@@ -84,24 +84,26 @@ const FluidShader = () => {
           
           float combinedNoise = (noise1 + noise2 * 0.5 + noise3 * 0.25) / 1.75;
           
-          // Cinematic gradient colors: purple -> blue -> teal -> pink
-          vec3 color1 = vec3(0.55, 0.27, 0.85); // Purple
-          vec3 color2 = vec3(0.27, 0.45, 0.85); // Blue
-          vec3 color3 = vec3(0.27, 0.85, 0.75); // Teal
-          vec3 color4 = vec3(0.85, 0.27, 0.65); // Pink
+          // Warm real-estate aesthetic: beige -> teal -> midnight blue with violet and coral accents
+          vec3 color1 = vec3(0.95, 0.90, 0.85); // Soft beige
+          vec3 color2 = vec3(0.36, 0.73, 0.73); // Muted teal
+          vec3 color3 = vec3(0.15, 0.20, 0.35); // Deep midnight blue
+          vec3 color4 = vec3(0.65, 0.33, 0.73); // Neon violet
+          vec3 color5 = vec3(0.95, 0.48, 0.48); // Dorm coral
           
-          // Mix colors based on noise and position
-          vec3 color = mix(color1, color2, smoothstep(-0.5, 0.5, combinedNoise + uv.x));
-          color = mix(color, color3, smoothstep(-0.3, 0.7, noise2 + uv.y));
-          color = mix(color, color4, smoothstep(0.2, 0.8, noise3));
+          // Mix colors based on noise and position for gradient effect
+          vec3 color = mix(color1, color2, smoothstep(0.0, 0.4, uv.y + combinedNoise * 0.2));
+          color = mix(color, color3, smoothstep(0.4, 1.0, uv.y + noise2 * 0.15));
+          color = mix(color, color4, smoothstep(0.3, 0.7, noise3) * 0.15);
+          color = mix(color, color5, smoothstep(0.6, 0.9, noise1) * 0.1);
           
           // Add subtle glow effect near mouse
           float mouseDist = length(uv - (uMouse * 0.5 + 0.5));
           float mouseGlow = smoothstep(0.8, 0.0, mouseDist);
-          color += mouseGlow * vec3(0.3, 0.2, 0.4);
+          color += mouseGlow * vec3(0.3, 0.15, 0.35);
           
-          // Darken for better UI readability
-          color *= 0.35;
+          // Brighten for better visibility on light theme
+          color *= 0.95;
           
           gl_FragColor = vec4(color, 1.0);
         }

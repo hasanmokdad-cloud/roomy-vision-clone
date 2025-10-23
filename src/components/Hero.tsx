@@ -2,8 +2,9 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { Search, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useRef } from 'react';
+import { useRef, Suspense } from 'react';
 import heroImage from '@/assets/hero-image.jpg';
+import { ThreeHero } from './ThreeHero';
 
 export const Hero = () => {
   const ref = useRef<HTMLDivElement>(null);
@@ -19,9 +20,13 @@ export const Hero = () => {
     <motion.section
       ref={ref}
       style={{ y, opacity }}
-      className="min-h-screen flex items-center justify-center px-6 pt-32 pb-20"
+      className="min-h-screen flex items-center justify-center px-6 pt-32 pb-20 relative overflow-hidden"
     >
-      <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+      <Suspense fallback={null}>
+        <ThreeHero />
+      </Suspense>
+      
+      <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center relative z-10">
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}

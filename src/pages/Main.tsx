@@ -4,6 +4,7 @@ import { Hero } from '@/components/Hero';
 import { HowItWorks } from '@/components/HowItWorks';
 import { DormListings } from '@/components/DormListings';
 import { Footer } from '@/components/Footer';
+import { WhatsAppButton } from '@/components/WhatsAppButton';
 
 const Main = () => {
   return (
@@ -14,6 +15,7 @@ const Main = () => {
       <HowItWorks />
       <DormListings />
       <Footer />
+      <WhatsAppButton />
     </div>
   );
 };

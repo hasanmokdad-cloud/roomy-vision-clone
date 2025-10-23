@@ -1,14 +1,17 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Building2, Home, Sparkles, Info, MessageSquare } from 'lucide-react';
+import { Building2, Home, Sparkles, Info, MessageSquare, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ReachUsModal } from './ReachUsModal';
 
 export const Navbar = () => {
+  const [reachUsOpen, setReachUsOpen] = useState(false);
+  
   const navItems = [
     { icon: Home, label: 'Home', href: '#' },
     { icon: Building2, label: 'Dorms', href: '#dorms' },
     { icon: Sparkles, label: 'AI Match', href: '#ai-match' },
     { icon: Info, label: 'About', href: '#about' },
-    { icon: MessageSquare, label: 'Contact', href: '#contact' },
   ];
 
   return (
@@ -52,14 +55,25 @@ export const Navbar = () => {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5, duration: 0.5 }}
+          className="flex items-center gap-2"
         >
           <Button
-            className="bg-gradient-to-r from-primary to-secondary text-white font-semibold px-6 py-2 rounded-xl hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] transition-all duration-300"
+            variant="ghost"
+            onClick={() => setReachUsOpen(true)}
+            className="hidden md:flex items-center gap-2"
+          >
+            <Phone className="w-4 h-4" />
+            Reach Us
+          </Button>
+          <Button
+            className="bg-gradient-to-r from-primary to-secondary text-white font-semibold px-6 py-2 rounded-xl hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] transition-all duration-300"
           >
             Get Started
           </Button>
         </motion.div>
       </div>
+      
+      <ReachUsModal open={reachUsOpen} onOpenChange={setReachUsOpen} />
     </motion.nav>
   );
 };

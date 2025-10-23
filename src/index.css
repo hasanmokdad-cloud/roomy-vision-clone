@@ -6,59 +6,59 @@
 
 @layer base {
   :root {
-    --background: 220 40% 4%;
-    --foreground: 210 40% 98%;
+    --background: 42 47% 95%;
+    --foreground: 222 47% 11%;
 
-    --card: 220 40% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 220 40% 6%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 280 90% 65%;
+    --primary: 271 91% 65%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 190 95% 55%;
+    --secondary: 174 41% 55%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 220 30% 15%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 320 85% 60%;
+    --accent: 14 91% 65%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 30% 18%;
-    --input: 220 30% 18%;
-    --ring: 280 90% 65%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 271 91% 65%;
 
     --radius: 1rem;
 
     /* Cinematic gradient colors */
-    --gradient-purple: 280 90% 65%;
+    --gradient-purple: 271 91% 65%;
     --gradient-blue: 220 90% 60%;
-    --gradient-teal: 180 85% 55%;
-    --gradient-pink: 320 85% 65%;
+    --gradient-teal: 174 41% 55%;
+    --gradient-pink: 14 91% 65%;
 
     /* Glass morphism */
-    --glass-bg: 220 40% 8%;
-    --glass-border: 210 40% 98%;
+    --glass-bg: 0 0% 100%;
+    --glass-border: 222 47% 11%;
     
     /* Glow effects */
-    --glow-purple: 280 90% 65%;
-    --glow-teal: 180 85% 55%;
-    --glow-pink: 320 85% 65%;
+    --glow-purple: 271 91% 65%;
+    --glow-teal: 174 41% 55%;
+    --glow-pink: 14 91% 65%;
 
-    --sidebar-background: 220 40% 6%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 280 90% 65%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 271 91% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 30% 15%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 220 30% 18%;
-    --sidebar-ring: 280 90% 65%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 271 91% 65%;
   }
 }
 
@@ -80,11 +80,11 @@
 
   /* Glass morphism utilities */
   .glass {
-    @apply bg-black/40 backdrop-blur-xl border border-white/10;
+    @apply bg-white/60 backdrop-blur-xl border border-foreground/10;
   }
 
   .glass-hover {
-    @apply transition-all duration-300 hover:bg-black/50 hover:border-white/20 hover:shadow-[0_0_30px_rgba(139,92,246,0.3)];
+    @apply transition-all duration-300 hover:bg-white/70 hover:border-foreground/20 hover:shadow-[0_0_30px_rgba(168,85,247,0.3)];
   }
 
   /* Glow effects */
