@@ -13,7 +13,7 @@ export default function Listings() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
-    priceRange: [0, 2000],
+    priceRange: [0, 2000] as [number, number],
     universities: [] as string[],
     areas: [] as string[],
     roomTypes: [] as string[],
