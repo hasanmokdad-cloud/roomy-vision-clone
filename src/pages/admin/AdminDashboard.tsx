@@ -8,6 +8,7 @@ import { FluidBackground } from '@/components/FluidBackground';
 import AdminHome from './AdminHome';
 import AdminDorms from './AdminDorms';
 import AdminStudents from './AdminStudents';
+import AdminNotifications from './AdminNotifications';
 import AdminAnalytics from './AdminAnalytics';
 import AdminLogs from './AdminLogs';
 import AdminSettings from './AdminSettings';
@@ -59,6 +60,7 @@ export default function AdminDashboard() {
                 <Route path="/" element={<AdminHome />} />
                 <Route path="/dorms" element={<AdminDorms />} />
                 <Route path="/students" element={<AdminStudents />} />
+                <Route path="/notifications" element={<AdminNotifications />} />
                 <Route path="/analytics" element={<AdminAnalytics />} />
                 <Route path="/logs" element={<AdminLogs />} />
                 <Route path="/settings" element={<AdminSettings />} />

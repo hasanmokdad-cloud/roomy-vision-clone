@@ -16,6 +16,7 @@ const menuItems = [
   { title: 'Dashboard', url: '/admin', icon: Home },
   { title: 'Dorm Listings', url: '/admin/dorms', icon: Building2 },
   { title: 'Students', url: '/admin/students', icon: Users },
+  { title: 'Notifications', url: '/admin/notifications', icon: FileText },
   { title: 'Analytics', url: '/admin/analytics', icon: BarChart3 },
   { title: 'System Logs', url: '/admin/logs', icon: FileText },
   { title: 'Settings', url: '/admin/settings', icon: Settings },

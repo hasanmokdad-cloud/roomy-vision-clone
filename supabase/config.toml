@@ -1,1 +1,10 @@
 project_id = "vtdtmhgzisigtqryojwl"
+
+[functions.roomy-chat]
+verify_jwt = false
+
+[functions.send-owner-notification]
+verify_jwt = false
+
+[functions.process-pending-notifications]
+verify_jwt = false
