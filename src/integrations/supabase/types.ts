@@ -100,6 +100,36 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_sessions: {
+        Row: {
+          context: Json | null
+          created_at: string | null
+          history: Json | null
+          id: string
+          session_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string | null
+          history?: Json | null
+          id?: string
+          session_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string | null
+          history?: Json | null
+          id?: string
+          session_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       dorms: {
         Row: {
           address: string | null

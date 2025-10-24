@@ -17,12 +17,14 @@ export const ChatbotBubble = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Hi 👋 I'm Roomy AI! I can help you find dorms by budget, area, university, and room type.",
+      content: "Hi 👋 I'm Roomy AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
     },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [hasContext, setHasContext] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -54,15 +56,44 @@ export const ChatbotBubble = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('roomy-chat', {
-        body: { message: userMessage, userId },
+        body: { 
+          message: userMessage, 
+          userId,
+          sessionId 
+        },
       });
 
       if (error) throw error;
 
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: data.response || 'Sorry, I could not process that request.' },
-      ]);
+      const responseMessage = data.response || 'Sorry, I could not process that request.';
+      
+      // Update session ID if provided
+      if (data.sessionId && !sessionId) {
+        setSessionId(data.sessionId);
+      }
+
+      // Update context indicator
+      if (data.hasContext !== undefined) {
+        setHasContext(data.hasContext);
+      }
+
+      // Check if chat was reset
+      if (data.sessionReset) {
+        setMessages([
+          {
+            role: 'assistant',
+            content: "Hi 👋 I'm Roomy AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
+          },
+          { role: 'assistant', content: responseMessage }
+        ]);
+        setSessionId(null);
+        setHasContext(false);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { role: 'assistant', content: responseMessage },
+        ]);
+      }
     } catch (error) {
       console.error('Chat error:', error);
       toast({
@@ -79,6 +110,11 @@ export const ChatbotBubble = () => {
     }
   };
 
+  const handleReset = async () => {
+    setInput('reset chat');
+    await handleSend();
+  };
+
   return (
     <>
       <AnimatePresence>
@@ -90,15 +126,37 @@ export const ChatbotBubble = () => {
             className="fixed bottom-24 right-6 w-96 h-[500px] glass rounded-2xl shadow-2xl flex flex-col z-50"
           >
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <h3 className="font-bold text-lg">Roomy AI Assistant</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsOpen(false)}
-                className="hover:bg-muted"
-              >
-                <X className="w-5 h-5" />
-              </Button>
+              <div className="flex flex-col">
+                <h3 className="font-bold text-lg">Roomy AI Assistant</h3>
+                {hasContext && (
+                  <span className="text-xs text-muted-foreground">
+                    💭 Remembers your preferences
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {hasContext && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleReset}
+                    className="hover:bg-muted"
+                    title="Reset conversation"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsOpen(false)}
+                  className="hover:bg-muted"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
 
             <ScrollArea className="flex-1 p-4" ref={scrollRef}>

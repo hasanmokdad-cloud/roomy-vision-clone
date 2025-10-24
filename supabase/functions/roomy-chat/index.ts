@@ -8,13 +8,17 @@ const corsHeaders = {
 };
 
 // Helper function to detect keywords and extract filters
-function extractFilters(message: string) {
+function extractFilters(message: string, context: any = {}) {
   const query = message.toLowerCase();
-  const filters: any = {};
+  const filters: any = { ...context };
 
   // Budget detection
   const budgetMatch = query.match(/\$?(\d{2,4})/);
   if (budgetMatch) filters.budget = parseInt(budgetMatch[1]);
+  else if (query.includes("cheaper") || query.includes("lower")) {
+    // Reduce budget by 20% if asking for cheaper
+    if (context.budget) filters.budget = Math.floor(context.budget * 0.8);
+  }
 
   // University detection
   const universities = ["lau", "aub", "usek", "usj", "balamand", "bau", "lu", "haigazian"];
@@ -31,6 +35,12 @@ function extractFilters(message: string) {
   const roomMatch = roomTypes.find(r => query.includes(r));
   if (roomMatch) filters.roomType = roomMatch;
 
+  // Detect amenity queries
+  if (query.includes("parking") || query.includes("garage")) filters.amenity = "parking";
+  if (query.includes("wifi") || query.includes("internet")) filters.amenity = "wifi";
+  if (query.includes("gym") || query.includes("fitness")) filters.amenity = "gym";
+  if (query.includes("laundry")) filters.amenity = "laundry";
+
   return filters;
 }
 
@@ -40,7 +50,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, userId } = await req.json();
+    const { message, userId, sessionId } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -52,9 +62,55 @@ serve(async (req) => {
     // Initialize Supabase client
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    // Extract filters from user message
-    const filters = extractFilters(message);
+    // Generate session ID for guest users
+    const effectiveUserId = userId || `guest_${Date.now()}`;
+    const effectiveSessionId = sessionId || effectiveUserId;
+
+    // Check for reset command
+    if (message.toLowerCase().includes("reset chat") || message.toLowerCase().includes("start over")) {
+      await supabase.from("chat_sessions").delete().eq("session_id", effectiveSessionId);
+      return new Response(
+        JSON.stringify({ 
+          response: "Chat reset! 🔄 Let's start fresh. How can I help you find your perfect dorm?",
+          sessionReset: true 
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Load existing session or create new one
+    let { data: session } = await supabase
+      .from("chat_sessions")
+      .select("*")
+      .eq("session_id", effectiveSessionId)
+      .maybeSingle();
+
+    if (!session) {
+      const { data: newSession } = await supabase
+        .from("chat_sessions")
+        .insert({
+          user_id: effectiveUserId,
+          session_id: effectiveSessionId,
+          history: [],
+          context: {}
+        })
+        .select()
+        .single();
+      session = newSession;
+    }
+
+    const history = session?.history || [];
+    const storedContext = session?.context || {};
+
+    // Extract filters from message, merging with stored context
+    const filters = extractFilters(message, storedContext);
     
+    // Build conversation context from history (last 10 messages)
+    const recentHistory = history.slice(-10);
+    const conversationContext = recentHistory.length > 0
+      ? "\n\nPrevious conversation:\n" + recentHistory.map((h: any) => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.content}`).join("\n") + "\n"
+      : "";
+
     // Query dorms database with filters
     let dbQuery = supabase
       .from("dorms")
@@ -66,6 +122,7 @@ serve(async (req) => {
     if (filters.university) dbQuery = dbQuery.ilike("university", `%${filters.university}%`);
     if (filters.area) dbQuery = dbQuery.ilike("area", `%${filters.area}%`);
     if (filters.roomType) dbQuery = dbQuery.ilike("room_types", `%${filters.roomType}%`);
+    if (filters.amenity) dbQuery = dbQuery.ilike("services_amenities", `%${filters.amenity}%`);
 
     const { data: dorms, error: dbError } = await dbQuery;
     
@@ -96,13 +153,14 @@ Your role is to help students find the perfect dorm that matches their preferenc
 Key capabilities:
 - Help students find dorms based on budget, university, location, and preferences
 - Provide detailed information about available dorms from our live database
+- Remember previous conversation context to handle follow-up questions naturally
 - Recommend dorms based on amenities, gender preferences, and proximity to universities
 - Be conversational, warm, and helpful
 - Use emojis to make conversations friendly (🏠 💰 🎓 ✨)
 
 When I provide you with matching dorms from our database, present them in an engaging way.
 If no dorms match, suggest alternatives or ask the user to adjust their criteria.
-Keep responses concise and actionable.${dormsContext}`;
+Keep responses concise and actionable.${conversationContext}${dormsContext}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -152,6 +210,27 @@ Keep responses concise and actionable.${dormsContext}`;
     const aiData = await response.json();
     const aiResponse = aiData.choices?.[0]?.message?.content || "Sorry, I couldn't process that request.";
 
+    // Update session with new messages
+    const updatedHistory = [
+      ...history,
+      { role: "user", content: message, timestamp: new Date().toISOString() },
+      { role: "assistant", content: aiResponse, timestamp: new Date().toISOString() }
+    ];
+
+    // Keep only last 20 entries (10 conversation turns)
+    const trimmedHistory = updatedHistory.slice(-20);
+
+    // Update context with latest filters
+    const updatedContext = { ...filters };
+
+    await supabase.from("chat_sessions")
+      .update({
+        history: trimmedHistory,
+        context: updatedContext,
+        updated_at: new Date().toISOString()
+      })
+      .eq("session_id", effectiveSessionId);
+
     // Log conversation (optional)
     if (userId) {
       const { error: logError } = await supabase.from("chat_logs").insert([{
@@ -163,7 +242,11 @@ Keep responses concise and actionable.${dormsContext}`;
     }
 
     return new Response(
-      JSON.stringify({ response: aiResponse }),
+      JSON.stringify({ 
+        response: aiResponse,
+        sessionId: effectiveSessionId,
+        hasContext: recentHistory.length > 0
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
