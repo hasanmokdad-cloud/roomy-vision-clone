@@ -68,7 +68,7 @@ export const Hero = () => {
             transition={{ delay: 0.4, duration: 0.8 }}
             className="text-5xl md:text-7xl font-bold leading-tight"
           >
-            Find your perfect dorm in Jbeil{' '}
+            Find your perfect dorm{' '}
             <span className="gradient-text">— powered by AI</span>
           </motion.h1>
 
@@ -78,8 +78,7 @@ export const Hero = () => {
             transition={{ delay: 0.6, duration: 0.8 }}
             className="text-lg text-foreground/70 leading-relaxed"
           >
-            No scams. No outdated listings. Just verified, available dorms matched to your lifestyle. 
-            Smart recommendations, 3D tours, and trusted roommates — all in one place.
+            No scams. No outdated listings. Just verified, available dorms matched to your lifestyle—smarter, safer, faster.
           </motion.p>
 
           <motion.div
