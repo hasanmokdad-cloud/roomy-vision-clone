@@ -93,6 +93,7 @@ export type Database = {
           location: string
           monthly_price: number | null
           name: string
+          owner_id: string | null
           phone_number: string | null
           price: number
           room_types: string | null
@@ -120,6 +121,7 @@ export type Database = {
           location: string
           monthly_price?: number | null
           name: string
+          owner_id?: string | null
           phone_number?: string | null
           price: number
           room_types?: string | null
@@ -147,6 +149,7 @@ export type Database = {
           location?: string
           monthly_price?: number | null
           name?: string
+          owner_id?: string | null
           phone_number?: string | null
           price?: number
           room_types?: string | null
@@ -157,6 +160,44 @@ export type Database = {
           updated_at?: string
           verification_status?: string | null
           website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dorms_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owners: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          phone_number: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name: string
+          id?: string
+          phone_number?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          phone_number?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -211,6 +252,36 @@ export type Database = {
           university?: string | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      system_logs: {
+        Row: {
+          action: string
+          details: Json | null
+          log_id: string
+          record_id: string | null
+          table_affected: string
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          details?: Json | null
+          log_id?: string
+          record_id?: string | null
+          table_affected: string
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          details?: Json | null
+          log_id?: string
+          record_id?: string | null
+          table_affected?: string
+          timestamp?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
