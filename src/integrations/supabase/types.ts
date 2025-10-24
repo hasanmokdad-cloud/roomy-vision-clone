@@ -243,6 +243,7 @@ export type Database = {
           event_type: string
           fields_changed: Json | null
           id: string
+          language: string | null
           owner_id: string
           retry_count: number | null
           sent_at: string | null
@@ -256,6 +257,7 @@ export type Database = {
           event_type: string
           fields_changed?: Json | null
           id?: string
+          language?: string | null
           owner_id: string
           retry_count?: number | null
           sent_at?: string | null
@@ -269,6 +271,7 @@ export type Database = {
           event_type?: string
           fields_changed?: Json | null
           id?: string
+          language?: string | null
           owner_id?: string
           retry_count?: number | null
           sent_at?: string | null

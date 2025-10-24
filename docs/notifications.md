@@ -1,7 +1,20 @@
 # Roomy Notification System
 
 ## Overview
-The Roomy platform provides a comprehensive notification system that alerts dorm owners about important updates via **Email** and **WhatsApp**.
+The Roomy platform provides a comprehensive **bilingual** notification system that alerts dorm owners about important updates via **Email** and **WhatsApp** in their preferred language (English or Arabic).
+
+## Supported Languages
+
+### English (EN)
+- Default for international phone numbers
+- Standard Latin script
+- Left-to-right text direction
+
+### Arabic (AR)
+- Default for Lebanese phone numbers (+961)
+- Arabic script with proper UTF-8 encoding
+- Right-to-left text direction
+- Localized for Lebanese market
 
 ## Supported Notification Types
 
@@ -42,8 +55,13 @@ Triggered when a student sends an inquiry about a listing.
 ### WhatsApp (via Twilio)
 - **Rate Limit:** 3 messages per hour per owner
 - **Debounce:** 10 minutes for identical events
-- **Language Support:** English (EN) and Arabic (AR)
+- **Language Support:** 
+  - English (EN) - Default for international numbers
+  - Arabic (AR) - Default for Lebanese numbers (+961)
+  - Owner-selectable in account settings
+- **Templates:** Bilingual message templates for all event types
 - **Requirements:** Owner must have valid phone number in international format
+- **Encoding:** UTF-8 support for Arabic characters
 
 ## Owner Preferences
 
@@ -55,7 +73,8 @@ Owners can control their notification preferences from `/owner/account`:
 
 2. **WhatsApp Notifications** (`notify_whatsapp`)
    - Toggle: "Receive WhatsApp alerts"
-   - Language: English or Arabic
+   - Language: English (🇬🇧) or Arabic (🇱🇧)
+   - Auto-detection: Lebanese numbers (+961) default to Arabic
    - Default: Enabled
    - Requires: Valid phone number
 
@@ -82,6 +101,7 @@ status: text (pending | sent | failed | skipped)
 error_message: text
 retry_count: integer
 channel: text (email | whatsapp | both)
+language: text (EN | AR, default: EN)
 ```
 
 ### `inquiries` Table
@@ -146,10 +166,14 @@ View and manage all notifications:
   - Status (sent | failed | pending | skipped)
   - Event type (verified | edited | inquiry)
   - Channel (email | whatsapp | both)
+  - Language (EN | AR)
 - **Actions:**
   - Retry failed notifications
   - View error messages
-  - Monitor success rates
+  - Monitor success rates by language
+- **Language Indicators:**
+  - 🇬🇧 EN - English messages
+  - 🇱🇧 AR - Arabic messages
 
 ### Statistics
 - Total notifications sent
@@ -179,6 +203,11 @@ View and manage all notifications:
 2. Send 4 WhatsApp within an hour → 4th is skipped
 3. Skipped notifications logged with reason
 
+✅ **Language Selection**
+1. Owner with +961 number → automatically defaults to Arabic
+2. Owner changes language to English → next message in English
+3. Owner changes to Arabic → messages show in Arabic with proper RTL formatting
+
 ✅ **Opt-Out**
 1. Owner disables `notify_email` → no emails sent
 2. Owner disables `notify_whatsapp` → no WhatsApp sent
@@ -201,11 +230,13 @@ To add a new event type:
 2. **Update Edge Function**
    ```typescript
    // Add new template in send-owner-notification/index.ts
-   else if (notification.event_type === "new_event_type") {
-     subject = "Subject";
-     whatsappMessage = "WhatsApp message";
-     html = `Email HTML template`;
-   }
+   const whatsappTemplates: WhatsAppTemplates = {
+     ...
+     new_event_type: {
+       EN: "English template with {{variables}}",
+       AR: "Arabic template with {{variables}}"
+     }
+   };
    ```
 
 3. **Update UI Filters**
@@ -221,6 +252,9 @@ To add a new event type:
 - All dynamic values sanitized before templating
 - Rate limits prevent abuse and spam
 - Twilio credentials stored as secrets (never in code)
+- UTF-8 encoding ensures proper Arabic character rendering
+- Language preference stored securely in database
+- Auto-detection based on phone number prefix for better UX
 
 ## Environment Variables
 

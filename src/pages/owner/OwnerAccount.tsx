@@ -177,8 +177,11 @@ export default function OwnerAccount() {
             {formData.notify_whatsapp && (
               <div className="p-4 glass rounded-xl">
                 <Label htmlFor="whatsapp-language" className="font-semibold mb-2 block">
-                  Preferred Language
+                  Preferred Language / اللغة المفضلة
                 </Label>
+                <p className="text-xs text-foreground/60 mb-3">
+                  Choose the language for your WhatsApp notifications
+                </p>
                 <Select
                   value={formData.whatsapp_language}
                   onValueChange={(value) => 
@@ -189,10 +192,15 @@ export default function OwnerAccount() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="EN">English</SelectItem>
-                    <SelectItem value="AR">Arabic</SelectItem>
+                    <SelectItem value="EN">🇬🇧 English</SelectItem>
+                    <SelectItem value="AR">🇱🇧 العربية (Arabic)</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-foreground/60 mt-2">
+                  {formData.whatsapp_language === 'AR' 
+                    ? 'ستتلقى الرسائل باللغة العربية' 
+                    : 'You will receive messages in English'}
+                </p>
               </div>
             )}
 

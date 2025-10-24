@@ -27,6 +27,7 @@ export default function AdminNotifications() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [eventFilter, setEventFilter] = useState<string>('all');
   const [channelFilter, setChannelFilter] = useState<string>('all');
+  const [languageFilter, setLanguageFilter] = useState<string>('all');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -50,7 +51,7 @@ export default function AdminNotifications() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [statusFilter, eventFilter, channelFilter]);
+  }, [statusFilter, eventFilter, channelFilter, languageFilter]);
 
   const loadNotifications = async () => {
     let query = supabase
@@ -73,6 +74,10 @@ export default function AdminNotifications() {
 
     if (channelFilter !== 'all') {
       query = query.eq('channel', channelFilter);
+    }
+
+    if (languageFilter !== 'all') {
+      query = query.eq('language', languageFilter);
     }
 
     const { data, error } = await query;
@@ -192,6 +197,17 @@ export default function AdminNotifications() {
               <SelectItem value="both">Both</SelectItem>
             </SelectContent>
           </Select>
+
+          <Select value={languageFilter} onValueChange={setLanguageFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by language" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Languages</SelectItem>
+              <SelectItem value="EN">🇬🇧 English</SelectItem>
+              <SelectItem value="AR">🇱🇧 Arabic</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="overflow-x-auto">
@@ -201,6 +217,7 @@ export default function AdminNotifications() {
                 <TableHead>Timestamp</TableHead>
                 <TableHead>Event</TableHead>
                 <TableHead>Channel</TableHead>
+                <TableHead>Language</TableHead>
                 <TableHead>Dorm</TableHead>
                 <TableHead>Owner</TableHead>
                 <TableHead>Email</TableHead>
@@ -222,6 +239,11 @@ export default function AdminNotifications() {
                   <TableCell>
                     <Badge variant="outline">
                       {notification.channel || 'email'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">
+                      {notification.language === 'AR' ? '🇱🇧 AR' : '🇬🇧 EN'}
                     </Badge>
                   </TableCell>
                   <TableCell>{notification.dorm?.dorm_name || notification.dorm?.name || 'N/A'}</TableCell>

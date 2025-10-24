@@ -20,6 +20,74 @@ interface NotificationPayload {
   notificationId: string;
 }
 
+interface WhatsAppTemplates {
+  [key: string]: {
+    EN: string;
+    AR: string;
+  };
+}
+
+// Bilingual WhatsApp message templates
+const whatsappTemplates: WhatsAppTemplates = {
+  verified: {
+    EN: `Hi {{owner_name}} 👋
+Your listing "{{dorm_name}}" has been verified on Roomy 🎉
+Students can now find and contact you directly.
+Manage your listing here:
+{{owner_dashboard_url}}
+— Roomy Team`,
+    AR: `مرحباً {{owner_name}} 👋
+تمّ التحقق من السكن "{{dorm_name}}" بنجاح ✅
+يمكن للطلاب الآن العثور عليه والتواصل معك مباشرةً.
+يمكنك إدارة السكن من هنا:
+{{owner_dashboard_url}}
+— فريق Roomy`
+  },
+  edited: {
+    EN: `Hi {{owner_name}},
+Your Roomy listing "{{dorm_name}}" was recently updated.
+Updated fields: {{fields_changed_summary}}
+View details in your dashboard:
+{{owner_dashboard_url}}
+— Roomy Team`,
+    AR: `مرحباً {{owner_name}},
+تمّ تعديل السكن "{{dorm_name}}" على Roomy.
+التعديلات الجديدة: {{fields_changed_summary}}
+شاهد التفاصيل من خلال لوحة التحكم:
+{{owner_dashboard_url}}
+— فريق Roomy`
+  },
+  inquiry: {
+    EN: `Hi {{owner_name}}! 👋
+A student is interested in "{{dorm_name}}" and has sent you a message.
+Open your dashboard to read and reply:
+{{owner_dashboard_url}}
+— Roomy AI Assistant 🤖`,
+    AR: `مرحباً {{owner_name}}! 👋
+طالب مهتم بالسكن "{{dorm_name}}" وقد أرسل لك رسالة.
+افتح لوحة التحكم لقراءة الرسالة والرد عليها:
+{{owner_dashboard_url}}
+— مساعد Roomy الذكي 🤖`
+  }
+};
+
+// Helper function to generate WhatsApp message from template
+function generateWhatsAppMessage(
+  eventType: string,
+  language: string,
+  variables: { [key: string]: string }
+): string {
+  const lang = (language === 'AR' ? 'AR' : 'EN') as 'EN' | 'AR';
+  const template = whatsappTemplates[eventType]?.[lang] || whatsappTemplates[eventType]?.EN || '';
+  
+  let message = template;
+  for (const [key, value] of Object.entries(variables)) {
+    message = message.replace(new RegExp(`{{${key}}}`, 'g'), value);
+  }
+  
+  return message;
+}
+
 // Helper function to send WhatsApp message via Twilio
 async function sendWhatsAppMessage(to: string, message: string): Promise<{ success: boolean; error?: string }> {
   try {
@@ -90,6 +158,7 @@ serve(async (req) => {
     const dormName = dorm?.dorm_name || dorm?.name || "Your listing";
     const ownerName = owner?.full_name || owner?.email || "Owner";
     const channel = notification.channel || 'email';
+    const language = owner?.whatsapp_language || 'EN';
     const shouldSendEmail = channel === 'email' || channel === 'both';
     const shouldSendWhatsApp = (channel === 'whatsapp' || channel === 'both') && owner?.notify_whatsapp && owner?.phone_number;
 
@@ -99,7 +168,11 @@ serve(async (req) => {
 
     if (notification.event_type === "verified") {
       subject = "🎉 Your Roomy listing is now Verified!";
-      whatsappMessage = `Hi ${ownerName} 👋\nYour listing "${dormName}" has just been verified on Roomy 🎉\nStudents can now find and contact you directly.\nManage your listing here:\nhttps://main-roomy.lovable.app/owner/listings\n— Roomy Team`;
+      whatsappMessage = generateWhatsAppMessage('verified', language, {
+        owner_name: ownerName,
+        dorm_name: dormName,
+        owner_dashboard_url: 'https://main-roomy.lovable.app/owner/listings'
+      });
       html = `
         <!DOCTYPE html>
         <html>
@@ -154,7 +227,12 @@ serve(async (req) => {
         key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
       ).join(', ');
       
-      whatsappMessage = `Hi ${ownerName},\nYour Roomy listing "${dormName}" was recently updated.\nFields changed: ${changedFields}\nView details in your dashboard:\nhttps://main-roomy.lovable.app/owner/listings\n— Roomy Team`;
+      whatsappMessage = generateWhatsAppMessage('edited', language, {
+        owner_name: ownerName,
+        dorm_name: dormName,
+        fields_changed_summary: changedFields,
+        owner_dashboard_url: 'https://main-roomy.lovable.app/owner/listings'
+      });
       
       // Build changes table
       let changesHtml = "<ul style='list-style: none; padding: 0;'>";
@@ -221,7 +299,11 @@ serve(async (req) => {
       const studentName = inquiryData.student_name || "A student";
       const message = inquiryData.message || "No message provided";
       
-      whatsappMessage = `Hi ${ownerName}! 👋\nA student is interested in "${dormName}" and has sent a new inquiry.\nOpen your dashboard to view the message and reply:\nhttps://main-roomy.lovable.app/owner\n— Roomy AI Assistant 🤖`;
+      whatsappMessage = generateWhatsAppMessage('inquiry', language, {
+        owner_name: ownerName,
+        dorm_name: dormName,
+        owner_dashboard_url: 'https://main-roomy.lovable.app/owner'
+      });
       
       html = `
         <!DOCTYPE html>
@@ -306,13 +388,14 @@ serve(async (req) => {
     
     const errorMessage = errors.length > 0 ? errors.join('; ') : null;
 
-    // Update notification status
+    // Update notification status with language tracking
     await supabase
       .from("notifications_log")
       .update({
         status: finalStatus,
         error_message: errorMessage,
         retry_count: finalStatus === "failed" ? notification.retry_count + 1 : notification.retry_count,
+        language: language,
       })
       .eq("id", notificationId);
 
