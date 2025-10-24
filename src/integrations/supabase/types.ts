@@ -171,8 +171,73 @@ export type Database = {
           },
         ]
       }
+      inquiries: {
+        Row: {
+          created_at: string | null
+          dorm_id: string | null
+          id: string
+          inquiry_type: string
+          message: string | null
+          owner_id: string
+          status: string | null
+          student_email: string | null
+          student_id: string | null
+          student_name: string | null
+          student_phone: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dorm_id?: string | null
+          id?: string
+          inquiry_type: string
+          message?: string | null
+          owner_id: string
+          status?: string | null
+          student_email?: string | null
+          student_id?: string | null
+          student_name?: string | null
+          student_phone?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dorm_id?: string | null
+          id?: string
+          inquiry_type?: string
+          message?: string | null
+          owner_id?: string
+          status?: string | null
+          student_email?: string | null
+          student_id?: string | null
+          student_name?: string | null
+          student_phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inquiries_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inquiries_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inquiries_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications_log: {
         Row: {
+          channel: string | null
           dorm_id: string | null
           error_message: string | null
           event_type: string
@@ -185,6 +250,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          channel?: string | null
           dorm_id?: string | null
           error_message?: string | null
           event_type: string
@@ -197,6 +263,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          channel?: string | null
           dorm_id?: string | null
           error_message?: string | null
           event_type?: string
@@ -232,9 +299,11 @@ export type Database = {
           full_name: string
           id: string
           notify_email: boolean | null
+          notify_whatsapp: boolean | null
           phone_number: string | null
           updated_at: string | null
           user_id: string
+          whatsapp_language: string | null
         }
         Insert: {
           created_at?: string | null
@@ -242,9 +311,11 @@ export type Database = {
           full_name: string
           id?: string
           notify_email?: boolean | null
+          notify_whatsapp?: boolean | null
           phone_number?: string | null
           updated_at?: string | null
           user_id: string
+          whatsapp_language?: string | null
         }
         Update: {
           created_at?: string | null
@@ -252,9 +323,11 @@ export type Database = {
           full_name?: string
           id?: string
           notify_email?: boolean | null
+          notify_whatsapp?: boolean | null
           phone_number?: string | null
           updated_at?: string | null
           user_id?: string
+          whatsapp_language?: string | null
         }
         Relationships: []
       }
@@ -373,6 +446,14 @@ export type Database = {
         Returns: boolean
       }
       check_notification_rate_limit: {
+        Args: { p_owner_id: string }
+        Returns: boolean
+      }
+      check_whatsapp_debounce: {
+        Args: { p_dorm_id: string; p_event_type: string; p_owner_id: string }
+        Returns: boolean
+      }
+      check_whatsapp_rate_limit: {
         Args: { p_owner_id: string }
         Returns: boolean
       }
