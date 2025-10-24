@@ -47,16 +47,29 @@ export const DormFinder = ({ isOpen, onClose, userId }: DormFinderProps) => {
   const handleSearch = async () => {
     setIsSearching(true);
     
+    // Save preferences to student profile
+    await supabase
+      .from('students')
+      .update({
+        preferred_university: formData.university,
+        budget: formData.budget ? parseFloat(formData.budget) : null,
+        room_type: formData.gender,
+      })
+      .eq('user_id', userId);
+
     // Simulate AI processing
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    let query = supabase.from('dorms').select('*').eq('available', true);
+    let query = supabase
+      .from('dorms')
+      .select('*')
+      .eq('verification_status', 'Verified');
 
     if (formData.university) {
       query = query.eq('university', formData.university);
     }
     if (formData.budget) {
-      query = query.lte('price', parseFloat(formData.budget));
+      query = query.lte('monthly_price', parseFloat(formData.budget));
     }
     if (formData.gender) {
       query = query.eq('gender_preference', formData.gender);

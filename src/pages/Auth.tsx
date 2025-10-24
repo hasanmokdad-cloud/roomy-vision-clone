@@ -92,7 +92,7 @@ const Auth = () => {
           options: {
             emailRedirectTo: `${window.location.origin}/main`,
             data: {
-              name: name.trim(),
+              full_name: name.trim(),
             }
           }
         });

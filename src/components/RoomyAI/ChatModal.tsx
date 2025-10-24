@@ -46,11 +46,27 @@ export const ChatModal = ({ isOpen, onClose, userId }: ChatModalProps) => {
   }, [messages]);
 
   const fetchDorms = async (query: string) => {
-    const { data, error } = await supabase
+    // Get user preferences from students table
+    const { data: studentData } = await supabase
+      .from('students')
+      .select('budget, preferred_university, room_type')
+      .eq('user_id', userId)
+      .single();
+
+    let dormQuery = supabase
       .from('dorms')
       .select('*')
-      .eq('available', true)
-      .limit(3);
+      .eq('verification_status', 'Verified');
+
+    // Apply user preferences if available
+    if (studentData?.budget) {
+      dormQuery = dormQuery.lte('monthly_price', studentData.budget);
+    }
+    if (studentData?.preferred_university) {
+      dormQuery = dormQuery.eq('university', studentData.preferred_university);
+    }
+
+    const { data, error } = await dormQuery.limit(3);
 
     if (!error && data) {
       setDorms(data);

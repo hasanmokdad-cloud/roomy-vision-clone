@@ -49,23 +49,43 @@ export const DormListings = () => {
       const { data, error } = await supabase
         .from('dorms')
         .select('*')
-        .eq('available', true)
+        .eq('verification_status', 'Verified')
         .limit(6);
 
       if (!error && data && data.length > 0) {
         const formattedDorms = data.map(dorm => ({
           image: dorm.image_url || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
-          name: dorm.name,
+          name: dorm.dorm_name || dorm.name,
           match: 90,
-          location: dorm.location,
-          price: Number(dorm.price),
-          amenities: dorm.amenities || [],
+          location: dorm.area || dorm.location,
+          price: Number(dorm.monthly_price || dorm.price),
+          amenities: dorm.services_amenities?.split(',').map((a: string) => a.trim()) || dorm.amenities || [],
         }));
         setDorms(formattedDorms);
       }
     };
 
     fetchDorms();
+
+    // Set up real-time listener
+    const channel = supabase
+      .channel('dorms-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'dorms'
+        },
+        () => {
+          fetchDorms();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return (
