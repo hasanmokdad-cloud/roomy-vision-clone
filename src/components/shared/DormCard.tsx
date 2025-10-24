@@ -13,16 +13,16 @@ interface DormCardProps {
     services_amenities?: string;
     room_types?: string;
     verification_status?: string;
-    phone_number?: string;
     image_url?: string;
   };
 }
 
 export default function DormCard({ dorm }: DormCardProps) {
   const openWhatsApp = () => {
-    const phone = dorm.phone_number || '96181858026';
+    // Use default Roomy contact number - actual owner contact is protected
+    const phone = '96181858026';
     const message = `Hi! I'm interested in "${dorm.dorm_name}" on Roomy.`;
-    window.open(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const amenities = dorm.services_amenities?.split(',').slice(0, 4).map(a => a.trim()) || [];
