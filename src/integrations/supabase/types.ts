@@ -171,12 +171,67 @@ export type Database = {
           },
         ]
       }
+      notifications_log: {
+        Row: {
+          dorm_id: string | null
+          error_message: string | null
+          event_type: string
+          fields_changed: Json | null
+          id: string
+          owner_id: string
+          retry_count: number | null
+          sent_at: string | null
+          sent_to: string
+          status: string
+        }
+        Insert: {
+          dorm_id?: string | null
+          error_message?: string | null
+          event_type: string
+          fields_changed?: Json | null
+          id?: string
+          owner_id: string
+          retry_count?: number | null
+          sent_at?: string | null
+          sent_to: string
+          status?: string
+        }
+        Update: {
+          dorm_id?: string | null
+          error_message?: string | null
+          event_type?: string
+          fields_changed?: Json | null
+          id?: string
+          owner_id?: string
+          retry_count?: number | null
+          sent_at?: string | null
+          sent_to?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_log_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_log_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owners: {
         Row: {
           created_at: string | null
           email: string
           full_name: string
           id: string
+          notify_email: boolean | null
           phone_number: string | null
           updated_at: string | null
           user_id: string
@@ -186,6 +241,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          notify_email?: boolean | null
           phone_number?: string | null
           updated_at?: string | null
           user_id: string
@@ -195,6 +251,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          notify_email?: boolean | null
           phone_number?: string | null
           updated_at?: string | null
           user_id?: string
@@ -311,6 +368,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_notification_debounce: {
+        Args: { p_dorm_id: string; p_event_type: string; p_owner_id: string }
+        Returns: boolean
+      }
+      check_notification_rate_limit: {
+        Args: { p_owner_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
