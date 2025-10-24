@@ -5,6 +5,7 @@ import { HowItWorks } from '@/components/HowItWorks';
 import { DormListings } from '@/components/DormListings';
 import { Footer } from '@/components/Footer';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
+import { RoomyAI } from '@/components/RoomyAI';
 
 const Main = () => {
   return (
@@ -16,6 +17,7 @@ const Main = () => {
       <DormListings />
       <Footer />
       <WhatsAppButton />
+      <RoomyAI />
     </div>
   );
 };

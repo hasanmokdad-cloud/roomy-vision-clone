@@ -1,8 +1,18 @@
 import { motion, useInView } from 'framer-motion';
 import { DormCard } from './DormCard';
-import { useRef } from 'react';
+import { useRef, useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
-const dorms = [
+interface Dorm {
+  id: string;
+  name: string;
+  location: string;
+  price: number;
+  amenities: string[];
+  image_url?: string;
+}
+
+const fallbackDorms = [
   {
     image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
     name: 'Sunny Side Studios',
@@ -32,6 +42,31 @@ const dorms = [
 export const DormListings = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const [dorms, setDorms] = useState(fallbackDorms);
+
+  useEffect(() => {
+    const fetchDorms = async () => {
+      const { data, error } = await supabase
+        .from('dorms')
+        .select('*')
+        .eq('available', true)
+        .limit(6);
+
+      if (!error && data && data.length > 0) {
+        const formattedDorms = data.map(dorm => ({
+          image: dorm.image_url || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
+          name: dorm.name,
+          match: 90,
+          location: dorm.location,
+          price: Number(dorm.price),
+          amenities: dorm.amenities || [],
+        }));
+        setDorms(formattedDorms);
+      }
+    };
+
+    fetchDorms();
+  }, []);
 
   return (
     <section ref={ref} id="dorms" className="py-32 px-6">

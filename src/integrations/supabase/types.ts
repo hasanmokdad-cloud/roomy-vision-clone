@@ -14,7 +14,119 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_recommendations_log: {
+        Row: {
+          action: string
+          created_at: string
+          dorm_id: string | null
+          id: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          dorm_id?: string | null
+          id?: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          dorm_id?: string | null
+          id?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_recommendations_log_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          query: string
+          response: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          query: string
+          response: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          query?: string
+          response?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dorms: {
+        Row: {
+          amenities: string[] | null
+          available: boolean | null
+          capacity: number | null
+          created_at: string
+          description: string | null
+          gender_preference: string | null
+          id: string
+          image_url: string | null
+          location: string
+          name: string
+          price: number
+          type: string | null
+          university: string | null
+          updated_at: string
+        }
+        Insert: {
+          amenities?: string[] | null
+          available?: boolean | null
+          capacity?: number | null
+          created_at?: string
+          description?: string | null
+          gender_preference?: string | null
+          id?: string
+          image_url?: string | null
+          location: string
+          name: string
+          price: number
+          type?: string | null
+          university?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amenities?: string[] | null
+          available?: boolean | null
+          capacity?: number | null
+          created_at?: string
+          description?: string | null
+          gender_preference?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string
+          name?: string
+          price?: number
+          type?: string | null
+          university?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

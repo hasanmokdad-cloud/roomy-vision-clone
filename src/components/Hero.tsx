@@ -1,13 +1,18 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { Search, Users } from 'lucide-react';
+import { Search, Users, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useRef, Suspense } from 'react';
+import { useRef, Suspense, useState, useEffect } from 'react';
 import heroImage from '@/assets/hero-image.jpg';
 import { ThreeHero } from './ThreeHero';
+import { DormFinder } from '@/components/RoomyAI';
+import { supabase } from '@/integrations/supabase/client';
 
 export const Hero = () => {
   const ref = useRef<HTMLDivElement>(null);
+  const [isFinderOpen, setIsFinderOpen] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end start"],
@@ -15,6 +20,18 @@ export const Hero = () => {
 
   const y = useTransform(scrollYProgress, [0, 1], [0, 200]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user?.id || null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUserId(session?.user?.id || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <motion.section
@@ -69,22 +86,39 @@ export const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.8 }}
-            className="glass-hover rounded-2xl p-6 space-y-4"
+            className="space-y-3"
           >
-            <div className="flex items-center gap-2 text-sm text-foreground/60">
-              <Search className="w-4 h-4" />
-              <span>Ask Roomy AI:</span>
-            </div>
-            <div className="flex gap-3">
-              <Input
-                placeholder='e.g., "Private room near LAU for $400/month"'
-                className="bg-black/20 border-white/10 text-foreground placeholder:text-foreground/40 focus:border-primary/50 transition-all"
-              />
-              <Button className="bg-gradient-to-r from-primary to-secondary text-white font-semibold px-8 rounded-xl hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] transition-all duration-300 whitespace-nowrap">
-                Search
-              </Button>
+            <Button 
+              onClick={() => setIsFinderOpen(true)}
+              className="w-full bg-gradient-to-r from-primary to-secondary text-white font-semibold py-6 rounded-xl hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] transition-all duration-300 flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-5 h-5" />
+              Find My Dorm
+            </Button>
+            <div className="glass-hover rounded-2xl p-6 space-y-4">
+              <div className="flex items-center gap-2 text-sm text-foreground/60">
+                <Search className="w-4 h-4" />
+                <span>Ask Roomy AI:</span>
+              </div>
+              <div className="flex gap-3">
+                <Input
+                  placeholder='e.g., "Private room near LAU for $400/month"'
+                  className="bg-black/20 border-white/10 text-foreground placeholder:text-foreground/40 focus:border-primary/50 transition-all"
+                />
+                <Button className="bg-gradient-to-r from-primary to-secondary text-white font-semibold px-8 rounded-xl hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] transition-all duration-300 whitespace-nowrap">
+                  Search
+                </Button>
+              </div>
             </div>
           </motion.div>
+
+          {userId && (
+            <DormFinder 
+              isOpen={isFinderOpen} 
+              onClose={() => setIsFinderOpen(false)} 
+              userId={userId} 
+            />
+          )}
 
           <motion.div
             initial={{ opacity: 0 }}
