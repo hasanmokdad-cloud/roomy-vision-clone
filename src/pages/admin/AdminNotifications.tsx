@@ -26,6 +26,7 @@ export default function AdminNotifications() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [eventFilter, setEventFilter] = useState<string>('all');
+  const [channelFilter, setChannelFilter] = useState<string>('all');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -49,7 +50,7 @@ export default function AdminNotifications() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [statusFilter, eventFilter]);
+  }, [statusFilter, eventFilter, channelFilter]);
 
   const loadNotifications = async () => {
     let query = supabase
@@ -68,6 +69,10 @@ export default function AdminNotifications() {
 
     if (eventFilter !== 'all') {
       query = query.eq('event_type', eventFilter);
+    }
+
+    if (channelFilter !== 'all') {
+      query = query.eq('channel', channelFilter);
     }
 
     const { data, error } = await query;
@@ -172,6 +177,19 @@ export default function AdminNotifications() {
               <SelectItem value="all">All Events</SelectItem>
               <SelectItem value="verified">Verified</SelectItem>
               <SelectItem value="edited">Edited</SelectItem>
+              <SelectItem value="inquiry">Inquiry</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={channelFilter} onValueChange={setChannelFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by channel" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Channels</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+              <SelectItem value="whatsapp">WhatsApp</SelectItem>
+              <SelectItem value="both">Both</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -182,6 +200,7 @@ export default function AdminNotifications() {
               <TableRow>
                 <TableHead>Timestamp</TableHead>
                 <TableHead>Event</TableHead>
+                <TableHead>Channel</TableHead>
                 <TableHead>Dorm</TableHead>
                 <TableHead>Owner</TableHead>
                 <TableHead>Email</TableHead>
@@ -198,6 +217,11 @@ export default function AdminNotifications() {
                   <TableCell>
                     <Badge variant={notification.event_type === 'verified' ? 'default' : 'secondary'}>
                       {notification.event_type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {notification.channel || 'email'}
                     </Badge>
                   </TableCell>
                   <TableCell>{notification.dorm?.dorm_name || notification.dorm?.name || 'N/A'}</TableCell>

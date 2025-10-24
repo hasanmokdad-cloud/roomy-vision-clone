@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 
 export default function OwnerAccount() {
@@ -14,6 +15,8 @@ export default function OwnerAccount() {
     full_name: '',
     phone_number: '',
     notify_email: true,
+    notify_whatsapp: true,
+    whatsapp_language: 'EN',
   });
   const { toast } = useToast();
 
@@ -37,6 +40,8 @@ export default function OwnerAccount() {
         full_name: data.full_name || '',
         phone_number: data.phone_number || '',
         notify_email: data.notify_email ?? true,
+        notify_whatsapp: data.notify_whatsapp ?? true,
+        whatsapp_language: data.whatsapp_language || 'EN',
       });
     }
     setLoading(false);
@@ -142,6 +147,61 @@ export default function OwnerAccount() {
                 <li>🎉 Verification confirmation when your listing goes live</li>
                 <li>📝 Update notifications when listing details are changed</li>
                 <li>⚡ Limited to 5 emails per hour (we respect your inbox!)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-white/10 pt-6">
+          <h2 className="text-xl font-bold mb-4">WhatsApp Notifications</h2>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 glass rounded-xl">
+              <div className="flex-1">
+                <Label htmlFor="notify-whatsapp" className="font-semibold">
+                  Receive WhatsApp alerts
+                </Label>
+                <p className="text-sm text-foreground/60 mt-1">
+                  Get instant notifications via WhatsApp for verifications, updates, and inquiries
+                </p>
+              </div>
+              <Switch
+                id="notify-whatsapp"
+                checked={formData.notify_whatsapp}
+                onCheckedChange={(checked) => 
+                  setFormData({ ...formData, notify_whatsapp: checked })
+                }
+              />
+            </div>
+
+            {formData.notify_whatsapp && (
+              <div className="p-4 glass rounded-xl">
+                <Label htmlFor="whatsapp-language" className="font-semibold mb-2 block">
+                  Preferred Language
+                </Label>
+                <Select
+                  value={formData.whatsapp_language}
+                  onValueChange={(value) => 
+                    setFormData({ ...formData, whatsapp_language: value })
+                  }
+                >
+                  <SelectTrigger className="bg-black/20 border-white/10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="EN">English</SelectItem>
+                    <SelectItem value="AR">Arabic</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="text-sm text-foreground/60 p-4 glass rounded-xl">
+              <p className="font-semibold mb-2">WhatsApp benefits:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>📱 Instant alerts on your phone</li>
+                <li>🔔 Get notified about new student inquiries immediately</li>
+                <li>⚡ Limited to 3 WhatsApp messages per hour</li>
               </ul>
             </div>
           </div>

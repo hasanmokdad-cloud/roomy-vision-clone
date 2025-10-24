@@ -5,6 +5,9 @@ import { Resend } from "https://esm.sh/resend@4.0.0";
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID")!;
+const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN")!;
+const twilioWhatsAppNumber = Deno.env.get("TWILIO_WHATSAPP_NUMBER")!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -15,6 +18,40 @@ const corsHeaders = {
 
 interface NotificationPayload {
   notificationId: string;
+}
+
+// Helper function to send WhatsApp message via Twilio
+async function sendWhatsAppMessage(to: string, message: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Basic ' + btoa(`${twilioAccountSid}:${twilioAuthToken}`),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          From: `whatsapp:${twilioWhatsAppNumber}`,
+          To: `whatsapp:${to}`,
+          Body: message,
+        }).toString(),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('Twilio error:', error);
+      return { success: false, error: error };
+    }
+
+    const data = await response.json();
+    console.log('WhatsApp message sent:', data.sid);
+    return { success: true };
+  } catch (error: any) {
+    console.error('WhatsApp send error:', error);
+    return { success: false, error: error.message };
+  }
 }
 
 serve(async (req) => {
@@ -30,7 +67,7 @@ serve(async (req) => {
       .from("notifications_log")
       .select(`
         *,
-        owner:owners(full_name, email),
+        owner:owners(full_name, email, phone_number, notify_whatsapp, whatsapp_language),
         dorm:dorms(dorm_name, name, monthly_price, area, university)
       `)
       .eq("id", notificationId)
@@ -52,12 +89,17 @@ serve(async (req) => {
     const dorm = notification.dorm;
     const dormName = dorm?.dorm_name || dorm?.name || "Your listing";
     const ownerName = owner?.full_name || owner?.email || "Owner";
+    const channel = notification.channel || 'email';
+    const shouldSendEmail = channel === 'email' || channel === 'both';
+    const shouldSendWhatsApp = (channel === 'whatsapp' || channel === 'both') && owner?.notify_whatsapp && owner?.phone_number;
 
     let subject = "";
     let html = "";
+    let whatsappMessage = "";
 
     if (notification.event_type === "verified") {
       subject = "🎉 Your Roomy listing is now Verified!";
+      whatsappMessage = `Hi ${ownerName} 👋\nYour listing "${dormName}" has just been verified on Roomy 🎉\nStudents can now find and contact you directly.\nManage your listing here:\nhttps://main-roomy.lovable.app/owner/listings\n— Roomy Team`;
       html = `
         <!DOCTYPE html>
         <html>
@@ -106,9 +148,16 @@ serve(async (req) => {
     } else if (notification.event_type === "edited") {
       subject = "📝 Your Roomy listing was updated";
       
+      // Build changes summary for WhatsApp and email
+      const fields = notification.fields_changed || {};
+      const changedFields = Object.keys(fields).map(key => 
+        key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+      ).join(', ');
+      
+      whatsappMessage = `Hi ${ownerName},\nYour Roomy listing "${dormName}" was recently updated.\nFields changed: ${changedFields}\nView details in your dashboard:\nhttps://main-roomy.lovable.app/owner/listings\n— Roomy Team`;
+      
       // Build changes table
       let changesHtml = "<ul style='list-style: none; padding: 0;'>";
-      const fields = notification.fields_changed || {};
       
       for (const [key, value] of Object.entries(fields)) {
         const [oldVal, newVal] = value as [any, any];
@@ -166,42 +215,114 @@ serve(async (req) => {
         </body>
         </html>
       `;
-    }
-
-    // Send email via Resend
-    const { data: emailData, error: emailError } = await resend.emails.send({
-      from: "Roomy Support <onboarding@resend.dev>",
-      to: [notification.sent_to],
-      subject,
-      html,
-    });
-
-    if (emailError) {
-      console.error("Email send error:", emailError);
+    } else if (notification.event_type === "inquiry") {
+      subject = "🔔 New Inquiry for Your Listing";
+      const inquiryData = notification.fields_changed || {};
+      const studentName = inquiryData.student_name || "A student";
+      const message = inquiryData.message || "No message provided";
       
-      // Update notification as failed
-      await supabase
-        .from("notifications_log")
-        .update({
-          status: "failed",
-          error_message: emailError.message,
-          retry_count: notification.retry_count + 1,
-        })
-        .eq("id", notificationId);
-
-      throw emailError;
+      whatsappMessage = `Hi ${ownerName}! 👋\nA student is interested in "${dormName}" and has sent a new inquiry.\nOpen your dashboard to view the message and reply:\nhttps://main-roomy.lovable.app/owner\n— Roomy AI Assistant 🤖`;
+      
+      html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center; }
+            .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; }
+            .button { display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; margin-top: 20px; font-weight: 600; }
+            .footer { text-align: center; margin-top: 30px; font-size: 14px; color: #6b7280; }
+            h1 { margin: 0; font-size: 28px; }
+            .emoji { font-size: 48px; margin-bottom: 10px; }
+            .inquiry-box { background: #f9fafb; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #8B5CF6; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="emoji">🔔</div>
+              <h1>New Inquiry!</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${ownerName},</p>
+              <p><strong>${studentName}</strong> is interested in your listing <strong>"${dormName}"</strong>.</p>
+              <div class="inquiry-box">
+                <strong>Message:</strong><br/>
+                ${message}
+              </div>
+              <p>Reply quickly to increase your chances of booking!</p>
+              <a href="${supabaseUrl.replace('https://vtdtmhgzisigtqryojwl.supabase.co', 'https://main-roomy.lovable.app')}/owner" class="button">
+                View Inquiry & Reply
+              </a>
+            </div>
+            <div class="footer">
+              <p>— The Roomy Team</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
     }
 
-    console.log("Email sent successfully:", emailData);
+    let emailSuccess = true;
+    let whatsappSuccess = true;
+    let errors: string[] = [];
 
-    // Update notification as sent
+    // Send email via Resend if needed
+    if (shouldSendEmail && subject && html) {
+      const { data: emailData, error: emailError } = await resend.emails.send({
+        from: "Roomy Support <onboarding@resend.dev>",
+        to: [notification.sent_to],
+        subject,
+        html,
+      });
+
+      if (emailError) {
+        console.error("Email send error:", emailError);
+        emailSuccess = false;
+        errors.push(`Email: ${emailError.message}`);
+      } else {
+        console.log("Email sent successfully:", emailData);
+      }
+    }
+
+    // Send WhatsApp message if needed
+    if (shouldSendWhatsApp && whatsappMessage) {
+      const whatsappResult = await sendWhatsAppMessage(owner.phone_number, whatsappMessage);
+      
+      if (!whatsappResult.success) {
+        console.error("WhatsApp send error:", whatsappResult.error);
+        whatsappSuccess = false;
+        errors.push(`WhatsApp: ${whatsappResult.error}`);
+      }
+    }
+
+    // Determine final status
+    const finalStatus = (emailSuccess || !shouldSendEmail) && (whatsappSuccess || !shouldSendWhatsApp) 
+      ? "sent" 
+      : "failed";
+    
+    const errorMessage = errors.length > 0 ? errors.join('; ') : null;
+
+    // Update notification status
     await supabase
       .from("notifications_log")
-      .update({ status: "sent" })
+      .update({
+        status: finalStatus,
+        error_message: errorMessage,
+        retry_count: finalStatus === "failed" ? notification.retry_count + 1 : notification.retry_count,
+      })
       .eq("id", notificationId);
 
     return new Response(
-      JSON.stringify({ success: true, emailId: emailData?.id }),
+      JSON.stringify({ 
+        success: finalStatus === "sent", 
+        emailSent: emailSuccess,
+        whatsappSent: whatsappSuccess,
+        errors: errors.length > 0 ? errors : undefined
+      }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
