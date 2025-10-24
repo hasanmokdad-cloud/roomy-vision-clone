@@ -76,6 +76,30 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          reply: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          reply: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          reply?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       dorms: {
         Row: {
           address: string | null
