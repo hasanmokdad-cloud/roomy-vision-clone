@@ -64,13 +64,29 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   const onSubmit = async (data: StudentProfile) => {
     setLoading(true);
     try {
+      // Get user email from auth
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) throw new Error('User not authenticated');
+
       const { error } = await supabase
         .from('students')
         .upsert({
-          ...data,
           user_id: userId,
-          email: data.full_name, // Use full_name as email since email comes from auth
-        } as any);
+          email: user.email || '',
+          full_name: data.full_name,
+          age: data.age,
+          gender: data.gender,
+          university: data.university,
+          residential_area: data.residential_area,
+          preferred_university: data.preferred_university,
+          room_type: data.room_type,
+          roommate_needed: data.roommate_needed,
+          budget: data.budget,
+          distance_preference: data.distance_preference,
+        }, {
+          onConflict: 'user_id'
+        });
 
       if (error) throw error;
 
