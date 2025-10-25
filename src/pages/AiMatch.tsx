@@ -14,6 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import DormCard from '@/components/shared/DormCard';
 import { useToast } from '@/hooks/use-toast';
 import { Sparkles, ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react';
+import { useAuthGuard, useProfileCompletion } from '@/hooks/useAuthGuard';
 
 const universities = [
   'LAU (Byblos)',
@@ -29,8 +30,9 @@ const universities = [
 ];
 
 export default function AiMatch() {
+  const { loading: authLoading, userId } = useAuthGuard();
+  const { checkingProfile } = useProfileCompletion(userId);
   const [step, setStep] = useState(1);
-  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [matches, setMatches] = useState<any[]>([]);
   const { toast } = useToast();
@@ -54,19 +56,14 @@ export default function AiMatch() {
   });
 
   useEffect(() => {
-    checkAuth();
-  }, []);
+    if (!userId) return;
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      setUser(session.user);
-      // Load existing student data if available
+    const loadProfile = async () => {
       const { data } = await supabase
         .from('students')
         .select('*')
-        .eq('user_id', session.user.id)
-        .single();
+        .eq('user_id', userId)
+        .maybeSingle();
       
       if (data) {
         setProfile({
@@ -85,8 +82,10 @@ export default function AiMatch() {
           distance_preference: data.distance_preference || 'No preference',
         });
       }
-    }
-  };
+    };
+
+    loadProfile();
+  }, [userId]);
 
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,7 +101,7 @@ export default function AiMatch() {
 
     // Upsert student profile
     const studentData = {
-      user_id: user?.id,
+      user_id: userId,
       full_name: profile.full_name,
       email: profile.email,
       age: profile.age ? parseInt(profile.age) : null,
@@ -113,7 +112,7 @@ export default function AiMatch() {
 
     const { error } = await supabase
       .from('students')
-      .upsert(studentData, { onConflict: user?.id ? 'user_id' : 'email' });
+      .upsert(studentData, { onConflict: userId ? 'user_id' : 'email' });
 
     if (error) {
       toast({
@@ -187,6 +186,17 @@ export default function AiMatch() {
     setStep(1);
     setMatches([]);
   };
+
+  if (authLoading || checkingProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-foreground/60">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const progress = (step / 3) * 100;
 

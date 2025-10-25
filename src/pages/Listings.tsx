@@ -6,8 +6,11 @@ import FiltersPanel from '@/components/shared/FiltersPanel';
 import DormCard from '@/components/shared/DormCard';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { useAuthGuard, useProfileCompletion } from '@/hooks/useAuthGuard';
 
 export default function Listings() {
+  const { loading: authLoading, userId } = useAuthGuard();
+  const { checkingProfile } = useProfileCompletion(userId);
   const [dorms, setDorms] = useState<any[]>([]);
   const [filteredDorms, setFilteredDorms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,6 +97,17 @@ export default function Listings() {
   const handleFilterChange = (newFilters: typeof filters) => {
     setFilters(newFilters);
   };
+
+  if (authLoading || checkingProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-foreground/60">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
