@@ -25,13 +25,13 @@ const Auth = () => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
-        navigate('/main');
+        navigate('/');
       }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        navigate('/main');
+        navigate('/');
       }
     });
 
@@ -90,7 +90,7 @@ const Auth = () => {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/main`,
+            emailRedirectTo: `${window.location.origin}/`,
             data: {
               full_name: name.trim(),
             }

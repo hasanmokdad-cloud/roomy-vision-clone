@@ -28,16 +28,16 @@ export default function Profile() {
       <div className="container mx-auto px-6 py-12">
         <Button
           variant="ghost"
-          onClick={() => navigate('/main')}
+          onClick={() => navigate('/')}
           className="mb-6 hover:bg-white/10"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Main
+          Back to Home
         </Button>
 
         <StudentProfileForm 
           userId={userId} 
-          onComplete={() => navigate('/main')}
+          onComplete={() => navigate('/')}
         />
       </div>
     </div>
