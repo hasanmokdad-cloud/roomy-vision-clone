@@ -1,97 +1,59 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import FiltersPanel from '@/components/shared/FiltersPanel';
-import DormCard from '@/components/shared/DormCard';
+import DormCard from '@/components/listings/DormCard';
+import RoomCard from '@/components/listings/RoomCard';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { useAuthGuard, useProfileCompletion } from '@/hooks/useAuthGuard';
+import { useListingsQuery } from '@/hooks/useListingsQuery';
 
 export default function Listings() {
+  const navigate = useNavigate();
   const { loading: authLoading, userId } = useAuthGuard();
   const { checkingProfile } = useProfileCompletion(userId);
-  const [dorms, setDorms] = useState<any[]>([]);
-  const [filteredDorms, setFilteredDorms] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
     priceRange: [0, 2000] as [number, number],
     universities: [] as string[],
     areas: [] as string[],
     roomTypes: [] as string[],
+    capacity: undefined as number | undefined,
   });
 
-  useEffect(() => {
-    loadDorms();
-    
-    // Real-time subscription
-    const channel = supabase
-      .channel('dorms-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'dorms' }, () => {
-        loadDorms();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+  const { data, loading } = useListingsQuery(filters);
+  const [filteredResults, setFilteredResults] = useState(data);
 
   useEffect(() => {
-    applyFilters();
-  }, [dorms, filters, searchQuery]);
+    applySearch();
+  }, [data, searchQuery]);
 
-  const loadDorms = async () => {
-    const { data, error } = await supabase
-      .from('dorms')
-      .select('*')
-      .eq('verification_status', 'Verified')
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      setDorms(data);
+  const applySearch = () => {
+    if (!searchQuery.trim()) {
+      setFilteredResults(data);
+      return;
     }
-    setLoading(false);
-  };
 
-  const applyFilters = () => {
-    let result = [...dorms];
+    const query = searchQuery.toLowerCase();
 
-    // Search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(d => 
+    if (data.mode === 'dorm') {
+      const filtered = data.dorms.filter(d => 
         d.dorm_name?.toLowerCase().includes(query) ||
         d.area?.toLowerCase().includes(query) ||
         d.services_amenities?.toLowerCase().includes(query)
       );
-    }
-
-    // Price filter
-    result = result.filter(d => {
-      const price = d.monthly_price || 0;
-      return price >= filters.priceRange[0] && price <= filters.priceRange[1];
-    });
-
-    // University filter
-    if (filters.universities.length > 0) {
-      result = result.filter(d => filters.universities.includes(d.university));
-    }
-
-    // Area filter
-    if (filters.areas.length > 0) {
-      result = result.filter(d => filters.areas.includes(d.area));
-    }
-
-    // Room type filter
-    if (filters.roomTypes.length > 0) {
-      result = result.filter(d => 
-        filters.roomTypes.some(rt => d.room_types?.includes(rt))
+      setFilteredResults({ mode: 'dorm', dorms: filtered });
+    } else {
+      const filtered = data.rooms.filter(r =>
+        r.dorm_name?.toLowerCase().includes(query) ||
+        r.area?.toLowerCase().includes(query) ||
+        r.type?.toLowerCase().includes(query) ||
+        r.amenities.some(a => a.toLowerCase().includes(query))
       );
+      setFilteredResults({ mode: 'room', rooms: filtered });
     }
-
-    setFilteredDorms(result);
   };
 
   const handleFilterChange = (newFilters: typeof filters) => {
@@ -139,7 +101,7 @@ export default function Listings() {
             <FiltersPanel 
               filters={filters}
               onFilterChange={handleFilterChange}
-              dorms={dorms}
+              dorms={data.mode === 'dorm' ? data.dorms : []}
             />
           </aside>
 
@@ -150,29 +112,51 @@ export default function Listings() {
                   <div key={i} className="h-96 rounded-2xl glass animate-pulse" />
                 ))}
               </div>
-            ) : filteredDorms.length === 0 ? (
+            ) : filteredResults.mode === 'dorm' && filteredResults.dorms.length === 0 ? (
               <div className="text-center py-16 glass-hover rounded-2xl">
                 <p className="text-xl text-foreground/60">No dorms match your filters.</p>
                 <p className="text-sm text-foreground/40 mt-2">Try adjusting your search criteria.</p>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredDorms.map((dorm, idx) => (
-                  <div 
-                    key={dorm.id}
-                    className="animate-fade-in"
-                    style={{ animationDelay: `${idx * 50}ms` }}
-                  >
-                    <DormCard dorm={dorm} />
-                  </div>
-                ))}
+            ) : filteredResults.mode === 'room' && filteredResults.rooms.length === 0 ? (
+              <div className="text-center py-16 glass-hover rounded-2xl">
+                <p className="text-xl text-foreground/60">No rooms match your capacity filter.</p>
+                <p className="text-sm text-foreground/40 mt-2">Try adjusting your search criteria.</p>
               </div>
-            )}
-
-            {!loading && filteredDorms.length > 0 && (
-              <p className="text-sm text-foreground/60 mt-6 text-center">
-                Showing {filteredDorms.length} of {dorms.length} verified dorms
-              </p>
+            ) : filteredResults.mode === 'dorm' ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredResults.dorms.map((dorm, idx) => (
+                    <DormCard key={dorm.id} dorm={dorm} index={idx} />
+                  ))}
+                </div>
+                <p className="text-sm text-foreground/60 mt-6 text-center">
+                  Showing {filteredResults.dorms.length} verified dorms
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="mb-4 glass-hover rounded-xl p-4">
+                  <p className="text-sm text-foreground/80">
+                    Showing rooms for <span className="font-semibold text-primary">{filters.capacity}+ people</span>
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredResults.rooms.map((room, idx) => (
+                    <RoomCard
+                      key={`${room.dorm_id}-${room.type}-${idx}`}
+                      room={room}
+                      dormName={room.dorm_name}
+                      dormArea={room.area}
+                      university={room.university}
+                      onViewDetails={() => navigate(`/dorm/${room.dorm_id}?room=${encodeURIComponent(room.type)}`)}
+                      index={idx}
+                    />
+                  ))}
+                </div>
+                <p className="text-sm text-foreground/60 mt-6 text-center">
+                  Showing {filteredResults.rooms.length} available rooms
+                </p>
+              </>
             )}
           </div>
         </div>

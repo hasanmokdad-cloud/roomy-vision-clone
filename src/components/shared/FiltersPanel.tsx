@@ -12,6 +12,7 @@ interface FiltersPanelProps {
     universities: string[];
     areas: string[];
     roomTypes: string[];
+    capacity?: number;
   };
   onFilterChange: (filters: any) => void;
   dorms: any[];
@@ -34,8 +35,10 @@ const areas = [
   'Ras Beirut', 'Manara', 'Ain Al Mraiseh', 'Raoucheh', 'Verdun', 'Kraytem',
   'Sanayeh', 'Mar Elias', 'Badaro', 'Forn El Chebbak', 'Tariq El Jdideh',
   'Jnah', 'Borj Hammoud', 'Dekwaneh', 'Jdeideh', 'Hazmieh', 'Tayouneh',
-  'UNESCO', 'Aïsha Bakkar', 'Ras Al Naba\'a', 'Geitawi', 'Jbeil', 'Byblos', 'Hamra'
+  'UNESCO', 'Aïsha Bakkar', 'Ras Al Naba\'a', 'Geitawi', 'Jbeil', 'Byblos', 'Hamra', 'Dora'
 ];
+
+const capacityOptions = [1, 2, 3, 4, 5, 6];
 
 export default function FiltersPanel({ filters, onFilterChange, dorms }: FiltersPanelProps) {
   const [roomTypes, setRoomTypes] = useState<string[]>([]);
@@ -57,7 +60,8 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
       priceRange: [0, 2000],
       universities: [],
       areas: [],
-      roomTypes: []
+      roomTypes: [],
+      capacity: undefined
     });
   };
 
@@ -77,6 +81,31 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
           <RotateCcw className="w-4 h-4 mr-2" />
           Reset
         </Button>
+      </div>
+
+      {/* Capacity Filter */}
+      <div className="space-y-3">
+        <Label className="text-base">
+          Capacity {filters.capacity ? `(${filters.capacity}+ people)` : '(Any)'}
+        </Label>
+        <div className="grid grid-cols-3 gap-2">
+          {capacityOptions.map((cap) => (
+            <button
+              key={cap}
+              onClick={() => onFilterChange({ 
+                ...filters, 
+                capacity: filters.capacity === cap ? undefined : cap 
+              })}
+              className={`glass-hover px-3 py-2 rounded-lg text-sm transition-all ${
+                filters.capacity === cap 
+                  ? 'bg-primary/20 border-2 border-primary' 
+                  : 'border border-white/10'
+              }`}
+            >
+              {cap}+ {cap === 1 ? 'Person' : 'People'}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Price Range */}

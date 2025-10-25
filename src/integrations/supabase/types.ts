@@ -137,6 +137,7 @@ export type Database = {
           area: string | null
           available: boolean | null
           capacity: number | null
+          cover_image: string | null
           created_at: string
           description: string | null
           dorm_name: string | null
@@ -151,6 +152,7 @@ export type Database = {
           phone_number: string | null
           price: number
           room_types: string | null
+          room_types_json: Json | null
           services_amenities: string | null
           shuttle: boolean | null
           type: string | null
@@ -165,6 +167,7 @@ export type Database = {
           area?: string | null
           available?: boolean | null
           capacity?: number | null
+          cover_image?: string | null
           created_at?: string
           description?: string | null
           dorm_name?: string | null
@@ -179,6 +182,7 @@ export type Database = {
           phone_number?: string | null
           price: number
           room_types?: string | null
+          room_types_json?: Json | null
           services_amenities?: string | null
           shuttle?: boolean | null
           type?: string | null
@@ -193,6 +197,7 @@ export type Database = {
           area?: string | null
           available?: boolean | null
           capacity?: number | null
+          cover_image?: string | null
           created_at?: string
           description?: string | null
           dorm_name?: string | null
@@ -207,6 +212,7 @@ export type Database = {
           phone_number?: string | null
           price?: number
           room_types?: string | null
+          room_types_json?: Json | null
           services_amenities?: string | null
           shuttle?: boolean | null
           type?: string | null
