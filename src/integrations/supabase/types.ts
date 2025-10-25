@@ -388,16 +388,52 @@ export type Database = {
         }
         Relationships: []
       }
+      preference_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          preference_type: string
+          student_id: string
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          preference_type: string
+          student_id: string
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          preference_type?: string
+          student_id?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preference_history_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           age: number | null
+          ai_confidence_score: number | null
           budget: number | null
           created_at: string | null
           distance_preference: string | null
           email: string
+          favorite_areas: string[] | null
           full_name: string
           gender: string | null
           id: string
+          preferred_amenities: string[] | null
+          preferred_room_types: string[] | null
           preferred_university: string | null
           residential_area: string | null
           room_type: string | null
@@ -408,13 +444,17 @@ export type Database = {
         }
         Insert: {
           age?: number | null
+          ai_confidence_score?: number | null
           budget?: number | null
           created_at?: string | null
           distance_preference?: string | null
           email: string
+          favorite_areas?: string[] | null
           full_name: string
           gender?: string | null
           id?: string
+          preferred_amenities?: string[] | null
+          preferred_room_types?: string[] | null
           preferred_university?: string | null
           residential_area?: string | null
           room_type?: string | null
@@ -425,13 +465,17 @@ export type Database = {
         }
         Update: {
           age?: number | null
+          ai_confidence_score?: number | null
           budget?: number | null
           created_at?: string | null
           distance_preference?: string | null
           email?: string
+          favorite_areas?: string[] | null
           full_name?: string
           gender?: string | null
           id?: string
+          preferred_amenities?: string[] | null
+          preferred_room_types?: string[] | null
           preferred_university?: string | null
           residential_area?: string | null
           room_type?: string | null
@@ -520,6 +564,18 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      reset_student_ai_memory: {
+        Args: { p_student_id: string }
+        Returns: undefined
+      }
+      update_student_preference: {
+        Args: {
+          p_preference_type: string
+          p_student_id: string
+          p_value: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
