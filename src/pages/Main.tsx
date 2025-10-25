@@ -1,5 +1,5 @@
 import { FluidBackground } from '@/components/FluidBackground';
-import { Navbar } from '@/components/Navbar';
+import Navbar from '@/components/shared/Navbar';
 import { Hero } from '@/components/Hero';
 import { HowItWorks } from '@/components/HowItWorks';
 import { DormListings } from '@/components/DormListings';
