@@ -7,6 +7,7 @@ import Main from "./pages/Main";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
+import DormDetail from "./pages/DormDetail";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import OwnerDashboard from "./pages/owner/OwnerDashboard";
 import Listings from "./pages/Listings";
@@ -27,6 +28,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Main />} />
           <Route path="/listings" element={<Listings />} />
+          <Route path="/dorm/:id" element={<DormDetail />} />
           <Route path="/ai-match" element={<AiMatch />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />

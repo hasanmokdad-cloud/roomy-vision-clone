@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { MapPin, CheckCircle, Wifi, Home, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,11 +19,17 @@ interface DormCardProps {
 }
 
 export default function DormCard({ dorm }: DormCardProps) {
+  const navigate = useNavigate();
+
   const openWhatsApp = () => {
     // Use default Roomy contact number - actual owner contact is protected
     const phone = '96181858026';
     const message = `Hi! I'm interested in "${dorm.dorm_name}" on Roomy.`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const viewDetails = () => {
+    navigate(`/dorm/${dorm.id}`);
   };
 
   const amenities = dorm.services_amenities?.split(',').slice(0, 4).map(a => a.trim()) || [];
@@ -113,7 +120,7 @@ export default function DormCard({ dorm }: DormCardProps) {
           </Button>
           <Button 
             className="flex-1 bg-gradient-to-r from-primary to-secondary"
-            onClick={openWhatsApp}
+            onClick={viewDetails}
           >
             View Details
           </Button>
