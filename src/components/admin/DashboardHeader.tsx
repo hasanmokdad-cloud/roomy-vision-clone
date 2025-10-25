@@ -15,7 +15,7 @@ export function DashboardHeader() {
       title: 'Logged out',
       description: 'Successfully logged out',
     });
-    navigate('/login');
+    navigate('/auth');
   };
 
   return (
