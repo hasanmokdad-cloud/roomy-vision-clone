@@ -37,7 +37,7 @@ export default function Profile() {
 
         <StudentProfileForm 
           userId={userId} 
-          onComplete={() => navigate('/')}
+          onComplete={() => navigate('/ai-match')}
         />
       </div>
     </div>

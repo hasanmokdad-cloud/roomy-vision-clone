@@ -88,7 +88,13 @@ export const Hero = () => {
             className="space-y-3"
           >
             <Button 
-              onClick={() => setIsFinderOpen(true)}
+              onClick={() => {
+                if (userId) {
+                  setIsFinderOpen(true);
+                } else {
+                  window.location.href = '/ai-match';
+                }
+              }}
               className="w-full bg-gradient-to-r from-primary to-secondary text-white font-semibold py-6 rounded-xl hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] transition-all duration-300 flex items-center justify-center gap-2"
             >
               <Sparkles className="w-5 h-5" />
