@@ -2,6 +2,8 @@ import { useState } from 'react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import WhatsAppFab from '@/components/shared/WhatsAppFab';
+import { UnderwaterScene } from '@/components/UnderwaterScene';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,24 +40,35 @@ export default function Contact() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background relative">
+      <UnderwaterScene />
       <Navbar />
       
       <main className="flex-1 container mx-auto px-4 py-16 mt-20">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12 animate-fade-in">
-            <Badge variant="secondary" className="mb-4">We're Here to Help</Badge>
-            <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-3">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-12"
+          >
+            <Badge variant="secondary" className="mb-4 neon-glow">We're Here to Help</Badge>
+            <h1 className="text-5xl md:text-6xl font-black gradient-text mb-6">
               Get in Touch
             </h1>
-            <p className="text-lg text-foreground/70">
+            <p className="text-xl text-foreground/80">
               Have questions? We'd love to hear from you!
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            <div className="glass-hover rounded-2xl p-8 animate-fade-in">
-              <h2 className="text-2xl font-bold mb-6">Contact Form</h2>
+            <motion.div 
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="glass-hover rounded-3xl p-10 neon-border"
+            >
+              <h2 className="text-3xl font-black mb-8 gradient-text">Contact Form</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -110,11 +123,16 @@ export default function Contact() {
                   Send Message
                 </Button>
               </form>
-            </div>
+            </motion.div>
 
             <div className="space-y-6">
-              <div className="glass-hover rounded-2xl p-8 animate-fade-in" style={{ animationDelay: '100ms' }}>
-                <h2 className="text-2xl font-bold mb-6">Contact Info</h2>
+              <motion.div 
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="glass-hover rounded-3xl p-10 neon-border"
+              >
+                <h2 className="text-3xl font-black mb-8 gradient-text">Contact Info</h2>
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -144,9 +162,14 @@ export default function Contact() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="glass-hover rounded-2xl p-8 animate-fade-in border-2 border-primary/20" style={{ animationDelay: '200ms' }}>
+              <motion.div 
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="glass-hover rounded-3xl p-10 neon-border neon-glow"
+              >
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
                     <MessageCircle className="w-5 h-5 text-white" />
@@ -168,7 +191,7 @@ export default function Contact() {
                     Chat on WhatsApp
                   </a>
                 </Button>
-              </div>
+              </motion.div>
             </div>
           </div>
         </div>

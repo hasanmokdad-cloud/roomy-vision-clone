@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
+import { UnderwaterScene } from '@/components/UnderwaterScene';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -201,29 +203,40 @@ export default function AiMatch() {
   const progress = (step / 3) * 100;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background relative">
+      <UnderwaterScene />
       <Navbar />
       
       <main className="flex-1 container mx-auto px-4 py-8 mt-20">
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-8 animate-fade-in">
-            <Badge variant="secondary" className="mb-4">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-8"
+          >
+            <Badge variant="secondary" className="mb-4 neon-glow">
               <Sparkles className="w-4 h-4 mr-2" />
               AI-Powered Matching
             </Badge>
-            <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-3">
+            <h1 className="text-5xl md:text-6xl font-black gradient-text mb-6">
               Find Your Perfect Dorm
             </h1>
-            <p className="text-lg text-foreground/70">
+            <p className="text-xl text-foreground/80">
               Answer a few quick questions and let AI do the work
             </p>
-          </div>
+          </motion.div>
 
           <Progress value={progress} className="mb-8" />
 
           {step === 1 && (
-            <div className="glass-hover rounded-2xl p-8 animate-fade-in">
-              <h2 className="text-2xl font-bold mb-6">Step 1 — Create your profile</h2>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="glass-hover rounded-3xl p-10 neon-border"
+            >
+              <h2 className="text-3xl font-black mb-8 gradient-text">Step 1 — Create your profile</h2>
               <form onSubmit={handleStep1Submit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -293,12 +306,17 @@ export default function AiMatch() {
                   Next <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </form>
-            </div>
+            </motion.div>
           )}
 
           {step === 2 && (
-            <div className="glass-hover rounded-2xl p-8 animate-fade-in">
-              <h2 className="text-2xl font-bold mb-6">Step 2 — Set your preferences</h2>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="glass-hover rounded-3xl p-10 neon-border"
+            >
+              <h2 className="text-3xl font-black mb-8 gradient-text">Step 2 — Set your preferences</h2>
               <form onSubmit={handleStep2Submit} className="space-y-6">
                 <div>
                   <Label>Room Type</Label>
@@ -383,13 +401,18 @@ export default function AiMatch() {
                   </Button>
                 </div>
               </form>
-            </div>
+            </motion.div>
           )}
 
           {step === 3 && (
-            <div className="animate-fade-in space-y-6">
-              <div className="text-center glass-hover rounded-2xl p-8">
-                <h2 className="text-2xl font-bold mb-3">
+            <div className="space-y-6">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="text-center glass-hover rounded-3xl p-10 neon-border"
+              >
+                <h2 className="text-3xl font-black mb-4 gradient-text">
                   {loading ? 'Finding your perfect match...' : 'Your Matches'}
                 </h2>
                 {!loading && matches.length === 0 && (
@@ -397,7 +420,7 @@ export default function AiMatch() {
                     No matches found. Try adjusting your preferences.
                   </p>
                 )}
-              </div>
+              </motion.div>
 
               {!loading && matches.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

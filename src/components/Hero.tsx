@@ -66,7 +66,7 @@ export const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.8 }}
-            className="text-5xl md:text-7xl font-bold leading-tight"
+            className="text-5xl md:text-7xl font-black leading-tight"
           >
             Find your perfect dorm{' '}
             <span className="gradient-text">— powered by AI</span>
@@ -76,9 +76,9 @@ export const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.8 }}
-            className="text-lg text-foreground/70 leading-relaxed"
+            className="text-xl text-foreground/80 leading-relaxed"
           >
-            No scams. No outdated listings. Just verified, available dorms matched to your lifestyle—smarter, safer, faster.
+            No scams. No outdated listings. Just verified, available dorms matched to your lifestyle—<span className="font-bold text-primary">smarter, safer, faster.</span>
           </motion.p>
 
           <motion.div
@@ -95,13 +95,13 @@ export const Hero = () => {
                   window.location.href = '/ai-match';
                 }
               }}
-              className="w-full bg-gradient-to-r from-primary to-secondary text-white font-semibold py-6 rounded-xl hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] transition-all duration-300 flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-7 rounded-2xl hover:shadow-[0_0_40px_rgba(94,234,212,0.4)] transition-all duration-300 flex items-center justify-center gap-2 neon-glow text-lg"
             >
               <Sparkles className="w-5 h-5" />
-              Find My Dorm
+              Find My Dorm with AI
             </Button>
-            <div className="glass-hover rounded-2xl p-6 space-y-4">
-              <div className="flex items-center gap-2 text-sm text-foreground/60">
+            <div className="glass-hover rounded-2xl p-6 space-y-4 border-2 border-primary/20">
+              <div className="flex items-center gap-2 text-sm text-foreground/70 font-medium">
                 <Search className="w-4 h-4" />
                 <span>Ask Roomy AI:</span>
               </div>
@@ -110,7 +110,7 @@ export const Hero = () => {
                   placeholder='e.g., "Private room near LAU for $400/month"'
                   className="bg-black/20 border-white/10 text-foreground placeholder:text-foreground/40 focus:border-primary/50 transition-all"
                 />
-                <Button className="bg-gradient-to-r from-primary to-secondary text-white font-semibold px-8 rounded-xl hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] transition-all duration-300 whitespace-nowrap">
+                <Button className="bg-gradient-to-r from-primary to-secondary text-white font-bold px-8 rounded-2xl hover:shadow-[0_0_40px_rgba(94,234,212,0.4)] transition-all duration-300 whitespace-nowrap neon-glow">
                   Search
                 </Button>
               </div>
@@ -160,9 +160,9 @@ export const Hero = () => {
               repeat: Infinity,
               ease: "easeInOut",
             }}
-            className="glass-hover rounded-3xl p-2 glow-purple"
+            className="glass-hover rounded-3xl p-2 neon-glow"
           >
-            <div className="w-full aspect-[4/3] rounded-2xl bg-gradient-to-br from-primary/20 via-secondary/20 to-accent/20 overflow-hidden">
+            <div className="w-full aspect-[4/3] rounded-2xl bg-gradient-to-br from-primary/20 via-secondary/20 to-accent/20 overflow-hidden border-2 border-primary/20">
               <img
                 src={heroImage}
                 alt="Modern student living in Jbeil"
@@ -176,15 +176,15 @@ export const Hero = () => {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 1.2, duration: 0.8 }}
-            className="absolute -bottom-6 -left-6 glass-hover p-4 rounded-2xl"
+            className="absolute -bottom-6 -left-6 glass-hover p-6 rounded-2xl border-2 border-primary/30 neon-glow"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-secondary to-accent flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary to-accent flex items-center justify-center">
+                <Users className="w-7 h-7 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold">AI Matching</p>
-                <p className="text-xs text-foreground/60">95% accuracy</p>
+                <p className="text-base font-black gradient-text">AI Matching</p>
+                <p className="text-sm text-foreground/70 font-medium">95% accuracy</p>
               </div>
             </div>
           </motion.div>

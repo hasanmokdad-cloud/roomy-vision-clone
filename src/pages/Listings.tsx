@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import FiltersPanel from '@/components/shared/FiltersPanel';
 import DormCard from '@/components/listings/DormCard';
 import RoomCard from '@/components/listings/RoomCard';
+import { UnderwaterScene } from '@/components/UnderwaterScene';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, Sparkles } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useAuthGuard, useProfileCompletion } from '@/hooks/useAuthGuard';
 import { useListingsQuery } from '@/hooks/useListingsQuery';
 
@@ -72,29 +75,44 @@ export default function Listings() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background relative">
+      <UnderwaterScene />
       <Navbar />
       
       <main className="flex-1 container mx-auto px-4 py-8 mt-20">
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-3">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="mb-12 text-center"
+        >
+          <Badge variant="secondary" className="mb-4 neon-glow">
+            <Sparkles className="w-4 h-4 mr-2" />
+            Browse Verified Dorms
+          </Badge>
+          <h1 className="text-5xl md:text-6xl font-black gradient-text mb-6">
             Available Dorms in Lebanon
           </h1>
-          <p className="text-lg text-foreground/70">
+          <p className="text-xl text-foreground/80">
             Explore verified listings and find your match.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="relative mb-6 animate-fade-in">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="relative mb-8"
+        >
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Search by name, location, or features (e.g., 'single room near AUB')"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 h-12 text-lg bg-card/50 border-white/10"
+            className="pl-12 h-14 text-lg bg-card/50 border-white/10 glass rounded-2xl"
           />
-        </div>
+        </motion.div>
 
         <div className="flex flex-col lg:flex-row gap-8">
           <aside className="lg:w-80 flex-shrink-0">
