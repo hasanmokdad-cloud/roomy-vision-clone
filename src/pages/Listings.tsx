@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import FiltersPanel from '@/components/shared/FiltersPanel';
+import { FilterChips } from '@/components/shared/FilterChips';
 import { DormGrid } from '@/components/dorms/DormGrid';
 import { UnderwaterScene } from '@/components/UnderwaterScene';
 import { Input } from '@/components/ui/input';
@@ -83,6 +84,21 @@ export default function Listings() {
     setFilters(newFilters);
   };
 
+  const handleRemoveFilter = (category: 'universities' | 'areas' | 'roomTypes' | 'capacity', value?: string) => {
+    if (category === 'capacity') {
+      setFilters({ ...filters, capacity: undefined });
+    } else if (value) {
+      setFilters({
+        ...filters,
+        [category]: filters[category].filter((v) => v !== value)
+      });
+    }
+  };
+
+  const handleResetPrice = () => {
+    setFilters({ ...filters, priceRange: [0, 2000] });
+  };
+
   if (authLoading || checkingProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -143,7 +159,13 @@ export default function Listings() {
             />
           </aside>
 
-          <div className="flex-1">
+          <div className="flex-1 space-y-6">
+            <FilterChips
+              filters={filters}
+              onRemoveFilter={handleRemoveFilter}
+              onResetPrice={handleResetPrice}
+            />
+
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {[1, 2, 3, 4, 5, 6].map(i => (

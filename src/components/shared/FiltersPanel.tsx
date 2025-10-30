@@ -31,11 +31,51 @@ const universities = [
   'Haigazian'
 ];
 
-const areas = [
-  'Ras Beirut', 'Manara', 'Ain Al Mraiseh', 'Raoucheh', 'Verdun', 'Kraytem',
-  'Sanayeh', 'Mar Elias', 'Badaro', 'Forn El Chebbak', 'Tariq El Jdideh',
-  'Jnah', 'Borj Hammoud', 'Dekwaneh', 'Jdeideh', 'Hazmieh', 'Tayouneh',
-  'UNESCO', 'Aïsha Bakkar', 'Ras Al Naba\'a', 'Geitawi', 'Jbeil', 'Byblos', 'Hamra', 'Dora'
+const byblosAreas = [
+  'Nahr Ibrahim',
+  'Blat',
+  'Halat',
+  'Jeddayel',
+  'Mastita',
+  'Fidar',
+  'Jbeil',
+  'Byblos'
+];
+
+const beirutAreas = [
+  'Hamra',
+  'Manara',
+  'Ain El Mraisseh',
+  'Raoucheh',
+  'Ras Beirut',
+  'UNESCO',
+  'Geitawi',
+  'Dora',
+  'Badaro',
+  'Ashrafieh',
+  'Verdun',
+  'Sin El Fil',
+  'Dekwaneh',
+  'Jdeideh',
+  'Mar Elias',
+  'Borj Hammoud',
+  'Hazmieh',
+  'Furn El Chebbak',
+  'Tayouneh',
+  'Jnah',
+  'Ras Al Naba\'a',
+  'Gemmayze',
+  'Clemenceau',
+  'Khalde'
+];
+
+const areas = [...byblosAreas, ...beirutAreas].sort();
+
+const budgetPresets = [
+  { label: '<$300', min: 0, max: 300 },
+  { label: '$300-$500', min: 300, max: 500 },
+  { label: '$500-$800', min: 500, max: 800 },
+  { label: '>$800', min: 800, max: 2000 }
 ];
 
 const capacityOptions = [1, 2, 3, 4, 5, 6];
@@ -74,10 +114,10 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
   };
 
   return (
-    <div className="glass-hover rounded-2xl p-6 space-y-6 sticky top-24">
+    <div className="glass-hover neon-border rounded-2xl p-6 space-y-6 sticky top-24 shadow-xl">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold">Filters</h3>
-        <Button variant="ghost" size="sm" onClick={handleReset}>
+        <h3 className="text-xl font-black gradient-text">Filters</h3>
+        <Button variant="ghost" size="sm" onClick={handleReset} className="hover:neon-glow">
           <RotateCcw className="w-4 h-4 mr-2" />
           Reset
         </Button>
@@ -108,10 +148,10 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
         </div>
       </div>
 
-      {/* Price Range */}
+      {/* Budget Filter */}
       <div className="space-y-3">
-        <Label className="text-base">
-          Price Range: ${filters.priceRange[0]} - ${filters.priceRange[1]}
+        <Label className="text-base font-semibold">
+          Budget: ${filters.priceRange[0]} - ${filters.priceRange[1]}
         </Label>
         <Slider
           value={filters.priceRange}
@@ -121,15 +161,30 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
           step={50}
           className="mt-2"
         />
+        <div className="grid grid-cols-2 gap-2 mt-3">
+          {budgetPresets.map((preset) => (
+            <button
+              key={preset.label}
+              onClick={() => onFilterChange({ ...filters, priceRange: [preset.min, preset.max] })}
+              className={`glass-hover px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:neon-glow ${
+                filters.priceRange[0] === preset.min && filters.priceRange[1] === preset.max
+                  ? 'neon-border bg-primary/10'
+                  : 'border border-white/10'
+              }`}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Universities */}
       <div className="space-y-3">
-        <Label className="text-base">University</Label>
-        <ScrollArea className="h-48">
+        <Label className="text-base font-semibold">University</Label>
+        <ScrollArea className="h-48 rounded-lg border border-white/10 p-2">
           <div className="space-y-2">
             {universities.map(uni => (
-              <div key={uni} className="flex items-center space-x-2">
+              <div key={uni} className="flex items-center space-x-2 hover:bg-white/5 p-1 rounded transition-colors">
                 <Checkbox
                   id={`uni-${uni}`}
                   checked={filters.universities.includes(uni)}
@@ -137,7 +192,7 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
                 />
                 <label
                   htmlFor={`uni-${uni}`}
-                  className="text-sm cursor-pointer"
+                  className="text-sm cursor-pointer flex-1"
                 >
                   {uni}
                 </label>
@@ -149,11 +204,12 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
 
       {/* Areas */}
       <div className="space-y-3">
-        <Label className="text-base">Area</Label>
-        <ScrollArea className="h-48">
-          <div className="space-y-2">
-            {areas.map(area => (
-              <div key={area} className="flex items-center space-x-2">
+        <Label className="text-base font-semibold">Area</Label>
+        <ScrollArea className="h-48 rounded-lg border border-white/10 p-2">
+          <div className="space-y-1">
+            <div className="text-xs font-semibold text-primary/70 px-1 py-1">Byblos Areas</div>
+            {byblosAreas.map(area => (
+              <div key={area} className="flex items-center space-x-2 hover:bg-white/5 p-1 rounded transition-colors">
                 <Checkbox
                   id={`area-${area}`}
                   checked={filters.areas.includes(area)}
@@ -161,7 +217,23 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
                 />
                 <label
                   htmlFor={`area-${area}`}
-                  className="text-sm cursor-pointer"
+                  className="text-sm cursor-pointer flex-1"
+                >
+                  {area}
+                </label>
+              </div>
+            ))}
+            <div className="text-xs font-semibold text-primary/70 px-1 py-1 mt-2">Beirut Areas</div>
+            {beirutAreas.map(area => (
+              <div key={area} className="flex items-center space-x-2 hover:bg-white/5 p-1 rounded transition-colors">
+                <Checkbox
+                  id={`area-${area}`}
+                  checked={filters.areas.includes(area)}
+                  onCheckedChange={() => toggleFilter('areas', area)}
+                />
+                <label
+                  htmlFor={`area-${area}`}
+                  className="text-sm cursor-pointer flex-1"
                 >
                   {area}
                 </label>
@@ -174,10 +246,10 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
       {/* Room Types */}
       {roomTypes.length > 0 && (
         <div className="space-y-3">
-          <Label className="text-base">Room Type</Label>
-          <div className="space-y-2">
+          <Label className="text-base font-semibold">Room Type</Label>
+          <div className="space-y-2 rounded-lg border border-white/10 p-2">
             {roomTypes.map(type => (
-              <div key={type} className="flex items-center space-x-2">
+              <div key={type} className="flex items-center space-x-2 hover:bg-white/5 p-1 rounded transition-colors">
                 <Checkbox
                   id={`room-${type}`}
                   checked={filters.roomTypes.includes(type)}
@@ -185,7 +257,7 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
                 />
                 <label
                   htmlFor={`room-${type}`}
-                  className="text-sm cursor-pointer"
+                  className="text-sm cursor-pointer flex-1"
                 >
                   {type}
                 </label>
