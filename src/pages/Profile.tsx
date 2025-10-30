@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { StudentProfileForm } from '@/components/StudentProfileForm';
+import { UnderwaterScene } from '@/components/UnderwaterScene';
+import Navbar from '@/components/shared/Navbar';
+import Footer from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
@@ -22,14 +25,15 @@ export default function Profile() {
   if (!userId) return null;
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      <div className="fixed inset-0 bg-gradient-to-br from-background via-background/95 to-background -z-10" />
+    <div className="min-h-screen relative">
+      <UnderwaterScene />
+      <Navbar />
       
-      <div className="container mx-auto px-6 py-12">
+      <div className="container mx-auto px-6 py-32">
         <Button
           variant="ghost"
           onClick={() => navigate('/')}
-          className="mb-6 hover:bg-white/10"
+          className="mb-6 hover:bg-white/10 hover:neon-glow"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Home
@@ -40,6 +44,8 @@ export default function Profile() {
           onComplete={() => navigate('/ai-match')}
         />
       </div>
+
+      <Footer />
     </div>
   );
 }

@@ -13,7 +13,9 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import DormCard from '@/components/shared/DormCard';
+import { MatchCard } from '@/components/ai-match/MatchCard';
+import { AIAvatar } from '@/components/ai-match/AIAvatar';
+import { mockMatches } from '@/data/mockMatches';
 import { useToast } from '@/hooks/use-toast';
 import { Sparkles, ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react';
 import { useAuthGuard, useProfileCompletion } from '@/hooks/useAuthGuard';
@@ -204,8 +206,9 @@ export default function AiMatch() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background relative">
-      <UnderwaterScene />
+      <UnderwaterScene dimmed />
       <Navbar />
+      {step === 3 && <AIAvatar userName={profile.full_name.split(' ')[0] || 'there'} />}
       
       <main className="flex-1 container mx-auto px-4 py-8 mt-20">
         <div className="max-w-3xl mx-auto">
@@ -405,48 +408,81 @@ export default function AiMatch() {
           )}
 
           {step === 3 && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="text-center glass-hover rounded-3xl p-10 neon-border"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="text-center"
               >
-                <h2 className="text-3xl font-black mb-4 gradient-text">
-                  {loading ? 'Finding your perfect match...' : 'Your Matches'}
+                <Badge variant="secondary" className="mb-4 neon-glow">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  AI-Powered Results
+                </Badge>
+                <h2 className="text-4xl md:text-5xl font-black mb-4 gradient-text">
+                  {loading ? 'Analyzing your preferences...' : 'Your Perfect Matches'}
                 </h2>
-                {!loading && matches.length === 0 && (
-                  <p className="text-foreground/60">
-                    No matches found. Try adjusting your preferences.
-                  </p>
-                )}
+                <p className="text-lg text-foreground/70">
+                  Personalized recommendations based on your profile
+                </p>
               </motion.div>
 
-              {!loading && matches.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {matches.map((dorm, idx) => (
-                    <div 
-                      key={dorm.id}
-                      className="animate-fade-in"
-                      style={{ animationDelay: `${idx * 100}ms` }}
-                    >
-                      <DormCard dorm={dorm} />
-                    </div>
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="h-[450px] rounded-3xl glass animate-pulse" />
                   ))}
                 </div>
+              ) : (
+                <>
+                  <motion.div 
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                      visible: {
+                        transition: {
+                          staggerChildren: 0.15,
+                          delayChildren: 0.15
+                        }
+                      }
+                    }}
+                  >
+                    {mockMatches.map((match, idx) => (
+                      <MatchCard key={idx} match={match} index={idx} />
+                    ))}
+                  </motion.div>
+
+                  {mockMatches.length === 0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-center glass-hover rounded-3xl p-12"
+                    >
+                      <p className="text-foreground/60">
+                        No matches found. Try adjusting your preferences.
+                      </p>
+                    </motion.div>
+                  )}
+                </>
               )}
 
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
-                  <ArrowLeft className="w-4 h-4 mr-2" /> Back
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 }}
+                className="flex flex-wrap gap-3 justify-center"
+              >
+                <Button variant="outline" onClick={() => setStep(2)} className="hover:neon-glow">
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Adjust Preferences
                 </Button>
-                <Button variant="outline" onClick={restart} className="flex-1">
-                  <RotateCcw className="w-4 h-4 mr-2" /> Restart
+                <Button variant="outline" onClick={restart} className="hover:neon-glow">
+                  <RotateCcw className="w-4 h-4 mr-2" /> Start Over
                 </Button>
-                <Button onClick={() => navigate('/listings')} className="flex-1 bg-gradient-to-r from-primary to-secondary">
+                <Button onClick={() => navigate('/listings')} className="neon-glow bg-gradient-to-r from-primary to-secondary">
                   Browse All Dorms
                 </Button>
-              </div>
+              </motion.div>
             </div>
           )}
         </div>

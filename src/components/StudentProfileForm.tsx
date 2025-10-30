@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,7 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, MapPin, GraduationCap, DollarSign, Home } from 'lucide-react';
+import { User, MapPin, GraduationCap, DollarSign, Home, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Confetti } from '@/components/profile/Confetti';
+import { ProfileProgress } from '@/components/profile/ProfileProgress';
 
 const studentProfileSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters').max(100),
@@ -34,11 +36,27 @@ interface StudentProfileFormProps {
 export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormProps) => {
   const [loading, setLoading] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<StudentProfile>({
     resolver: zodResolver(studentProfileSchema),
   });
+
+  const formValues = watch();
+  
+  // Calculate profile completion percentage
+  const calculateProgress = () => {
+    const fields = ['full_name', 'age', 'gender', 'university', 'residential_area', 'preferred_university', 'room_type', 'budget'];
+    const filledFields = fields.filter(field => {
+      const value = formValues[field as keyof StudentProfile];
+      return value !== undefined && value !== null && value !== '';
+    });
+    return Math.round((filledFields.length / fields.length) * 100);
+  };
+
+  const progress = calculateProgress();
 
   useEffect(() => {
     loadProfile();
@@ -63,6 +81,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
 
   const onSubmit = async (data: StudentProfile) => {
     setLoading(true);
+    setIsSaving(true);
     try {
       // Get user email from auth
       const { data: { user } } = await supabase.auth.getUser();
@@ -90,6 +109,10 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
 
       if (error) throw error;
 
+      // Show confetti on successful save
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 2000);
+
       toast({
         title: 'Profile saved! ✨',
         description: 'Your preferences will help Roomy AI find perfect matches.',
@@ -105,23 +128,32 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
       });
     } finally {
       setLoading(false);
+      setTimeout(() => setIsSaving(false), 800);
     }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="glass-hover rounded-3xl p-8 max-w-2xl mx-auto"
-    >
-      <div className="space-y-2 mb-6">
-        <h2 className="text-3xl font-bold gradient-text">
-          {hasProfile ? 'Update Your Profile' : 'Complete Your Profile'}
-        </h2>
-        <p className="text-foreground/60">
-          Help Roomy AI find dorms that match your needs perfectly
-        </p>
-      </div>
+    <>
+      <AnimatePresence>
+        {showConfetti && <Confetti />}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-2xl mx-auto space-y-6"
+      >
+        <ProfileProgress percentage={progress} />
+
+        <div className="glass-hover neon-border rounded-3xl p-8">
+          <div className="space-y-2 mb-6">
+            <h2 className="text-3xl font-black gradient-text">
+              {hasProfile ? 'Update Your Profile' : 'Complete Your Profile'}
+            </h2>
+            <p className="text-foreground/60">
+              Help Roomy AI find dorms that match your needs perfectly
+            </p>
+          </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-4">
@@ -133,7 +165,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
             <Input
               {...register('full_name')}
               placeholder="Enter your full name"
-              className="bg-black/20 border-white/10"
+              className="bg-black/20 border-white/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
             />
             {errors.full_name && (
               <p className="text-xs text-red-400 mt-1">{errors.full_name.message}</p>
@@ -147,7 +179,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                 type="number"
                 {...register('age', { valueAsNumber: true })}
                 placeholder="18"
-                className="bg-black/20 border-white/10"
+                className="bg-black/20 border-white/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               />
               {errors.age && (
                 <p className="text-xs text-red-400 mt-1">{errors.age.message}</p>
@@ -198,7 +230,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
               <Input
                 {...register('residential_area')}
                 placeholder="e.g., Beirut"
-                className="bg-black/20 border-white/10"
+                className="bg-black/20 border-white/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               />
             </div>
 
@@ -210,7 +242,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
               <Input
                 {...register('preferred_university')}
                 placeholder="e.g., Near LAU"
-                className="bg-black/20 border-white/10"
+                className="bg-black/20 border-white/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               />
             </div>
           </div>
@@ -225,7 +257,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                 type="number"
                 {...register('budget', { valueAsNumber: true })}
                 placeholder="500"
-                className="bg-black/20 border-white/10"
+                className="bg-black/20 border-white/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               />
             </div>
 
@@ -275,11 +307,55 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         <Button
           type="submit"
           disabled={loading}
-          className="w-full bg-gradient-to-r from-primary to-secondary text-white font-semibold py-6 rounded-xl hover:shadow-[0_0_30px_rgba(139,92,246,0.5)]"
+          className="w-full bg-gradient-to-r from-primary to-secondary text-white font-semibold py-6 rounded-xl hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] relative overflow-hidden group"
         >
-          {loading ? 'Saving...' : hasProfile ? 'Update Profile' : 'Complete Profile'}
+          <AnimatePresence mode="wait">
+            {isSaving ? (
+              <motion.span
+                key="saving"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="flex items-center gap-2"
+              >
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Saving changes...
+              </motion.span>
+            ) : (
+              <motion.span
+                key="save"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                {hasProfile ? 'Update Profile' : 'Complete Profile'}
+              </motion.span>
+            )}
+          </AnimatePresence>
         </Button>
+
+        {/* Status Indicator */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="flex items-center justify-center gap-2 text-sm"
+        >
+          {progress === 100 ? (
+            <>
+              <CheckCircle className="w-4 h-4 text-primary" />
+              <span className="text-primary font-semibold">All info up to date ✅</span>
+            </>
+          ) : (
+            <>
+              <AlertCircle className="w-4 h-4 text-yellow-500" />
+              <span className="text-foreground/60">Pending completion ⚠️</span>
+            </>
+          )}
+        </motion.div>
       </form>
-    </motion.div>
+        </div>
+      </motion.div>
+    </>
   );
 };

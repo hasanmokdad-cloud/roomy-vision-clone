@@ -99,16 +99,16 @@ const Caustics = () => {
   );
 };
 
-export const UnderwaterScene = () => {
+export const UnderwaterScene = ({ dimmed = false }: { dimmed?: boolean }) => {
   return (
-    <div className="fixed inset-0 -z-10 opacity-40">
+    <div className={`fixed inset-0 -z-10 ${dimmed ? 'opacity-20' : 'opacity-40'}`}>
       <Canvas
         camera={{ position: [0, 0, 10], fov: 60 }}
         gl={{ antialias: false, alpha: true }}
         dpr={[1, 1.5]}
       >
-        <color attach="background" args={['#0a0f1e']} />
-        <fog attach="fog" args={['#0a0f1e', 10, 50]} />
+        <color attach="background" args={[dimmed ? '#05070f' : '#0a0f1e']} />
+        <fog attach="fog" args={[dimmed ? '#05070f' : '#0a0f1e', 10, 50]} />
         
         <ambientLight intensity={0.3} />
         <pointLight position={[10, 10, 10]} intensity={0.5} color="#5eead4" />
