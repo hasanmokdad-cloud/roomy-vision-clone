@@ -1,9 +1,10 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { useEffect, useRef } from 'react';
+import { X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { RoomExpansion3D } from './RoomExpansion3D';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface RoomType {
   type: string;
@@ -28,7 +29,17 @@ interface FullViewportRoomOverlayProps {
 
 export function FullViewportRoomOverlay({ isOpen, onClose, dorm }: FullViewportRoomOverlayProps) {
   const isMobile = useIsMobile();
+  const prefersReducedMotion = useReducedMotion();
   const roomTypes: RoomType[] = dorm.room_types_json || [];
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Parallax scroll effect
+  const { scrollYProgress } = useScroll({
+    container: scrollContainerRef,
+  });
+  
+  const backgroundY = useTransform(scrollYProgress, [0, 1], [0, -50]);
+  const headerOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0.8]);
 
   // Lock body scroll when overlay is open
   useEffect(() => {
@@ -92,63 +103,109 @@ export function FullViewportRoomOverlay({ isOpen, onClose, dorm }: FullViewportR
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[80] bg-black/35 backdrop-blur-md flex items-center justify-center p-4"
+          transition={{ duration: 0.4 }}
+          className="fixed inset-0 z-[999] bg-black/40 backdrop-blur-md"
           onClick={onClose}
           data-room-overlay
         >
+          {/* Parallax Background Layer */}
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className={`relative w-full ${
-              isMobile 
-                ? 'h-full rounded-none' 
-                : 'max-w-[1400px] max-h-[90vh] rounded-2xl'
-            } bg-background/95 shadow-2xl overflow-hidden`}
+            className="absolute inset-0 opacity-10"
+            style={{ 
+              y: prefersReducedMotion ? 0 : backgroundY,
+              backgroundImage: 'radial-gradient(circle at 50% 50%, hsl(var(--primary)) 0%, transparent 70%)'
+            }}
+          />
+
+          {/* Main Content Container */}
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+            transition={{ 
+              duration: 0.5, 
+              ease: [0.22, 1, 0.36, 1]
+            }}
+            className="absolute inset-0 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border p-4 md:p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-2xl md:text-3xl font-black gradient-text mb-2 truncate">
-                    {dorm.dorm_name}
-                  </h2>
-                  <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                    <span>{dorm.area}</span>
-                    {dorm.university && (
-                      <>
-                        <span>•</span>
-                        <span>Near {dorm.university}</span>
-                      </>
-                    )}
-                    <span>•</span>
-                    <span>{roomTypes.length} room type{roomTypes.length > 1 ? 's' : ''}</span>
-                  </div>
+            {/* Cinematic Header */}
+            <motion.div 
+              className="relative z-10 bg-background/95 backdrop-blur-xl border-b border-border/50"
+              style={{ opacity: prefersReducedMotion ? 1 : headerOpacity }}
+            >
+              <div className="container mx-auto px-6 py-8">
+                <div className="flex items-start justify-between gap-4">
+                  <motion.div 
+                    className="flex-1 min-w-0"
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.2, duration: 0.5 }}
+                  >
+                    <h2 className="text-3xl md:text-5xl font-black gradient-text mb-3">
+                      {dorm.dorm_name}
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-3 text-base text-muted-foreground">
+                      <span className="font-semibold">{dorm.area}</span>
+                      {dorm.university && (
+                        <>
+                          <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
+                          <span>Near {dorm.university}</span>
+                        </>
+                      )}
+                      <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
+                      <span className="font-medium gradient-text">
+                        {roomTypes.length} room type{roomTypes.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </motion.div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onClose}
+                    className="shrink-0 rounded-full hover:bg-destructive/10 hover:text-destructive transition-all"
+                    aria-label="Close room selection"
+                  >
+                    <X className="w-6 h-6" />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  className="shrink-0 hover:bg-destructive/10"
-                  aria-label="Close room selection"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Room Cards Container */}
-            <div className="overflow-y-auto max-h-[calc(90vh-120px)] md:max-h-[calc(90vh-140px)]">
-              <RoomExpansion3D
-                rooms={roomTypes}
-                dormId={dorm.id}
-                isExpanded={true}
-                isFullViewport={true}
-                dormAddress={dorm.address}
-                dormShuttle={dorm.shuttle}
-              />
+            {/* Scrollable Room Container */}
+            <div 
+              ref={scrollContainerRef}
+              className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth"
+              style={{ 
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'hsl(var(--primary) / 0.3) transparent'
+              }}
+            >
+              <div className="container mx-auto px-6 py-12">
+                <RoomExpansion3D
+                  rooms={roomTypes}
+                  dormId={dorm.id}
+                  isExpanded={true}
+                  isFullViewport={true}
+                  dormAddress={dorm.address}
+                  dormShuttle={dorm.shuttle}
+                />
+              </div>
+
+              {/* Scroll Indicator */}
+              <motion.div
+                className="flex flex-col items-center gap-2 pb-8 opacity-50"
+                animate={{ y: [0, 8, 0] }}
+                transition={{ 
+                  repeat: Infinity, 
+                  duration: 2,
+                  ease: "easeInOut"
+                }}
+              >
+                <span className="text-xs text-muted-foreground">Scroll to explore</span>
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              </motion.div>
             </div>
           </motion.div>
         </motion.div>
