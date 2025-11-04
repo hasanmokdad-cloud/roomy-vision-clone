@@ -497,13 +497,14 @@ Present results engagingly. If match scores exist, mention why dorms are great f
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     
-    // Log to security_logs
+    // Log to system_logs
     try {
-      await logClient.from('security_logs').insert({
-        event_type: 'chat_error',
-        severity: 'error',
-        message: 'Error in roomy-chat function',
+      await logClient.from('system_logs').insert({
+        table_affected: 'roomy-chat',
+        action: 'chat_error',
         details: {
+          severity: 'error',
+          message: 'Error in roomy-chat function',
           error: error instanceof Error ? error.message : 'Unknown error',
           stack: error instanceof Error ? error.stack?.substring(0, 500) : null
         }

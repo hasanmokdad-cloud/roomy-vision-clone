@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useAdminDormsQuery } from '@/hooks/useAdminDormsQuery';
 
 export default function AdminAnalytics() {
   const [priceByUniversity, setPriceByUniversity] = useState<any[]>([]);
   const [roomTypes, setRoomTypes] = useState<any[]>([]);
+  const { data: dorms } = useAdminDormsQuery();
 
   useEffect(() => {
-    loadAnalytics();
-  }, []);
+    if (dorms) {
+      loadAnalytics();
+    }
+  }, [dorms]);
 
-  const loadAnalytics = async () => {
-    const { data: dorms } = await supabase.from('dorms').select('*');
+  const loadAnalytics = () => {
     
     if (dorms) {
       // Avg price by university

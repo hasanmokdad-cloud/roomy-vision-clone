@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { Building2, Eye, MessageCircle, TrendingUp } from 'lucide-react';
+import { useOwnerDormsQuery } from '@/hooks/useOwnerDormsQuery';
 
 export default function OwnerHome() {
+  const [ownerId, setOwnerId] = useState<string>();
+  const { data: dorms } = useOwnerDormsQuery(ownerId);
   const [stats, setStats] = useState({
     myDorms: 0,
     totalViews: 0,
@@ -12,10 +15,22 @@ export default function OwnerHome() {
   });
 
   useEffect(() => {
-    loadStats();
+    loadOwnerId();
   }, []);
 
-  const loadStats = async () => {
+  useEffect(() => {
+    if (dorms) {
+      const verified = dorms.filter(d => d.verification_status === 'Verified').length;
+      setStats({
+        myDorms: dorms.length,
+        totalViews: 0, // Would come from analytics
+        inquiries: 0, // Would come from ai_recommendations_log
+        verified,
+      });
+    }
+  }, [dorms]);
+
+  const loadOwnerId = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
@@ -26,19 +41,7 @@ export default function OwnerHome() {
       .single();
 
     if (owner) {
-      const { data: dorms } = await supabase
-        .from('dorms')
-        .select('*')
-        .eq('owner_id', owner.id);
-
-      const verified = dorms?.filter(d => d.verification_status === 'Verified').length || 0;
-
-      setStats({
-        myDorms: dorms?.length || 0,
-        totalViews: 0, // Would come from analytics
-        inquiries: 0, // Would come from ai_recommendations_log
-        verified,
-      });
+      setOwnerId(owner.id);
     }
   };
 

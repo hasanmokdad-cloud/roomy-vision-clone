@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Building2, Users, TrendingUp, CheckCircle, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { dormDataFromExcel } from '@/utils/excelParser';
+import { useAdminDormsQuery } from '@/hooks/useAdminDormsQuery';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +20,7 @@ import {
 export default function AdminHome() {
   const [importing, setImporting] = useState(false);
   const { toast } = useToast();
+  const { data: dorms, refetch: refetchDorms } = useAdminDormsQuery();
   const [stats, setStats] = useState({
     totalDorms: 0,
     verifiedDorms: 0,
@@ -28,25 +30,24 @@ export default function AdminHome() {
 
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [dorms]);
 
   const loadStats = async () => {
-    const [dormsRes, studentsRes] = await Promise.all([
-      supabase.from('dorms').select('*', { count: 'exact' }),
-      supabase.from('students').select('budget', { count: 'exact' }),
-    ]);
+    const { data: studentsRes } = await supabase
+      .from('students')
+      .select('budget', { count: 'exact' });
 
-    const verifiedCount = dormsRes.data?.filter(
+    const verifiedCount = dorms?.filter(
       d => d.verification_status === 'Verified'
     ).length || 0;
 
-    const avgBudget = studentsRes.data?.reduce((sum, s) => sum + (Number(s.budget) || 0), 0) / 
-      (studentsRes.data?.length || 1) || 0;
+    const avgBudget = studentsRes?.reduce((sum, s) => sum + (Number(s.budget) || 0), 0) / 
+      (studentsRes?.length || 1) || 0;
 
     setStats({
-      totalDorms: dormsRes.count || 0,
+      totalDorms: dorms?.length || 0,
       verifiedDorms: verifiedCount,
-      totalStudents: studentsRes.count || 0,
+      totalStudents: studentsRes?.length || 0,
       avgBudget: Math.round(avgBudget),
     });
   };
@@ -67,6 +68,7 @@ export default function AdminHome() {
       });
       
       // Reload stats
+      await refetchDorms();
       loadStats();
     } catch (error) {
       console.error('Import error:', error);

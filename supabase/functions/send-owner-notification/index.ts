@@ -420,13 +420,14 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     
-    // Log to security_logs
+    // Log to system_logs
     try {
-      await logClient.from("security_logs").insert({
-        event_type: "notification_error",
-        severity: "error",
-        message: "Error sending owner notification",
+      await logClient.from("system_logs").insert({
+        table_affected: "send-owner-notification",
+        action: "notification_error",
         details: {
+          severity: "error",
+          message: "Error sending owner notification",
           error: error.message,
           stack: error.stack?.substring(0, 500)
         }

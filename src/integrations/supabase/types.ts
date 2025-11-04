@@ -569,7 +569,7 @@ export type Database = {
       dorms_public: {
         Row: {
           address: string | null
-          amenities: string | null
+          amenities: string[] | null
           area: string | null
           available: boolean | null
           capacity: number | null
@@ -594,7 +594,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
-          amenities?: string | null
+          amenities?: string[] | null
           area?: string | null
           available?: boolean | null
           capacity?: number | null
@@ -619,7 +619,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
-          amenities?: string | null
+          amenities?: string[] | null
           area?: string | null
           available?: boolean | null
           capacity?: number | null

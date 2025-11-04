@@ -18,7 +18,7 @@ export interface DormPublic {
   room_types: string | null;
   room_types_json: any;
   capacity: number | null;
-  amenities: string | null;
+  amenities: string[] | null;
   gender_preference: string | null;
   shuttle: boolean | null;
   available: boolean | null;

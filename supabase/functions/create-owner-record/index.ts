@@ -99,19 +99,21 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error in create-owner-record:', error);
     
-    // Log to security_logs
+    // Log to system_logs
     try {
       const logClient = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
       
-      await logClient.from("security_logs").insert({
-        event_type: "owner_registration_error",
-        severity: "error",
-        message: "Error creating owner record",
+      await logClient.from("system_logs").insert({
+        table_affected: "create-owner-record",
+        action: "owner_registration_error",
         details: {
-          error: error instanceof Error ? error.message : 'Unknown error'
+          severity: "error",
+          message: "Error creating owner record",
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : null
         }
       });
     } catch (logError) {

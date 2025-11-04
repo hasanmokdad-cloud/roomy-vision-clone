@@ -75,13 +75,14 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     
-    // Log to security_logs
+    // Log to system_logs
     try {
-      await logClient.from("security_logs").insert({
-        event_type: "notification_processing_error",
-        severity: "error",
-        message: "Error in process-pending-notifications",
+      await logClient.from("system_logs").insert({
+        table_affected: "process-pending-notifications",
+        action: "notification_processing_error",
         details: {
+          severity: "error",
+          message: "Error in process-pending-notifications",
           error: error.message,
           stack: error.stack?.substring(0, 500)
         }

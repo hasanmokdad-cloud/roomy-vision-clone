@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2 } from 'lucide-react';
+import { useOwnerDormsQuery } from '@/hooks/useOwnerDormsQuery';
 import {
   Table,
   TableBody,
@@ -14,15 +15,15 @@ import {
 } from '@/components/ui/table';
 
 export default function OwnerListings() {
-  const [dorms, setDorms] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [ownerId, setOwnerId] = useState<string>();
+  const { data: dorms, isLoading: loading, refetch } = useOwnerDormsQuery(ownerId);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadMyDorms();
+    loadOwnerId();
   }, []);
 
-  const loadMyDorms = async () => {
+  const loadOwnerId = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
@@ -33,17 +34,8 @@ export default function OwnerListings() {
       .single();
 
     if (owner) {
-      const { data, error } = await supabase
-        .from('dorms')
-        .select('*')
-        .eq('owner_id', owner.id)
-        .order('created_at', { ascending: false });
-
-      if (!error && data) {
-        setDorms(data);
-      }
+      setOwnerId(owner.id);
     }
-    setLoading(false);
   };
 
   const handleDelete = async (id: string) => {
@@ -68,7 +60,7 @@ export default function OwnerListings() {
       description: 'Listing deleted successfully',
     });
     
-    loadMyDorms();
+    refetch();
   };
 
   if (loading) {
@@ -82,7 +74,7 @@ export default function OwnerListings() {
         <p className="text-foreground/60 mt-2">Manage your dorm properties</p>
       </div>
 
-      {dorms.length === 0 ? (
+      {!dorms || dorms.length === 0 ? (
         <div className="glass-hover rounded-2xl p-12 text-center">
           <h3 className="text-xl font-bold mb-2">No listings yet</h3>
           <p className="text-foreground/60 mb-4">Create your first dorm listing to get started</p>

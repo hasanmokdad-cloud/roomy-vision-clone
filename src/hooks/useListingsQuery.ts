@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { DormPublic } from '@/types/dorm';
 
 interface RoomType {
   type: string;
@@ -9,15 +10,7 @@ interface RoomType {
   images?: string[];
 }
 
-interface Dorm {
-  id: string;
-  dorm_name: string;
-  area?: string;
-  university?: string;
-  monthly_price?: number;
-  verification_status?: string;
-  cover_image?: string;
-  image_url?: string;
+type Dorm = DormPublic & {
   room_types_json?: RoomType[];
   services_amenities?: string;
   room_types?: string;
@@ -77,11 +70,10 @@ export function useListingsQuery(filters: Filters) {
   const loadListings = async () => {
     setLoading(true);
 
-    // Build base query
+    // Build base query using public view
     let query = supabase
-      .from('dorms')
+      .from('dorms_public')
       .select('*')
-      .eq('verification_status', 'Verified')
       .order('created_at', { ascending: false });
 
     // Apply server-side filters

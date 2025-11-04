@@ -337,13 +337,17 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     
-    // Log to security_logs
+    // Log to system_logs
     try {
-      await logClient.from("security_logs").insert({
-        event_type: "import_error",
-        severity: "error",
-        message: "Error importing dorm data",
-        details: { error: error instanceof Error ? error.message : 'Unknown error' }
+      await logClient.from("system_logs").insert({
+        table_affected: "import-dorms-data",
+        action: "import_error",
+        details: {
+          severity: "error",
+          message: "Error importing dorm data",
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : null
+        }
       });
     } catch (logError) {
       console.error("Failed to log error:", logError);
