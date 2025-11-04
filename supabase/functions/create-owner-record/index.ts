@@ -98,9 +98,28 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Error in create-owner-record:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    
+    // Log to security_logs
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      
+      await supabase.from("security_logs").insert({
+        event_type: "owner_registration_error",
+        severity: "error",
+        message: "Error creating owner record",
+        details: {
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      });
+    } catch (logError) {
+      console.error("Failed to log error:", logError);
+    }
+    
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: "An error occurred during registration. Please try again." }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

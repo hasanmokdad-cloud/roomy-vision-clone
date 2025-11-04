@@ -68,8 +68,24 @@ serve(async (req) => {
     );
   } catch (error: any) {
     console.error("Error processing notifications:", error);
+    
+    // Log to security_logs
+    try {
+      await supabase.from("security_logs").insert({
+        event_type: "notification_processing_error",
+        severity: "error",
+        message: "Error in process-pending-notifications",
+        details: {
+          error: error.message,
+          stack: error.stack?.substring(0, 500)
+        }
+      });
+    } catch (logError) {
+      console.error("Failed to log error:", logError);
+    }
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "An error occurred while processing notifications." }),
       {
         status: 500,
         headers: { "Content-Type": "application/json" },

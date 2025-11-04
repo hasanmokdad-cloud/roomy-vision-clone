@@ -413,8 +413,24 @@ serve(async (req) => {
     );
   } catch (error: any) {
     console.error("Notification error:", error);
+    
+    // Log to security_logs
+    try {
+      await supabase.from("security_logs").insert({
+        event_type: "notification_error",
+        severity: "error",
+        message: "Error sending owner notification",
+        details: {
+          error: error.message,
+          stack: error.stack?.substring(0, 500)
+        }
+      });
+    } catch (logError) {
+      console.error("Failed to log error:", logError);
+    }
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "An error occurred while sending the notification. Please try again later." }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -71,13 +71,60 @@ function extractFilters(message: string, context: any = {}, studentPrefs: any = 
   return { filters, learnedPrefs };
 }
 
+// Input sanitization helper
+function sanitizeInput(input: string): string {
+  if (!input || typeof input !== 'string') return '';
+  
+  // Remove HTML and script tags
+  let sanitized = input.replace(/<[^>]*>/g, '');
+  
+  // Remove SQL keywords (case insensitive)
+  const sqlKeywords = /\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|UNION|SCRIPT)\b/gi;
+  sanitized = sanitized.replace(sqlKeywords, '');
+  
+  // Trim and limit length
+  sanitized = sanitized.trim().substring(0, 500);
+  
+  // Escape special characters
+  sanitized = sanitized
+    .replace(/[<>]/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+=/gi, '');
+  
+  return sanitized;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { message, userId, sessionId } = await req.json();
+    const rawBody = await req.json();
+    const message = sanitizeInput(rawBody.message);
+    const userId = rawBody.userId;
+    const sessionId = rawBody.sessionId;
+
+    // Validate message
+    if (!message || message.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Message cannot be empty" }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    if (message.length > 500) {
+      return new Response(
+        JSON.stringify({ error: "Message too long. Please keep it under 500 characters." }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");

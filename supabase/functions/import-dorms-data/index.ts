@@ -330,9 +330,21 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Import error:', error);
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
+    
+    // Log to security_logs
+    try {
+      await supabase.from("security_logs").insert({
+        event_type: "import_error",
+        severity: "error",
+        message: "Error importing dorm data",
+        details: { error: error instanceof Error ? error.message : 'Unknown error' }
+      });
+    } catch (logError) {
+      console.error("Failed to log error:", logError);
+    }
+    
     return new Response(
-      JSON.stringify({ error: errorMsg }),
+      JSON.stringify({ error: "An error occurred while importing data. Please check your file and try again." }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
