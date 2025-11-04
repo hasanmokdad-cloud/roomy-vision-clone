@@ -23,15 +23,27 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        navigate('/');
+        const { data: owner } = await supabase
+          .from('owners')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        
+        navigate(owner ? '/admin' : '/dashboard');
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        navigate('/');
+        const { data: owner } = await supabase
+          .from('owners')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        
+        navigate(owner ? '/admin' : '/dashboard');
       }
     });
 
