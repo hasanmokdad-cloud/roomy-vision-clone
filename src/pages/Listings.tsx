@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useAuthGuard, useProfileCompletion } from '@/hooks/useAuthGuard';
 import { useListingsQuery } from '@/hooks/useListingsQuery';
 import { sanitizeInput } from '@/utils/inputValidation';
 import { CinematicDormCard } from '@/components/listings/CinematicDormCard';
@@ -18,9 +17,8 @@ import { ScrollToTopButton } from '@/components/listings/ScrollToTopButton';
 
 export default function Listings() {
   const navigate = useNavigate();
-  const { loading: authLoading, userId } = useAuthGuard();
-  const { checkingProfile } = useProfileCompletion(userId);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [filters, setFilters] = useState({
     priceRange: [0, 2000] as [number, number],
     universities: [] as string[],
@@ -99,16 +97,6 @@ export default function Listings() {
     setExpandedDormId(null);
   };
 
-  if (authLoading || checkingProfile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground/60">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col relative">

@@ -3,6 +3,7 @@ import { Search, Users, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useRef, Suspense, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import heroImage from '@/assets/hero-image.jpg';
 import { ThreeHero } from './ThreeHero';
 import { DormFinder } from '@/components/RoomyAI';
@@ -10,8 +11,10 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const Hero = () => {
   const ref = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const [isFinderOpen, setIsFinderOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState('');
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -109,9 +112,25 @@ export const Hero = () => {
               <div className="flex gap-3">
                 <Input
                   placeholder='e.g., "Private room near LAU for $400/month"'
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && searchInput.trim()) {
+                      navigate(`/listings?search=${encodeURIComponent(searchInput)}`);
+                    }
+                  }}
                   className="bg-black/20 border-white/10 text-foreground placeholder:text-foreground/40 focus:border-primary/50 transition-all"
                 />
-                <Button className="bg-gradient-to-r from-primary to-secondary text-white font-bold px-8 rounded-2xl hover:shadow-[0_0_40px_rgba(94,234,212,0.4)] transition-all duration-300 whitespace-nowrap neon-glow">
+                <Button 
+                  onClick={() => {
+                    if (searchInput.trim()) {
+                      navigate(`/listings?search=${encodeURIComponent(searchInput)}`);
+                    } else {
+                      navigate('/listings');
+                    }
+                  }}
+                  className="bg-gradient-to-r from-primary to-secondary text-white font-bold px-8 rounded-2xl hover:shadow-[0_0_40px_rgba(94,234,212,0.4)] transition-all duration-300 whitespace-nowrap neon-glow"
+                >
                   Search
                 </Button>
               </div>

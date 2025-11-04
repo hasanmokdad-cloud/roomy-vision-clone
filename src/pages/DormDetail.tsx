@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare } from 'lucide-react';
+import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { RoomType } from '@/components/listings/RoomExpansion3D';
 
 export default function DormDetail() {
   const { id } = useParams();
@@ -73,6 +74,12 @@ export default function DormDetail() {
 
   const images = dorm.image_url ? [dorm.image_url] : [];
   const displayName = dorm.dorm_name || dorm.name;
+  
+  // Parse room types from JSON
+  const roomTypes: RoomType[] = dorm.room_types_json || [];
+  const startingPrice = roomTypes.length > 0 
+    ? Math.min(...roomTypes.map(r => r.price))
+    : dorm.monthly_price;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -109,9 +116,11 @@ export default function DormDetail() {
               </div>
               <div className="text-right">
                 <div className="text-3xl font-bold gradient-text">
-                  ${dorm.monthly_price}
+                  ${startingPrice}
                 </div>
-                <div className="text-sm text-foreground/60">per month</div>
+                <div className="text-sm text-foreground/60">
+                  {roomTypes.length > 1 ? 'starting from' : 'per month'}
+                </div>
               </div>
             </div>
           </div>
@@ -210,6 +219,39 @@ export default function DormDetail() {
                     <p className="text-foreground/80 leading-relaxed whitespace-pre-line">
                       {dorm.description}
                     </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Room Options */}
+              {roomTypes.length > 0 && (
+                <Card className="glass-hover">
+                  <CardContent className="p-6">
+                    <h2 className="text-2xl font-bold mb-4">Available Room Options</h2>
+                    <div className="grid gap-4">
+                      {roomTypes.map((room, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/10 hover:border-primary/30 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                              <Home className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-lg">{room.type}</h3>
+                              <p className="text-sm text-foreground/60">
+                                Capacity: {room.capacity} {room.capacity === 1 ? 'person' : 'people'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold gradient-text">${room.price}</div>
+                            <div className="text-xs text-foreground/60">per month</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               )}
@@ -326,12 +368,26 @@ export default function DormDetail() {
                 <CardContent className="p-6">
                   <h3 className="text-xl font-bold mb-4">Pricing</h3>
                   <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-foreground/70">Monthly Rent</span>
-                      <span className="font-bold text-xl gradient-text">
-                        ${dorm.monthly_price}
-                      </span>
-                    </div>
+                    {roomTypes.length > 0 ? (
+                      <>
+                        <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                          <span className="text-foreground/70">Starting from</span>
+                          <span className="font-bold text-xl gradient-text">
+                            ${startingPrice}
+                          </span>
+                        </div>
+                        <div className="text-sm text-foreground/60 pt-2">
+                          {roomTypes.length} room {roomTypes.length === 1 ? 'option' : 'options'} available
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex justify-between items-center">
+                        <span className="text-foreground/70">Monthly Rent</span>
+                        <span className="font-bold text-xl gradient-text">
+                          ${dorm.monthly_price}
+                        </span>
+                      </div>
+                    )}
                     {dorm.shuttle && (
                       <div className="pt-2 border-t border-white/10">
                         <Badge variant="secondary">

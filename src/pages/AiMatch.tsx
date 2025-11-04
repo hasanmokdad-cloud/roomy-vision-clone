@@ -446,12 +446,30 @@ export default function AiMatch() {
                       }
                     }}
                   >
-                    {mockMatches.map((match, idx) => (
-                      <MatchCard key={idx} match={match} index={idx} />
+                    {matches.map((match, idx) => (
+                      <MatchCard 
+                        key={match.id} 
+                        match={{
+                          dorm: match.dorm_name || match.name,
+                          room: match.room_types || 'Various',
+                          matchPercentage: 90 - (idx * 5),
+                          distance: match.area || match.location,
+                          price: match.monthly_price,
+                          capacity: match.capacity || 1,
+                          reasons: [
+                            'Within your budget',
+                            'Close to your university',
+                            'Verified dorm'
+                          ],
+                          amenities: match.amenities || [],
+                          dormId: match.id
+                        }} 
+                        index={idx} 
+                      />
                     ))}
                   </motion.div>
 
-                  {mockMatches.length === 0 && (
+                  {matches.length === 0 && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}

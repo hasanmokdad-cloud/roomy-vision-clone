@@ -6,11 +6,12 @@ import { Users, Sparkles, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-interface RoomType {
+export interface RoomType {
   type: string;
   capacity: number;
   price: number;
   amenities?: string[];
+  images?: string[];
 }
 
 interface RoomExpansion3DProps {

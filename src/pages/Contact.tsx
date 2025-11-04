@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Mail, Phone, MapPin, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { validateName, validateEmail, sanitizeInput, validateMessage } from '@/utils/inputValidation';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Contact() {
   const { toast } = useToast();
@@ -24,7 +25,7 @@ export default function Contact() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const newErrors: Record<string, string> = {};
@@ -54,6 +55,24 @@ export default function Contact() {
     }
     
     setErrors({});
+
+    // Submit to database
+    const { error } = await supabase.from('inquiries').insert({
+      inquiry_type: 'contact',
+      student_name: `${formData.firstName} ${formData.lastName}`,
+      student_email: formData.email,
+      message: `University: ${formData.university}\n\n${formData.message}`,
+      owner_id: '00000000-0000-0000-0000-000000000000' // General inquiry, no specific owner
+    });
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to send message. Please try again.',
+        variant: 'destructive'
+      });
+      return;
+    }
     
     toast({
       title: 'Message Sent!',
