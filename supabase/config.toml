@@ -1,5 +1,8 @@
 project_id = "vtdtmhgzisigtqryojwl"
 
+[functions.import-dorms-data]
+verify_jwt = true
+
 [functions.roomy-chat]
 verify_jwt = false
 

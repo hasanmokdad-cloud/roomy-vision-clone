@@ -1,9 +1,24 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Users, TrendingUp, CheckCircle } from 'lucide-react';
+import { Building2, Users, TrendingUp, CheckCircle, Upload } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { dormDataFromExcel } from '@/utils/excelParser';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function AdminHome() {
+  const [importing, setImporting] = useState(false);
+  const { toast } = useToast();
   const [stats, setStats] = useState({
     totalDorms: 0,
     verifiedDorms: 0,
@@ -34,6 +49,35 @@ export default function AdminHome() {
       totalStudents: studentsRes.count || 0,
       avgBudget: Math.round(avgBudget),
     });
+  };
+
+  const handleImportDorms = async () => {
+    setImporting(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('import-dorms-data', {
+        body: { dormsData: dormDataFromExcel }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: '✅ Import Successful!',
+        description: `${data.message}. Total dorms in database: ${data.totalInDatabase}`,
+      });
+      
+      // Reload stats
+      loadStats();
+    } catch (error) {
+      console.error('Import error:', error);
+      toast({
+        title: 'Import Failed',
+        description: error.message || 'An error occurred during import',
+        variant: 'destructive',
+      });
+    } finally {
+      setImporting(false);
+    }
   };
 
   const statCards = [
@@ -72,18 +116,49 @@ export default function AdminHome() {
         ))}
       </div>
 
-      <div className="glass-hover rounded-2xl p-6">
+      <div className="bg-white rounded-2xl p-6 shadow-sm">
         <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="glass hover:bg-white/10 rounded-xl p-4 text-left transition-all">
-            <h3 className="font-semibold mb-1">Add New Dorm</h3>
-            <p className="text-sm text-foreground/60">Create a new listing</p>
-          </button>
-          <button className="glass hover:bg-white/10 rounded-xl p-4 text-left transition-all">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                disabled={importing}
+                className="bg-gradient-to-r from-primary to-secondary text-white rounded-xl p-4 text-left transition-all hover:shadow-lg disabled:opacity-50"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Upload className="w-5 h-5" />
+                  <h3 className="font-semibold">Import Excel Data</h3>
+                </div>
+                <p className="text-sm text-white/80">
+                  {importing ? 'Importing...' : 'Import 25 verified dorms'}
+                </p>
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Import Dorm Data</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will import 25 verified dorms from the Excel database.
+                  All entries will be marked as verified and available for public viewing.
+                  <br /><br />
+                  <strong>Note:</strong> This operation will add new dorms to the database.
+                  Existing dorms will not be affected.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleImportDorms}>
+                  Confirm Import
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          
+          <button className="bg-gray-100 hover:bg-gray-200 rounded-xl p-4 text-left transition-all">
             <h3 className="font-semibold mb-1">Verify Listings</h3>
             <p className="text-sm text-foreground/60">Review pending dorms</p>
           </button>
-          <button className="glass hover:bg-white/10 rounded-xl p-4 text-left transition-all">
+          <button className="bg-gray-100 hover:bg-gray-200 rounded-xl p-4 text-left transition-all">
             <h3 className="font-semibold mb-1">View Analytics</h3>
             <p className="text-sm text-foreground/60">Check platform insights</p>
           </button>
