@@ -101,12 +101,12 @@ Deno.serve(async (req) => {
     
     // Log to security_logs
     try {
-      const supabase = createClient(
+      const logClient = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
       
-      await supabase.from("security_logs").insert({
+      await logClient.from("security_logs").insert({
         event_type: "owner_registration_error",
         severity: "error",
         message: "Error creating owner record",

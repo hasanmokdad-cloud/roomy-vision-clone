@@ -47,6 +47,13 @@ export type Database = {
             referencedRelation: "dorms"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ai_recommendations_log_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       ai_sessions: {
@@ -280,6 +287,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "inquiries_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "inquiries_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
@@ -344,6 +358,13 @@ export type Database = {
             columns: ["dorm_id"]
             isOneToOne: false
             referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_log_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
             referencedColumns: ["id"]
           },
           {
@@ -545,7 +566,84 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      dorms_public: {
+        Row: {
+          address: string | null
+          amenities: string | null
+          area: string | null
+          available: boolean | null
+          capacity: number | null
+          cover_image: string | null
+          created_at: string | null
+          description: string | null
+          dorm_name: string | null
+          gender_preference: string | null
+          id: string | null
+          image_url: string | null
+          location: string | null
+          monthly_price: number | null
+          name: string | null
+          price: number | null
+          room_types: string | null
+          room_types_json: Json | null
+          shuttle: boolean | null
+          type: string | null
+          university: string | null
+          updated_at: string | null
+          verification_status: string | null
+        }
+        Insert: {
+          address?: string | null
+          amenities?: string | null
+          area?: string | null
+          available?: boolean | null
+          capacity?: number | null
+          cover_image?: string | null
+          created_at?: string | null
+          description?: string | null
+          dorm_name?: string | null
+          gender_preference?: string | null
+          id?: string | null
+          image_url?: string | null
+          location?: string | null
+          monthly_price?: number | null
+          name?: string | null
+          price?: number | null
+          room_types?: string | null
+          room_types_json?: Json | null
+          shuttle?: boolean | null
+          type?: string | null
+          university?: string | null
+          updated_at?: string | null
+          verification_status?: string | null
+        }
+        Update: {
+          address?: string | null
+          amenities?: string | null
+          area?: string | null
+          available?: boolean | null
+          capacity?: number | null
+          cover_image?: string | null
+          created_at?: string | null
+          description?: string | null
+          dorm_name?: string | null
+          gender_preference?: string | null
+          id?: string | null
+          image_url?: string | null
+          location?: string | null
+          monthly_price?: number | null
+          name?: string | null
+          price?: number | null
+          room_types?: string | null
+          room_types_json?: Json | null
+          shuttle?: boolean | null
+          type?: string | null
+          university?: string | null
+          updated_at?: string | null
+          verification_status?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_notification_debounce: {

@@ -331,9 +331,15 @@ serve(async (req) => {
   } catch (error) {
     console.error('Import error:', error);
     
+    // Create client for error logging
+    const logClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
     // Log to security_logs
     try {
-      await supabase.from("security_logs").insert({
+      await logClient.from("security_logs").insert({
         event_type: "import_error",
         severity: "error",
         message: "Error importing dorm data",

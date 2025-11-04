@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Mail, Phone, MapPin, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { validateName, validateEmail, sanitizeInput, validateMessage } from '@/utils/inputValidation';
 
 export default function Contact() {
   const { toast } = useToast();
@@ -21,9 +22,38 @@ export default function Contact() {
     university: '',
     message: ''
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const newErrors: Record<string, string> = {};
+    
+    // Validate fields
+    if (!validateName(formData.firstName)) {
+      newErrors.firstName = 'Please enter a valid first name (2-100 characters, letters only)';
+    }
+    if (!validateName(formData.lastName)) {
+      newErrors.lastName = 'Please enter a valid last name (2-100 characters, letters only)';
+    }
+    if (!validateEmail(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    if (!formData.university.trim()) {
+      newErrors.university = 'University is required';
+    }
+    
+    const messageValidation = validateMessage(formData.message);
+    if (!messageValidation.valid) {
+      newErrors.message = messageValidation.error || 'Invalid message';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    
+    setErrors({});
     
     toast({
       title: 'Message Sent!',
@@ -70,15 +100,16 @@ export default function Contact() {
             >
               <h2 className="text-3xl font-black mb-8 gradient-text">Contact Form</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>First Name</Label>
                     <Input
                       required
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="bg-black/20 border-white/10"
+                      className={`bg-black/20 border-white/10 ${errors.firstName ? 'border-destructive' : ''}`}
                     />
+                    {errors.firstName && <p className="text-sm text-destructive mt-1">{errors.firstName}</p>}
                   </div>
                   <div>
                     <Label>Last Name</Label>
@@ -86,8 +117,9 @@ export default function Contact() {
                       required
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="bg-black/20 border-white/10"
+                      className={`bg-black/20 border-white/10 ${errors.lastName ? 'border-destructive' : ''}`}
                     />
+                    {errors.lastName && <p className="text-sm text-destructive mt-1">{errors.lastName}</p>}
                   </div>
                 </div>
                 <div>
@@ -97,8 +129,9 @@ export default function Contact() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="bg-black/20 border-white/10"
+                    className={`bg-black/20 border-white/10 ${errors.email ? 'border-destructive' : ''}`}
                   />
+                  {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
                 </div>
                 <div>
                   <Label>University</Label>
@@ -106,8 +139,9 @@ export default function Contact() {
                     required
                     value={formData.university}
                     onChange={(e) => setFormData({ ...formData, university: e.target.value })}
-                    className="bg-black/20 border-white/10"
+                    className={`bg-black/20 border-white/10 ${errors.university ? 'border-destructive' : ''}`}
                   />
+                  {errors.university && <p className="text-sm text-destructive mt-1">{errors.university}</p>}
                 </div>
                 <div>
                   <Label>Message</Label>
@@ -116,8 +150,11 @@ export default function Contact() {
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     rows={6}
-                    className="bg-black/20 border-white/10 resize-none"
+                    className={`bg-black/20 border-white/10 resize-none ${errors.message ? 'border-destructive' : ''}`}
+                    maxLength={500}
                   />
+                  {errors.message && <p className="text-sm text-destructive mt-1">{errors.message}</p>}
+                  <p className="text-xs text-muted-foreground mt-1">{formData.message.length}/500</p>
                 </div>
                 <Button type="submit" className="w-full bg-gradient-to-r from-primary to-secondary">
                   Send Message

@@ -490,6 +490,28 @@ Present results engagingly. If match scores exist, mention why dorms are great f
     );
   } catch (error) {
     console.error("Chat error:", error);
+    
+    // Create client for error logging
+    const logClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    // Log to security_logs
+    try {
+      await logClient.from('security_logs').insert({
+        event_type: 'chat_error',
+        severity: 'error',
+        message: 'Error in roomy-chat function',
+        details: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack?.substring(0, 500) : null
+        }
+      });
+    } catch (logError) {
+      console.error('Failed to log error:', logError);
+    }
+    
     return new Response(
       JSON.stringify({ error: "An error occurred. Please try again." }),
       {
