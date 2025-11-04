@@ -82,7 +82,7 @@ const Auth = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const { error } = await supabase.functions.invoke('create-owner-record', {
+      const { data, error } = await supabase.functions.invoke('create-owner-record', {
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }
@@ -90,6 +90,15 @@ const Auth = () => {
 
       if (error) {
         console.error('Error creating owner record:', error);
+        return;
+      }
+
+      // Show success toast only if owner record was newly created
+      if (data?.success && data?.message === 'Owner record created successfully') {
+        toast({
+          title: "Admin Access Granted",
+          description: "You are now registered as a verified Roomy Owner.",
+        });
       }
     } catch (error) {
       console.error('Error invoking create-owner-record:', error);
