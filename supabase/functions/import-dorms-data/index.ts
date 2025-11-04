@@ -1,36 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import * as XLSX from "https://esm.sh/xlsx@0.18.5";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface DormData {
-  Dorm: string;
-  "Monthly Price (prices are per student, not per room)": string;
-  Deposit: string;
-  City: string;
-  Shuttle: string;
-  Address: string;
-  "Room Type": string;
-  Capacity: string;
-  "Phone Number": string;
-  "Services & Amenities": string;
-  "Walking distance": string;
-}
-
 interface RoomType {
   type: string;
   price: number;
   capacity: number;
   amenities?: string[];
-}
-
-function parsePrice(priceStr: string): number {
-  // Extract first dollar amount from string like "S: $350" or "$300"
-  const match = priceStr.match(/\$\s*(\d+)/);
-  return match ? parseInt(match[1]) : 350;
 }
 
 function parsePrices(priceStr: string): RoomType[] {
@@ -85,7 +66,8 @@ function parsePrices(priceStr: string): RoomType[] {
   
   // If no room types parsed, return a default
   if (roomTypes.length === 0) {
-    const defaultPrice = parsePrice(priceStr);
+    const match = priceStr.match(/\$\s*(\d+)/);
+    const defaultPrice = match ? parseInt(match[1]) : 350;
     roomTypes.push({ type: 'Single Room', price: defaultPrice, capacity: 1 });
   }
   
@@ -120,6 +102,40 @@ function generateCoverImage(): string {
   return `https://source.unsplash.com/800x600/?${randomId},interior`;
 }
 
+function parseExcelFile(buffer: ArrayBuffer): any[] {
+  const workbook = XLSX.read(buffer, { type: 'array' });
+  const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][];
+
+  if (rows.length < 2) {
+    throw new Error('Excel file is empty or missing data');
+  }
+
+  const dormsData = [];
+  
+  // Skip header row (index 0)
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row[0]) continue; // Skip empty rows
+
+    dormsData.push({
+      Dorm: String(row[0] || '').trim(),
+      "Monthly Price (prices are per student, not per room)": String(row[1] || ''),
+      Deposit: String(row[2] || ''),
+      City: String(row[3] || '').trim(),
+      Shuttle: String(row[4] || '').trim(),
+      Address: String(row[5] || '').trim(),
+      "Room Type": String(row[6] || '').trim(),
+      Capacity: String(row[7] || '').trim(),
+      "Phone Number": String(row[8] || '').trim() || null,
+      "Services & Amenities": String(row[9] || '').trim(),
+      "Walking distance": String(row[10] || '').trim(),
+    });
+  }
+
+  return dormsData;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -130,8 +146,71 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get the raw Excel data from the request
-    const { dormsData } = await req.json();
+    // Check authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      throw new Error('Unauthorized');
+    }
+
+    // Check if user is owner
+    const { data: owner } = await supabase
+      .from('owners')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!owner) {
+      throw new Error('Only owners can import dorms');
+    }
+
+    console.log('Starting dorms import for owner:', owner.id);
+
+    const contentType = req.headers.get('content-type') || '';
+    let dormsData: any[] = [];
+
+    if (contentType.includes('multipart/form-data')) {
+      // Handle file upload
+      const formData = await req.formData();
+      const file = formData.get('file') as File;
+      
+      if (!file) {
+        throw new Error('No file provided');
+      }
+
+      console.log('Processing file:', file.name, 'Size:', file.size);
+
+      // Parse Excel file
+      const buffer = await file.arrayBuffer();
+      dormsData = parseExcelFile(buffer);
+
+      // Store file in storage for backup
+      const fileName = `${Date.now()}-${file.name}`;
+      const fileBuffer = new Uint8Array(buffer);
+      
+      const { error: storageError } = await supabase.storage
+        .from('dorm-uploads')
+        .upload(`uploads/${fileName}`, fileBuffer, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (storageError) {
+        console.error('Storage error:', storageError);
+        // Continue even if storage fails
+      }
+    } else {
+      // Handle JSON data (backward compatibility)
+      const body = await req.json();
+      dormsData = body.dormsData;
+    }
     
     if (!dormsData || !Array.isArray(dormsData)) {
       return new Response(
@@ -145,8 +224,14 @@ serve(async (req) => {
     const dormsToInsert = [];
     const errors = [];
 
-    for (const row of dormsData as DormData[]) {
+    for (const row of dormsData) {
       try {
+        // Validate required fields
+        if (!row.Dorm || !row.Address) {
+          errors.push({ dorm: row.Dorm || 'Unknown', error: 'Missing required fields (name or address)' });
+          continue;
+        }
+
         // Parse room types and prices
         const roomTypes = parsePrices(row["Monthly Price (prices are per student, not per room)"]);
         const minPrice = Math.min(...roomTypes.map(rt => rt.price));
@@ -164,8 +249,8 @@ serve(async (req) => {
         // Clean amenities
         const amenities = row["Services & Amenities"]
           ?.split(',')
-          .map(a => a.trim())
-          .filter(a => a.length > 0) || [];
+          .map((a: string) => a.trim())
+          .filter((a: string) => a.length > 0) || [];
         
         // Generate description
         const description = generateDescription(row.Dorm, area, roomTypeNames);
@@ -195,6 +280,7 @@ serve(async (req) => {
           available: true,
           capacity: Math.max(...roomTypes.map(rt => rt.capacity)),
           type: roomTypes.length > 1 ? 'Mixed' : roomTypes[0].type,
+          owner_id: owner.id, // Link to owner
         };
         
         dormsToInsert.push(dormData);
@@ -234,7 +320,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Successfully imported ${insertedCount} dorms`,
+        message: `✅ ${insertedCount} dorms imported successfully — visible now on /listings and /ai-match`,
+        count: insertedCount,
         totalInDatabase: count,
         errors: errors.length > 0 ? errors : undefined,
       }),
