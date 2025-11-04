@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { DormPublic } from '@/types/dorm';
 
+interface DormListing extends DormPublic {
+  deposit?: number;
+  city?: string;
+  walking_distance?: string;
+  services_amenities?: string;
+}
+
 interface RoomType {
   type: string;
   capacity: number;
@@ -22,6 +29,8 @@ interface Filters {
   areas: string[];
   roomTypes: string[];
   capacity?: number;
+  cities?: string[];
+  shuttle?: 'all' | 'available' | 'none';
 }
 
 interface DormModeResult {
@@ -51,6 +60,7 @@ type ListingsResult = DormModeResult | RoomModeResult;
 export function useListingsQuery(filters: Filters) {
   const [data, setData] = useState<ListingsResult>({ mode: 'dorm', dorms: [] });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadListings();
@@ -70,11 +80,12 @@ export function useListingsQuery(filters: Filters) {
   const loadListings = async () => {
     setLoading(true);
 
-    // Build base query using public view
+    // Build base query with specific columns
     let query = supabase
       .from('dorms_public')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('id, dorm_name, monthly_price, area, university, verification_status, cover_image, image_url, room_types, room_types_json, capacity, amenities, gender_preference, shuttle, available, created_at, updated_at, type, description, address')
+      .eq('available', true)
+      .order('dorm_name', { ascending: true });
 
     // Apply server-side filters
     if (filters.universities.length > 0) {
@@ -85,9 +96,27 @@ export function useListingsQuery(filters: Filters) {
       query = query.in('area', filters.areas);
     }
 
+    if (filters.cities && filters.cities.length > 0) {
+      query = query.in('area', filters.cities);
+    }
+
+    if (filters.shuttle && filters.shuttle !== 'all') {
+      const shuttleValue = filters.shuttle === 'available';
+      query = query.eq('shuttle', shuttleValue);
+    }
+
     const { data: dorms, error } = await query;
 
-    if (error || !dorms) {
+    if (error) {
+      console.error('Error fetching dorms:', error);
+      setError('Unable to load listings. Please try again shortly.');
+      setLoading(false);
+      return;
+    }
+
+    if (!dorms || dorms.length === 0) {
+      setData({ mode: 'dorm', dorms: [] });
+      setError(null);
       setLoading(false);
       return;
     }
@@ -162,8 +191,9 @@ export function useListingsQuery(filters: Filters) {
       setData({ mode: 'dorm', dorms: filteredDorms as unknown as Dorm[] });
     }
 
+    setError(null);
     setLoading(false);
   };
 
-  return { data, loading };
+  return { data, loading, error };
 }

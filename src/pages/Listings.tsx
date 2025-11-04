@@ -7,6 +7,7 @@ import FiltersPanel from '@/components/shared/FiltersPanel';
 import { FilterChips } from '@/components/shared/FilterChips';
 import { DormGrid } from '@/components/dorms/DormGrid';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Search, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuthGuard, useProfileCompletion } from '@/hooks/useAuthGuard';
@@ -26,9 +27,21 @@ export default function Listings() {
     areas: [] as string[],
     roomTypes: [] as string[],
     capacity: undefined as number | undefined,
+    cities: [] as string[],
+    shuttle: 'all' as 'all' | 'available' | 'none',
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
-  const { data, loading } = useListingsQuery(filters);
+  const { data, loading, error } = useListingsQuery(filters);
+
+  // Cache data in sessionStorage
+  useEffect(() => {
+    if (data.mode === 'dorm' && data.dorms.length > 0) {
+      sessionStorage.setItem('roomy_dorms_cache', JSON.stringify(data.dorms));
+      sessionStorage.setItem('roomy_dorms_cache_time', Date.now().toString());
+    }
+  }, [data]);
 
   // Convert real data to SeedDorm format, or use seed data if empty
   const dorms = useMemo(() => {
@@ -83,11 +96,20 @@ export default function Listings() {
     );
   }, [dorms, searchQuery]);
 
+  // Paginate results
+  const paginatedDorms = useMemo(() => {
+    const startIndex = 0;
+    const endIndex = currentPage * itemsPerPage;
+    return filteredDorms.slice(startIndex, endIndex);
+  }, [filteredDorms, currentPage]);
+
+  const hasMore = filteredDorms.length > paginatedDorms.length;
+
   const handleFilterChange = (newFilters: typeof filters) => {
     setFilters(newFilters);
   };
 
-  const handleRemoveFilter = (category: 'universities' | 'areas' | 'roomTypes' | 'capacity', value?: string) => {
+  const handleRemoveFilter = (category: 'universities' | 'areas' | 'roomTypes' | 'capacity' | 'cities', value?: string) => {
     if (category === 'capacity') {
       setFilters({ ...filters, capacity: undefined });
     } else if (value) {
@@ -96,6 +118,10 @@ export default function Listings() {
         [category]: filters[category].filter((v) => v !== value)
       });
     }
+  };
+
+  const handleLoadMore = () => {
+    setCurrentPage(prev => prev + 1);
   };
 
   const handleResetPrice = () => {
@@ -132,7 +158,7 @@ export default function Listings() {
             Available Dorms in Lebanon
           </h1>
           <p className="text-xl text-foreground/80">
-            Explore verified listings and find your match.
+            Explore verified dorms and find your perfect stay near campus.
           </p>
         </motion.div>
 
@@ -178,17 +204,46 @@ export default function Listings() {
                   <div key={i} className="h-96 rounded-2xl bg-white animate-pulse shadow-sm" />
                 ))}
               </div>
+            ) : error ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center py-16 glass-hover rounded-3xl p-12"
+              >
+                <h3 className="text-2xl font-black gradient-text mb-4">Connection Error</h3>
+                <p className="text-foreground/70">
+                  {error}
+                </p>
+              </motion.div>
+            ) : filteredDorms.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center py-16 glass-hover rounded-3xl p-12"
+              >
+                <h3 className="text-2xl font-black gradient-text mb-4">No dorms match your search</h3>
+                <p className="text-foreground/70">
+                  Try adjusting filters or check back later.
+                </p>
+              </motion.div>
             ) : (
               <>
                 <DormGrid 
-                  dorms={filteredDorms} 
+                  dorms={paginatedDorms} 
                   capacityFilter={filters.capacity}
                 />
-                {filteredDorms.length > 0 && (
-                  <p className="text-sm text-foreground/60 mt-8 text-center">
-                    Showing {filteredDorms.length} verified dorms
-                    {filters.capacity && ` with rooms for ${filters.capacity}+ people`}
-                  </p>
+                {paginatedDorms.length > 0 && (
+                  <div className="text-center mt-8 space-y-4">
+                    <p className="text-sm text-foreground/60">
+                      Showing {paginatedDorms.length} of {filteredDorms.length} verified dorms
+                      {filters.capacity && ` with rooms for ${filters.capacity}+ people`}
+                    </p>
+                    {hasMore && (
+                      <Button onClick={handleLoadMore} variant="outline" size="lg" className="px-8">
+                        Load More
+                      </Button>
+                    )}
+                  </div>
                 )}
               </>
             )}

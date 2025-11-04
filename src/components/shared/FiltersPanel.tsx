@@ -13,6 +13,8 @@ interface FiltersPanelProps {
     areas: string[];
     roomTypes: string[];
     capacity?: number;
+    cities?: string[];
+    shuttle?: 'all' | 'available' | 'none';
   };
   onFilterChange: (filters: any) => void;
   dorms: any[];
@@ -82,17 +84,25 @@ const capacityOptions = [1, 2, 3, 4, 5, 6];
 
 export default function FiltersPanel({ filters, onFilterChange, dorms }: FiltersPanelProps) {
   const [roomTypes, setRoomTypes] = useState<string[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
 
   useEffect(() => {
     const types = new Set<string>();
+    const citySet = new Set<string>();
+    
     dorms.forEach(dorm => {
       if (dorm.room_types) {
         dorm.room_types.split(',').forEach((type: string) => {
           types.add(type.trim());
         });
       }
+      if (dorm.area) {
+        citySet.add(dorm.area);
+      }
     });
+    
     setRoomTypes(Array.from(types).sort());
+    setCities(Array.from(citySet).sort());
   }, [dorms]);
 
   const handleReset = () => {
@@ -101,12 +111,14 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
       universities: [],
       areas: [],
       roomTypes: [],
-      capacity: undefined
+      capacity: undefined,
+      cities: [],
+      shuttle: 'all'
     });
   };
 
-  const toggleFilter = (category: 'universities' | 'areas' | 'roomTypes', value: string) => {
-    const current = filters[category];
+  const toggleFilter = (category: 'universities' | 'areas' | 'roomTypes' | 'cities', value: string) => {
+    const current = filters[category] as string[];
     const updated = current.includes(value)
       ? current.filter(v => v !== value)
       : [...current, value];
@@ -121,6 +133,54 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
           <RotateCcw className="w-4 h-4 mr-2" />
           Reset
         </Button>
+      </div>
+
+      {/* City Filter */}
+      {cities.length > 0 && (
+        <div className="space-y-3">
+          <Label className="text-base font-semibold">City</Label>
+          <ScrollArea className="h-32 rounded-lg border border-white/10 p-2">
+            <div className="space-y-2">
+              {cities.map(city => (
+                <div key={city} className="flex items-center space-x-2 hover:bg-white/5 p-1 rounded transition-colors">
+                  <Checkbox
+                    id={`city-${city}`}
+                    checked={filters.cities?.includes(city) || false}
+                    onCheckedChange={() => toggleFilter('cities', city)}
+                  />
+                  <label
+                    htmlFor={`city-${city}`}
+                    className="text-sm cursor-pointer flex-1"
+                  >
+                    {city}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+      )}
+
+      {/* Shuttle Filter */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold">Shuttle Service</Label>
+        <div className="space-y-2">
+          {['all', 'available', 'none'].map((option) => (
+            <div key={option} className="flex items-center space-x-2 hover:bg-white/5 p-2 rounded transition-colors">
+              <Checkbox
+                id={`shuttle-${option}`}
+                checked={filters.shuttle === option}
+                onCheckedChange={() => onFilterChange({ ...filters, shuttle: option as 'all' | 'available' | 'none' })}
+              />
+              <label
+                htmlFor={`shuttle-${option}`}
+                className="text-sm cursor-pointer flex-1 capitalize"
+              >
+                {option === 'all' ? 'All' : option === 'available' ? 'Shuttle Available' : 'No Shuttle'}
+              </label>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Capacity Filter */}
