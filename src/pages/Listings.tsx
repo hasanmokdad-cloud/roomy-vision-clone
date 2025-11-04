@@ -13,6 +13,7 @@ import { useAuthGuard, useProfileCompletion } from '@/hooks/useAuthGuard';
 import { useListingsQuery } from '@/hooks/useListingsQuery';
 import { seedDorms, SeedDorm, SeedRoom } from '@/data/dorms.seed';
 import { deriveCapacity } from '@/lib/capacity';
+import { sanitizeInput } from '@/utils/inputValidation';
 
 export default function Listings() {
   const navigate = useNavigate();
@@ -68,7 +69,10 @@ export default function Listings() {
   const filteredDorms = useMemo(() => {
     if (!searchQuery.trim()) return dorms;
 
-    const query = searchQuery.toLowerCase();
+    // Sanitize and limit search query
+    const sanitized = sanitizeInput(searchQuery);
+    const query = sanitized.substring(0, 120).toLowerCase();
+    
     return dorms.filter(dorm =>
       dorm.name.toLowerCase().includes(query) ||
       dorm.area.toLowerCase().includes(query) ||
@@ -143,7 +147,11 @@ export default function Listings() {
             type="text"
             placeholder="Search by name, location, or features (e.g., 'single room near AUB')"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              const sanitized = sanitizeInput(e.target.value);
+              const limited = sanitized.substring(0, 120);
+              setSearchQuery(limited);
+            }}
             className="pl-12 h-14 text-lg bg-white border-gray-200 rounded-2xl shadow-sm"
           />
         </motion.div>

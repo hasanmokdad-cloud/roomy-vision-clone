@@ -1,11 +1,45 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Zod validation schemas
+const messageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string().min(1).max(500)
+});
+
+const chatRequestSchema = z.object({
+  message: z.string().min(1).max(500),
+  userId: z.string().uuid().optional(),
+  sessionId: z.string().uuid().optional()
+});
+
+// Rate limiting (in-memory, resets on cold start)
+const rateLimit = new Map<string, { count: number; lastReset: number }>();
+const RATE_LIMIT = 10; // requests per minute
+const RATE_WINDOW_MS = 60_000; // 1 minute
+
+function checkRateLimit(identifier: string): boolean {
+  const now = Date.now();
+  const data = rateLimit.get(identifier) || { count: 0, lastReset: now };
+  
+  // Reset counter if window has passed
+  if (now - data.lastReset > RATE_WINDOW_MS) {
+    data.count = 0;
+    data.lastReset = now;
+  }
+  
+  data.count++;
+  rateLimit.set(identifier, data);
+  
+  return data.count <= RATE_LIMIT;
+}
 
 // Helper function to detect keywords and extract filters
 function extractFilters(message: string, context: any = {}, studentPrefs: any = {}) {
@@ -100,12 +134,39 @@ serve(async (req) => {
   }
 
   try {
+    // Parse and validate request body
     const rawBody = await req.json();
-    const message = sanitizeInput(rawBody.message);
-    const userId = rawBody.userId;
-    const sessionId = rawBody.sessionId;
+    const validationResult = chatRequestSchema.safeParse(rawBody);
+    
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid input", 
+          details: validationResult.error.issues 
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
 
-    // Validate message
+    const { message: rawMessage, userId, sessionId } = validationResult.data;
+    const message = sanitizeInput(rawMessage);
+
+    // Rate limiting check
+    const rateLimitKey = userId || req.headers.get('x-real-ip') || req.headers.get('cf-connecting-ip') || 'anonymous';
+    if (!checkRateLimit(rateLimitKey)) {
+      return new Response(
+        JSON.stringify({ error: "Too many requests. Please slow down and try again in a minute." }),
+        { 
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    // Validate message after sanitization
     if (!message || message.length === 0) {
       return new Response(
         JSON.stringify({ error: "Message cannot be empty" }),
