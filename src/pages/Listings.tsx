@@ -5,7 +5,6 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import FiltersPanel from '@/components/shared/FiltersPanel';
 import { FilterChips } from '@/components/shared/FilterChips';
-import { DormGrid } from '@/components/dorms/DormGrid';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Sparkles } from 'lucide-react';
@@ -13,7 +12,9 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthGuard, useProfileCompletion } from '@/hooks/useAuthGuard';
 import { useListingsQuery } from '@/hooks/useListingsQuery';
 import { sanitizeInput } from '@/utils/inputValidation';
-import DormCard from '@/components/shared/DormCard';
+import { CinematicDormCard } from '@/components/listings/CinematicDormCard';
+import { ScrollImmersion } from '@/components/listings/ScrollImmersion';
+import { ScrollToTopButton } from '@/components/listings/ScrollToTopButton';
 
 export default function Listings() {
   const navigate = useNavigate();
@@ -104,7 +105,8 @@ export default function Listings() {
     <div className="min-h-screen flex flex-col relative">
       <Navbar />
       
-      <main className="flex-1 container mx-auto px-4 py-8 mt-20">
+      <ScrollImmersion>
+        <main className="flex-1 container mx-auto px-4 py-8 mt-20">
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -189,9 +191,9 @@ export default function Listings() {
               </motion.div>
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {paginatedDorms.map((dorm) => (
-                    <DormCard key={dorm.id} dorm={dorm} />
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                  {paginatedDorms.map((dorm, index) => (
+                    <CinematicDormCard key={dorm.id} dorm={dorm} index={index} />
                   ))}
                 </div>
                 {paginatedDorms.length > 0 && (
@@ -212,7 +214,9 @@ export default function Listings() {
         </div>
       </main>
 
+      <ScrollToTopButton />
       <Footer />
+      </ScrollImmersion>
     </div>
   );
 }
