@@ -1,4 +1,3 @@
-import { UnderwaterScene } from '@/components/UnderwaterScene';
 import Navbar from '@/components/shared/Navbar';
 import { Hero } from '@/components/Hero';
 import { HowItWorks } from '@/components/HowItWorks';
@@ -10,7 +9,6 @@ import { RoomyAI } from '@/components/RoomyAI';
 const Main = () => {
   return (
     <div className="relative min-h-screen">
-      <UnderwaterScene />
       <Navbar />
       <Hero />
       <HowItWorks />

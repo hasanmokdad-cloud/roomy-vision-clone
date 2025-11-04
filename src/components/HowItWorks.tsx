@@ -57,15 +57,15 @@ export const HowItWorks = () => {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: index * 0.2 }}
               whileHover={{ y: -10, scale: 1.02 }}
-              className="glass-hover rounded-3xl p-8 relative overflow-hidden group"
+              className="bg-white rounded-3xl p-8 relative overflow-hidden group shadow-[0_2px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.12)] transition-all duration-300"
             >
               {/* Gradient glow on hover */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               
               <div className="relative z-10 space-y-6">
-                <div className="text-6xl font-bold text-white/10">{step.number}</div>
+                <div className="text-6xl font-bold text-gray-100">{step.number}</div>
                 
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center glow-purple">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
                   <step.icon className="w-8 h-8 text-white" />
                 </div>
 

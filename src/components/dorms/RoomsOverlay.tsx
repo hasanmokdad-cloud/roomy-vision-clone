@@ -61,28 +61,29 @@ export const RoomsOverlay: React.FC<RoomsOverlayProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+            transition={{ duration: 0.4 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-md z-40"
+            style={{ backdropFilter: 'blur(12px) brightness(0.8)' }}
             onClick={onClose}
           />
 
-          {/* Overlay Container */}
+          {/* Overlay Container - Centered */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.98, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: 8 }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="fixed inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-5xl z-50 overflow-auto"
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-5xl max-h-[85vh] z-50 overflow-auto"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="overlay-title"
           >
-            <div className="glass-hover rounded-3xl p-8 border-2 border-primary/30 neon-glow relative">
+            <div className="bg-white rounded-3xl p-8 shadow-[0_20px_80px_rgba(0,0,0,0.25)] relative">
               {/* Close Button */}
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 w-10 h-10 rounded-full glass-hover flex items-center justify-center hover:bg-primary/20 transition-colors"
+                className="absolute top-6 right-6 w-10 h-10 rounded-full bg-gray-100 hover:bg-primary hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-lg"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />

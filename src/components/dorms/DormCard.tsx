@@ -30,9 +30,9 @@ export const DormCard: React.FC<DormCardProps> = ({ dorm, capacityFilter }) => {
   return (
     <>
       <motion.div
-        whileHover={{ y: -6, scale: 1.01 }}
-        transition={{ duration: 0.3 }}
-        className={`relative glass-hover rounded-3xl overflow-hidden cursor-pointer border-2 border-primary/20 group ${
+        whileHover={{ y: -6, scale: 1.02 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        className={`relative bg-white rounded-2xl overflow-hidden cursor-pointer group shadow-[0_2px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.12),0_0_0_2px_hsl(var(--primary)/0.15)] transition-all duration-300 ${
           isExpanded ? 'blur-sm scale-95' : ''
         }`}
         onClick={handleCardClick}
@@ -45,7 +45,7 @@ export const DormCard: React.FC<DormCardProps> = ({ dorm, capacityFilter }) => {
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           />
           {dorm.verified && (
-            <Badge className="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm neon-glow">
+            <Badge className="absolute top-4 right-4 bg-primary backdrop-blur-sm rounded-full px-3 py-1 shadow-lg">
               <BadgeCheck className="w-3 h-3 mr-1" />
               Verified
             </Badge>

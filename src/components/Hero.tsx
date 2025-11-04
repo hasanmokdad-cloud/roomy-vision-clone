@@ -18,7 +18,8 @@ export const Hero = () => {
     offset: ["start start", "end start"],
   });
 
-  const y = useTransform(scrollYProgress, [0, 1], [0, 200]);
+  const y = useTransform(scrollYProgress, [0, 1], [0, 150]);
+  const imageY = useTransform(scrollYProgress, [0, 1], [0, -100]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   useEffect(() => {
@@ -150,6 +151,7 @@ export const Hero = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 1, delay: 0.2, ease: [0.6, 0.05, 0.01, 0.9] }}
           className="relative"
+          style={{ y: imageY }}
         >
           <motion.div
             animate={{
@@ -160,9 +162,9 @@ export const Hero = () => {
               repeat: Infinity,
               ease: "easeInOut",
             }}
-            className="glass-hover rounded-3xl p-2 neon-glow"
+            className="rounded-3xl p-2 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
           >
-            <div className="w-full aspect-[4/3] rounded-2xl bg-gradient-to-br from-primary/20 via-secondary/20 to-accent/20 overflow-hidden border-2 border-primary/20">
+            <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden">
               <img
                 src={heroImage}
                 alt="Modern student living in Jbeil"
@@ -176,7 +178,7 @@ export const Hero = () => {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 1.2, duration: 0.8 }}
-            className="absolute -bottom-6 -left-6 glass-hover p-6 rounded-2xl border-2 border-primary/30 neon-glow"
+            className="absolute -bottom-6 -left-6 bg-white p-6 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.15)]"
           >
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary to-accent flex items-center justify-center">

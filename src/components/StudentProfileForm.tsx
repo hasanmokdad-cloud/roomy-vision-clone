@@ -138,14 +138,15 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         {showConfetti && <Confetti />}
       </AnimatePresence>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-2xl mx-auto space-y-6"
-      >
+      <div className="bg-white rounded-3xl p-8 shadow-[0_8px_32px_rgba(0,0,0,0.12)] max-w-2xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
         <ProfileProgress percentage={progress} />
 
-        <div className="glass-hover neon-border rounded-3xl p-8">
+        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
           <div className="space-y-2 mb-6">
             <h2 className="text-3xl font-black gradient-text">
               {hasProfile ? 'Update Your Profile' : 'Complete Your Profile'}
@@ -165,7 +166,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
             <Input
               {...register('full_name')}
               placeholder="Enter your full name"
-              className="bg-black/20 border-white/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+              className="bg-white border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all hover:border-gray-300"
             />
             {errors.full_name && (
               <p className="text-xs text-red-400 mt-1">{errors.full_name.message}</p>
@@ -179,7 +180,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                 type="number"
                 {...register('age', { valueAsNumber: true })}
                 placeholder="18"
-                className="bg-black/20 border-white/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                className="bg-white border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all hover:border-gray-300"
               />
               {errors.age && (
                 <p className="text-xs text-red-400 mt-1">{errors.age.message}</p>
@@ -189,7 +190,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
             <div>
               <Label>Gender</Label>
               <Select onValueChange={(value) => setValue('gender', value as any)}>
-                <SelectTrigger className="bg-black/20 border-white/10">
+                <SelectTrigger className="bg-white border-gray-200 hover:border-gray-300">
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
                 <SelectContent>
@@ -207,7 +208,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
               University
             </Label>
             <Select onValueChange={(value) => setValue('university', value)}>
-              <SelectTrigger className="bg-black/20 border-white/10">
+              <SelectTrigger className="bg-white border-gray-200 hover:border-gray-300">
                 <SelectValue placeholder="Select your university" />
               </SelectTrigger>
               <SelectContent>
@@ -230,7 +231,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
               <Input
                 {...register('residential_area')}
                 placeholder="e.g., Beirut"
-                className="bg-black/20 border-white/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                className="bg-white border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all hover:border-gray-300"
               />
             </div>
 
@@ -242,7 +243,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
               <Input
                 {...register('preferred_university')}
                 placeholder="e.g., Near LAU"
-                className="bg-black/20 border-white/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                className="bg-white border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all hover:border-gray-300"
               />
             </div>
           </div>
@@ -257,7 +258,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                 type="number"
                 {...register('budget', { valueAsNumber: true })}
                 placeholder="500"
-                className="bg-black/20 border-white/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                className="bg-white border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all hover:border-gray-300"
               />
             </div>
 
@@ -267,7 +268,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                 Room Type
               </Label>
               <Select onValueChange={(value) => setValue('room_type', value)}>
-                <SelectTrigger className="bg-black/20 border-white/10">
+                <SelectTrigger className="bg-white border-gray-200 hover:border-gray-300">
                   <SelectValue placeholder="Select preference" />
                 </SelectTrigger>
                 <SelectContent>
@@ -283,7 +284,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
           <div>
             <Label>Distance Preference</Label>
             <Select onValueChange={(value) => setValue('distance_preference', value)}>
-              <SelectTrigger className="bg-black/20 border-white/10">
+              <SelectTrigger className="bg-white border-gray-200 hover:border-gray-300">
                 <SelectValue placeholder="Select distance preference" />
               </SelectTrigger>
               <SelectContent>
@@ -298,7 +299,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
             <input
               type="checkbox"
               {...register('roommate_needed')}
-              className="w-4 h-4 rounded border-white/10 bg-black/20"
+              className="w-4 h-4 rounded border-gray-300"
             />
             <Label className="cursor-pointer">Looking for a roommate</Label>
           </div>
@@ -355,7 +356,8 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         </motion.div>
       </form>
         </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </>
   );
 };

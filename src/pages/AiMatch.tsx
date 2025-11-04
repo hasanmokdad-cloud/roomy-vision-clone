@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { UnderwaterScene } from '@/components/UnderwaterScene';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -205,8 +204,7 @@ export default function AiMatch() {
   const progress = (step / 3) * 100;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background relative">
-      <UnderwaterScene dimmed />
+    <div className="min-h-screen flex flex-col relative">
       <Navbar />
       {step === 3 && <AIAvatar userName={profile.full_name.split(' ')[0] || 'there'} />}
       
@@ -237,7 +235,7 @@ export default function AiMatch() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="glass-hover rounded-3xl p-10 neon-border"
+              className="bg-white rounded-3xl p-10 shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
             >
               <h2 className="text-3xl font-black mb-8 gradient-text">Step 1 — Create your profile</h2>
               <form onSubmit={handleStep1Submit} className="space-y-4">
@@ -248,7 +246,7 @@ export default function AiMatch() {
                       required
                       value={profile.full_name}
                       onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-                      className="bg-black/20 border-white/10"
+                      className="bg-white border-gray-200"
                     />
                   </div>
                   <div>
@@ -258,7 +256,7 @@ export default function AiMatch() {
                       required
                       value={profile.email}
                       onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                      className="bg-black/20 border-white/10"
+                      className="bg-white border-gray-200"
                     />
                   </div>
                   <div>
@@ -267,13 +265,13 @@ export default function AiMatch() {
                       type="number"
                       value={profile.age}
                       onChange={(e) => setProfile({ ...profile, age: e.target.value })}
-                      className="bg-black/20 border-white/10"
+                      className="bg-white border-gray-200"
                     />
                   </div>
                   <div>
                     <Label>Gender</Label>
                     <Select value={profile.gender} onValueChange={(v) => setProfile({ ...profile, gender: v })}>
-                      <SelectTrigger className="bg-black/20 border-white/10">
+                      <SelectTrigger className="bg-white border-gray-200">
                         <SelectValue placeholder="Select gender" />
                       </SelectTrigger>
                       <SelectContent>
@@ -286,7 +284,7 @@ export default function AiMatch() {
                   <div>
                     <Label>University</Label>
                     <Select value={profile.university} onValueChange={(v) => setProfile({ ...profile, university: v })}>
-                      <SelectTrigger className="bg-black/20 border-white/10">
+                      <SelectTrigger className="bg-white border-gray-200">
                         <SelectValue placeholder="Select university" />
                       </SelectTrigger>
                       <SelectContent>
@@ -301,7 +299,7 @@ export default function AiMatch() {
                     <Input
                       value={profile.residential_area}
                       onChange={(e) => setProfile({ ...profile, residential_area: e.target.value })}
-                      className="bg-black/20 border-white/10"
+                      className="bg-white border-gray-200"
                     />
                   </div>
                 </div>
@@ -317,7 +315,7 @@ export default function AiMatch() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="glass-hover rounded-3xl p-10 neon-border"
+              className="bg-white rounded-3xl p-10 shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
             >
               <h2 className="text-3xl font-black mb-8 gradient-text">Step 2 — Set your preferences</h2>
               <form onSubmit={handleStep2Submit} className="space-y-6">
@@ -338,7 +336,7 @@ export default function AiMatch() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 glass rounded-xl">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <div>
                     <Label>Roommate Needed?</Label>
                     <p className="text-sm text-foreground/60">Looking for a compatible roommate</p>
@@ -367,7 +365,7 @@ export default function AiMatch() {
                     value={preferences.preferred_university} 
                     onValueChange={(v) => setPreferences({ ...preferences, preferred_university: v })}
                   >
-                    <SelectTrigger className="bg-black/20 border-white/10">
+                    <SelectTrigger className="bg-white border-gray-200">
                       <SelectValue placeholder="Select university" />
                     </SelectTrigger>
                     <SelectContent>
@@ -384,7 +382,7 @@ export default function AiMatch() {
                     value={preferences.distance_preference} 
                     onValueChange={(v) => setPreferences({ ...preferences, distance_preference: v })}
                   >
-                    <SelectTrigger className="bg-black/20 border-white/10">
+                    <SelectTrigger className="bg-white border-gray-200">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -430,7 +428,7 @@ export default function AiMatch() {
               {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="h-[450px] rounded-3xl glass animate-pulse" />
+                    <div key={i} className="h-[450px] rounded-3xl bg-white animate-pulse shadow-sm" />
                   ))}
                 </div>
               ) : (
@@ -457,7 +455,7 @@ export default function AiMatch() {
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="text-center glass-hover rounded-3xl p-12"
+                      className="text-center bg-white rounded-3xl p-12 shadow-sm"
                     >
                       <p className="text-foreground/60">
                         No matches found. Try adjusting your preferences.
@@ -473,7 +471,7 @@ export default function AiMatch() {
                 transition={{ delay: 0.8 }}
                 className="flex flex-wrap gap-3 justify-center"
               >
-                <Button variant="outline" onClick={() => setStep(2)} className="hover:neon-glow">
+                <Button variant="outline" onClick={() => setStep(2)}>
                   <ArrowLeft className="w-4 h-4 mr-2" /> Adjust Preferences
                 </Button>
                 <Button variant="outline" onClick={restart} className="hover:neon-glow">

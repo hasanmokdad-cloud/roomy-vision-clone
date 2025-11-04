@@ -45,8 +45,9 @@ export default function Navbar() {
   return (
     <>
       <nav 
+        style={{ opacity: scrolled ? 0.98 : 1 }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled ? 'bg-background/80 backdrop-blur-xl border-b border-white/10' : 'bg-transparent'
+          scrolled ? 'bg-white/90 backdrop-blur-xl shadow-sm' : 'bg-white/70 backdrop-blur-md'
         }`}
       >
         <div className="container mx-auto px-4">

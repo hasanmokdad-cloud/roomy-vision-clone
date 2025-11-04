@@ -6,7 +6,6 @@ import Footer from '@/components/shared/Footer';
 import FiltersPanel from '@/components/shared/FiltersPanel';
 import { FilterChips } from '@/components/shared/FilterChips';
 import { DormGrid } from '@/components/dorms/DormGrid';
-import { UnderwaterScene } from '@/components/UnderwaterScene';
 import { Input } from '@/components/ui/input';
 import { Search, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -111,8 +110,7 @@ export default function Listings() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background relative">
-      <UnderwaterScene />
+    <div className="min-h-screen flex flex-col relative">
       <Navbar />
       
       <main className="flex-1 container mx-auto px-4 py-8 mt-20">
@@ -146,7 +144,7 @@ export default function Listings() {
             placeholder="Search by name, location, or features (e.g., 'single room near AUB')"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 h-14 text-lg bg-card/50 border-white/10 glass rounded-2xl"
+            className="pl-12 h-14 text-lg bg-white border-gray-200 rounded-2xl shadow-sm"
           />
         </motion.div>
 
@@ -169,7 +167,7 @@ export default function Listings() {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {[1, 2, 3, 4, 5, 6].map(i => (
-                  <div key={i} className="h-96 rounded-2xl glass animate-pulse" />
+                  <div key={i} className="h-96 rounded-2xl bg-white animate-pulse shadow-sm" />
                 ))}
               </div>
             ) : (

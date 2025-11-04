@@ -26,7 +26,6 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen relative">
-      <UnderwaterScene />
       <Navbar />
       
       <div className="container mx-auto px-6 py-32">
