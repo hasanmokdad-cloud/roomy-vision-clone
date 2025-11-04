@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, CheckCircle, Wifi, Home, DollarSign } from 'lucide-react';
+import { MapPin, CheckCircle, Wifi, Bus, Users, Phone, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useState } from 'react';
 
 interface DormCardProps {
   dorm: {
@@ -15,14 +16,18 @@ interface DormCardProps {
     room_types?: string;
     verification_status?: string;
     image_url?: string;
+    shuttle?: boolean;
+    capacity?: number;
+    address?: string;
+    cover_image?: string;
   };
 }
 
 export default function DormCard({ dorm }: DormCardProps) {
   const navigate = useNavigate();
+  const [showAllAmenities, setShowAllAmenities] = useState(false);
 
   const openWhatsApp = () => {
-    // Use default Roomy contact number - actual owner contact is protected
     const phone = '96181858026';
     const message = `Hi! I'm interested in "${dorm.dorm_name}" on Roomy.`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -32,7 +37,8 @@ export default function DormCard({ dorm }: DormCardProps) {
     navigate(`/dorm/${dorm.id}`);
   };
 
-  const amenities = dorm.services_amenities?.split(',').slice(0, 4).map(a => a.trim()) || [];
+  const amenitiesList = dorm.services_amenities?.split(',').map(a => a.trim()).filter(Boolean) || [];
+  const displayedAmenities = showAllAmenities ? amenitiesList : amenitiesList.slice(0, 3);
   const primaryRoomType = dorm.room_types?.split(',')[0]?.trim() || 'Room Available';
   const isVerified = dorm.verification_status === 'Verified';
 
@@ -68,49 +74,76 @@ export default function DormCard({ dorm }: DormCardProps) {
 
       <div className="p-6 space-y-4 flex-1 flex flex-col">
         <div className="space-y-2 flex-1">
-          <h3 className="text-xl font-bold">{dorm.dorm_name}</h3>
+          <h3 className="text-xl font-bold gradient-text">{dorm.dorm_name}</h3>
           
-          {(dorm.area || dorm.university) && (
-            <div className="flex items-center gap-2 text-sm text-foreground/60">
-              <MapPin className="w-4 h-4" />
-              <span>
-                {dorm.area && dorm.university ? `${dorm.area} • ${dorm.university}` : dorm.area || dorm.university}
-              </span>
+          {dorm.area && (
+            <p className="text-sm text-muted-foreground">{dorm.area}</p>
+          )}
+
+          <div className="flex items-baseline gap-2 pt-2">
+            <span className="text-2xl font-bold text-primary">
+              {dorm.monthly_price ? `$${dorm.monthly_price}` : 'Contact'}
+            </span>
+            {dorm.monthly_price && (
+              <span className="text-sm text-foreground/60">/ month</span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-2">
+            {dorm.shuttle && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Bus className="w-3 h-3" />
+                Shuttle
+              </Badge>
+            )}
+            {dorm.capacity && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <Users className="w-3 h-3" />
+                {dorm.capacity} capacity
+              </Badge>
+            )}
+          </div>
+
+          {dorm.address && (
+            <div className="flex items-start gap-2 text-sm text-foreground/70">
+              <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span className="line-clamp-2">{dorm.address}</span>
             </div>
           )}
 
-          {dorm.services_amenities && (
-            <p className="text-sm text-foreground/70 line-clamp-2">
-              {dorm.services_amenities.split('.')[0]}.
-            </p>
+          {dorm.university && (
+            <div className="flex items-center gap-2 text-sm text-foreground/60">
+              <Home className="w-4 h-4" />
+              <span>Near {dorm.university}</span>
+            </div>
           )}
-        </div>
 
-        {amenities.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {amenities.map((amenity) => (
-              <div
-                key={amenity}
-                className="glass px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs"
-              >
-                <Wifi className="w-3 h-3 text-secondary" />
-                <span>{amenity}</span>
+          {amenitiesList.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {displayedAmenities.map((amenity, idx) => (
+                  <div
+                    key={idx}
+                    className="glass px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs"
+                  >
+                    <Wifi className="w-3 h-3 text-secondary" />
+                    <span>{amenity}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-baseline gap-2 pt-2 border-t border-white/10">
-          <DollarSign className="w-5 h-5 text-primary" />
-          <span className="text-2xl font-bold gradient-text">
-            {dorm.monthly_price || 'Contact'}
-          </span>
-          {dorm.monthly_price && (
-            <span className="text-sm text-foreground/60">/ month</span>
+              {amenitiesList.length > 3 && (
+                <button
+                  onClick={() => setShowAllAmenities(!showAllAmenities)}
+                  className="text-xs text-primary hover:underline"
+                >
+                  {showAllAmenities ? 'Show Less' : `View More (${amenitiesList.length - 3} more)`}
+                </button>
+              )}
+            </div>
           )}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 pt-4 border-t border-white/10">
           <Button 
             variant="outline" 
             className="flex-1"

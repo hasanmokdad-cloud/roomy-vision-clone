@@ -12,9 +12,8 @@ import { Search, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuthGuard, useProfileCompletion } from '@/hooks/useAuthGuard';
 import { useListingsQuery } from '@/hooks/useListingsQuery';
-import { seedDorms, SeedDorm, SeedRoom } from '@/data/dorms.seed';
-import { deriveCapacity } from '@/lib/capacity';
 import { sanitizeInput } from '@/utils/inputValidation';
+import DormCard from '@/components/shared/DormCard';
 
 export default function Listings() {
   const navigate = useNavigate();
@@ -35,64 +34,26 @@ export default function Listings() {
 
   const { data, loading, error } = useListingsQuery(filters);
 
-  // Cache data in sessionStorage
-  useEffect(() => {
-    if (data.mode === 'dorm' && data.dorms.length > 0) {
-      sessionStorage.setItem('roomy_dorms_cache', JSON.stringify(data.dorms));
-      sessionStorage.setItem('roomy_dorms_cache_time', Date.now().toString());
-    }
-  }, [data]);
-
-  // Convert real data to SeedDorm format, or use seed data if empty
+  // Get real dorms from Supabase
   const dorms = useMemo(() => {
-    if (data.mode === 'dorm' && data.dorms.length > 0) {
-      // Convert real dorms to seed format
-      return data.dorms.map((dorm): SeedDorm => {
-        const roomTypesJson = dorm.room_types_json as any[] | null;
-        const rooms: SeedRoom[] = roomTypesJson?.map((rt, idx) => ({
-          id: `${dorm.id}-room-${idx}`,
-          roomType: rt.type || 'Room',
-          price: rt.price || dorm.monthly_price || 0,
-          capacity: deriveCapacity(rt.type || 'Room'),
-          amenities: Array.isArray(rt.amenities) ? rt.amenities : [],
-          utilities: 'Contact for details',
-          nearUniversity: dorm.university,
-        })) || [];
-
-        return {
-          id: dorm.id,
-          slug: `dorm-${dorm.id}`,
-          name: dorm.dorm_name || 'Dorm',
-          area: dorm.area || 'Unknown',
-          exteriorPhoto: dorm.cover_image || dorm.image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800',
-          verified: dorm.verification_status === 'Verified',
-          distanceToUniversities: {
-            [dorm.university || 'University']: 'Nearby',
-          },
-          rooms,
-          minPrice: Math.min(...rooms.map(r => r.price), dorm.monthly_price || Infinity),
-        };
-      });
+    if (data.mode === 'dorm') {
+      return data.dorms;
     }
-    // Fallback to seed data if no real data
-    return seedDorms;
+    return [];
   }, [data]);
 
   // Filter dorms by search query
   const filteredDorms = useMemo(() => {
     if (!searchQuery.trim()) return dorms;
 
-    // Sanitize and limit search query
     const sanitized = sanitizeInput(searchQuery);
     const query = sanitized.substring(0, 120).toLowerCase();
     
     return dorms.filter(dorm =>
-      dorm.name.toLowerCase().includes(query) ||
-      dorm.area.toLowerCase().includes(query) ||
-      dorm.rooms.some(r => 
-        r.roomType.toLowerCase().includes(query) ||
-        r.amenities.some(a => a.toLowerCase().includes(query))
-      )
+      dorm.dorm_name?.toLowerCase().includes(query) ||
+      dorm.area?.toLowerCase().includes(query) ||
+      dorm.address?.toLowerCase().includes(query) ||
+      dorm.university?.toLowerCase().includes(query)
     );
   }, [dorms, searchQuery]);
 
@@ -221,22 +182,22 @@ export default function Listings() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center py-16 glass-hover rounded-3xl p-12"
               >
-                <h3 className="text-2xl font-black gradient-text mb-4">No dorms match your search</h3>
+                <h3 className="text-2xl font-black gradient-text mb-4">No dorms available yet</h3>
                 <p className="text-foreground/70">
-                  Try adjusting filters or check back later.
+                  Check back soon!
                 </p>
               </motion.div>
             ) : (
               <>
-                <DormGrid 
-                  dorms={paginatedDorms} 
-                  capacityFilter={filters.capacity}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {paginatedDorms.map((dorm) => (
+                    <DormCard key={dorm.id} dorm={dorm} />
+                  ))}
+                </div>
                 {paginatedDorms.length > 0 && (
                   <div className="text-center mt-8 space-y-4">
                     <p className="text-sm text-foreground/60">
                       Showing {paginatedDorms.length} of {filteredDorms.length} verified dorms
-                      {filters.capacity && ` with rooms for ${filters.capacity}+ people`}
                     </p>
                     {hasMore && (
                       <Button onClick={handleLoadMore} variant="outline" size="lg" className="px-8">
