@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, CheckCircle, Wifi, Zap, Home, Navigation } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { RoomExpansion3D } from './RoomExpansion3D';
+import { FullViewportRoomOverlay } from './FullViewportRoomOverlay';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -33,11 +33,13 @@ interface CinematicDormCardProps {
     university?: string;
   };
   index: number;
+  isExpanded: boolean;
+  onExpand: () => void;
+  onClose: () => void;
 }
 
-export function CinematicDormCard({ dorm, index }: CinematicDormCardProps) {
+export function CinematicDormCard({ dorm, index, isExpanded, onExpand, onClose }: CinematicDormCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const isMobile = useIsMobile();
@@ -54,8 +56,17 @@ export function CinematicDormCard({ dorm, index }: CinematicDormCardProps) {
   const dormImage = dorm.cover_image || dorm.image_url || '/placeholder.svg';
   const isVerified = dorm.verification_status === 'Verified';
 
-  const handleLearnMore = () => {
+  const handleLearnMore = (e: React.MouseEvent) => {
+    e.stopPropagation();
     navigate(`/dorm/${dorm.id}`);
+  };
+
+  const handleCardClick = () => {
+    if (hasMultipleRooms) {
+      onExpand();
+    } else {
+      navigate(`/dorm/${dorm.id}`);
+    }
   };
 
   const amenityIcons: Record<string, any> = {
@@ -85,33 +96,24 @@ export function CinematicDormCard({ dorm, index }: CinematicDormCardProps) {
   };
 
   return (
-    <motion.div
-      variants={cardVariants}
-      initial="hidden"
-      animate="visible"
-      className="relative perspective-deep group"
-      onMouseEnter={() => {
-        if (!isMobile && !prefersReducedMotion) {
-          setIsFlipped(true);
-          if (hasMultipleRooms) setIsExpanded(true);
-        }
-      }}
-      onMouseLeave={() => {
-        if (!isMobile && !prefersReducedMotion) {
-          setIsFlipped(false);
-          setIsExpanded(false);
-        }
-      }}
-      onClick={() => {
-        if (isMobile) {
-          if (hasMultipleRooms) {
-            setIsExpanded(!isExpanded);
-          } else {
-            handleLearnMore();
+    <>
+      <motion.div
+        variants={cardVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative perspective-deep group cursor-pointer"
+        onMouseEnter={() => {
+          if (!isMobile && !prefersReducedMotion) {
+            setIsFlipped(true);
           }
-        }
-      }}
-    >
+        }}
+        onMouseLeave={() => {
+          if (!isMobile && !prefersReducedMotion) {
+            setIsFlipped(false);
+          }
+        }}
+        onClick={handleCardClick}
+      >
       <motion.div
         animate={{
           rotateX: !prefersReducedMotion && !isMobile && isFlipped ? 180 : 0
@@ -173,7 +175,7 @@ export function CinematicDormCard({ dorm, index }: CinematicDormCardProps) {
               </div>
               {hasMultipleRooms && (
                 <Badge variant="outline" className="text-xs">
-                  Hover for options
+                  Click to explore
                 </Badge>
               )}
             </div>
@@ -242,20 +244,22 @@ export function CinematicDormCard({ dorm, index }: CinematicDormCardProps) {
             </div>
 
             <Button onClick={handleLearnMore} className="w-full">
-              Learn More
+              {hasMultipleRooms ? 'View All Rooms' : 'Learn More'}
             </Button>
           </div>
         </div>
       </motion.div>
 
-      {/* Room Expansion 3D */}
+      </motion.div>
+
+      {/* Full Viewport Overlay */}
       {hasMultipleRooms && (
-        <RoomExpansion3D
-          rooms={roomTypes}
-          dormId={dorm.id}
-          isExpanded={isExpanded}
+        <FullViewportRoomOverlay
+          isOpen={isExpanded}
+          onClose={onClose}
+          dorm={dorm}
         />
       )}
-    </motion.div>
+    </>
   );
 }

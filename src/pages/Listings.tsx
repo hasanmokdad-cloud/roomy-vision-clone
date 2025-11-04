@@ -31,6 +31,7 @@ export default function Listings() {
     shuttle: 'all' as 'all' | 'available' | 'none',
   });
   const [currentPage, setCurrentPage] = useState(1);
+  const [expandedDormId, setExpandedDormId] = useState<string | null>(null);
   const itemsPerPage = 6;
 
   const { data, loading, error } = useListingsQuery(filters);
@@ -88,6 +89,14 @@ export default function Listings() {
 
   const handleResetPrice = () => {
     setFilters({ ...filters, priceRange: [0, 2000] });
+  };
+
+  const handleExpandDorm = (dormId: string) => {
+    setExpandedDormId(dormId);
+  };
+
+  const handleCloseExpansion = () => {
+    setExpandedDormId(null);
   };
 
   if (authLoading || checkingProfile) {
@@ -193,7 +202,14 @@ export default function Listings() {
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                   {paginatedDorms.map((dorm, index) => (
-                    <CinematicDormCard key={dorm.id} dorm={dorm} index={index} />
+                    <CinematicDormCard 
+                      key={dorm.id} 
+                      dorm={dorm} 
+                      index={index}
+                      isExpanded={expandedDormId === dorm.id}
+                      onExpand={() => handleExpandDorm(dorm.id)}
+                      onClose={handleCloseExpansion}
+                    />
                   ))}
                 </div>
                 {paginatedDorms.length > 0 && (

@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, Sparkles } from 'lucide-react';
+import { Users, Sparkles, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -17,9 +17,19 @@ interface RoomExpansion3DProps {
   rooms: RoomType[];
   dormId: string;
   isExpanded: boolean;
+  isFullViewport?: boolean;
+  dormAddress?: string;
+  dormShuttle?: boolean;
 }
 
-export function RoomExpansion3D({ rooms, dormId, isExpanded }: RoomExpansion3DProps) {
+export function RoomExpansion3D({ 
+  rooms, 
+  dormId, 
+  isExpanded, 
+  isFullViewport = false,
+  dormAddress,
+  dormShuttle 
+}: RoomExpansion3DProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [flippedIndex, setFlippedIndex] = useState<number | null>(null);
@@ -27,75 +37,184 @@ export function RoomExpansion3D({ rooms, dormId, isExpanded }: RoomExpansion3DPr
   if (rooms.length <= 1) return null;
 
   const calculateArcPosition = (index: number, total: number) => {
-    const angle = (index - (total - 1) / 2) * (120 / Math.max(total, 2));
-    const radius = 150;
-    const x = Math.sin((angle * Math.PI) / 180) * radius;
-    const z = Math.cos((angle * Math.PI) / 180) * radius - radius;
-    return { x, z, rotateY: -angle };
+    if (isFullViewport) {
+      // Larger arc for full viewport
+      const angle = (index - (total - 1) / 2) * (100 / Math.max(total, 2));
+      const radius = 250;
+      const x = Math.sin((angle * Math.PI) / 180) * radius;
+      const z = Math.cos((angle * Math.PI) / 180) * radius - radius;
+      return { x, z, rotateY: -angle };
+    } else {
+      // Original smaller arc
+      const angle = (index - (total - 1) / 2) * (120 / Math.max(total, 2));
+      const radius = 150;
+      const x = Math.sin((angle * Math.PI) / 180) * radius;
+      const z = Math.cos((angle * Math.PI) / 180) * radius - radius;
+      return { x, z, rotateY: -angle };
+    }
   };
 
   const handleViewDetails = (room: RoomType) => {
     navigate(`/dorm/${dormId}?roomType=${encodeURIComponent(room.type)}`);
   };
 
-  // Mobile accordion view
-  if (isMobile) {
+  // Mobile/tablet grid view (for full viewport)
+  if (isMobile || isFullViewport) {
     return (
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden mt-4 space-y-2"
-          >
-            {rooms.map((room, index) => (
+      <div className={`${isFullViewport ? 'p-4 md:p-8' : 'mt-4'}`}>
+        <div className={`grid ${
+          isFullViewport 
+            ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6' 
+            : 'grid-cols-1 gap-2'
+        }`}
+        >
+          {rooms.map((room, index) => {
+            const isFlipped = flippedIndex === index;
+            
+            return (
               <motion.div
                 key={index}
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: index * 0.1 }}
-                className="glass-hover rounded-xl p-4 border border-border"
+                initial={{ y: 20, opacity: 0, scale: 0.95 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                transition={{ 
+                  delay: index * 0.08,
+                  type: 'spring',
+                  damping: 20,
+                  stiffness: 300
+                }}
+                className="group cursor-pointer"
+                onClick={() => setFlippedIndex(isFlipped ? null : index)}
+                onMouseEnter={() => !isMobile && setFlippedIndex(index)}
+                onMouseLeave={() => !isMobile && setFlippedIndex(null)}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-bold text-foreground">{room.type}</h4>
-                  <Badge variant="secondary" className="neon-glow">
-                    ${room.price}/mo
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                  <Users className="w-4 h-4" />
-                  <span>Capacity: {room.capacity}</span>
-                </div>
-                {room.amenities && room.amenities.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    {room.amenities.slice(0, 3).map((amenity, i) => (
-                      <Badge key={i} variant="outline" className="text-xs">
-                        {amenity}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-                <Button
-                  size="sm"
-                  className="w-full"
-                  onClick={() => handleViewDetails(room)}
+                <motion.div
+                  animate={{ rotateX: isFlipped ? 180 : 0 }}
+                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                  className={`relative ${
+                    isFullViewport ? 'h-80' : 'h-auto'
+                  } flip-card-3d`}
+                  style={{ transformStyle: 'preserve-3d' }}
                 >
-                  View Details
-                </Button>
+                  {/* Front Face */}
+                  <div
+                    className={`absolute inset-0 glass-hover rounded-xl p-6 border border-border shadow-lg backface-hidden ${
+                      isFullViewport ? '' : 'relative'
+                    }`}
+                    style={{ backfaceVisibility: 'hidden' }}
+                  >
+                    <div className="flex flex-col h-full justify-between">
+                      <div>
+                        <Badge variant="secondary" className="mb-3">
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          Available
+                        </Badge>
+                        <h3 className="text-xl md:text-2xl font-black gradient-text mb-3">
+                          {room.type}
+                        </h3>
+                        <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                          <Users className="w-4 h-4" />
+                          <span className="text-sm">Fits {room.capacity} student{room.capacity > 1 ? 's' : ''}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-3xl font-black gradient-text mb-1">
+                          ${room.price}
+                        </div>
+                        <div className="text-sm text-muted-foreground">per month</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Back Face */}
+                  <div
+                    className={`absolute inset-0 glass-hover rounded-xl p-6 border border-border shadow-lg backface-hidden`}
+                    style={{
+                      backfaceVisibility: 'hidden',
+                      transform: 'rotateX(180deg)'
+                    }}
+                  >
+                    <div className="flex flex-col h-full justify-between">
+                      <div className="space-y-3">
+                        <h4 className="font-bold text-lg text-foreground">{room.type}</h4>
+                        <div className="text-2xl font-black gradient-text">
+                          ${room.price}/mo
+                        </div>
+                        
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4 text-primary" />
+                            <span>Capacity: {room.capacity}</span>
+                          </div>
+                          {dormShuttle && (
+                            <div className="flex items-center gap-2">
+                              <Zap className="w-4 h-4 text-primary" />
+                              <span>Shuttle available</span>
+                            </div>
+                          )}
+                          {dormAddress && (
+                            <div className="text-muted-foreground line-clamp-2">
+                              {dormAddress}
+                            </div>
+                          )}
+                        </div>
+
+                        {room.amenities && room.amenities.length > 0 && (
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground mb-2">Amenities:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {room.amenities.slice(0, 5).map((amenity, i) => (
+                                <Badge key={i} variant="outline" className="text-xs">
+                                  {amenity}
+                                </Badge>
+                              ))}
+                              {room.amenities.length > 5 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{room.amenities.length - 5} more
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewDetails(room);
+                          }}
+                          className="flex-1"
+                          size="sm"
+                        >
+                          Learn More
+                        </Button>
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewDetails(room);
+                          }}
+                          variant="outline"
+                          className="flex-1"
+                          size="sm"
+                        >
+                          Contact
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
               </motion.div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            );
+          })}
+        </div>
+      </div>
     );
   }
 
-  // Desktop 3D arc view
+  // Desktop 3D arc view (old small version - kept for non-full-viewport use)
   return (
     <AnimatePresence>
-      {isExpanded && (
+      {isExpanded && !isFullViewport && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
