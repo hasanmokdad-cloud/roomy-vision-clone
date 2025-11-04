@@ -77,6 +77,25 @@ const Auth = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const createOwnerRecordForLAU = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { error } = await supabase.functions.invoke('create-owner-record', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (error) {
+        console.error('Error creating owner record:', error);
+      }
+    } catch (error) {
+      console.error('Error invoking create-owner-record:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -92,6 +111,11 @@ const Auth = () => {
         });
         
         if (error) throw error;
+
+        // Check if LAU domain user and create owner record
+        if (email.endsWith('@lau.edu')) {
+          await createOwnerRecordForLAU();
+        }
         
         toast({
           title: "Welcome back!",
@@ -110,6 +134,14 @@ const Auth = () => {
         });
         
         if (error) throw error;
+
+        // Check if LAU domain user and create owner record
+        if (email.endsWith('@lau.edu')) {
+          // Wait a bit for the user to be created
+          setTimeout(async () => {
+            await createOwnerRecordForLAU();
+          }, 1000);
+        }
         
         toast({
           title: "Account created!",
