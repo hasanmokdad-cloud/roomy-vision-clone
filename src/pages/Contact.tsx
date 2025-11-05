@@ -27,6 +27,36 @@ export default function Contact() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check rate limiting
+    const rateLimitKey = 'contact_form_limit';
+    const rateLimitData = localStorage.getItem(rateLimitKey);
+    
+    if (rateLimitData) {
+      const { timestamp, count } = JSON.parse(rateLimitData);
+      const hoursSinceFirst = (Date.now() - timestamp) / (1000 * 60 * 60);
+      
+      if (hoursSinceFirst < 1 && count >= 3) {
+        const minutesRemaining = Math.ceil((60 - (hoursSinceFirst * 60)));
+        toast({
+          title: 'Submission limit reached',
+          description: `You've reached the limit of 3 submissions per hour. Try again in ${minutesRemaining} minutes.`,
+          variant: 'destructive'
+        });
+        return;
+      }
+      
+      // Reset counter if more than 1 hour has passed
+      if (hoursSinceFirst >= 1) {
+        localStorage.setItem(rateLimitKey, JSON.stringify({ timestamp: Date.now(), count: 1 }));
+      } else {
+        localStorage.setItem(rateLimitKey, JSON.stringify({ timestamp, count: count + 1 }));
+      }
+    } else {
+      localStorage.setItem(rateLimitKey, JSON.stringify({ timestamp: Date.now(), count: 1 }));
+    }
+
+    setIsSubmitting(true);
     
     const newErrors: Record<string, string> = {};
     

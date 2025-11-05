@@ -14,6 +14,8 @@ import { sanitizeInput } from '@/utils/inputValidation';
 import { CinematicDormCard } from '@/components/listings/CinematicDormCard';
 import { ScrollImmersion } from '@/components/listings/ScrollImmersion';
 import { ScrollToTopButton } from '@/components/listings/ScrollToTopButton';
+import { DormCardSkeleton } from '@/components/skeletons/DormCardSkeleton';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 export default function Listings() {
   const navigate = useNavigate();
@@ -161,7 +163,7 @@ export default function Listings() {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {[1, 2, 3, 4, 5, 6].map(i => (
-                  <div key={i} className="h-96 rounded-2xl bg-white animate-pulse shadow-sm" />
+                  <DormCardSkeleton key={i} />
                 ))}
               </div>
             ) : error ? (
@@ -188,18 +190,20 @@ export default function Listings() {
               </motion.div>
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                  {paginatedDorms.map((dorm, index) => (
-                    <CinematicDormCard 
-                      key={dorm.id} 
-                      dorm={dorm} 
-                      index={index}
-                      isExpanded={expandedDormId === dorm.id}
-                      onExpand={() => handleExpandDorm(dorm.id)}
-                      onClose={handleCloseExpansion}
-                    />
-                  ))}
-                </div>
+                <ErrorBoundary>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                    {paginatedDorms.map((dorm, index) => (
+                      <CinematicDormCard 
+                        key={dorm.id} 
+                        dorm={dorm} 
+                        index={index}
+                        isExpanded={expandedDormId === dorm.id}
+                        onExpand={() => handleExpandDorm(dorm.id)}
+                        onClose={handleCloseExpansion}
+                      />
+                    ))}
+                  </div>
+                </ErrorBoundary>
                 {paginatedDorms.length > 0 && (
                   <div className="text-center mt-8 space-y-4">
                     <p className="text-sm text-foreground/60">

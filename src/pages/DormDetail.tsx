@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { RoomType } from '@/components/listings/RoomExpansion3D';
+import { DormDetailSkeleton } from '@/components/skeletons/DormDetailSkeleton';
 
 export default function DormDetail() {
   const { id } = useParams();
@@ -61,11 +62,10 @@ export default function DormDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground/60">Loading dorm details...</p>
-        </div>
+      <div className="min-h-screen flex flex-col bg-background">
+        <Navbar />
+        <DormDetailSkeleton />
+        <Footer />
       </div>
     );
   }

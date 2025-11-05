@@ -8,10 +8,13 @@ import heroImage from '@/assets/hero-image.jpg';
 import { ThreeHero } from './ThreeHero';
 import { DormFinder } from '@/components/RoomyAI';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { sanitizeInput } from '@/utils/inputValidation';
 
 export const Hero = () => {
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isFinderOpen, setIsFinderOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState('');
@@ -36,6 +39,21 @@ export const Hero = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const handleSearch = () => {
+    const trimmed = searchInput.trim();
+    
+    if (trimmed.length < 2) {
+      toast({
+        title: 'Invalid search',
+        description: 'Please enter at least 2 characters',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    navigate(`/listings?search=${encodeURIComponent(trimmed)}`);
+  };
 
   return (
     <motion.section
@@ -113,22 +131,20 @@ export const Hero = () => {
                 <Input
                   placeholder='e.g., "Private room near LAU for $400/month"'
                   value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
+                  onChange={(e) => {
+                    const sanitized = sanitizeInput(e.target.value);
+                    const limited = sanitized.substring(0, 100);
+                    setSearchInput(limited);
+                  }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && searchInput.trim()) {
-                      navigate(`/listings?search=${encodeURIComponent(searchInput)}`);
+                    if (e.key === 'Enter') {
+                      handleSearch();
                     }
                   }}
                   className="bg-black/20 border-white/10 text-foreground placeholder:text-foreground/40 focus:border-primary/50 transition-all"
                 />
                 <Button 
-                  onClick={() => {
-                    if (searchInput.trim()) {
-                      navigate(`/listings?search=${encodeURIComponent(searchInput)}`);
-                    } else {
-                      navigate('/listings');
-                    }
-                  }}
+                  onClick={handleSearch}
                   className="bg-gradient-to-r from-primary to-secondary text-white font-bold px-8 rounded-2xl hover:shadow-[0_0_40px_rgba(94,234,212,0.4)] transition-all duration-300 whitespace-nowrap neon-glow"
                 >
                   Search

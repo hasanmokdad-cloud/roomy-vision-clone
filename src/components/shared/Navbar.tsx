@@ -6,9 +6,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Building2, User, LogOut } from 'lucide-react';
+import { Building2, User, LogOut, LayoutDashboard } from 'lucide-react';
 import AuthModal from './AuthModal';
 
 export default function Navbar() {
@@ -95,6 +96,11 @@ export default function Navbar() {
                       <User className="w-4 h-4 mr-2" />
                       My Profile
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                      <LayoutDashboard className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="w-4 h-4 mr-2" />
                       Sign Out

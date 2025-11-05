@@ -27,11 +27,15 @@ export const useAuthGuard = () => {
 };
 
 export const useProfileCompletion = (userId: string | null) => {
-  const navigate = useNavigate();
   const [checkingProfile, setCheckingProfile] = useState(true);
+  const [isProfileComplete, setIsProfileComplete] = useState(false);
+  const [completionPercentage, setCompletionPercentage] = useState(0);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setCheckingProfile(false);
+      return;
+    }
 
     const checkProfile = async () => {
       const { data: profile } = await supabase
@@ -40,16 +44,24 @@ export const useProfileCompletion = (userId: string | null) => {
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (profile && (!profile.university || !profile.budget || !profile.residential_area || !profile.room_type)) {
-        navigate('/profile');
+      if (!profile) {
+        setIsProfileComplete(false);
+        setCompletionPercentage(0);
+        setCheckingProfile(false);
         return;
       }
 
+      const fields = [profile.university, profile.budget, profile.residential_area, profile.room_type];
+      const filledFields = fields.filter(Boolean).length;
+      const percentage = (filledFields / fields.length) * 100;
+
+      setIsProfileComplete(percentage === 100);
+      setCompletionPercentage(percentage);
       setCheckingProfile(false);
     };
 
     checkProfile();
-  }, [userId, navigate]);
+  }, [userId]);
 
-  return { checkingProfile };
+  return { checkingProfile, isProfileComplete, completionPercentage };
 };

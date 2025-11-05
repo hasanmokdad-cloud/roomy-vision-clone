@@ -18,6 +18,8 @@ import { mockMatches } from '@/data/mockMatches';
 import { useToast } from '@/hooks/use-toast';
 import { Sparkles, ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react';
 import { useAuthGuard, useProfileCompletion } from '@/hooks/useAuthGuard';
+import { MatchCardSkeleton } from '@/components/skeletons/MatchCardSkeleton';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const universities = [
   'LAU (Byblos)',
@@ -428,46 +430,48 @@ export default function AiMatch() {
               {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="h-[450px] rounded-3xl bg-white animate-pulse shadow-sm" />
+                    <MatchCardSkeleton key={i} />
                   ))}
                 </div>
               ) : (
                 <>
-                  <motion.div 
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-                    initial="hidden"
-                    animate="visible"
-                    variants={{
-                      visible: {
-                        transition: {
-                          staggerChildren: 0.15,
-                          delayChildren: 0.15
+                  <ErrorBoundary>
+                    <motion.div 
+                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                      initial="hidden"
+                      animate="visible"
+                      variants={{
+                        visible: {
+                          transition: {
+                            staggerChildren: 0.15,
+                            delayChildren: 0.15
+                          }
                         }
-                      }
-                    }}
-                  >
-                    {matches.map((match, idx) => (
-                      <MatchCard 
-                        key={match.id} 
-                        match={{
-                          dorm: match.dorm_name || match.name,
-                          room: match.room_types || 'Various',
-                          matchPercentage: 90 - (idx * 5),
-                          distance: match.area || match.location,
-                          price: match.monthly_price,
-                          capacity: match.capacity || 1,
-                          reasons: [
-                            'Within your budget',
-                            'Close to your university',
-                            'Verified dorm'
-                          ],
-                          amenities: match.amenities || [],
-                          dormId: match.id
-                        }} 
-                        index={idx} 
-                      />
-                    ))}
-                  </motion.div>
+                      }}
+                    >
+                      {matches.map((match, idx) => (
+                        <MatchCard 
+                          key={match.id} 
+                          match={{
+                            dorm: match.dorm_name || match.name,
+                            room: match.room_types || 'Various',
+                            matchPercentage: 90 - (idx * 5),
+                            distance: match.area || match.location,
+                            price: match.monthly_price,
+                            capacity: match.capacity || 1,
+                            reasons: [
+                              'Within your budget',
+                              'Close to your university',
+                              'Verified dorm'
+                            ],
+                            amenities: match.amenities || [],
+                            dormId: match.id
+                          }} 
+                          index={idx} 
+                        />
+                      ))}
+                    </motion.div>
+                  </ErrorBoundary>
 
                   {matches.length === 0 && (
                     <motion.div
