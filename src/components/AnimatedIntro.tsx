@@ -1,118 +1,94 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FluidBackground } from './FluidBackground';
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
-interface AnimatedIntroProps {
-  destination: string;
+interface EntryAnimationProps {
+  onComplete: () => void;
 }
 
-export const AnimatedIntro = ({ destination }: AnimatedIntroProps) => {
-  const navigate = useNavigate();
-  const [fadeIn, setFadeIn] = useState(true);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-
-  // Detect system color scheme
-  useEffect(() => {
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setTheme(isDark ? 'dark' : 'light');
-  }, []);
+export const EntryAnimation = ({ onComplete }: EntryAnimationProps) => {
+  const [stage, setStage] = useState<"logo" | "text" | "wave" | "complete">("logo");
 
   useEffect(() => {
-    const fadeTimer = setTimeout(() => setFadeIn(false), 800);
-    const redirectTimer = setTimeout(() => {
-      navigate(destination, { replace: true });
-    }, 3300);
+    const logoTimer = setTimeout(() => setStage("text"), 1500);
+    const textTimer = setTimeout(() => setStage("wave"), 3000);
+    const waveTimer = setTimeout(() => setStage("complete"), 4500);
+    const completeTimer = setTimeout(() => onComplete(), 5000);
 
     return () => {
-      clearTimeout(fadeTimer);
-      clearTimeout(redirectTimer);
+      clearTimeout(logoTimer);
+      clearTimeout(textTimer);
+      clearTimeout(waveTimer);
+      clearTimeout(completeTimer);
     };
-  }, [navigate, destination]);
+  }, [onComplete]);
 
   return (
-    <div
-      className={`fixed inset-0 flex items-center justify-center overflow-hidden ${
-        theme === 'dark' ? 'bg-black' : 'bg-white'
-      }`}
-    >
-      <FluidBackground />
-
-      {/* Fade-to-black cinematic overlay */}
-      <AnimatePresence>
-        {fadeIn && (
-          <motion.div
-            className="absolute inset-0 bg-black z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: 'easeInOut' }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Animated content */}
-      <div className="relative z-10 flex flex-col items-center justify-center space-y-6">
-        {/* Logo Text */}
-        <motion.h1
-          className={`text-6xl md:text-7xl font-bold bg-gradient-to-r ${
-            theme === 'dark'
-              ? 'from-[#6366f1] to-[#22d3ee]'
-              : 'from-[#3b82f6] to-[#06b6d4]'
-          } bg-clip-text text-transparent`}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{
-            duration: 0.8,
-            ease: [0.22, 1, 0.36, 1],
-            delay: 0.9
-          }}
-          style={{
-            willChange: 'transform, opacity',
-            filter: 'drop-shadow(0 4px 24px rgba(34, 211, 238, 0.4))'
-          }}
-        >
-          Roomy
-        </motion.h1>
-
-        {/* Subtitle */}
-        <motion.p
-          className={`text-xl md:text-2xl font-medium ${
-            theme === 'dark' ? 'text-white/90' : 'text-gray-800'
-          }`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: 0.6,
-            delay: 1.8,
-            ease: 'easeOut'
-          }}
-          style={{ willChange: 'transform, opacity' }}
-        >
-          AI-Powered Dorm Finder
-        </motion.p>
-
-        {/* Glow Pulse Effect */}
+    <AnimatePresence>
+      {stage !== "complete" && (
         <motion.div
-          className="absolute inset-0 -z-10 blur-3xl"
-          initial={{ opacity: 0 }}
-          animate={{
-            opacity: [0, 0.6, 0.4],
-            scale: [0.8, 1.1, 1.05]
-          }}
-          transition={{
-            duration: 1,
-            delay: 2.3,
-            ease: 'easeInOut'
-          }}
-          style={{
-            background:
-              theme === 'dark'
-                ? 'radial-gradient(circle, rgba(99,102,241,0.6) 0%, transparent 70%)'
-                : 'radial-gradient(circle, rgba(59,130,246,0.4) 0%, transparent 70%)'
-          }}
-        />
-      </div>
-    </div>
+          initial={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.8 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background"
+        >
+          <div className="relative">
+            <AnimatePresence mode="wait">
+              {stage === "logo" && (
+                <motion.div
+                  key="logo"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{
+                    scale: 1,
+                    opacity: 1,
+                  }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
+                  className="text-center"
+                >
+                  <h1 className="text-8xl font-bold text-gradient-hero relative">
+                    Roomy
+                    <div className="absolute inset-0 blur-3xl opacity-50 text-gradient-hero">Roomy</div>
+                  </h1>
+                </motion.div>
+              )}
+
+              {stage === "text" && (
+                <motion.div
+                  key="text"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 1 }}
+                  className="text-center"
+                >
+                  <h2 className="text-5xl font-bold text-gradient mb-4">AI-Powered Dorm Finder</h2>
+                  <div className="w-64 h-1 mx-auto rounded-full overflow-hidden bg-muted">
+                    <motion.div
+                      initial={{ x: "-100%" }}
+                      animate={{ x: "100%" }}
+                      transition={{ duration: 1.5, ease: "easeInOut" }}
+                      className="h-full w-full bg-gradient-to-r from-primary via-secondary to-accent"
+                    />
+                  </div>
+                </motion.div>
+              )}
+
+              {stage === "wave" && (
+                <motion.div
+                  key="wave"
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 1.5, ease: [0.4, 0, 0.2, 1] }}
+                  className="w-screen h-screen"
+                  style={{ originX: 0 }}
+                >
+                  <div className="w-full h-full bg-gradient-to-r from-primary via-secondary to-accent opacity-90" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
