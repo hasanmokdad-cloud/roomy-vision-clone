@@ -24,6 +24,7 @@ export default function Contact() {
     message: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +82,7 @@ export default function Contact() {
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      setIsSubmitting(false);
       return;
     }
     
@@ -101,6 +103,7 @@ export default function Contact() {
         description: 'Failed to send message. Please try again.',
         variant: 'destructive'
       });
+      setIsSubmitting(false);
       return;
     }
     
@@ -116,6 +119,7 @@ export default function Contact() {
       university: '',
       message: ''
     });
+    setIsSubmitting(false);
   };
 
   return (
@@ -205,8 +209,8 @@ export default function Contact() {
                   {errors.message && <p className="text-sm text-destructive mt-1">{errors.message}</p>}
                   <p className="text-xs text-muted-foreground mt-1">{formData.message.length}/500</p>
                 </div>
-                <Button type="submit" className="w-full bg-gradient-to-r from-primary to-secondary">
-                  Send Message
+                <Button type="submit" disabled={isSubmitting} className="w-full bg-gradient-to-r from-primary to-secondary">
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
                 </Button>
               </form>
             </motion.div>
