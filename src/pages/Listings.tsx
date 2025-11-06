@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/shared/Navbar';
@@ -68,36 +68,39 @@ export default function Listings() {
 
   const hasMore = filteredDorms.length > paginatedDorms.length;
 
-  const handleFilterChange = (newFilters: typeof filters) => {
+  const handleFilterChange = useCallback((newFilters: typeof filters) => {
     setFilters(newFilters);
-  };
+  }, []);
 
-  const handleRemoveFilter = (category: 'universities' | 'areas' | 'roomTypes' | 'capacity' | 'cities', value?: string) => {
-    if (category === 'capacity') {
-      setFilters({ ...filters, capacity: undefined });
-    } else if (value) {
-      setFilters({
-        ...filters,
-        [category]: filters[category].filter((v) => v !== value)
-      });
-    }
-  };
+  const handleRemoveFilter = useCallback((category: 'universities' | 'areas' | 'roomTypes' | 'capacity' | 'cities', value?: string) => {
+    setFilters(prev => {
+      if (category === 'capacity') {
+        return { ...prev, capacity: undefined };
+      } else if (value) {
+        return {
+          ...prev,
+          [category]: prev[category].filter((v) => v !== value)
+        };
+      }
+      return prev;
+    });
+  }, []);
 
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     setCurrentPage(prev => prev + 1);
-  };
+  }, []);
 
-  const handleResetPrice = () => {
-    setFilters({ ...filters, priceRange: [0, 2000] });
-  };
+  const handleResetPrice = useCallback(() => {
+    setFilters(prev => ({ ...prev, priceRange: [0, 2000] }));
+  }, []);
 
-  const handleExpandDorm = (dormId: string) => {
+  const handleExpandDorm = useCallback((dormId: string) => {
     setExpandedDormId(dormId);
-  };
+  }, []);
 
-  const handleCloseExpansion = () => {
+  const handleCloseExpansion = useCallback(() => {
     setExpandedDormId(null);
-  };
+  }, []);
 
 
   return (

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, CheckCircle, Wifi, Zap, Home, Navigation } from 'lucide-react';
@@ -38,50 +38,60 @@ interface CinematicDormCardProps {
   onClose: () => void;
 }
 
-export function CinematicDormCard({ dorm, index, isExpanded, onExpand, onClose }: CinematicDormCardProps) {
+const CinematicDormCardComponent = ({ dorm, index, isExpanded, onExpand, onClose }: CinematicDormCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const isMobile = useIsMobile();
 
-  // Parse room types
-  const roomTypes: RoomType[] = dorm.room_types_json || [];
-  const hasMultipleRooms = roomTypes.length > 1;
+  // Memoized room types calculations
+  const roomTypes: RoomType[] = useMemo(() => dorm.room_types_json || [], [dorm.room_types_json]);
+  const hasMultipleRooms = useMemo(() => roomTypes.length > 1, [roomTypes.length]);
   
-  // Calculate starting price
-  const startingPrice = roomTypes.length > 0
-    ? Math.min(...roomTypes.map(r => r.price))
-    : dorm.monthly_price || dorm.price || 0;
+  // Memoized starting price calculation
+  const startingPrice = useMemo(() => 
+    roomTypes.length > 0
+      ? Math.min(...roomTypes.map(r => r.price))
+      : dorm.monthly_price || dorm.price || 0,
+    [roomTypes, dorm.monthly_price, dorm.price]
+  );
 
-  const dormImage = dorm.cover_image || dorm.image_url || '/placeholder.svg';
-  const isVerified = dorm.verification_status === 'Verified';
+  const dormImage = useMemo(() => 
+    dorm.cover_image || dorm.image_url || '/placeholder.svg',
+    [dorm.cover_image, dorm.image_url]
+  );
 
-  const handleLearnMore = (e: React.MouseEvent) => {
+  const isVerified = useMemo(() => 
+    dorm.verification_status === 'Verified',
+    [dorm.verification_status]
+  );
+
+  const handleLearnMore = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     navigate(`/dorm/${dorm.id}`);
-  };
+  }, [navigate, dorm.id]);
 
-  const handleCardClick = () => {
+  const handleCardClick = useCallback(() => {
     if (hasMultipleRooms) {
       onExpand();
     } else {
       navigate(`/dorm/${dorm.id}`);
     }
-  };
+  }, [hasMultipleRooms, onExpand, navigate, dorm.id]);
 
-  const amenityIcons: Record<string, any> = {
+  const amenityIcons: Record<string, any> = useMemo(() => ({
     'WiFi': Wifi,
     'Internet': Wifi,
     'Electricity': Zap,
     'Furnished': Home,
-  };
+  }), []);
 
-  const getAmenityIcon = (amenity: string) => {
+  const getAmenityIcon = useCallback((amenity: string) => {
     const IconComponent = amenityIcons[amenity] || Navigation;
     return <IconComponent className="w-3 h-3" />;
-  };
+  }, [amenityIcons]);
 
-  const cardVariants = {
+  const cardVariants = useMemo(() => ({
     hidden: { opacity: 0, y: 60, scale: 0.95 },
     visible: {
       opacity: 1,
@@ -93,7 +103,7 @@ export function CinematicDormCard({ dorm, index, isExpanded, onExpand, onClose }
         ease: [0.22, 1, 0.36, 1]
       }
     }
-  };
+  }), [prefersReducedMotion, index]);
 
   return (
     <>
@@ -263,4 +273,6 @@ export function CinematicDormCard({ dorm, index, isExpanded, onExpand, onClose }
       )}
     </>
   );
-}
+};
+
+export const CinematicDormCard = memo(CinematicDormCardComponent);
