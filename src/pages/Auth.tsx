@@ -25,13 +25,13 @@ const Auth = () => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        navigate('/animated-intro', { replace: true });
+        navigate('/welcome', { state: { destination: '/' } });
       }
     });
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        navigate('/animated-intro', { replace: true });
+        navigate('/welcome', { state: { destination: '/' } });
       }
     });
 

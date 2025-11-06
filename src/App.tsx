@@ -12,7 +12,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 const Main = lazy(() => import("./pages/Main"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Welcome = lazy(() => import("./pages/Welcome"));
-const AnimatedIntro = lazy(() => import("./pages/AnimatedIntro"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const DormDetail = lazy(() => import("./pages/DormDetail"));
@@ -55,7 +54,6 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/welcome" element={<Welcome />} />
-              <Route path="/animated-intro" element={<AnimatedIntro />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/admin/*" element={<AdminDashboard />} />
               <Route path="/owner/*" element={<OwnerDashboard />} />
