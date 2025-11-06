@@ -1,16 +1,8 @@
-import { useLocation, Navigate } from 'react-router-dom';
-import { AnimatedIntro } from '@/components/AnimatedIntro';
+import { Navigate } from 'react-router-dom';
 
 const Welcome = () => {
-  const location = useLocation();
-  const destination = (location.state as { destination?: string })?.destination || '/';
-
-  // If accessed directly without state, redirect to homepage
-  if (!location.state) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <AnimatedIntro destination={destination} />;
+  // Redirect to animated intro instead
+  return <Navigate to="/animated-intro" replace />;
 };
 
 export default Welcome;
