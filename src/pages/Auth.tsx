@@ -31,7 +31,7 @@ const Auth = () => {
           .eq('user_id', session.user.id)
           .maybeSingle();
         
-        navigate(owner ? '/admin' : '/dashboard');
+        navigate('/welcome', { state: { destination: owner ? '/admin' : '/dashboard' } });
       }
     });
 
@@ -43,7 +43,7 @@ const Auth = () => {
           .eq('user_id', session.user.id)
           .maybeSingle();
         
-        navigate(owner ? '/admin' : '/dashboard');
+        navigate('/welcome', { state: { destination: owner ? '/admin' : '/dashboard' } });
       }
     });
 
@@ -128,7 +128,7 @@ const Auth = () => {
         
         toast({
           title: "Welcome back!",
-          description: "Successfully logged in.",
+          description: "Preparing your dashboard...",
         });
       } else {
         const { error } = await supabase.auth.signUp({
@@ -154,7 +154,7 @@ const Auth = () => {
         
         toast({
           title: "Account created!",
-          description: "Welcome to Roomy!",
+          description: "Preparing your dashboard...",
         });
       }
     } catch (error: any) {
