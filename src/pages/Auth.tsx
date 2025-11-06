@@ -25,25 +25,13 @@ const Auth = () => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        const { data: owner } = await supabase
-          .from('owners')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        
-        navigate('/welcome', { state: { destination: owner ? '/admin' : '/dashboard' } });
+        navigate('/welcome', { state: { destination: '/' } });
       }
     });
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        const { data: owner } = await supabase
-          .from('owners')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        
-        navigate('/welcome', { state: { destination: owner ? '/admin' : '/dashboard' } });
+        navigate('/welcome', { state: { destination: '/' } });
       }
     });
 
@@ -128,7 +116,7 @@ const Auth = () => {
         
         toast({
           title: "Welcome back!",
-          description: "Preparing your dashboard...",
+          description: "Welcome to Roomy...",
         });
       } else {
         const { error } = await supabase.auth.signUp({
@@ -154,7 +142,7 @@ const Auth = () => {
         
         toast({
           title: "Account created!",
-          description: "Preparing your dashboard...",
+          description: "Welcome to Roomy...",
         });
       }
     } catch (error: any) {
