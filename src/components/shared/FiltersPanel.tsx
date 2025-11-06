@@ -126,27 +126,38 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
   };
 
   return (
-    <div className="glass-hover neon-border rounded-2xl p-6 space-y-6 sticky top-24 shadow-xl">
+    <aside 
+      className="glass-hover neon-border rounded-2xl p-6 space-y-6 sticky top-24 shadow-xl"
+      role="search"
+      aria-label="Filter dorm listings"
+    >
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-black gradient-text">Filters</h3>
-        <Button variant="ghost" size="sm" onClick={handleReset} className="hover:neon-glow">
-          <RotateCcw className="w-4 h-4 mr-2" />
+        <h3 className="text-xl font-black gradient-text" id="filters-heading">Filters</h3>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleReset} 
+          className="hover:neon-glow"
+          aria-label="Reset all filters"
+        >
+          <RotateCcw className="w-4 h-4 mr-2" aria-hidden="true" />
           Reset
         </Button>
       </div>
 
       {/* City Filter */}
       {cities.length > 0 && (
-        <div className="space-y-3">
-          <Label className="text-base font-semibold">City</Label>
+        <fieldset className="space-y-3" role="group" aria-labelledby="city-filter-label">
+          <Label id="city-filter-label" className="text-base font-semibold">City</Label>
           <ScrollArea className="h-32 rounded-lg border border-white/10 p-2">
-            <div className="space-y-2">
+            <div className="space-y-2" role="group" aria-label="City options">
               {cities.map(city => (
                 <div key={city} className="flex items-center space-x-2 hover:bg-white/5 p-1 rounded transition-colors">
                   <Checkbox
                     id={`city-${city}`}
                     checked={filters.cities?.includes(city) || false}
                     onCheckedChange={() => toggleFilter('cities', city)}
+                    aria-label={`Filter by ${city}`}
                   />
                   <label
                     htmlFor={`city-${city}`}
@@ -158,7 +169,7 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
               ))}
             </div>
           </ScrollArea>
-        </div>
+        </fieldset>
       )}
 
       {/* Shuttle Filter */}
@@ -184,11 +195,11 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
       </div>
 
       {/* Capacity Filter */}
-      <div className="space-y-3">
-        <Label className="text-base">
+      <fieldset className="space-y-3" role="group" aria-labelledby="capacity-filter-label">
+        <Label id="capacity-filter-label" className="text-base">
           Capacity {filters.capacity ? `(${filters.capacity}+ people)` : '(Any)'}
         </Label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2" role="group" aria-label="Room capacity options">
           {capacityOptions.map((cap) => (
             <button
               key={cap}
@@ -201,16 +212,19 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
                   ? 'bg-primary/20 border-2 border-primary' 
                   : 'border border-white/10'
               }`}
+              aria-label={`Filter by ${cap}+ ${cap === 1 ? 'person' : 'people'} capacity`}
+              aria-pressed={filters.capacity === cap}
+              role="button"
             >
               {cap}+ {cap === 1 ? 'Person' : 'People'}
             </button>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       {/* Budget Filter */}
-      <div className="space-y-3">
-        <Label className="text-base font-semibold">
+      <fieldset className="space-y-3" role="group" aria-labelledby="budget-filter-label">
+        <Label id="budget-filter-label" className="text-base font-semibold">
           Budget: ${filters.priceRange[0]} - ${filters.priceRange[1]}
         </Label>
         <Slider
@@ -220,8 +234,9 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
           max={2000}
           step={50}
           className="mt-2"
+          aria-label={`Budget range from $${filters.priceRange[0]} to $${filters.priceRange[1]}`}
         />
-        <div className="grid grid-cols-2 gap-2 mt-3">
+        <div className="grid grid-cols-2 gap-2 mt-3" role="group" aria-label="Budget preset options">
           {budgetPresets.map((preset) => (
             <button
               key={preset.label}
@@ -231,12 +246,15 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
                   ? 'neon-border bg-primary/10'
                   : 'border border-white/10'
               }`}
+              aria-label={`Set budget to ${preset.label}`}
+              aria-pressed={filters.priceRange[0] === preset.min && filters.priceRange[1] === preset.max}
+              role="button"
             >
               {preset.label}
             </button>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       {/* Universities */}
       <div className="space-y-3">
@@ -326,6 +344,6 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
           </div>
         </div>
       )}
-    </div>
+    </aside>
   );
 }

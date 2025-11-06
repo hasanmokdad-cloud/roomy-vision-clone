@@ -122,9 +122,13 @@ export const Hero = () => {
               <Sparkles className="w-5 h-5" />
               Find My Dorm with AI
             </Button>
-            <div className="glass-hover rounded-2xl p-6 space-y-4 border-2 border-primary/20">
+            <div 
+              className="glass-hover rounded-2xl p-6 space-y-4 border-2 border-primary/20"
+              role="search"
+              aria-label="Dorm search"
+            >
               <div className="flex items-center gap-2 text-sm text-foreground/70 font-medium">
-                <Search className="w-4 h-4" />
+                <Search className="w-4 h-4" aria-hidden="true" />
                 <span>Ask Roomy AI:</span>
               </div>
               <div className="flex gap-3">
@@ -142,10 +146,12 @@ export const Hero = () => {
                     }
                   }}
                   className="bg-black/20 border-white/10 text-foreground placeholder:text-foreground/40 focus:border-primary/50 transition-all"
+                  aria-label="Search for dorms by location, price, or features"
                 />
                 <Button 
                   onClick={handleSearch}
                   className="bg-gradient-to-r from-primary to-secondary text-white font-bold px-8 rounded-2xl hover:shadow-[0_0_40px_rgba(94,234,212,0.4)] transition-all duration-300 whitespace-nowrap neon-glow"
+                  aria-label="Search for dorms"
                 >
                   Search
                 </Button>

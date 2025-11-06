@@ -5,14 +5,18 @@ import { DormListings } from '@/components/DormListings';
 import { Footer } from '@/components/Footer';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { RoomyAI } from '@/components/RoomyAI';
+import { SkipToContent } from '@/components/SkipToContent';
 
 const Main = () => {
   return (
     <div className="relative min-h-screen">
+      <SkipToContent />
       <Navbar />
-      <Hero />
-      <HowItWorks />
-      <DormListings />
+      <main id="main-content">
+        <Hero />
+        <HowItWorks />
+        <DormListings />
+      </main>
       <Footer />
       <WhatsAppButton />
       <RoomyAI />

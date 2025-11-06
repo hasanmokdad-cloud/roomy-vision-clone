@@ -16,6 +16,7 @@ import { ScrollImmersion } from '@/components/listings/ScrollImmersion';
 import { ScrollToTopButton } from '@/components/listings/ScrollToTopButton';
 import { DormCardSkeleton } from '@/components/skeletons/DormCardSkeleton';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { SkipToContent } from '@/components/SkipToContent';
 
 export default function Listings() {
   const navigate = useNavigate();
@@ -105,10 +106,11 @@ export default function Listings() {
 
   return (
     <div className="min-h-screen flex flex-col relative">
+      <SkipToContent />
       <Navbar />
       
       <ScrollImmersion>
-        <main className="flex-1 container mx-auto px-4 py-8 mt-20">
+        <main id="main-content" className="flex-1 container mx-auto px-4 py-8 mt-20" role="main">
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -132,8 +134,9 @@ export default function Listings() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="relative mb-8"
+          role="search"
         >
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" aria-hidden="true" />
           <Input
             type="text"
             placeholder="Search by name, location, or features (e.g., 'single room near AUB')"
@@ -144,6 +147,7 @@ export default function Listings() {
               setSearchQuery(limited);
             }}
             className="pl-12 h-14 text-lg bg-white border-gray-200 rounded-2xl shadow-sm"
+            aria-label="Search dorms by name, location, or features"
           />
         </motion.div>
 
@@ -194,7 +198,11 @@ export default function Listings() {
             ) : (
               <>
                 <ErrorBoundary>
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                  <div 
+                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
+                    role="list"
+                    aria-label="Dorm listings"
+                  >
                     {paginatedDorms.map((dorm, index) => (
                       <CinematicDormCard 
                         key={dorm.id} 
@@ -208,12 +216,18 @@ export default function Listings() {
                   </div>
                 </ErrorBoundary>
                 {paginatedDorms.length > 0 && (
-                  <div className="text-center mt-8 space-y-4">
+                  <div className="text-center mt-8 space-y-4" role="status" aria-live="polite">
                     <p className="text-sm text-foreground/60">
                       Showing {paginatedDorms.length} of {filteredDorms.length} verified dorms
                     </p>
                     {hasMore && (
-                      <Button onClick={handleLoadMore} variant="outline" size="lg" className="px-8">
+                      <Button 
+                        onClick={handleLoadMore} 
+                        variant="outline" 
+                        size="lg" 
+                        className="px-8"
+                        aria-label={`Load more dorms. Currently showing ${paginatedDorms.length} of ${filteredDorms.length}`}
+                      >
                         Load More
                       </Button>
                     )}

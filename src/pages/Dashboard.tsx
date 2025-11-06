@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useProfileCompletion } from '@/hooks/useAuthGuard';
+import { SkipToContent } from '@/components/SkipToContent';
 
 interface DormPreview {
   id: string;
@@ -92,9 +93,10 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen relative">
+      <SkipToContent />
       <FluidBackground />
       
-      <div className="absolute top-6 right-6 z-50 flex gap-2">
+      <nav className="absolute top-6 right-6 z-50 flex gap-2" role="navigation" aria-label="Dashboard navigation">
         <Button
           onClick={() => navigate('/')}
           variant="ghost"
@@ -119,7 +121,7 @@ export default function Dashboard() {
           <LogOut className="w-4 h-4" />
           Logout
         </Button>
-      </div>
+      </nav>
 
       <RoomyAI />
       <WhatsAppButton />

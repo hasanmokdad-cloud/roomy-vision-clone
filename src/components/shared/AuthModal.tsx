@@ -105,22 +105,32 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent 
+        className="sm:max-w-md"
+        aria-labelledby="auth-modal-title"
+        aria-describedby="auth-modal-description"
+      >
         <DialogHeader>
-          <DialogTitle className="text-2xl gradient-text">Welcome to Roomy</DialogTitle>
-          <DialogDescription>
+          <DialogTitle id="auth-modal-title" className="text-2xl gradient-text">
+            Welcome to Roomy
+          </DialogTitle>
+          <DialogDescription id="auth-modal-description">
             Sign in or create an account to get started
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="signin" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin">Sign In</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2" role="tablist" aria-label="Authentication options">
+            <TabsTrigger value="signin" role="tab" aria-controls="signin-panel">
+              Sign In
+            </TabsTrigger>
+            <TabsTrigger value="signup" role="tab" aria-controls="signup-panel">
+              Sign Up
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="signin">
-            <form onSubmit={handleSignIn} className="space-y-4">
+          <TabsContent value="signin" id="signin-panel" role="tabpanel" aria-labelledby="signin-tab">
+            <form onSubmit={handleSignIn} className="space-y-4" aria-label="Sign in form">
               <div>
                 <Label htmlFor="signin-email">Email</Label>
                 <Input
@@ -153,8 +163,8 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
             </form>
           </TabsContent>
 
-          <TabsContent value="signup">
-            <form onSubmit={handleSignUp} className="space-y-4">
+          <TabsContent value="signup" id="signup-panel" role="tabpanel" aria-labelledby="signup-tab">
+            <form onSubmit={handleSignUp} className="space-y-4" aria-label="Sign up form">
               <div>
                 <Label htmlFor="signup-email">Email</Label>
                 <Input

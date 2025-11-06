@@ -123,6 +123,15 @@ const CinematicDormCardComponent = ({ dorm, index, isExpanded, onExpand, onClose
           }
         }}
         onClick={handleCardClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleCardClick();
+          }
+        }}
+        role="article"
+        tabIndex={0}
+        aria-label={`${dorm.dorm_name} in ${dorm.area || dorm.location}${hasMultipleRooms ? `, ${roomTypes.length} room types available` : ``}, starting from $${startingPrice} per month`}
       >
       <motion.div
         animate={{
@@ -254,7 +263,11 @@ const CinematicDormCardComponent = ({ dorm, index, isExpanded, onExpand, onClose
               )}
             </div>
 
-            <Button onClick={handleLearnMore} className="w-full">
+            <Button 
+              onClick={handleLearnMore} 
+              className="w-full"
+              aria-label={hasMultipleRooms ? `View all ${roomTypes.length} room types for ${dorm.dorm_name}` : `Learn more about ${dorm.dorm_name}`}
+            >
               {hasMultipleRooms ? 'View All Rooms' : 'Learn More'}
             </Button>
           </div>
