@@ -163,7 +163,7 @@ export default function AiMatch() {
     setLoading(true);
     
     let query = supabase
-      .from('dorms')
+      .from('dorms_public')
       .select('*')
       .eq('verification_status', 'Verified')
       .lte('monthly_price', preferences.budget);

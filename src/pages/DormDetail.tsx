@@ -32,7 +32,7 @@ export default function DormDetail() {
 
   const loadDorm = async () => {
     const { data, error } = await supabase
-      .from('dorms')
+      .from('dorms_public')
       .select('*')
       .eq('id', id)
       .eq('verification_status', 'Verified')
@@ -137,6 +137,7 @@ export default function DormDetail() {
                           <img
                             src={img}
                             alt={`${displayName} - Image ${idx + 1}`}
+                            loading="lazy"
                             className="w-full h-[400px] md:h-[500px] object-cover"
                           />
                         </CardContent>
