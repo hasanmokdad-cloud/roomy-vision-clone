@@ -4,22 +4,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const Intro = () => {
   const navigate = useNavigate();
-  const [stage, setStage] = useState<'gradient' | 'text' | 'blur' | 'fadeToGradient' | 'complete'>('gradient');
+  const [stage, setStage] = useState<'text' | 'gradientSweep' | 'fadeToHome' | 'complete'>('text');
 
   useEffect(() => {
-    const gradientTimer = setTimeout(() => setStage('text'), 1500);
-    const textTimer = setTimeout(() => setStage('blur'), 2800);
-    const blurTimer = setTimeout(() => setStage('fadeToGradient'), 4000);
-    const fadeTimer = setTimeout(() => setStage('complete'), 4800);
+    const textTimer = setTimeout(() => setStage('gradientSweep'), 2500);
+    const sweepTimer = setTimeout(() => setStage('fadeToHome'), 3500);
+    const fadeTimer = setTimeout(() => setStage('complete'), 4300);
     const completeTimer = setTimeout(() => {
       sessionStorage.setItem('intro-played', 'true');
       navigate('/', { replace: true });
-    }, 5000);
+    }, 4500);
 
     return () => {
-      clearTimeout(gradientTimer);
       clearTimeout(textTimer);
-      clearTimeout(blurTimer);
+      clearTimeout(sweepTimer);
       clearTimeout(fadeTimer);
       clearTimeout(completeTimer);
     };
@@ -28,31 +26,14 @@ const Intro = () => {
   return (
     <div className="fixed inset-0 bg-black overflow-hidden">
       <AnimatePresence>
-        {/* Gradient sweep animation */}
-        {stage === 'gradient' && (
-          <motion.div
-            className="absolute inset-0"
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{
-              duration: 1.5,
-              ease: [0.42, 0, 0.58, 1],
-            }}
-            style={{
-              transformOrigin: 'left',
-              background: 'linear-gradient(90deg, #6A00F4 0%, #00E0DC 100%)',
-            }}
-          />
-        )}
-
         {/* Text animation */}
-        {(stage === 'text' || stage === 'blur' || stage === 'fadeToGradient') && (
+        {stage === 'text' && (
           <motion.div
             className="absolute inset-0 flex flex-col items-center justify-center z-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: stage === 'fadeToGradient' ? 0 : 1 }}
-            transition={{ duration: 0.8, ease: 'easeInOut' }}
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
           >
             <motion.h1
               className="text-7xl md:text-8xl font-bold mb-6"
@@ -100,38 +81,35 @@ const Intro = () => {
           </motion.div>
         )}
 
-        {/* Blur expansion */}
-        {stage === 'blur' && (
-          <motion.div
-            className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1.5 }}
-            transition={{
-              duration: 1.2,
-              ease: [0.42, 0, 0.58, 1],
-            }}
-          >
-            <div
-              className="w-[600px] h-[600px] rounded-full blur-[100px]"
-              style={{
-                background: 'radial-gradient(circle, rgba(106, 0, 244, 0.6) 0%, rgba(0, 224, 220, 0.4) 50%, transparent 70%)',
-              }}
-            />
-          </motion.div>
-        )}
-
-        {/* Fade to gradient - full screen fill */}
-        {stage === 'fadeToGradient' && (
+        {/* Blue gradient sweep - right to left */}
+        {(stage === 'gradientSweep' || stage === 'fadeToHome') && (
           <motion.div
             className="absolute inset-0 z-20"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
             transition={{
-              duration: 0.8,
+              duration: 1,
               ease: [0.42, 0, 0.58, 1],
             }}
             style={{
+              transformOrigin: 'right',
               background: 'linear-gradient(90deg, #6A00F4 0%, #00E0DC 100%)',
+            }}
+          />
+        )}
+
+        {/* Fade to home - smooth blend */}
+        {stage === 'fadeToHome' && (
+          <motion.div
+            className="absolute inset-0 z-30"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{
+              duration: 0.8,
+              ease: 'easeInOut',
+            }}
+            style={{
+              background: 'hsl(var(--background))',
             }}
           />
         )}
