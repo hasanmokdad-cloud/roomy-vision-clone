@@ -48,7 +48,8 @@ export default function Navbar() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    navigate('/intro');
+    sessionStorage.removeItem('intro-played');
+    navigate('/auth');
   };
 
   return (

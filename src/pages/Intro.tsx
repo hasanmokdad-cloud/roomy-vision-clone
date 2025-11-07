@@ -4,18 +4,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const Intro = () => {
   const navigate = useNavigate();
-  const [stage, setStage] = useState<'gradient' | 'text' | 'blur' | 'complete'>('gradient');
+  const [stage, setStage] = useState<'gradient' | 'text' | 'blur' | 'fadeToGradient' | 'complete'>('gradient');
 
   useEffect(() => {
     const gradientTimer = setTimeout(() => setStage('text'), 1500);
     const textTimer = setTimeout(() => setStage('blur'), 2800);
-    const blurTimer = setTimeout(() => setStage('complete'), 4000);
-    const completeTimer = setTimeout(() => navigate('/home', { replace: true }), 4500);
+    const blurTimer = setTimeout(() => setStage('fadeToGradient'), 4000);
+    const fadeTimer = setTimeout(() => setStage('complete'), 4800);
+    const completeTimer = setTimeout(() => {
+      sessionStorage.setItem('intro-played', 'true');
+      navigate('/', { replace: true });
+    }, 5000);
 
     return () => {
       clearTimeout(gradientTimer);
       clearTimeout(textTimer);
       clearTimeout(blurTimer);
+      clearTimeout(fadeTimer);
       clearTimeout(completeTimer);
     };
   }, [navigate]);
@@ -42,11 +47,11 @@ const Intro = () => {
         )}
 
         {/* Text animation */}
-        {(stage === 'text' || stage === 'blur') && (
+        {(stage === 'text' || stage === 'blur' || stage === 'fadeToGradient') && (
           <motion.div
             className="absolute inset-0 flex flex-col items-center justify-center z-10"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{ opacity: stage === 'fadeToGradient' ? 0 : 1 }}
             transition={{ duration: 0.8, ease: 'easeInOut' }}
           >
             <motion.h1
@@ -115,19 +120,18 @@ const Intro = () => {
           </motion.div>
         )}
 
-        {/* Fade to FluidBackground-like gradient */}
-        {stage === 'blur' && (
+        {/* Fade to gradient - full screen fill */}
+        {stage === 'fadeToGradient' && (
           <motion.div
-            className="absolute inset-0"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            className="absolute inset-0 z-20"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{
-              duration: 1,
-              delay: 0.5,
-              ease: 'easeInOut',
+              duration: 0.8,
+              ease: [0.42, 0, 0.58, 1],
             }}
             style={{
-              background: 'linear-gradient(135deg, rgba(106, 0, 244, 0.3) 0%, rgba(0, 224, 220, 0.3) 100%)',
+              background: 'linear-gradient(90deg, #6A00F4 0%, #00E0DC 100%)',
             }}
           />
         )}

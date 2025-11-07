@@ -23,6 +23,13 @@ const Main = () => {
         navigate('/auth', { replace: true });
         return;
       }
+
+      // Check if intro has been played this session
+      const introPlayed = sessionStorage.getItem('intro-played');
+      if (!introPlayed) {
+        navigate('/intro', { replace: true });
+        return;
+      }
       
       setLoading(false);
     };

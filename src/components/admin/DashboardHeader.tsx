@@ -15,7 +15,8 @@ export function DashboardHeader() {
       title: 'Logged out',
       description: 'Successfully logged out',
     });
-    navigate('/intro');
+    sessionStorage.removeItem('intro-played');
+    navigate('/auth');
   };
 
   return (

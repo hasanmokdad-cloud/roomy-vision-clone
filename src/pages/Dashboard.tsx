@@ -88,7 +88,8 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate('/intro');
+    sessionStorage.removeItem('intro-played');
+    navigate('/auth');
   };
 
   return (
