@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { DashboardHeader } from '@/components/admin/DashboardHeader';
-import { FluidBackground } from '@/components/FluidBackground';
+import FluidBackground from '@/components/FluidBackground';
 import AdminHome from './AdminHome';
 import AdminDorms from './AdminDorms';
 import AdminStudents from './AdminStudents';

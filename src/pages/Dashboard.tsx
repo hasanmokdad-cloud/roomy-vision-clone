@@ -5,7 +5,7 @@ import { RoomyAI } from '@/components/RoomyAI';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { Button } from '@/components/ui/button';
 import { User, LogOut, Home, MessageSquare, Search, Award, Eye, TrendingUp, CheckCircle } from 'lucide-react';
-import { FluidBackground } from '@/components/FluidBackground';
+import FluidBackground from '@/components/FluidBackground';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';

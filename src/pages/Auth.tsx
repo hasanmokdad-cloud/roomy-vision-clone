@@ -1,261 +1,94 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Building2, Mail, Lock, User, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { z } from 'zod';
-import { FluidBackground } from '@/components/FluidBackground';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import FluidBackground from "@/components/FluidBackground";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
-const emailSchema = z.string().trim().email({ message: "Invalid email address" }).max(255);
-const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" }).max(100);
-
-const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const navigate = useNavigate();
+export default function Auth() {
+  const [tab, setTab] = useState<"login" | "signup">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        navigate('/intro', { replace: true });
-      }
-    });
-
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        navigate('/intro', { replace: true });
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    try {
-      emailSchema.parse(email);
-    } catch (e) {
-      if (e instanceof z.ZodError) {
-        newErrors.email = e.errors[0].message;
-      }
+  const onLogin = async () => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      toast({ title: "Login failed", description: error.message, variant: "destructive" });
+      return;
     }
-    
-    try {
-      passwordSchema.parse(password);
-    } catch (e) {
-      if (e instanceof z.ZodError) {
-        newErrors.password = e.errors[0].message;
-      }
-    }
-    
-    if (!isLogin && !name.trim()) {
-      newErrors.name = "Name is required";
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    toast({ title: "Welcome back!", description: "Signed in successfully." });
+    navigate("/intro", { replace: true });
   };
 
-  const createOwnerRecordForLAU = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data, error } = await supabase.functions.invoke('create-owner-record', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
-
-      if (error) {
-        console.error('Error creating owner record:', error);
-        return;
-      }
-
-      // Show success toast only if owner record was newly created
-      if (data?.success && data?.message === 'Owner record created successfully') {
-        toast({
-          title: "Admin Access Granted",
-          description: "You are now registered as a verified Roomy Owner.",
-        });
-      }
-    } catch (error) {
-      console.error('Error invoking create-owner-record:', error);
+  const onSignup = async () => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) {
+      toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
+      return;
     }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    setLoading(true);
-    
-    try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        
-        if (error) throw error;
-
-        // Check if LAU domain user and create owner record
-        if (email.endsWith('@lau.edu')) {
-          await createOwnerRecordForLAU();
-        }
-        
-        toast({
-          title: "Welcome back!",
-          description: "Welcome to Roomy...",
-        });
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              full_name: name.trim(),
-            }
-          }
-        });
-        
-        if (error) throw error;
-
-        // Check if LAU domain user and create owner record
-        if (email.endsWith('@lau.edu')) {
-          // Wait a bit for the user to be created
-          setTimeout(async () => {
-            await createOwnerRecordForLAU();
-          }, 1000);
-        }
-        
-        toast({
-          title: "Account created!",
-          description: "Welcome to Roomy...",
-        });
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Something went wrong",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    toast({ title: "Account created", description: "Check your inbox to verify your email." });
+    navigate("/intro", { replace: true });
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-6">
+    <div className="relative min-h-screen overflow-hidden">
       <FluidBackground />
-      
-      <Button
-        variant="ghost"
-        className="absolute top-6 left-6 z-10"
-        onClick={() => navigate('/')}
-      >
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Home
-      </Button>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="w-full max-w-md glass rounded-3xl p-8 relative z-10"
-      >
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center glow-purple">
-            <Building2 className="w-7 h-7 text-white" />
-          </div>
-          <span className="text-3xl font-bold gradient-text">Roomy</span>
-        </div>
-
-        <h2 className="text-2xl font-bold text-center mb-2">
-          {isLogin ? 'Welcome Back' : 'Join Roomy'}
-        </h2>
-        <p className="text-muted-foreground text-center mb-6">
-          {isLogin ? 'Sign in to find your perfect dorm' : 'Start your journey to the perfect dorm'}
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
-            <div>
-              <div className="relative">
-                <User className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
-                <Input
-                  placeholder="Full Name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className={`pl-10 ${errors.name ? 'border-destructive' : ''}`}
-                  disabled={loading}
-                />
-              </div>
-              {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-background/95 backdrop-blur-sm border-white/20 shadow-2xl">
+          <CardHeader className="text-center space-y-2">
+            <div className="text-5xl font-extrabold">
+              <span className="bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] bg-clip-text text-transparent">
+                Roomy
+              </span>
             </div>
-          )}
+            <CardTitle className="text-2xl">Welcome to Roomy</CardTitle>
+            <CardDescription>Sign in or create an account to find your perfect student housing</CardDescription>
+          </CardHeader>
 
-          <div>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
-                disabled={loading}
-              />
-            </div>
-            {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
-          </div>
+          <CardContent>
+            <Tabs value={tab} onValueChange={(v) => setTab(v as "login" | "signup")} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              </TabsList>
 
-          <div>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={`pl-10 ${errors.password ? 'border-destructive' : ''}`}
-                disabled={loading}
-              />
-            </div>
-            {errors.password && <p className="text-sm text-destructive mt-1">{errors.password}</p>}
-          </div>
+              <TabsContent value="login" className="mt-6 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+                </div>
+                <Button onClick={onLogin} className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90">
+                  Sign in
+                </Button>
+              </TabsContent>
 
-          <Button
-            type="submit"
-            className="w-full bg-gradient-to-r from-primary to-secondary"
-            disabled={loading}
-          >
-            {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')}
-          </Button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-          </button>
-        </div>
-      </motion.div>
+              <TabsContent value="signup" className="mt-6 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email2">Email</Label>
+                  <Input id="email2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password2">Password</Label>
+                  <Input id="password2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+                </div>
+                <Button onClick={onSignup} className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90">
+                  Create account
+                </Button>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
-};
-
-export default Auth;
+}

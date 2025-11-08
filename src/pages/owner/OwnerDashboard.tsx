@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
 import { DashboardHeader } from '@/components/admin/DashboardHeader';
-import { FluidBackground } from '@/components/FluidBackground';
+import FluidBackground from '@/components/FluidBackground';
 import OwnerHome from './OwnerHome';
 import OwnerListings from './OwnerListings';
 import OwnerAddDorm from './OwnerAddDorm';
