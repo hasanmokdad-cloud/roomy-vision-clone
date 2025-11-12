@@ -11,7 +11,7 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="border-t border-white/10 py-16 px-4">
+    <footer className="border-t border-white/10 bg-black/40 backdrop-blur-sm py-16 px-4">
       <div className="container mx-auto max-w-7xl">
         <div className="grid md:grid-cols-4 gap-12 mb-12">
           {/* Left Block */}
