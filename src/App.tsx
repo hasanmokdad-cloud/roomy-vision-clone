@@ -19,6 +19,7 @@ const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const OwnerDashboard = lazy(() => import("./pages/owner/OwnerDashboard"));
 const Listings = lazy(() => import("./pages/Listings"));
 const AiMatch = lazy(() => import("./pages/AiMatch"));
+const AiChat = lazy(() => import("./pages/AiChat"));
 const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/listings" element={<Listings />} />
               <Route path="/dorm/:id" element={<DormDetail />} />
               <Route path="/ai-match" element={<AiMatch />} />
+              <Route path="/ai-chat" element={<AiChat />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/dashboard" element={<Dashboard />} />
