@@ -20,6 +20,7 @@ import { Sparkles, ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react';
 import { useAuthGuard, useProfileCompletion } from '@/hooks/useAuthGuard';
 import { MatchCardSkeleton } from '@/components/skeletons/MatchCardSkeleton';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { generateReasonText } from '@/utils/aiLogic';
 
 const universities = [
   'LAU (Byblos)',
@@ -437,7 +438,7 @@ export default function AiMatch() {
                 <>
                   <ErrorBoundary>
                     <motion.div 
-                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                       initial="hidden"
                       animate="visible"
                       variants={{
@@ -450,25 +451,34 @@ export default function AiMatch() {
                       }}
                     >
                       {matches.map((match, idx) => (
-                        <MatchCard 
-                          key={match.id} 
-                          match={{
-                            dorm: match.dorm_name || match.name,
-                            room: match.room_types || 'Various',
-                            matchPercentage: 90 - (idx * 5),
-                            distance: match.area || match.location,
-                            price: match.monthly_price,
-                            capacity: match.capacity || 1,
-                            reasons: [
-                              'Within your budget',
-                              'Close to your university',
-                              'Verified dorm'
-                            ],
-                            amenities: match.amenities || [],
-                            dormId: match.id
-                          }} 
-                          index={idx} 
-                        />
+                        <motion.div
+                          key={match.id || idx}
+                          initial={{ opacity: 0, y: 30 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.1 }}
+                          className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg p-6 hover:shadow-xl hover:border-primary/40 transition-all duration-300"
+                        >
+                          <h3 className="text-2xl font-bold text-white mb-2">
+                            {match.dorm_name || match.name}
+                          </h3>
+                          <p className="text-primary font-semibold mb-3">
+                            Match Score: {90 - idx * 5}%
+                          </p>
+                          <p className="text-sm text-gray-300 italic mb-4">
+                            {generateReasonText(match)}
+                          </p>
+                          <div className="space-y-2 text-sm text-gray-300">
+                            <p>📍 {match.area || match.location}</p>
+                            <p>💰 ${match.monthly_price}/month</p>
+                            <p>🛏️ {match.room_types || 'Various types'}</p>
+                          </div>
+                          <Button
+                            onClick={() => navigate(`/dorm/${match.id}`)}
+                            className="w-full mt-4 bg-gradient-to-r from-primary to-secondary"
+                          >
+                            View Details
+                          </Button>
+                        </motion.div>
                       ))}
                     </motion.div>
                   </ErrorBoundary>
@@ -477,9 +487,10 @@ export default function AiMatch() {
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="text-center bg-white rounded-3xl p-12 shadow-sm"
+                      className="text-center bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-12"
                     >
-                      <p className="text-foreground/60">
+                      <Sparkles className="w-12 h-12 mx-auto mb-4 text-primary" />
+                      <p className="text-gray-300 text-lg">
                         No matches found. Try adjusting your preferences.
                       </p>
                     </motion.div>
@@ -491,16 +502,33 @@ export default function AiMatch() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
-                className="flex flex-wrap gap-3 justify-center"
+                className="flex flex-wrap gap-3 justify-center mt-8"
               >
-                <Button variant="outline" onClick={() => setStep(2)}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setStep(2)}
+                  className="bg-white/10 border-white/20 hover:bg-white/20 text-white"
+                >
                   <ArrowLeft className="w-4 h-4 mr-2" /> Adjust Preferences
                 </Button>
-                <Button variant="outline" onClick={restart} className="hover:neon-glow">
+                <Button 
+                  variant="outline" 
+                  onClick={restart} 
+                  className="bg-white/10 border-white/20 hover:bg-white/20 text-white hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]"
+                >
                   <RotateCcw className="w-4 h-4 mr-2" /> Start Over
                 </Button>
-                <Button onClick={() => navigate('/listings')} className="neon-glow bg-gradient-to-r from-primary to-secondary">
+                <Button 
+                  onClick={() => navigate('/listings')} 
+                  className="bg-gradient-to-r from-primary to-secondary hover:shadow-[0_0_30px_rgba(168,85,247,0.4)]"
+                >
                   Browse All Dorms
+                </Button>
+                <Button
+                  onClick={() => navigate('/ai-chat')}
+                  className="bg-gradient-to-r from-purple-600 via-blue-500 to-emerald-400 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-[0_0_40px_rgba(168,85,247,0.5)] transition-all hover:scale-105"
+                >
+                  💬 Chat with Roomy AI
                 </Button>
               </motion.div>
             </div>
