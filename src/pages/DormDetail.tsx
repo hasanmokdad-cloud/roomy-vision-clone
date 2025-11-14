@@ -11,6 +11,7 @@ import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, 
 import { useToast } from '@/hooks/use-toast';
 import RoomContactCard from '@/components/listings/RoomContactCard';
 import { DormDetailSkeleton } from '@/components/skeletons/DormDetailSkeleton';
+import { ImageGallery } from '@/components/shared/ImageGallery';
 import type { RoomType } from '@/types/RoomType';
 
 export default function DormDetail() {
@@ -20,6 +21,9 @@ export default function DormDetail() {
   const [dorm, setDorm] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [galleryStartIndex, setGalleryStartIndex] = useState(0);
 
   useEffect(() => {
     loadDorm();
@@ -59,6 +63,22 @@ export default function DormDetail() {
       title: 'Opening Roomy AI',
       description: `Let me help you learn more about ${dorm.dorm_name || dorm.name}`,
     });
+  };
+
+  const openGallery = (images: string[], startIndex: number = 0) => {
+    setGalleryImages(images);
+    setGalleryStartIndex(startIndex);
+    setGalleryOpen(true);
+  };
+
+  const getAllRoomImages = () => {
+    const allImages: string[] = [];
+    roomTypes.forEach(room => {
+      if (room.images && Array.isArray(room.images)) {
+        allImages.push(...room.images);
+      }
+    });
+    return allImages;
   };
 
   if (loading) {
@@ -229,28 +249,70 @@ export default function DormDetail() {
               {roomTypes.length > 0 && (
                 <Card className="glass-hover">
                   <CardContent className="p-6">
-                    <h2 className="text-2xl font-bold mb-4">Available Room Options</h2>
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-2xl font-bold">Available Room Options</h2>
+                      {getAllRoomImages().length > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openGallery(getAllRoomImages())}
+                        >
+                          View All {getAllRoomImages().length} Images
+                        </Button>
+                      )}
+                    </div>
                     <div className="grid gap-4">
                       {roomTypes.map((room, idx) => (
                         <div
                           key={idx}
-                          className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/10 hover:border-primary/30 transition-colors"
+                          className="flex flex-col gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/10 hover:border-primary/30 transition-colors"
                         >
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                              <Home className="w-6 h-6 text-white" />
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                                <Home className="w-6 h-6 text-white" />
+                              </div>
+                              <div>
+                                <h3 className="font-bold text-lg">{room.type}</h3>
+                                <p className="text-sm text-foreground/60">
+                                  Capacity: {room.capacity} {room.capacity === 1 ? 'person' : 'people'}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <h3 className="font-bold text-lg">{room.type}</h3>
-                              <p className="text-sm text-foreground/60">
-                                Capacity: {room.capacity} {room.capacity === 1 ? 'person' : 'people'}
-                              </p>
+                            <div className="text-right">
+                              <div className="text-2xl font-bold gradient-text">${room.price}</div>
+                              <div className="text-xs text-foreground/60">per month</div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-2xl font-bold gradient-text">${room.price}</div>
-                            <div className="text-xs text-foreground/60">per month</div>
-                          </div>
+                          
+                          {/* Room Images */}
+                          {room.images && room.images.length > 0 && (
+                            <div className="flex gap-2 overflow-x-auto pb-2">
+                              {room.images.slice(0, 4).map((image, imgIdx) => (
+                                <button
+                                  key={imgIdx}
+                                  onClick={() => openGallery(room.images!, imgIdx)}
+                                  className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-colors cursor-pointer"
+                                >
+                                  <img
+                                    src={image}
+                                    alt={`${room.type} - Image ${imgIdx + 1}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </button>
+                              ))}
+                              {room.images.length > 4 && (
+                                <button
+                                  onClick={() => openGallery(room.images!, 0)}
+                                  className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-colors cursor-pointer bg-primary/10 flex items-center justify-center"
+                                >
+                                  <span className="text-sm font-medium">
+                                    +{room.images.length - 4} more
+                                  </span>
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -405,6 +467,13 @@ export default function DormDetail() {
           </div>
         </div>
       </main>
+
+      <ImageGallery
+        images={galleryImages}
+        initialIndex={galleryStartIndex}
+        isOpen={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+      />
 
       <Footer />
     </div>
