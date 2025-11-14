@@ -99,6 +99,38 @@
     border-radius: 0.25rem;
   }
 
+  /* Optimized Animations for Low-End Devices */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Mobile Touch Targets */
+  @media (max-width: 768px) {
+    button, a, input, select, textarea {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+
+  /* Improved Dark Theme Contrast */
+  .dark .text-foreground\/60 {
+    color: hsl(var(--foreground) / 0.75);
+  }
+
+  .dark .text-foreground\/70 {
+    color: hsl(var(--foreground) / 0.85);
+  }
+
+  .dark .border-border {
+    border-color: hsl(var(--border) / 0.3);
+  }
+
   /* Screen Reader Only utility class */
   .sr-only {
     position: absolute;
@@ -148,8 +180,30 @@
   /* Vibrant Glow Effects */
   .neon-glow {
     box-shadow: 
-      0 4px 20px hsla(var(--primary), 0.4),
-      0 0 60px hsla(var(--accent), 0.3);
+      0 0 20px hsla(var(--primary), 0.4),
+      0 0 40px hsla(var(--primary), 0.2);
+    animation: glow 3s ease-in-out infinite alternate;
+  }
+
+  @keyframes glow {
+    from {
+      box-shadow: 
+        0 0 20px hsla(var(--primary), 0.4),
+        0 0 40px hsla(var(--primary), 0.2);
+    }
+    to {
+      box-shadow: 
+        0 0 30px hsla(var(--primary), 0.6),
+        0 0 60px hsla(var(--primary), 0.3);
+    }
+  }
+
+  /* Reduce animation intensity on mobile */
+  @media (max-width: 768px) {
+    .neon-glow {
+      animation: none;
+      box-shadow: 0 0 15px hsla(var(--primary), 0.3);
+    }
   }
 
   .neon-border {
