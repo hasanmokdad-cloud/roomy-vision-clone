@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, DollarSign, MessageSquare, Wifi, Wind, Droplet, CookingPot } from 'lucide-react';
+import { Users, DollarSign, MessageSquare, Wifi, Wind, Droplet, CookingPot, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { RoomType } from '@/types/RoomType';
+import { BookingRequestModal } from '@/components/bookings/BookingRequestModal';
 
 type RoomContactCardProps = {
   room: RoomType;
@@ -26,6 +27,7 @@ const amenityIcons: Record<string, any> = {
 
 export default function RoomContactCard({ room, dormId, dormName, ownerId, index = 0 }: RoomContactCardProps) {
   const [loading, setLoading] = useState(false);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -111,11 +113,12 @@ export default function RoomContactCard({ room, dormId, dormName, ownerId, index
   const isAvailable = room.available !== false;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.1 }}
-    >
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: index * 0.1 }}
+      >
       <Card className={`overflow-hidden hover:shadow-xl transition-all duration-300 ${!isAvailable ? 'opacity-50 grayscale contrast-75' : ''}`}>
         <div className="relative h-48 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
           {!isAvailable && (

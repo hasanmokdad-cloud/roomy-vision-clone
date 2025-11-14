@@ -30,6 +30,13 @@ type Message = {
   sender_id: string;
   body: string;
   created_at: string;
+  read?: boolean;
+};
+
+type TypingStatus = {
+  userId: string;
+  conversationId: string;
+  typing?: boolean;
 };
 
 export default function Messages() {
@@ -42,14 +49,16 @@ export default function Messages() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
     if (!userId) return;
     loadConversations();
 
     // Subscribe to new messages
-    const channel = supabase
+    const messagesChannel = supabase
       .channel('messages-changes')
       .on('postgres_changes', {
         event: 'INSERT',
@@ -59,18 +68,71 @@ export default function Messages() {
         const newMessage = payload.new as Message;
         if (newMessage.conversation_id === selectedConversation) {
           setMessages(prev => [...prev, newMessage]);
+          // Mark as read if sender is not current user
+          if (newMessage.sender_id !== userId) {
+            markAsRead(newMessage.id);
+          }
         }
       })
       .subscribe();
 
+    // Subscribe to typing indicators using presence
+    const presenceChannel = supabase.channel('typing-presence', {
+      config: { presence: { key: userId } }
+    });
+
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const typingSet = new Set<string>();
+        Object.entries(state).forEach(([key, presences]) => {
+          const presence = presences[0] as TypingStatus;
+          if (presence?.conversationId === selectedConversation && presence?.userId !== userId) {
+            typingSet.add(presence.userId);
+          }
+        });
+        setTypingUsers(typingSet);
+      })
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(presenceChannel);
     };
   }, [userId, selectedConversation]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const markAsRead = async (messageId: string) => {
+    await supabase
+      .from('messages')
+      .update({ read: true })
+      .eq('id', messageId);
+  };
+
+  const handleTyping = () => {
+    if (!selectedConversation || !userId) return;
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Track presence for typing
+    const channel = supabase.channel('typing-presence');
+    channel.track({
+      userId,
+      conversationId: selectedConversation,
+      typing: true
+    });
+
+    // Stop typing after 2 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      channel.untrack();
+    }, 2000);
+  };
 
   const loadConversations = async () => {
     if (!userId) return;
@@ -125,10 +187,20 @@ export default function Messages() {
           otherUserName = studentData?.full_name || 'Student';
         }
 
+        // Get last message
+        const { data: lastMsg } = await supabase
+          .from('messages')
+          .select('body')
+          .eq('conversation_id', conv.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
         return {
           ...conv,
-          dorm_name: dorm?.dorm_name || dorm?.name || 'Dorm',
           other_user_name: otherUserName,
+          dorm_name: dorm?.dorm_name || dorm?.name || 'Dorm',
+          last_message: lastMsg?.body
         };
       }));
       setConversations(enriched);
@@ -144,30 +216,44 @@ export default function Messages() {
 
     if (data) {
       setMessages(data);
+      // Mark all as read
+      const unreadIds = data.filter(m => m.sender_id !== userId && !m.read).map(m => m.id);
+      if (unreadIds.length > 0) {
+        await supabase
+          .from('messages')
+          .update({ read: true })
+          .in('id', unreadIds);
+      }
     }
-    setSelectedConversation(conversationId);
   };
 
   const sendMessage = async () => {
     if (!messageInput.trim() || !selectedConversation || !userId) return;
 
     setSending(true);
-    const { error } = await supabase.from('messages').insert({
-      conversation_id: selectedConversation,
-      sender_id: userId,
-      body: messageInput.trim(),
-    });
+    try {
+      const { error } = await supabase.from('messages').insert({
+        conversation_id: selectedConversation,
+        sender_id: userId,
+        body: messageInput.trim(),
+      });
 
-    if (error) {
+      if (error) throw error;
+
+      setMessageInput('');
+      
+      // Stop typing indicator
+      const channel = supabase.channel('typing-presence');
+      channel.untrack();
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Failed to send message',
+        description: error.message,
         variant: 'destructive',
       });
-    } else {
-      setMessageInput('');
+    } finally {
+      setSending(false);
     }
-    setSending(false);
   };
 
   if (authLoading) {

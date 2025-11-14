@@ -139,6 +139,70 @@ export type Database = {
           },
         ]
       }
+      bookings: {
+        Row: {
+          created_at: string
+          dorm_id: string
+          id: string
+          message: string | null
+          owner_id: string
+          owner_notes: string | null
+          requested_date: string
+          requested_time: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dorm_id: string
+          id?: string
+          message?: string | null
+          owner_id: string
+          owner_notes?: string | null
+          requested_date: string
+          requested_time: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dorm_id?: string
+          id?: string
+          message?: string | null
+          owner_id?: string
+          owner_notes?: string | null
+          requested_date?: string
+          requested_time?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+        ]
+      }
       chat_logs: {
         Row: {
           created_at: string | null
@@ -427,6 +491,7 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          read: boolean
           sender_id: string
         }
         Insert: {
@@ -434,6 +499,7 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          read?: boolean
           sender_id: string
         }
         Update: {
@@ -441,6 +507,7 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          read?: boolean
           sender_id?: string
         }
         Relationships: [
