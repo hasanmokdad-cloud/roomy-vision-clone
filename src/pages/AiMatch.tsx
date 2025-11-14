@@ -249,7 +249,7 @@ export default function AiMatch() {
                       required
                       value={profile.full_name}
                       onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-                      className="bg-white border-gray-200"
+                      className="bg-white dark:bg-gray-800 border-gray-200"
                     />
                   </div>
                   <div>
@@ -259,7 +259,7 @@ export default function AiMatch() {
                       required
                       value={profile.email}
                       onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                      className="bg-white border-gray-200"
+                      className="bg-white dark:bg-gray-800 border-gray-200"
                     />
                   </div>
                   <div>
@@ -324,14 +324,14 @@ export default function AiMatch() {
               <form onSubmit={handleStep2Submit} className="space-y-6">
                 <div>
                   <Label>Room Type</Label>
-                  <div className="grid grid-cols-3 gap-3 mt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
                     {['Private Room', 'Shared Room', 'Studio Apartment'].map(type => (
                       <Button
                         key={type}
                         type="button"
                         variant={preferences.room_type === type ? 'default' : 'outline'}
                         onClick={() => setPreferences({ ...preferences, room_type: type })}
-                        className="h-auto py-3"
+                        className="h-auto py-3 text-sm"
                       >
                         {type}
                       </Button>
@@ -409,7 +409,7 @@ export default function AiMatch() {
           )}
 
           {step === 3 && (
-            <div className="space-y-6 md:space-y-8">
+            <div className="space-y-6 md:space-y-8 mb-20 md:mb-0">
               <motion.div 
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -429,8 +429,8 @@ export default function AiMatch() {
               </motion.div>
 
               {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {[1, 2, 3, 4].map(i => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map(i => (
                     <MatchCardSkeleton key={i} />
                   ))}
                 </div>
