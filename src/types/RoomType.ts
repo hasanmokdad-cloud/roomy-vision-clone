@@ -5,4 +5,5 @@ export interface RoomType {
   amenities?: string[];
   images?: string[];
   available?: boolean;
+  panorama_url?: string;
 }
