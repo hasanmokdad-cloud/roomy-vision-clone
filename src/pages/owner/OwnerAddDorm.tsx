@@ -319,7 +319,7 @@ export default function OwnerAddDorm() {
     <div className="min-h-screen flex bg-background">
       <OwnerSidebar />
       
-      <main className="flex-1 p-4 md:p-8 overflow-auto">
+      <main className="flex-1 p-4 md:p-8 overflow-auto pb-20 md:pb-8">
         <div className="max-w-4xl mx-auto">
           <Button
             variant="ghost"

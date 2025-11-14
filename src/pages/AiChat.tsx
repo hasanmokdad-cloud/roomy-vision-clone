@@ -55,7 +55,7 @@ export default function AiChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sendMessage = async () => {
+  const sendMessage = async (retryCount = 0) => {
     const trimmed = input.trim();
     
     if (!trimmed) {
@@ -94,9 +94,19 @@ export default function AiChat() {
 
       if (error) throw error;
 
+      if (!data || !data.response) {
+        // Retry once if response is empty
+        if (retryCount < 1) {
+          console.log("Empty response, retrying...");
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return sendMessage(retryCount + 1);
+        }
+        throw new Error("Empty response from AI");
+      }
+
       const aiMsg: Message = {
         role: "assistant",
-        content: data.response || "Sorry, I couldn't process that.",
+        content: data.response,
         timestamp: new Date().toISOString()
       };
 
@@ -106,11 +116,20 @@ export default function AiChat() {
       console.error("Chat error:", error);
       
       let errorMessage = "Failed to get response. Please try again.";
+      let shouldRetry = false;
       
       if (error.message?.includes("429") || error.message?.includes("Too many requests")) {
         errorMessage = "You're sending messages too quickly. Please wait a minute and try again.";
       } else if (error.message?.includes("402") || error.message?.includes("Payment required")) {
         errorMessage = "AI service temporarily unavailable. Please try again later.";
+      } else if (error.message?.includes("Failed to fetch") || error.message?.includes("Network")) {
+        errorMessage = "Network error. Retrying...";
+        shouldRetry = true;
+      }
+
+      if (shouldRetry && retryCount < 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return sendMessage(retryCount + 1);
       }
 
       toast({
@@ -123,11 +142,17 @@ export default function AiChat() {
     }
   };
 
-  const handleReset = async () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendMessage();
+  };
+
+  const handleReset = () => {
     setMessages([]);
-    setInput("reset chat");
-    await sendMessage();
-    setInput("");
+    toast({
+      title: "Chat reset",
+      description: "Starting fresh conversation"
+    });
   };
 
   return (
@@ -228,7 +253,7 @@ export default function AiChat() {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  sendMessage();
+                  sendMessage(0);
                 }
               }}
               placeholder="Ask about dorms, prices, areas, amenities..."
@@ -236,7 +261,7 @@ export default function AiChat() {
               className="flex-1 bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-gray-400 focus:border-primary/50 rounded-xl px-4 py-3"
             />
             <Button
-              onClick={sendMessage}
+              onClick={() => sendMessage(0)}
               disabled={loading || !input.trim()}
               className="bg-gradient-to-r from-primary to-secondary hover:shadow-[0_0_30px_rgba(168,85,247,0.4)] transition-all rounded-xl px-6"
             >
