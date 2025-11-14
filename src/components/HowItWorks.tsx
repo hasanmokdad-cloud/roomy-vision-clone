@@ -57,23 +57,15 @@ export const HowItWorks = () => {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: index * 0.2 }}
               whileHover={{ y: -10, scale: 1.02 }}
-              className="bg-white rounded-3xl p-8 relative overflow-hidden group shadow-[0_2px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.12)] transition-all duration-300"
-            >
-              {/* Gradient glow on hover */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-              <div className="relative z-10 space-y-6">
-                <div className="text-6xl font-bold text-gray-100">{step.number}</div>
-                
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
-                  <step.icon className="w-8 h-8 text-white" />
+              className="bg-[rgba(255,255,255,0.03)] backdrop-blur-xl border border-white/10 rounded-3xl p-10 group hover:scale-105 transition-all duration-300 cursor-pointer">
+              <div className="flex items-center gap-6 mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <step.icon className="w-8 h-8 text-primary" />
                 </div>
-
-                <div className="space-y-3">
-                  <h3 className="text-2xl font-bold">{step.title}</h3>
-                  <p className="text-foreground/70 leading-relaxed">{step.description}</p>
-                </div>
+                <div className="text-6xl font-bold text-foreground/10">{step.number}</div>
               </div>
+              <h3 className="text-2xl font-bold mb-4 text-foreground gradient-text">{step.title}</h3>
+              <p className="text-foreground/70 leading-relaxed">{step.description}</p>
             </motion.div>
           ))}
         </div>

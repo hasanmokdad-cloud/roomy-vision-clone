@@ -127,7 +127,7 @@ export default function Listings() {
           className="relative mb-8"
           role="search"
         >
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" aria-hidden="true" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/50" aria-hidden="true" />
           <Input
             type="text"
             placeholder="Search by name, location, or features (e.g., 'single room near AUB')"
@@ -137,7 +137,7 @@ export default function Listings() {
               const limited = sanitized.substring(0, 120);
               setSearchQuery(limited);
             }}
-            className="pl-12 h-14 text-lg bg-white border-gray-200 rounded-2xl shadow-sm"
+            className="pl-12 h-14 text-lg bg-background/30 backdrop-blur-xl border border-white/10 rounded-2xl placeholder:text-foreground/50"
             aria-label="Search dorms by name, location, or features"
           />
         </motion.div>

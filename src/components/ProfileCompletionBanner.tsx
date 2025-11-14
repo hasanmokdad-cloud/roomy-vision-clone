@@ -49,7 +49,7 @@ export function ProfileCompletionBanner({ completionPercentage, onDismiss }: Pro
           </div>
           <div className="flex items-center gap-2">
             <Link to="/profile">
-              <Button size="sm" variant="secondary" className="bg-white text-primary hover:bg-white/90">
+              <Button size="sm" variant="secondary" className="bg-primary/20 text-primary hover:bg-primary/30 border border-primary/30">
                 Complete Profile
               </Button>
             </Link>
