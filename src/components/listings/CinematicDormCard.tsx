@@ -1,10 +1,9 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useState, useMemo, useCallback, memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, CheckCircle, Wifi, Zap, Home, Navigation } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { FullViewportRoomOverlay } from "./FullViewportRoomOverlay";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -33,12 +32,9 @@ interface CinematicDormCardProps {
     university?: string;
   };
   index: number;
-  isExpanded: boolean;
-  onExpand: () => void;
-  onClose: () => void;
 }
 
-const CinematicDormCardComponent = ({ dorm, index, isExpanded, onExpand, onClose }: CinematicDormCardProps) => {
+const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
@@ -109,8 +105,7 @@ const CinematicDormCardComponent = ({ dorm, index, isExpanded, onExpand, onClose
   );
 
   return (
-    <>
-      <motion.div
+    <motion.div
         variants={cardVariants}
         initial="hidden"
         animate="visible"
@@ -273,61 +268,6 @@ const CinematicDormCardComponent = ({ dorm, index, isExpanded, onExpand, onClose
           </div>
         </motion.div>
       </motion.div>
-
-      {/* Smooth Expanded Dorm Details */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            transition={{ duration: 0.35, ease: "easeInOut" }}
-            className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 backdrop-blur-md p-6"
-          >
-            <motion.div
-              layout
-              className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 max-w-3xl w-full shadow-2xl overflow-y-auto max-h-[90vh]"
-              transition={{ duration: 0.35, ease: "easeInOut" }}
-            >
-              <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl">
-                ×
-              </button>
-
-              <div className="space-y-4 text-white">
-                <h2 className="text-3xl font-bold">{dorm.dorm_name}</h2>
-                <p className="text-gray-400">{dorm.area || dorm.location}</p>
-                <p className="text-lg text-primary font-semibold">Starting from ${startingPrice}/month</p>
-
-                {/* Room Types */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
-                  {roomTypes.map((room, i) => (
-                    <div key={i} className="p-4 bg-white/10 rounded-2xl flex flex-col gap-1">
-                      <p className="font-semibold text-white">{room.type}</p>
-                      <p className="text-sm text-gray-400">Capacity: {room.capacity}</p>
-                      <p className="text-sm text-gray-400">Price: ${room.price}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Amenities */}
-                {dorm.amenities?.length > 0 && (
-                  <div className="mt-6">
-                    <h4 className="font-semibold mb-2">Amenities</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {dorm.amenities.map((a, i) => (
-                        <span key={i} className="text-sm px-3 py-1 rounded-full bg-white/10 text-gray-200">
-                          {a}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
   );
 };
 

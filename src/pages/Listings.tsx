@@ -32,7 +32,6 @@ export default function Listings() {
     shuttle: 'all' as 'all' | 'available' | 'none',
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [expandedDormId, setExpandedDormId] = useState<string | null>(null);
   const itemsPerPage = 6;
 
   const { data, loading, error } = useListingsQuery(filters);
@@ -93,14 +92,6 @@ export default function Listings() {
 
   const handleResetPrice = useCallback(() => {
     setFilters(prev => ({ ...prev, priceRange: [0, 2000] }));
-  }, []);
-
-  const handleExpandDorm = useCallback((dormId: string) => {
-    setExpandedDormId(dormId);
-  }, []);
-
-  const handleCloseExpansion = useCallback(() => {
-    setExpandedDormId(null);
   }, []);
 
 
@@ -208,9 +199,6 @@ export default function Listings() {
                         key={dorm.id} 
                         dorm={dorm} 
                         index={index}
-                        isExpanded={expandedDormId === dorm.id}
-                        onExpand={() => handleExpandDorm(dorm.id)}
-                        onClose={handleCloseExpansion}
                       />
                     ))}
                   </div>
