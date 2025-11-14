@@ -196,7 +196,7 @@ export default function Navbar() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent 
                     align="end"
-                    className="bg-background/95 backdrop-blur-sm z-[60]"
+                    className="bg-background/95 backdrop-blur-sm border border-white/10 z-[60]"
                     role="menu"
                     aria-label="User menu"
                   >
@@ -213,6 +213,13 @@ export default function Navbar() {
                     >
                       <LayoutDashboard className="w-4 h-4 mr-2" aria-hidden="true" />
                       Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => navigate('/settings')}
+                      role="menuitem"
+                    >
+                      <User className="w-4 h-4 mr-2" aria-hidden="true" />
+                      Settings
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 

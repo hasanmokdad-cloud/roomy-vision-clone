@@ -138,7 +138,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         {showConfetti && <Confetti />}
       </AnimatePresence>
 
-      <div className="bg-white rounded-3xl p-8 shadow-[0_8px_32px_rgba(0,0,0,0.12)] max-w-2xl mx-auto">
+      <div className="bg-background/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl max-w-2xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -166,7 +166,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
             <Input
               {...register('full_name')}
               placeholder="Enter your full name"
-              className="bg-white border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all hover:border-gray-300"
+              className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/50 transition-all"
             />
             {errors.full_name && (
               <p className="text-xs text-red-400 mt-1">{errors.full_name.message}</p>
@@ -180,7 +180,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                 type="number"
                 {...register('age', { valueAsNumber: true })}
                 placeholder="18"
-                className="bg-white border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all hover:border-gray-300"
+                className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/50 transition-all"
               />
               {errors.age && (
                 <p className="text-xs text-red-400 mt-1">{errors.age.message}</p>
@@ -190,10 +190,10 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
             <div>
               <Label>Gender</Label>
               <Select onValueChange={(value) => setValue('gender', value as any)}>
-                <SelectTrigger className="bg-white border-gray-200 hover:border-gray-300">
+                <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background border border-white/10">
                   <SelectItem value="Male">Male</SelectItem>
                   <SelectItem value="Female">Female</SelectItem>
                   <SelectItem value="Other">Other</SelectItem>
@@ -208,10 +208,10 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
               University
             </Label>
             <Select onValueChange={(value) => setValue('university', value)}>
-              <SelectTrigger className="bg-white border-gray-200 hover:border-gray-300">
+              <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
                 <SelectValue placeholder="Select your university" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background border border-white/10">
                 <SelectItem value="LAU">Lebanese American University (LAU)</SelectItem>
                 <SelectItem value="AUB">American University of Beirut (AUB)</SelectItem>
                 <SelectItem value="USEK">Holy Spirit University of Kaslik (USEK)</SelectItem>
@@ -231,7 +231,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
               <Input
                 {...register('residential_area')}
                 placeholder="e.g., Beirut"
-                className="bg-white border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all hover:border-gray-300"
+                className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/50 transition-all"
               />
             </div>
 
@@ -243,7 +243,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
               <Input
                 {...register('preferred_university')}
                 placeholder="e.g., Near LAU"
-                className="bg-white border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all hover:border-gray-300"
+                className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/50 transition-all"
               />
             </div>
           </div>
@@ -258,7 +258,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                 type="number"
                 {...register('budget', { valueAsNumber: true })}
                 placeholder="500"
-                className="bg-white border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all hover:border-gray-300"
+                className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/50 transition-all"
               />
             </div>
 
@@ -268,10 +268,10 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                 Room Type
               </Label>
               <Select onValueChange={(value) => setValue('room_type', value)}>
-                <SelectTrigger className="bg-white border-gray-200 hover:border-gray-300">
+                <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
                   <SelectValue placeholder="Select preference" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background border border-white/10">
                   <SelectItem value="single">Single Room</SelectItem>
                   <SelectItem value="double">Double Room</SelectItem>
                   <SelectItem value="studio">Studio</SelectItem>
@@ -284,10 +284,10 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
           <div>
             <Label>Distance Preference</Label>
             <Select onValueChange={(value) => setValue('distance_preference', value)}>
-              <SelectTrigger className="bg-white border-gray-200 hover:border-gray-300">
+              <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
                 <SelectValue placeholder="Select distance preference" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background border border-white/10">
                 <SelectItem value="walking">Walking Distance</SelectItem>
                 <SelectItem value="shuttle">Shuttle Service OK</SelectItem>
                 <SelectItem value="any">Any Distance</SelectItem>

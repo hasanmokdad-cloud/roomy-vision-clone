@@ -238,7 +238,7 @@ export default function AiMatch() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="bg-card dark:bg-card rounded-2xl md:rounded-3xl p-4 md:p-10 shadow-2xl border border-border"
+              className="bg-background/40 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-10 shadow-2xl"
             >
               <h2 className="text-xl md:text-3xl font-black mb-4 md:mb-8 gradient-text">Step 1 — Create your profile</h2>
               <form onSubmit={handleStep1Submit} className="space-y-4">
@@ -249,7 +249,7 @@ export default function AiMatch() {
                       required
                       value={profile.full_name}
                       onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-                      className="bg-white dark:bg-gray-800 border-gray-200"
+                      className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/40"
                     />
                   </div>
                   <div>
@@ -259,7 +259,7 @@ export default function AiMatch() {
                       required
                       value={profile.email}
                       onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                      className="bg-white dark:bg-gray-800 border-gray-200"
+                      className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/40"
                     />
                   </div>
                   <div>
@@ -268,16 +268,16 @@ export default function AiMatch() {
                       type="number"
                       value={profile.age}
                       onChange={(e) => setProfile({ ...profile, age: e.target.value })}
-                      className="bg-white border-gray-200"
+                      className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/40"
                     />
                   </div>
                   <div>
                     <Label>Gender</Label>
                     <Select value={profile.gender} onValueChange={(v) => setProfile({ ...profile, gender: v })}>
-                      <SelectTrigger className="bg-white border-gray-200">
+                      <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
                         <SelectValue placeholder="Select gender" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border border-white/10">
                         <SelectItem value="Male">Male</SelectItem>
                         <SelectItem value="Female">Female</SelectItem>
                         <SelectItem value="Other">Other</SelectItem>
@@ -287,10 +287,10 @@ export default function AiMatch() {
                   <div>
                     <Label>University</Label>
                     <Select value={profile.university} onValueChange={(v) => setProfile({ ...profile, university: v })}>
-                      <SelectTrigger className="bg-white border-gray-200">
+                      <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
                         <SelectValue placeholder="Select university" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border border-white/10">
                         {universities.map(u => (
                           <SelectItem key={u} value={u}>{u}</SelectItem>
                         ))}
@@ -302,7 +302,7 @@ export default function AiMatch() {
                     <Input
                       value={profile.residential_area}
                       onChange={(e) => setProfile({ ...profile, residential_area: e.target.value })}
-                      className="bg-white border-gray-200"
+                      className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/40"
                     />
                   </div>
                 </div>
@@ -318,7 +318,7 @@ export default function AiMatch() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="bg-card dark:bg-card rounded-2xl md:rounded-3xl p-4 md:p-10 shadow-2xl border border-border"
+              className="bg-background/40 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-10 shadow-2xl"
             >
               <h2 className="text-2xl md:text-3xl font-black mb-6 md:mb-8 gradient-text">Step 2 — Set your preferences</h2>
               <form onSubmit={handleStep2Submit} className="space-y-6">
@@ -368,10 +368,10 @@ export default function AiMatch() {
                     value={preferences.preferred_university} 
                     onValueChange={(v) => setPreferences({ ...preferences, preferred_university: v })}
                   >
-                    <SelectTrigger className="bg-white border-gray-200">
+                    <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
                       <SelectValue placeholder="Select university" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-background border border-white/10">
                       {universities.map(u => (
                         <SelectItem key={u} value={u}>{u}</SelectItem>
                       ))}
@@ -385,10 +385,10 @@ export default function AiMatch() {
                     value={preferences.distance_preference} 
                     onValueChange={(v) => setPreferences({ ...preferences, distance_preference: v })}
                   >
-                    <SelectTrigger className="bg-white border-gray-200">
+                    <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-background border border-white/10">
                       <SelectItem value="Walking distance">Walking distance</SelectItem>
                       <SelectItem value="Shuttle OK">Shuttle OK</SelectItem>
                       <SelectItem value="No preference">No preference</SelectItem>
