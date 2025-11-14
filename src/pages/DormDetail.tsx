@@ -9,8 +9,9 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { RoomType } from '@/components/listings/RoomExpansion3D';
+import RoomContactCard from '@/components/listings/RoomContactCard';
 import { DormDetailSkeleton } from '@/components/skeletons/DormDetailSkeleton';
+import RoomContactCard from '@/components/listings/RoomContactCard';
 
 export default function DormDetail() {
   const { id } = useParams();
@@ -32,8 +33,8 @@ export default function DormDetail() {
 
   const loadDorm = async () => {
     const { data, error } = await supabase
-      .from('dorms_public')
-      .select('*')
+      .from('dorms')
+      .select('*, owner_id')
       .eq('id', id)
       .eq('verification_status', 'Verified')
       .maybeSingle();

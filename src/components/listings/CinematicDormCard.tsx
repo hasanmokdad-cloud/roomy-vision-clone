@@ -70,12 +70,8 @@ const CinematicDormCardComponent = ({ dorm, index, isExpanded, onExpand, onClose
   );
 
   const handleCardClick = useCallback(() => {
-    if (hasMultipleRooms) {
-      onExpand();
-    } else {
-      navigate(`/dorm/${dorm.id}`);
-    }
-  }, [hasMultipleRooms, onExpand, navigate, dorm.id]);
+    navigate(`/dorm/${dorm.id}`);
+  }, [navigate, dorm.id]);
 
   const amenityIcons: Record<string, any> = useMemo(
     () => ({

@@ -33,6 +33,8 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Unauthorized = lazy(() => import("./pages/Unauthorized"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Messages = lazy(() => import("./pages/Messages"));
+const OwnerAddDorm = lazy(() => import("./pages/owner/OwnerAddDorm"));
+const ClaimDorm = lazy(() => import("./pages/owner/ClaimDorm"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -93,9 +95,8 @@ const App = () => (
               <Route path="/contact" element={<Contact />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
-
-              {/* Legacy Dashboard Route - redirects based on role */}
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/unauthorized" element={<Unauthorized />} />
 
         {/* Protected Dashboards */}
         <Route
@@ -121,6 +122,14 @@ const App = () => (
               <Route
                 path="/owner/performance"
                 element={<ProtectedRoute element={<OwnerPerformance />} requiredRole="owner" />}
+              />
+              <Route
+                path="/owner/add-dorm"
+                element={<ProtectedRoute element={<OwnerAddDorm />} requiredRole="owner" />}
+              />
+              <Route
+                path="/owner/claim-dorm"
+                element={<ProtectedRoute element={<ClaimDorm />} requiredRole="owner" />}
               />
 
               {/* Owner Routes (legacy support) */}
