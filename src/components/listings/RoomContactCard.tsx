@@ -7,15 +7,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-export type RoomType = {
-  type: string;
-  capacity: number;
-  price: number;
-  amenities?: string[];
-  images?: string[];
-  available?: boolean;
-};
+import type { RoomType } from '@/types/RoomType';
 
 type RoomContactCardProps = {
   room: RoomType;

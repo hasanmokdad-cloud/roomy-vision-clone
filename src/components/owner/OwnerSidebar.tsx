@@ -1,4 +1,4 @@
-import { Home, Building2, Plus, BarChart3, Settings } from 'lucide-react';
+import { Home, Building2, Plus, BarChart3, Settings, DoorOpen } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
   Sidebar,
@@ -15,6 +15,7 @@ import {
 const menuItems = [
   { title: 'Dashboard', url: '/owner', icon: Home },
   { title: 'My Listings', url: '/owner/listings', icon: Building2 },
+  { title: 'Room Management', url: '/owner/rooms', icon: DoorOpen },
   { title: 'Add New Dorm', url: '/owner/add', icon: Plus },
   { title: 'Statistics', url: '/owner/stats', icon: BarChart3 },
   { title: 'Account', url: '/owner/account', icon: Settings },
