@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
@@ -9,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Building2, User, LogOut, LayoutDashboard, Menu } from 'lucide-react';
+import { Building2, User, LogOut, LayoutDashboard, Menu, MessageSquare } from 'lucide-react';
 import AuthModal from './AuthModal';
 import {
   Sheet,
@@ -18,6 +19,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { useUnreadCount } from '@/hooks/useUnreadCount';
 
 export default function Navbar() {
   const [authOpen, setAuthOpen] = useState(false);
@@ -25,6 +27,7 @@ export default function Navbar() {
   const [user, setUser] = useState<any>(null);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
+  const unreadCount = useUnreadCount(user?.id || null);
 
   useEffect(() => {
     // Check auth

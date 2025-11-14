@@ -37,6 +37,7 @@ const Messages = lazy(() => import("./pages/Messages"));
 const OwnerAddDorm = lazy(() => import("./pages/owner/OwnerAddDorm"));
 const ClaimDorm = lazy(() => import("./pages/owner/ClaimDorm"));
 const OwnerRooms = lazy(() => import("./pages/owner/OwnerRooms"));
+const OwnerBookings = lazy(() => import("./pages/owner/OwnerBookings"));
 
 // Loading fallback component
 const PageLoader = () => (
