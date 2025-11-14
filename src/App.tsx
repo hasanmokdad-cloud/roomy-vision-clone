@@ -2,11 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { ChatbotBubble } from "./components/ChatbotBubble";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRoleGuard } from "@/hooks/useRoleGuard";
 
 // Lazy load route components
 const Main = lazy(() => import("./pages/Main"));
@@ -17,12 +18,15 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const DormDetail = lazy(() => import("./pages/DormDetail"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const OwnerDashboard = lazy(() => import("./pages/owner/OwnerDashboard"));
+const StudentDashboard = lazy(() => import("./pages/dashboard/StudentDashboard"));
 const Listings = lazy(() => import("./pages/Listings"));
 const AiMatch = lazy(() => import("./pages/AiMatch"));
 const AiChat = lazy(() => import("./pages/AiChat"));
 const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Unauthorized = lazy(() => import("./pages/Unauthorized"));
+const Settings = lazy(() => import("./pages/Settings"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -35,6 +39,30 @@ const PageLoader = () => (
   </div>
 );
 
+function ProtectedRoute({
+  element,
+  requiredRole,
+}: {
+  element: JSX.Element;
+  requiredRole: "admin" | "owner" | "user";
+}) {
+  const { loading, role } = useRoleGuard(requiredRole);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-foreground/60">Loading...</p>
+      </div>
+    );
+  }
+
+  if (role !== requiredRole) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  return element;
+}
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -46,20 +74,52 @@ const App = () => (
         <BrowserRouter>
           <Suspense fallback={<PageLoader />}>
             <Routes>
+              {/* Public Routes */}
               <Route path="/" element={<Main />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/intro" element={<Intro />} />
               <Route path="/listings" element={<Listings />} />
               <Route path="/dorm/:id" element={<DormDetail />} />
               <Route path="/ai-match" element={<AiMatch />} />
               <Route path="/ai-chat" element={<AiChat />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/intro" element={<Intro />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/admin/*" element={<AdminDashboard />} />
-              <Route path="/owner/*" element={<OwnerDashboard />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="/settings" element={<Settings />} />
+
+              {/* Legacy Dashboard Route - redirects based on role */}
+              <Route path="/dashboard" element={<Dashboard />} />
+
+              {/* Protected Dashboards */}
+              <Route
+                path="/dashboard/student"
+                element={<ProtectedRoute element={<StudentDashboard />} requiredRole="user" />}
+              />
+              <Route
+                path="/dashboard/owner"
+                element={<ProtectedRoute element={<OwnerDashboard />} requiredRole="owner" />}
+              />
+              <Route
+                path="/dashboard/admin"
+                element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />}
+              />
+
+              {/* Owner Routes (legacy support) */}
+              <Route
+                path="/owner/*"
+                element={<ProtectedRoute element={<OwnerDashboard />} requiredRole="owner" />}
+              />
+
+              {/* Admin Routes (legacy support) */}
+              <Route
+                path="/admin/*"
+                element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />}
+              />
+
+              {/* Unauthorized Fallback */}
+              <Route path="/unauthorized" element={<Unauthorized />} />
+
+              {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
