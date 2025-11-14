@@ -32,6 +32,7 @@ const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Unauthorized = lazy(() => import("./pages/Unauthorized"));
 const Settings = lazy(() => import("./pages/Settings"));
+const Messages = lazy(() => import("./pages/Messages"));
 
 // Loading fallback component
 const PageLoader = () => (

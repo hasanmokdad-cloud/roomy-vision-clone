@@ -1,28 +1,56 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Save, Trash2, Lock, Heart, CheckCircle, XCircle, Shield } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
+import BottomNav from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { settingsManager, type UserSettings } from '@/utils/settings';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Settings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { loading, userId } = useAuthGuard();
+  const isMobile = useIsMobile();
   const [settings, setSettings] = useState<UserSettings>(settingsManager.load());
   const [saving, setSaving] = useState(false);
+  const [savedItems, setSavedItems] = useState<any[]>([]);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [keepSignedIn, setKeepSignedIn] = useState(true);
 
   useEffect(() => {
     if (!loading && userId) {
       settingsManager.loadFromSupabase(userId).then((loadedSettings) => {
         setSettings(loadedSettings);
       });
+
+      // Load saved items
+      supabase
+        .from('saved_items')
+        .select('*')
+        .eq('user_id', userId)
+        .then(({ data }) => setSavedItems(data || []));
+
+      // Check verification status
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        setEmailVerified(!!user?.email_confirmed_at);
+      });
+
+      supabase
+        .from('students')
+        .select('phone_verified')
+        .eq('user_id', userId)
+        .maybeSingle()
+        .then(({ data }) => setPhoneVerified(data?.phone_verified || false));
     }
   }, [loading, userId]);
 
@@ -144,7 +172,97 @@ export default function Settings() {
               </div>
             </Card>
 
-            {/* Language */}
+            {/* Saved / Favorites */}
+            <Card className="glass p-6 border-white/20">
+              <div className="flex items-center gap-4 mb-4">
+                <Heart className="w-6 h-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Saved Dorms</h3>
+                  <p className="text-sm text-white/60">
+                    {savedItems.length} {savedItems.length === 1 ? 'item' : 'items'} saved
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate('/profile')}
+              >
+                View Saved Items
+              </Button>
+            </Card>
+
+            {/* Password & Security */}
+            <Card className="glass p-6 border-white/20">
+              <div className="flex items-center gap-4 mb-6">
+                <Lock className="w-6 h-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Password & Security</h3>
+                  <p className="text-sm text-white/60">Manage your account security</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between py-3 border-b border-white/10">
+                  <div className="flex items-center gap-3">
+                    {emailVerified ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-red-500" />
+                    )}
+                    <span className="text-white">Email Verification</span>
+                  </div>
+                  <Badge variant={emailVerified ? "default" : "destructive"}>
+                    {emailVerified ? 'Verified' : 'Unverified'}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center justify-between py-3 border-b border-white/10">
+                  <div className="flex items-center gap-3">
+                    {phoneVerified ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-red-500" />
+                    )}
+                    <span className="text-white">Phone Verification</span>
+                  </div>
+                  <Badge variant="secondary">Coming Soon</Badge>
+                </div>
+
+                <Button
+                  variant="outline"
+                  className="w-full mt-4"
+                  onClick={() => toast({ title: 'Coming Soon', description: 'Password change feature will be available soon' })}
+                >
+                  Change Password
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => toast({ title: 'Coming Soon', description: 'Two-factor authentication will be available soon' })}
+                >
+                  <Shield className="w-4 h-4 mr-2" />
+                  Enable 2FA (Coming Soon)
+                </Button>
+              </div>
+            </Card>
+
+            {/* Keep Signed In (Mobile) */}
+            {isMobile && (
+              <Card className="glass p-6 border-white/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">Keep me signed in</h3>
+                    <p className="text-sm text-white/60">Stay logged in on this device</p>
+                  </div>
+                  <Switch
+                    checked={keepSignedIn}
+                    onCheckedChange={setKeepSignedIn}
+                  />
+                </div>
+              </Card>
+            )}
             <Card className="glass p-6 border-white/20">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -229,6 +347,7 @@ export default function Settings() {
         </motion.div>
       </div>
 
+      {isMobile && <BottomNav />}
       <Footer />
     </div>
   );
