@@ -7,16 +7,18 @@ import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Home, MessageSquare, TrendingUp } from "lucide-react";
+import { NotificationBell } from "@/components/owner/NotificationBell";
 
 export default function OwnerDashboard() {
   const { loading, userId } = useRoleGuard("owner");
   const [dorms, setDorms] = useState<any[]>([]);
+  const [ownerId, setOwnerId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!userId) return;
 
-    const fetchDorms = async () => {
+    const fetchOwnerData = async () => {
       // Get owner record first
       const { data: owner } = await supabase
         .from("owners")
@@ -25,6 +27,8 @@ export default function OwnerDashboard() {
         .maybeSingle();
 
       if (!owner) return;
+      
+      setOwnerId(owner.id);
 
       const { data, error } = await supabase
         .from("dorms")
@@ -35,7 +39,7 @@ export default function OwnerDashboard() {
       else setDorms(data || []);
     };
 
-    fetchDorms();
+    fetchOwnerData();
   }, [userId]);
 
   if (loading) {
@@ -65,12 +69,15 @@ export default function OwnerDashboard() {
             </p>
           </div>
 
-          <Button
-            onClick={() => navigate("/listings")}
-            className="mt-6 md:mt-0 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
-          >
-            <Home className="w-4 h-4 mr-2" /> View All Dorms
-          </Button>
+          <div className="flex items-center gap-3 mt-6 md:mt-0">
+            {ownerId && <NotificationBell ownerId={ownerId} />}
+            <Button
+              onClick={() => navigate("/listings")}
+              className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
+            >
+              <Home className="w-4 h-4 mr-2" /> View All Dorms
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards */}
