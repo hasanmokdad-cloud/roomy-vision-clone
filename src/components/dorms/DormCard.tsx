@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { MapPin, BadgeCheck, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { SeedDorm } from '@/data/dorms.seed';
-import { RoomsOverlay } from './RoomsOverlay';
+import { useNavigate } from 'react-router-dom';
 
 interface DormCardProps {
   dorm: SeedDorm;
@@ -11,7 +11,7 @@ interface DormCardProps {
 }
 
 export const DormCard: React.FC<DormCardProps> = ({ dorm, capacityFilter }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const navigate = useNavigate();
 
   // Filter rooms by capacity if filter is active
   const matchingRooms = capacityFilter
@@ -24,17 +24,17 @@ export const DormCard: React.FC<DormCardProps> = ({ dorm, capacityFilter }) => {
   }
 
   const handleCardClick = () => {
-    setIsExpanded(true);
+    // Navigate to dorm detail page
+    // Note: SeedDorm doesn't have an id field by default, using name as fallback
+    const dormId = (dorm as any).id || dorm.name.toLowerCase().replace(/\s+/g, '-');
+    navigate(`/dorm/${dormId}`);
   };
 
   return (
-    <>
-      <motion.div
+    <motion.div
         whileHover={{ y: -6, scale: 1.02 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className={`relative bg-white rounded-2xl overflow-hidden cursor-pointer group shadow-[0_2px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.12),0_0_0_2px_hsl(var(--primary)/0.15)] transition-all duration-300 ${
-          isExpanded ? 'blur-sm scale-95' : ''
-        }`}
+        className="relative bg-white dark:bg-card rounded-2xl overflow-hidden cursor-pointer group shadow-[0_2px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.12),0_0_0_2px_hsl(var(--primary)/0.15)] dark:shadow-[0_2px_16px_rgba(0,0,0,0.3)] dark:hover:shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_0_2px_hsl(var(--primary)/0.15)] transition-all duration-300"
         onClick={handleCardClick}
       >
         {/* Image */}
@@ -88,18 +88,9 @@ export const DormCard: React.FC<DormCardProps> = ({ dorm, capacityFilter }) => {
 
           {/* Hover Hint */}
           <div className="mt-4 text-center text-xs text-primary/70 opacity-0 group-hover:opacity-100 transition-opacity">
-            Click to view rooms →
+            Click to view details →
           </div>
         </div>
       </motion.div>
-
-      {/* Rooms Overlay */}
-      <RoomsOverlay
-        dorm={dorm}
-        isOpen={isExpanded}
-        onClose={() => setIsExpanded(false)}
-        capacityFilter={capacityFilter}
-      />
-    </>
   );
 };
