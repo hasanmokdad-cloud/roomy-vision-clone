@@ -133,6 +133,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log('[roomy-chat] Request received');
   try {
     // Parse and validate request body
     const rawBody = await req.json();

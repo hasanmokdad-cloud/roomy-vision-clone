@@ -11,19 +11,26 @@ const cors = {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  console.log('[train-recommender] Request received');
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    console.log('[train-recommender] Recomputing engagement scores');
     // Example: recompute a lightweight score per dorm from analytics_events
     const { data, error } = await supabase.rpc("recompute_dorm_engagement_scores");
-    if (error) throw error;
+    if (error) {
+      console.error('[train-recommender] RPC error:', error);
+      throw error;
+    }
 
+    console.log('[train-recommender] Scores recomputed, updated:', data?.length ?? 0);
     return new Response(JSON.stringify({ ok: true, updated: data?.length ?? 0 }), {
       headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (e: any) {
+    console.error('[train-recommender] Error:', e);
     return new Response(JSON.stringify({ error: e?.message ?? "Unknown error" }), {
       status: 500,
       headers: { ...cors, "Content-Type": "application/json" },
