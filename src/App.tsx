@@ -138,6 +138,10 @@ const App = () => (
                 path="/owner/rooms"
                 element={<ProtectedRoute element={<OwnerRooms />} requiredRole="owner" />}
               />
+              <Route
+                path="/owner/edit-dorm/:id"
+                element={<ProtectedRoute element={<OwnerAddDorm />} requiredRole="owner" />}
+              />
 
               {/* Owner Routes (legacy support) */}
               <Route
