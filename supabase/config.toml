@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.create-owner-record]
 verify_jwt = true
+
+[functions.log-user-actions]
+verify_jwt = false
+
+[functions.train-recommender]
+verify_jwt = false
