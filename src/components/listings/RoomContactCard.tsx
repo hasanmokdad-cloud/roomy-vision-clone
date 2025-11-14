@@ -116,7 +116,7 @@ export default function RoomContactCard({ room, dormId, dormName, ownerId, index
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.1 }}
     >
-      <Card className={`overflow-hidden hover:shadow-xl transition-all duration-300 ${!isAvailable ? 'opacity-60 grayscale' : ''}`}>
+      <Card className={`overflow-hidden hover:shadow-xl transition-all duration-300 ${!isAvailable ? 'opacity-50 grayscale contrast-75' : ''}`}>
         <div className="relative h-48 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
           {!isAvailable && (
             <Badge variant="destructive" className="absolute top-4 right-4 text-sm font-semibold">

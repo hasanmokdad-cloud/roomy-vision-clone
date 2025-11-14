@@ -97,10 +97,10 @@ export default function DormDetail() {
   const displayName = dorm.dorm_name || dorm.name;
   
   // Parse room types from JSON
-  const roomTypes: RoomType[] = dorm.room_types_json || [];
+  const roomTypes: RoomType[] = Array.isArray(dorm.room_types_json) ? dorm.room_types_json : [];
   const startingPrice = roomTypes.length > 0 
     ? Math.min(...roomTypes.map(r => r.price))
-    : dorm.monthly_price;
+    : dorm.monthly_price || dorm.price || 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -330,6 +330,23 @@ export default function DormDetail() {
                     </p>
                   </CardContent>
                 </Card>
+              )}
+
+              {/* Room Contact Cards */}
+              {roomTypes.length > 0 && (
+                <div className="space-y-4">
+                  <h2 className="text-2xl font-bold">Contact for Rooms</h2>
+                  {roomTypes.map((room, idx) => (
+                    <RoomContactCard
+                      key={idx}
+                      room={room}
+                      dormId={dorm.id}
+                      dormName={displayName}
+                      ownerId={dorm.owner_id}
+                      index={idx}
+                    />
+                  ))}
+                </div>
               )}
 
               {/* Location */}
