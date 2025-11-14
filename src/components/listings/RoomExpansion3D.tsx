@@ -6,14 +6,7 @@ import { Users, Sparkles, Zap, Wifi, Home, Navigation, CheckCircle, MapPin } fro
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-
-export interface RoomType {
-  type: string;
-  capacity: number;
-  price: number;
-  amenities?: string[];
-  images?: string[];
-}
+import type { RoomType } from '@/types/RoomType';
 
 interface RoomExpansion3DProps {
   rooms: RoomType[];

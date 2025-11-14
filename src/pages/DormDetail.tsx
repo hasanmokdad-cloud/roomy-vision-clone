@@ -11,7 +11,7 @@ import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, 
 import { useToast } from '@/hooks/use-toast';
 import RoomContactCard from '@/components/listings/RoomContactCard';
 import { DormDetailSkeleton } from '@/components/skeletons/DormDetailSkeleton';
-import RoomContactCard from '@/components/listings/RoomContactCard';
+import type { RoomType } from '@/types/RoomType';
 
 export default function DormDetail() {
   const { id } = useParams();

@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Users, DollarSign, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RoomType } from './RoomExpansion3D';
+import type { RoomType } from '@/types/RoomType';
 import { useNavigate } from 'react-router-dom';
 
 interface RoomDetailModalProps {

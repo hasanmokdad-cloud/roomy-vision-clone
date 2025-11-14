@@ -35,6 +35,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Messages = lazy(() => import("./pages/Messages"));
 const OwnerAddDorm = lazy(() => import("./pages/owner/OwnerAddDorm"));
 const ClaimDorm = lazy(() => import("./pages/owner/ClaimDorm"));
+const OwnerRooms = lazy(() => import("./pages/owner/OwnerRooms"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -130,6 +131,10 @@ const App = () => (
               <Route
                 path="/owner/claim-dorm"
                 element={<ProtectedRoute element={<ClaimDorm />} requiredRole="owner" />}
+              />
+              <Route
+                path="/owner/rooms"
+                element={<ProtectedRoute element={<OwnerRooms />} requiredRole="owner" />}
               />
 
               {/* Owner Routes (legacy support) */}
