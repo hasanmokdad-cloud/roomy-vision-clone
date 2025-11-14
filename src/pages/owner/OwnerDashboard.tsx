@@ -71,13 +71,44 @@ export default function OwnerDashboard() {
 
           <div className="flex items-center gap-3 mt-6 md:mt-0">
             {ownerId && <NotificationBell ownerId={ownerId} />}
-            <Button
-              onClick={() => navigate("/listings")}
-              className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
-            >
-              <Home className="w-4 h-4 mr-2" /> View All Dorms
-            </Button>
           </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          <Card
+            className="cursor-pointer hover:shadow-xl transition-shadow bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/20"
+            onClick={() => navigate('/owner/add-dorm')}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                  <PlusCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Add New Dorm</h3>
+                  <p className="text-sm text-foreground/60">Create a new listing</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-xl transition-shadow bg-gradient-to-br from-accent/10 to-primary/10 border-accent/20"
+            onClick={() => navigate('/owner/claim-dorm')}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center">
+                  <Home className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Claim Existing Dorm</h3>
+                  <p className="text-sm text-foreground/60">Link your verified dorm</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Summary Cards */}
@@ -127,10 +158,10 @@ export default function OwnerDashboard() {
                 <Home className="w-5 h-5 text-primary" /> My Properties
               </CardTitle>
               <Button
-                onClick={() => navigate("/owner/add")}
-                className="bg-gradient-to-r from-green-500 to-emerald-400 text-white font-semibold px-4 py-2 rounded-xl shadow hover:scale-105 transition-transform"
+                onClick={() => navigate("/owner/rooms")}
+                variant="outline"
               >
-                <PlusCircle className="w-4 h-4 mr-2" /> Add New Dorm
+                Manage Rooms
               </Button>
             </div>
           </CardHeader>

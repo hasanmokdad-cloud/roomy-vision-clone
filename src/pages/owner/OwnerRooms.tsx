@@ -201,24 +201,33 @@ export default function OwnerRooms() {
                                 )}
 
                                 <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                                  <Label
-                                    htmlFor={`room-${dorm.id}-${index}`}
-                                    className="flex items-center gap-2 cursor-pointer"
+                                  <div className="flex items-center gap-3">
+                                    <Label
+                                      htmlFor={`room-${dorm.id}-${index}`}
+                                      className="flex items-center gap-2 cursor-pointer"
+                                    >
+                                      {isAvailable ? (
+                                        <CheckCircle className="w-4 h-4 text-green-500" />
+                                      ) : (
+                                        <XCircle className="w-4 h-4 text-red-500" />
+                                      )}
+                                      <span className="text-sm font-medium">
+                                        {isAvailable ? 'Available' : 'Unavailable'}
+                                      </span>
+                                    </Label>
+                                    <Switch
+                                      id={`room-${dorm.id}-${index}`}
+                                      checked={isAvailable}
+                                      onCheckedChange={() => toggleRoomAvailability(dorm.id, index, isAvailable)}
+                                    />
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => navigate(`/owner/edit-dorm/${dorm.id}`)}
                                   >
-                                    {isAvailable ? (
-                                      <CheckCircle className="w-4 h-4 text-green-500" />
-                                    ) : (
-                                      <XCircle className="w-4 h-4 text-red-500" />
-                                    )}
-                                    <span className="text-sm font-medium">
-                                      {isAvailable ? 'Available' : 'Unavailable'}
-                                    </span>
-                                  </Label>
-                                  <Switch
-                                    id={`room-${dorm.id}-${index}`}
-                                    checked={isAvailable}
-                                    onCheckedChange={() => toggleRoomAvailability(dorm.id, index, isAvailable)}
-                                  />
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
                                 </div>
                               </div>
                             );

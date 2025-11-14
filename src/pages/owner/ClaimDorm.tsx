@@ -8,12 +8,11 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Search, CheckCircle } from 'lucide-react';
-import { useAuthGuard } from '@/hooks/useAuthGuard';
-import Navbar from '@/components/shared/Navbar';
-import BottomNav from '@/components/BottomNav';
+import { useRoleGuard } from '@/hooks/useRoleGuard';
+import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
 
 export default function ClaimDorm() {
-  const { loading: authLoading, userId } = useAuthGuard();
+  const { userId } = useRoleGuard('owner');
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searching, setSearching] = useState(false);
@@ -37,8 +36,9 @@ export default function ClaimDorm() {
         .is('owner_id', null)
         .eq('verification_status', 'Verified');
 
+      // Search by dorm name, area, phone, or email
       if (searchQuery.dorm_name) {
-        query = query.ilike('dorm_name', `%${searchQuery.dorm_name}%`);
+        query = query.or(`dorm_name.ilike.%${searchQuery.dorm_name}%,area.ilike.%${searchQuery.dorm_name}%`);
       }
       if (searchQuery.phone_number) {
         query = query.eq('phone_number', searchQuery.phone_number);
@@ -101,7 +101,7 @@ export default function ClaimDorm() {
         description: 'The dorm is now linked to your account.',
       });
 
-      navigate('/dashboard/owner');
+      navigate('/owner/rooms');
     } catch (error: any) {
       console.error('Error claiming dorm:', error);
       toast({
@@ -114,29 +114,21 @@ export default function ClaimDorm() {
     }
   };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
+    <div className="min-h-screen flex bg-background">
+      <OwnerSidebar />
       
-      <main className="flex-1 container mx-auto px-4 py-8 mt-20 mb-20 md:mb-0">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/dashboard/owner')}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
-
+      <main className="flex-1 p-4 md:p-8 overflow-auto">
         <div className="max-w-4xl mx-auto">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/owner')}
+            className="mb-6"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+
           <h1 className="text-4xl font-bold gradient-text mb-4">Claim Your Dorm</h1>
           <p className="text-foreground/70 mb-8">
             Search for your existing dorm in our database and claim it to manage it from your dashboard.
@@ -214,8 +206,6 @@ export default function ClaimDorm() {
           )}
         </div>
       </main>
-
-      <BottomNav />
     </div>
   );
 }

@@ -16,7 +16,7 @@ const menuItems = [
   { title: 'Dashboard', url: '/owner', icon: Home },
   { title: 'My Listings', url: '/owner/listings', icon: Building2 },
   { title: 'Room Management', url: '/owner/rooms', icon: DoorOpen },
-  { title: 'Add New Dorm', url: '/owner/add', icon: Plus },
+  { title: 'Add New Dorm', url: '/owner/add-dorm', icon: Plus },
   { title: 'Statistics', url: '/owner/stats', icon: BarChart3 },
   { title: 'Account', url: '/owner/account', icon: Settings },
 ];
