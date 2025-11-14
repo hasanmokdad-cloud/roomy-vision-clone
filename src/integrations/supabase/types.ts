@@ -193,6 +193,55 @@ export type Database = {
         }
         Relationships: []
       }
+      conversations: {
+        Row: {
+          created_at: string
+          dorm_id: string | null
+          id: string
+          owner_id: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dorm_id?: string | null
+          id?: string
+          owner_id: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dorm_id?: string | null
+          id?: string
+          owner_id?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+        ]
+      }
       dorms: {
         Row: {
           address: string | null
@@ -372,6 +421,38 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications_log: {
         Row: {
           channel: string | null
@@ -509,11 +590,13 @@ export type Database = {
         Row: {
           created_at: string | null
           email: string
+          email_verified: boolean | null
           full_name: string
           id: string
           notify_email: boolean | null
           notify_whatsapp: boolean | null
           phone_number: string | null
+          phone_verified: boolean | null
           updated_at: string | null
           user_id: string
           whatsapp_language: string | null
@@ -521,11 +604,13 @@ export type Database = {
         Insert: {
           created_at?: string | null
           email: string
+          email_verified?: boolean | null
           full_name: string
           id?: string
           notify_email?: boolean | null
           notify_whatsapp?: boolean | null
           phone_number?: string | null
+          phone_verified?: boolean | null
           updated_at?: string | null
           user_id: string
           whatsapp_language?: string | null
@@ -533,11 +618,13 @@ export type Database = {
         Update: {
           created_at?: string | null
           email?: string
+          email_verified?: boolean | null
           full_name?: string
           id?: string
           notify_email?: boolean | null
           notify_whatsapp?: boolean | null
           phone_number?: string | null
+          phone_verified?: boolean | null
           updated_at?: string | null
           user_id?: string
           whatsapp_language?: string | null
@@ -576,6 +663,30 @@ export type Database = {
           },
         ]
       }
+      saved_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          item_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          item_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       students: {
         Row: {
           age: number | null
@@ -588,6 +699,8 @@ export type Database = {
           full_name: string
           gender: string | null
           id: string
+          phone_number: string | null
+          phone_verified: boolean | null
           preferred_amenities: string[] | null
           preferred_room_types: string[] | null
           preferred_university: string | null
@@ -609,6 +722,8 @@ export type Database = {
           full_name: string
           gender?: string | null
           id?: string
+          phone_number?: string | null
+          phone_verified?: boolean | null
           preferred_amenities?: string[] | null
           preferred_room_types?: string[] | null
           preferred_university?: string | null
@@ -630,6 +745,8 @@ export type Database = {
           full_name?: string
           gender?: string | null
           id?: string
+          phone_number?: string | null
+          phone_verified?: boolean | null
           preferred_amenities?: string[] | null
           preferred_room_types?: string[] | null
           preferred_university?: string | null

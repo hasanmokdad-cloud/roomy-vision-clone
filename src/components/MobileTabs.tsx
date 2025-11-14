@@ -1,12 +1,11 @@
-// src/components/MobileTabs.tsx
+// Instagram-style mobile bottom navbar with icons only
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Home,
   MessageSquare,
   User,
-  Brain,
-  LayoutDashboard,
+  Sparkles,
 } from "lucide-react";
 
 export default function MobileTabs() {
@@ -14,10 +13,10 @@ export default function MobileTabs() {
   const location = useLocation();
 
   const tabs = [
-    { path: "/dashboard/student", icon: LayoutDashboard, label: "Dashboard" },
-    { path: "/ai-chat", icon: MessageSquare, label: "Chat" },
-    { path: "/listings", icon: Home, label: "Dorms" },
-    { path: "/ai-match", icon: Brain, label: "AI Match" },
+    { path: "/dashboard", icon: Home, label: "Home" },
+    { path: "/messages", icon: MessageSquare, label: "Messages" },
+    { path: "/listings", icon: null, label: "Dorms", center: true },
+    { path: "/ai-match", icon: Sparkles, label: "AI Match" },
     { path: "/profile", icon: User, label: "Profile" },
   ];
 
@@ -29,24 +28,53 @@ export default function MobileTabs() {
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md shadow-[0_-4px_12px_rgba(0,0,0,0.1)] border-t border-gray-200 md:hidden flex justify-around py-3 z-50"
+      className="fixed bottom-0 left-0 w-full bg-background/95 dark:bg-background/98 backdrop-blur-lg shadow-[0_-2px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_-2px_20px_rgba(0,0,0,0.3)] border-t border-border md:hidden flex justify-around items-center py-2 z-50 safe-area-inset-bottom"
     >
-      {tabs.map(({ path, icon: Icon, label }) => {
-        const active = location.pathname === path;
+      {tabs.map(({ path, icon: Icon, label, center }) => {
+        const active = location.pathname === path || location.pathname.startsWith(path);
+        
+        if (center) {
+          return (
+            <button
+              key={path}
+              onClick={() => navigate(path)}
+              className="relative flex items-center justify-center -mt-6"
+              aria-label={label}
+              aria-current={active ? "page" : undefined}
+            >
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+                active
+                  ? "bg-gradient-to-br from-primary via-secondary to-accent shadow-lg shadow-primary/50"
+                  : "bg-gradient-to-br from-muted to-muted/50"
+              }`}>
+                <Home className={`w-6 h-6 ${active ? "text-primary-foreground" : "text-foreground/70"}`} />
+              </div>
+            </button>
+          );
+        }
+
         return (
           <button
             key={path}
             onClick={() => navigate(path)}
-            className={`flex flex-col items-center ${
-              active
-                ? "text-purple-600 scale-110"
-                : "text-gray-600 hover:text-purple-500"
-            } transition-all`}
+            className="relative flex items-center justify-center p-2 transition-all"
             aria-label={label}
             aria-current={active ? "page" : undefined}
           >
-            <Icon className="w-6 h-6" />
-            <span className="text-xs font-medium">{label}</span>
+            {Icon && (
+              <>
+                <Icon className={`w-7 h-7 transition-colors ${
+                  active ? "text-primary" : "text-foreground/60"
+                }`} />
+                {active && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute -bottom-1 w-1 h-1 rounded-full bg-primary"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </>
+            )}
           </button>
         );
       })}
