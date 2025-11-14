@@ -119,57 +119,77 @@ export default function RoomContactCard({ room, dormId, dormName, ownerId, index
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: index * 0.1 }}
       >
-      <Card className={`overflow-hidden hover:shadow-xl transition-all duration-300 ${!isAvailable ? 'opacity-50 grayscale contrast-75' : ''}`}>
-        <div className="relative h-48 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-          {!isAvailable && (
-            <Badge variant="destructive" className="absolute top-4 right-4 text-sm font-semibold">
-              Unavailable
-            </Badge>
-          )}
-          <div className="text-center">
-            <Users className="w-16 h-16 mx-auto mb-2 text-primary/60" />
-            <p className="text-lg font-semibold text-foreground">{room.type}</p>
-          </div>
-        </div>
-        
-        <CardContent className="p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-foreground/60" />
-              <span className="text-sm text-foreground/80">{room.capacity} {room.capacity === 1 ? 'person' : 'people'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-primary" />
-              <span className="text-xl font-bold gradient-text">${room.price}</span>
-              <span className="text-sm text-foreground/60">/month</span>
+        <Card className={`overflow-hidden hover:shadow-xl transition-all duration-300 ${!isAvailable ? 'opacity-50 grayscale contrast-75' : ''}`}>
+          <div className="relative h-48 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+            {!isAvailable && (
+              <Badge variant="destructive" className="absolute top-4 right-4 text-sm font-semibold">
+                Unavailable
+              </Badge>
+            )}
+            <div className="text-center">
+              <Users className="w-16 h-16 mx-auto mb-2 text-primary/60" />
+              <p className="text-lg font-semibold text-foreground">{room.type}</p>
             </div>
           </div>
-
-          {room.amenities && room.amenities.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {room.amenities.slice(0, 4).map((amenity, i) => {
-                const Icon = amenityIcons[amenity.toLowerCase()] || Wind;
-                return (
-                  <Badge key={i} variant="secondary" className="text-xs">
-                    <Icon className="w-3 h-3 mr-1" />
-                    {amenity}
-                  </Badge>
-                );
-              })}
+          
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-foreground/60" />
+                <span className="text-sm text-foreground/80">{room.capacity} {room.capacity === 1 ? 'person' : 'people'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-primary" />
+                <span className="text-xl font-bold gradient-text">${room.price}</span>
+                <span className="text-sm text-foreground/60">/month</span>
+              </div>
             </div>
-          )}
 
-          <Button
-            onClick={handleContactForReservation}
-            disabled={!isAvailable || loading}
-            className="w-full"
-            size="lg"
-          >
-            <MessageSquare className="w-4 h-4 mr-2" />
-            {loading ? 'Loading...' : 'Contact for Reservation'}
-          </Button>
-        </CardContent>
-      </Card>
-    </motion.div>
+            {room.amenities && room.amenities.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {room.amenities.slice(0, 4).map((amenity, i) => {
+                  const Icon = amenityIcons[amenity.toLowerCase()] || Wind;
+                  return (
+                    <Badge key={i} variant="secondary" className="text-xs">
+                      <Icon className="w-3 h-3 mr-1" />
+                      {amenity}
+                    </Badge>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleContactForReservation}
+                disabled={!isAvailable || loading}
+                className="flex-1"
+                size="lg"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                {loading ? 'Loading...' : 'Contact'}
+              </Button>
+              
+              <Button
+                onClick={() => setBookingModalOpen(true)}
+                disabled={!isAvailable || !ownerId}
+                variant="outline"
+                size="lg"
+              >
+                <Calendar className="w-4 h-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <BookingRequestModal
+        open={bookingModalOpen}
+        onOpenChange={setBookingModalOpen}
+        dormId={dormId}
+        dormName={dormName}
+        ownerId={ownerId || ''}
+      />
+    </>
   );
 }

@@ -86,8 +86,8 @@ export default function Messages() {
         const state = presenceChannel.presenceState();
         const typingSet = new Set<string>();
         Object.entries(state).forEach(([key, presences]) => {
-          const presence = presences[0] as TypingStatus;
-          if (presence?.conversationId === selectedConversation && presence?.userId !== userId) {
+          const presence = presences[0] as any;
+          if (presence?.conversationId === selectedConversation && presence?.userId !== userId && presence?.typing) {
             typingSet.add(presence.userId);
           }
         });
