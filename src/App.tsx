@@ -19,7 +19,10 @@ const Profile = lazy(() => import("./pages/Profile"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const DormDetail = lazy(() => import("./pages/DormDetail"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const Analytics = lazy(() => import("./pages/admin/Analytics"));
+const Trends = lazy(() => import("./pages/admin/Trends"));
 const OwnerDashboard = lazy(() => import("./pages/owner/OwnerDashboard"));
+const OwnerPerformance = lazy(() => import("./pages/owner/Performance"));
 const StudentDashboard = lazy(() => import("./pages/dashboard/StudentDashboard"));
 const Listings = lazy(() => import("./pages/Listings"));
 const AiMatch = lazy(() => import("./pages/AiMatch"));
@@ -93,18 +96,30 @@ const App = () => (
               {/* Legacy Dashboard Route - redirects based on role */}
               <Route path="/dashboard" element={<Dashboard />} />
 
-              {/* Protected Dashboards */}
+        {/* Protected Dashboards */}
+        <Route
+          path="/dashboard/student"
+          element={<ProtectedRoute element={<StudentDashboard />} requiredRole="user" />}
+        />
+        <Route
+          path="/dashboard/owner"
+          element={<ProtectedRoute element={<OwnerDashboard />} requiredRole="owner" />}
+        />
+        <Route
+          path="/dashboard/admin"
+          element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />}
+        />
               <Route
-                path="/dashboard/student"
-                element={<ProtectedRoute element={<StudentDashboard />} requiredRole="user" />}
+                path="/admin/analytics"
+                element={<ProtectedRoute element={<Analytics />} requiredRole="admin" />}
               />
               <Route
-                path="/dashboard/owner"
-                element={<ProtectedRoute element={<OwnerDashboard />} requiredRole="owner" />}
+                path="/admin/trends"
+                element={<ProtectedRoute element={<Trends />} requiredRole="admin" />}
               />
               <Route
-                path="/dashboard/admin"
-                element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />}
+                path="/owner/performance"
+                element={<ProtectedRoute element={<OwnerPerformance />} requiredRole="owner" />}
               />
 
               {/* Owner Routes (legacy support) */}

@@ -54,6 +54,13 @@ export type Database = {
             referencedRelation: "dorms_public"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ai_recommendations_log_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
         ]
       }
       ai_sessions: {
@@ -82,6 +89,55 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      analytics_events: {
+        Row: {
+          created_at: string
+          dorm_id: string | null
+          id: string
+          meta: Json | null
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          dorm_id?: string | null
+          id?: string
+          meta?: Json | null
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          dorm_id?: string | null
+          id?: string
+          meta?: Json | null
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+        ]
       }
       chat_logs: {
         Row: {
@@ -294,6 +350,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "inquiries_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+          {
             foreignKeyName: "inquiries_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
@@ -368,7 +431,73 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notifications_log_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+          {
             foreignKeyName: "notifications_log_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_notifications: {
+        Row: {
+          body: string
+          created_at: string
+          dorm_id: string | null
+          id: string
+          owner_id: string
+          read: boolean | null
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          dorm_id?: string | null
+          id?: string
+          owner_id: string
+          read?: boolean | null
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          dorm_id?: string | null
+          id?: string
+          owner_id?: string
+          read?: boolean | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_notifications_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_notifications_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_notifications_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "owner_notifications_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "owners"
@@ -614,6 +743,37 @@ export type Database = {
       }
     }
     Views: {
+      dorm_engagement_view: {
+        Row: {
+          dorm_id: string | null
+          favorites: number | null
+          inquiries: number | null
+          views: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+        ]
+      }
       dorms_public: {
         Row: {
           address: string | null
@@ -692,8 +852,35 @@ export type Database = {
         }
         Relationships: []
       }
+      owner_performance_view: {
+        Row: {
+          dorm_id: string | null
+          dorm_name: string | null
+          favorites: number | null
+          inquiries: number | null
+          owner_id: string | null
+          views: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dorms_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      analytics_summary: { Args: never; Returns: Json }
+      analytics_timeseries: {
+        Args: { p_days?: number; p_metric: string }
+        Returns: {
+          date: string
+          value: number
+        }[]
+      }
       check_notification_debounce: {
         Args: { p_dorm_id: string; p_event_type: string; p_owner_id: string }
         Returns: boolean
@@ -717,6 +904,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      recompute_dorm_engagement_scores: { Args: never; Returns: Json }
       reset_student_ai_memory: {
         Args: { p_student_id: string }
         Returns: undefined
