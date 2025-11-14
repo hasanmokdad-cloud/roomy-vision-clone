@@ -11,8 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Plus, Trash2, Upload, X } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Upload } from 'lucide-react';
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
+import { ImageDropzone } from '@/components/owner/ImageDropzone';
+import { DraggableImageList } from '@/components/owner/DraggableImageList';
+import { compressImage } from '@/utils/imageCompression';
 import { z } from 'zod';
 
 const dormSchema = z.object({
@@ -137,16 +140,31 @@ export default function OwnerAddDorm() {
     setRooms(updatedRooms);
   };
 
-  // Handle cover image upload
-  const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setCoverImage(file);
+  // Handle cover image upload with compression
+  const handleCoverImageFiles = async (files: File[]) => {
+    if (files.length === 0) return;
+    
+    const file = files[0];
+    toast({
+      title: 'Compressing image...',
+      description: 'Please wait while we optimize your image.',
+    });
+
+    try {
+      const compressedFile = await compressImage(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1920 });
+      setCoverImage(compressedFile);
+      
       const reader = new FileReader();
       reader.onloadend = () => {
         setCoverImagePreview(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressedFile);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to process image',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -155,16 +173,26 @@ export default function OwnerAddDorm() {
     setCoverImagePreview(null);
   };
 
-  // Handle room image uploads
-  const handleRoomImageChange = (roomIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
+  // Handle room image uploads with compression
+  const handleRoomImageFiles = async (roomIndex: number, files: File[]) => {
+    if (files.length === 0) return;
+
+    toast({
+      title: 'Compressing images...',
+      description: `Processing ${files.length} image(s)...`,
+    });
+
+    try {
+      const compressedFiles = await Promise.all(
+        files.map(file => compressImage(file, { maxSizeMB: 0.3, maxWidthOrHeight: 1024 }))
+      );
+
       setRoomImageFiles(prev => ({
         ...prev,
-        [roomIndex]: [...(prev[roomIndex] || []), ...files]
+        [roomIndex]: [...(prev[roomIndex] || []), ...compressedFiles]
       }));
 
-      files.forEach(file => {
+      compressedFiles.forEach(file => {
         const reader = new FileReader();
         reader.onloadend = () => {
           setRoomImagePreviews(prev => ({
@@ -173,6 +201,12 @@ export default function OwnerAddDorm() {
           }));
         };
         reader.readAsDataURL(file);
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to process images',
+        variant: 'destructive',
       });
     }
   };
@@ -193,6 +227,27 @@ export default function OwnerAddDorm() {
       }
       return updated;
     });
+  };
+
+  const reorderRoomImages = (roomIndex: number, reorderedImages: string[]) => {
+    setRoomImagePreviews(prev => ({
+      ...prev,
+      [roomIndex]: reorderedImages
+    }));
+
+    // Also reorder the files to match
+    if (roomImageFiles[roomIndex]) {
+      const currentPreviews = roomImagePreviews[roomIndex] || [];
+      const reorderedFiles = reorderedImages.map(preview => {
+        const originalIndex = currentPreviews.indexOf(preview);
+        return roomImageFiles[roomIndex][originalIndex];
+      }).filter(Boolean);
+
+      setRoomImageFiles(prev => ({
+        ...prev,
+        [roomIndex]: reorderedFiles
+      }));
+    }
   };
 
   // Upload image to Supabase storage
@@ -373,42 +428,31 @@ export default function OwnerAddDorm() {
                   <h3 className="text-xl font-semibold">Cover Image</h3>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="cover_image">Upload Cover Photo</Label>
-                    <div className="flex items-start gap-4">
-                      {coverImagePreview ? (
-                        <div className="relative">
-                          <img 
-                            src={coverImagePreview} 
-                            alt="Cover preview" 
-                            className="w-48 h-32 object-cover rounded-lg border"
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute -top-2 -right-2 h-6 w-6"
-                            onClick={removeCoverImage}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <label 
-                          htmlFor="cover_image" 
-                          className="w-48 h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                    <Label>Upload Cover Photo (Drag & Drop or Click)</Label>
+                    {coverImagePreview ? (
+                      <div className="relative inline-block">
+                        <img 
+                          src={coverImagePreview} 
+                          alt="Cover preview" 
+                          className="w-64 h-40 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-2 right-2"
+                          onClick={removeCoverImage}
                         >
-                          <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                          <span className="text-sm text-muted-foreground">Click to upload</span>
-                        </label>
-                      )}
-                      <Input
-                        id="cover_image"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleCoverImageChange}
-                        className="hidden"
+                          Remove
+                        </Button>
+                      </div>
+                    ) : (
+                      <ImageDropzone 
+                        onFilesAdded={handleCoverImageFiles}
+                        multiple={false}
+                        className="w-full min-h-[160px]"
                       />
-                    </div>
+                    )}
                   </div>
                 </div>
 
@@ -613,41 +657,27 @@ export default function OwnerAddDorm() {
 
                         {/* Room Images */}
                         <div className="space-y-2">
-                          <Label>Room Images</Label>
-                          <div className="flex flex-wrap gap-2">
-                            {roomImagePreviews[index]?.map((preview, imgIdx) => (
-                              <div key={imgIdx} className="relative">
-                                <img 
-                                  src={preview} 
-                                  alt={`Room ${index + 1} image ${imgIdx + 1}`}
-                                  className="w-24 h-24 object-cover rounded-lg border"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  size="icon"
-                                  className="absolute -top-2 -right-2 h-5 w-5"
-                                  onClick={() => removeRoomImage(index, imgIdx)}
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            ))}
-                            <label 
-                              htmlFor={`room_images_${index}`}
-                              className="w-24 h-24 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-primary transition-colors"
-                            >
-                              <Upload className="w-6 h-6 text-muted-foreground" />
-                            </label>
-                            <Input
-                              id={`room_images_${index}`}
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              onChange={(e) => handleRoomImageChange(index, e)}
-                              className="hidden"
+                          <Label>Room Images (Drag to reorder)</Label>
+                          
+                          {roomImagePreviews[index] && roomImagePreviews[index].length > 0 && (
+                            <DraggableImageList
+                              images={roomImagePreviews[index]}
+                              onReorder={(reordered) => reorderRoomImages(index, reordered)}
+                              onRemove={(imgIdx) => removeRoomImage(index, imgIdx)}
+                              className="mb-3"
                             />
-                          </div>
+                          )}
+
+                          <ImageDropzone
+                            onFilesAdded={(files) => handleRoomImageFiles(index, files)}
+                            multiple={true}
+                            className="w-full min-h-[120px]"
+                          >
+                            <Upload className="w-8 h-8 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">
+                              Drop room images here or click
+                            </p>
+                          </ImageDropzone>
                         </div>
                       </div>
                     </Card>
