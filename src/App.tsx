@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import BottomNav from "./components/BottomNav";
 import MobileNavbar from "./components/MobileNavbar";
+import { SwipeableRoutes } from "./components/SwipeableRoutes";
 
 // Lazy load route components
 const Main = lazy(() => import("./pages/Main"));
@@ -83,7 +84,8 @@ const App = () => (
         <BrowserRouter>
           <MobileNavbar />
           <Suspense fallback={<PageLoader />}>
-            <Routes>
+            <SwipeableRoutes>
+              <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Main />} />
               <Route path="/auth" element={<Auth />} />
@@ -155,6 +157,7 @@ const App = () => (
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </SwipeableRoutes>
           </Suspense>
           <BottomNav />
           <ChatbotBubble />
