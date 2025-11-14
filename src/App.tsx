@@ -8,6 +8,8 @@ import { ChatbotBubble } from "./components/ChatbotBubble";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
+import BottomNav from "./components/BottomNav";
+import MobileNavbar from "./components/MobileNavbar";
 
 // Lazy load route components
 const Main = lazy(() => import("./pages/Main"));
@@ -72,6 +74,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <MobileNavbar />
           <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Public Routes */}
@@ -123,6 +126,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
+          <BottomNav />
           <ChatbotBubble />
         </BrowserRouter>
       </TooltipProvider>

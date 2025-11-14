@@ -211,36 +211,36 @@ export default function AiMatch() {
       <Navbar />
       {step === 3 && <AIAvatar userName={profile.full_name.split(' ')[0] || 'there'} />}
       
-      <main className="flex-1 container mx-auto px-4 py-8 mt-20">
+      <main className="flex-1 container mx-auto px-4 py-8 mt-20 md:mt-24 mb-20 md:mb-0">
         <div className="max-w-3xl mx-auto">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-center mb-8"
+            className="text-center mb-6 md:mb-8"
           >
             <Badge variant="secondary" className="mb-4 neon-glow">
               <Sparkles className="w-4 h-4 mr-2" />
               AI-Powered Matching
             </Badge>
-            <h1 className="text-5xl md:text-6xl font-black gradient-text mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black gradient-text mb-4 md:mb-6">
               Find Your Perfect Dorm
             </h1>
-            <p className="text-xl text-foreground/80">
+            <p className="text-lg md:text-xl text-foreground/80">
               Answer a few quick questions and let AI do the work
             </p>
           </motion.div>
 
-          <Progress value={progress} className="mb-8" />
+          <Progress value={progress} className="mb-6 md:mb-8" />
 
           {step === 1 && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="bg-white rounded-3xl p-10 shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
+              className="bg-white dark:bg-gray-900 rounded-3xl p-6 md:p-10 shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
             >
-              <h2 className="text-3xl font-black mb-8 gradient-text">Step 1 — Create your profile</h2>
+              <h2 className="text-2xl md:text-3xl font-black mb-6 md:mb-8 gradient-text">Step 1 — Create your profile</h2>
               <form onSubmit={handleStep1Submit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -318,9 +318,9 @@ export default function AiMatch() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="bg-white rounded-3xl p-10 shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
+              className="bg-white dark:bg-gray-900 rounded-3xl p-6 md:p-10 shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
             >
-              <h2 className="text-3xl font-black mb-8 gradient-text">Step 2 — Set your preferences</h2>
+              <h2 className="text-2xl md:text-3xl font-black mb-6 md:mb-8 gradient-text">Step 2 — Set your preferences</h2>
               <form onSubmit={handleStep2Submit} className="space-y-6">
                 <div>
                   <Label>Room Type</Label>
@@ -409,7 +409,7 @@ export default function AiMatch() {
           )}
 
           {step === 3 && (
-            <div className="space-y-8">
+            <div className="space-y-6 md:space-y-8">
               <motion.div 
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -420,10 +420,10 @@ export default function AiMatch() {
                   <Sparkles className="w-4 h-4 mr-2" />
                   AI-Powered Results
                 </Badge>
-                <h2 className="text-4xl md:text-5xl font-black mb-4 gradient-text">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4 gradient-text">
                   {loading ? 'Analyzing your preferences...' : 'Your Perfect Matches'}
                 </h2>
-                <p className="text-lg text-foreground/70">
+                <p className="text-base md:text-lg text-foreground/70">
                   Personalized recommendations based on your profile
                 </p>
               </motion.div>
