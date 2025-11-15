@@ -25,7 +25,7 @@ export default function Profile() {
   if (!userId) return null;
 
   return (
-    <div className="min-h-screen relative bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen relative bg-gradient-to-b from-[#0f051d] via-[#1a0b2e] to-[#0d0418]">
       <Navbar />
       
       <motion.div 
