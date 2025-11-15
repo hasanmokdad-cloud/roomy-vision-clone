@@ -61,7 +61,7 @@ export const ChatbotBubble = () => {
     setIsLoading(true);
 
     try {
-      const res = await fetch("https://ujdkllllyjjekglagijyc.supabase.co/functions/v1/roomy-chat", {
+      const response = await fetch("https://ujdkllllyjjekglagijyc.functions.supabase.co/roomy-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -70,7 +70,6 @@ export const ChatbotBubble = () => {
           sessionId,
         }),
       });
-
       const data = await res.json();
       console.log("✅ Gemini response:", data);
 
