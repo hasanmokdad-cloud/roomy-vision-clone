@@ -77,6 +77,10 @@ export default function Settings() {
   const handleThemeToggle = () => {
     const newTheme = settingsManager.toggleTheme();
     setSettings((prev) => ({ ...prev, theme: newTheme }));
+    toast({
+      title: `${newTheme === 'dark' ? 'Dark' : 'Light'} mode enabled`,
+      description: 'Your theme preference has been saved.',
+    });
   };
 
   const handleClearAIMemory = async () => {
@@ -131,11 +135,20 @@ export default function Settings() {
             <Card className="glass p-6 border-white/20">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  {settings.theme === 'dark' ? (
-                    <Moon className="w-6 h-6 text-primary" />
-                  ) : (
-                    <Sun className="w-6 h-6 text-secondary" />
-                  )}
+                  <motion.div
+                    key={settings.theme}
+                    initial={{ rotate: -90, opacity: 0, scale: 0.8 }}
+                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    whileTap={{ scale: 0.9 }}
+                    className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center"
+                  >
+                    {settings.theme === 'dark' ? (
+                      <Moon className="w-5 h-5 text-primary" />
+                    ) : (
+                      <Sun className="w-5 h-5 text-primary" />
+                    )}
+                  </motion.div>
                   <div>
                     <h3 className="text-lg font-semibold text-white">Theme</h3>
                     <p className="text-sm text-white/60">
@@ -143,13 +156,10 @@ export default function Settings() {
                     </p>
                   </div>
                 </div>
-                <Button
-                  onClick={handleThemeToggle}
-                  variant="outline"
-                  className="border-white/20 hover:border-primary/50"
-                >
-                  Toggle
-                </Button>
+                <Switch
+                  checked={settings.theme === 'dark'}
+                  onCheckedChange={handleThemeToggle}
+                />
               </div>
             </Card>
 
