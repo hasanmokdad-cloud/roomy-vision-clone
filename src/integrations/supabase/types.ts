@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_chat_sessions: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          role: string
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          role: string
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          role?: string
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       ai_recommendations_log: {
         Row: {
           action: string

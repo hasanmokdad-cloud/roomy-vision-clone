@@ -524,8 +524,72 @@ Present results engagingly. If match scores exist, mention why dorms are great f
       );
     }
 
+    // Collect the full response for logging
+    let fullResponse = "";
+    const reader = response.body?.getReader();
+    const encoder = new TextEncoder();
+    
     console.log("[roomy-chat] Streaming response to client");
-    return new Response(response.body, {
+    
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          while (true) {
+            const { done, value } = await reader!.read();
+            if (done) break;
+            
+            // Decode and collect response
+            const text = new TextDecoder().decode(value);
+            const lines = text.split('\n');
+            
+            for (const line of lines) {
+              if (line.startsWith('data: ') && !line.includes('[DONE]')) {
+                try {
+                  const json = JSON.parse(line.slice(6));
+                  const content = json.choices?.[0]?.delta?.content;
+                  if (content) fullResponse += content;
+                } catch (e) {
+                  // Ignore parse errors for partial data
+                }
+              }
+            }
+            
+            // Forward to client
+            controller.enqueue(value);
+          }
+          
+          // Log conversation to ai_chat_sessions after streaming completes
+          if (fullResponse && effectiveSessionId) {
+            try {
+              await supabase.from('ai_chat_sessions').insert([
+                { 
+                  user_id: userId || null, 
+                  session_id: effectiveSessionId, 
+                  role: 'user', 
+                  message: message 
+                },
+                { 
+                  user_id: userId || null, 
+                  session_id: effectiveSessionId, 
+                  role: 'assistant', 
+                  message: fullResponse 
+                }
+              ]);
+              console.log("[roomy-chat] Logged conversation to ai_chat_sessions");
+            } catch (logError) {
+              console.error("[roomy-chat] Failed to log conversation:", logError);
+            }
+          }
+          
+          controller.close();
+        } catch (err) {
+          console.error("[roomy-chat] Stream error:", err);
+          controller.error(err);
+        }
+      }
+    });
+    
+    return new Response(stream, {
       headers: {
         ...corsHeaders,
         "Content-Type": "text/event-stream",
