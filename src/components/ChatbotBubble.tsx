@@ -1,14 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MessageCircle, X, Send } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
 }
 
@@ -16,11 +16,12 @@ export const ChatbotBubble = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
-      role: 'assistant',
-      content: "Hi 👋 I'm Roomy AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
+      role: "assistant",
+      content:
+        "Hi 👋 I'm Roomy AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
     },
   ]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -33,7 +34,9 @@ export const ChatbotBubble = () => {
       setUserId(session?.user?.id || null);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_, session) => {
       setUserId(session?.user?.id || null);
     });
 
@@ -50,60 +53,69 @@ export const ChatbotBubble = () => {
     if (!input.trim() || isLoading) return;
 
     const userMessage = input.trim();
-    setInput('');
-    setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
+    setInput("");
+    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('roomy-chat', {
-        body: { 
-          message: userMessage, 
+      // ✅ Call your Supabase Edge Function directly
+      const response = await fetch("https://ujdkllllyjjekglagijyc.supabase.co/functions/v1/roomy-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMessage,
           userId,
-          sessionId 
-        },
+          sessionId,
+        }),
       });
 
-      if (error) throw error;
+      const data = await response.json();
+      console.log("AI Response:", data);
 
-      const responseMessage = data.response || 'Sorry, I could not process that request.';
-      
-      // Update session ID if provided
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "AI service unavailable.");
+      }
+
+      const responseMessage = data.response || "Sorry, I could not process that request.";
+
+      // ✅ Update session ID if provided
       if (data.sessionId && !sessionId) {
         setSessionId(data.sessionId);
       }
 
-      // Update context indicator
+      // ✅ Update context indicator
       if (data.hasContext !== undefined) {
         setHasContext(data.hasContext);
       }
 
-      // Check if chat was reset
+      // ✅ If chat reset is triggered
       if (data.sessionReset) {
         setMessages([
           {
-            role: 'assistant',
-            content: "Hi 👋 I'm Roomy AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
+            role: "assistant",
+            content:
+              "Hi 👋 I'm Roomy AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
           },
-          { role: 'assistant', content: responseMessage }
+          { role: "assistant", content: responseMessage },
         ]);
         setSessionId(null);
         setHasContext(false);
       } else {
-        setMessages((prev) => [
-          ...prev,
-          { role: 'assistant', content: responseMessage },
-        ]);
+        setMessages((prev) => [...prev, { role: "assistant", content: responseMessage }]);
       }
-    } catch (error) {
-      console.error('Chat error:', error);
+    } catch (error: any) {
+      console.error("Chat error:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to get response. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to get response. Please try again.",
+        variant: "destructive",
       });
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' },
+        {
+          role: "assistant",
+          content: "Sorry, I encountered an error while connecting to Roomy AI. Please try again later.",
+        },
       ]);
     } finally {
       setIsLoading(false);
@@ -111,12 +123,12 @@ export const ChatbotBubble = () => {
   };
 
   const handleReset = async () => {
-    setInput('reset chat');
+    setInput("reset chat");
     await handleSend();
   };
 
   const handleResetMemory = async () => {
-    setInput('reset my memory');
+    setInput("reset my memory");
     await handleSend();
   };
 
@@ -130,14 +142,11 @@ export const ChatbotBubble = () => {
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             className="fixed bottom-24 right-6 w-96 h-[500px] glass rounded-2xl shadow-2xl flex flex-col z-50"
           >
+            {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
               <div className="flex flex-col">
                 <h3 className="font-bold text-lg">Roomy AI Assistant</h3>
-                {hasContext && (
-                  <span className="text-xs text-muted-foreground">
-                    💭 Remembers your preferences
-                  </span>
-                )}
+                {hasContext && <span className="text-xs text-muted-foreground">💭 Remembers your preferences</span>}
               </div>
               <div className="flex gap-2">
                 {userId && (
@@ -149,7 +158,12 @@ export const ChatbotBubble = () => {
                     title="Reset AI Memory (clears all learned preferences)"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
                     </svg>
                   </Button>
                 )}
@@ -162,36 +176,32 @@ export const ChatbotBubble = () => {
                     title="Reset conversation"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
                     </svg>
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsOpen(false)}
-                  className="hover:bg-muted"
-                >
+                <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="hover:bg-muted">
                   <X className="w-5 h-5" />
                 </Button>
               </div>
             </div>
 
+            {/* Messages */}
             <ScrollArea className="flex-1 p-4" ref={scrollRef}>
               <div className="space-y-4">
                 {messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
+                  <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                     <div
                       className={`max-w-[80%] rounded-2xl px-4 py-2 ${
-                        msg.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-foreground'
+                        msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
                       }`}
                     >
-                      <p className="text-sm">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     </div>
                   </div>
                 ))}
@@ -209,12 +219,13 @@ export const ChatbotBubble = () => {
               </div>
             </ScrollArea>
 
+            {/* Input */}
             <div className="p-4 border-t border-border">
               <div className="flex gap-2">
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
                   placeholder="Ask about dorms..."
                   disabled={isLoading}
                   className="flex-1"
@@ -228,6 +239,7 @@ export const ChatbotBubble = () => {
         )}
       </AnimatePresence>
 
+      {/* Floating Chat Button */}
       <motion.button
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
