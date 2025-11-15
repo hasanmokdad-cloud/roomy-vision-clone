@@ -138,226 +138,226 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         {showConfetti && <Confetti />}
       </AnimatePresence>
 
-      <div className="bg-background/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl max-w-2xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-        <ProfileProgress percentage={progress} />
+      <ProfileProgress percentage={progress} />
 
-        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
-          <div className="space-y-2 mb-6">
-            <h2 className="text-3xl font-black gradient-text">
-              {hasProfile ? 'Update Your Profile' : 'Complete Your Profile'}
-            </h2>
-            <p className="text-foreground/60">
-              Help Roomy AI find dorms that match your needs perfectly
-            </p>
-          </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.6 }}
+        className="max-w-2xl mx-auto bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl"
+      >
+        <div className="space-y-2 mb-6">
+          <h2 className="text-3xl font-black text-primary">
+            {hasProfile ? 'Update Your Profile' : 'Complete Your Profile'}
+          </h2>
+          <p className="text-foreground/60">
+            Help Roomy AI find dorms that match your needs perfectly
+          </p>
+        </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="space-y-4">
-          <div>
-            <Label className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              Full Name *
-            </Label>
-            <Input
-              {...register('full_name')}
-              placeholder="Enter your full name"
-              className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/50 transition-all"
-            />
-            {errors.full_name && (
-              <p className="text-xs text-red-400 mt-1">{errors.full_name.message}</p>
-            )}
-          </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Personal Information Section */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-black text-primary flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Personal Information
+            </h3>
 
-          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Age</Label>
+              <Label htmlFor="full_name" className="text-foreground/80">Full Name *</Label>
               <Input
-                type="number"
-                {...register('age', { valueAsNumber: true })}
-                placeholder="18"
-                className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/50 transition-all"
+                id="full_name"
+                {...register('full_name')}
+                placeholder="Your full name"
+                className="mt-2 w-full focus:ring-2 focus:ring-primary"
               />
-              {errors.age && (
-                <p className="text-xs text-red-400 mt-1">{errors.age.message}</p>
+              {errors.full_name && (
+                <p className="text-destructive text-sm mt-1">{errors.full_name.message}</p>
               )}
             </div>
 
-            <div>
-              <Label>Gender</Label>
-              <Select onValueChange={(value) => setValue('gender', value as any)}>
-                <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border border-white/10">
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="age" className="text-foreground/80">Age</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  {...register('age', { valueAsNumber: true })}
+                  placeholder="Your age"
+                  className="mt-2 w-full focus:ring-2 focus:ring-primary"
+                />
+                {errors.age && (
+                  <p className="text-destructive text-sm mt-1">{errors.age.message}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="gender" className="text-foreground/80">Gender</Label>
+                <Select onValueChange={(value) => setValue('gender', value as any)}>
+                  <SelectTrigger id="gender" className="mt-2 w-full focus:ring-2 focus:ring-primary">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
-          <div>
-            <Label className="flex items-center gap-2">
-              <GraduationCap className="w-4 h-4" />
-              University
-            </Label>
-            <Select onValueChange={(value) => setValue('university', value)}>
-              <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
-                <SelectValue placeholder="Select your university" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border border-white/10">
-                <SelectItem value="LAU">Lebanese American University (LAU)</SelectItem>
-                <SelectItem value="AUB">American University of Beirut (AUB)</SelectItem>
-                <SelectItem value="USEK">Holy Spirit University of Kaslik (USEK)</SelectItem>
-                <SelectItem value="NDU">Notre Dame University (NDU)</SelectItem>
-                <SelectItem value="USJ">Université Saint-Joseph (USJ)</SelectItem>
-                <SelectItem value="BAU">Beirut Arab University (BAU)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Academic Information Section */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-black text-primary flex items-center gap-2">
+              <GraduationCap className="w-5 h-5" />
+              Academic Information
+            </h3>
 
-          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                Current Area
-              </Label>
+              <Label htmlFor="university" className="text-foreground/80">Current University</Label>
               <Input
-                {...register('residential_area')}
-                placeholder="e.g., Beirut"
-                className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/50 transition-all"
+                id="university"
+                {...register('university')}
+                placeholder="e.g., UC Berkeley"
+                className="mt-2 w-full focus:ring-2 focus:ring-primary"
               />
             </div>
 
             <div>
-              <Label className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                Preferred Dorm Area
-              </Label>
+              <Label htmlFor="preferred_university" className="text-foreground/80">Preferred University (for dorm search)</Label>
               <Input
+                id="preferred_university"
                 {...register('preferred_university')}
-                placeholder="e.g., Near LAU"
-                className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/50 transition-all"
+                placeholder="e.g., Stanford University"
+                className="mt-2 w-full focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Housing Preferences Section */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-black text-primary flex items-center gap-2">
+              <Home className="w-5 h-5" />
+              Housing Preferences
+            </h3>
+
             <div>
-              <Label className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4" />
-                Monthly Budget ($)
-              </Label>
+              <Label htmlFor="residential_area" className="text-foreground/80">Preferred Residential Area</Label>
               <Input
+                id="residential_area"
+                {...register('residential_area')}
+                placeholder="e.g., Downtown, Campus Area"
+                className="mt-2 w-full focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="room_type" className="text-foreground/80">Preferred Room Type</Label>
+                <Select onValueChange={(value) => setValue('room_type', value)}>
+                  <SelectTrigger id="room_type" className="mt-2 w-full focus:ring-2 focus:ring-primary">
+                    <SelectValue placeholder="Select room type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Single">Single</SelectItem>
+                    <SelectItem value="Double">Double</SelectItem>
+                    <SelectItem value="Triple">Triple</SelectItem>
+                    <SelectItem value="Suite">Suite</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="roommate_needed" className="text-foreground/80">Need a Roommate?</Label>
+                <Select onValueChange={(value) => setValue('roommate_needed', value === 'yes')}>
+                  <SelectTrigger id="roommate_needed" className="mt-2 w-full focus:ring-2 focus:ring-primary">
+                    <SelectValue placeholder="Select option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Budget Section */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-black text-primary flex items-center gap-2">
+              <DollarSign className="w-5 h-5" />
+              Budget
+            </h3>
+
+            <div>
+              <Label htmlFor="budget" className="text-foreground/80">Monthly Budget ($)</Label>
+              <Input
+                id="budget"
                 type="number"
                 {...register('budget', { valueAsNumber: true })}
-                placeholder="500"
-                className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/50 transition-all"
+                placeholder="e.g., 1000"
+                className="mt-2 w-full focus:ring-2 focus:ring-primary"
               />
             </div>
+          </div>
+
+          {/* Location Preferences Section */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-black text-primary flex items-center gap-2">
+              <MapPin className="w-5 h-5" />
+              Location Preferences
+            </h3>
 
             <div>
-              <Label className="flex items-center gap-2">
-                <Home className="w-4 h-4" />
-                Room Type
-              </Label>
-              <Select onValueChange={(value) => setValue('room_type', value)}>
-                <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
-                  <SelectValue placeholder="Select preference" />
+              <Label htmlFor="distance_preference" className="text-foreground/80">Preferred Distance from Campus</Label>
+              <Select onValueChange={(value) => setValue('distance_preference', value)}>
+                <SelectTrigger id="distance_preference" className="mt-2 w-full focus:ring-2 focus:ring-primary">
+                  <SelectValue placeholder="Select distance" />
                 </SelectTrigger>
-                <SelectContent className="bg-background border border-white/10">
-                  <SelectItem value="single">Single Room</SelectItem>
-                  <SelectItem value="double">Double Room</SelectItem>
-                  <SelectItem value="studio">Studio</SelectItem>
-                  <SelectItem value="apartment">Apartment</SelectItem>
+                <SelectContent>
+                  <SelectItem value="Walking distance">Walking distance (&lt; 1 mile)</SelectItem>
+                  <SelectItem value="Short commute">Short commute (1-3 miles)</SelectItem>
+                  <SelectItem value="Moderate commute">Moderate commute (3-5 miles)</SelectItem>
+                  <SelectItem value="Long commute">Long commute (&gt; 5 miles)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          <div>
-            <Label>Distance Preference</Label>
-            <Select onValueChange={(value) => setValue('distance_preference', value)}>
-              <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
-                <SelectValue placeholder="Select distance preference" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border border-white/10">
-                <SelectItem value="walking">Walking Distance</SelectItem>
-                <SelectItem value="shuttle">Shuttle Service OK</SelectItem>
-                <SelectItem value="any">Any Distance</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              {...register('roommate_needed')}
-              className="w-4 h-4 rounded border-gray-300"
-            />
-            <Label className="cursor-pointer">Looking for a roommate</Label>
-          </div>
-        </div>
-
-        <Button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-gradient-to-r from-primary to-secondary text-white font-semibold py-6 rounded-xl hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] relative overflow-hidden group"
-        >
-          <AnimatePresence mode="wait">
+          <Button 
+            type="submit" 
+            disabled={isSaving}
+            className="w-full py-6 text-lg font-bold bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+          >
             {isSaving ? (
-              <motion.span
-                key="saving"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="flex items-center gap-2"
-              >
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Saving changes...
-              </motion.span>
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Saving Profile...
+              </>
             ) : (
-              <motion.span
-                key="save"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-              >
-                {hasProfile ? 'Update Profile' : 'Complete Profile'}
-              </motion.span>
+              <>
+                {hasProfile ? 'Update Profile' : 'Create Profile'}
+              </>
             )}
-          </AnimatePresence>
-        </Button>
+          </Button>
 
-        {/* Status Indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="flex items-center justify-center gap-2 text-sm"
-        >
-          {progress === 100 ? (
-            <>
-              <CheckCircle className="w-4 h-4 text-primary" />
-              <span className="text-primary font-semibold">All info up to date ✅</span>
-            </>
-          ) : (
-            <>
-              <AlertCircle className="w-4 h-4 text-yellow-500" />
-              <span className="text-foreground/60">Pending completion ⚠️</span>
-            </>
-          )}
-        </motion.div>
-      </form>
-        </div>
-        </motion.div>
-      </div>
+          {/* Profile Status Indicator */}
+          <div className="flex items-center justify-center gap-2 p-4 rounded-xl bg-primary/5 border border-primary/20">
+            {progress === 100 ? (
+              <>
+                <CheckCircle className="w-5 h-5 text-primary" />
+                <span className="text-sm font-semibold text-foreground">Profile Complete!</span>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="w-5 h-5 text-primary" />
+                <span className="text-sm text-foreground/70">Complete your profile to get better AI matches</span>
+              </>
+            )}
+          </div>
+        </form>
+      </motion.div>
     </>
   );
 };

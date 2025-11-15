@@ -11,7 +11,7 @@ export const ProfileProgress: React.FC<ProfileProgressProps> = ({ percentage }) 
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-background/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 mb-6 shadow-lg"
+      className="max-w-2xl mx-auto bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 mb-6 shadow-2xl"
     >
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-black gradient-text">Profile Completion</h3>
