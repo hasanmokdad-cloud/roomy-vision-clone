@@ -61,7 +61,7 @@ export const ChatbotBubble = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch("https://ujdkllllyjjekglagijyc.functions.supabase.co/roomy-chat", {
+      const res = await fetch("https://ujdkllllyjjekglagijyc.functions.supabase.co/roomy-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
