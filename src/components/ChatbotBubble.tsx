@@ -29,6 +29,7 @@ export const ChatbotBubble = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  // ✅ Load Supabase user session
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUserId(session?.user?.id || null);
@@ -43,12 +44,14 @@ export const ChatbotBubble = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // ✅ Always scroll to bottom on new message
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
 
+  // ✅ Core send function (calls Edge Function)
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -58,8 +61,7 @@ export const ChatbotBubble = () => {
     setIsLoading(true);
 
     try {
-      // ✅ Call your Supabase Edge Function directly
-      const response = await fetch("https://ujdkllllyjjekglagijyc.supabase.co/functions/v1/roomy-chat", {
+      const res = await fetch("https://ujdkllllyjjekglagijyc.supabase.co/functions/v1/roomy-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -69,26 +71,19 @@ export const ChatbotBubble = () => {
         }),
       });
 
-      const data = await response.json();
-      console.log("AI Response:", data);
+      const data = await res.json();
+      console.log("✅ Gemini response:", data);
 
-      if (!response.ok || data.error) {
+      if (!res.ok || data.error) {
         throw new Error(data.error || "AI service unavailable.");
       }
 
-      const responseMessage = data.response || "Sorry, I could not process that request.";
+      const responseText = data.response || "Sorry, I could not process that request.";
 
-      // ✅ Update session ID if provided
-      if (data.sessionId && !sessionId) {
-        setSessionId(data.sessionId);
-      }
+      // ✅ Update memory session data
+      if (data.sessionId) setSessionId(data.sessionId);
+      if (typeof data.hasContext === "boolean") setHasContext(data.hasContext);
 
-      // ✅ Update context indicator
-      if (data.hasContext !== undefined) {
-        setHasContext(data.hasContext);
-      }
-
-      // ✅ If chat reset is triggered
       if (data.sessionReset) {
         setMessages([
           {
@@ -96,15 +91,15 @@ export const ChatbotBubble = () => {
             content:
               "Hi 👋 I'm Roomy AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
           },
-          { role: "assistant", content: responseMessage },
+          { role: "assistant", content: responseText },
         ]);
         setSessionId(null);
         setHasContext(false);
       } else {
-        setMessages((prev) => [...prev, { role: "assistant", content: responseMessage }]);
+        setMessages((prev) => [...prev, { role: "assistant", content: responseText }]);
       }
-    } catch (error: any) {
-      console.error("Chat error:", error);
+    } catch (err) {
+      console.error("❌ Chat error:", err);
       toast({
         title: "Error",
         description: "Failed to get response. Please try again.",
@@ -122,14 +117,38 @@ export const ChatbotBubble = () => {
     }
   };
 
+  // ✅ Resets only conversation (not memory)
   const handleReset = async () => {
-    setInput("reset chat");
-    await handleSend();
+    setMessages([
+      {
+        role: "assistant",
+        content:
+          "Hi 👋 I'm Roomy AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
+      },
+    ]);
+    setSessionId(null);
+    setHasContext(false);
   };
 
+  // ✅ Clears all AI memory (calls Supabase to delete session context)
   const handleResetMemory = async () => {
-    setInput("reset my memory");
-    await handleSend();
+    try {
+      if (userId && sessionId) {
+        await supabase.from("ai_chat_sessions").delete().eq("user_id", userId).eq("session_id", sessionId);
+      }
+      handleReset();
+      toast({
+        title: "AI Memory Cleared",
+        description: "Roomy AI has forgotten your previous preferences.",
+      });
+    } catch (err) {
+      console.error("Memory reset failed:", err);
+      toast({
+        title: "Error",
+        description: "Could not clear memory. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -205,6 +224,7 @@ export const ChatbotBubble = () => {
                     </div>
                   </div>
                 ))}
+
                 {isLoading && (
                   <div className="flex justify-start">
                     <div className="bg-muted rounded-2xl px-4 py-2">
