@@ -410,7 +410,7 @@ export default function AiMatch() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="flex items-center justify-between p-4 bg-background/40 rounded-xl border border-white/10">
                   <div>
                     <Label>Roommate Needed?</Label>
                     <p className="text-sm text-foreground/60">Looking for a compatible roommate</p>

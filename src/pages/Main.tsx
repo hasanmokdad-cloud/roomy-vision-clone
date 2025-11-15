@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 import Navbar from '@/components/shared/Navbar';
 import { Hero } from '@/components/Hero';
 import { HowItWorks } from '@/components/HowItWorks';
@@ -13,9 +14,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const Main = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Redirect mobile users to listings page
+    if (isMobile) {
+      navigate('/listings', { replace: true });
+      return;
+    }
+
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -35,7 +43,7 @@ const Main = () => {
     };
 
     checkAuth();
-  }, [navigate]);
+  }, [navigate, isMobile]);
 
   if (loading) {
     return (
