@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import BottomNav from "./components/BottomNav";
 import MobileNavbar from "./components/MobileNavbar";
-import { SwipeableRoutes } from "./components/SwipeableRoutes";
+import { MobileSwipeLayout } from "./layouts/MobileSwipeLayout";
 
 // Lazy load route components
 const Main = lazy(() => import("./pages/Main"));
@@ -85,21 +85,21 @@ const App = () => (
         <BrowserRouter>
           <MobileNavbar />
           <Suspense fallback={<PageLoader />}>
-            <SwipeableRoutes>
-              <Routes>
+            <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Main />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/intro" element={<Intro />} />
-              <Route path="/listings" element={<Listings />} />
+              <Route path="/listings" element={<MobileSwipeLayout><Listings /></MobileSwipeLayout>} />
               <Route path="/dorm/:id" element={<DormDetail />} />
-              <Route path="/ai-match" element={<AiMatch />} />
+              <Route path="/ai-match" element={<MobileSwipeLayout><AiMatch /></MobileSwipeLayout>} />
               <Route path="/ai-chat" element={<AiChat />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/profile" element={<Profile />} />
+              <Route path="/dashboard" element={<MobileSwipeLayout><Dashboard /></MobileSwipeLayout>} />
+              <Route path="/profile" element={<MobileSwipeLayout><Profile /></MobileSwipeLayout>} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/messages" element={<Messages />} />
+              <Route path="/messages" element={<MobileSwipeLayout><Messages /></MobileSwipeLayout>} />
               <Route path="/unauthorized" element={<Unauthorized />} />
 
         {/* Protected Dashboards */}
@@ -140,6 +140,10 @@ const App = () => (
                 element={<ProtectedRoute element={<OwnerRooms />} requiredRole="owner" />}
               />
               <Route
+                path="/owner/bookings"
+                element={<ProtectedRoute element={<OwnerBookings />} requiredRole="owner" />}
+              />
+              <Route
                 path="/owner/edit-dorm/:id"
                 element={<ProtectedRoute element={<OwnerAddDorm />} requiredRole="owner" />}
               />
@@ -162,7 +166,6 @@ const App = () => (
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-            </SwipeableRoutes>
           </Suspense>
           <BottomNav />
           <ChatbotBubble />
