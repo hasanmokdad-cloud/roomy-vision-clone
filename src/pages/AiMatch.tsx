@@ -66,6 +66,13 @@ export default function AiMatch() {
   const [hasContext, setHasContext] = useState(false);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  
+  // Initialize session ID on mount
+  useEffect(() => {
+    if (!sessionId) {
+      setSessionId(crypto.randomUUID());
+    }
+  }, []);
 
   useEffect(() => {
     if (!userId) return;
@@ -230,6 +237,37 @@ Keep it conversational, concrete, and under 120 words.
       });
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  // 🔄 Reset AI Memory
+  const handleResetMemory = async () => {
+    if (!sessionId || !userId) return;
+    
+    try {
+      await supabase
+        .from('ai_chat_sessions')
+        .delete()
+        .eq('session_id', sessionId)
+        .eq('user_id', userId);
+      
+      // Generate new session ID
+      const newSessionId = crypto.randomUUID();
+      setSessionId(newSessionId);
+      setHasContext(false);
+      setAiSummary(null);
+      
+      toast({
+        title: "Memory Reset",
+        description: "Roomy AI's memory has been cleared. Starting fresh!",
+      });
+    } catch (err) {
+      console.error("Error resetting AI memory:", err);
+      toast({
+        title: "Error",
+        description: "Failed to reset AI memory. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -600,26 +638,49 @@ Keep it conversational, concrete, and under 120 words.
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-                    <h3 className="text-lg md:text-xl font-semibold">Roomy AI is reading your matches...</h3>
+                    <h3 className="text-lg md:text-xl font-semibold">Roomy AI is analyzing...</h3>
+                  </div>
+                  <div className="flex gap-2 mb-3">
+                    <Badge variant="secondary" className="text-xs">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Gemini 2.5 Flash
+                    </Badge>
                   </div>
                   <p className="text-sm text-foreground/70">
-                    Generating a short explanation of why these dorms fit your preferences.
+                    Generating personalized insights based on your preferences.
                   </p>
                 </motion.div>
               )}
 
               {aiSummary && !aiLoading && (
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.5 }}
-                  className="bg-background/60 backdrop-blur-xl border border-primary/40 rounded-2xl p-4 md:p-6 shadow-[0_0_30px_rgba(129,140,248,0.35)]"
+                  className="bg-primary/10 backdrop-blur-xl border border-primary/30 rounded-2xl p-4 md:p-6 shadow-[0_0_30px_rgba(129,140,248,0.35)]"
                 >
-                  <div className="flex items-center gap-3 mb-3">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    <h3 className="text-lg md:text-xl font-bold">Roomy AI insight</h3>
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-5 h-5 text-primary" />
+                        <h3 className="text-lg md:text-xl font-bold">Roomy AI Insight</h3>
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        <Badge variant="secondary" className="text-xs">
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          Gemini 2.5 Flash
+                        </Badge>
+                        {hasContext && (
+                          <Badge variant="outline" className="text-xs">
+                            Context Memory Active
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm md:text-base text-foreground/80 whitespace-pre-line">{aiSummary}</p>
+                  <div className="prose prose-sm max-w-none text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                    {aiSummary}
+                  </div>
                 </motion.div>
               )}
 
@@ -728,6 +789,15 @@ Keep it conversational, concrete, and under 120 words.
                   className="bg-white/10 border-white/20 hover:bg.white/20 text-white"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" /> Adjust Preferences
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleResetMemory}
+                  disabled={!hasContext}
+                  className="bg-white/10 border-white/20 hover:bg-white/20 text-white"
+                  title={hasContext ? "Clear Roomy AI's memory" : "No memory to reset"}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" /> Reset AI Memory
                 </Button>
                 <Button
                   variant="outline"
