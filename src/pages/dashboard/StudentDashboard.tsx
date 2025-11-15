@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Bookmark, MessageSquare, Sparkles, User } from "lucide-react";
+import { FavoritesRecommendations } from "@/components/dashboard/FavoritesRecommendations";
 
 export default function StudentDashboard() {
   const { loading, userId } = useRoleGuard("user");
@@ -92,6 +93,18 @@ export default function StudentDashboard() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Favorites & Recommendations */}
+        {userId && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mb-10"
+          >
+            <FavoritesRecommendations userId={userId} />
+          </motion.div>
+        )}
 
         {/* Quick Access Buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-10">
