@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send } from "lucide-react";
+import { MessageCircle, X, Send, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,10 +29,42 @@ export const ChatbotBubble = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // ✅ Load Supabase user session
+  // ✅ Load Supabase user session and chat history
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user?.id || null);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const uid = session?.user?.id || null;
+      setUserId(uid);
+      
+      // Load previous messages if user is logged in
+      if (uid) {
+        const tempSessionId = `session_${uid}_${Date.now()}`;
+        setSessionId(tempSessionId);
+        
+        const { data: previousMessages } = await supabase
+          .from("ai_chat_sessions")
+          .select("role, message")
+          .eq("user_id", uid)
+          .order("created_at", { ascending: false })
+          .limit(10);
+        
+        if (previousMessages && previousMessages.length > 0) {
+          const formattedMessages = previousMessages
+            .reverse()
+            .map((msg: any) => ({
+              role: msg.role as "user" | "assistant",
+              content: msg.message
+            }));
+          
+          setMessages([
+            {
+              role: "assistant",
+              content: "Hi 👋 I'm Roomy AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
+            },
+            ...formattedMessages
+          ]);
+          setHasContext(true);
+        }
+      }
     });
 
     const {
@@ -130,22 +162,52 @@ export const ChatbotBubble = () => {
     setHasContext(false);
   };
 
-  // ✅ Clears all AI memory (calls Supabase to delete session context)
+  // ✅ Clear AI Memory (deletes session from DB)
   const handleResetMemory = async () => {
-    try {
-      if (userId && sessionId) {
-        await supabase.from("ai_chat_sessions").delete().eq("user_id", userId).eq("session_id", sessionId);
-      }
-      handleReset();
-      toast({
-        title: "AI Memory Cleared",
-        description: "Roomy AI has forgotten your previous preferences.",
-      });
-    } catch (err) {
-      console.error("Memory reset failed:", err);
+    if (!userId) {
       toast({
         title: "Error",
-        description: "Could not clear memory. Please try again.",
+        description: "Please sign in to reset memory.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Delete all chat sessions for this user
+      const { error: chatError } = await supabase
+        .from("ai_chat_sessions")
+        .delete()
+        .eq("user_id", userId);
+      
+      // Delete chat session context
+      if (sessionId) {
+        await supabase
+          .from("chat_sessions")
+          .delete()
+          .eq("session_id", sessionId);
+      }
+
+      if (chatError) throw chatError;
+
+      setMessages([
+        {
+          role: "assistant",
+          content: "✨ AI memory reset! I've forgotten all your preferences. Let's start fresh!",
+        },
+      ]);
+      setSessionId(`session_${userId}_${Date.now()}`);
+      setHasContext(false);
+
+      toast({
+        title: "Memory Reset",
+        description: "AI memory has been cleared successfully.",
+      });
+    } catch (err) {
+      console.error("❌ Error resetting memory:", err);
+      toast({
+        title: "Error",
+        description: "Failed to reset AI memory. Please try again.",
         variant: "destructive",
       });
     }
@@ -164,49 +226,34 @@ export const ChatbotBubble = () => {
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
               <div className="flex flex-col">
-                <h3 className="font-bold text-lg">Roomy AI Assistant</h3>
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                  💬 Roomy AI
+                  {hasContext && (
+                    <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
+                      Memory Active
+                    </span>
+                  )}
+                </h3>
                 {hasContext && <span className="text-xs text-muted-foreground">💭 Remembers your preferences</span>}
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 {userId && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
+                  <button
                     onClick={handleResetMemory}
-                    className="hover:bg-destructive hover:text-destructive-foreground"
-                    title="Reset AI Memory (clears all learned preferences)"
+                    className="text-muted-foreground hover:text-foreground transition-colors p-2 hover:bg-muted rounded-lg"
+                    aria-label="Reset AI Memory"
+                    title="Reset AI Memory"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                  </Button>
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 )}
-                {hasContext && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleReset}
-                    className="hover:bg-muted"
-                    title="Reset conversation"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
-                    </svg>
-                  </Button>
-                )}
-                <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="hover:bg-muted">
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Close chat"
+                >
                   <X className="w-5 h-5" />
-                </Button>
+                </button>
               </div>
             </div>
 

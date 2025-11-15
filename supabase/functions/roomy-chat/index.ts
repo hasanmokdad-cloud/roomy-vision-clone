@@ -300,6 +300,21 @@ serve(async (req) => {
       );
     }
 
+    // Load last 10 messages from ai_chat_sessions for conversation history
+    const { data: recentMessages } = await supabase
+      .from("ai_chat_sessions")
+      .select("role, message")
+      .eq("session_id", effectiveSessionId)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    
+    const conversationHistory = (recentMessages || []).reverse();
+
+    // Check if user is asking for roommates
+    const isRoommateQuery = message.toLowerCase().includes("roommate") || 
+                           message.toLowerCase().includes("room mate") ||
+                           message.toLowerCase().includes("find me someone");
+    
     // Load existing session or create new one
     let { data: session } = await supabase
       .from("chat_sessions")
@@ -430,9 +445,43 @@ serve(async (req) => {
       console.error("Database query error:", dbError);
     }
 
+    // Handle roommate queries
+    let roommatesContext = "";
+    if (isRoommateQuery) {
+      const { data: potentialRoommates, error: roommatesError } = await supabase
+        .from("students")
+        .select("full_name, age, gender, university, budget, preferred_room_types, preferred_amenities")
+        .neq("user_id", userId || "")
+        .limit(3);
+      
+      if (potentialRoommates && potentialRoommates.length > 0) {
+        // Filter by similar university if available
+        let filteredRoommates = potentialRoommates;
+        if (studentProfile?.preferred_university) {
+          filteredRoommates = potentialRoommates.filter(
+            (r: any) => r.university === studentProfile.preferred_university
+          );
+          if (filteredRoommates.length === 0) filteredRoommates = potentialRoommates;
+        }
+        
+        roommatesContext = "\n\nHere are potential roommates from our database:\n\n";
+        filteredRoommates.slice(0, 3).forEach((roommate: any, idx: number) => {
+          roommatesContext += `${idx + 1}. ${roommate.full_name}\n`;
+          roommatesContext += `   👤 Age: ${roommate.age || "Not specified"}\n`;
+          roommatesContext += `   🎓 University: ${roommate.university || "Not specified"}\n`;
+          roommatesContext += `   💰 Budget: $${roommate.budget || "Not specified"}/month\n`;
+          roommatesContext += `   🛏️ Room Preference: ${roommate.preferred_room_types?.join(", ") || "Not specified"}\n`;
+          roommatesContext += `   ✨ Interests: ${roommate.preferred_amenities?.join(", ") || "Not specified"}\n\n`;
+        });
+        roommatesContext += "\nPresent these roommate matches conversationally. Highlight shared interests and compatibility.";
+      } else {
+        roommatesContext = "\n\nNo roommate profiles match your criteria yet. New students join daily!";
+      }
+    }
+    
     // Build context with dorm data
     let dormsContext = "";
-    if (rankedDorms && rankedDorms.length > 0) {
+    if (!isRoommateQuery && rankedDorms && rankedDorms.length > 0) {
       dormsContext = "\n\nHere are the top matching dorms from our database";
       if (studentProfile) {
         dormsContext += " (ranked by your preferences)";
@@ -451,8 +500,18 @@ serve(async (req) => {
         dormsContext += "\n";
       });
       dormsContext += "\nPresent these dorms conversationally with emojis. Highlight why they match the user's preferences.";
-    } else if (Object.keys(filters).length > 0) {
+    } else if (!isRoommateQuery && Object.keys(filters).length > 0) {
       dormsContext = "\n\nNo dorms match the criteria. Suggest adjusting budget, location, or room type. Ask what matters most.";
+    }
+    
+    // Build conversation history context
+    let conversationHistoryContext = "";
+    if (conversationHistory.length > 0) {
+      conversationHistoryContext = "\n\nRECENT CONVERSATION HISTORY:\n";
+      conversationHistory.forEach((msg: any) => {
+        conversationHistoryContext += `${msg.role === 'user' ? 'Student' : 'Roomy AI'}: ${msg.message}\n`;
+      });
+      conversationHistoryContext += "\nUse this history to provide contextual, personalized responses.\n";
     }
 
     const systemPrompt = `You are Roomy AI, a personalized housing assistant for students in Lebanon with long-term memory.
@@ -465,10 +524,11 @@ CORE PERSONALITY:
 
 KEY CAPABILITIES:
 - Find dorms using live database queries
+- Find compatible roommates based on university, budget, and preferences
 - Learn and remember: budget, areas, room types, amenities
 - Provide personalized matches ranked by student preferences
 - Handle follow-up questions using conversation context
-- Explain match scores and why dorms fit their profile
+- Explain match scores and why dorms or roommates fit their profile
 
 CONVERSATIONAL INTELLIGENCE:
 - If you know user preferences, acknowledge them: "I know you prefer single rooms near AUB under $700..."
@@ -481,7 +541,7 @@ WHEN USER ASKS:
 - Generic greeting → Offer personalized search based on known preferences
 - New criteria → Update internal understanding and search accordingly
 
-${profileContext}${conversationContext}${dormsContext}
+${profileContext}${conversationContext}${conversationHistoryContext}${dormsContext}${roommatesContext}
 
 Present results engagingly. If match scores exist, mention why dorms are great fits. Keep responses concise but warm.`;
 
