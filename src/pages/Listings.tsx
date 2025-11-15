@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Sparkles, SlidersHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { AISmartFilter } from '@/components/listings/AISmartFilter';
+import { DormComparison, DormComparisonCheckbox } from '@/components/listings/DormComparison';
 import {
   Sheet,
   SheetContent,
@@ -41,8 +43,19 @@ export default function Listings() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
 
   const { data, loading, error } = useListingsQuery(filters);
+
+  // Load user session
+  useEffect(() => {
+    import('@/integrations/supabase/client').then(({ supabase }) => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setUserId(session?.user?.id || null);
+      });
+    });
+  }, []);
 
   // Get real dorms from Supabase
   const dorms = useMemo(() => {
@@ -100,6 +113,31 @@ export default function Listings() {
 
   const handleResetPrice = useCallback(() => {
     setFilters(prev => ({ ...prev, priceRange: [0, 2000] }));
+  }, []);
+
+  const handleAIFilters = useCallback((aiFilters: any) => {
+    setFilters(prev => ({
+      ...prev,
+      ...(aiFilters.priceRange && { priceRange: aiFilters.priceRange }),
+      ...(aiFilters.universities && { universities: aiFilters.universities }),
+      ...(aiFilters.areas && { areas: aiFilters.areas }),
+      ...(aiFilters.roomTypes && { roomTypes: aiFilters.roomTypes }),
+    }));
+    if (aiFilters.searchQuery) {
+      setSearchQuery(aiFilters.searchQuery);
+    }
+  }, []);
+
+  const toggleComparisonSelection = useCallback((dormId: string) => {
+    setSelectedForComparison(prev => {
+      if (prev.includes(dormId)) {
+        return prev.filter(id => id !== dormId);
+      }
+      if (prev.length >= 3) {
+        return prev;
+      }
+      return [...prev, dormId];
+    });
   }, []);
 
 
@@ -176,6 +214,16 @@ export default function Listings() {
           </Sheet>
         </motion.div>
 
+        {/* AI Smart Filter */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="mb-8"
+        >
+          <AISmartFilter onFiltersApplied={handleAIFilters} userId={userId} />
+        </motion.div>
+
         <div className="flex flex-col gap-8">
           <div className="flex-1 space-y-6">
 
@@ -184,6 +232,11 @@ export default function Listings() {
               onRemoveFilter={handleRemoveFilter}
               onResetPrice={handleResetPrice}
             />
+
+            {/* Dorm Comparison */}
+            {filteredDorms.length > 0 && (
+              <DormComparison dorms={filteredDorms} userId={userId} />
+            )}
 
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -222,11 +275,17 @@ export default function Listings() {
                     aria-label="Dorm listings"
                   >
                     {paginatedDorms.map((dorm, index) => (
-                      <CinematicDormCard 
-                        key={dorm.id} 
-                        dorm={dorm} 
-                        index={index}
-                      />
+                      <div key={dorm.id} className="relative">
+                        <DormComparisonCheckbox
+                          dormId={dorm.id}
+                          isSelected={selectedForComparison.includes(dorm.id)}
+                          onToggle={toggleComparisonSelection}
+                        />
+                        <CinematicDormCard 
+                          dorm={dorm} 
+                          index={index}
+                        />
+                      </div>
                     ))}
                   </div>
                 </ErrorBoundary>

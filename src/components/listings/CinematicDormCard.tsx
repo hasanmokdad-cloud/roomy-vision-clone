@@ -1,11 +1,13 @@
 import { motion } from "framer-motion";
-import { useState, useMemo, useCallback, memo } from "react";
+import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, CheckCircle, Wifi, Zap, Home, Navigation } from "lucide-react";
+import { MapPin, CheckCircle, Wifi, Zap, Home, Navigation, Bookmark } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface RoomType {
   type: string;
@@ -36,9 +38,32 @@ interface CinematicDormCardProps {
 
 const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
+
+  // Load user and check if dorm is saved
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const uid = session?.user?.id || null;
+      setUserId(uid);
+      
+      if (uid) {
+        const { data } = await supabase
+          .from("saved_items")
+          .select("id")
+          .eq("user_id", uid)
+          .eq("item_id", dorm.id)
+          .eq("item_type", "dorm")
+          .maybeSingle();
+        
+        setIsSaved(!!data);
+      }
+    });
+  }, [dorm.id]);
 
   // Memoized room types calculations
   const roomTypes: RoomType[] = useMemo(() => dorm.room_types_json || [], [dorm.room_types_json]);
@@ -68,6 +93,58 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
   const handleCardClick = useCallback(() => {
     navigate(`/dorm/${dorm.id}`);
   }, [navigate, dorm.id]);
+
+  const toggleSave = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!userId) {
+      toast({
+        title: "Sign in Required",
+        description: "Please sign in to save dorms.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (isSaved) {
+        // Remove from saved
+        await supabase
+          .from("saved_items")
+          .delete()
+          .eq("user_id", userId)
+          .eq("item_id", dorm.id);
+        
+        setIsSaved(false);
+        toast({
+          title: "Removed",
+          description: "Dorm removed from favorites.",
+        });
+      } else {
+        // Add to saved
+        await supabase
+          .from("saved_items")
+          .insert({
+            user_id: userId,
+            item_id: dorm.id,
+            item_type: "dorm",
+          });
+        
+        setIsSaved(true);
+        toast({
+          title: "Saved",
+          description: "Dorm added to favorites!",
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling save:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorites.",
+        variant: "destructive",
+      });
+    }
+  }, [userId, isSaved, dorm.id, toast]);
 
   const amenityIcons: Record<string, any> = useMemo(
     () => ({
@@ -168,6 +245,19 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
                   </Badge>
                 )}
               </div>
+
+              {/* Save Button */}
+              <button
+                onClick={toggleSave}
+                className="absolute top-4 right-4 p-2 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:bg-background transition-colors"
+                aria-label={isSaved ? "Remove from favorites" : "Save to favorites"}
+              >
+                <Bookmark
+                  className={`w-5 h-5 transition-colors ${
+                    isSaved ? "fill-primary text-primary" : "text-muted-foreground"
+                  }`}
+                />
+              </button>
             </div>
 
             {/* Content */}
