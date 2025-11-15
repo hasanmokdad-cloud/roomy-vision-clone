@@ -7,8 +7,15 @@ import FiltersPanel from '@/components/shared/FiltersPanel';
 import { FilterChips } from '@/components/shared/FilterChips';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Sparkles } from 'lucide-react';
+import { Search, Sparkles, SlidersHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { useListingsQuery } from '@/hooks/useListingsQuery';
 import { sanitizeInput } from '@/utils/inputValidation';
 import { CinematicDormCard } from '@/components/listings/CinematicDormCard';
@@ -33,6 +40,7 @@ export default function Listings() {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const { data, loading, error } = useListingsQuery(filters);
 
@@ -124,34 +132,53 @@ export default function Listings() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="relative mb-8"
+          className="relative mb-8 flex gap-3"
           role="search"
         >
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/50" aria-hidden="true" />
-          <Input
-            type="text"
-            placeholder="Search by name, location, or features (e.g., 'single room near AUB')"
-            value={searchQuery}
-            onChange={(e) => {
-              const sanitized = sanitizeInput(e.target.value);
-              const limited = sanitized.substring(0, 120);
-              setSearchQuery(limited);
-            }}
-            className="pl-12 h-14 text-lg bg-background/30 backdrop-blur-xl border border-white/10 rounded-2xl placeholder:text-foreground/50"
-            aria-label="Search dorms by name, location, or features"
-          />
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/50" aria-hidden="true" />
+            <Input
+              type="text"
+              placeholder="Search by name, location, or features (e.g., 'single room near AUB')"
+              value={searchQuery}
+              onChange={(e) => {
+                const sanitized = sanitizeInput(e.target.value);
+                const limited = sanitized.substring(0, 120);
+                setSearchQuery(limited);
+              }}
+              className="pl-12 h-14 text-lg bg-background/30 backdrop-blur-xl border border-white/10 rounded-2xl placeholder:text-foreground/50"
+              aria-label="Search dorms by name, location, or features"
+            />
+          </div>
+          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-14 px-6 bg-background/30 border border-white/10 hover:bg-background/40 rounded-2xl whitespace-nowrap"
+                aria-label="Open filters"
+              >
+                <SlidersHorizontal className="w-5 h-5 mr-2" />
+                Filters
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto bg-background border-l border-white/10">
+              <SheetHeader>
+                <SheetTitle>Filter Listings</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6">
+                <FiltersPanel 
+                  filters={filters}
+                  onFilterChange={handleFilterChange}
+                  dorms={data.mode === 'dorm' ? data.dorms : []}
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
         </motion.div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          <aside className="lg:w-80 flex-shrink-0">
-            <FiltersPanel 
-              filters={filters}
-              onFilterChange={handleFilterChange}
-              dorms={data.mode === 'dorm' ? data.dorms : []}
-            />
-          </aside>
-
+        <div className="flex flex-col gap-8">
           <div className="flex-1 space-y-6">
+
             <FilterChips
               filters={filters}
               onRemoveFilter={handleRemoveFilter}
