@@ -1,3 +1,19 @@
+/**
+ * Roomy AI Chat Edge Function
+ * 
+ * Handles streaming chat interactions with Lovable AI gateway for the Roomy housing assistant.
+ * Provides personalized dorm recommendations based on student preferences and conversation history.
+ * 
+ * Required Environment Variables:
+ * - SUPABASE_URL: Your Supabase project URL (auto-configured)
+ * - SUPABASE_SERVICE_ROLE_KEY: Supabase service role key for backend operations (auto-configured)
+ * - LOVABLE_API_KEY: API key for Lovable AI gateway (auto-provisioned by Lovable)
+ * 
+ * Deployment Note:
+ * All required secrets are automatically configured in Lovable Cloud.
+ * This function is automatically deployed when you make changes to the codebase.
+ */
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
@@ -191,12 +207,20 @@ serve(async (req) => {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    // Validate environment variables
+    if (!LOVABLE_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("[roomy-chat] Missing required environment variables");
+      return new Response(
+        JSON.stringify({ error: "AI backend is not properly configured" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Initialize Supabase client
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Generate session ID for guest users
     const effectiveUserId = userId || `guest_${Date.now()}`;
@@ -473,83 +497,42 @@ Present results engagingly. If match scores exist, mention why dorms are great f
           { role: "system", content: systemPrompt },
           { role: "user", content: message },
         ],
+        stream: true,
       }),
     });
 
     if (!response.ok) {
       if (response.status === 429) {
+        console.error("[roomy-chat] Rate limit exceeded");
         return new Response(
           JSON.stringify({ error: "Rate limits exceeded, please try again later." }),
-          {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       if (response.status === 402) {
+        console.error("[roomy-chat] Payment required");
         return new Response(
           JSON.stringify({ error: "Payment required, please add funds to your Lovable AI workspace." }),
-          {
-            status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("[roomy-chat] AI gateway error:", response.status, errorText);
       return new Response(
-        JSON.stringify({ error: "An error occurred processing your request" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        JSON.stringify({ error: "AI service is temporarily unavailable" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const aiData = await response.json();
-    const aiResponse = aiData.choices?.[0]?.message?.content || "Sorry, I couldn't process that request.";
-
-    // Update session with new messages
-    const updatedHistory = [
-      ...history,
-      { role: "user", content: message, timestamp: new Date().toISOString() },
-      { role: "assistant", content: aiResponse, timestamp: new Date().toISOString() }
-    ];
-
-    // Keep only last 20 entries (10 conversation turns)
-    const trimmedHistory = updatedHistory.slice(-20);
-
-    // Update context with latest filters
-    const updatedContext = { ...filters };
-
-    await supabase.from("chat_sessions")
-      .update({
-        history: trimmedHistory,
-        context: updatedContext,
-        updated_at: new Date().toISOString()
-      })
-      .eq("session_id", effectiveSessionId);
-
-    // Log conversation (optional)
-    if (userId) {
-      const { error: logError } = await supabase.from("chat_logs").insert([{
-        user_id: userId,
-        message: message,
-        reply: aiResponse,
-      }]);
-      if (logError) console.error("Failed to log chat:", logError);
-    }
-
-    return new Response(
-      JSON.stringify({ 
-        response: aiResponse,
-        sessionId: effectiveSessionId,
-        hasContext: recentHistory.length > 0
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    console.log("[roomy-chat] Streaming response to client");
+    return new Response(response.body, {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
+    });
   } catch (error) {
     console.error("Chat error:", error);
     
