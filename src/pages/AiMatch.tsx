@@ -163,29 +163,100 @@ export default function AiMatch() {
   const findMatches = async () => {
     setLoading(true);
     
-    let query = supabase
-      .from('dorms_public')
-      .select('*')
-      .eq('verification_status', 'Verified')
-      .lte('monthly_price', preferences.budget);
+    try {
+      // Load all verified dorms
+      const { data: dorms, error: dormsError } = await supabase
+        .from('dorms_public')
+        .select('*')
+        .eq('verification_status', 'Verified');
 
-    if (preferences.preferred_university) {
-      query = query.eq('university', preferences.preferred_university);
-    }
+      if (dormsError) throw dormsError;
 
-    if (preferences.room_type) {
-      query = query.ilike('room_types', `%${preferences.room_type}%`);
-    }
+      // Load engagement signals
+      const { data: signals } = await supabase
+        .from('dorm_engagement_view')
+        .select('dorm_id, views, favorites, inquiries');
 
-    const { data, error } = await query.order('monthly_price', { ascending: true }).limit(3);
+      const signalsMap: Record<string, any> = {};
+      (signals ?? []).forEach((s: any) => (signalsMap[s.dorm_id] = s));
 
-    setLoading(false);
+      // Build user profile for recommendation engine
+      const userProfile = {
+        budget: preferences.budget,
+        preferred_university: preferences.preferred_university || null,
+        favorite_areas: [], // Could be enhanced with area preferences
+        preferred_room_types: preferences.room_type ? [preferences.room_type] : [],
+        preferred_amenities: [], // Could be enhanced with amenity preferences
+        ai_confidence_score: 85, // Default confidence
+      };
 
-    if (!error && data) {
-      setMatches(data);
-    } else {
+      // Use recommendation engine to rank dorms
+      const { rankDorms } = await import('@/ai-engine/recommendationModel');
+      const rankedDorms = rankDorms(dorms ?? [], userProfile, signalsMap);
+
+      // Take top 8 matches
+      const topMatches = rankedDorms.slice(0, 8).map(dorm => ({
+        ...dorm,
+        matchScore: dorm.matchScore,
+        matchReasons: generateMatchReasons(dorm, userProfile),
+      }));
+
+      setMatches(topMatches);
+    } catch (error) {
+      console.error('Error finding matches:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to find matches. Please try again.',
+        variant: 'destructive'
+      });
       setMatches([]);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Generate human-readable match reasons
+  const generateMatchReasons = (dorm: any, userProfile: any): string[] => {
+    const reasons: string[] = [];
+
+    // Budget fit
+    if (userProfile.budget && dorm.monthly_price <= userProfile.budget) {
+      const savings = userProfile.budget - dorm.monthly_price;
+      if (savings > 100) {
+        reasons.push(`Within budget - saves you $${savings}/month`);
+      } else {
+        reasons.push('Perfectly within your budget');
+      }
+    }
+
+    // University match
+    if (userProfile.preferred_university && dorm.university) {
+      if (dorm.university.toLowerCase().includes(userProfile.preferred_university.toLowerCase())) {
+        reasons.push(`Close to ${userProfile.preferred_university}`);
+      }
+    }
+
+    // Room type match
+    if (userProfile.preferred_room_types?.length && dorm.room_types) {
+      const hasMatch = userProfile.preferred_room_types.some((t: string) =>
+        dorm.room_types.toLowerCase().includes(t.toLowerCase())
+      );
+      if (hasMatch) {
+        reasons.push(`Has your preferred room type`);
+      }
+    }
+
+    // Verification status
+    if (dorm.verification_status === 'Verified') {
+      reasons.push('Verified and trusted');
+    }
+
+    // Popular choice
+    if (dorm.matchScore && dorm.matchScore > 70) {
+      reasons.push('Highly recommended for you');
+    }
+
+    return reasons.slice(0, 3); // Max 3 reasons
   };
 
   const restart = () => {
@@ -456,22 +527,41 @@ export default function AiMatch() {
                           initial={{ opacity: 0, y: 30 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.1 }}
-                          className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg p-6 hover:shadow-xl hover:border-primary/40 transition-all duration-300"
+                          className="bg-background/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 hover:shadow-xl hover:border-primary/40 transition-all duration-300"
                         >
-                          <h3 className="text-2xl font-bold text-white mb-2">
-                            {match.dorm_name || match.name}
-                          </h3>
-                          <p className="text-primary font-semibold mb-3">
-                            Match Score: {90 - idx * 5}%
-                          </p>
-                          <p className="text-sm text-gray-300 italic mb-4">
-                            {generateReasonText(match)}
-                          </p>
-                          <div className="space-y-2 text-sm text-gray-300">
+                          <div className="flex items-start justify-between mb-3">
+                            <h3 className="text-2xl font-bold text-foreground">
+                              {match.dorm_name || match.name}
+                            </h3>
+                            <Badge 
+                              variant={match.matchScore >= 80 ? 'default' : match.matchScore >= 60 ? 'secondary' : 'outline'}
+                              className="ml-2"
+                            >
+                              {match.matchScore}% match
+                            </Badge>
+                          </div>
+                          
+                          {/* Match reasons */}
+                          {match.matchReasons && match.matchReasons.length > 0 && (
+                            <div className="space-y-1 mb-4">
+                              {match.matchReasons.map((reason: string, i: number) => (
+                                <div key={i} className="flex items-center text-sm text-foreground/70">
+                                  <span className="text-primary mr-2">✓</span>
+                                  {reason}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="space-y-2 text-sm text-foreground/70 mb-4">
                             <p>📍 {match.area || match.location}</p>
                             <p>💰 ${match.monthly_price}/month</p>
                             <p>🛏️ {match.room_types || 'Various types'}</p>
+                            {match.amenities && match.amenities.length > 0 && (
+                              <p>✨ {match.amenities.slice(0, 3).join(', ')}</p>
+                            )}
                           </div>
+                          
                           <Button
                             onClick={() => navigate(`/dorm/${match.id}`)}
                             className="w-full mt-4 bg-gradient-to-r from-primary to-secondary"
@@ -487,11 +577,15 @@ export default function AiMatch() {
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="text-center bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-12"
+                      className="text-center bg-background/40 backdrop-blur-xl border border-white/10 rounded-3xl p-12"
                     >
                       <Sparkles className="w-12 h-12 mx-auto mb-4 text-primary" />
-                      <p className="text-gray-300 text-lg">
-                        No matches found. Try adjusting your preferences.
+                      <h3 className="text-xl font-bold text-foreground mb-2">No Perfect Match Yet</h3>
+                      <p className="text-foreground/70 text-lg mb-4">
+                        We couldn't find dorms that match all your criteria.
+                      </p>
+                      <p className="text-foreground/60 text-sm">
+                        Try adjusting your budget or location preferences and search again.
                       </p>
                     </motion.div>
                   )}

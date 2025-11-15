@@ -97,19 +97,51 @@ export const ChatModal = ({ isOpen, onClose, userId }: ChatModalProps) => {
         }),
       });
 
-      if (response.status === 429 || response.status === 402) {
-        const errorData = await response.json();
+      // Handle error responses with user-friendly messages
+      if (response.status === 429) {
+        const errorData = await response.json().catch(() => ({}));
         toast({
-          title: 'Error',
-          description: errorData.error,
+          title: 'Rate Limit Exceeded',
+          description: errorData.error || 'Too many requests. Please try again in a moment.',
           variant: 'destructive',
         });
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: '⚠️ Roomy AI is receiving too many requests right now. Please try again in a moment.',
+          },
+        ]);
         setIsLoading(false);
         return;
       }
 
+      if (response.status === 402) {
+        const errorData = await response.json().catch(() => ({}));
+        toast({
+          title: 'Service Unavailable',
+          description: errorData.error || 'AI service requires payment. Please contact support.',
+          variant: 'destructive',
+        });
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: '⚠️ Roomy AI service is temporarily unavailable. Please contact support.',
+          },
+        ]);
+        setIsLoading(false);
+        return;
+      }
+
+      if (response.status === 500) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Roomy AI backend error:', errorData);
+        throw new Error('Roomy AI is having trouble responding right now. Please try again in a moment.');
+      }
+
       if (!response.ok || !response.body) {
-        throw new Error('Failed to get response');
+        throw new Error('Unable to reach Roomy AI. Please check your connection and try again.');
       }
 
       const reader = response.body.getReader();
@@ -119,6 +151,7 @@ export const ChatModal = ({ isOpen, onClose, userId }: ChatModalProps) => {
 
       setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
 
+      // Stream response token by token
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -149,10 +182,16 @@ export const ChatModal = ({ isOpen, onClose, userId }: ChatModalProps) => {
               });
             }
           } catch {
+            // Incomplete JSON chunk, put back and wait for more data
             textBuffer = line + '\n' + textBuffer;
             break;
           }
         }
+      }
+
+      // Validate we received content
+      if (!assistantMessage.trim()) {
+        throw new Error('Roomy AI is having trouble responding right now. Please try again in a moment.');
       }
 
       // Save to database
@@ -165,11 +204,35 @@ export const ChatModal = ({ isOpen, onClose, userId }: ChatModalProps) => {
       setIsLoading(false);
     } catch (error) {
       console.error('Chat error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send message. Please try again.';
+      
       toast({
         title: 'Error',
-        description: 'Failed to send message. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
+
+      setMessages((prev) => {
+        const lastMessage = prev[prev.length - 1];
+        if (lastMessage?.role === 'assistant' && !lastMessage.content) {
+          // Remove empty assistant message and add error
+          return [
+            ...prev.slice(0, -1),
+            {
+              role: 'assistant',
+              content: `⚠️ ${errorMessage}`,
+            },
+          ];
+        }
+        return [
+          ...prev,
+          {
+            role: 'assistant',
+            content: `⚠️ ${errorMessage}`,
+          },
+        ];
+      });
+
       setIsLoading(false);
     }
   };
