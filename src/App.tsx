@@ -1,186 +1,104 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { lazy, Suspense } from "react";
-import { ChatbotBubble } from "./components/ChatbotBubble";
-import ErrorBoundary from "./components/ErrorBoundary";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useRoleGuard } from "@/hooks/useRoleGuard";
-import BottomNav from "./components/BottomNav";
-import MobileNavbar from "./components/MobileNavbar";
-import { MobileSwipeLayout } from "./layouts/MobileSwipeLayout";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import Onboarding from "@/pages/Onboarding";
-import AiChat from "@/pages/AiChat"; // chat page
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { Sparkles } from "lucide-react";
 
-// Lazy load route components
-const Main = lazy(() => import("./pages/Main"));
-const Auth = lazy(() => import("./pages/Auth"));
-const Intro = lazy(() => import("./pages/Intro"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const DormDetail = lazy(() => import("./pages/DormDetail"));
-const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
-const Analytics = lazy(() => import("./pages/admin/Analytics"));
-const Trends = lazy(() => import("./pages/admin/Trends"));
-const OwnerDashboard = lazy(() => import("./pages/owner/OwnerDashboard"));
-const OwnerPerformance = lazy(() => import("./pages/owner/Performance"));
-const StudentDashboard = lazy(() => import("./pages/dashboard/StudentDashboard"));
-const Listings = lazy(() => import("./pages/Listings"));
-const AiMatch = lazy(() => import("./pages/AiMatch"));
-const About = lazy(() => import("./pages/About"));
-const Contact = lazy(() => import("./pages/Contact"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const Unauthorized = lazy(() => import("./pages/Unauthorized"));
-const Settings = lazy(() => import("./pages/Settings"));
-const Messages = lazy(() => import("./pages/Messages"));
-const OwnerAddDorm = lazy(() => import("./pages/owner/OwnerAddDorm"));
-const ClaimDorm = lazy(() => import("./pages/owner/ClaimDorm"));
-const OwnerRooms = lazy(() => import("./pages/owner/OwnerRooms"));
-const OwnerBookings = lazy(() => import("./pages/owner/OwnerBookings"));
+export default function Onboarding() {
+  const navigate = useNavigate();
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [input, setInput] = useState("");
+  const [saving, setSaving] = useState(false);
 
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="space-y-4 w-full max-w-md px-4">
-      <Skeleton className="h-12 w-3/4 mx-auto" />
-      <Skeleton className="h-64 w-full" />
-      <Skeleton className="h-8 w-1/2 mx-auto" />
+  const questions = [
+    "Welcome to Roomy! What’s your full name?",
+    "Which university are you currently attending?",
+    "What’s your monthly budget (in USD)?",
+    "Do you prefer a Private Room, Shared Room, or Studio?",
+    "Would you describe yourself as more Social or Quiet?",
+    "What amenities matter most to you (AC, gym, parking, Wi-Fi...)?",
+    "Which area or campus would you prefer to live near?",
+  ];
+
+  const handleNext = async () => {
+    if (!input.trim()) return;
+
+    const updated = { ...answers, [questions[step]]: input };
+    setAnswers(updated);
+    setInput("");
+
+    if (step === questions.length - 1) {
+      setSaving(true);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { error } = await supabase.from("user_preferences" as any).upsert({
+          user_id: user.id,
+          preferences: updated,
+        });
+
+        if (error) {
+          console.error("❌ Error saving preferences:", error);
+          alert("Failed to save preferences. Please try again.");
+          setSaving(false);
+          return;
+        }
+
+        // ✅ Redirect to AI Chat once preferences are saved
+        navigate("/ai-chat", { replace: true });
+      } else {
+        alert("You need to be logged in to save preferences.");
+      }
+
+      setSaving(false);
+    } else {
+      setStep(step + 1);
+    }
+  };
+
+  const progress = ((step + 1) / questions.length) * 100;
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-purple-700 via-blue-600 to-emerald-400 text-white px-6 py-10">
+      <motion.div
+        key={step}
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="max-w-lg w-full bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-6 md:p-10 text-center"
+      >
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <Sparkles className="w-6 h-6 text-emerald-300" />
+          <h2 className="text-2xl font-bold gradient-text">
+            Question {step + 1} of {questions.length}
+          </h2>
+        </div>
+
+        <p className="text-lg md:text-xl mb-6 font-medium leading-snug text-white/90">{questions[step]}</p>
+
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type your answer..."
+          className="w-full text-center text-lg bg-white/20 border border-white/30 text-white placeholder:text-white/60 rounded-xl py-3"
+        />
+
+        <Progress value={progress} className="my-6" />
+
+        <Button
+          onClick={handleNext}
+          disabled={saving}
+          className="w-full bg-gradient-to-r from-emerald-400 to-blue-500 text-white text-lg py-3 rounded-xl shadow-lg hover:shadow-[0_0_25px_rgba(52,211,153,0.5)] transition-all disabled:opacity-60"
+        >
+          {saving ? "Saving..." : step === questions.length - 1 ? "Finish 🎯" : "Next →"}
+        </Button>
+      </motion.div>
     </div>
-  </div>
-);
-
-function ProtectedRoute({ element, requiredRole }: { element: JSX.Element; requiredRole: "admin" | "owner" | "user" }) {
-  const { loading, role } = useRoleGuard(requiredRole);
-
-  if (loading)
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <p className="text-foreground/60">Loading...</p>
-      </div>
-    );
-
-  if (role !== requiredRole) return <Navigate to="/unauthorized" replace />;
-  return element;
+  );
 }
-
-const queryClient = new QueryClient();
-
-const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <MobileNavbar />
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                {/* Public */}
-                <Route path="/" element={<Main />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/intro" element={<Intro />} />
-                <Route
-                  path="/listings"
-                  element={
-                    <MobileSwipeLayout>
-                      <Listings />
-                    </MobileSwipeLayout>
-                  }
-                />
-                <Route path="/dorm/:id" element={<DormDetail />} />
-                <Route
-                  path="/ai-match"
-                  element={
-                    <MobileSwipeLayout>
-                      <AiMatch />
-                    </MobileSwipeLayout>
-                  }
-                />
-                <Route path="/ai-chat" element={<AiChat />} />
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <MobileSwipeLayout>
-                      <Dashboard />
-                    </MobileSwipeLayout>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <MobileSwipeLayout>
-                      <Profile />
-                    </MobileSwipeLayout>
-                  }
-                />
-                <Route path="/settings" element={<Settings />} />
-                <Route
-                  path="/messages"
-                  element={
-                    <MobileSwipeLayout>
-                      <Messages />
-                    </MobileSwipeLayout>
-                  }
-                />
-                <Route path="/unauthorized" element={<Unauthorized />} />
-
-                {/* Protected Dashboards */}
-                <Route
-                  path="/dashboard/student"
-                  element={<ProtectedRoute element={<StudentDashboard />} requiredRole="user" />}
-                />
-                <Route
-                  path="/dashboard/owner"
-                  element={<ProtectedRoute element={<OwnerDashboard />} requiredRole="owner" />}
-                />
-                <Route
-                  path="/dashboard/admin"
-                  element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />}
-                />
-                <Route
-                  path="/admin/analytics"
-                  element={<ProtectedRoute element={<Analytics />} requiredRole="admin" />}
-                />
-                <Route path="/admin/trends" element={<ProtectedRoute element={<Trends />} requiredRole="admin" />} />
-                <Route
-                  path="/owner/performance"
-                  element={<ProtectedRoute element={<OwnerPerformance />} requiredRole="owner" />}
-                />
-                <Route
-                  path="/owner/add-dorm"
-                  element={<ProtectedRoute element={<OwnerAddDorm />} requiredRole="owner" />}
-                />
-                <Route
-                  path="/owner/claim-dorm"
-                  element={<ProtectedRoute element={<ClaimDorm />} requiredRole="owner" />}
-                />
-                <Route path="/owner/rooms" element={<ProtectedRoute element={<OwnerRooms />} requiredRole="owner" />} />
-                <Route
-                  path="/owner/bookings"
-                  element={<ProtectedRoute element={<OwnerBookings />} requiredRole="owner" />}
-                />
-                <Route
-                  path="/owner/edit-dorm/:id"
-                  element={<ProtectedRoute element={<OwnerAddDorm />} requiredRole="owner" />}
-                />
-
-                {/* Catch-all */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-            <BottomNav />
-            <ChatbotBubble />
-          </BrowserRouter>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
-);
-
-export default App;
