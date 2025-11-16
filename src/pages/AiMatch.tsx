@@ -21,6 +21,7 @@ import { useAuthGuard, useProfileCompletion } from "@/hooks/useAuthGuard";
 import { MatchCardSkeleton } from "@/components/skeletons/MatchCardSkeleton";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { generateReasonText } from "@/utils/aiLogic";
+import { questions, profileQuestions, preferenceQuestions, Question } from "@/data/questions";
 
 const universities = [
   "LAU (Byblos)",
@@ -67,6 +68,9 @@ export default function AiMatch() {
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   
+  // 📋 Survey answers state
+  const [surveyAnswers, setSurveyAnswers] = useState<Record<number, any>>({});
+  
   // Initialize session ID on mount
   useEffect(() => {
     if (!sessionId) {
@@ -96,6 +100,28 @@ export default function AiMatch() {
           preferred_university: data.preferred_university || "",
           distance_preference: data.distance_preference || "No preference",
         });
+      }
+
+      // Load stored survey answers from students_ai_responses
+      const { data: aiResponses } = await supabase
+        .from("students_ai_responses")
+        .select("responses")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (aiResponses?.responses) {
+        setSurveyAnswers(aiResponses.responses as Record<number, any>);
+        
+        // Pre-fill profile fields from survey if available
+        const responses = aiResponses.responses as Record<number, any>;
+        if (responses[14] && !data?.age) {
+          setProfile(prev => ({ ...prev, age: responses[14].toString() }));
+        }
+        if (responses[15] && !data?.university) {
+          setProfile(prev => ({ ...prev, university: responses[15] }));
+        }
       }
     };
 
@@ -163,6 +189,23 @@ export default function AiMatch() {
       return;
     }
 
+    // Save survey answers to students_ai_responses
+    const responsesPayload = {
+      ...surveyAnswers,
+      budget: preferences.budget,
+      room_type: preferences.room_type,
+      roommate_needed: preferences.roommate_needed,
+      preferred_university: preferences.preferred_university,
+      distance_preference: preferences.distance_preference,
+    };
+
+    await supabase
+      .from("students_ai_responses")
+      .insert({
+        user_id: userId || "",
+        responses: responsesPayload,
+      });
+
     setStep(3);
     findMatches();
   };
@@ -180,14 +223,18 @@ export default function AiMatch() {
           .filter(Boolean)
           .join(", ") || "a few suitable dorms";
 
+      const surveyValues = surveyAnswers[18] ? (Array.isArray(surveyAnswers[18]) ? surveyAnswers[18].join(", ") : "Not specified") : "Not specified";
+      
       const prompt = `
 You are Roomy, an AI assistant helping Lebanese university students find dorms.
 
-User preferences:
+User preferences (from their profile + survey):
 - Budget: $${userProfile.budget} / month
 - Preferred university: ${userProfile.preferred_university || "None specified"}
-- Preferred room types: ${userProfile.preferred_room_types?.join(", ") || "Not specified"}
 - Distance preference: ${userProfile.distance_preference || "Not specified"}
+- Values: ${surveyValues}
+- Social preference: ${surveyAnswers[1] || "Not specified"}
+- Study environment: ${surveyAnswers[2] || "Not specified"}
 
 We have identified these candidate dorms: ${topDormNames}.
 
@@ -293,13 +340,13 @@ Keep it conversational, concrete, and under 120 words.
       const signalsMap: Record<string, any> = {};
       (signals ?? []).forEach((s: any) => (signalsMap[s.dorm_id] = s));
 
-      // Build user profile for recommendation engine
+      // Build user profile for recommendation engine enriched with survey data
       const userProfile = {
         budget: preferences.budget,
-        preferred_university: preferences.preferred_university || null,
-        favorite_areas: [], // Could be enhanced with area preferences
+        preferred_university: preferences.preferred_university || profile.university || null,
+        favorite_areas: surveyAnswers[13] === "Near campus" ? ["campus"] : surveyAnswers[13] === "City area" ? ["city"] : [],
         preferred_room_types: preferences.room_type ? [preferences.room_type] : [],
-        preferred_amenities: [], // Could be enhanced with amenity preferences
+        preferred_amenities: Array.isArray(surveyAnswers[18]) ? surveyAnswers[18] : [],
         ai_confidence_score: 85, // Default confidence
         distance_preference: preferences.distance_preference,
       };
@@ -384,6 +431,116 @@ Keep it conversational, concrete, and under 120 words.
     setAiSummary(null);
     setSessionId(null);
     setHasContext(false);
+  };
+
+  // Helper to render survey questions
+  const renderQuestion = (q: Question) => {
+    const value = surveyAnswers[q.id];
+
+    if (q.type === "scale" && q.options) {
+      return (
+        <div key={q.id} className="space-y-2">
+          <Label className="text-sm">{q.text}</Label>
+          <div className="flex gap-2">
+            {q.options.map((opt, idx) => (
+              <Button
+                key={opt}
+                type="button"
+                size="sm"
+                variant={value === opt ? "default" : "outline"}
+                onClick={() => setSurveyAnswers({ ...surveyAnswers, [q.id]: opt })}
+                className="flex-1 h-auto py-2 text-xs"
+              >
+                {opt}
+              </Button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (q.type === "single" && q.options) {
+      return (
+        <div key={q.id} className="space-y-2">
+          <Label className="text-sm">{q.text}</Label>
+          <div className="flex flex-wrap gap-2">
+            {q.options.map((opt) => (
+              <Button
+                key={opt}
+                type="button"
+                size="sm"
+                variant={value === opt ? "default" : "outline"}
+                onClick={() => setSurveyAnswers({ ...surveyAnswers, [q.id]: opt })}
+                className="h-auto py-2 text-xs"
+              >
+                {opt}
+              </Button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (q.type === "multi" && q.options) {
+      const selected = Array.isArray(value) ? value : [];
+      return (
+        <div key={q.id} className="space-y-2">
+          <Label className="text-sm">{q.text}</Label>
+          <div className="flex flex-wrap gap-2">
+            {q.options.map((opt) => {
+              const isSelected = selected.includes(opt);
+              return (
+                <Button
+                  key={opt}
+                  type="button"
+                  size="sm"
+                  variant={isSelected ? "default" : "outline"}
+                  onClick={() => {
+                    const newSelected = isSelected
+                      ? selected.filter((s) => s !== opt)
+                      : [...selected, opt];
+                    setSurveyAnswers({ ...surveyAnswers, [q.id]: newSelected });
+                  }}
+                  className="h-auto py-2 text-xs"
+                >
+                  {opt}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    if (q.type === "number") {
+      return (
+        <div key={q.id} className="space-y-2">
+          <Label className="text-sm">{q.text}</Label>
+          <Input
+            type="number"
+            value={value || ""}
+            onChange={(e) => setSurveyAnswers({ ...surveyAnswers, [q.id]: parseInt(e.target.value) || 0 })}
+            className="bg-background/40 border border-white/10 text-foreground"
+          />
+        </div>
+      );
+    }
+
+    if (q.type === "text") {
+      return (
+        <div key={q.id} className="space-y-2">
+          <Label className="text-sm">{q.text}</Label>
+          <Input
+            type="text"
+            value={value || ""}
+            onChange={(e) => setSurveyAnswers({ ...surveyAnswers, [q.id]: e.target.value })}
+            className="bg-background/40 border border-white/10 text-foreground"
+          />
+        </div>
+      );
+    }
+
+    return null;
   };
 
   if (authLoading || checkingProfile) {
@@ -503,6 +660,13 @@ Keep it conversational, concrete, and under 120 words.
                     />
                   </div>
                 </div>
+
+                {/* About You - Survey Questions */}
+                <div className="mt-6 p-6 bg-background/40 backdrop-blur-xl border border-white/10 rounded-xl space-y-4">
+                  <h3 className="text-lg font-bold gradient-text mb-4">About You</h3>
+                  {profileQuestions.slice(0, 5).map(renderQuestion)}
+                </div>
+
                 <Button type="submit" className="w-full bg-gradient-to-r from-primary to-secondary">
                   Next <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -595,6 +759,12 @@ Keep it conversational, concrete, and under 120 words.
                       <SelectItem value="No preference">No preference</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* Lifestyle & Dorm Preferences - Survey Questions */}
+                <div className="p-6 bg-background/40 backdrop-blur-xl border border-white/10 rounded-xl space-y-4">
+                  <h3 className="text-lg font-bold gradient-text mb-4">Lifestyle & Dorm Preferences</h3>
+                  {preferenceQuestions.slice(0, 7).map(renderQuestion)}
                 </div>
 
                 <div className="flex gap-3">
