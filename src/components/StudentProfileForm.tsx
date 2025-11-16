@@ -77,6 +77,28 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         }
       });
     }
+
+    // Load AI responses to auto-fill if profile is incomplete
+    if (!data || !data.budget || !data.preferred_university) {
+      const { data: aiResponses } = await supabase
+        .from('students_ai_responses')
+        .select('responses')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (aiResponses?.responses) {
+        const responses = aiResponses.responses as Record<string, any>;
+        if (responses.budget && !data?.budget) setValue('budget', responses.budget);
+        if (responses.preferred_university && !data?.preferred_university) {
+          setValue('preferred_university', responses.preferred_university);
+        }
+        if (responses.room_type && !data?.room_type) setValue('room_type', responses.room_type);
+        if (responses[14] && !data?.age) setValue('age', parseInt(responses[14]));
+        if (responses[15] && !data?.university) setValue('university', responses[15]);
+      }
+    }
   };
 
   const onSubmit = async (data: StudentProfile) => {
