@@ -11,6 +11,7 @@ import { useRoleGuard } from "@/hooks/useRoleGuard";
 import BottomNav from "./components/BottomNav";
 import MobileNavbar from "./components/MobileNavbar";
 import { MobileSwipeLayout } from "./layouts/MobileSwipeLayout";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 // Lazy load route components
 const Main = lazy(() => import("./pages/Main"));
@@ -79,10 +80,11 @@ const queryClient = new QueryClient();
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+      <ThemeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
           <MobileNavbar />
           <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -171,6 +173,7 @@ const App = () => (
           <ChatbotBubble />
         </BrowserRouter>
       </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   </ErrorBoundary>
 );
