@@ -14,12 +14,14 @@ import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { settingsManager, type UserSettings } from '@/utils/settings';
 import { supabase } from '@/integrations/supabase/client';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function Settings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { loading, userId } = useAuthGuard();
   const isMobile = useIsMobile();
+  const { theme, toggleTheme } = useTheme();
   const [settings, setSettings] = useState<UserSettings>(settingsManager.load());
   const [saving, setSaving] = useState(false);
   const [savedItems, setSavedItems] = useState<any[]>([]);
@@ -75,7 +77,8 @@ export default function Settings() {
   };
 
   const handleThemeToggle = () => {
-    const newTheme = settingsManager.toggleTheme();
+    toggleTheme();
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
     setSettings((prev) => ({ ...prev, theme: newTheme }));
     toast({
       title: `${newTheme === 'dark' ? 'Dark' : 'Light'} mode enabled`,
@@ -136,28 +139,28 @@ export default function Settings() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <motion.div
-                    key={settings.theme}
+                    key={theme}
                     initial={{ rotate: -90, opacity: 0, scale: 0.8 }}
                     animate={{ rotate: 0, opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
                     whileTap={{ scale: 0.9 }}
                     className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center"
                   >
-                    {settings.theme === 'dark' ? (
+                    {theme === 'dark' ? (
                       <Moon className="w-5 h-5 text-primary" />
                     ) : (
                       <Sun className="w-5 h-5 text-primary" />
                     )}
                   </motion.div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white">Theme</h3>
-                    <p className="text-sm text-white/60">
-                      Current: {settings.theme === 'dark' ? 'Dark' : 'Light'}
+                    <h3 className="text-lg font-semibold text-foreground">Theme</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Current: {theme === 'dark' ? 'Dark' : 'Light'}
                     </p>
                   </div>
                 </div>
                 <Switch
-                  checked={settings.theme === 'dark'}
+                  checked={theme === 'dark'}
                   onCheckedChange={handleThemeToggle}
                 />
               </div>
