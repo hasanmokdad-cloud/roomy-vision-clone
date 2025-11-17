@@ -64,12 +64,20 @@ export default function StudentDashboard() {
             </p>
           </div>
 
-          <Button
-            onClick={() => navigate("/ai-chat")}
-            className="mt-6 md:mt-0 bg-gradient-to-r from-purple-600 via-blue-500 to-emerald-400 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
-          >
-            <Sparkles className="w-4 h-4 mr-2" /> Chat with Roomy AI
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 mt-6 md:mt-0">
+            <Button
+              onClick={() => navigate("/onboarding")}
+              className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
+            >
+              🎯 Start AI Onboarding
+            </Button>
+            <Button
+              onClick={() => navigate("/ai-chat")}
+              className="bg-gradient-to-r from-purple-600 via-blue-500 to-emerald-400 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
+            >
+              <Sparkles className="w-4 h-4 mr-2" /> Chat with Roomy AI
+            </Button>
+          </div>
         </div>
 
         {/* Profile Completion Card */}

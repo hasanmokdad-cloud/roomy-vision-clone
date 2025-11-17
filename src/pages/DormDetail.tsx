@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home } from 'lucide-react';
+import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home, Video } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import RoomContactCard from '@/components/listings/RoomContactCard';
 import { DormDetailSkeleton } from '@/components/skeletons/DormDetailSkeleton';
 import { ImageGallery } from '@/components/shared/ImageGallery';
+import { BookTourModal } from '@/components/bookings/BookTourModal';
 import type { RoomType } from '@/types/RoomType';
 
 export default function DormDetail() {
@@ -24,6 +25,7 @@ export default function DormDetail() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
+  const [tourModalOpen, setTourModalOpen] = useState(false);
 
   useEffect(() => {
     loadDorm();
@@ -144,6 +146,25 @@ export default function DormDetail() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="mb-8 flex flex-wrap gap-3 animate-fade-in">
+            <Button
+              onClick={() => setTourModalOpen(true)}
+              className="bg-gradient-to-r from-purple-600 to-blue-500 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
+            >
+              <Video className="w-4 h-4 mr-2" />
+              Book Virtual Tour
+            </Button>
+            <Button
+              onClick={handleChatWithRoomy}
+              variant="outline"
+              className="px-6 py-3 rounded-xl"
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Chat with Roomy AI
+            </Button>
           </div>
 
           {/* Image Carousel */}
@@ -490,6 +511,14 @@ export default function DormDetail() {
         initialIndex={galleryStartIndex}
         isOpen={galleryOpen}
         onClose={() => setGalleryOpen(false)}
+      />
+
+      <BookTourModal
+        open={tourModalOpen}
+        onOpenChange={setTourModalOpen}
+        dormId={dorm.id}
+        dormName={displayName}
+        ownerId={dorm.owner_id}
       />
 
       <Footer />

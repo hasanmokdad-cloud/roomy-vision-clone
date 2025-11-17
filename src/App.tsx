@@ -29,6 +29,7 @@ const StudentDashboard = lazy(() => import("./pages/dashboard/StudentDashboard")
 const Listings = lazy(() => import("./pages/Listings"));
 const AiMatch = lazy(() => import("./pages/AiMatch"));
 const AiChat = lazy(() => import("./pages/AiChat"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
 const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -95,7 +96,8 @@ const App = () => (
               <Route path="/listings" element={<MobileSwipeLayout><Listings /></MobileSwipeLayout>} />
               <Route path="/dorm/:id" element={<DormDetail />} />
               <Route path="/ai-match" element={<MobileSwipeLayout><AiMatch /></MobileSwipeLayout>} />
-              <Route path="/ai-chat" element={<AiChat />} />
+              <Route path="/ai-chat" element={<MobileSwipeLayout><AiChat /></MobileSwipeLayout>} />
+              <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/dashboard" element={<MobileSwipeLayout><Dashboard /></MobileSwipeLayout>} />

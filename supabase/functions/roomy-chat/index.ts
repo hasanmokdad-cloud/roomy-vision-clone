@@ -229,6 +229,7 @@ serve(async (req) => {
     // Load student profile and preferences if user is logged in
     let studentProfile: any = null;
     let studentId: string | null = null;
+    let userPreferences: any = null;
     
     if (userId && userId.startsWith('guest_') === false) {
       const { data: student } = await supabase
@@ -239,6 +240,15 @@ serve(async (req) => {
       
       studentProfile = student;
       studentId = student?.id;
+
+      // Load user preferences from onboarding
+      const { data: prefs } = await supabase
+        .from("user_preferences")
+        .select("preferences")
+        .eq("user_id", userId)
+        .maybeSingle();
+      
+      userPreferences = prefs?.preferences || null;
     }
 
     // Check for reset AI memory command
@@ -375,6 +385,17 @@ serve(async (req) => {
         profileContext = `\n\nKnown student preferences (confidence: ${studentProfile.ai_confidence_score}%):\n${knownPrefs.join("; ")}\n`;
         profileContext += "Use these to provide personalized recommendations. Only ask about missing preferences.\n";
       }
+    }
+
+    // Add onboarding preferences context
+    if (userPreferences) {
+      profileContext += "\n\nOnboarding Preferences (from AI setup):\n";
+      for (const [question, answer] of Object.entries(userPreferences)) {
+        if (answer && typeof answer === 'string') {
+          profileContext += `- ${question}: ${answer}\n`;
+        }
+      }
+      profileContext += "Use these onboarding answers to better understand the student's personality and needs.\n";
     }
 
     // Query dorms database with smart matching priority

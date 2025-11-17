@@ -907,6 +907,91 @@ export type Database = {
         }
         Relationships: []
       }
+      tour_bookings: {
+        Row: {
+          ai_suggested_questions: Json | null
+          created_at: string
+          dorm_id: string
+          id: string
+          owner_id: string
+          scheduled_time: string
+          status: string
+          student_id: string
+          student_message: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_suggested_questions?: Json | null
+          created_at?: string
+          dorm_id: string
+          id?: string
+          owner_id: string
+          scheduled_time: string
+          status?: string
+          student_id: string
+          student_message?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_suggested_questions?: Json | null
+          created_at?: string
+          dorm_id?: string
+          id?: string
+          owner_id?: string
+          scheduled_time?: string
+          status?: string
+          student_id?: string
+          student_message?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tour_bookings_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tour_bookings_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tour_bookings_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+        ]
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          preferences: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          preferences?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          preferences?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
