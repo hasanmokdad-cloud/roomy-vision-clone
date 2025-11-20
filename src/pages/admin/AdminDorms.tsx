@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Edit, Trash2, Plus } from 'lucide-react';
+import { CheckCircle, Edit, Trash2, Plus, X } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -54,34 +54,39 @@ export default function AdminDorms() {
     setLoading(false);
   };
 
-  const handleVerify = async (id: string) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    const { error } = await supabase
-      .from('dorms')
-      .update({ verification_status: 'Verified' })
-      .eq('id', id);
+  const handleVerify = async (id: string, status: 'Verified' | 'Rejected') => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/owner-verification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          dorm_id: id,
+          new_status: status
+        })
+      });
 
-    if (error) {
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update verification status');
+      }
+
+      toast({
+        title: 'Success',
+        description: result.message,
+      });
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Failed to verify dorm',
+        description: error.message,
         variant: 'destructive',
       });
-      return;
     }
-
-    await supabase.from('system_logs').insert({
-      user_id: session?.user.id,
-      action: 'VERIFY_DORM',
-      table_affected: 'dorms',
-      record_id: id,
-    });
-
-    toast({
-      title: 'Success',
-      description: 'Dorm verified successfully',
-    });
   };
 
   const handleDelete = async (id: string) => {
@@ -165,9 +170,20 @@ export default function AdminDorms() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleVerify(dorm.id)}
+                        onClick={() => handleVerify(dorm.id, 'Verified')}
+                        title="Verify dorm"
                       >
-                        <CheckCircle className="w-4 h-4" />
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                      </Button>
+                    )}
+                    {dorm.verification_status !== 'Rejected' && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleVerify(dorm.id, 'Rejected')}
+                        title="Reject dorm"
+                      >
+                        <X className="w-4 h-4 text-red-500" />
                       </Button>
                     )}
                     <Button size="sm" variant="ghost">
