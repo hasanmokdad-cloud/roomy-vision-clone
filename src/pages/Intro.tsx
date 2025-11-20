@@ -31,7 +31,7 @@ export default function Intro() {
       .eq("user_id", session.user.id)
       .limit(1);
 
-    const userRole = roles?.[0]?.role as "admin" | "owner" | "user" | undefined;
+    const userRole = roles?.[0]?.role as "admin" | "owner" | "student" | undefined;
 
     if (!userRole) {
       navigate("/select-role", { replace: true });
@@ -42,7 +42,7 @@ export default function Intro() {
       navigate("/admin", { replace: true });
     } else if (userRole === "owner") {
       navigate("/owner", { replace: true });
-    } else {
+    } else if (userRole === "student") {
       navigate("/dashboard", { replace: true });
     }
   };

@@ -6,11 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 /**
  * useRoleGuard - Custom hook to restrict access based on user roles
  *
- * @param requiredRole - "admin" | "owner" | "user" (optional)
+ * @param requiredRole - "admin" | "owner" | "student" (optional)
  * Redirects to "/auth" if not authenticated and "/unauthorized" if wrong role.
  * Returns { loading, role, userId } for in-component logic.
  */
-export function useRoleGuard(requiredRole?: "admin" | "owner" | "user") {
+export function useRoleGuard(requiredRole?: "admin" | "owner" | "student") {
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export function useRoleGuard(requiredRole?: "admin" | "owner" | "user") {
         .select("role")
         .eq("user_id", user.id);
 
-      const userRole = roles?.[0]?.role || "user"; // default fallback
+      const userRole = roles?.[0]?.role || null; // no default, must be explicitly set
       setRole(userRole);
 
       // Role-based redirection

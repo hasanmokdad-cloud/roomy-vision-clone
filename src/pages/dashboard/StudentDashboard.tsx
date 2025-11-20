@@ -11,7 +11,7 @@ import { Bookmark, MessageSquare, Sparkles, User } from "lucide-react";
 import { FavoritesRecommendations } from "@/components/dashboard/FavoritesRecommendations";
 
 export default function StudentDashboard() {
-  const { loading, userId } = useRoleGuard("user");
+  const { loading, userId } = useRoleGuard("student");
   const [profileCompletion, setProfileCompletion] = useState(0);
   const navigate = useNavigate();
 

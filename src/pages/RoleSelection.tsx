@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, GraduationCap, Building2 } from "lucide-react";
 import { motion } from "framer-motion";
 
-type AppRole = "admin" | "owner" | "user";
+type AppRole = "admin" | "owner" | "student";
 
 export default function RoleSelection() {
   const navigate = useNavigate();
@@ -43,7 +43,7 @@ export default function RoleSelection() {
           navigate("/admin", { replace: true });
         } else if (existingRole === "owner") {
           navigate("/owner", { replace: true });
-        } else {
+        } else if (existingRole === "student") {
           navigate("/dashboard", { replace: true });
         }
         return;
@@ -66,15 +66,14 @@ export default function RoleSelection() {
       return;
     }
 
-    const { error } = await supabase.from("user_roles").upsert(
+    const { error } = await supabase.from("user_roles").upsert([
       {
         user_id: session.user.id,
         role,
-      },
-      {
-        onConflict: "user_id",
       }
-    );
+    ], {
+      onConflict: "user_id",
+    });
 
     if (error) {
       console.error("Error saving role:", error);
@@ -87,8 +86,8 @@ export default function RoleSelection() {
       navigate("/owner", { replace: true });
     } else if (role === "admin") {
       navigate("/admin", { replace: true });
-    } else {
-      navigate("/onboarding", { replace: true });
+    } else if (role === "student") {
+      navigate("/dashboard", { replace: true });
     }
 
     setSaving(false);
@@ -120,7 +119,7 @@ export default function RoleSelection() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <button
             disabled={saving}
-            onClick={() => handleSelectRole("user")}
+            onClick={() => handleSelectRole("student")}
             className="group rounded-2xl border border-white/20 bg-white/5 hover:bg-emerald-500/10 px-4 py-6 flex flex-col items-center justify-center gap-3 transition-all hover:-translate-y-1 hover:shadow-[0_0_40px_rgba(45,212,191,0.45)]"
           >
             <div className="w-12 h-12 rounded-full bg-emerald-400/20 flex items-center justify-center">
