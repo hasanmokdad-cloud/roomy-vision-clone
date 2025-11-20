@@ -56,12 +56,27 @@ Deno.serve(async (req) => {
 
     console.log(`✅ Assigning role "${role}" to user ${user.id}`);
 
-    // Insert role into user_roles table
+    // Lookup role_id from roles table
+    const { data: roleData, error: roleLookupError } = await supabase
+      .from('roles')
+      .select('id')
+      .eq('name', role)
+      .maybeSingle();
+
+    if (roleLookupError || !roleData) {
+      console.error('❌ Error looking up role:', roleLookupError);
+      return new Response(JSON.stringify({ error: 'Invalid role', details: roleLookupError?.message }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Insert role_id into user_roles table
     const { error: roleError } = await supabase
       .from('user_roles')
       .upsert({
         user_id: user.id,
-        role: role,
+        role_id: roleData.id,
       }, {
         onConflict: 'user_id',
       });

@@ -26,11 +26,23 @@ export default function Intro() {
     // Check if user has a role assigned
     const { data: userRoleRow } = await supabase
       .from("user_roles")
-      .select("role")
+      .select("role_id")
       .eq("user_id", session.user.id)
       .maybeSingle();
 
-    const role = userRoleRow?.role;
+    if (!userRoleRow?.role_id) {
+      navigate("/select-role", { replace: true });
+      return;
+    }
+
+    // Resolve role name from roles table
+    const { data: roleRecord } = await supabase
+      .from("roles")
+      .select("name")
+      .eq("id", userRoleRow.role_id)
+      .maybeSingle();
+
+    const role = roleRecord?.name;
 
     if (!role) {
       // No role assigned yet → go to role selection
