@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { ChatbotBubble } from "./components/ChatbotBubble";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -58,7 +58,7 @@ function ProtectedRoute({
   requiredRole,
 }: {
   element: JSX.Element;
-  requiredRole: "admin" | "owner" | "user";
+  requiredRole?: "admin" | "owner" | "student";
 }) {
   const { loading, role } = useRoleGuard(requiredRole);
 
@@ -70,7 +70,13 @@ function ProtectedRoute({
     );
   }
 
-  if (role !== requiredRole) {
+  // If user has NO role → send them to role selection
+  if (!role) {
+    return <Navigate to="/select-role" replace />;
+  }
+
+  // Role mismatch → unauthorized
+  if (requiredRole && role !== requiredRole) {
     return <Navigate to="/unauthorized" replace />;
   }
 
@@ -78,6 +84,62 @@ function ProtectedRoute({
 }
 
 const queryClient = new QueryClient();
+
+const AppRoutes = () => {
+  const location = useLocation();
+
+  return (
+    <>
+      <MobileNavbar />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Main />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/intro" element={<Intro />} />
+          <Route path="/listings" element={<MobileSwipeLayout><Listings /></MobileSwipeLayout>} />
+          <Route path="/dorm/:id" element={<DormDetail />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="/select-role" element={<RoleSelection />} />
+
+          {/* Student Routes */}
+          <Route path="/onboarding" element={<ProtectedRoute element={<Onboarding />} requiredRole="student" />} />
+          <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} requiredRole="student" />} />
+          <Route path="/profile" element={<ProtectedRoute element={<Profile />} requiredRole="student" />} />
+          <Route path="/settings" element={<ProtectedRoute element={<Settings />} requiredRole="student" />} />
+          <Route path="/messages" element={<ProtectedRoute element={<Messages />} requiredRole="student" />} />
+          <Route path="/ai-match" element={<ProtectedRoute element={<MobileSwipeLayout><AiMatch /></MobileSwipeLayout>} requiredRole="student" />} />
+          <Route path="/ai-chat" element={<ProtectedRoute element={<MobileSwipeLayout><AiChat /></MobileSwipeLayout>} requiredRole="student" />} />
+
+          {/* Owner Routes */}
+          <Route path="/owner" element={<ProtectedRoute element={<OwnerDashboard />} requiredRole="owner" />} />
+          <Route path="/owner/performance" element={<ProtectedRoute element={<OwnerPerformance />} requiredRole="owner" />} />
+          <Route path="/owner/add-dorm" element={<ProtectedRoute element={<OwnerAddDorm />} requiredRole="owner" />} />
+          <Route path="/owner/claim" element={<ProtectedRoute element={<ClaimDorm />} requiredRole="owner" />} />
+          <Route path="/owner/rooms" element={<ProtectedRoute element={<OwnerRooms />} requiredRole="owner" />} />
+          <Route path="/owner/bookings" element={<ProtectedRoute element={<OwnerBookings />} requiredRole="owner" />} />
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />} />
+          <Route path="/admin/analytics" element={<ProtectedRoute element={<Analytics />} requiredRole="admin" />} />
+          <Route path="/admin/trends" element={<ProtectedRoute element={<Trends />} requiredRole="admin" />} />
+
+          {/* 404 Fallback */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+
+      {!location.pathname.match(/^\/(auth|intro|select-role)$/) && (
+        <>
+          <BottomNav />
+          <ChatbotBubble />
+        </>
+      )}
+    </>
+  );
+};
 
 const App = () => (
   <ErrorBoundary>
@@ -87,96 +149,9 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-          <MobileNavbar />
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Main />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/intro" element={<Intro />} />
-              <Route path="/listings" element={<MobileSwipeLayout><Listings /></MobileSwipeLayout>} />
-              <Route path="/dorm/:id" element={<DormDetail />} />
-              <Route path="/ai-match" element={<MobileSwipeLayout><AiMatch /></MobileSwipeLayout>} />
-              <Route path="/ai-chat" element={<MobileSwipeLayout><AiChat /></MobileSwipeLayout>} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/dashboard" element={<MobileSwipeLayout><Dashboard /></MobileSwipeLayout>} />
-              <Route path="/profile" element={<MobileSwipeLayout><Profile /></MobileSwipeLayout>} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/messages" element={<MobileSwipeLayout><Messages /></MobileSwipeLayout>} />
-              <Route path="/select-role" element={<RoleSelection />} />
-              <Route path="/unauthorized" element={<Unauthorized />} />
-
-        {/* Protected Dashboards */}
-        <Route
-          path="/dashboard/student"
-          element={<ProtectedRoute element={<StudentDashboard />} requiredRole="user" />}
-        />
-        <Route
-          path="/dashboard/owner"
-          element={<ProtectedRoute element={<OwnerDashboard />} requiredRole="owner" />}
-        />
-        <Route
-          path="/dashboard/admin"
-          element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />}
-        />
-              <Route
-                path="/admin/analytics"
-                element={<ProtectedRoute element={<Analytics />} requiredRole="admin" />}
-              />
-              <Route
-                path="/admin/trends"
-                element={<ProtectedRoute element={<Trends />} requiredRole="admin" />}
-              />
-              <Route
-                path="/owner/performance"
-                element={<ProtectedRoute element={<OwnerPerformance />} requiredRole="owner" />}
-              />
-              <Route
-                path="/owner/add-dorm"
-                element={<ProtectedRoute element={<OwnerAddDorm />} requiredRole="owner" />}
-              />
-              <Route
-                path="/owner/claim-dorm"
-                element={<ProtectedRoute element={<ClaimDorm />} requiredRole="owner" />}
-              />
-              <Route
-                path="/owner/rooms"
-                element={<ProtectedRoute element={<OwnerRooms />} requiredRole="owner" />}
-              />
-              <Route
-                path="/owner/bookings"
-                element={<ProtectedRoute element={<OwnerBookings />} requiredRole="owner" />}
-              />
-              <Route
-                path="/owner/edit-dorm/:id"
-                element={<ProtectedRoute element={<OwnerAddDorm />} requiredRole="owner" />}
-              />
-
-              {/* Owner Routes (legacy support) */}
-              <Route
-                path="/owner/*"
-                element={<ProtectedRoute element={<OwnerDashboard />} requiredRole="owner" />}
-              />
-
-              {/* Admin Routes (legacy support) */}
-              <Route
-                path="/admin/*"
-                element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />}
-              />
-
-              {/* Unauthorized Fallback */}
-              <Route path="/unauthorized" element={<Unauthorized />} />
-
-              {/* Catch-all */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-          <BottomNav />
-          <ChatbotBubble />
-        </BrowserRouter>
-      </TooltipProvider>
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </ErrorBoundary>
