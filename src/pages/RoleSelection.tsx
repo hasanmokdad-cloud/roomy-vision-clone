@@ -18,7 +18,7 @@ export default function RoleSelection() {
   const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
-    const init = async () => {
+    const checkEmailVerification = async () => {
       const {
         data: { session },
         error,
@@ -32,43 +32,10 @@ export default function RoleSelection() {
       // Check email verification status
       setEmailVerified(!!session.user.email_confirmed_at);
       setUserEmail(session.user.email || "");
-
-      const { data: userRoleRow, error: roleError } = await supabase
-        .from("user_roles")
-        .select("role_id")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
-
-      if (roleError) {
-        console.error("Error loading user role:", roleError);
-        setLoading(false);
-        return;
-      }
-
-      if (userRoleRow?.role_id) {
-        // User already has a role, resolve it and redirect
-        const { data: roleRecord } = await supabase
-          .from("roles")
-          .select("name")
-          .eq("id", userRoleRow.role_id)
-          .maybeSingle();
-
-        const existingRole = roleRecord?.name as AppRole | undefined;
-
-        if (existingRole === "admin") {
-          navigate("/admin", { replace: true });
-        } else if (existingRole === "owner") {
-          navigate("/owner", { replace: true });
-        } else if (existingRole === "student") {
-          navigate("/dashboard", { replace: true });
-        }
-        return;
-      }
-
       setLoading(false);
     };
 
-    init();
+    checkEmailVerification();
   }, [navigate]);
 
   const handleResendVerification = async () => {
@@ -91,71 +58,60 @@ export default function RoleSelection() {
     }
   };
 
-  const handleSelectRole = async (role: AppRole) => {
-    // Block role selection if email not verified
-    if (!emailVerified) {
-      toast({
-        title: "Email verification required",
-        description: "Please verify your email before selecting a role.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const assignRole = async (selectedRole: "student" | "owner") => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const user = sessionData?.session?.user;
+    if (!user) return;
 
-    setSaving(true);
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    // Lookup role_id from roles table
+    const { data: roleRecord } = await supabase
+      .from("roles")
+      .select("id")
+      .eq("name", selectedRole)
+      .single();
 
-    if (!session) {
-      navigate("/auth");
-      return;
-    }
-
-    try {
-      // Call edge function to assign role and create profile
-      const { data, error } = await supabase.functions.invoke('assign-role', {
-        body: { role },
-      });
-
-      if (error) {
-        console.error("Error calling assign-role function:", error);
-        toast({
-          title: "Error",
-          description: error.message || "Failed to assign role",
-          variant: "destructive",
-        });
-        setSaving(false);
-        return;
-      }
-
-      if (data?.error) {
-        toast({
-          title: "Error",
-          description: data.error,
-          variant: "destructive",
-        });
-        setSaving(false);
-        return;
-      }
-
-      toast({
-        title: "Success",
-        description: `Your role has been set to ${role}`,
-      });
-
-      // Navigate to intro which will redirect to appropriate dashboard
-      navigate("/intro", { replace: true });
-    } catch (err) {
-      console.error("Unexpected error:", err);
+    if (!roleRecord) {
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: "Role not found",
         variant: "destructive",
       });
+      return;
     }
 
-    setSaving(false);
+    // Insert or update user role
+    const { error } = await supabase.from("user_roles").upsert(
+      {
+        user_id: user.id,
+        role: selectedRole,
+        role_id: roleRecord.id,
+      },
+      { onConflict: "user_id" }
+    );
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create profile record
+    if (selectedRole === "student") {
+      await supabase.from("students").upsert({
+        user_id: user.id,
+        email: user.email || "",
+        full_name: user.user_metadata?.full_name || user.email || "",
+      });
+    } else if (selectedRole === "owner") {
+      await supabase.from("owners").upsert({
+        user_id: user.id,
+        email: user.email || "",
+        full_name: user.user_metadata?.full_name || user.email || "",
+      });
+    }
   };
 
   if (loading) {
@@ -219,7 +175,19 @@ export default function RoleSelection() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <button
             disabled={saving || !emailVerified}
-            onClick={() => handleSelectRole("student")}
+            onClick={async () => {
+              if (!emailVerified) {
+                toast({
+                  title: "Email verification required",
+                  description: "Please verify your email before selecting a role.",
+                  variant: "destructive",
+                });
+                return;
+              }
+              setSaving(true);
+              await assignRole("student");
+              navigate("/dashboard", { replace: true });
+            }}
             className="group rounded-2xl border border-white/20 bg-white/5 hover:bg-emerald-500/10 px-4 py-6 flex flex-col items-center justify-center gap-3 transition-all hover:-translate-y-1 hover:shadow-[0_0_40px_rgba(45,212,191,0.45)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             <div className="w-12 h-12 rounded-full bg-emerald-400/20 flex items-center justify-center">
@@ -234,7 +202,19 @@ export default function RoleSelection() {
 
           <button
             disabled={saving || !emailVerified}
-            onClick={() => handleSelectRole("owner")}
+            onClick={async () => {
+              if (!emailVerified) {
+                toast({
+                  title: "Email verification required",
+                  description: "Please verify your email before selecting a role.",
+                  variant: "destructive",
+                });
+                return;
+              }
+              setSaving(true);
+              await assignRole("owner");
+              navigate("/owner", { replace: true });
+            }}
             className="group rounded-2xl border border-white/20 bg-white/5 hover:bg-blue-500/10 px-4 py-6 flex flex-col items-center justify-center gap-3 transition-all hover:-translate-y-1 hover:shadow-[0_0_40px_rgba(59,130,246,0.45)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             <div className="w-12 h-12 rounded-full bg-blue-400/20 flex items-center justify-center">
