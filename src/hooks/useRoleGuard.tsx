@@ -31,38 +31,30 @@ export function useRoleGuard(requiredRole?: "admin" | "owner" | "student") {
       const user = session.user;
       setUserId(user.id);
 
-      // Fetch user role_id from user_roles table
-      const { data: userRoleRow } = await supabase
+      // Fetch role using join
+      const { data: roleRow } = await supabase
         .from("user_roles")
-        .select("role_id")
+        .select("role_id, roles(name)")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (!userRoleRow?.role_id && requiredRole) {
+      const role = roleRow?.roles?.name;
+
+      if (!role && requiredRole) {
         navigate("/select-role");
         return;
       }
 
-      // Resolve role name from roles table
-      const { data: roleRecord } = await supabase
-        .from("roles")
-        .select("name")
-        .eq("id", userRoleRow.role_id)
-        .limit(1)
-        .single();
-
-      const userRole = roleRecord?.name || null;
-      
-      if (!roleRecord?.name) {
+      if (!role) {
         setRole(null);
         setLoading(false);
         return;
       }
       
-      setRole(userRole);
+      setRole(role);
 
       // Role-based redirection
-      if (requiredRole && userRole !== requiredRole) {
+      if (requiredRole && role !== requiredRole) {
         navigate("/unauthorized");
         return;
       }
