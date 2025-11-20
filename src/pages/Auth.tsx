@@ -27,13 +27,18 @@ export default function Auth() {
   };
 
   const onSignup = async () => {
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/intro`,
+      },
+    });
     if (error) {
       toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Account created", description: "Check your inbox to verify your email." });
-    navigate("/intro", { replace: true });
+    toast({ title: "Account created", description: "Check your inbox to verify your email before continuing." });
   };
 
   return (
