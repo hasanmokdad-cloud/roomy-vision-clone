@@ -26,6 +26,17 @@ export default function Onboarding() {
         return;
       }
 
+      // Check email verification
+      if (!sessionData.session.user.email_confirmed_at) {
+        toast({
+          title: "Email verification required",
+          description: "Please verify your email before continuing with onboarding.",
+          variant: "destructive",
+        });
+        navigate("/select-role", { replace: true });
+        return;
+      }
+
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
@@ -40,7 +51,7 @@ export default function Onboarding() {
     }
 
     init();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const questions = [
     "Welcome to Roomy! What's your full name?",
