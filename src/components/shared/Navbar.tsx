@@ -94,6 +94,13 @@ export default function Navbar() {
                 Dorms
               </Link>
               <Link 
+                to="/messages" 
+                className="text-foreground/80 hover:text-foreground transition-colors story-link"
+                role="menuitem"
+              >
+                Messages
+              </Link>
+              <Link 
                 to="/ai-match" 
                 className="text-foreground/80 hover:text-foreground transition-colors story-link"
                 role="menuitem"

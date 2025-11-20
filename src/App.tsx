@@ -40,6 +40,7 @@ const OwnerAddDorm = lazy(() => import("./pages/owner/OwnerAddDorm"));
 const ClaimDorm = lazy(() => import("./pages/owner/ClaimDorm"));
 const OwnerRooms = lazy(() => import("./pages/owner/OwnerRooms"));
 const OwnerBookings = lazy(() => import("./pages/owner/OwnerBookings"));
+const RoleSelection = lazy(() => import("./pages/RoleSelection"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -104,6 +105,7 @@ const App = () => (
               <Route path="/profile" element={<MobileSwipeLayout><Profile /></MobileSwipeLayout>} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/messages" element={<MobileSwipeLayout><Messages /></MobileSwipeLayout>} />
+              <Route path="/select-role" element={<RoleSelection />} />
               <Route path="/unauthorized" element={<Unauthorized />} />
 
         {/* Protected Dashboards */}
