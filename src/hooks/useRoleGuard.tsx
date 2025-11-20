@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
+export type AppRole = "admin" | "owner" | "student";
+
 /**
  * useRoleGuard - Custom hook to restrict access based on user roles
  *
@@ -10,46 +12,74 @@ import { supabase } from "@/integrations/supabase/client";
  * Redirects to "/auth" if not authenticated and "/unauthorized" if wrong role.
  * Returns { loading, role, userId } for in-component logic.
  */
-export function useRoleGuard(requiredRole?: "admin" | "owner" | "student") {
+export function useRoleGuard(requiredRole?: AppRole) {
   const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState<string | null>(null);
+  const [role, setRole] = useState<AppRole | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const validateSession = async () => {
+      setLoading(true);
+
       const {
         data: { session },
         error,
       } = await supabase.auth.getSession();
 
       if (error || !session) {
-        navigate("/auth");
+        navigate("/auth", { replace: true });
         return;
       }
 
       const user = session.user;
       setUserId(user.id);
 
-      // Fetch user role from user_roles table
-      const { data: roles } = await supabase
+      // 1) Get role_id from user_roles
+      const { data: userRoleRow, error: userRoleError } = await supabase
         .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id);
+        .select("role_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-      const userRole = roles?.[0]?.role || null; // no default, must be explicitly set
+      if (userRoleError) {
+        console.error("Error fetching user_roles:", userRoleError);
+      }
+
+      if (!userRoleRow?.role_id) {
+        // No role yet → force role selection
+        setRole(null);
+        setLoading(false);
+        if (requiredRole) {
+          navigate("/select-role", { replace: true });
+        }
+        return;
+      }
+
+      // 2) Resolve role name from roles table
+      const { data: roleRecord, error: roleError } = await supabase
+        .from("roles")
+        .select("name")
+        .eq("id", userRoleRow.role_id)
+        .maybeSingle();
+
+      if (roleError) {
+        console.error("Error fetching role name:", roleError);
+      }
+
+      const userRole = (roleRecord?.name || null) as AppRole | null;
       setRole(userRole);
 
-      // Role-based redirection
       if (requiredRole && userRole !== requiredRole) {
-        navigate("/unauthorized");
+        navigate("/unauthorized", { replace: true });
+        setLoading(false);
         return;
       }
 
       setLoading(false);
     };
 
-    validateSession();
+    void validateSession();
   }, [navigate, requiredRole]);
 
   return { loading, role, userId };
