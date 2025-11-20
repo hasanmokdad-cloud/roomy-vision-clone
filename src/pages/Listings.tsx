@@ -26,6 +26,7 @@ import { ScrollToTopButton } from '@/components/listings/ScrollToTopButton';
 import { DormCardSkeleton } from '@/components/skeletons/DormCardSkeleton';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { SkipToContent } from '@/components/SkipToContent';
+import { logAnalyticsEvent } from '@/utils/analytics';
 
 export default function Listings() {
   const navigate = useNavigate();
@@ -48,11 +49,19 @@ export default function Listings() {
 
   const { data, loading, error } = useListingsQuery(filters);
 
-  // Load user session
+  // Load user session and log page view
   useEffect(() => {
     import('@/integrations/supabase/client').then(({ supabase }) => {
       supabase.auth.getSession().then(({ data: { session } }) => {
-        setUserId(session?.user?.id || null);
+        const uid = session?.user?.id || null;
+        setUserId(uid);
+        
+        // Log page view
+        logAnalyticsEvent({
+          eventType: 'page_view',
+          userId: uid,
+          metadata: { page: 'listings' }
+        });
       });
     });
   }, []);

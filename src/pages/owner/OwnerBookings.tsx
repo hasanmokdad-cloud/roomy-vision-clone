@@ -13,6 +13,7 @@ import { Calendar, Clock, MapPin, User, CheckCircle, XCircle, MessageSquare } fr
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import BottomNav from '@/components/BottomNav';
+import { sendOwnerNotification } from '@/utils/analytics';
 
 type Booking = {
   id: string;
@@ -119,6 +120,9 @@ export default function OwnerBookings() {
 
   const handleApprove = async (bookingId: string) => {
     try {
+      const booking = bookings.find(b => b.id === bookingId);
+      if (!booking) return;
+
       const { error } = await supabase
         .from('bookings')
         .update({ 
@@ -128,6 +132,25 @@ export default function OwnerBookings() {
         .eq('id', bookingId);
 
       if (error) throw error;
+
+      // Send notification to owner
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: owner } = await supabase
+          .from('owners')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (owner && booking.dorm_id) {
+          await sendOwnerNotification({
+            ownerId: owner.id,
+            dormId: booking.dorm_id,
+            event: 'booking_approved',
+            message: `Viewing request approved for ${booking.student_name}`
+          });
+        }
+      }
 
       toast({
         title: 'Viewing Approved',
@@ -148,6 +171,9 @@ export default function OwnerBookings() {
 
   const handleDecline = async (bookingId: string) => {
     try {
+      const booking = bookings.find(b => b.id === bookingId);
+      if (!booking) return;
+
       const { error } = await supabase
         .from('bookings')
         .update({ 
@@ -157,6 +183,25 @@ export default function OwnerBookings() {
         .eq('id', bookingId);
 
       if (error) throw error;
+
+      // Send notification to owner
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: owner } = await supabase
+          .from('owners')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (owner && booking.dorm_id) {
+          await sendOwnerNotification({
+            ownerId: owner.id,
+            dormId: booking.dorm_id,
+            event: 'booking_declined',
+            message: `Viewing request declined for ${booking.student_name}`
+          });
+        }
+      }
 
       toast({
         title: 'Viewing Declined',

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Navbar from '@/components/shared/Navbar';
+import { logAnalyticsEvent } from '@/utils/analytics';
 import { Hero } from '@/components/Hero';
 import { HowItWorks } from '@/components/HowItWorks';
 import { DormListings } from '@/components/DormListings';
@@ -31,6 +32,13 @@ const Main = () => {
         navigate('/auth', { replace: true });
         return;
       }
+
+      // Log page view
+      await logAnalyticsEvent({
+        eventType: 'page_view',
+        userId: session.user.id,
+        metadata: { page: 'main' }
+      });
 
       // Check if intro has been played this session
       const introPlayed = sessionStorage.getItem('intro-played');

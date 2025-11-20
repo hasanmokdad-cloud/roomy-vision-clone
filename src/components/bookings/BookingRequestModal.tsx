@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { format } from 'date-fns';
+import { logAnalyticsEvent, sendOwnerNotification, triggerRecommenderTraining } from '@/utils/analytics';
 
 interface BookingRequestModalProps {
   open: boolean;
@@ -60,6 +61,28 @@ export function BookingRequestModal({ open, onOpenChange, dormId, dormName, owne
       });
 
       if (error) throw error;
+
+      // Log booking request
+      await logAnalyticsEvent({
+        eventType: 'booking_request',
+        userId: user.id,
+        dormId: dormId,
+        metadata: { 
+          date: format(selectedDate, 'yyyy-MM-dd'),
+          time: selectedTime
+        }
+      });
+
+      // Send notification to owner
+      await sendOwnerNotification({
+        ownerId: ownerId,
+        dormId: dormId,
+        event: 'new_booking',
+        message: `New viewing request for ${dormName}`
+      });
+
+      // Trigger recommender training
+      await triggerRecommenderTraining(user.id);
 
       toast({
         title: 'Viewing Requested',
