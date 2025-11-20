@@ -29,8 +29,14 @@ export default function RoleSelection() {
         return;
       }
 
-      // Prevent admin from accessing this page
-      if (session.user.email === "hassan.mokdad01@lau.edu") {
+      // Check if user is admin and redirect
+      const { data: roleRow } = await supabase
+        .from("user_roles")
+        .select("role_id, roles(name)")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      if (roleRow?.roles?.name === "admin") {
         navigate("/admin", { replace: true });
         return;
       }
@@ -64,33 +70,34 @@ export default function RoleSelection() {
     }
   };
 
-  const assignRole = async (selectedRole: "student" | "owner") => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const user = sessionData?.session?.user;
-    if (!user) return;
+  const assignRole = async (chosen_role: "student" | "owner") => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
 
-    // Call the assign-role edge function
-    const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/assign-role`,
+    const resp = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/role-assign`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${sessionData.session?.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ role: selectedRole }),
+        body: JSON.stringify({ chosen_role }),
       }
     );
 
-    if (!response.ok) {
-      const errorData = await response.json();
+    const result = await resp.json();
+    if (!resp.ok) {
       toast({
         title: "Error",
-        description: errorData.error || "Failed to assign role",
+        description: result.error || "Failed to assign role",
         variant: "destructive",
       });
       return;
     }
+
+    if (chosen_role === "student") navigate("/onboarding", { replace: true });
+    if (chosen_role === "owner") navigate("/owner", { replace: true });
   };
 
   if (loading) {

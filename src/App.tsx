@@ -75,7 +75,7 @@ function ProtectedRoute({
   }
 
   // Prevent users with existing roles from re-accessing /select-role
-  if (location.pathname === "/select-role") {
+  if (location.pathname === "/select-role" && role) {
     if (role === "admin") return <Navigate to="/admin" replace />;
     if (role === "owner") return <Navigate to="/owner" replace />;
     if (role === "student") return <Navigate to="/dashboard" replace />;
