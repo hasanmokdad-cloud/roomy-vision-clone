@@ -8,42 +8,46 @@ export default function Intro() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const introPlayed = sessionStorage.getItem("intro-played");
-    if (introPlayed === "true") {
-      navigateBasedOnRole();
+    const played = sessionStorage.getItem("intro-played");
+    if (played === "true") {
+      void navigateBasedOnRole();
     }
   }, []);
 
   const navigateBasedOnRole = async () => {
-    const {
-      data: { session },
-      error,
-    } = await supabase.auth.getSession();
+    const { data: sessionData, error } = await supabase.auth.getSession();
+    const session = sessionData?.session;
 
     if (error || !session) {
       navigate("/auth", { replace: true });
       return;
     }
 
-    const { data: roles } = await supabase
+    // Check if user has a role assigned
+    const { data: userRoleRow } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", session.user.id)
-      .limit(1);
+      .maybeSingle();
 
-    const userRole = roles?.[0]?.role as "admin" | "owner" | "student" | undefined;
+    const role = userRoleRow?.role;
 
-    if (!userRole) {
+    if (!role) {
+      // No role assigned yet → go to role selection
       navigate("/select-role", { replace: true });
       return;
     }
 
-    if (userRole === "admin") {
+    // Navigate based on assigned role
+    if (role === "admin") {
       navigate("/admin", { replace: true });
-    } else if (userRole === "owner") {
+    } else if (role === "owner") {
       navigate("/owner", { replace: true });
-    } else if (userRole === "student") {
+    } else if (role === "student") {
       navigate("/dashboard", { replace: true });
+    } else {
+      // Unknown role → go to role selection
+      navigate("/select-role", { replace: true });
     }
   };
 
