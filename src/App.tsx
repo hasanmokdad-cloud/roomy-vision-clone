@@ -57,10 +57,13 @@ const PageLoader = () => (
 function ProtectedRoute({
   element,
   requiredRole,
+  allowedRoles,
 }: {
   element: JSX.Element;
   requiredRole?: "admin" | "owner" | "student";
+  allowedRoles?: ("admin" | "owner" | "student" | "none")[];
 }) {
+  const location = useLocation();
   const { loading, role } = useRoleGuard(requiredRole);
 
   if (loading) {
@@ -69,6 +72,23 @@ function ProtectedRoute({
         <p className="text-foreground/60">Loading...</p>
       </div>
     );
+  }
+
+  // Prevent admin from ever seeing /select-role
+  if (location.pathname === "/select-role" && role === "admin") {
+    return <Navigate to="/admin" replace />;
+  }
+
+  // Prevent users with existing roles from re-accessing /select-role
+  if (location.pathname === "/select-role" && role) {
+    if (role === "student") return <Navigate to="/dashboard" replace />;
+    if (role === "owner") return <Navigate to="/owner" replace />;
+    if (role === "admin") return <Navigate to="/admin" replace />;
+  }
+
+  // Handle "none" role (users with no assigned role)
+  if (allowedRoles?.includes("none") && !role) {
+    return element;
   }
 
   // If user has NO role → send them to role selection
@@ -103,7 +123,12 @@ const AppRoutes = () => {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
-          <Route path="/select-role" element={<RoleSelection />} />
+          <Route 
+            path="/select-role" 
+            element={
+              <ProtectedRoute element={<RoleSelection />} allowedRoles={["none"]} />
+            } 
+          />
 
           {/* Student Routes */}
           <Route path="/onboarding" element={<ProtectedRoute element={<Onboarding />} requiredRole="student" />} />
