@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { logAnalyticsEvent, triggerRecommenderTraining } from "@/utils/analytics";
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -60,6 +61,15 @@ export default function Onboarding() {
           setSaving(false);
           return;
         }
+
+        // Log onboarding completion and trigger recommender training
+        await logAnalyticsEvent({
+          eventType: 'onboarding_complete',
+          userId: user.id,
+          metadata: { preferences: updated }
+        });
+        
+        await triggerRecommenderTraining(user.id);
 
         toast({
           title: "Preferences Saved! 🎉",

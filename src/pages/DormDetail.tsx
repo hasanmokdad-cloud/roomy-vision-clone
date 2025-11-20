@@ -14,6 +14,7 @@ import { DormDetailSkeleton } from '@/components/skeletons/DormDetailSkeleton';
 import { ImageGallery } from '@/components/shared/ImageGallery';
 import { BookTourModal } from '@/components/bookings/BookTourModal';
 import type { RoomType } from '@/types/RoomType';
+import { logAnalyticsEvent } from '@/utils/analytics';
 
 export default function DormDetail() {
   const { id } = useParams();
@@ -31,6 +32,18 @@ export default function DormDetail() {
     loadDorm();
     checkAuth();
   }, [id]);
+
+  useEffect(() => {
+    // Log dorm view when component mounts and user is loaded
+    if (id && !loading) {
+      logAnalyticsEvent({
+        eventType: 'dorm_view',
+        userId: user?.id,
+        dormId: id,
+        metadata: { page: 'dorm-detail' }
+      });
+    }
+  }, [id, user, loading]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();

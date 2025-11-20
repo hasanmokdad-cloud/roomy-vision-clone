@@ -22,6 +22,7 @@ import { MatchCardSkeleton } from "@/components/skeletons/MatchCardSkeleton";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { generateReasonText } from "@/utils/aiLogic";
 import { questions, profileQuestions, preferenceQuestions, Question } from "@/data/questions";
+import { logAnalyticsEvent } from "@/utils/analytics";
 
 const universities = [
   "LAU (Byblos)",
@@ -205,6 +206,18 @@ export default function AiMatch() {
         user_id: userId || "",
         responses: responsesPayload,
       });
+
+    // Log AI match start
+    if (userId) {
+      await logAnalyticsEvent({
+        eventType: 'ai_match_start',
+        userId,
+        metadata: { 
+          preferences: preferences,
+          budget: preferences.budget 
+        }
+      });
+    }
 
     setStep(3);
     findMatches();

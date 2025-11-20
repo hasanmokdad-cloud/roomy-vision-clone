@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { RoomType } from '@/types/RoomType';
 import { BookingRequestModal } from '@/components/bookings/BookingRequestModal';
+import { logAnalyticsEvent, sendOwnerNotification } from '@/utils/analytics';
 
 type RoomContactCardProps = {
   room: RoomType;
@@ -58,6 +59,14 @@ export default function RoomContactCard({ room, dormId, dormName, ownerId, index
         throw new Error('Unable to create conversation');
       }
 
+      // Log contact click
+      await logAnalyticsEvent({
+        eventType: 'contact_click',
+        userId: user.id,
+        dormId: dormId,
+        metadata: { room_type: room.type }
+      });
+
       // Check if conversation already exists
       const { data: existingConv } = await supabase
         .from('conversations')
@@ -89,6 +98,14 @@ export default function RoomContactCard({ room, dormId, dormName, ownerId, index
           conversation_id: conversationId,
           sender_id: user.id,
           body: `Hi, I'm interested in the ${room.type} at ${dormName}. Is it still available?`,
+        });
+
+        // Send notification to owner
+        await sendOwnerNotification({
+          ownerId: ownerId,
+          dormId: dormId,
+          event: 'new_message',
+          message: `New inquiry about ${room.type}`
         });
       }
 

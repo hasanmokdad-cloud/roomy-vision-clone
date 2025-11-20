@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Send, Sparkles, RefreshCw } from "lucide-react";
 import { sanitizeInput } from "@/utils/inputValidation";
+import { logAnalyticsEvent } from "@/utils/analytics";
 
 type Message = {
   role: "user" | "assistant";
@@ -78,6 +79,15 @@ export default function AiChat() {
 
     const sanitized = sanitizeInput(trimmed);
     const userMsg: Message = { role: "user", content: sanitized, timestamp: new Date().toISOString() };
+    
+    // Log AI chat start if this is the first message
+    if (messages.length === 0 && userId) {
+      await logAnalyticsEvent({
+        eventType: 'ai_chat_start',
+        userId,
+        metadata: { session_id: sessionId }
+      });
+    }
     
     setMessages(prev => [...prev, userMsg]);
     setInput("");
