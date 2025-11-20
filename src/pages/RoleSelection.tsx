@@ -33,11 +33,11 @@ export default function RoleSelection() {
       setEmailVerified(!!session.user.email_confirmed_at);
       setUserEmail(session.user.email || "");
 
-      const { data: roles, error: roleError } = await supabase
+      const { data: userRoleRow, error: roleError } = await supabase
         .from("user_roles")
-        .select("role")
+        .select("role_id")
         .eq("user_id", session.user.id)
-        .limit(1);
+        .maybeSingle();
 
       if (roleError) {
         console.error("Error loading user role:", roleError);
@@ -45,9 +45,16 @@ export default function RoleSelection() {
         return;
       }
 
-      const existingRole = roles?.[0]?.role as AppRole | undefined;
+      if (userRoleRow?.role_id) {
+        // User already has a role, resolve it and redirect
+        const { data: roleRecord } = await supabase
+          .from("roles")
+          .select("name")
+          .eq("id", userRoleRow.role_id)
+          .maybeSingle();
 
-      if (existingRole) {
+        const existingRole = roleRecord?.name as AppRole | undefined;
+
         if (existingRole === "admin") {
           navigate("/admin", { replace: true });
         } else if (existingRole === "owner") {
@@ -137,14 +144,8 @@ export default function RoleSelection() {
         description: `Your role has been set to ${role}`,
       });
 
-      // Navigate based on role
-      if (role === "owner") {
-        navigate("/owner", { replace: true });
-      } else if (role === "admin") {
-        navigate("/admin", { replace: true });
-      } else if (role === "student") {
-        navigate("/dashboard", { replace: true });
-      }
+      // Navigate to intro which will redirect to appropriate dashboard
+      navigate("/intro", { replace: true });
     } catch (err) {
       console.error("Unexpected error:", err);
       toast({

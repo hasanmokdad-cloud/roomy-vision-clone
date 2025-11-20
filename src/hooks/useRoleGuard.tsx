@@ -31,13 +31,26 @@ export function useRoleGuard(requiredRole?: "admin" | "owner" | "student") {
       const user = session.user;
       setUserId(user.id);
 
-      // Fetch user role from user_roles table
-      const { data: roles } = await supabase
+      // Fetch user role_id from user_roles table
+      const { data: userRoleRow } = await supabase
         .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id);
+        .select("role_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-      const userRole = roles?.[0]?.role || null; // no default, must be explicitly set
+      if (!userRoleRow?.role_id) {
+        navigate("/select-role");
+        return;
+      }
+
+      // Resolve role name from roles table
+      const { data: roleRecord } = await supabase
+        .from("roles")
+        .select("name")
+        .eq("id", userRoleRow.role_id)
+        .maybeSingle();
+
+      const userRole = roleRecord?.name || null;
       setRole(userRole);
 
       // Role-based redirection
