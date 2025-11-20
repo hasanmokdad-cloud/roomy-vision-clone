@@ -38,7 +38,7 @@ export function useRoleGuard(requiredRole?: "admin" | "owner" | "student") {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (!userRoleRow?.role_id) {
+      if (!userRoleRow?.role_id && requiredRole) {
         navigate("/select-role");
         return;
       }
@@ -48,9 +48,17 @@ export function useRoleGuard(requiredRole?: "admin" | "owner" | "student") {
         .from("roles")
         .select("name")
         .eq("id", userRoleRow.role_id)
-        .maybeSingle();
+        .limit(1)
+        .single();
 
       const userRole = roleRecord?.name || null;
+      
+      if (!roleRecord?.name) {
+        setRole(null);
+        setLoading(false);
+        return;
+      }
+      
       setRole(userRole);
 
       // Role-based redirection
