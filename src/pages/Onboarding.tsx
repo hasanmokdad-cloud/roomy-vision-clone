@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -16,6 +16,31 @@ export default function Onboarding() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [input, setInput] = useState("");
   const [saving, setSaving] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function init() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) {
+        navigate("/auth", { replace: true });
+        return;
+      }
+
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", sessionData.session.user.id)
+        .single();
+
+      setRole(roles?.role ?? null);
+
+      if (roles?.role === "owner" || roles?.role === "admin") {
+        navigate("/owner", { replace: true });
+      }
+    }
+
+    init();
+  }, [navigate]);
 
   const questions = [
     "Welcome to Roomy! What's your full name?",
@@ -102,6 +127,8 @@ export default function Onboarding() {
   };
 
   const progress = ((step + 1) / questions.length) * 100;
+
+  if (role === "owner" || role === "admin") return null;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-purple-700 via-blue-600 to-emerald-400 text-white px-6 py-10">
