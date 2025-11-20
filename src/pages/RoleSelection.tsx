@@ -29,6 +29,12 @@ export default function RoleSelection() {
         return;
       }
 
+      // Prevent admin from accessing this page
+      if (session.user.email === "hassan.mokdad01@lau.edu") {
+        navigate("/admin", { replace: true });
+        return;
+      }
+
       // Check email verification status
       setEmailVerified(!!session.user.email_confirmed_at);
       setUserEmail(session.user.email || "");
@@ -63,54 +69,27 @@ export default function RoleSelection() {
     const user = sessionData?.session?.user;
     if (!user) return;
 
-    // Lookup role_id from roles table
-    const { data: roleRecord } = await supabase
-      .from("roles")
-      .select("id")
-      .eq("name", selectedRole)
-      .single();
-
-    if (!roleRecord) {
-      toast({
-        title: "Error",
-        description: "Role not found",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Insert or update user role
-    const { error } = await supabase.from("user_roles").upsert(
+    // Call the assign-role edge function
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/assign-role`,
       {
-        user_id: user.id,
-        role: selectedRole,
-        role_id: roleRecord.id,
-      },
-      { onConflict: "user_id" }
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session?.access_token}`,
+        },
+        body: JSON.stringify({ chosen_role: selectedRole }),
+      }
     );
 
-    if (error) {
+    if (!response.ok) {
+      const errorData = await response.json();
       toast({
         title: "Error",
-        description: error.message,
+        description: errorData.error || "Failed to assign role",
         variant: "destructive",
       });
       return;
-    }
-
-    // Create profile record
-    if (selectedRole === "student") {
-      await supabase.from("students").upsert({
-        user_id: user.id,
-        email: user.email || "",
-        full_name: user.user_metadata?.full_name || user.email || "",
-      });
-    } else if (selectedRole === "owner") {
-      await supabase.from("owners").upsert({
-        user_id: user.id,
-        email: user.email || "",
-        full_name: user.user_metadata?.full_name || user.email || "",
-      });
     }
   };
 
@@ -186,7 +165,7 @@ export default function RoleSelection() {
               }
               setSaving(true);
               await assignRole("student");
-              navigate("/dashboard", { replace: true });
+              navigate("/onboarding", { replace: true });
             }}
             className="group rounded-2xl border border-white/20 bg-white/5 hover:bg-emerald-500/10 px-4 py-6 flex flex-col items-center justify-center gap-3 transition-all hover:-translate-y-1 hover:shadow-[0_0_40px_rgba(45,212,191,0.45)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >

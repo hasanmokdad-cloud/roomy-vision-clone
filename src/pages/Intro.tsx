@@ -31,6 +31,11 @@ export default function Intro() {
       .maybeSingle();
 
     if (!userRoleRow?.role_id) {
+      // Check if admin by email before redirecting to role selection
+      if (session.user.email === "hassan.mokdad01@lau.edu") {
+        navigate("/admin", { replace: true });
+        return;
+      }
       navigate("/select-role", { replace: true });
       return;
     }
@@ -42,24 +47,25 @@ export default function Intro() {
       .eq("id", userRoleRow.role_id)
       .maybeSingle();
 
-    const role = roleRecord?.name;
+    const userRole = roleRecord?.name;
 
-    if (!role) {
-      // No role assigned yet → go to role selection
+    if (!userRole) {
+      // No role assigned yet → check admin email
+      if (session.user.email === "hassan.mokdad01@lau.edu") {
+        navigate("/admin", { replace: true });
+        return;
+      }
       navigate("/select-role", { replace: true });
       return;
     }
 
     // Navigate based on assigned role
-    if (role === "admin") {
+    if (userRole === "admin") {
       navigate("/admin", { replace: true });
-    } else if (role === "owner") {
+    } else if (userRole === "owner") {
       navigate("/owner", { replace: true });
-    } else if (role === "student") {
+    } else if (userRole === "student") {
       navigate("/dashboard", { replace: true });
-    } else {
-      // Unknown role → go to role selection
-      navigate("/select-role", { replace: true });
     }
   };
 
