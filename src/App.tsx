@@ -41,6 +41,7 @@ const ClaimDorm = lazy(() => import("./pages/owner/ClaimDorm"));
 const OwnerRooms = lazy(() => import("./pages/owner/OwnerRooms"));
 const OwnerBookings = lazy(() => import("./pages/owner/OwnerBookings"));
 const RoleSelection = lazy(() => import("./pages/RoleSelection"));
+const StudentProfile = lazy(() => import("./pages/StudentProfile"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -110,6 +111,7 @@ const AppRoutes = () => {
           <Route path="/profile" element={<ProtectedRoute element={<Profile />} requiredRole="student" />} />
           <Route path="/settings" element={<ProtectedRoute element={<Settings />} requiredRole="student" />} />
           <Route path="/messages" element={<ProtectedRoute element={<Messages />} requiredRole="student" />} />
+          <Route path="/student-profile/:id" element={<ProtectedRoute element={<StudentProfile />} requiredRole="student" />} />
           <Route path="/ai-match" element={<ProtectedRoute element={<MobileSwipeLayout><AiMatch /></MobileSwipeLayout>} requiredRole="student" />} />
           <Route path="/ai-chat" element={<ProtectedRoute element={<MobileSwipeLayout><AiChat /></MobileSwipeLayout>} requiredRole="student" />} />
 

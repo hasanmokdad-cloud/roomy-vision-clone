@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/shared/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +44,7 @@ export default function Messages() {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -56,6 +57,11 @@ export default function Messages() {
   useEffect(() => {
     if (!userId) return;
     loadConversations();
+
+    // Handle auto-message workflow
+    if (location.state?.initialMessage && location.state?.openThreadWithUserId) {
+      handleAutoMessage();
+    }
 
     // Subscribe to new messages
     const messagesChannel = supabase
@@ -224,6 +230,80 @@ export default function Messages() {
           .update({ read: true })
           .in('id', unreadIds);
       }
+    }
+  };
+
+  const handleAutoMessage = async () => {
+    const { openThreadWithUserId, initialMessage, matchProfile } = location.state || {};
+    if (!openThreadWithUserId || !initialMessage || !userId) return;
+
+    try {
+      const { data: student } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      const { data: targetStudent } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', openThreadWithUserId)
+        .maybeSingle();
+
+      if (!student || !targetStudent) {
+        toast({
+          title: "Error",
+          description: "Could not initiate conversation",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      let conversationId = selectedConversation;
+      if (!conversationId) {
+        const { data: existingConv } = await supabase
+          .from('conversations')
+          .select('id')
+          .or(`student_id.eq.${student.id},student_id.eq.${targetStudent.id}`)
+          .maybeSingle();
+
+        if (existingConv) {
+          conversationId = existingConv.id;
+          setSelectedConversation(conversationId);
+        } else {
+          const { data: newConv } = await supabase
+            .from('conversations')
+            .insert({
+              student_id: student.id,
+              owner_id: targetStudent.id,
+            })
+            .select()
+            .single();
+
+          if (newConv) {
+            conversationId = newConv.id;
+            setSelectedConversation(conversationId);
+          }
+        }
+      }
+
+      if (conversationId) {
+        await supabase.from('messages').insert({
+          conversation_id: conversationId,
+          sender_id: userId,
+          body: initialMessage,
+        });
+
+        await loadMessages(conversationId);
+        await loadConversations();
+      }
+    } catch (error: any) {
+      console.error("Auto-message error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send automatic message",
+        variant: "destructive",
+      });
     }
   };
 

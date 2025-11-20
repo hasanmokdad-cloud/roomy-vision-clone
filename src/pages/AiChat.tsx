@@ -22,6 +22,8 @@ export default function AiChat() {
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string>("");
+  const [userPreferences, setUserPreferences] = useState<Record<string, any>>({});
+  const [userProfile, setUserProfile] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -46,6 +48,30 @@ export default function AiChat() {
           timestamp: msg.timestamp
         }));
         setMessages(parsedHistory.slice(-10));
+      }
+
+      // Load user preferences
+      if (session) {
+        const { data: pref } = await supabase
+          .from("user_preferences")
+          .select("preferences")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        if (pref?.preferences) {
+          setUserPreferences(pref.preferences as Record<string, any>);
+        }
+
+        // Load user profile
+        const { data: profile } = await supabase
+          .from("students")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        if (profile) {
+          setUserProfile(profile);
+        }
       }
     };
 
@@ -94,12 +120,16 @@ export default function AiChat() {
     setLoading(true);
 
     try {
+      const enrichedInput = {
+        message: sanitized,
+        userId: userId,
+        sessionId: sessionId,
+        preferences: userPreferences,
+        student_profile: userProfile
+      };
+
       const { data, error } = await supabase.functions.invoke("roomy-chat", {
-        body: {
-          message: sanitized,
-          userId: userId,
-          sessionId: sessionId
-        }
+        body: enrichedInput
       });
 
       if (error) throw error;
