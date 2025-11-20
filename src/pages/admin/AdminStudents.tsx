@@ -9,10 +9,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { Shield, ShieldOff } from 'lucide-react';
 
 export default function AdminStudents() {
   const [students, setStudents] = useState<any[]>([]);
+  const [userRoles, setUserRoles] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadStudents();
@@ -26,8 +31,59 @@ export default function AdminStudents() {
 
     if (!error && data) {
       setStudents(data);
+      
+      // Load roles for all users
+      const userIds = data.map(s => s.user_id);
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', userIds);
+      
+      const rolesMap: Record<string, string[]> = {};
+      rolesData?.forEach(r => {
+        if (!rolesMap[r.user_id]) rolesMap[r.user_id] = [];
+        rolesMap[r.user_id].push(r.role);
+      });
+      setUserRoles(rolesMap);
     }
     setLoading(false);
+  };
+
+  const handleToggleAdmin = async (userId: string, currentlyAdmin: boolean) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-elevation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          target_user_id: userId,
+          elevate: !currentlyAdmin
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update admin status');
+      }
+
+      toast({
+        title: 'Success',
+        description: result.message,
+      });
+
+      loadStudents();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
   };
 
   if (loading) {
@@ -70,23 +126,58 @@ export default function AdminStudents() {
               <TableHead>Budget</TableHead>
               <TableHead>Room Type</TableHead>
               <TableHead>Roommate</TableHead>
+              <TableHead>Roles</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {students.map((student) => (
-              <TableRow key={student.id}>
-                <TableCell className="font-medium">{student.full_name}</TableCell>
-                <TableCell>{student.age || 'N/A'}</TableCell>
-                <TableCell>{student.university || 'Not specified'}</TableCell>
-                <TableCell>${student.budget || 'N/A'}</TableCell>
-                <TableCell>{student.room_type || 'Any'}</TableCell>
-                <TableCell>
-                  <Badge variant={student.roommate_needed ? 'default' : 'secondary'}>
-                    {student.roommate_needed ? 'Yes' : 'No'}
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            ))}
+            {students.map((student) => {
+              const roles = userRoles[student.user_id] || [];
+              const isAdmin = roles.includes('admin');
+              
+              return (
+                <TableRow key={student.id}>
+                  <TableCell className="font-medium">{student.full_name}</TableCell>
+                  <TableCell>{student.age || 'N/A'}</TableCell>
+                  <TableCell>{student.university || 'Not specified'}</TableCell>
+                  <TableCell>${student.budget || 'N/A'}</TableCell>
+                  <TableCell>{student.room_type || 'Any'}</TableCell>
+                  <TableCell>
+                    <Badge variant={student.roommate_needed ? 'default' : 'secondary'}>
+                      {student.roommate_needed ? 'Yes' : 'No'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1 flex-wrap">
+                      {roles.map(role => (
+                        <Badge key={role} variant={role === 'admin' ? 'destructive' : 'default'}>
+                          {role}
+                        </Badge>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      size="sm"
+                      variant={isAdmin ? 'destructive' : 'default'}
+                      onClick={() => handleToggleAdmin(student.user_id, isAdmin)}
+                    >
+                      {isAdmin ? (
+                        <>
+                          <ShieldOff className="w-4 h-4 mr-1" />
+                          Remove Admin
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="w-4 h-4 mr-1" />
+                          Make Admin
+                        </>
+                      )}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
