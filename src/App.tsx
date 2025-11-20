@@ -74,16 +74,11 @@ function ProtectedRoute({
     );
   }
 
-  // Prevent admin from ever seeing /select-role
-  if (location.pathname === "/select-role" && role === "admin") {
-    return <Navigate to="/admin" replace />;
-  }
-
   // Prevent users with existing roles from re-accessing /select-role
-  if (location.pathname === "/select-role" && role) {
-    if (role === "student") return <Navigate to="/dashboard" replace />;
-    if (role === "owner") return <Navigate to="/owner" replace />;
+  if (location.pathname === "/select-role") {
     if (role === "admin") return <Navigate to="/admin" replace />;
+    if (role === "owner") return <Navigate to="/owner" replace />;
+    if (role === "student") return <Navigate to="/dashboard" replace />;
   }
 
   // Handle "none" role (users with no assigned role)

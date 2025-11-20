@@ -78,7 +78,7 @@ export default function RoleSelection() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${sessionData.session?.access_token}`,
         },
-        body: JSON.stringify({ chosen_role: selectedRole }),
+        body: JSON.stringify({ role: selectedRole }),
       }
     );
 

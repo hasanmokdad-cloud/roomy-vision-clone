@@ -28,14 +28,10 @@ export default function Intro() {
       .from("user_roles")
       .select("role_id")
       .eq("user_id", session.user.id)
-      .maybeSingle();
+      .limit(1)
+      .single();
 
     if (!userRoleRow?.role_id) {
-      // Check if admin by email before redirecting to role selection
-      if (session.user.email === "hassan.mokdad01@lau.edu") {
-        navigate("/admin", { replace: true });
-        return;
-      }
       navigate("/select-role", { replace: true });
       return;
     }
@@ -45,16 +41,12 @@ export default function Intro() {
       .from("roles")
       .select("name")
       .eq("id", userRoleRow.role_id)
-      .maybeSingle();
+      .limit(1)
+      .single();
 
     const userRole = roleRecord?.name;
 
     if (!userRole) {
-      // No role assigned yet → check admin email
-      if (session.user.email === "hassan.mokdad01@lau.edu") {
-        navigate("/admin", { replace: true });
-        return;
-      }
       navigate("/select-role", { replace: true });
       return;
     }
