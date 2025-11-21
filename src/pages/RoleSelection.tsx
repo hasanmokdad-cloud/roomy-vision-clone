@@ -180,43 +180,35 @@ export default function RoleSelection() {
         }
       }
 
-      // Refresh session to get latest email_confirmed_at
-      console.log("🔄 Refreshing session before navigation...");
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      // Force full page reload to ensure completely fresh session
+      // This avoids race conditions with useRoleGuard on protected routes
+      console.log("✅ Role assigned successfully. Forcing full page reload...");
+      
+      toast({
+        title: "Role assigned successfully",
+        description: "Redirecting to your dashboard...",
+      });
 
-      if (refreshError) {
-        console.error("❌ Session refresh failed:", refreshError);
-      } else {
-        console.log("✅ Session refreshed successfully, email_confirmed_at:", refreshData.session?.user.email_confirmed_at);
-      }
-
-      // Small delay to ensure session is fully updated
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Redirect logic
-      if (assignedRole === "student") {
-        console.log("✅ Navigating to /onboarding");
-        navigate("/onboarding", { replace: true });
-        return;
-      } else if (assignedRole === "owner") {
-        console.log("✅ Navigating to /owner");
-        navigate("/owner", { replace: true });
-        return;
-      } else {
-        // If still failed after retries, use chosen_role as fallback
-        console.log("⚠️ Using fallback navigation with chosen_role:", chosen_role);
-        toast({
-          title: "Role assigned successfully",
-          description: "Redirecting to your dashboard...",
-        });
-        
-        if (chosen_role === "student") {
-          navigate("/onboarding", { replace: true });
+      // Use window.location.href for hard navigation (not React Router)
+      // This ensures fresh session data is loaded on the next page
+      setTimeout(() => {
+        if (assignedRole === "student") {
+          window.location.href = "/onboarding";
+        } else if (assignedRole === "owner") {
+          window.location.href = "/owner";
+        } else if (assignedRole === "admin") {
+          window.location.href = "/admin";
         } else {
-          navigate("/owner", { replace: true });
+          // Fallback to chosen_role if assignedRole is still undefined
+          if (chosen_role === "student") {
+            window.location.href = "/onboarding";
+          } else {
+            window.location.href = "/owner";
+          }
         }
-        return;
-      }
+      }, 500); // Small delay to show the toast
+      
+      return;
     } catch (error) {
       console.error("❌ Error in assignRole:", error);
       toast({
