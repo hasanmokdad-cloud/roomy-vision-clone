@@ -15,6 +15,7 @@ import {
   LogOut,
   LayoutDashboard,
   ShieldCheck,
+  ClipboardCheck,
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -230,7 +231,7 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Footer Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -240,7 +241,7 @@ export default function AdminDashboard() {
             <div className="flex flex-col items-center gap-4">
               <Users className="w-12 h-12" />
               <h3 className="text-xl font-bold">Manage Students</h3>
-              <p className="text-sm opacity-90">View and manage student profiles</p>
+              <p className="text-sm opacity-90">View student profiles</p>
             </div>
           </motion.button>
 
@@ -253,7 +254,7 @@ export default function AdminDashboard() {
             <div className="flex flex-col items-center gap-4">
               <Building2 className="w-12 h-12" />
               <h3 className="text-xl font-bold">Manage Owners</h3>
-              <p className="text-sm opacity-90">Oversee property owners</p>
+              <p className="text-sm opacity-90">Oversee owners</p>
             </div>
           </motion.button>
 
@@ -265,8 +266,21 @@ export default function AdminDashboard() {
           >
             <div className="flex flex-col items-center gap-4">
               <ShieldCheck className="w-12 h-12" />
-              <h3 className="text-xl font-bold">Review Pending Dorms</h3>
-              <p className="text-sm opacity-90">Verify dorm listings</p>
+              <h3 className="text-xl font-bold">Pending Dorms</h3>
+              <p className="text-sm opacity-90">Verify listings</p>
+            </div>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/admin/claims")}
+            className="relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br from-orange-500 to-yellow-400 text-white shadow-xl hover:shadow-2xl transition-all group"
+          >
+            <div className="flex flex-col items-center gap-4">
+              <ClipboardCheck className="w-12 h-12" />
+              <h3 className="text-xl font-bold">Ownership Claims</h3>
+              <p className="text-sm opacity-90">Review claims</p>
             </div>
           </motion.button>
         </div>
