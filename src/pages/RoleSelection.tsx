@@ -33,7 +33,7 @@ export default function RoleSelection() {
         "hasan.mokdad@aiesec.net",
       ];
 
-      // Check if user is admin (by role OR founder email) and redirect
+      // Check if user is admin (by role OR founder email) and redirect BEFORE email check
       const { data: roleRow } = await supabase
         .from("user_roles")
         .select("role_id, roles(name)")
@@ -46,6 +46,7 @@ export default function RoleSelection() {
         | "student"
         | undefined;
 
+      // Admins bypass email verification and role selection entirely
       if (roleName === "admin" || defaultAdminEmails.includes(user.email ?? "")) {
         navigate("/admin", { replace: true });
         return;

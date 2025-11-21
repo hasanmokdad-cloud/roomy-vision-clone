@@ -60,6 +60,13 @@ export function useRoleGuard(requiredRole?: AppRole) {
         resolvedRole = "admin";
       }
 
+      // Admin must NEVER be redirected to /select-role
+      if (resolvedRole === "admin") {
+        setRole("admin");
+        setLoading(false);
+        return;
+      }
+
       if (!resolvedRole) {
         // User has no role at all
         setRole(null);
