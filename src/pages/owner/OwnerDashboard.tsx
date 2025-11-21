@@ -11,7 +11,7 @@ import { NotificationBell } from "@/components/owner/NotificationBell";
 import { DormForm } from "@/components/owner/DormForm";
 
 export default function OwnerDashboard() {
-  const { loading, userId } = useRoleGuard("owner");
+  const { loading, userId, role } = useRoleGuard();
   const [dorms, setDorms] = useState<any[]>([]);
   const [ownerId, setOwnerId] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -27,49 +27,67 @@ export default function OwnerDashboard() {
   }, [userId]);
 
   const fetchOwnerData = async () => {
-    // Get owner record first
-    const { data: owner } = await supabase
-      .from("owners")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    if (!userId) return;
 
-    if (!owner) return;
-    
-    setOwnerId(owner.id);
+    try {
+      // Check if user is admin
+      const isAdmin = role === "admin";
+      
+      let dormsQuery = supabase.from("dorms").select("*");
+      
+      if (!isAdmin) {
+        // Get owner record for non-admins
+        const { data: owner, error: ownerError } = await supabase
+          .from("owners")
+          .select("id")
+          .eq("user_id", userId)
+          .maybeSingle();
 
-    // Fetch dorms
-    const { data: dormsData, error: dormsError } = await supabase
-      .from("dorms")
-      .select("*")
-      .eq("owner_id", owner.id)
-      .order("created_at", { ascending: false });
+        if (ownerError) throw ownerError;
+        if (!owner) {
+          console.error("Owner profile not found");
+          return;
+        }
 
-    if (dormsError) {
-      console.error("Error loading dorms:", dormsError);
-      return;
-    }
-    
-    setDorms(dormsData || []);
-
-    // Fetch rooms for each dorm
-    if (dormsData && dormsData.length > 0) {
-      const dormIds = dormsData.map(d => d.id);
-      const { data: roomsData } = await supabase
-        .from("rooms")
-        .select("*")
-        .in("dorm_id", dormIds);
-
-      if (roomsData) {
-        const roomsByDorm: Record<string, any[]> = {};
-        roomsData.forEach(room => {
-          if (!roomsByDorm[room.dorm_id]) {
-            roomsByDorm[room.dorm_id] = [];
-          }
-          roomsByDorm[room.dorm_id].push(room);
-        });
-        setRooms(roomsByDorm);
+        setOwnerId(owner.id);
+        dormsQuery = dormsQuery.eq("owner_id", owner.id);
+      } else {
+        // Admin sees all dorms - set ownerId to userId for form operations
+        setOwnerId(userId);
       }
+
+      // Fetch dorms
+      const { data: dormsData, error: dormsError } = await dormsQuery
+        .order("created_at", { ascending: false });
+
+      if (dormsError) {
+        console.error("Error loading dorms:", dormsError);
+        return;
+      }
+      
+      setDorms(dormsData || []);
+
+      // Fetch rooms for each dorm
+      if (dormsData && dormsData.length > 0) {
+        const dormIds = dormsData.map(d => d.id);
+        const { data: roomsData } = await supabase
+          .from("rooms")
+          .select("*")
+          .in("dorm_id", dormIds);
+
+        if (roomsData) {
+          const roomsByDorm: Record<string, any[]> = {};
+          roomsData.forEach(room => {
+            if (!roomsByDorm[room.dorm_id]) {
+              roomsByDorm[room.dorm_id] = [];
+            }
+            roomsByDorm[room.dorm_id].push(room);
+          });
+          setRooms(roomsByDorm);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching owner data:", error);
     }
   };
 

@@ -14,6 +14,7 @@ import {
 
 const menuItems = [
   { title: 'Dashboard', url: '/admin', icon: Home },
+  { title: 'Manage Dorms', url: '/owner', icon: Building2 },
   { title: 'Dorm Listings', url: '/admin/dorms', icon: Building2 },
   { title: 'Students', url: '/admin/students', icon: Users },
   { title: 'Notifications', url: '/admin/notifications', icon: FileText },

@@ -27,6 +27,7 @@ export default function RoomForm() {
     name: "",
     type: "",
     price: "",
+    deposit: "",
     area_m2: "",
     description: "",
     available: true,
@@ -57,6 +58,7 @@ export default function RoomForm() {
         name: data.name,
         type: data.type,
         price: data.price.toString(),
+        deposit: (data as any).deposit?.toString() || "",
         area_m2: data.area_m2?.toString() || "",
         description: data.description || "",
         available: data.available,
@@ -135,17 +137,18 @@ export default function RoomForm() {
 
     setLoading(true);
     try {
-      const roomData = {
-        dorm_id: dormId,
-        name: formData.name,
-        type: formData.type,
-        price: parseFloat(formData.price),
-        area_m2: formData.area_m2 ? parseFloat(formData.area_m2) : null,
-        description: formData.description || null,
-        images: images,
-        panorama_urls: panoramaUrls,
-        available: formData.available,
-      };
+    const roomData = {
+      dorm_id: dormId,
+      name: formData.name,
+      type: formData.type,
+      price: parseFloat(formData.price),
+      deposit: formData.deposit ? parseFloat(formData.deposit) : null,
+      area_m2: formData.area_m2 ? parseFloat(formData.area_m2) : null,
+      description: formData.description || null,
+      images: images,
+      panorama_urls: panoramaUrls,
+      available: formData.available,
+    };
 
       if (roomId) {
         const { error } = await supabase
