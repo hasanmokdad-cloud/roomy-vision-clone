@@ -107,13 +107,18 @@ function ProtectedRoute({
     return element;
   }
 
+  // If allowedRoles is provided, check if current role is in the list
+  if (allowedRoles && role && !allowedRoles.includes(role)) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
   // If user has NO role → send them to role selection (unless they're admin)
   if (!role && requiredRole !== "admin") {
     return <Navigate to="/select-role" replace />;
   }
 
-  // Role mismatch → unauthorized
-  if (requiredRole && role !== requiredRole) {
+  // Role mismatch → unauthorized (only if allowedRoles not specified)
+  if (!allowedRoles && requiredRole && role !== requiredRole) {
     return <Navigate to="/unauthorized" replace />;
   }
 
@@ -158,21 +163,21 @@ const AppRoutes = () => {
           <Route path="/boost-profile" element={<ProtectedRoute element={<BoostProfile />} requiredRole="student" />} />
           <Route path="/ai-chat" element={<ProtectedRoute element={<MobileSwipeLayout><AiChat /></MobileSwipeLayout>} requiredRole="student" />} />
 
-          {/* Owner Routes */}
-          <Route path="/owner" element={<ProtectedRoute element={<OwnerDashboard />} requiredRole="owner" />} />
-          <Route path="/owner/listings" element={<ProtectedRoute element={<OwnerListings />} requiredRole="owner" />} />
-          <Route path="/owner/dorms/new" element={<ProtectedRoute element={<AddNewDorm />} requiredRole="owner" />} />
-          <Route path="/owner/claim" element={<ProtectedRoute element={<ClaimDormNew />} requiredRole="owner" />} />
-          <Route path="/owner/dorms/:dormId/rooms" element={<ProtectedRoute element={<DormRooms />} requiredRole="owner" />} />
-          <Route path="/owner/dorms/:dormId/rooms/new" element={<ProtectedRoute element={<RoomForm />} requiredRole="owner" />} />
-          <Route path="/owner/dorms/:dormId/rooms/:roomId/edit" element={<ProtectedRoute element={<RoomForm />} requiredRole="owner" />} />
-          <Route path="/owner/bulk-import" element={<ProtectedRoute element={<BulkImport />} requiredRole="owner" />} />
-          <Route path="/owner/performance" element={<ProtectedRoute element={<OwnerPerformance />} requiredRole="owner" />} />
-          <Route path="/owner/add-dorm" element={<ProtectedRoute element={<OwnerAddDorm />} requiredRole="owner" />} />
-          <Route path="/owner/claim-dorm" element={<ProtectedRoute element={<ClaimDorm />} requiredRole="owner" />} />
-          <Route path="/owner/rooms" element={<ProtectedRoute element={<OwnerRooms />} requiredRole="owner" />} />
-          <Route path="/owner/bookings" element={<ProtectedRoute element={<OwnerBookings />} requiredRole="owner" />} />
-          <Route path="/owner/bulk-operations" element={<ProtectedRoute element={<BulkRoomOps />} requiredRole="owner" />} />
+          {/* Owner Routes - Admins can access all owner routes */}
+          <Route path="/owner" element={<ProtectedRoute element={<OwnerDashboard />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/listings" element={<ProtectedRoute element={<OwnerListings />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/dorms/new" element={<ProtectedRoute element={<AddNewDorm />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/claim" element={<ProtectedRoute element={<ClaimDormNew />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/dorms/:dormId/rooms" element={<ProtectedRoute element={<DormRooms />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/dorms/:dormId/rooms/new" element={<ProtectedRoute element={<RoomForm />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/dorms/:dormId/rooms/:roomId/edit" element={<ProtectedRoute element={<RoomForm />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/bulk-import" element={<ProtectedRoute element={<BulkImport />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/performance" element={<ProtectedRoute element={<OwnerPerformance />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/add-dorm" element={<ProtectedRoute element={<OwnerAddDorm />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/claim-dorm" element={<ProtectedRoute element={<ClaimDorm />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/rooms" element={<ProtectedRoute element={<OwnerRooms />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/bookings" element={<ProtectedRoute element={<OwnerBookings />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/bulk-operations" element={<ProtectedRoute element={<BulkRoomOps />} allowedRoles={["owner", "admin"]} />} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />} />

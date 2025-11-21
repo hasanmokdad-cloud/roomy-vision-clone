@@ -358,6 +358,11 @@ export default function DormDetail() {
                               <div className="text-right">
                                 <div className="text-2xl font-bold gradient-text">${room.price}</div>
                                 <div className="text-xs text-foreground/60">per month</div>
+                                {(room as any).deposit && (
+                                  <div className="text-sm text-foreground/60 mt-1">
+                                    Deposit: ${(room as any).deposit}
+                                  </div>
+                                )}
                               </div>
                             </div>
 
