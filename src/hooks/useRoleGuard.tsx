@@ -69,36 +69,16 @@ export function useRoleGuard(requiredRole?: AppRole) {
         attempts++;
         console.log(`🔄 useRoleGuard: Attempt ${attempts}/${maxAttempts} to fetch role for user ${user.id}`);
         
-        // Step 1: Get the role_id from user_roles
-        const { data: userRoleRow, error: userRoleError } = await supabase
-          .from("user_roles")
-          .select("role_id")
-          .eq("user_id", user.id)
-          .maybeSingle();
+        // Use security definer function to bypass RLS policies
+        const { data, error } = await supabase.rpc('get_user_role', { 
+          p_user_id: user.id 
+        });
 
-        if (userRoleError) {
-          console.error(`❌ useRoleGuard: user_roles fetch failed:`, userRoleError);
-        }
-
-        // Log what we got
-        console.log(`📊 useRoleGuard: user_roles data:`, userRoleRow);
-
-        if (userRoleRow?.role_id) {
-          // Step 2: Get the role name from roles table
-          const { data: roleData, error: roleError } = await supabase
-            .from("roles")
-            .select("name")
-            .eq("id", userRoleRow.role_id)
-            .single();
-
-          if (roleError) {
-            console.error(`❌ useRoleGuard: roles fetch failed:`, roleError);
-          } else {
-            resolvedRole = roleData?.name as AppRole | null;
-            console.log(`✅ useRoleGuard: Role found on attempt ${attempts}:`, resolvedRole);
-          }
+        if (error) {
+          console.error(`❌ useRoleGuard: get_user_role RPC failed:`, error);
         } else {
-          console.log(`⏳ useRoleGuard: No user_role found on attempt ${attempts}`);
+          resolvedRole = data as AppRole | null;
+          console.log(`✅ useRoleGuard: Role found on attempt ${attempts}:`, resolvedRole);
         }
 
         // Wait before retrying if no role found
