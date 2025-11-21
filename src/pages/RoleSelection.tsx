@@ -16,7 +16,7 @@ export default function RoleSelection() {
   const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
-    const checkEmailVerification = async () => {
+    const checkRoleAndRedirect = async () => {
       const {
         data: { session },
         error,
@@ -33,7 +33,7 @@ export default function RoleSelection() {
         "hasan.mokdad@aiesec.net",
       ];
 
-      // Check if user is admin (by role OR founder email) and redirect BEFORE email check
+      // Check if user already has a role
       const { data: roleRow } = await supabase
         .from("user_roles")
         .select("role_id, roles(name)")
@@ -46,19 +46,29 @@ export default function RoleSelection() {
         | "student"
         | undefined;
 
-      // Admins bypass email verification and role selection entirely
+      // If user already has a role, redirect to appropriate dashboard
       if (roleName === "admin" || defaultAdminEmails.includes(user.email ?? "")) {
         navigate("/admin", { replace: true });
         return;
       }
+      
+      if (roleName === "owner") {
+        navigate("/owner", { replace: true });
+        return;
+      }
+      
+      if (roleName === "student") {
+        navigate("/dashboard", { replace: true });
+        return;
+      }
 
-      // Check email verification status
+      // No role yet - check email verification and show role selection
       setEmailVerified(!!session.user.email_confirmed_at);
       setUserEmail(session.user.email || "");
       setLoading(false);
     };
 
-    void checkEmailVerification();
+    void checkRoleAndRedirect();
   }, [navigate]);
 
   const handleResendVerification = async () => {
@@ -114,6 +124,24 @@ export default function RoleSelection() {
       );
 
       const result = await resp.json();
+
+      // Handle 409 - user already has a different role
+      if (resp.status === 409) {
+        toast({
+          title: "Role already assigned",
+          description: `You are already registered as ${result.role}. Redirecting...`,
+        });
+        
+        // Redirect to their existing role's dashboard
+        if (result.role === "admin") {
+          navigate("/admin", { replace: true });
+        } else if (result.role === "owner") {
+          navigate("/owner", { replace: true });
+        } else if (result.role === "student") {
+          navigate("/dashboard", { replace: true });
+        }
+        return;
+      }
 
       if (!resp.ok) {
         toast({

@@ -38,7 +38,7 @@ export default function Auth() {
       toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Account created", description: "Check your inbox to verify your email before continuing." });
+    toast({ title: "Account created!", description: "You can sign in now. We've also emailed you a confirmation link." });
   };
 
   return (

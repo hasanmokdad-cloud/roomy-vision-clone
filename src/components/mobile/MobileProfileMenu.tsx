@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { User, Edit, Settings, LayoutDashboard, LogOut, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MobileProfileMenuProps {
   open: boolean;
@@ -12,11 +14,41 @@ interface MobileProfileMenuProps {
 }
 
 export function MobileProfileMenu({ open, onClose, onSignOut, userEmail }: MobileProfileMenuProps) {
+  const [dashboardHref, setDashboardHref] = useState('/dashboard');
+
+  // Fetch user role and set appropriate dashboard link
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: roleRow } = await supabase
+        .from("user_roles")
+        .select("roles(name)")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const roleName = roleRow?.roles?.name;
+
+      if (roleName === "admin") {
+        setDashboardHref("/admin");
+      } else if (roleName === "owner") {
+        setDashboardHref("/owner");
+      } else {
+        setDashboardHref("/dashboard");
+      }
+    };
+
+    if (open) {
+      void fetchUserRole();
+    }
+  }, [open]);
+
   const menuItems = [
     { icon: User, label: 'My Profile', href: '/profile' },
     { icon: Edit, label: 'Edit Profile', href: '/profile' },
     { icon: Settings, label: 'Settings', href: '/settings' },
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+    { icon: LayoutDashboard, label: 'Dashboard', href: dashboardHref },
   ];
 
   return (
