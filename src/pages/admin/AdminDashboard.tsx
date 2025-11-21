@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
+import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,10 +12,14 @@ import {
   CheckCircle2,
   ShieldAlert,
   Home,
+  LogOut,
+  LayoutDashboard,
+  ShieldCheck,
 } from "lucide-react";
 
 export default function AdminDashboard() {
   const { loading } = useRoleGuard("admin");
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     students: 0,
     owners: 0,
@@ -59,6 +64,11 @@ export default function AdminDashboard() {
     setStats(prev => ({ ...prev, pendingDorms: prev.pendingDorms - 1 }));
   };
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth", { replace: true });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -69,12 +79,45 @@ export default function AdminDashboard() {
 
   return (
     <motion.div
-      className="min-h-screen bg-gradient-to-b from-background to-muted/20 px-4 md:px-12 py-16"
+      className="min-h-screen bg-gradient-to-b from-background to-muted/20"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
     >
-      <div className="max-w-6xl mx-auto space-y-12">
+      {/* Top Navigation Bar */}
+      <div className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 md:px-12 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold gradient-text">Admin Panel</h2>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2"
+            >
+              <Home className="w-4 h-4" />
+              Home
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/admin")}
+              className="flex items-center gap-2"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Dashboard
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={handleSignOut}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 md:px-12 py-16 space-y-12">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-5xl font-extrabold gradient-text">
@@ -185,6 +228,48 @@ export default function AdminDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Footer Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/admin/students")}
+            className="relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br from-blue-500 to-cyan-400 text-white shadow-xl hover:shadow-2xl transition-all group"
+          >
+            <div className="flex flex-col items-center gap-4">
+              <Users className="w-12 h-12" />
+              <h3 className="text-xl font-bold">Manage Students</h3>
+              <p className="text-sm opacity-90">View and manage student profiles</p>
+            </div>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/admin/owners")}
+            className="relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br from-green-500 to-emerald-400 text-white shadow-xl hover:shadow-2xl transition-all group"
+          >
+            <div className="flex flex-col items-center gap-4">
+              <Building2 className="w-12 h-12" />
+              <h3 className="text-xl font-bold">Manage Owners</h3>
+              <p className="text-sm opacity-90">Oversee property owners</p>
+            </div>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/admin")}
+            className="relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br from-purple-500 to-pink-400 text-white shadow-xl hover:shadow-2xl transition-all group"
+          >
+            <div className="flex flex-col items-center gap-4">
+              <ShieldCheck className="w-12 h-12" />
+              <h3 className="text-xl font-bold">Review Pending Dorms</h3>
+              <p className="text-sm opacity-90">Verify dorm listings</p>
+            </div>
+          </motion.button>
+        </div>
       </div>
     </motion.div>
   );

@@ -51,6 +51,7 @@ export default function Intro() {
       return;
     }
 
+    // Admin always goes to /admin immediately
     if (role === "admin") {
       navigate("/admin", { replace: true });
     } else if (role === "owner") {

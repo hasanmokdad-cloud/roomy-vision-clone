@@ -74,6 +74,11 @@ function ProtectedRoute({
     );
   }
 
+  // Admin must NEVER see /select-role
+  if (role === "admin" && location.pathname === "/select-role") {
+    return <Navigate to="/admin" replace />;
+  }
+
   // Prevent users with existing roles from re-accessing /select-role
   if (location.pathname === "/select-role" && role) {
     if (role === "admin") return <Navigate to="/admin" replace />;
@@ -86,8 +91,8 @@ function ProtectedRoute({
     return element;
   }
 
-  // If user has NO role → send them to role selection
-  if (!role) {
+  // If user has NO role → send them to role selection (unless they're admin)
+  if (!role && requiredRole !== "admin") {
     return <Navigate to="/select-role" replace />;
   }
 
