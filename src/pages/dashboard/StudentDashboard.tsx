@@ -13,12 +13,14 @@ import { FavoritesRecommendations } from "@/components/dashboard/FavoritesRecomm
 export default function StudentDashboard() {
   const { loading, userId } = useRoleGuard("student");
   const [profileCompletion, setProfileCompletion] = useState(0);
+  const [hasOnboardingPreferences, setHasOnboardingPreferences] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!userId) return;
 
-    const calculateProfileCompletion = async () => {
+    const loadProfileData = async () => {
+      // Calculate profile completion
       const { data } = await supabase
         .from("students")
         .select("*")
@@ -32,9 +34,18 @@ export default function StudentDashboard() {
         ).length;
         setProfileCompletion(Math.round((filledFields / totalFields) * 100));
       }
+
+      // Check if user has completed onboarding preferences
+      const { data: prefsData } = await supabase
+        .from("user_preferences")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      setHasOnboardingPreferences(!!prefsData);
     };
 
-    calculateProfileCompletion();
+    loadProfileData();
   }, [userId]);
 
   if (loading) {
@@ -65,12 +76,14 @@ export default function StudentDashboard() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 mt-6 md:mt-0">
-            <Button
-              onClick={() => navigate("/onboarding")}
-              className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
-            >
-              🎯 Start AI Onboarding
-            </Button>
+            {!hasOnboardingPreferences && (
+              <Button
+                onClick={() => navigate("/onboarding")}
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
+              >
+                🎯 Start AI Onboarding
+              </Button>
+            )}
             <Button
               onClick={() => navigate("/ai-chat")}
               className="bg-gradient-to-r from-purple-600 via-blue-500 to-emerald-400 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
@@ -115,7 +128,7 @@ export default function StudentDashboard() {
         )}
 
         {/* Quick Access Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
           <Button
             onClick={() => navigate("/listings")}
             className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white h-16 text-lg font-semibold shadow-md hover:scale-105 transition-transform"
@@ -127,6 +140,12 @@ export default function StudentDashboard() {
             className="bg-gradient-to-r from-green-500 to-emerald-400 text-white h-16 text-lg font-semibold shadow-md hover:scale-105 transition-transform"
           >
             <Sparkles className="w-5 h-5 mr-2" /> AI Match
+          </Button>
+          <Button
+            onClick={() => navigate("/ai-roommate-match")}
+            className="bg-gradient-to-r from-pink-500 to-purple-500 text-white h-16 text-lg font-semibold shadow-md hover:scale-105 transition-transform"
+          >
+            👥 Find Roommates
           </Button>
           <Button
             onClick={() => navigate("/ai-chat")}
