@@ -13,6 +13,8 @@ import RoomContactCard from '@/components/listings/RoomContactCard';
 import { DormDetailSkeleton } from '@/components/skeletons/DormDetailSkeleton';
 import { ImageGallery } from '@/components/shared/ImageGallery';
 import { BookTourModal } from '@/components/bookings/BookTourModal';
+import { BookingCalendar } from '@/components/bookings/BookingCalendar';
+import { VirtualTourGallery } from '@/components/rooms/VirtualTourGallery';
 import type { RoomType } from '@/types/RoomType';
 import { logAnalyticsEvent } from '@/utils/analytics';
 
@@ -499,6 +501,25 @@ export default function DormDetail() {
                 </Card>
               )}
 
+              {/* Virtual Tour for Rooms from Database */}
+              {rooms.length > 0 && rooms.some(r => r.panorama_urls && r.panorama_urls.length > 0) && (
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold mb-4">360° Virtual Tours</h2>
+                  {rooms
+                    .filter(r => r.panorama_urls && r.panorama_urls.length > 0)
+                    .map((room) => (
+                      <div key={room.id} className="mb-4">
+                        <h3 className="text-lg font-semibold mb-2">{room.name}</h3>
+                        <VirtualTourGallery
+                          roomId={room.id}
+                          panoramaUrls={room.panorama_urls}
+                          editable={false}
+                        />
+                      </div>
+                    ))}
+                </div>
+              )}
+
               {/* Room Contact Cards */}
               {roomTypes.length > 0 && (
                 <div className="space-y-4">
@@ -553,6 +574,21 @@ export default function DormDetail() {
                   </Button>
                 </CardContent>
               </Card>
+
+              {/* Booking Calendar */}
+              {user && (
+                <BookingCalendar
+                  dormId={dorm.id}
+                  dormName={displayName}
+                  ownerId={dorm.owner_id}
+                  onSuccess={() => {
+                    toast({
+                      title: "Success!",
+                      description: "Your viewing request has been sent",
+                    });
+                  }}
+                />
+              )}
 
               {/* Contact Information */}
               {user && (
