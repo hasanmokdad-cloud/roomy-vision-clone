@@ -180,6 +180,19 @@ export default function RoleSelection() {
         }
       }
 
+      // Refresh session to get latest email_confirmed_at
+      console.log("🔄 Refreshing session before navigation...");
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+
+      if (refreshError) {
+        console.error("❌ Session refresh failed:", refreshError);
+      } else {
+        console.log("✅ Session refreshed successfully, email_confirmed_at:", refreshData.session?.user.email_confirmed_at);
+      }
+
+      // Small delay to ensure session is fully updated
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       // Redirect logic
       if (assignedRole === "student") {
         console.log("✅ Navigating to /onboarding");

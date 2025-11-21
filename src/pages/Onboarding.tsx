@@ -20,14 +20,26 @@ export default function Onboarding() {
 
   useEffect(() => {
     async function init() {
+      // First refresh session to get latest email verification status
+      console.log("🔄 Onboarding: Refreshing session...");
+      const { data: refreshedSession, error: refreshError } = await supabase.auth.refreshSession();
+
+      if (refreshError) {
+        console.error("❌ Onboarding: Session refresh failed:", refreshError);
+      }
+
       const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData?.session) {
+      const sessionToUse = refreshedSession?.session || sessionData?.session;
+      
+      if (!sessionToUse) {
         navigate("/auth", { replace: true });
         return;
       }
 
+      console.log("📧 Onboarding: Email confirmed at:", sessionToUse.user.email_confirmed_at);
+
       // Check email verification
-      if (!sessionData.session.user.email_confirmed_at) {
+      if (!sessionToUse.user.email_confirmed_at) {
         toast({
           title: "Email verification required",
           description: "Please verify your email before continuing with onboarding.",
@@ -40,7 +52,7 @@ export default function Onboarding() {
       const { data: roleRow } = await supabase
         .from("user_roles")
         .select("roles(name)")
-        .eq("user_id", sessionData.session.user.id)
+        .eq("user_id", sessionToUse.user.id)
         .maybeSingle();
 
       const roleName = roleRow?.roles?.name as string | null;
