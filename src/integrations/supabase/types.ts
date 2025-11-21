@@ -840,6 +840,70 @@ export type Database = {
         }
         Relationships: []
       }
+      rooms: {
+        Row: {
+          area_m2: number | null
+          available: boolean | null
+          created_at: string
+          description: string | null
+          dorm_id: string
+          id: string
+          images: string[] | null
+          name: string
+          price: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          area_m2?: number | null
+          available?: boolean | null
+          created_at?: string
+          description?: string | null
+          dorm_id: string
+          id?: string
+          images?: string[] | null
+          name: string
+          price: number
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          area_m2?: number | null
+          available?: boolean | null
+          created_at?: string
+          description?: string | null
+          dorm_id?: string
+          id?: string
+          images?: string[] | null
+          name?: string
+          price?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+        ]
+      }
       saved_items: {
         Row: {
           created_at: string
@@ -1304,7 +1368,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "owner" | "student"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1431,8 +1495,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["admin", "owner", "student"],
-    },
+    Enums: {},
   },
 } as const

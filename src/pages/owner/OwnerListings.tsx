@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Plus } from 'lucide-react';
+import { Edit, Trash2, Plus, DoorOpen } from 'lucide-react';
 import { useOwnerDormsQuery } from '@/hooks/useOwnerDormsQuery';
 import {
   Table,
@@ -123,6 +123,14 @@ export default function OwnerListings() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => navigate(`/owner/dorms/${dorm.id}/rooms`)}
+                        title="Manage Rooms"
+                      >
+                        <DoorOpen className="w-4 h-4" />
+                      </Button>
                       <Button size="sm" variant="ghost">
                         <Edit className="w-4 h-4" />
                       </Button>
