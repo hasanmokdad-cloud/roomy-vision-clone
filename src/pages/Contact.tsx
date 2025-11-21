@@ -9,10 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Phone, MapPin, MessageCircle } from 'lucide-react';
+import { Mail, Phone, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { validateName, validateEmail, sanitizeInput, validateMessage } from '@/utils/inputValidation';
 import { supabase } from '@/integrations/supabase/client';
+import { WhatsAppDropdown } from '@/components/shared/WhatsAppDropdown';
 
 export default function Contact() {
   const { toast } = useToast();
@@ -230,7 +231,7 @@ export default function Contact() {
                     </div>
                     <div>
                       <p className="font-semibold">Email</p>
-                      <p className="text-sm text-foreground/70">mekdadhassan09@gmail.com</p>
+                      <p className="text-sm text-foreground/70">nader.safa@lau.edu</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -239,7 +240,7 @@ export default function Contact() {
                     </div>
                     <div>
                       <p className="font-semibold">Phone</p>
-                      <p className="text-sm text-foreground/70">+961 81 858 026</p>
+                      <p className="text-sm text-foreground/70">+961 76 977 539</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -260,27 +261,13 @@ export default function Contact() {
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className="glass-hover rounded-3xl p-10 neon-border neon-glow"
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                    <MessageCircle className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold">WhatsApp Support</h3>
+                <div className="mb-4">
+                  <h3 className="text-xl font-bold mb-2">WhatsApp Support</h3>
+                  <p className="text-foreground/70">
+                    Get instant help via WhatsApp
+                  </p>
                 </div>
-                <p className="text-foreground/70 mb-4">
-                  Get instant help via WhatsApp
-                </p>
-                <Button 
-                  asChild
-                  className="w-full bg-gradient-to-r from-primary to-secondary"
-                >
-                  <a 
-                    href="https://wa.me/96181858026" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    Chat on WhatsApp
-                  </a>
-                </Button>
+                <WhatsAppDropdown />
               </motion.div>
             </div>
           </div>

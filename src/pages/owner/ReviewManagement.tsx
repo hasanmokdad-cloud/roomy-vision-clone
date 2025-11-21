@@ -1,0 +1,224 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useRoleGuard } from '@/hooks/useRoleGuard';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Star } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+export default function ReviewManagement() {
+  const { loading, userId } = useRoleGuard('owner');
+  const { toast } = useToast();
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [ownerId, setOwnerId] = useState<string | null>(null);
+  const [responseTexts, setResponseTexts] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (userId) {
+      loadOwnerData();
+    }
+  }, [userId]);
+
+  const loadOwnerData = async () => {
+    // Get owner ID
+    const { data: owner } = await supabase
+      .from('owners')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (owner) {
+      setOwnerId(owner.id);
+      loadReviews(owner.id);
+    }
+  };
+
+  const loadReviews = async (ownerId: string) => {
+    // First get dorm IDs for this owner
+    const { data: dorms } = await supabase
+      .from('dorms')
+      .select('id')
+      .eq('owner_id', ownerId);
+
+    if (!dorms || dorms.length === 0) {
+      setReviews([]);
+      return;
+    }
+
+    const dormIds = dorms.map(d => d.id);
+
+    const { data } = await supabase
+      .from('reviews')
+      .select(`
+        *,
+        students(full_name),
+        dorms(dorm_name, name),
+        review_responses(*)
+      `)
+      .in('dorm_id', dormIds)
+      .order('created_at', { ascending: false });
+
+    setReviews(data || []);
+  };
+
+  const handleRespond = async (reviewId: string) => {
+    if (!responseTexts[reviewId]?.trim() || !ownerId) return;
+
+    try {
+      const { error } = await supabase.from('review_responses').insert({
+        review_id: reviewId,
+        owner_id: ownerId,
+        response_text: responseTexts[reviewId].trim(),
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Response posted',
+        description: 'Your response has been added to the review',
+      });
+
+      setResponseTexts({ ...responseTexts, [reviewId]: '' });
+      if (ownerId) loadReviews(ownerId);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const renderStars = (rating: number) => {
+    return (
+      <div className="flex gap-0.5">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`w-4 h-4 ${star <= rating ? 'fill-primary text-primary' : 'text-muted'}`}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  const filterReviews = (status: string) => {
+    if (status === 'all') return reviews;
+    return reviews.filter(r => r.status === status);
+  };
+
+  if (loading) {
+    return <div className="p-6">Loading...</div>;
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold gradient-text">Review Management</h1>
+        <p className="text-foreground/60 mt-2">Respond to reviews from your guests</p>
+      </div>
+
+      <Tabs defaultValue="approved" className="w-full">
+        <TabsList>
+          <TabsTrigger value="approved">Approved ({filterReviews('approved').length})</TabsTrigger>
+          <TabsTrigger value="pending">Pending ({filterReviews('pending').length})</TabsTrigger>
+          <TabsTrigger value="all">All ({reviews.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="approved" className="space-y-4">
+          {filterReviews('approved').map(review => (
+            <ReviewManagementCard
+              key={review.id}
+              review={review}
+              responseText={responseTexts[review.id] || ''}
+              onResponseChange={(text) => setResponseTexts({ ...responseTexts, [review.id]: text })}
+              onSubmitResponse={() => handleRespond(review.id)}
+              renderStars={renderStars}
+            />
+          ))}
+        </TabsContent>
+
+        <TabsContent value="pending" className="space-y-4">
+          {filterReviews('pending').map(review => (
+            <ReviewManagementCard
+              key={review.id}
+              review={review}
+              responseText={responseTexts[review.id] || ''}
+              onResponseChange={(text) => setResponseTexts({ ...responseTexts, [review.id]: text })}
+              onSubmitResponse={() => handleRespond(review.id)}
+              renderStars={renderStars}
+            />
+          ))}
+        </TabsContent>
+
+        <TabsContent value="all" className="space-y-4">
+          {reviews.map(review => (
+            <ReviewManagementCard
+              key={review.id}
+              review={review}
+              responseText={responseTexts[review.id] || ''}
+              onResponseChange={(text) => setResponseTexts({ ...responseTexts, [review.id]: text })}
+              onSubmitResponse={() => handleRespond(review.id)}
+              renderStars={renderStars}
+            />
+          ))}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function ReviewManagementCard({ review, responseText, onResponseChange, onSubmitResponse, renderStars }: any) {
+  const hasResponse = review.review_responses && review.review_responses.length > 0;
+
+  return (
+    <Card className="p-6">
+      <div className="space-y-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold">{review.students?.full_name || 'Anonymous'}</h3>
+              <Badge variant={review.status === 'approved' ? 'default' : 'secondary'}>
+                {review.status}
+              </Badge>
+            </div>
+            <p className="text-sm text-foreground/60">{review.dorms?.dorm_name || review.dorms?.name}</p>
+            <div className="flex items-center gap-2 mt-2">
+              {renderStars(review.rating)}
+              <span className="text-sm text-foreground/60">
+                {new Date(review.created_at).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h4 className="font-medium mb-1">{review.title}</h4>
+          {review.comment && <p className="text-sm text-foreground/80">{review.comment}</p>}
+        </div>
+
+        {hasResponse ? (
+          <div className="bg-muted/30 p-4 rounded-lg">
+            <p className="text-sm font-medium mb-1">Your Response</p>
+            <p className="text-sm text-foreground/80">{review.review_responses[0].response_text}</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Textarea
+              placeholder="Write your response..."
+              value={responseText}
+              onChange={(e) => onResponseChange(e.target.value)}
+              rows={3}
+            />
+            <Button onClick={onSubmitResponse} disabled={!responseText.trim()}>
+              Post Response
+            </Button>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}

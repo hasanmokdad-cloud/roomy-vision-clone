@@ -1,0 +1,46 @@
+{
+  "nav": {
+    "home": "Home",
+    "dorms": "Dorms",
+    "messages": "Messages",
+    "aiMatch": "AI Match",
+    "about": "About",
+    "contact": "Contact",
+    "profile": "Profile",
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "signOut": "Sign Out"
+  },
+  "buttons": {
+    "getStarted": "Get Started",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "loadMore": "Load More",
+    "backToListings": "Back to Listings",
+    "contactOwner": "Contact Owner",
+    "bookTour": "Book Virtual Tour"
+  },
+  "settings": {
+    "title": "Settings",
+    "theme": "Theme",
+    "notifications": "Notifications",
+    "language": "Language",
+    "savedDorms": "Saved Dorms",
+    "passwordSecurity": "Password & Security",
+    "changePassword": "Change Password",
+    "enable2FA": "Enable 2FA",
+    "aiMemory": "AI Memory",
+    "saveSettings": "Save Settings"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "filter": "Filter"
+  }
+}

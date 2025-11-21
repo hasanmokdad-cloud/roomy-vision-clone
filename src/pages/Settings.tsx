@@ -15,11 +15,13 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { settingsManager, type UserSettings } from '@/utils/settings';
 import { supabase } from '@/integrations/supabase/client';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useRoleGuard } from '@/hooks/useRoleGuard';
 
 export default function Settings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { loading, userId } = useAuthGuard();
+  const { role } = useRoleGuard();
   const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
   const [settings, setSettings] = useState<UserSettings>(settingsManager.load());
@@ -173,7 +175,11 @@ export default function Settings() {
                   <Bell className="w-6 h-6 text-primary" />
                   <div>
                     <h3 className="text-lg font-semibold text-white">Notifications</h3>
-                    <p className="text-sm text-white/60">Receive updates about new dorms</p>
+                    <p className="text-sm text-white/60">
+                      {role === 'owner' ? 'Receive updates about new bookings and inquiries' : 
+                       role === 'admin' ? 'Receive platform-wide updates and alerts' :
+                       'Receive updates about new dorms'}
+                    </p>
                   </div>
                 </div>
                 <Switch
@@ -185,25 +191,27 @@ export default function Settings() {
               </div>
             </Card>
 
-            {/* Saved / Favorites */}
-            <Card className="glass p-6 border-white/20">
-              <div className="flex items-center gap-4 mb-4">
-                <Heart className="w-6 h-6 text-primary" />
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Saved Dorms</h3>
-                  <p className="text-sm text-white/60">
-                    {savedItems.length} {savedItems.length === 1 ? 'item' : 'items'} saved
-                  </p>
+            {/* Saved / Favorites - Only show for students */}
+            {role === 'student' && (
+              <Card className="glass p-6 border-white/20">
+                <div className="flex items-center gap-4 mb-4">
+                  <Heart className="w-6 h-6 text-primary" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">Saved Dorms</h3>
+                    <p className="text-sm text-white/60">
+                      {savedItems.length} {savedItems.length === 1 ? 'item' : 'items'} saved
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate('/profile')}
-              >
-                View Saved Items
-              </Button>
-            </Card>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => navigate('/profile')}
+                >
+                  View Saved Items
+                </Button>
+              </Card>
+            )}
 
             {/* Password & Security */}
             <Card className="glass p-6 border-white/20">

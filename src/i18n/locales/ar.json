@@ -1,0 +1,46 @@
+{
+  "nav": {
+    "home": "الرئيسية",
+    "dorms": "السكن الجامعي",
+    "messages": "الرسائل",
+    "aiMatch": "المطابقة الذكية",
+    "about": "من نحن",
+    "contact": "اتصل بنا",
+    "profile": "الملف الشخصي",
+    "dashboard": "لوحة التحكم",
+    "settings": "الإعدادات",
+    "signOut": "تسجيل الخروج"
+  },
+  "buttons": {
+    "getStarted": "ابدأ الآن",
+    "signIn": "تسجيل الدخول",
+    "signUp": "إنشاء حساب",
+    "loadMore": "تحميل المزيد",
+    "backToListings": "العودة للقوائم",
+    "contactOwner": "اتصل بالمالك",
+    "bookTour": "احجز جولة افتراضية"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "theme": "المظهر",
+    "notifications": "الإشعارات",
+    "language": "اللغة",
+    "savedDorms": "السكن المحفوظ",
+    "passwordSecurity": "كلمة المرور والأمان",
+    "changePassword": "تغيير كلمة المرور",
+    "enable2FA": "تفعيل المصادقة الثنائية",
+    "aiMemory": "ذاكرة الذكاء الاصطناعي",
+    "saveSettings": "حفظ الإعدادات"
+  },
+  "common": {
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "success": "نجح",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "search": "بحث",
+    "filter": "تصفية"
+  }
+}

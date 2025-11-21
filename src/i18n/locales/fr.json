@@ -1,0 +1,46 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "dorms": "Résidences",
+    "messages": "Messages",
+    "aiMatch": "Correspondance IA",
+    "about": "À propos",
+    "contact": "Contact",
+    "profile": "Profil",
+    "dashboard": "Tableau de bord",
+    "settings": "Paramètres",
+    "signOut": "Se déconnecter"
+  },
+  "buttons": {
+    "getStarted": "Commencer",
+    "signIn": "Se connecter",
+    "signUp": "S'inscrire",
+    "loadMore": "Charger plus",
+    "backToListings": "Retour aux annonces",
+    "contactOwner": "Contacter le propriétaire",
+    "bookTour": "Réserver une visite virtuelle"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "theme": "Thème",
+    "notifications": "Notifications",
+    "language": "Langue",
+    "savedDorms": "Résidences sauvegardées",
+    "passwordSecurity": "Mot de passe et sécurité",
+    "changePassword": "Changer le mot de passe",
+    "enable2FA": "Activer 2FA",
+    "aiMemory": "Mémoire IA",
+    "saveSettings": "Enregistrer les paramètres"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "search": "Rechercher",
+    "filter": "Filtrer"
+  }
+}
