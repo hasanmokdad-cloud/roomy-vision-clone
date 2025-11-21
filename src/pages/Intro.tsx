@@ -1,3 +1,4 @@
+// src/pages/Intro.tsx
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import EntryAnimation from "@/components/EntryAnimation";
@@ -15,29 +16,48 @@ export default function Intro() {
   }, []);
 
   const navigateBasedOnRole = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     if (!session) {
       navigate("/auth", { replace: true });
       return;
     }
 
+    const user = session.user;
+
     // Fetch role using join
     const { data: roleRow } = await supabase
       .from("user_roles")
       .select("role_id, roles(name)")
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .maybeSingle();
 
-    const role = roleRow?.roles?.name;
+    const defaultAdminEmails = [
+      "hassan.mokdad01@lau.edu",
+      "hasan.mokdad@aiesec.net",
+    ];
+
+    let role = roleRow?.roles?.name as "admin" | "owner" | "student" | undefined;
+
+    // Fallback: treat founder emails as admin if no role row exists yet
+    if (!role && defaultAdminEmails.includes(user.email ?? "")) {
+      role = "admin";
+    }
 
     if (!role) {
       navigate("/select-role", { replace: true });
       return;
     }
 
-    if (role === "admin") navigate("/admin", { replace: true });
-    else if (role === "owner") navigate("/owner", { replace: true });
-    else if (role === "student") navigate("/dashboard", { replace: true });
+    if (role === "admin") {
+      navigate("/admin", { replace: true });
+    } else if (role === "owner") {
+      navigate("/owner", { replace: true });
+    } else if (role === "student") {
+      navigate("/dashboard", { replace: true });
+    }
   };
 
   const handleComplete = async () => {
