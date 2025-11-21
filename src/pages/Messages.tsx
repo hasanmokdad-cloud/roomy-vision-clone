@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import BottomNav from '@/components/BottomNav';
+import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
 
 type Conversation = {
   id: string;
@@ -63,24 +64,20 @@ export default function Messages() {
       handleAutoMessage();
     }
 
-    // Subscribe to new messages
-    const messagesChannel = supabase
-      .channel('messages-changes')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages'
-      }, (payload) => {
-        const newMessage = payload.new as Message;
-        if (newMessage.conversation_id === selectedConversation) {
-          setMessages(prev => [...prev, newMessage]);
-          // Mark as read if sender is not current user
-          if (newMessage.sender_id !== userId) {
-            markAsRead(newMessage.id);
-          }
+    // Subscribe to new messages using realtime utility
+    const messagesChannel = subscribeTo("messages", (payload) => {
+      const newMessage = payload.new as Message;
+      if (newMessage.conversation_id === selectedConversation) {
+        setMessages(prev => [...prev, newMessage]);
+        if (newMessage.sender_id !== userId) {
+          markAsRead(newMessage.id);
         }
-      })
-      .subscribe();
+      }
+    });
+
+    const conversationsChannel = subscribeTo("conversations", () => {
+      loadConversations();
+    });
 
     // Subscribe to typing indicators using presence
     const presenceChannel = supabase.channel('typing-presence', {
@@ -102,7 +99,8 @@ export default function Messages() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(messagesChannel);
+      unsubscribeFrom(messagesChannel);
+      unsubscribeFrom(conversationsChannel);
       supabase.removeChannel(presenceChannel);
     };
   }, [userId, selectedConversation]);

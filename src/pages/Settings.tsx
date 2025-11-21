@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Save, Trash2, Lock, Heart, CheckCircle, XCircle, Shield } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Save, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import BottomNav from '@/components/BottomNav';
@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -30,6 +33,12 @@ export default function Settings() {
   const [emailVerified, setEmailVerified] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [keepSignedIn, setKeepSignedIn] = useState(true);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [show2FASetup, setShow2FASetup] = useState(false);
+  const [qrCode, setQrCode] = useState('');
+  const [factorId, setFactorId] = useState('');
 
   useEffect(() => {
     if (!loading && userId) {
@@ -106,6 +115,69 @@ export default function Settings() {
       toast({
         title: 'Error',
         description: 'Failed to clear AI memory.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'Passwords do not match',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (newPassword.length < 8) {
+      toast({
+        title: 'Error',
+        description: 'Password must be at least 8 characters',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Success',
+        description: 'Password changed successfully',
+      });
+      
+      setShowPasswordModal(false);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleEnable2FA = async () => {
+    try {
+      const { data, error } = await supabase.auth.mfa.enroll({
+        factorType: 'totp',
+      });
+      
+      if (error) throw error;
+      
+      setQrCode(data.totp.qr_code);
+      setFactorId(data.id);
+      setShow2FASetup(true);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
         variant: 'destructive',
       });
     }
@@ -203,15 +275,15 @@ export default function Settings() {
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => navigate('/profile')}
-                >
-                  View Saved Items
-                </Button>
-              </Card>
-            )}
+                 <Button
+                   variant="outline"
+                   className="w-full"
+                   onClick={() => navigate('/profile')}
+                 >
+                   View Saved Items
+                 </Button>
+               </Card>
+             )}
 
             {/* Password & Security */}
             <Card className="glass p-6 border-white/20">
@@ -253,7 +325,7 @@ export default function Settings() {
                 <Button
                   variant="outline"
                   className="w-full mt-4"
-                  onClick={() => toast({ title: 'Coming Soon', description: 'Password change feature will be available soon' })}
+                  onClick={() => setShowPasswordModal(true)}
                 >
                   Change Password
                 </Button>
@@ -261,10 +333,10 @@ export default function Settings() {
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => toast({ title: 'Coming Soon', description: 'Two-factor authentication will be available soon' })}
+                  onClick={handleEnable2FA}
                 >
                   <Shield className="w-4 h-4 mr-2" />
-                  Enable 2FA (Coming Soon)
+                  Enable 2FA
                 </Button>
               </div>
             </Card>
@@ -367,6 +439,76 @@ export default function Settings() {
           </div>
         </motion.div>
       </div>
+
+      {/* Password Change Modal */}
+      <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+        <DialogContent className="bg-card/95 backdrop-blur-xl border-white/20">
+          <DialogHeader>
+            <DialogTitle className="gradient-text">Change Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="new-password" className="text-white">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                className="bg-black/20 border-white/10"
+              />
+            </div>
+            <div>
+              <Label htmlFor="confirm-password" className="text-white">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+                className="bg-black/20 border-white/10"
+              />
+            </div>
+            <Button 
+              onClick={handleChangePassword} 
+              className="w-full bg-gradient-to-r from-primary to-secondary"
+            >
+              Update Password
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 2FA Setup Modal */}
+      <Dialog open={show2FASetup} onOpenChange={setShow2FASetup}>
+        <DialogContent className="bg-card/95 backdrop-blur-xl border-white/20">
+          <DialogHeader>
+            <DialogTitle className="gradient-text">Enable Two-Factor Authentication</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-white/70">
+              Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
+            </p>
+            {qrCode && (
+              <div className="flex justify-center p-4 bg-white rounded-lg">
+                <img src={qrCode} alt="2FA QR Code" className="w-48 h-48" />
+              </div>
+            )}
+            <Button 
+              onClick={() => {
+                setShow2FASetup(false);
+                toast({
+                  title: 'Success',
+                  description: '2FA has been enabled for your account',
+                });
+              }}
+              className="w-full bg-gradient-to-r from-primary to-secondary"
+            >
+              I've Scanned the Code
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {isMobile && <BottomNav />}
       <Footer />

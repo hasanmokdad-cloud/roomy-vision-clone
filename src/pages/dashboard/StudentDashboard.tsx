@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Bookmark, MessageSquare, Sparkles, User } from "lucide-react";
 import { FavoritesRecommendations } from "@/components/dashboard/FavoritesRecommendations";
+import { subscribeTo, unsubscribeFrom } from "@/lib/supabaseRealtime";
 
 export default function StudentDashboard() {
   const { loading, userId } = useRoleGuard("student");
@@ -46,6 +47,20 @@ export default function StudentDashboard() {
     };
 
     loadProfileData();
+
+    // Real-time subscriptions
+    const preferencesChannel = subscribeTo("user_preferences", () => {
+      loadProfileData();
+    });
+
+    const bookingsChannel = subscribeTo("bookings", () => {
+      loadProfileData();
+    });
+
+    return () => {
+      unsubscribeFrom(preferencesChannel);
+      unsubscribeFrom(bookingsChannel);
+    };
   }, [userId]);
 
   if (loading) {

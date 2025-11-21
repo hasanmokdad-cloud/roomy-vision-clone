@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Home, MessageSquare, TrendingUp } from "lucide-react";
 import { NotificationBell } from "@/components/owner/NotificationBell";
 import { DormForm } from "@/components/owner/DormForm";
+import { subscribeTo, unsubscribeFrom } from "@/lib/supabaseRealtime";
 
 export default function OwnerDashboard() {
   const { loading, userId, role } = useRoleGuard();
@@ -24,6 +25,25 @@ export default function OwnerDashboard() {
   useEffect(() => {
     if (!userId) return;
     fetchOwnerData();
+
+    // Real-time subscriptions
+    const dormsChannel = subscribeTo("dorms", () => {
+      fetchOwnerData();
+    });
+    
+    const roomsChannel = subscribeTo("rooms", () => {
+      fetchOwnerData();
+    });
+    
+    const bookingsChannel = subscribeTo("bookings", () => {
+      fetchOwnerData();
+    });
+
+    return () => {
+      unsubscribeFrom(dormsChannel);
+      unsubscribeFrom(roomsChannel);
+      unsubscribeFrom(bookingsChannel);
+    };
   }, [userId]);
 
   const fetchOwnerData = async () => {

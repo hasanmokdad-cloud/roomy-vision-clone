@@ -58,6 +58,7 @@ const AdminLogs = lazy(() => import("./pages/admin/AdminLogs"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const AdminDormClaims = lazy(() => import("./pages/admin/AdminDormClaims"));
+const ReviewManagement = lazy(() => import("./pages/owner/ReviewManagement"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -178,6 +179,7 @@ const AppRoutes = () => {
           <Route path="/owner/rooms" element={<ProtectedRoute element={<OwnerRooms />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/bookings" element={<ProtectedRoute element={<OwnerBookings />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/bulk-operations" element={<ProtectedRoute element={<BulkRoomOps />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/reviews" element={<ProtectedRoute element={<ReviewManagement />} allowedRoles={["owner", "admin"]} />} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />} />
