@@ -36,7 +36,7 @@ export default function RoleSelection() {
       // Check if user already has a role
       const { data: roleRow } = await supabase
         .from("user_roles")
-        .select("role_id, roles(name)")
+        .select("roles(name)")
         .eq("user_id", user.id)
         .maybeSingle();
 

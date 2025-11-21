@@ -26,7 +26,7 @@ export function MobileProfileMenu({ open, onClose, onSignOut, userEmail }: Mobil
         .from("user_roles")
         .select("roles(name)")
         .eq("user_id", user.id)
-        .maybeSingle();
+        .single();
 
       const roleName = roleRow?.roles?.name;
 
