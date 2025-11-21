@@ -15,6 +15,7 @@ import { ImageGallery } from '@/components/shared/ImageGallery';
 import { BookTourModal } from '@/components/bookings/BookTourModal';
 import { BookingCalendar } from '@/components/bookings/BookingCalendar';
 import { VirtualTourGallery } from '@/components/rooms/VirtualTourGallery';
+import { ReviewList } from '@/components/reviews/ReviewList';
 import type { RoomType } from '@/types/RoomType';
 import { logAnalyticsEvent } from '@/utils/analytics';
 
@@ -692,6 +693,16 @@ export default function DormDetail() {
           </div>
         </div>
       </main>
+
+      {/* Reviews & Ratings Section */}
+      <div className="container mx-auto px-4 pb-12 max-w-6xl">
+        <Card className="glass-hover">
+          <CardContent className="p-6">
+            <h2 className="text-3xl font-bold mb-6">Reviews & Ratings</h2>
+            <ReviewList dormId={id!} />
+          </CardContent>
+        </Card>
+      </div>
 
       <ImageGallery
         images={galleryImages}
