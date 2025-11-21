@@ -68,9 +68,9 @@ serve(async (req) => {
     }
 
     // Check if user already has a role
-    const { data: existing, error: existingError } = await supabase
+    const { data: existingRole, error: existingError } = await supabase
       .from("user_roles")
-      .select("user_id")
+      .select("id, role_id, roles(name)")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -82,23 +82,43 @@ serve(async (req) => {
       });
     }
 
-    if (existing) {
-      return new Response(JSON.stringify({ error: "Role already set" }), {
-        status: 409,
-        headers: corsHeaders,
-      });
-    }
-
     // Lookup role_id from roles table
     const { data: roleRow, error: roleError } = await supabase
       .from("roles")
-      .select("id")
+      .select("id, name")
       .eq("name", chosen_role)
       .single();
 
     if (roleError || !roleRow) {
       return new Response(JSON.stringify({ error: "Role not found" }), {
         status: 400,
+        headers: corsHeaders,
+      });
+    }
+
+    // If user already has a role
+    if (existingRole) {
+      const existingRoleName = (existingRole.roles as any)?.name;
+      
+      // If trying to assign the same role, return success without error
+      if (existingRoleName === chosen_role) {
+        return new Response(JSON.stringify({ 
+          success: true, 
+          role: chosen_role,
+          alreadyHadRole: true 
+        }), {
+          status: 200,
+          headers: corsHeaders,
+        });
+      }
+      
+      // If trying to switch to a different role, return 409 with current role
+      return new Response(JSON.stringify({ 
+        success: false,
+        role: existingRoleName,
+        message: `Role already set to ${existingRoleName}`
+      }), {
+        status: 409,
         headers: corsHeaders,
       });
     }
@@ -153,7 +173,11 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ message: `Role '${chosen_role}' assigned` }), {
+    return new Response(JSON.stringify({ 
+      success: true,
+      role: chosen_role,
+      alreadyHadRole: false
+    }), {
       status: 200,
       headers: corsHeaders,
     });
