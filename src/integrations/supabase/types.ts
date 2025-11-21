@@ -1014,21 +1014,18 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
-          role: Database["public"]["Enums"]["app_role"]
           role_id: string
           user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
-          role: Database["public"]["Enums"]["app_role"]
           role_id: string
           user_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
           role_id?: string
           user_id?: string
         }
@@ -1222,15 +1219,11 @@ export type Database = {
         Args: { p_owner_id: string }
         Returns: boolean
       }
-      has_role:
-        | { Args: { _role_name: string; _user_id: string }; Returns: boolean }
-        | {
-            Args: {
-              _role: Database["public"]["Enums"]["app_role"]
-              _user_id: string
-            }
-            Returns: boolean
-          }
+      get_user_role: { Args: { p_user_id: string }; Returns: string }
+      has_role: {
+        Args: { _role_name: string; _user_id: string }
+        Returns: boolean
+      }
       recompute_dorm_engagement_scores: { Args: never; Returns: Json }
       reset_student_ai_memory: {
         Args: { p_student_id: string }
@@ -1246,7 +1239,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user" | "owner" | "student"
+      app_role: "admin" | "owner" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1374,7 +1367,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user", "owner", "student"],
+      app_role: ["admin", "owner", "student"],
     },
   },
 } as const
