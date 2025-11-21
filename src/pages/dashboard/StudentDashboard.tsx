@@ -105,13 +105,24 @@ export default function StudentDashboard() {
               Your profile is {profileCompletion}% complete.
             </p>
             <Progress value={profileCompletion} className="h-3" />
-            <Button
-              onClick={() => navigate("/profile")}
-              variant="outline"
-              className="mt-4"
-            >
-              Complete My Profile
-            </Button>
+            <div className="flex gap-2 mt-4">
+              <Button
+                onClick={() => navigate("/profile")}
+                variant="outline"
+                className="flex-1"
+              >
+                Complete My Profile
+              </Button>
+              {!hasOnboardingPreferences && (
+                <Button
+                  onClick={() => navigate("/boost-profile")}
+                  className="flex-1 bg-gradient-to-r from-primary to-secondary text-white"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Boost Profile
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
 

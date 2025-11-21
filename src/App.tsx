@@ -49,6 +49,7 @@ const BulkImport = lazy(() => import("./pages/owner/BulkImport"));
 const RoleSelection = lazy(() => import("./pages/RoleSelection"));
 const StudentProfile = lazy(() => import("./pages/StudentProfile"));
 const StudentMatch = lazy(() => import("./pages/StudentMatch"));
+const BoostProfile = lazy(() => import("./pages/BoostProfile"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 const AdminStudents = lazy(() => import("./pages/admin/AdminStudents"));
 const AdminDorms = lazy(() => import("./pages/admin/AdminDorms"));
@@ -153,6 +154,7 @@ const AppRoutes = () => {
           <Route path="/student-profile/:id" element={<ProtectedRoute element={<StudentProfile />} requiredRole="student" />} />
           <Route path="/ai-match" element={<ProtectedRoute element={<MobileSwipeLayout><AiMatch /></MobileSwipeLayout>} requiredRole="student" />} />
           <Route path="/ai-roommate-match" element={<ProtectedRoute element={<StudentMatch />} requiredRole="student" />} />
+          <Route path="/boost-profile" element={<ProtectedRoute element={<BoostProfile />} requiredRole="student" />} />
           <Route path="/ai-chat" element={<ProtectedRoute element={<MobileSwipeLayout><AiChat /></MobileSwipeLayout>} requiredRole="student" />} />
 
           {/* Owner Routes */}
