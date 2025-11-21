@@ -75,47 +75,97 @@ export default function StudentMatch() {
   const calculateCompatibility = (otherStudent: any, userPrefs: any, currentUserData: any): number => {
     let score = 0;
 
-    // Budget similarity (30 points)
+    // Budget similarity (25 points)
     if (currentUserData.budget && otherStudent.budget) {
       const budgetDiff = Math.abs(currentUserData.budget - otherStudent.budget);
-      const budgetScore = Math.max(0, 30 - (budgetDiff / 50));
+      const budgetScore = Math.max(0, 25 - (budgetDiff / 50));
       score += budgetScore;
     }
 
-    // Room type match (20 points)
+    // Room type match (15 points)
     if (currentUserData.room_type && otherStudent.room_type) {
       if (currentUserData.room_type === otherStudent.room_type) {
-        score += 20;
-      }
-    }
-
-    // University match (15 points)
-    if (currentUserData.university && otherStudent.university) {
-      if (currentUserData.university === otherStudent.university) {
         score += 15;
       }
     }
 
-    // Personality traits from preferences (35 points)
+    // University match (10 points)
+    if (currentUserData.university && otherStudent.university) {
+      if (currentUserData.university === otherStudent.university) {
+        score += 10;
+      }
+    }
+
+    // Basic personality traits from preferences (20 points)
     const otherPrefs = otherStudent.preferences || {};
     
     if (userPrefs && otherPrefs) {
       // Social vs Quiet preference
       if (userPrefs["Would you describe yourself as more Social or Quiet?"] === 
           otherPrefs["Would you describe yourself as more Social or Quiet?"]) {
-        score += 15;
+        score += 10;
       }
 
       // Study habits
       if (userPrefs["Do you prefer to study alone or with others?"] === 
           otherPrefs["Do you prefer to study alone or with others?"]) {
-        score += 10;
+        score += 5;
       }
 
       // Area preference
       if (userPrefs["Which area or campus would you prefer to live near?"] === 
           otherPrefs["Which area or campus would you prefer to live near?"]) {
-        score += 10;
+        score += 5;
+      }
+    }
+
+    // Boost Profile compatibility (30 points bonus if both have boost data)
+    const userBoost = userPrefs?.boost_profile;
+    const otherBoost = otherPrefs?.boost_profile;
+
+    if (userBoost && otherBoost) {
+      // Wake time compatibility (5 points)
+      if (userBoost.wake_time === otherBoost.wake_time) {
+        score += 5;
+      }
+
+      // Cleanliness level (5 points - closer values = higher score)
+      if (userBoost.cleanliness && otherBoost.cleanliness) {
+        const cleanDiff = Math.abs(userBoost.cleanliness - otherBoost.cleanliness);
+        score += Math.max(0, 5 - cleanDiff / 2);
+      }
+
+      // Noise tolerance (5 points)
+      if (userBoost.noise_tolerance && otherBoost.noise_tolerance) {
+        const noiseDiff = Math.abs(userBoost.noise_tolerance - otherBoost.noise_tolerance);
+        score += Math.max(0, 5 - noiseDiff / 2);
+      }
+
+      // Guest policy (3 points)
+      if (userBoost.guest_policy === otherBoost.guest_policy) {
+        score += 3;
+      }
+
+      // Cooking habits (3 points)
+      if (userBoost.cooking_habits === otherBoost.cooking_habits) {
+        score += 3;
+      }
+
+      // Social energy level (4 points)
+      if (userBoost.social_energy && otherBoost.social_energy) {
+        const socialDiff = Math.abs(userBoost.social_energy - otherBoost.social_energy);
+        score += Math.max(0, 4 - socialDiff / 2.5);
+      }
+
+      // Organization style (3 points)
+      if (userBoost.organization_style && otherBoost.organization_style) {
+        const orgDiff = Math.abs(userBoost.organization_style - otherBoost.organization_style);
+        score += Math.max(0, 3 - orgDiff / 3);
+      }
+
+      // Temperature preference (2 points)
+      if (userBoost.temperature_preference === otherBoost.temperature_preference) {
+        score += 2;
       }
     }
 
@@ -342,6 +392,39 @@ export default function StudentMatch() {
                 Showing top {filteredStudents.length} matches
               </span>
             </div>
+
+            {/* Boost Profile CTA */}
+            {currentUser && !currentUser.preferences?.boost_profile && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 }}
+                className="mt-6"
+              >
+                <Card className="bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-emerald-500/10 border-primary/30">
+                  <CardContent className="py-4">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex items-center gap-3">
+                        <Sparkles className="w-6 h-6 text-primary" />
+                        <div className="text-left">
+                          <p className="font-semibold">Boost Your Matches!</p>
+                          <p className="text-sm text-foreground/60">
+                            Answer 12 quick questions to improve compatibility by up to 30%
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => navigate("/boost-profile")}
+                        className="bg-gradient-to-r from-primary to-secondary text-white"
+                      >
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Boost Profile
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
           </div>
 
           {/* Filters */}
