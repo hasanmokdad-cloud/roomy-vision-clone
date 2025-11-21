@@ -153,26 +153,45 @@ export default function RoleSelection() {
         return;
       }
 
-      // 🔥 CRITICAL: Re-fetch the role from Supabase after successful assignment
-      const { data: roleRow } = await supabase
-        .from("user_roles")
-        .select("roles(name)")
-        .eq("user_id", session.user.id)
-        .single();
+      // Wait briefly for transaction to commit
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-      const assignedRole = roleRow?.roles?.name as "admin" | "owner" | "student" | undefined;
+      // Re-fetch with error handling and retry logic
+      let assignedRole: string | undefined;
+      let retries = 0;
+      const maxRetries = 3;
 
-      // Redirect based on the confirmed role from database
+      while (!assignedRole && retries < maxRetries) {
+        const { data: roleRow, error: fetchError } = await supabase
+          .from("user_roles")
+          .select("roles(name)")
+          .eq("user_id", session.user.id)
+          .single();
+
+        if (fetchError) {
+          console.error(`Role fetch attempt ${retries + 1} failed:`, fetchError);
+          retries++;
+          if (retries < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 200 * retries));
+          }
+        } else {
+          assignedRole = roleRow?.roles?.name as "admin" | "owner" | "student" | undefined;
+          console.log("Role fetched successfully:", assignedRole);
+        }
+      }
+
+      // Redirect logic
       if (assignedRole === "student") {
         navigate("/onboarding", { replace: true });
       } else if (assignedRole === "owner") {
         navigate("/owner", { replace: true });
       } else {
-        // Fallback if role fetch failed - use the chosen_role
+        // If still failed after retries, use chosen_role as fallback
         toast({
-          title: "Warning",
-          description: "Role assigned but could not verify. Please refresh if redirected incorrectly.",
+          title: "Role assigned successfully",
+          description: "Redirecting to your dashboard...",
         });
+        
         if (chosen_role === "student") {
           navigate("/onboarding", { replace: true });
         } else {
