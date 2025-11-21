@@ -850,6 +850,7 @@ export type Database = {
           id: string
           images: string[] | null
           name: string
+          panorama_urls: string[] | null
           price: number
           type: string
           updated_at: string
@@ -863,6 +864,7 @@ export type Database = {
           id?: string
           images?: string[] | null
           name: string
+          panorama_urls?: string[] | null
           price: number
           type: string
           updated_at?: string
@@ -876,6 +878,7 @@ export type Database = {
           id?: string
           images?: string[] | null
           name?: string
+          panorama_urls?: string[] | null
           price?: number
           type?: string
           updated_at?: string

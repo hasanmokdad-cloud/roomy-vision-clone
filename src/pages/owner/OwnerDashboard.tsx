@@ -106,7 +106,7 @@ export default function OwnerDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <Card
             className="cursor-pointer hover:shadow-xl transition-shadow bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/20"
             onClick={() => navigate('/owner/add-dorm')}
@@ -136,6 +136,23 @@ export default function OwnerDashboard() {
                 <div>
                   <h3 className="text-lg font-bold">Claim Existing Dorm</h3>
                   <p className="text-sm text-foreground/60">Link your verified dorm</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-xl transition-shadow bg-gradient-to-br from-secondary/10 to-accent/10 border-secondary/20"
+            onClick={() => navigate('/owner/bulk-operations')}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-secondary to-accent flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Bulk Operations</h3>
+                  <p className="text-sm text-foreground/60">Update multiple rooms</p>
                 </div>
               </div>
             </CardContent>

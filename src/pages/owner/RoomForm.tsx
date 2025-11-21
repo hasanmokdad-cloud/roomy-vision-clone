@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Loader2, Upload, X } from "lucide-react";
 import { compressImage } from "@/utils/imageCompression";
+import { VirtualTourGallery } from "@/components/rooms/VirtualTourGallery";
 
 const ROOM_TYPES = ["Single", "Double", "Triple", "Studio", "Suite", "Shared"];
 
@@ -31,6 +32,7 @@ export default function RoomForm() {
     available: true,
   });
   const [images, setImages] = useState<string[]>([]);
+  const [panoramaUrls, setPanoramaUrls] = useState<string[]>([]);
 
   useEffect(() => {
     if (roomId) {
@@ -60,6 +62,7 @@ export default function RoomForm() {
         available: data.available,
       });
       setImages(data.images || []);
+      setPanoramaUrls(data.panorama_urls || []);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -140,6 +143,7 @@ export default function RoomForm() {
         area_m2: formData.area_m2 ? parseFloat(formData.area_m2) : null,
         description: formData.description || null,
         images: images,
+        panorama_urls: panoramaUrls,
         available: formData.available,
       };
 
@@ -321,6 +325,20 @@ export default function RoomForm() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Virtual Tour Panoramas */}
+          <div>
+            <Label>360° Virtual Tour Images</Label>
+            <p className="text-xs text-foreground/60 mb-2">
+              Upload panoramic 360° images for immersive virtual tours
+            </p>
+            <VirtualTourGallery
+              roomId={roomId}
+              panoramaUrls={panoramaUrls}
+              editable={true}
+              onUpdate={setPanoramaUrls}
+            />
           </div>
 
           <div className="flex gap-4">
