@@ -36,13 +36,14 @@ export default function AdminStudents() {
       const userIds = data.map(s => s.user_id);
       const { data: rolesData } = await supabase
         .from('user_roles')
-        .select('user_id, role')
+        .select('user_id, role_id, roles(name)')
         .in('user_id', userIds);
       
       const rolesMap: Record<string, string[]> = {};
       rolesData?.forEach(r => {
         if (!rolesMap[r.user_id]) rolesMap[r.user_id] = [];
-        rolesMap[r.user_id].push(r.role);
+        const roleName = (r.roles as any)?.name;
+        if (roleName) rolesMap[r.user_id].push(roleName);
       });
       setUserRoles(rolesMap);
     }

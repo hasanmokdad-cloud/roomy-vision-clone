@@ -119,6 +119,40 @@ serve(async (req) => {
       });
     }
 
+    // Insert into appropriate profile table (students or owners)
+    const userEmail = user.email || "";
+    const userName = user.user_metadata?.full_name || userEmail.split("@")[0];
+
+    if (chosen_role === "student") {
+      const { error: studentError } = await supabase.from("students").insert([
+        {
+          user_id: user.id,
+          email: userEmail,
+          full_name: userName,
+        },
+      ]);
+
+      if (studentError) {
+        console.error("Student profile creation error:", studentError);
+        // Note: We don't fail the request if profile creation fails
+        // The role is already assigned successfully
+      }
+    } else if (chosen_role === "owner") {
+      const { error: ownerError } = await supabase.from("owners").insert([
+        {
+          user_id: user.id,
+          email: userEmail,
+          full_name: userName,
+        },
+      ]);
+
+      if (ownerError) {
+        console.error("Owner profile creation error:", ownerError);
+        // Note: We don't fail the request if profile creation fails
+        // The role is already assigned successfully
+      }
+    }
+
     return new Response(JSON.stringify({ message: `Role '${chosen_role}' assigned` }), {
       status: 200,
       headers: corsHeaders,

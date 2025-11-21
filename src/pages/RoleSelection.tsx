@@ -102,7 +102,7 @@ export default function RoleSelection() {
 
     try {
       const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/role-assign`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/assign-role`,
         {
           method: "POST",
           headers: {

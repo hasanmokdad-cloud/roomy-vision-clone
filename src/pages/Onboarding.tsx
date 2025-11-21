@@ -37,15 +37,16 @@ export default function Onboarding() {
         return;
       }
 
-      const { data: roles } = await supabase
+      const { data: roleRow } = await supabase
         .from("user_roles")
-        .select("role")
+        .select("role_id, roles(name)")
         .eq("user_id", sessionData.session.user.id)
-        .single();
+        .maybeSingle();
 
-      setRole(roles?.role ?? null);
+      const roleName = roleRow?.roles?.name as string | null;
+      setRole(roleName);
 
-      if (roles?.role === "owner" || roles?.role === "admin") {
+      if (roleName === "owner" || roleName === "admin") {
         navigate("/owner", { replace: true });
       }
     }
