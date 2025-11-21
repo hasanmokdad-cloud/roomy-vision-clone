@@ -43,6 +43,9 @@ const ClaimDormNew = lazy(() => import("./pages/owner/ClaimDormNew"));
 const OwnerRooms = lazy(() => import("./pages/owner/OwnerRooms"));
 const OwnerBookings = lazy(() => import("./pages/owner/OwnerBookings"));
 const OwnerListings = lazy(() => import("./pages/owner/OwnerListings"));
+const DormRooms = lazy(() => import("./pages/owner/DormRooms"));
+const RoomForm = lazy(() => import("./pages/owner/RoomForm"));
+const BulkImport = lazy(() => import("./pages/owner/BulkImport"));
 const RoleSelection = lazy(() => import("./pages/RoleSelection"));
 const StudentProfile = lazy(() => import("./pages/StudentProfile"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
@@ -155,6 +158,10 @@ const AppRoutes = () => {
           <Route path="/owner/listings" element={<ProtectedRoute element={<OwnerListings />} requiredRole="owner" />} />
           <Route path="/owner/dorms/new" element={<ProtectedRoute element={<AddNewDorm />} requiredRole="owner" />} />
           <Route path="/owner/claim" element={<ProtectedRoute element={<ClaimDormNew />} requiredRole="owner" />} />
+          <Route path="/owner/dorms/:dormId/rooms" element={<ProtectedRoute element={<DormRooms />} requiredRole="owner" />} />
+          <Route path="/owner/dorms/:dormId/rooms/new" element={<ProtectedRoute element={<RoomForm />} requiredRole="owner" />} />
+          <Route path="/owner/dorms/:dormId/rooms/:roomId/edit" element={<ProtectedRoute element={<RoomForm />} requiredRole="owner" />} />
+          <Route path="/owner/bulk-import" element={<ProtectedRoute element={<BulkImport />} requiredRole="owner" />} />
           <Route path="/owner/performance" element={<ProtectedRoute element={<OwnerPerformance />} requiredRole="owner" />} />
           <Route path="/owner/add-dorm" element={<ProtectedRoute element={<OwnerAddDorm />} requiredRole="owner" />} />
           <Route path="/owner/claim-dorm" element={<ProtectedRoute element={<ClaimDorm />} requiredRole="owner" />} />
