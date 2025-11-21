@@ -17,11 +17,33 @@ export default function Auth() {
   const navigate = useNavigate();
 
   const onLogin = async () => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    
     if (error) {
+      // Check if error is due to unconfirmed email
+      if (error.message.includes("Email not confirmed")) {
+        toast({ 
+          title: "Email not verified", 
+          description: "Please check your email and click the verification link before signing in.",
+          variant: "destructive" 
+        });
+        return;
+      }
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
       return;
     }
+
+    // Additional check for email confirmation
+    if (data.user && !data.user.email_confirmed_at) {
+      await supabase.auth.signOut();
+      toast({ 
+        title: "Email not verified", 
+        description: "Please verify your email before signing in. Check your inbox for the verification link.",
+        variant: "destructive" 
+      });
+      return;
+    }
+
     toast({ title: "Welcome back!", description: "Signed in successfully." });
     navigate("/intro", { replace: true });
   };
@@ -38,7 +60,12 @@ export default function Auth() {
       toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Account created!", description: "You can sign in now. We've also emailed you a confirmation link." });
+    toast({ 
+      title: "Check your email!", 
+      description: "We've sent you a verification link. Please verify your email before signing in.",
+      duration: 6000
+    });
+    setTab("login");
   };
 
   return (
