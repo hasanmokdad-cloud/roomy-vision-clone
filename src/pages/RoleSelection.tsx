@@ -153,11 +153,31 @@ export default function RoleSelection() {
         return;
       }
 
-      // On success, go to the appropriate dashboard
-      if (chosen_role === "student") {
+      // 🔥 CRITICAL: Re-fetch the role from Supabase after successful assignment
+      const { data: roleRow } = await supabase
+        .from("user_roles")
+        .select("roles(name)")
+        .eq("user_id", session.user.id)
+        .single();
+
+      const assignedRole = roleRow?.roles?.name as "admin" | "owner" | "student" | undefined;
+
+      // Redirect based on the confirmed role from database
+      if (assignedRole === "student") {
         navigate("/onboarding", { replace: true });
-      } else {
+      } else if (assignedRole === "owner") {
         navigate("/owner", { replace: true });
+      } else {
+        // Fallback if role fetch failed - use the chosen_role
+        toast({
+          title: "Warning",
+          description: "Role assigned but could not verify. Please refresh if redirected incorrectly.",
+        });
+        if (chosen_role === "student") {
+          navigate("/onboarding", { replace: true });
+        } else {
+          navigate("/owner", { replace: true });
+        }
       }
     } catch {
       toast({
