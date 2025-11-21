@@ -182,11 +182,16 @@ export default function RoleSelection() {
 
       // Redirect logic
       if (assignedRole === "student") {
+        console.log("✅ Navigating to /onboarding");
         navigate("/onboarding", { replace: true });
+        return;
       } else if (assignedRole === "owner") {
+        console.log("✅ Navigating to /owner");
         navigate("/owner", { replace: true });
+        return;
       } else {
         // If still failed after retries, use chosen_role as fallback
+        console.log("⚠️ Using fallback navigation with chosen_role:", chosen_role);
         toast({
           title: "Role assigned successfully",
           description: "Redirecting to your dashboard...",
@@ -197,8 +202,10 @@ export default function RoleSelection() {
         } else {
           navigate("/owner", { replace: true });
         }
+        return;
       }
-    } catch {
+    } catch (error) {
+      console.error("❌ Error in assignRole:", error);
       toast({
         title: "Error",
         description: "Something went wrong while assigning your role.",

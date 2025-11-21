@@ -40,19 +40,41 @@ export function useRoleGuard(requiredRole?: AppRole) {
       const user = session.user;
       setUserId(user.id);
 
-      // Try to read role from user_roles joined with roles
-      const { data: roleRow } = await supabase
-        .from("user_roles")
-        .select("roles(name)")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
       const defaultAdminEmails = [
         "hassan.mokdad01@lau.edu",
         "hasan.mokdad@aiesec.net",
       ];
 
-      let resolvedRole = (roleRow?.roles?.name ?? null) as AppRole | null;
+      // Try to read role with retry logic
+      let resolvedRole: AppRole | null = null;
+      let retries = 0;
+      const maxRetries = 3;
+
+      while (!resolvedRole && retries < maxRetries) {
+        console.log(`🔄 useRoleGuard: Attempt ${retries + 1} to fetch role for user ${user.id}`);
+        
+        const { data: roleRow, error: roleError } = await supabase
+          .from("user_roles")
+          .select("roles(name)")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (roleError) {
+          console.error(`❌ useRoleGuard: Role fetch attempt ${retries + 1} failed:`, roleError);
+          retries++;
+          if (retries < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 200 * retries));
+          }
+        } else {
+          resolvedRole = (roleRow?.roles?.name ?? null) as AppRole | null;
+          if (resolvedRole) {
+            console.log("✅ useRoleGuard: Role fetched successfully:", resolvedRole);
+          } else {
+            console.log("⚠️ useRoleGuard: No role found in database");
+          }
+          break;
+        }
+      }
 
       // Fallback: if no stored role yet but email is a known founder/admin,
       // temporarily treat them as admin so they NEVER get stuck on /select-role.
