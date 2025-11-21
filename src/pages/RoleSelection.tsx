@@ -7,8 +7,6 @@ import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 
-type AppRole = "admin" | "owner" | "student";
-
 export default function RoleSelection() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -25,18 +23,30 @@ export default function RoleSelection() {
       } = await supabase.auth.getSession();
 
       if (error || !session) {
-        navigate("/auth");
+        navigate("/auth", { replace: true });
         return;
       }
 
-      // Check if user is admin and redirect
+      const user = session.user;
+      const defaultAdminEmails = [
+        "hassan.mokdad01@lau.edu",
+        "hasan.mokdad@aiesec.net",
+      ];
+
+      // Check if user is admin (by role OR founder email) and redirect
       const { data: roleRow } = await supabase
         .from("user_roles")
         .select("role_id, roles(name)")
-        .eq("user_id", session.user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
-      if (roleRow?.roles?.name === "admin") {
+      const roleName = roleRow?.roles?.name as
+        | "admin"
+        | "owner"
+        | "student"
+        | undefined;
+
+      if (roleName === "admin" || defaultAdminEmails.includes(user.email ?? "")) {
         navigate("/admin", { replace: true });
         return;
       }
@@ -47,13 +57,13 @@ export default function RoleSelection() {
       setLoading(false);
     };
 
-    checkEmailVerification();
+    void checkEmailVerification();
   }, [navigate]);
 
   const handleResendVerification = async () => {
     try {
       const { error } = await supabase.auth.resend({
-        type: 'signup',
+        type: "signup",
         email: userEmail,
         options: {
           emailRedirectTo: `${window.location.origin}/intro`,
@@ -61,43 +71,73 @@ export default function RoleSelection() {
       });
 
       if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
       } else {
-        toast({ title: "Verification email sent", description: "Check your inbox for the verification link." });
+        toast({
+          title: "Verification email sent",
+          description: "Check your inbox for the verification link.",
+        });
       }
-    } catch (err) {
-      toast({ title: "Error", description: "Failed to resend verification email", variant: "destructive" });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to resend verification email",
+        variant: "destructive",
+      });
     }
   };
 
   const assignRole = async (chosen_role: "student" | "owner") => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) return;
 
-    const resp = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/role-assign`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ chosen_role }),
-      }
-    );
+    setSaving(true);
 
-    const result = await resp.json();
-    if (!resp.ok) {
+    try {
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/role-assign`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ chosen_role }),
+        }
+      );
+
+      const result = await resp.json();
+
+      if (!resp.ok) {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to assign role",
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
+
+      // On success, go to the appropriate dashboard
+      if (chosen_role === "student") {
+        navigate("/onboarding", { replace: true });
+      } else {
+        navigate("/owner", { replace: true });
+      }
+    } catch {
       toast({
         title: "Error",
-        description: result.error || "Failed to assign role",
+        description: "Something went wrong while assigning your role.",
         variant: "destructive",
       });
-      return;
+      setSaving(false);
     }
-
-    if (chosen_role === "student") navigate("/onboarding", { replace: true });
-    if (chosen_role === "owner") navigate("/owner", { replace: true });
   };
 
   if (loading) {
@@ -124,10 +164,12 @@ export default function RoleSelection() {
             Verify Your Email
           </h1>
           <p className="text-white/80 mb-6">
-            Before you can select your role and start using Roomy, please verify your email address.
+            Before you can select your role and start using Roomy, please verify
+            your email address.
           </p>
           <p className="text-white/70 text-sm mb-6">
-            We sent a verification link to <span className="font-semibold text-emerald-300">{userEmail}</span>
+            We sent a verification link to{" "}
+            <span className="font-semibold text-emerald-300">{userEmail}</span>
           </p>
           <Button
             onClick={handleResendVerification}
@@ -161,18 +203,17 @@ export default function RoleSelection() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <button
             disabled={saving || !emailVerified}
-            onClick={async () => {
+            onClick={() => {
               if (!emailVerified) {
                 toast({
                   title: "Email verification required",
-                  description: "Please verify your email before selecting a role.",
+                  description:
+                    "Please verify your email before selecting a role.",
                   variant: "destructive",
                 });
                 return;
               }
-              setSaving(true);
-              await assignRole("student");
-              navigate("/onboarding", { replace: true });
+              void assignRole("student");
             }}
             className="group rounded-2xl border border-white/20 bg-white/5 hover:bg-emerald-500/10 px-4 py-6 flex flex-col items-center justify-center gap-3 transition-all hover:-translate-y-1 hover:shadow-[0_0_40px_rgba(45,212,191,0.45)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
@@ -188,25 +229,26 @@ export default function RoleSelection() {
 
           <button
             disabled={saving || !emailVerified}
-            onClick={async () => {
+            onClick={() => {
               if (!emailVerified) {
                 toast({
                   title: "Email verification required",
-                  description: "Please verify your email before selecting a role.",
+                  description:
+                    "Please verify your email before selecting a role.",
                   variant: "destructive",
                 });
                 return;
               }
-              setSaving(true);
-              await assignRole("owner");
-              navigate("/owner", { replace: true });
+              void assignRole("owner");
             }}
             className="group rounded-2xl border border-white/20 bg-white/5 hover:bg-blue-500/10 px-4 py-6 flex flex-col items-center justify-center gap-3 transition-all hover:-translate-y-1 hover:shadow-[0_0_40px_rgba(59,130,246,0.45)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             <div className="w-12 h-12 rounded-full bg-blue-400/20 flex items-center justify-center">
               <Building2 className="w-7 h-7 text-blue-300" />
             </div>
-            <h2 className="text-xl font-semibold text-white">I'm a Dorm Owner</h2>
+            <h2 className="text-xl font-semibold text-white">
+              I'm a Dorm Owner
+            </h2>
             <p className="text-sm text-white/70">
               Manage your dorm listings, rooms, availability, bookings,
               messages, and performance in one place with owner tools.
@@ -215,7 +257,8 @@ export default function RoleSelection() {
         </div>
 
         <p className="mt-6 text-xs text-white/50">
-          You can always contact an admin if your role needs to be changed later.
+          You can always contact an admin if your role needs to be changed
+          later.
         </p>
       </motion.div>
     </div>
