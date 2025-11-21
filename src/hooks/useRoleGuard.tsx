@@ -60,13 +60,14 @@ export function useRoleGuard(requiredRole?: AppRole) {
         "hasan.mokdad@aiesec.net",
       ];
 
-      // Try to read role with retry logic
+      // Try to read role with retry logic - keep retrying even if no role found
       let resolvedRole: AppRole | null = null;
-      let retries = 0;
-      const maxRetries = 3;
+      let attempts = 0;
+      const maxAttempts = 5; // Increased attempts for database replication lag
 
-      while (!resolvedRole && retries < maxRetries) {
-        console.log(`🔄 useRoleGuard: Attempt ${retries + 1} to fetch role for user ${user.id}`);
+      while (!resolvedRole && attempts < maxAttempts) {
+        attempts++;
+        console.log(`🔄 useRoleGuard: Attempt ${attempts}/${maxAttempts} to fetch role for user ${user.id}`);
         
         const { data: roleRow, error: roleError } = await supabase
           .from("user_roles")
@@ -75,19 +76,19 @@ export function useRoleGuard(requiredRole?: AppRole) {
           .maybeSingle();
 
         if (roleError) {
-          console.error(`❌ useRoleGuard: Role fetch attempt ${retries + 1} failed:`, roleError);
-          retries++;
-          if (retries < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, 200 * retries));
-          }
+          console.error(`❌ useRoleGuard: Role fetch attempt ${attempts} failed:`, roleError);
+        }
+
+        resolvedRole = (roleRow?.roles?.name ?? null) as AppRole | null;
+        
+        if (resolvedRole) {
+          console.log(`✅ useRoleGuard: Role found on attempt ${attempts}:`, resolvedRole);
         } else {
-          resolvedRole = (roleRow?.roles?.name ?? null) as AppRole | null;
-          if (resolvedRole) {
-            console.log("✅ useRoleGuard: Role fetched successfully:", resolvedRole);
-          } else {
-            console.log("⚠️ useRoleGuard: No role found in database");
+          console.log(`⏳ useRoleGuard: No role found on attempt ${attempts}, retrying...`);
+          // Wait before retrying, with exponential backoff
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 300 * attempts));
           }
-          break;
         }
       }
 
