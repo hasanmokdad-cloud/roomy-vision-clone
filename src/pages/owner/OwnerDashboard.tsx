@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Home, MessageSquare, TrendingUp } from "lucide-react";
 import { NotificationBell } from "@/components/owner/NotificationBell";
+import { DormForm } from "@/components/owner/DormForm";
 
 export default function OwnerDashboard() {
   const { loading, userId } = useRoleGuard("owner");
@@ -15,32 +16,62 @@ export default function OwnerDashboard() {
   const [ownerId, setOwnerId] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const [selectedDorm, setSelectedDorm] = useState<any>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showRoomForm, setShowRoomForm] = useState(false);
+  const [rooms, setRooms] = useState<Record<string, any[]>>({});
+
   useEffect(() => {
     if (!userId) return;
-
-    const fetchOwnerData = async () => {
-      // Get owner record first
-      const { data: owner } = await supabase
-        .from("owners")
-        .select("id")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (!owner) return;
-      
-      setOwnerId(owner.id);
-
-      const { data, error } = await supabase
-        .from("dorms")
-        .select("*")
-        .eq("owner_id", owner.id);
-
-      if (error) console.error("Error loading dorms:", error);
-      else setDorms(data || []);
-    };
-
     fetchOwnerData();
   }, [userId]);
+
+  const fetchOwnerData = async () => {
+    // Get owner record first
+    const { data: owner } = await supabase
+      .from("owners")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!owner) return;
+    
+    setOwnerId(owner.id);
+
+    // Fetch dorms
+    const { data: dormsData, error: dormsError } = await supabase
+      .from("dorms")
+      .select("*")
+      .eq("owner_id", owner.id)
+      .order("created_at", { ascending: false });
+
+    if (dormsError) {
+      console.error("Error loading dorms:", dormsError);
+      return;
+    }
+    
+    setDorms(dormsData || []);
+
+    // Fetch rooms for each dorm
+    if (dormsData && dormsData.length > 0) {
+      const dormIds = dormsData.map(d => d.id);
+      const { data: roomsData } = await supabase
+        .from("rooms")
+        .select("*")
+        .in("dorm_id", dormIds);
+
+      if (roomsData) {
+        const roomsByDorm: Record<string, any[]> = {};
+        roomsData.forEach(room => {
+          if (!roomsByDorm[room.dorm_id]) {
+            roomsByDorm[room.dorm_id] = [];
+          }
+          roomsByDorm[room.dorm_id].push(room);
+        });
+        setRooms(roomsByDorm);
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -151,55 +182,150 @@ export default function OwnerDashboard() {
         </div>
 
         {/* Dorm Management */}
-        <Card className="shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
-          <CardHeader>
-            <div className="flex justify-between items-center">
+        {!isEditing && !showRoomForm && (
+          <Card className="shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
+            <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Home className="w-5 h-5 text-primary" /> My Properties
               </CardTitle>
-              <Button
-                onClick={() => navigate("/owner/rooms")}
-                variant="outline"
-              >
-                Manage Rooms
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {dorms.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {dorms.map((dorm, idx) => (
-                  <motion.div
-                    key={idx}
-                    whileHover={{ scale: 1.03 }}
-                    className="rounded-2xl border border-muted bg-white dark:bg-gray-900 shadow-md overflow-hidden"
-                  >
-                    <img
-                      src={dorm.cover_image || dorm.image_url || "/placeholder.svg"}
-                      alt={dorm.dorm_name || dorm.name}
-                      className="w-full h-40 object-cover"
-                    />
-                    <div className="p-4 space-y-1">
-                      <h3 className="font-semibold text-lg text-foreground">
-                        {dorm.dorm_name || dorm.name}
-                      </h3>
-                      <p className="text-sm text-foreground/60">
-                        {dorm.address || dorm.location}
-                      </p>
-                      <p className="text-primary font-medium">
-                        ${dorm.monthly_price || dorm.price}/month
-                      </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {dorms.length > 0 ? (
+                <div className="space-y-6">
+                  {dorms.map((dorm) => (
+                    <div key={dorm.id} className="space-y-4">
+                      <motion.div
+                        whileHover={{ scale: 1.01 }}
+                        className="rounded-2xl border border-muted bg-card shadow-md overflow-hidden"
+                      >
+                        <div className="flex flex-col md:flex-row gap-4">
+                          <img
+                            src={dorm.cover_image || dorm.image_url || "/placeholder.svg"}
+                            alt={dorm.dorm_name || dorm.name}
+                            className="w-full md:w-48 h-40 object-cover"
+                          />
+                          <div className="flex-1 p-4 space-y-3">
+                            <div>
+                              <h3 className="font-bold text-xl text-foreground">
+                                {dorm.dorm_name || dorm.name}
+                              </h3>
+                              <p className="text-sm text-foreground/60">
+                                {dorm.address || dorm.location}
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedDorm(dorm);
+                                  setIsEditing(true);
+                                }}
+                              >
+                                Edit Dorm
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedDorm(dorm);
+                                  setShowRoomForm(true);
+                                }}
+                              >
+                                Add Room
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => navigate(`/owner/dorms/${dorm.id}/rooms`)}
+                              >
+                                View Rooms ({rooms[dorm.id]?.length || 0})
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-foreground/60 py-6">
-                You haven't listed any dorms yet.
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-foreground/60 py-6">
+                  You haven't listed any dorms yet.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Edit Dorm Form */}
+        {isEditing && selectedDorm && ownerId && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setIsEditing(false);
+                  setSelectedDorm(null);
+                }}
+              >
+                ← Back to Dashboard
+              </Button>
+              <h2 className="text-2xl font-bold">Edit Dorm</h2>
+            </div>
+            <DormForm
+              dorm={selectedDorm}
+              ownerId={ownerId}
+              onSaved={() => {
+                setIsEditing(false);
+                setSelectedDorm(null);
+                fetchOwnerData();
+              }}
+              onCancel={() => {
+                setIsEditing(false);
+                setSelectedDorm(null);
+              }}
+            />
+          </div>
+        )}
+
+        {/* Add Room Form */}
+        {showRoomForm && selectedDorm && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowRoomForm(false);
+                  setSelectedDorm(null);
+                }}
+              >
+                ← Back to Dashboard
+              </Button>
+              <h2 className="text-2xl font-bold">Add Room to {selectedDorm.dorm_name || selectedDorm.name}</h2>
+            </div>
+            <Card className="glass-hover p-6">
+              <p className="text-sm text-foreground/60 mb-4">
+                Use the full room form for better management
               </p>
-            )}
-          </CardContent>
-        </Card>
+              <Button
+                onClick={() => navigate(`/owner/dorms/${selectedDorm.id}/rooms/new`)}
+                className="w-full"
+              >
+                Go to Room Form
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowRoomForm(false);
+                  setSelectedDorm(null);
+                }}
+                className="w-full mt-2"
+              >
+                Cancel
+              </Button>
+            </Card>
+          </div>
+        )}
       </div>
     </motion.div>
   );

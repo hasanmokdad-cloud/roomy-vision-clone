@@ -15,7 +15,8 @@ import { compressImage } from "@/utils/imageCompression";
 const ROOM_TYPES = ["Single", "Double", "Triple", "Studio", "Suite", "Shared"];
 
 export default function RoomForm() {
-  const { dormId, roomId } = useParams<{ dormId: string; roomId?: string }>();
+  const { dormId } = useParams<{ dormId: string }>();
+  const { roomId } = useParams<{ roomId?: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
