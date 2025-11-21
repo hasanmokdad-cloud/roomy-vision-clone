@@ -69,26 +69,41 @@ export function useRoleGuard(requiredRole?: AppRole) {
         attempts++;
         console.log(`🔄 useRoleGuard: Attempt ${attempts}/${maxAttempts} to fetch role for user ${user.id}`);
         
-        const { data: roleRow, error: roleError } = await supabase
+        // Step 1: Get the role_id from user_roles
+        const { data: userRoleRow, error: userRoleError } = await supabase
           .from("user_roles")
-          .select("roles(name)")
+          .select("role_id")
           .eq("user_id", user.id)
           .maybeSingle();
 
-        if (roleError) {
-          console.error(`❌ useRoleGuard: Role fetch attempt ${attempts} failed:`, roleError);
+        if (userRoleError) {
+          console.error(`❌ useRoleGuard: user_roles fetch failed:`, userRoleError);
         }
 
-        resolvedRole = (roleRow?.roles?.name ?? null) as AppRole | null;
-        
-        if (resolvedRole) {
-          console.log(`✅ useRoleGuard: Role found on attempt ${attempts}:`, resolvedRole);
-        } else {
-          console.log(`⏳ useRoleGuard: No role found on attempt ${attempts}, retrying...`);
-          // Wait before retrying, with exponential backoff
-          if (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 300 * attempts));
+        // Log what we got
+        console.log(`📊 useRoleGuard: user_roles data:`, userRoleRow);
+
+        if (userRoleRow?.role_id) {
+          // Step 2: Get the role name from roles table
+          const { data: roleData, error: roleError } = await supabase
+            .from("roles")
+            .select("name")
+            .eq("id", userRoleRow.role_id)
+            .single();
+
+          if (roleError) {
+            console.error(`❌ useRoleGuard: roles fetch failed:`, roleError);
+          } else {
+            resolvedRole = roleData?.name as AppRole | null;
+            console.log(`✅ useRoleGuard: Role found on attempt ${attempts}:`, resolvedRole);
           }
+        } else {
+          console.log(`⏳ useRoleGuard: No user_role found on attempt ${attempts}`);
+        }
+
+        // Wait before retrying if no role found
+        if (!resolvedRole && attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 300 * attempts));
         }
       }
 
