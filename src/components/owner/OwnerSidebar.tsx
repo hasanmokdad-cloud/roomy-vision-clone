@@ -1,4 +1,4 @@
-import { Home, Building2, Plus, BarChart3, Settings, DoorOpen, Calendar, Upload, LayoutDashboard, TrendingUp, PlusCircle } from 'lucide-react';
+import { Home, Building2, Plus, BarChart3, Settings, DoorOpen, Calendar, Upload, LayoutDashboard, TrendingUp, PlusCircle, Star } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
   Sidebar,
@@ -18,6 +18,7 @@ const menuItems = [
   { title: 'Room Management', url: '/owner/rooms', icon: DoorOpen },
   { title: 'Bulk Operations', url: '/owner/bulk-operations', icon: Settings },
   { title: 'Bookings', url: '/owner/bookings', icon: Calendar },
+  { title: 'Reviews', url: '/owner/reviews', icon: Star },
   { title: 'Add New Dorm', url: '/owner/dorms/new', icon: PlusCircle },
   { title: 'Claim Existing Dorm', url: '/owner/claim', icon: Building2 },
   { title: 'Bulk Import', url: '/owner/bulk-import', icon: Upload },

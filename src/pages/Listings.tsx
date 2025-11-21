@@ -27,6 +27,8 @@ import { DormCardSkeleton } from '@/components/skeletons/DormCardSkeleton';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { SkipToContent } from '@/components/SkipToContent';
 import { logAnalyticsEvent } from '@/utils/analytics';
+import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Listings() {
   const navigate = useNavigate();
@@ -48,6 +50,23 @@ export default function Listings() {
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
 
   const { data, loading, error } = useListingsQuery(filters);
+  const queryClient = useQueryClient();
+
+  // Real-time subscriptions for dorms and rooms
+  useEffect(() => {
+    const dormsChannel = subscribeTo("dorms", () => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+    });
+    
+    const roomsChannel = subscribeTo("rooms", () => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+    });
+
+    return () => {
+      unsubscribeFrom(dormsChannel);
+      unsubscribeFrom(roomsChannel);
+    };
+  }, [queryClient]);
 
   // Load user session and log page view
   useEffect(() => {

@@ -20,6 +20,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function Navbar() {
   const [authOpen, setAuthOpen] = useState(false);
@@ -28,6 +29,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   const unreadCount = useUnreadCount(user?.id || null);
+  const { theme } = useTheme();
 
   useEffect(() => {
     // Check auth
@@ -60,10 +62,16 @@ export default function Navbar() {
       <nav 
         role="navigation"
         aria-label="Main navigation"
-      style={{ opacity: scrolled ? 0.98 : 1 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-black/80 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.4)]' : 'bg-black/60 backdrop-blur-md'
-      }`}
+        style={{ opacity: scrolled ? 0.98 : 1 }}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          scrolled 
+            ? theme === "light"
+              ? 'bg-white/95 backdrop-blur-xl shadow-lg text-gray-900'
+              : 'bg-black/80 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.4)] text-white'
+            : theme === "light"
+              ? 'bg-white/80 backdrop-blur-md text-gray-900'
+              : 'bg-black/60 backdrop-blur-md text-white'
+        }`}
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">

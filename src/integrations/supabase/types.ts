@@ -822,6 +822,212 @@ export type Database = {
           },
         ]
       }
+      review_helpful_votes: {
+        Row: {
+          created_at: string | null
+          id: string
+          review_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          review_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          review_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_helpful_votes_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_images: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string
+          review_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url: string
+          review_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          review_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_images_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_responses: {
+        Row: {
+          created_at: string | null
+          id: string
+          owner_id: string | null
+          response_text: string
+          review_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          owner_id?: string | null
+          response_text: string
+          review_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          owner_id?: string | null
+          response_text?: string
+          review_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_responses_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_responses_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          amenities_rating: number | null
+          booking_id: string | null
+          cleanliness_rating: number | null
+          comment: string | null
+          created_at: string | null
+          dorm_id: string | null
+          helpful_count: number | null
+          id: string
+          location_rating: number | null
+          moderation_notes: string | null
+          rating: number
+          room_id: string | null
+          status: string | null
+          student_id: string | null
+          title: string
+          updated_at: string | null
+          value_rating: number | null
+          verified_stay: boolean | null
+        }
+        Insert: {
+          amenities_rating?: number | null
+          booking_id?: string | null
+          cleanliness_rating?: number | null
+          comment?: string | null
+          created_at?: string | null
+          dorm_id?: string | null
+          helpful_count?: number | null
+          id?: string
+          location_rating?: number | null
+          moderation_notes?: string | null
+          rating: number
+          room_id?: string | null
+          status?: string | null
+          student_id?: string | null
+          title: string
+          updated_at?: string | null
+          value_rating?: number | null
+          verified_stay?: boolean | null
+        }
+        Update: {
+          amenities_rating?: number | null
+          booking_id?: string | null
+          cleanliness_rating?: number | null
+          comment?: string | null
+          created_at?: string | null
+          dorm_id?: string | null
+          helpful_count?: number | null
+          id?: string
+          location_rating?: number | null
+          moderation_notes?: string | null
+          rating?: number
+          room_id?: string | null
+          status?: string | null
+          student_id?: string | null
+          title?: string
+          updated_at?: string | null
+          value_rating?: number | null
+          verified_stay?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "reviews_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       roles: {
         Row: {
           created_at: string | null
