@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Plus } from 'lucide-react';
 import { useOwnerDormsQuery } from '@/hooks/useOwnerDormsQuery';
 import {
   Table,
@@ -15,6 +16,7 @@ import {
 } from '@/components/ui/table';
 
 export default function OwnerListings() {
+  const navigate = useNavigate();
   const [ownerId, setOwnerId] = useState<string>();
   const { data: dorms, isLoading: loading, refetch } = useOwnerDormsQuery(ownerId);
   const { toast } = useToast();
@@ -69,16 +71,28 @@ export default function OwnerListings() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold gradient-text">My Listings</h1>
-        <p className="text-foreground/60 mt-2">Manage your dorm properties</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold gradient-text">My Listings</h1>
+          <p className="text-foreground/60 mt-2">Manage your dorm properties</p>
+        </div>
+        <Button
+          onClick={() => navigate('/owner/dorms/new')}
+          className="bg-gradient-to-r from-primary to-secondary"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add New Dorm
+        </Button>
       </div>
 
       {!dorms || dorms.length === 0 ? (
         <div className="glass-hover rounded-2xl p-12 text-center">
           <h3 className="text-xl font-bold mb-2">No listings yet</h3>
           <p className="text-foreground/60 mb-4">Create your first dorm listing to get started</p>
-          <Button className="bg-gradient-to-r from-primary to-secondary">
+          <Button 
+            className="bg-gradient-to-r from-primary to-secondary"
+            onClick={() => window.location.href = '/owner/dorms/new'}
+          >
             Add New Listing
           </Button>
         </div>

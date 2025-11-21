@@ -333,6 +333,71 @@ export type Database = {
           },
         ]
       }
+      dorm_claims: {
+        Row: {
+          admin_notes: string | null
+          contact_number: string | null
+          created_at: string
+          dorm_id: string
+          id: string
+          owner_id: string
+          proof_of_ownership: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          contact_number?: string | null
+          created_at?: string
+          dorm_id: string
+          id?: string
+          owner_id: string
+          proof_of_ownership?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          contact_number?: string | null
+          created_at?: string
+          dorm_id?: string
+          id?: string
+          owner_id?: string
+          proof_of_ownership?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dorm_claims_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dorm_claims_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dorm_claims_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "dorm_claims_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dorms: {
         Row: {
           address: string | null

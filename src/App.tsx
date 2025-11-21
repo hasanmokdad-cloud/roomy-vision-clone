@@ -37,11 +37,21 @@ const Unauthorized = lazy(() => import("./pages/Unauthorized"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Messages = lazy(() => import("./pages/Messages"));
 const OwnerAddDorm = lazy(() => import("./pages/owner/OwnerAddDorm"));
+const AddNewDorm = lazy(() => import("./pages/owner/AddNewDorm"));
 const ClaimDorm = lazy(() => import("./pages/owner/ClaimDorm"));
+const ClaimDormNew = lazy(() => import("./pages/owner/ClaimDormNew"));
 const OwnerRooms = lazy(() => import("./pages/owner/OwnerRooms"));
 const OwnerBookings = lazy(() => import("./pages/owner/OwnerBookings"));
+const OwnerListings = lazy(() => import("./pages/owner/OwnerListings"));
 const RoleSelection = lazy(() => import("./pages/RoleSelection"));
 const StudentProfile = lazy(() => import("./pages/StudentProfile"));
+const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
+const AdminStudents = lazy(() => import("./pages/admin/AdminStudents"));
+const AdminDorms = lazy(() => import("./pages/admin/AdminDorms"));
+const AdminLogs = lazy(() => import("./pages/admin/AdminLogs"));
+const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminDormClaims = lazy(() => import("./pages/admin/AdminDormClaims"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -142,9 +152,12 @@ const AppRoutes = () => {
 
           {/* Owner Routes */}
           <Route path="/owner" element={<ProtectedRoute element={<OwnerDashboard />} requiredRole="owner" />} />
+          <Route path="/owner/listings" element={<ProtectedRoute element={<OwnerListings />} requiredRole="owner" />} />
+          <Route path="/owner/dorms/new" element={<ProtectedRoute element={<AddNewDorm />} requiredRole="owner" />} />
+          <Route path="/owner/claim" element={<ProtectedRoute element={<ClaimDormNew />} requiredRole="owner" />} />
           <Route path="/owner/performance" element={<ProtectedRoute element={<OwnerPerformance />} requiredRole="owner" />} />
           <Route path="/owner/add-dorm" element={<ProtectedRoute element={<OwnerAddDorm />} requiredRole="owner" />} />
-          <Route path="/owner/claim" element={<ProtectedRoute element={<ClaimDorm />} requiredRole="owner" />} />
+          <Route path="/owner/claim-dorm" element={<ProtectedRoute element={<ClaimDorm />} requiredRole="owner" />} />
           <Route path="/owner/rooms" element={<ProtectedRoute element={<OwnerRooms />} requiredRole="owner" />} />
           <Route path="/owner/bookings" element={<ProtectedRoute element={<OwnerBookings />} requiredRole="owner" />} />
 
@@ -152,6 +165,12 @@ const AppRoutes = () => {
           <Route path="/admin" element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />} />
           <Route path="/admin/analytics" element={<ProtectedRoute element={<Analytics />} requiredRole="admin" />} />
           <Route path="/admin/trends" element={<ProtectedRoute element={<Trends />} requiredRole="admin" />} />
+          <Route path="/admin/students" element={<ProtectedRoute element={<AdminStudents />} requiredRole="admin" />} />
+          <Route path="/admin/dorms" element={<ProtectedRoute element={<AdminDorms />} requiredRole="admin" />} />
+          <Route path="/admin/claims" element={<ProtectedRoute element={<AdminDormClaims />} requiredRole="admin" />} />
+          <Route path="/admin/logs" element={<ProtectedRoute element={<AdminLogs />} requiredRole="admin" />} />
+          <Route path="/admin/notifications" element={<ProtectedRoute element={<AdminNotifications />} requiredRole="admin" />} />
+          <Route path="/admin/settings" element={<ProtectedRoute element={<AdminSettings />} requiredRole="admin" />} />
 
           {/* 404 Fallback */}
           <Route path="*" element={<NotFound />} />

@@ -17,8 +17,8 @@ const menuItems = [
   { title: 'My Listings', url: '/owner/listings', icon: Building2 },
   { title: 'Room Management', url: '/owner/rooms', icon: DoorOpen },
   { title: 'Bookings', url: '/owner/bookings', icon: Calendar },
-  { title: 'Add New Dorm', url: '/owner/add-dorm', icon: Plus },
-  { title: 'Claim Existing Dorm', url: '/owner/claim-dorm', icon: Building2 },
+  { title: 'Add New Dorm', url: '/owner/dorms/new', icon: Plus },
+  { title: 'Claim Existing Dorm', url: '/owner/claim', icon: Building2 },
   { title: 'Statistics', url: '/owner/stats', icon: BarChart3 },
   { title: 'Account', url: '/owner/account', icon: Settings },
 ];
