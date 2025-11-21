@@ -193,7 +193,7 @@ export default function RoleSelection() {
       // This ensures fresh session data is loaded on the next page
       setTimeout(() => {
         if (assignedRole === "student") {
-          window.location.href = "/onboarding";
+          window.location.href = "/dashboard";
         } else if (assignedRole === "owner") {
           window.location.href = "/owner";
         } else if (assignedRole === "admin") {
@@ -201,7 +201,7 @@ export default function RoleSelection() {
         } else {
           // Fallback to chosen_role if assignedRole is still undefined
           if (chosen_role === "student") {
-            window.location.href = "/onboarding";
+            window.location.href = "/dashboard";
           } else {
             window.location.href = "/owner";
           }
