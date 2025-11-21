@@ -39,7 +39,7 @@ export default function Onboarding() {
 
       const { data: roleRow } = await supabase
         .from("user_roles")
-        .select("role_id, roles(name)")
+        .select("roles(name)")
         .eq("user_id", sessionData.session.user.id)
         .maybeSingle();
 

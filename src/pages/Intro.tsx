@@ -27,10 +27,10 @@ export default function Intro() {
 
     const user = session.user;
 
-    // Fetch role using join
+    // Fetch role using join with roles table
     const { data: roleRow } = await supabase
       .from("user_roles")
-      .select("role_id, roles(name)")
+      .select("roles(name)")
       .eq("user_id", user.id)
       .maybeSingle();
 

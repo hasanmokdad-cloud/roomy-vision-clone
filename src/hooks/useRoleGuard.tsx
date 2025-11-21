@@ -43,7 +43,7 @@ export function useRoleGuard(requiredRole?: AppRole) {
       // Try to read role from user_roles joined with roles
       const { data: roleRow } = await supabase
         .from("user_roles")
-        .select("role_id, roles(name)")
+        .select("roles(name)")
         .eq("user_id", user.id)
         .maybeSingle();
 
