@@ -21,6 +21,7 @@ export default function DormDetail() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [dorm, setDorm] = useState<any>(null);
+  const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -69,6 +70,15 @@ export default function DormDetail() {
     }
 
     setDorm(data);
+
+    // Fetch rooms for this dorm
+    const { data: roomsData } = await supabase
+      .from('rooms')
+      .select('*')
+      .eq('dorm_id', id)
+      .order('price', { ascending: true });
+
+    setRooms(roomsData || []);
     setLoading(false);
   };
 
@@ -88,12 +98,38 @@ export default function DormDetail() {
 
   const getAllRoomImages = () => {
     const allImages: string[] = [];
+    // Get images from rooms table
+    rooms.forEach(room => {
+      if (room.images && Array.isArray(room.images)) {
+        allImages.push(...room.images);
+      }
+    });
+    // Also get images from legacy room_types_json
     roomTypes.forEach(room => {
       if (room.images && Array.isArray(room.images)) {
         allImages.push(...room.images);
       }
     });
     return allImages;
+  };
+
+  const handleContactOwner = (room: any) => {
+    if (!room.available) return;
+    
+    navigate('/messages', {
+      state: {
+        openThreadWithUserId: dorm.owner_id,
+        initialMessage: `Hello! I am interested in ${room.name} at ${displayName}.`,
+        roomPreview: room,
+        metadata: {
+          dormId: dorm.id,
+          dormName: displayName,
+          roomId: room.id,
+          roomName: room.name,
+          price: room.price
+        }
+      }
+    });
   };
 
   if (loading) {
@@ -279,7 +315,104 @@ export default function DormDetail() {
                 </Card>
               )}
 
-              {/* Room Options */}
+              {/* Rooms from Database */}
+              {rooms.length > 0 && (
+                <Card className="glass-hover">
+                  <CardContent className="p-6">
+                    <h2 className="text-2xl font-bold mb-4">Available Rooms</h2>
+                    <div className="grid gap-4">
+                      {rooms.map((room) => {
+                        const isUnavailable = !room.available;
+                        return (
+                          <div
+                            key={room.id}
+                            className={`flex flex-col gap-3 p-4 rounded-xl border transition-colors ${
+                              isUnavailable
+                                ? 'bg-muted/30 border-muted opacity-60 grayscale'
+                                : 'bg-gradient-to-r from-primary/5 to-secondary/5 border-primary/10 hover:border-primary/30'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                                  isUnavailable
+                                    ? 'bg-muted'
+                                    : 'bg-gradient-to-br from-primary to-secondary'
+                                }`}>
+                                  <Home className={`w-6 h-6 ${isUnavailable ? 'text-muted-foreground' : 'text-white'}`} />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-bold text-lg">{room.name}</h3>
+                                    {isUnavailable && (
+                                      <Badge variant="secondary" className="text-xs">Reserved</Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-foreground/60">
+                                    {room.type} • {room.area_m2 ? `${room.area_m2}m²` : 'Size not specified'}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-2xl font-bold gradient-text">${room.price}</div>
+                                <div className="text-xs text-foreground/60">per month</div>
+                              </div>
+                            </div>
+
+                            {room.description && (
+                              <p className="text-sm text-foreground/70">{room.description}</p>
+                            )}
+
+                            {/* Room Images */}
+                            {room.images && room.images.length > 0 && (
+                              <div className="flex gap-2 overflow-x-auto pb-2">
+                                {room.images.slice(0, 4).map((image: string, imgIdx: number) => (
+                                  <button
+                                    key={imgIdx}
+                                    onClick={() => openGallery(room.images!, imgIdx)}
+                                    className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-colors cursor-pointer"
+                                  >
+                                    <img
+                                      src={image}
+                                      alt={`${room.name} - Image ${imgIdx + 1}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </button>
+                                ))}
+                                {room.images.length > 4 && (
+                                  <button
+                                    onClick={() => openGallery(room.images!, 0)}
+                                    className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-colors cursor-pointer bg-primary/10 flex items-center justify-center"
+                                  >
+                                    <span className="text-sm font-medium">
+                                      +{room.images.length - 4} more
+                                    </span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Contact Button */}
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleContactOwner(room);
+                              }}
+                              disabled={isUnavailable}
+                              className="w-full mt-2"
+                            >
+                              <MessageSquare className="w-4 h-4 mr-2" />
+                              {isUnavailable ? 'Not Available' : 'Contact About This Room'}
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Room Options (Legacy room_types_json) */}
               {roomTypes.length > 0 && (
                 <Card className="glass-hover">
                   <CardContent className="p-6">
