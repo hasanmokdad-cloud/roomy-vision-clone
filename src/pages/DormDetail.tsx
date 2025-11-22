@@ -359,7 +359,7 @@ export default function DormDetail() {
               <Card className="glass-hover">
                 <CardContent className="p-6">
                   <h2 className="text-2xl font-bold mb-4">Available Room Options</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                       {/* Database Rooms */}
                       {rooms.map((room, idx) => (
                         <EnhancedRoomCard
