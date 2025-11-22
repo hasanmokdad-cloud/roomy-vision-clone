@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-
-import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { Button } from '@/components/ui/button';
 import { User, LogOut, Home, MessageSquare, Search, Award, Eye, TrendingUp, CheckCircle } from 'lucide-react';
 import FluidBackground from '@/components/FluidBackground';
@@ -123,8 +121,6 @@ export default function Dashboard() {
           Logout
         </Button>
       </nav>
-
-      <WhatsAppButton />
       
       <div className="container mx-auto px-6 py-20 relative z-10">
         {/* Welcome Section */}

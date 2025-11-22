@@ -8,8 +8,6 @@ import { Hero } from '@/components/Hero';
 import { HowItWorks } from '@/components/HowItWorks';
 import { DormListings } from '@/components/DormListings';
 import { Footer } from '@/components/Footer';
-import { WhatsAppButton } from '@/components/WhatsAppButton';
-
 import { SkipToContent } from '@/components/SkipToContent';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -75,7 +73,6 @@ const Main = () => {
         <DormListings />
       </main>
       <Footer />
-      <WhatsAppButton />
     </div>
   );
 };
