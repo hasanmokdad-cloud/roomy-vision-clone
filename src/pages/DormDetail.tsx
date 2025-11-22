@@ -18,6 +18,7 @@ import { VirtualTourGallery } from '@/components/rooms/VirtualTourGallery';
 import { ReviewList } from '@/components/reviews/ReviewList';
 import type { RoomType } from '@/types/RoomType';
 import { logAnalyticsEvent } from '@/utils/analytics';
+import { ThreeDViewer } from '@/components/rooms/ThreeDViewer';
 
 export default function DormDetail() {
   const { id } = useParams();
@@ -505,6 +506,21 @@ export default function DormDetail() {
                     </p>
                   </CardContent>
                 </Card>
+              )}
+
+              {/* 3D Room Viewer */}
+              {rooms.length > 0 && rooms.some(r => r.three_d_model_url) && (
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold mb-4">3D Room Preview</h2>
+                  {rooms
+                    .filter(r => r.three_d_model_url)
+                    .map((room) => (
+                      <div key={room.id} className="mb-4">
+                        <h3 className="text-lg font-semibold mb-2">{room.name}</h3>
+                        <ThreeDViewer modelUrl={room.three_d_model_url} alt={`${room.name} 3D Model`} />
+                      </div>
+                    ))}
+                </div>
               )}
 
               {/* Virtual Tour for Rooms from Database */}

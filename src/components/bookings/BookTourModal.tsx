@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import { sendNotification, NotificationTemplates } from "@/lib/sendNotification";
 import {
   Dialog,
   DialogContent,
@@ -104,6 +105,23 @@ export const BookTourModal = ({
       });
 
       if (error) throw error;
+
+      // Send notification to owner
+      const { data: owner } = await supabase
+        .from('owners')
+        .select('whatsapp_language, user_id')
+        .eq('id', ownerId)
+        .single();
+
+      if (owner) {
+        const ownerLang = owner.whatsapp_language?.toLowerCase() === 'ar' ? 'ar' : 'en';
+        await sendNotification(
+          owner.user_id,
+          NotificationTemplates.TOUR_BOOKED,
+          ownerLang,
+          { dormId, dormName, scheduledTime: scheduledTime.toISOString() }
+        );
+      }
 
       setSuccess(true);
       toast({

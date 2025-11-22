@@ -56,14 +56,79 @@ export default function Messages() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
+  // Handle auto-open/auto-send from match links
+  useEffect(() => {
+    if (!userId || !location.state?.openThreadWithUserId) return;
+    
+    const openAndSendMessage = async () => {
+      const targetUserId = location.state.openThreadWithUserId;
+      const initialMessage = location.state.initialMessage;
+
+      // Find or create conversation
+      const { data: student } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      const { data: targetStudent } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', targetUserId)
+        .maybeSingle();
+
+      if (!student || !targetStudent) return;
+
+      // Check if conversation exists
+      let conversationId: string | null = null;
+      const { data: existingConv } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`and(student_id.eq.${student.id},owner_id.eq.${targetStudent.id}),and(student_id.eq.${targetStudent.id},owner_id.eq.${student.id})`)
+        .maybeSingle();
+
+      if (existingConv) {
+        conversationId = existingConv.id;
+      } else {
+        // Create new conversation (treating both as students, use a placeholder for owner_id)
+        const { data: newConv } = await supabase
+          .from('conversations')
+          .insert({
+            student_id: student.id,
+            owner_id: targetStudent.id, // Using as peer
+            dorm_id: null
+          })
+          .select('id')
+          .single();
+        
+        if (newConv) conversationId = newConv.id;
+      }
+
+      if (conversationId) {
+        setSelectedConversation(conversationId);
+        await loadMessages(conversationId);
+
+        // Send initial message if provided
+        if (initialMessage) {
+          await supabase.from('messages').insert({
+            conversation_id: conversationId,
+            sender_id: userId,
+            body: initialMessage,
+            read: false
+          });
+        }
+      }
+
+      // Clear location state
+      navigate(location.pathname, { replace: true, state: {} });
+    };
+
+    openAndSendMessage();
+  }, [userId, location.state]);
+
   useEffect(() => {
     if (!userId) return;
     loadConversations();
-
-    // Handle auto-message workflow
-    if (location.state?.initialMessage && location.state?.openThreadWithUserId) {
-      handleAutoMessage();
-    }
 
     // Subscribe to new messages using realtime utility
     const messagesChannel = subscribeTo("messages", (payload) => {

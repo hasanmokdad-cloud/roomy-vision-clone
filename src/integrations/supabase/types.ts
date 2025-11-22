@@ -645,6 +645,39 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          lang: string | null
+          message: string
+          metadata: Json | null
+          read: boolean | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          lang?: string | null
+          message: string
+          metadata?: Json | null
+          read?: boolean | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          lang?: string | null
+          message?: string
+          metadata?: Json | null
+          read?: boolean | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications_log: {
         Row: {
           channel: string | null
@@ -1091,6 +1124,7 @@ export type Database = {
           name: string
           panorama_urls: string[] | null
           price: number
+          three_d_model_url: string | null
           type: string
           updated_at: string
         }
@@ -1105,6 +1139,7 @@ export type Database = {
           name: string
           panorama_urls?: string[] | null
           price: number
+          three_d_model_url?: string | null
           type: string
           updated_at?: string
         }
@@ -1119,6 +1154,7 @@ export type Database = {
           name?: string
           panorama_urls?: string[] | null
           price?: number
+          three_d_model_url?: string | null
           type?: string
           updated_at?: string
         }

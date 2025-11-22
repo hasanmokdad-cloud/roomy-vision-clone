@@ -20,6 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
 import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
+import { useTranslation } from 'react-i18next';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -28,6 +29,8 @@ export default function Settings() {
   const { role } = useRoleGuard();
   const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
+  const { i18n } = useTranslation();
+  const currentLang = i18n.language;
   const [settings, setSettings] = useState<UserSettings>(settingsManager.load());
   const [saving, setSaving] = useState(false);
   const [savedItems, setSavedItems] = useState<any[]>([]);
@@ -265,9 +268,13 @@ export default function Settings() {
                   <div>
                     <h3 className="text-lg font-semibold text-white">Notifications</h3>
                     <p className="text-sm text-white/60">
-                      {role === 'owner' ? 'Receive updates about new bookings and inquiries' : 
-                       role === 'admin' ? 'Receive platform-wide updates and alerts' :
-                       'Receive updates about new dorms'}
+                      {role === 'owner' 
+                        ? (currentLang === 'ar' 
+                            ? 'استقبل إشعارات عن الحجوزات الجديدة' 
+                            : 'Receive updates about new bookings')
+                        : (currentLang === 'ar'
+                            ? 'استقبل إشعارات عن السكن الجديد'
+                            : 'Receive updates about new dorms')}
                     </p>
                   </div>
                 </div>

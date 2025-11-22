@@ -18,6 +18,7 @@ const menuItems = [
   { title: 'Room Management', url: '/owner/rooms', icon: DoorOpen },
   { title: 'Bulk Operations', url: '/owner/bulk-operations', icon: Settings },
   { title: 'Bookings', url: '/owner/bookings', icon: Calendar },
+  { title: 'Tour Calendar', url: '/owner/calendar', icon: Calendar },
   { title: 'Reviews', url: '/owner/reviews', icon: Star },
   { title: 'Add New Dorm', url: '/owner/dorms/new', icon: PlusCircle },
   

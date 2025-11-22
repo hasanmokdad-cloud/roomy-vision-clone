@@ -23,6 +23,9 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { generateReasonText } from "@/utils/aiLogic";
 import { questions, profileQuestions, preferenceQuestions, Question } from "@/data/questions";
 import { logAnalyticsEvent } from "@/utils/analytics";
+import { useRoommateMatch } from "@/hooks/useRoommateMatch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CheckCircle, MessageSquare } from "lucide-react";
 
 const universities = [
   "LAU (Byblos)",
@@ -43,8 +46,10 @@ export default function AiMatch() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [matches, setMatches] = useState<any[]>([]);
+  const [matchMode, setMatchMode] = useState<'dorms' | 'roommates'>('dorms');
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { loading: roommateLoading, matches: roommateMatches } = useRoommateMatch(userId);
 
   const [profile, setProfile] = useState({
     full_name: "",
@@ -854,9 +859,20 @@ Keep it conversational, concrete, and under 120 words.
                           Gemini 2.5 Flash
                         </Badge>
                         {hasContext && (
-                          <Badge variant="outline" className="text-xs">
-                            Context Memory Active
-                          </Badge>
+                          <>
+                            <Badge variant="outline" className="text-xs">
+                              Context Memory Active
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleResetMemory}
+                              className="ml-auto h-6"
+                            >
+                              <RotateCcw className="w-3 h-3 mr-1" />
+                              Reset Memory
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -959,6 +975,68 @@ Keep it conversational, concrete, and under 120 words.
                   )}
                 </>
               )}
+            </>
+            ) : (
+              // ROOMMATE MATCHES MODE
+              <div className="max-w-7xl mx-auto">
+                {roommateLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[...Array(6)].map((_, i) => <MatchCardSkeleton key={i} />)}
+                  </div>
+                ) : roommateMatches.length === 0 ? (
+                  <Card className="p-8 text-center bg-background/40 backdrop-blur-xl">
+                    <p className="text-foreground/60">No roommate matches found. Complete your profile for better matches!</p>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {roommateMatches.map((match) => (
+                      <Card key={match.user_id} className="overflow-hidden hover:shadow-lg transition-shadow bg-background/40 backdrop-blur-xl">
+                        <CardContent className="p-6">
+                          <div className="flex items-start gap-4 mb-4">
+                            <Avatar className="w-20 h-20 border-4 border-primary/20 shadow-md">
+                              <AvatarImage src={match.profile_photo_url} alt={match.full_name} />
+                              <AvatarFallback className="bg-primary/20 text-primary text-2xl">
+                                {match.full_name?.charAt(0) || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <h3 className="text-xl font-bold">{match.full_name}</h3>
+                              <p className="text-sm text-foreground/60">{match.university}</p>
+                              <Badge variant="secondary" className="mt-2">
+                                {match.matchScore}% Match
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2 mb-4">
+                            {match.matchReasons.map((reason: string, idx: number) => (
+                              <div key={idx} className="flex items-center gap-2 text-sm">
+                                <CheckCircle className="w-4 h-4 text-primary" />
+                                <span>{reason}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          <Button
+                            className="w-full"
+                            onClick={() => navigate("/messages", {
+                              state: {
+                                openThreadWithUserId: match.user_id,
+                                initialMessage: `Hi ${match.full_name}! We're a ${match.matchScore}% match on Roomy. Want to discuss finding a place together?`,
+                                matchProfile: match
+                              }
+                            })}
+                          >
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            Send Message
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
