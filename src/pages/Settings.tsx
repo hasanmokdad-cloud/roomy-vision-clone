@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Save, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Save, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import BottomNav from '@/components/BottomNav';
@@ -34,6 +34,7 @@ export default function Settings() {
   const [settings, setSettings] = useState<UserSettings>(settingsManager.load());
   const [saving, setSaving] = useState(false);
   const [savedItems, setSavedItems] = useState<any[]>([]);
+  const [savedRooms, setSavedRooms] = useState<any[]>([]);
   const [emailVerified, setEmailVerified] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [keepSignedIn, setKeepSignedIn] = useState(true);
@@ -51,12 +52,19 @@ export default function Settings() {
         setSettings(loadedSettings);
       });
 
-      // Load saved items
+      // Load saved items (dorms)
       supabase
         .from('saved_items')
         .select('*')
         .eq('user_id', userId)
         .then(({ data }) => setSavedItems(data || []));
+
+      // Load saved rooms
+      supabase
+        .from('saved_rooms')
+        .select('*')
+        .eq('student_id', userId)
+        .then(({ data }) => setSavedRooms(data || []));
 
       // Check verification status
       supabase.auth.getUser().then(({ data: { user } }) => {
@@ -287,27 +295,50 @@ export default function Settings() {
               </div>
             </Card>
 
-            {/* Saved / Favorites - Only show for students */}
+            {/* Saved Items - Only show for students */}
             {role === 'student' && (
-              <Card className="glass p-6 border-white/20">
-                <div className="flex items-center gap-4 mb-4">
-                  <Heart className="w-6 h-6 text-primary" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">Saved Dorms</h3>
-                    <p className="text-sm text-white/60">
-                      {savedItems.length} {savedItems.length === 1 ? 'item' : 'items'} saved
-                    </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Saved Dorms */}
+                <Card className="glass p-6 border-white/20">
+                  <div className="flex items-center gap-4 mb-4">
+                    <Heart className="w-6 h-6 text-primary" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Saved Dorms</h3>
+                      <p className="text-sm text-white/60">
+                        {savedItems.length} {savedItems.length === 1 ? 'dorm' : 'dorms'} saved
+                      </p>
+                    </div>
                   </div>
-                </div>
-                 <Button
-                   variant="outline"
-                   className="w-full"
-                   onClick={() => navigate('/saved-dorms')}
-                 >
-                   View Saved Items
-                 </Button>
-               </Card>
-             )}
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => navigate('/saved-dorms')}
+                  >
+                    View Saved Dorms
+                  </Button>
+                </Card>
+
+                {/* Saved Rooms */}
+                <Card className="glass p-6 border-white/20">
+                  <div className="flex items-center gap-4 mb-4">
+                    <Home className="w-6 h-6 text-secondary" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Saved Rooms</h3>
+                      <p className="text-sm text-white/60">
+                        {savedRooms.length} {savedRooms.length === 1 ? 'room' : 'rooms'} saved
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => navigate('/saved-rooms')}
+                  >
+                    View Saved Rooms
+                  </Button>
+                </Card>
+              </div>
+            )}
 
             {/* Password & Security */}
             <Card className="glass p-6 border-white/20">
