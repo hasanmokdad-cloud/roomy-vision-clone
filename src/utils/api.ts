@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 export async function fetchDorms() {
   try {
     const { data, error } = await supabase
-      .from("dorms_public")
+      .from("dorms")
       .select("*")
       .eq("verification_status", "Verified")
       .order("monthly_price", { ascending: true });

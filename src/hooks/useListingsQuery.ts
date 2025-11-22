@@ -82,7 +82,7 @@ export function useListingsQuery(filters: Filters) {
 
     // Build base query with specific columns
     let query = supabase
-      .from('dorms_public')
+      .from('dorms')
       .select('id, dorm_name, monthly_price, area, university, verification_status, cover_image, image_url, room_types, room_types_json, capacity, amenities, gender_preference, shuttle, available, created_at, updated_at, type, description, address')
       .eq('available', true)
       .eq('verification_status', 'Verified')

@@ -23,7 +23,7 @@ export function useRecommendations(userId?: string) {
 
       // Load dorms
       const { data: dorms } = await supabase
-        .from("dorms_public")
+        .from("dorms")
         .select("id, dorm_name, monthly_price, university, area, room_types, amenities, verification_status")
         .eq("verification_status", "Verified");
 
