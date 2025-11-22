@@ -10,9 +10,10 @@ interface ProfilePhotoUploadProps {
   userId: string;
   currentUrl?: string | null;
   onUploaded: (url: string) => void;
+  tableName?: 'students' | 'owners';
 }
 
-export function ProfilePhotoUpload({ userId, currentUrl, onUploaded }: ProfilePhotoUploadProps) {
+export function ProfilePhotoUpload({ userId, currentUrl, onUploaded, tableName = 'students' }: ProfilePhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(currentUrl);
   const { toast } = useToast();
@@ -62,9 +63,9 @@ export function ProfilePhotoUpload({ userId, currentUrl, onUploaded }: ProfilePh
         .from('profile-photos')
         .getPublicUrl(filePath);
 
-      // Update student profile
+      // Update profile
       const { error: updateError } = await supabase
-        .from('students')
+        .from(tableName)
         .update({ profile_photo_url: urlData.publicUrl })
         .eq('user_id', userId);
 
@@ -108,7 +109,7 @@ export function ProfilePhotoUpload({ userId, currentUrl, onUploaded }: ProfilePh
       
       // Update database
       const { error: updateError } = await supabase
-        .from('students')
+        .from(tableName)
         .update({ profile_photo_url: null })
         .eq('user_id', userId);
       

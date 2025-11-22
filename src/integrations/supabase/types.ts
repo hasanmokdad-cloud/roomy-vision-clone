@@ -823,6 +823,7 @@ export type Database = {
           notify_whatsapp: boolean | null
           phone_number: string | null
           phone_verified: boolean | null
+          profile_photo_url: string | null
           status: string | null
           updated_at: string | null
           user_id: string
@@ -839,6 +840,7 @@ export type Database = {
           notify_whatsapp?: boolean | null
           phone_number?: string | null
           phone_verified?: boolean | null
+          profile_photo_url?: string | null
           status?: string | null
           updated_at?: string | null
           user_id: string
@@ -855,6 +857,7 @@ export type Database = {
           notify_whatsapp?: boolean | null
           phone_number?: string | null
           phone_verified?: boolean | null
+          profile_photo_url?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string
