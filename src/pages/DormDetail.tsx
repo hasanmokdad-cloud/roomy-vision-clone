@@ -359,7 +359,7 @@ export default function DormDetail() {
               <Card className="glass-hover">
                 <CardContent className="p-6">
                   <h2 className="text-2xl font-bold mb-4">Available Room Options</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                       {/* Database Rooms */}
                       {rooms.map((room, idx) => (
                         <EnhancedRoomCard
@@ -374,25 +374,31 @@ export default function DormDetail() {
                       ))}
                       
                       {/* Legacy room_types_json Rooms */}
-                      {roomTypes.map((room, idx) => (
-                        <EnhancedRoomCard
-                          key={`legacy-${idx}`}
-                          room={{
-                            name: room.type,
-                            type: room.type,
-                            price: room.price,
-                            capacity: room.capacity,
-                            available: room.available !== false,
-                            images: room.images || [],
-                            amenities: room.amenities || []
-                          }}
-                          dormId={dorm.id}
-                          dormName={displayName}
-                          ownerId={dorm.owner_id}
-                          isLegacy={true}
-                          index={rooms.length + idx}
-                        />
-                    ))}
+                      {roomTypes.map((room, idx) => {
+                        // Generate stable ID for legacy rooms to enable save functionality
+                        const legacyRoomId = `legacy-${dorm.id}-${room.type.toLowerCase().replace(/\s+/g, '-')}`;
+                        
+                        return (
+                          <EnhancedRoomCard
+                            key={`legacy-${idx}`}
+                            room={{
+                              id: legacyRoomId,
+                              name: room.type,
+                              type: room.type,
+                              price: room.price,
+                              capacity: room.capacity,
+                              available: room.available !== false,
+                              images: room.images || [],
+                              amenities: room.amenities || []
+                            }}
+                            dormId={dorm.id}
+                            dormName={displayName}
+                            ownerId={dorm.owner_id}
+                            isLegacy={true}
+                            index={rooms.length + idx}
+                          />
+                        );
+                      })}
                   </div>
                   
                   {rooms.length === 0 && roomTypes.length === 0 && (
