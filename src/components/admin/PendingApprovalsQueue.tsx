@@ -178,30 +178,59 @@ export function PendingApprovalsQueue() {
                   key={dorm.id}
                   className="p-4 bg-muted/20 rounded-lg border border-border/40"
                 >
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start gap-4">
                     <div className="flex-1">
-                      <h4 className="font-semibold">{dorm.dorm_name || dorm.name}</h4>
-                      <p className="text-sm text-foreground/60 mt-1">
-                        {dorm.area} • ${dorm.monthly_price || dorm.price}/mo
-                      </p>
-                      <p className="text-xs text-foreground/40 mt-1">
-                        Submitted {new Date(dorm.created_at).toLocaleDateString()}
-                      </p>
+                      <div className="flex items-start gap-3">
+                        {dorm.image_url && (
+                          <img
+                            src={dorm.image_url}
+                            alt={dorm.dorm_name || dorm.name}
+                            className="w-16 h-16 rounded-lg object-cover"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-lg">{dorm.dorm_name || dorm.name}</h4>
+                          <p className="text-sm text-foreground/60 mt-1">
+                            📍 {dorm.area} {dorm.address && `• ${dorm.address}`}
+                          </p>
+                          <p className="text-sm text-foreground/60">
+                            💰 ${dorm.monthly_price || dorm.price}/mo
+                            {dorm.capacity && ` • Capacity: ${dorm.capacity}`}
+                          </p>
+                          {dorm.university && (
+                            <p className="text-sm text-foreground/60">
+                              🎓 Near {dorm.university}
+                            </p>
+                          )}
+                          {dorm.description && (
+                            <p className="text-xs text-foreground/50 mt-2 line-clamp-2">
+                              {dorm.description}
+                            </p>
+                          )}
+                          <p className="text-xs text-foreground/40 mt-2">
+                            Submitted {new Date(dorm.created_at).toLocaleDateString()} at{' '}
+                            {new Date(dorm.created_at).toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <Button
                         size="sm"
                         onClick={() => approveDorm(dorm.id)}
-                        className="bg-green-500 hover:bg-green-600"
+                        className="bg-green-500 hover:bg-green-600 gap-1"
                       >
                         <CheckCircle className="w-4 h-4" />
+                        Approve
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
                         onClick={() => rejectDorm(dorm.id)}
+                        className="gap-1"
                       >
                         <XCircle className="w-4 h-4" />
+                        Reject
                       </Button>
                     </div>
                   </div>
