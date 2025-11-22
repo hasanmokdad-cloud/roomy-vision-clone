@@ -183,7 +183,7 @@ export default function SharedCollection() {
             <p className="text-white/60">No rooms in this collection</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {rooms.map((room, index) => (
               <motion.div
                 key={room.id}
