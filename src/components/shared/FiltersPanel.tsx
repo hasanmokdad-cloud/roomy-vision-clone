@@ -30,18 +30,18 @@ const universities = [
   'Balamand (Dekwaneh)',
   'Balamand (ALBA)',
   'BAU',
-  'Haigazian'
+  'Haigazian',
+  'NDU'
 ];
 
 const byblosAreas = [
   'Nahr Ibrahim',
-  'Blat',
+  'Byblos',
   'Halat',
   'Jeddayel',
   'Mastita',
   'Fidar',
-  'Jbeil',
-  'Byblos'
+  'Habboub'
 ];
 
 const beirutAreas = [
@@ -82,27 +82,53 @@ const budgetPresets = [
 
 const capacityOptions = [1, 2, 3, 4, 5, 6];
 
+// Whitelist of acceptable room types in order
+const acceptableRoomTypes = [
+  'Single',
+  'Double',
+  'Triple',
+  'Apartment',
+  'Junior Suite',
+  'Royal Suite',
+  'Standard Single',
+  'High Standard Single',
+  'Standard Double',
+  'High Standard Double',
+  'Small Single',
+  'Medium Single',
+  'Large Single',
+  'Small Double',
+  'Medium Double',
+  'Large Double',
+  'Large Quadruple'
+];
+
 export default function FiltersPanel({ filters, onFilterChange, dorms }: FiltersPanelProps) {
   const [roomTypes, setRoomTypes] = useState<string[]>([]);
-  const [cities, setCities] = useState<string[]>([]);
 
   useEffect(() => {
     const types = new Set<string>();
-    const citySet = new Set<string>();
     
     dorms.forEach(dorm => {
       if (dorm.room_types) {
         dorm.room_types.split(',').forEach((type: string) => {
-          types.add(type.trim());
+          const trimmedType = type.trim();
+          // Only add if in acceptable list
+          if (acceptableRoomTypes.includes(trimmedType)) {
+            types.add(trimmedType);
+          }
         });
-      }
-      if (dorm.area) {
-        citySet.add(dorm.area);
       }
     });
     
-    setRoomTypes(Array.from(types).sort());
-    setCities(Array.from(citySet).sort());
+    // Sort room types by the order in acceptableRoomTypes
+    const sortedTypes = Array.from(types).sort((a, b) => {
+      const indexA = acceptableRoomTypes.indexOf(a);
+      const indexB = acceptableRoomTypes.indexOf(b);
+      return indexA - indexB;
+    });
+    
+    setRoomTypes(sortedTypes);
   }, [dorms]);
 
   const handleReset = () => {
@@ -146,31 +172,27 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
       </div>
 
       {/* City Filter */}
-      {cities.length > 0 && (
-        <fieldset className="space-y-3" role="group" aria-labelledby="city-filter-label">
-          <Label id="city-filter-label" className="text-base font-semibold">City</Label>
-          <ScrollArea className="h-32 rounded-lg border border-white/10 p-2">
-            <div className="space-y-2" role="group" aria-label="City options">
-              {cities.map(city => (
-                <div key={city} className="flex items-center space-x-2 hover:bg-white/5 p-1 rounded transition-colors">
-                  <Checkbox
-                    id={`city-${city}`}
-                    checked={filters.cities?.includes(city) || false}
-                    onCheckedChange={() => toggleFilter('cities', city)}
-                    aria-label={`Filter by ${city}`}
-                  />
-                  <label
-                    htmlFor={`city-${city}`}
-                    className="text-sm cursor-pointer flex-1"
-                  >
-                    {city}
-                  </label>
-                </div>
-              ))}
+      <fieldset className="space-y-3" role="group" aria-labelledby="city-filter-label">
+        <Label id="city-filter-label" className="text-base font-semibold">City</Label>
+        <div className="space-y-2" role="group" aria-label="City options">
+          {['Byblos', 'Beirut'].map(city => (
+            <div key={city} className="flex items-center space-x-2 hover:bg-white/5 p-2 rounded transition-colors">
+              <Checkbox
+                id={`city-${city}`}
+                checked={filters.cities?.includes(city) || false}
+                onCheckedChange={() => toggleFilter('cities', city)}
+                aria-label={`Filter by ${city}`}
+              />
+              <label
+                htmlFor={`city-${city}`}
+                className="text-sm cursor-pointer flex-1"
+              >
+                {city}
+              </label>
             </div>
-          </ScrollArea>
-        </fieldset>
-      )}
+          ))}
+        </div>
+      </fieldset>
 
       {/* Shuttle Filter */}
       <div className="space-y-3">
@@ -197,7 +219,7 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
       {/* Capacity Filter */}
       <fieldset className="space-y-3" role="group" aria-labelledby="capacity-filter-label">
         <Label id="capacity-filter-label" className="text-base">
-          Capacity {filters.capacity ? `(${filters.capacity}+ people)` : '(Any)'}
+          Capacity {filters.capacity ? `(${filters.capacity}${filters.capacity === 6 ? '+' : ''} ${filters.capacity === 1 ? 'student' : 'students'})` : '(Any)'}
         </Label>
         <div className="grid grid-cols-3 gap-2" role="group" aria-label="Room capacity options">
           {capacityOptions.map((cap) => (
@@ -212,11 +234,11 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
                   ? 'bg-primary/20 border-2 border-primary' 
                   : 'border border-white/10'
               }`}
-              aria-label={`Filter by ${cap}+ ${cap === 1 ? 'person' : 'people'} capacity`}
+              aria-label={`Filter by ${cap}${cap === 6 ? '+' : ''} ${cap === 1 ? 'student' : 'students'}`}
               aria-pressed={filters.capacity === cap}
               role="button"
             >
-              {cap}+ {cap === 1 ? 'Person' : 'People'}
+              {cap} {cap === 1 ? 'student' : 'students'}{cap === 6 ? '+' : ''}
             </button>
           ))}
         </div>
