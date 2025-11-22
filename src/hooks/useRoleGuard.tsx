@@ -57,7 +57,6 @@ export function useRoleGuard(requiredRole?: AppRole) {
 
       const defaultAdminEmails = [
         "hassan.mokdad01@lau.edu",
-        "hasan.mokdad@aiesec.net",
       ];
 
       // Try to read role with retry logic - keep retrying even if no role found

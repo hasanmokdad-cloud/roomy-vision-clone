@@ -36,7 +36,6 @@ export default function Intro() {
 
     const defaultAdminEmails = [
       "hassan.mokdad01@lau.edu",
-      "hasan.mokdad@aiesec.net",
     ];
 
     let role = roleRow?.roles?.name as "admin" | "owner" | "student" | undefined;
