@@ -151,17 +151,17 @@ const AppRoutes = () => {
             } 
           />
 
-          {/* Student Routes */}
-          <Route path="/onboarding" element={<ProtectedRoute element={<Onboarding />} requiredRole="student" />} />
-          <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} requiredRole="student" />} />
-          <Route path="/profile" element={<ProtectedRoute element={<Profile />} requiredRole="student" />} />
-          <Route path="/settings" element={<ProtectedRoute element={<Settings />} requiredRole="student" />} />
-          <Route path="/messages" element={<ProtectedRoute element={<Messages />} requiredRole="student" />} />
-          <Route path="/student-profile/:id" element={<ProtectedRoute element={<StudentProfile />} requiredRole="student" />} />
-          <Route path="/ai-match" element={<ProtectedRoute element={<MobileSwipeLayout><AiMatch /></MobileSwipeLayout>} requiredRole="student" />} />
-          <Route path="/ai-roommate-match" element={<ProtectedRoute element={<StudentMatch />} requiredRole="student" />} />
-          <Route path="/boost-profile" element={<ProtectedRoute element={<BoostProfile />} requiredRole="student" />} />
-          <Route path="/ai-chat" element={<ProtectedRoute element={<MobileSwipeLayout><AiChat /></MobileSwipeLayout>} requiredRole="student" />} />
+          {/* Student Routes - Admins can access all student routes */}
+          <Route path="/onboarding" element={<ProtectedRoute element={<Onboarding />} />} />
+          <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
+          <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
+          <Route path="/settings" element={<ProtectedRoute element={<Settings />} />} />
+          <Route path="/messages" element={<ProtectedRoute element={<Messages />} />} />
+          <Route path="/student-profile/:id" element={<ProtectedRoute element={<StudentProfile />} />} />
+          <Route path="/ai-match" element={<ProtectedRoute element={<MobileSwipeLayout><AiMatch /></MobileSwipeLayout>} />} />
+          <Route path="/ai-roommate-match" element={<ProtectedRoute element={<StudentMatch />} />} />
+          <Route path="/boost-profile" element={<ProtectedRoute element={<BoostProfile />} />} />
+          <Route path="/ai-chat" element={<ProtectedRoute element={<MobileSwipeLayout><AiChat /></MobileSwipeLayout>} />} />
 
           {/* Owner Routes - Admins can access all owner routes */}
           <Route path="/owner" element={<ProtectedRoute element={<OwnerDashboard />} allowedRoles={["owner", "admin"]} />} />
