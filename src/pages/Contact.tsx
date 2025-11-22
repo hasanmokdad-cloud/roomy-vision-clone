@@ -231,6 +231,7 @@ export default function Contact() {
                     </div>
                     <div>
                       <p className="font-semibold">Email</p>
+                      <p className="text-sm text-foreground/70">hassan.mokdad01@lau.edu</p>
                       <p className="text-sm text-foreground/70">nader.safa@lau.edu</p>
                     </div>
                   </div>
@@ -240,6 +241,7 @@ export default function Contact() {
                     </div>
                     <div>
                       <p className="font-semibold">Phone</p>
+                      <p className="text-sm text-foreground/70">+961 81 858 026</p>
                       <p className="text-sm text-foreground/70">+961 76 977 539</p>
                     </div>
                   </div>
