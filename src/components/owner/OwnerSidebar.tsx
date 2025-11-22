@@ -20,7 +20,7 @@ const menuItems = [
   { title: 'Bookings', url: '/owner/bookings', icon: Calendar },
   { title: 'Reviews', url: '/owner/reviews', icon: Star },
   { title: 'Add New Dorm', url: '/owner/dorms/new', icon: PlusCircle },
-  { title: 'Claim Existing Dorm', url: '/owner/claim', icon: Building2 },
+  
   { title: 'Bulk Import', url: '/owner/bulk-import', icon: Upload },
   { title: 'Statistics', url: '/owner/stats', icon: TrendingUp },
   { title: 'Account', url: '/owner/account', icon: Settings },
