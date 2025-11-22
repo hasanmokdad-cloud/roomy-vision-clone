@@ -93,11 +93,12 @@ export function useRoleGuard(requiredRole?: AppRole) {
         resolvedRole = "admin";
       }
 
-      // Admin must NEVER be redirected to /select-role
+      // Admin must NEVER be redirected to /select-role or /unauthorized
+      // Admins have unrestricted access to ALL routes
       if (resolvedRole === "admin") {
         setRole("admin");
         setLoading(false);
-        return;
+        return; // Skip ALL role checks - admins bypass everything
       }
 
       if (!resolvedRole) {
@@ -116,6 +117,7 @@ export function useRoleGuard(requiredRole?: AppRole) {
       // We have a role (either from DB or fallback)
       setRole(resolvedRole);
 
+      // Only check requiredRole if user is NOT admin (admins already returned above)
       if (requiredRole && resolvedRole !== requiredRole) {
         navigate("/unauthorized", { replace: true });
         setLoading(false);
