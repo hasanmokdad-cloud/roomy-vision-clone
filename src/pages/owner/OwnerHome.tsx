@@ -69,11 +69,22 @@ export default function OwnerHome() {
 
     console.log('🔍 Loading ownerId for userId:', userId);
     
+    // First verify the session
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('🔐 Current Session:', {
+      authenticated: !!session,
+      user_id: session?.user?.id,
+      matches_userId: session?.user?.id === userId,
+      expires_at: session?.expires_at
+    });
+    
     const { data: owner, error } = await supabase
       .from('owners')
-      .select('id')
+      .select('id, user_id, full_name, email')
       .eq('user_id', userId)
       .maybeSingle();
+
+    console.log('👤 Owner Query Result:', { owner, error });
 
     if (error) {
       console.error('❌ Error loading ownerId:', error);
@@ -86,7 +97,8 @@ export default function OwnerHome() {
     }
 
     if (owner) {
-      console.log('✅ Loaded ownerId:', owner.id);
+      console.log('✅ Loaded owner record:', owner);
+      console.log('🆔 Setting ownerId to:', owner.id);
       setOwnerId(owner.id);
     } else {
       console.log('⚠️ No owner record found for userId:', userId);

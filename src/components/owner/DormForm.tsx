@@ -213,7 +213,62 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
     }
   };
 
+  const ensureAuthenticated = async (): Promise<boolean> => {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    console.log('🔐 Auth Session Check:', {
+      authenticated: !!session,
+      user_id: session?.user?.id,
+      expires_at: session?.expires_at,
+      error: error?.message
+    });
+    
+    if (error || !session) {
+      toast({
+        title: "Session Expired",
+        description: "Please sign in again to continue.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    // Check if session is about to expire (within 5 minutes)
+    if (session.expires_at) {
+      const expiresAt = new Date(session.expires_at * 1000);
+      const now = new Date();
+      const minutesUntilExpiry = (expiresAt.getTime() - now.getTime()) / (1000 * 60);
+      
+      console.log('⏰ Session expiry check:', { minutesUntilExpiry });
+      
+      if (minutesUntilExpiry < 5) {
+        console.log('🔄 Session expiring soon, refreshing...');
+        const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !newSession) {
+          toast({
+            title: "Session Refresh Failed",
+            description: "Please sign in again.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        
+        console.log('✅ Session refreshed successfully');
+      }
+    }
+    
+    return true;
+  };
+
   const submitDorm = async () => {
+    // Ensure authenticated session FIRST
+    const isAuthenticated = await ensureAuthenticated();
+    if (!isAuthenticated) {
+      return;
+    }
+
+    console.log('📝 Owner ID from props:', ownerId);
+
     if (!validateContactInfo()) {
       toast({
         title: "Validation Error",
@@ -299,23 +354,52 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
         payload.gallery_images = formData.gallery_images;
       }
 
+      console.log('📦 Insert Payload:', {
+        ...payload,
+        owner_id: payload.owner_id,
+        amenities_count: payload.amenities?.length,
+        gallery_images_count: payload.gallery_images?.length
+      });
+
       if (dorm?.id) {
         // Update existing dorm
+        console.log('🔄 Updating existing dorm:', dorm.id);
         const { error } = await supabase
           .from("dorms")
           .update(payload)
           .eq("id", dorm.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Update Error:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
+          throw error;
+        }
         toast({ title: "Success", description: "Dorm updated successfully" });
       } else {
         // Create new dorm with Pending status
         payload.verification_status = "Pending";
         payload.available = true;
         
-        const { error } = await supabase.from("dorms").insert([payload]);
+        console.log('🚀 Attempting INSERT with payload:', JSON.stringify(payload, null, 2));
+        
+        const { data, error } = await supabase.from("dorms").insert([payload]);
+        
+        console.log('📬 Insert Response:', { data, error });
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Insert Error Details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
+          throw error;
+        }
+        
         toast({ 
           title: "Success", 
           description: "Dorm submitted for verification. You'll be notified once it's approved.",
@@ -324,6 +408,7 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
 
       onSaved();
     } catch (error: any) {
+      console.error('💥 Submission Error:', error);
       toast({
         title: "Error",
         description: error.message,
