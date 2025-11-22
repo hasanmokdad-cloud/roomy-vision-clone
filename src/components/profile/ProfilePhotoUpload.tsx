@@ -10,7 +10,7 @@ interface ProfilePhotoUploadProps {
   userId: string;
   currentUrl?: string | null;
   onUploaded: (url: string) => void;
-  tableName?: 'students' | 'owners';
+  tableName?: 'students' | 'owners' | 'admins';
 }
 
 export function ProfilePhotoUpload({ userId, currentUrl, onUploaded, tableName = 'students' }: ProfilePhotoUploadProps) {

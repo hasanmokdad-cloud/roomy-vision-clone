@@ -139,7 +139,7 @@ serve(async (req) => {
       });
     }
 
-    // Insert into appropriate profile table (students or owners)
+    // Insert into appropriate profile table (students, owners, or admins)
     const userEmail = user.email || "";
     const userName = user.user_metadata?.full_name || userEmail.split("@")[0];
 
@@ -172,6 +172,9 @@ serve(async (req) => {
         // The role is already assigned successfully
       }
     }
+    
+    // Note: Admin profiles are NOT created here. Admins are assigned manually by existing admins
+    // and their profiles are created through a separate process
 
     return new Response(JSON.stringify({ 
       success: true,

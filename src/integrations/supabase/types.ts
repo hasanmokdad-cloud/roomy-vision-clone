@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      admins: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          last_login: string | null
+          phone_number: string | null
+          phone_verified: boolean | null
+          profile_photo_url: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name: string
+          id?: string
+          last_login?: string | null
+          phone_number?: string | null
+          phone_verified?: boolean | null
+          profile_photo_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          last_login?: string | null
+          phone_number?: string | null
+          phone_verified?: boolean | null
+          profile_photo_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_chat_sessions: {
         Row: {
           created_at: string | null
