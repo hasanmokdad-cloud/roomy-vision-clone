@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home, Video } from 'lucide-react';
+import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home, Video, Bookmark } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import RoomContactCard from '@/components/listings/RoomContactCard';
 import { DormDetailSkeleton } from '@/components/skeletons/DormDetailSkeleton';
@@ -32,11 +32,28 @@ export default function DormDetail() {
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
   const [tourModalOpen, setTourModalOpen] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
     loadDorm();
     checkAuth();
   }, [id]);
+
+  // Check if dorm is saved
+  useEffect(() => {
+    if (user?.id && dorm?.id) {
+      supabase
+        .from("saved_items")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("item_id", dorm.id)
+        .eq("item_type", "dorm")
+        .maybeSingle()
+        .then(({ data }) => {
+          setIsSaved(!!data);
+        });
+    }
+  }, [user, dorm?.id]);
 
   useEffect(() => {
     // Log dorm view when component mounts and user is loaded
@@ -92,6 +109,55 @@ export default function DormDetail() {
       title: 'Opening Roomy AI',
       description: `Let me help you learn more about ${dorm.dorm_name || dorm.name}`,
     });
+  };
+
+  const toggleSave = async () => {
+    if (!user) {
+      toast({
+        title: "Sign in Required",
+        description: "Please sign in to save dorms.",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+
+    try {
+      if (isSaved) {
+        await supabase
+          .from("saved_items")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("item_id", dorm.id);
+        
+        setIsSaved(false);
+        toast({
+          title: "Removed",
+          description: "Dorm removed from favorites.",
+        });
+      } else {
+        await supabase
+          .from("saved_items")
+          .insert({
+            user_id: user.id,
+            item_id: dorm.id,
+            item_type: "dorm",
+          });
+        
+        setIsSaved(true);
+        toast({
+          title: "Saved",
+          description: "Dorm added to favorites!",
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling save:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorites.",
+        variant: "destructive",
+      });
+    }
   };
 
   const openGallery = (images: string[], startIndex: number = 0) => {
@@ -198,6 +264,24 @@ export default function DormDetail() {
                   {roomTypes.length > 1 ? 'starting from' : 'per month'}
                 </div>
               </div>
+            </div>
+            
+            {/* Save Button */}
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={toggleSave}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-background/80 backdrop-blur-sm border border-border hover:bg-background transition-colors"
+                aria-label={isSaved ? "Remove from favorites" : "Save to favorites"}
+              >
+                <Bookmark
+                  className={`w-6 h-6 transition-colors ${
+                    isSaved ? "fill-primary text-primary" : "text-muted-foreground"
+                  }`}
+                />
+                <span className="text-sm font-medium">
+                  {isSaved ? "Saved" : "Save"}
+                </span>
+              </button>
             </div>
           </div>
 
