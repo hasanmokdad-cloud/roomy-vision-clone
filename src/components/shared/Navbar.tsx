@@ -90,7 +90,7 @@ export default function Navbar() {
     } else if (role === 'owner') {
       navigate('/owner');
     } else {
-      navigate('/dashboard');
+      navigate('/listings');
     }
   };
 
