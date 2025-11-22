@@ -1283,6 +1283,52 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_rooms: {
+        Row: {
+          created_at: string | null
+          dorm_id: string
+          id: string
+          room_id: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dorm_id: string
+          id?: string
+          room_id: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string | null
+          dorm_id?: string
+          id?: string
+          room_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_rooms_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_rooms_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_rooms_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+        ]
+      }
       students: {
         Row: {
           age: number | null

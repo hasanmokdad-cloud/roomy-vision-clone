@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { Calendar, MessageSquare, Home, Users, DollarSign } from 'lucide-react';
+import { Calendar, MessageSquare, Home, Users, DollarSign, Heart, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BookingRequestModal } from '@/components/bookings/BookingRequestModal';
+import { motion } from 'framer-motion';
 
 interface EnhancedRoomCardProps {
   room: {
@@ -40,7 +41,27 @@ export function EnhancedRoomCard({
   const { toast } = useToast();
   const navigate = useNavigate();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const isUnavailable = room.available === false;
+
+  // Check if room is saved on mount
+  useEffect(() => {
+    const checkSaved = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !room.id) return;
+
+      const { data } = await supabase
+        .from('saved_rooms')
+        .select('id')
+        .eq('student_id', user.id)
+        .eq('room_id', room.id)
+        .maybeSingle();
+
+      setIsSaved(!!data);
+    };
+    
+    checkSaved();
+  }, [room.id]);
 
   // Use placeholder images if none provided
   const displayImages = room.images && room.images.length > 0 
@@ -109,18 +130,90 @@ export function EnhancedRoomCard({
     setBookingModalOpen(true);
   };
 
+  const handleSave = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({ 
+        title: 'Sign in required', 
+        description: 'Please sign in to save rooms',
+        variant: 'destructive' 
+      });
+      navigate('/auth');
+      return;
+    }
+
+    if (!room.id) return;
+
+    if (isSaved) {
+      await supabase
+        .from('saved_rooms')
+        .delete()
+        .eq('student_id', user.id)
+        .eq('room_id', room.id);
+      
+      setIsSaved(false);
+      toast({ title: 'Removed from saved rooms' });
+    } else {
+      await supabase
+        .from('saved_rooms')
+        .insert({ 
+          student_id: user.id, 
+          room_id: room.id,
+          dorm_id: dormId 
+        });
+      
+      setIsSaved(true);
+      toast({ title: 'Room saved!' });
+    }
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const shareUrl = `${window.location.origin}/dorm/${dormId}${room.id ? `?room=${room.id}` : ''}`;
+    const shareText = `Check out ${room.name} at ${dormName} - $${room.price}/month`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: room.name,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (err) {
+        // User cancelled or error
+      }
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      toast({ 
+        title: 'Link copied!', 
+        description: 'Share link copied to clipboard' 
+      });
+    }
+  };
+
   return (
     <>
-      <Card 
-        className={`overflow-hidden transition-all duration-300 ${
-          isUnavailable 
-            ? 'opacity-60 grayscale pointer-events-none' 
-            : 'hover:shadow-lg hover:scale-[1.02] cursor-pointer'
-        }`}
+      <motion.div
+        whileHover={{ 
+          y: -8, 
+          scale: 1.03,
+          transition: { duration: 0.3, ease: 'easeOut' }
+        }}
+        className="relative h-full"
       >
-        <CardContent className="p-0">
-          {/* Image Carousel */}
-          <div className="relative">
+        <Card 
+          className={`overflow-hidden h-full shadow-lg transition-shadow duration-300 ${
+            isUnavailable 
+              ? 'opacity-60 grayscale pointer-events-none' 
+              : 'hover:shadow-2xl cursor-pointer group'
+          }`}
+        >
+          <CardContent className="p-0">
+            {/* Image Carousel */}
+            <div className="relative overflow-hidden">
             {displayImages.length > 1 ? (
               <Carousel className="w-full">
                 <CarouselContent>
@@ -129,7 +222,7 @@ export function EnhancedRoomCard({
                       <img
                         src={img}
                         alt={`${room.name} - Image ${idx + 1}`}
-                        className="w-full h-48 object-cover"
+                        className="w-full h-48 object-cover transition-transform duration-700 group-hover:scale-110"
                         loading="lazy"
                       />
                     </CarouselItem>
@@ -142,9 +235,41 @@ export function EnhancedRoomCard({
               <img
                 src={displayImages[0]}
                 alt={room.name}
-                className="w-full h-48 object-cover"
+                className="w-full h-48 object-cover transition-transform duration-700 group-hover:scale-110"
                 loading="lazy"
               />
+            )}
+            
+            {/* Quick Actions Overlay - Appears on Hover */}
+            {!isUnavailable && (
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                <div className="w-full flex gap-2">
+                  <Button
+                    onClick={handleBookTour}
+                    size="sm"
+                    className="flex-1 bg-white text-black hover:bg-white/90 backdrop-blur-sm"
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Book Tour
+                  </Button>
+                  <Button
+                    onClick={handleSave}
+                    size="sm"
+                    variant="secondary"
+                    className="backdrop-blur-sm"
+                  >
+                    <Heart className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+                  </Button>
+                  <Button
+                    onClick={handleShare}
+                    size="sm"
+                    variant="secondary"
+                    className="backdrop-blur-sm"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             )}
             
             {/* Availability Badge */}
@@ -248,6 +373,7 @@ export function EnhancedRoomCard({
           </div>
         </CardContent>
       </Card>
+      </motion.div>
 
       <BookingRequestModal
         open={bookingModalOpen}
