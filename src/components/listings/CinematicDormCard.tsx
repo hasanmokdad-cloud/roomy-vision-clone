@@ -8,6 +8,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ShareButton } from "@/components/shared/ShareButton";
 
 interface RoomType {
   type: string;
@@ -91,9 +92,9 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
   );
 
   const handleCardClick = useCallback((e: React.MouseEvent) => {
-    // Don't navigate if clicking on save button
     const target = e.target as HTMLElement;
-    if (target.closest('.save-button')) {
+    // Don't navigate if clicking on save or share button
+    if (target.closest('.save-button') || target.closest('.share-button')) {
       return;
     }
     navigate(`/dorm/${dorm.id}`);
@@ -288,8 +289,15 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
             }}
           >
             <div className="flex flex-col h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/30 p-6">
-              {/* Save Button */}
-              <div className="flex justify-end mb-4">
+              {/* Share and Save Buttons */}
+              <div className="flex justify-end gap-2 mb-4">
+                <ShareButton 
+                  dormId={dorm.id} 
+                  dormName={dorm.dorm_name}
+                  size="icon"
+                  variant="ghost"
+                  className="p-2 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:bg-background"
+                />
                 <button
                   onClick={toggleSave}
                   className="save-button p-2 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:bg-background transition-colors"

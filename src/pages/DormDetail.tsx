@@ -19,6 +19,8 @@ import { ReviewList } from '@/components/reviews/ReviewList';
 import type { RoomType } from '@/types/RoomType';
 import { logAnalyticsEvent } from '@/utils/analytics';
 import { ThreeDViewer } from '@/components/rooms/ThreeDViewer';
+import { ScrollToTopButton } from '@/components/listings/ScrollToTopButton';
+import { ShareButton } from '@/components/shared/ShareButton';
 
 export default function DormDetail() {
   const { id } = useParams();
@@ -266,15 +268,21 @@ export default function DormDetail() {
               </div>
             </div>
             
-            {/* Save Button */}
-            <div className="flex justify-end mt-4">
+            {/* Share and Save Buttons */}
+            <div className="flex justify-end gap-3 mt-4">
+              <ShareButton 
+                dormId={dorm.id} 
+                dormName={displayName}
+                size="lg"
+                variant="outline"
+              />
               <button
                 onClick={toggleSave}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-background/80 backdrop-blur-sm border border-border hover:bg-background transition-colors"
                 aria-label={isSaved ? "Remove from favorites" : "Save to favorites"}
               >
                 <Bookmark
-                  className={`w-6 h-6 transition-colors ${
+                  className={`w-5 h-5 transition-colors ${
                     isSaved ? "fill-primary text-primary" : "text-muted-foreground"
                   }`}
                 />
@@ -819,6 +827,7 @@ export default function DormDetail() {
         ownerId={dorm.owner_id}
       />
 
+      <ScrollToTopButton />
       <Footer />
     </div>
   );
