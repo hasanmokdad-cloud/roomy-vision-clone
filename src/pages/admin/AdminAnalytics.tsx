@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, FunnelChart, Funnel } from 'recharts';
 import { useAdminDormsQuery } from '@/hooks/useAdminDormsQuery';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { UserGrowthChart } from '@/components/admin/UserGrowthChart';
+import { EngagementChart } from '@/components/admin/EngagementChart';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function AdminAnalytics() {
   const [priceByUniversity, setPriceByUniversity] = useState<any[]>([]);
@@ -76,6 +80,12 @@ export default function AdminAnalytics() {
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {/* User Growth */}
+      <UserGrowthChart />
+
+      {/* Engagement Metrics */}
+      <EngagementChart />
 
       <div className="glass-hover rounded-2xl p-6">
         <h2 className="text-xl font-bold mb-4">Room Types Distribution</h2>
