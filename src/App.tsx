@@ -23,7 +23,7 @@ const DormDetail = lazy(() => import("./pages/DormDetail"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const Analytics = lazy(() => import("./pages/admin/Analytics"));
 const Trends = lazy(() => import("./pages/admin/Trends"));
-const OwnerDashboard = lazy(() => import("./pages/owner/OwnerDashboard"));
+const OwnerHome = lazy(() => import("./pages/owner/OwnerHome"));
 const OwnerPerformance = lazy(() => import("./pages/owner/Performance"));
 const StudentDashboard = lazy(() => import("./pages/dashboard/StudentDashboard"));
 const Listings = lazy(() => import("./pages/Listings"));
@@ -176,7 +176,7 @@ const AppRoutes = () => {
           <Route path="/ai-chat" element={<ProtectedRoute element={<MobileSwipeLayout><AiChat /></MobileSwipeLayout>} />} />
 
           {/* Owner Routes - Admins can access all owner routes */}
-          <Route path="/owner" element={<ProtectedRoute element={<OwnerDashboard />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner" element={<ProtectedRoute element={<OwnerHome />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/listings" element={<ProtectedRoute element={<OwnerListings />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/dorms/new" element={<ProtectedRoute element={<AddNewDorm />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/dorms/:dormId/rooms" element={<ProtectedRoute element={<DormRooms />} allowedRoles={["owner", "admin"]} />} />
@@ -184,7 +184,6 @@ const AppRoutes = () => {
           <Route path="/owner/dorms/:dormId/rooms/:roomId/edit" element={<ProtectedRoute element={<RoomForm />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/bulk-import" element={<ProtectedRoute element={<BulkImport />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/performance" element={<ProtectedRoute element={<OwnerPerformance />} allowedRoles={["owner", "admin"]} />} />
-          <Route path="/owner/add-dorm" element={<ProtectedRoute element={<OwnerAddDorm />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/rooms" element={<ProtectedRoute element={<OwnerRooms />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/bookings" element={<ProtectedRoute element={<OwnerBookings />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/bulk-operations" element={<ProtectedRoute element={<BulkRoomOps />} allowedRoles={["owner", "admin"]} />} />
