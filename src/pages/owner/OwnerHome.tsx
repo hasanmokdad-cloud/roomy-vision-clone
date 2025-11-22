@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Eye, MessageCircle, TrendingUp, Home, LogOut, Plus, Clock, CheckCircle } from 'lucide-react';
+import { Building2, Eye, MessageCircle, TrendingUp, Home, LogOut, Plus, Clock, CheckCircle, Loader2 } from 'lucide-react';
 import { useOwnerDormsQuery } from '@/hooks/useOwnerDormsQuery';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
@@ -194,20 +194,29 @@ export default function OwnerHome() {
         )}
 
         {/* Dorm Form */}
-        {showAddDorm && ownerId && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold">Create New Dorm</h2>
-              <Button variant="ghost" onClick={() => setShowAddDorm(false)}>
-                Cancel
-              </Button>
-            </div>
-            <DormForm
-              ownerId={ownerId}
-              onSaved={handleDormSaved}
-              onCancel={() => setShowAddDorm(false)}
-            />
-          </div>
+        {showAddDorm && (
+          <Card className="glass-hover">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold">Create New Dorm</h2>
+                <Button variant="ghost" onClick={() => setShowAddDorm(false)}>
+                  Cancel
+                </Button>
+              </div>
+              {ownerId ? (
+                <DormForm
+                  ownerId={ownerId}
+                  onSaved={handleDormSaved}
+                  onCancel={() => setShowAddDorm(false)}
+                />
+              ) : (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <p className="ml-3 text-foreground/60">Loading owner information...</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Dorms Pending Verification */}
