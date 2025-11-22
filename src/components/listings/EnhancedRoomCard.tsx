@@ -204,13 +204,13 @@ export function EnhancedRoomCard({
         }}
         className="relative h-full"
       >
-        <Card 
-          className={`overflow-hidden h-full min-h-[520px] shadow-lg transition-shadow duration-300 ${
-            isUnavailable 
-              ? 'opacity-60 grayscale pointer-events-none' 
-              : 'hover:shadow-2xl cursor-pointer group'
-          }`}
-        >
+    <Card 
+      className={`overflow-hidden h-full min-h-[420px] shadow-lg transition-shadow duration-300 ${
+        isUnavailable 
+          ? 'opacity-60 grayscale pointer-events-none' 
+          : 'hover:shadow-2xl cursor-pointer group'
+      }`}
+    >
           <CardContent className="p-0">
             {/* Image Carousel */}
             <div className="relative overflow-hidden">
@@ -222,32 +222,32 @@ export function EnhancedRoomCard({
                       <img
                         src={img}
                         alt={`${room.name} - Image ${idx + 1}`}
-                        className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110"
+                className="w-full h-48 object-cover transition-transform duration-700 group-hover:scale-110"
                         loading="lazy"
                       />
                     </CarouselItem>
                   ))}
                 </CarouselContent>
                 <CarouselPrevious className="left-2" />
-                <CarouselNext className="right-2" />
+                <CarouselNext className="right-12 top-1/2 -translate-y-1/2" />
               </Carousel>
             ) : (
               <img
                 src={displayImages[0]}
                 alt={room.name}
-                className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110"
+                className="w-full h-48 object-cover transition-transform duration-700 group-hover:scale-110"
                 loading="lazy"
               />
             )}
             
             {/* Persistent Save Button - Always Visible */}
             {!isUnavailable && room.id && (
-              <div className="absolute top-3 right-3 z-20">
+              <div className="absolute top-2 right-2 z-30">
                 <Button
                   size="icon"
                   variant="secondary"
                   onClick={handleSave}
-                  className="h-10 w-10 rounded-full bg-white/95 backdrop-blur-sm hover:bg-white shadow-lg hover:scale-110 transition-all duration-200"
+                  className="h-10 w-10 rounded-full bg-white/95 backdrop-blur-sm hover:bg-white shadow-xl border-2 border-white hover:scale-110 transition-all duration-200"
                 >
                   <Heart 
                     className={`w-5 h-5 ${
