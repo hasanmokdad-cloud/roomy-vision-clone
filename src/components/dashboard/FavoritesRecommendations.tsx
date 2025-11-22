@@ -44,7 +44,7 @@ export function FavoritesRecommendations({ userId }: FavoritesRecommendationsPro
       if (savedItems && savedItems.length > 0) {
         const dormIds = savedItems.map(item => item.item_id);
         const { data: favDorms } = await supabase
-          .from("dorms_public")
+          .from("dorms")
           .select("id, dorm_name, area, monthly_price, amenities, university")
           .in("id", dormIds)
           .limit(3);
@@ -61,7 +61,7 @@ export function FavoritesRecommendations({ userId }: FavoritesRecommendationsPro
 
       if (profile) {
         let query = supabase
-          .from("dorms_public")
+          .from("dorms")
           .select("id, dorm_name, area, monthly_price, amenities, university")
           .eq("verification_status", "Verified")
           .limit(3);

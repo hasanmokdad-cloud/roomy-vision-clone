@@ -74,7 +74,7 @@ export default function Dashboard() {
     // Fetch recent dorms
     if (viewedDormIds.length > 0) {
       const { data: dormsData } = await supabase
-        .from('dorms_public')
+        .from('dorms')
         .select('id, dorm_name, monthly_price, cover_image, area')
         .in('id', viewedDormIds.slice(0, 5));
 
