@@ -27,8 +27,10 @@ export default function OwnerHome() {
   });
 
   useEffect(() => {
-    loadOwnerId();
-  }, []);
+    if (userId) {
+      loadOwnerId();
+    }
+  }, [userId]);
 
   useEffect(() => {
     if (dorms) {
@@ -111,7 +113,7 @@ export default function OwnerHome() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigate('/owner')}
+                  onClick={() => navigate('/')}
                   className="gap-2"
                 >
                   <Home className="w-4 h-4" />
@@ -180,10 +182,11 @@ export default function OwnerHome() {
                 </div>
                 <Button
                   onClick={() => setShowAddDorm(true)}
+                  disabled={!ownerId}
                   className="gap-2 bg-gradient-to-r from-primary to-secondary"
                 >
                   <Plus className="w-4 h-4" />
-                  Add New Dorm
+                  {ownerId ? 'Add New Dorm' : 'Loading...'}
                 </Button>
               </div>
             </CardContent>
