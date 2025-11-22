@@ -71,6 +71,13 @@ export type Database = {
             foreignKeyName: "ai_recommendations_log_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_recommendations_log_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorms"
             referencedColumns: ["id"]
           },
@@ -147,6 +154,13 @@ export type Database = {
             foreignKeyName: "analytics_events_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorms"
             referencedColumns: ["id"]
           },
@@ -207,6 +221,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bookings_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bookings_dorm_id_fkey"
             columns: ["dorm_id"]
@@ -347,6 +368,13 @@ export type Database = {
             foreignKeyName: "conversations_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorms"
             referencedColumns: ["id"]
           },
@@ -401,6 +429,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "dorm_claims_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "dorm_claims_dorm_id_fkey"
             columns: ["dorm_id"]
@@ -577,6 +612,13 @@ export type Database = {
             foreignKeyName: "inquiries_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inquiries_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorms"
             referencedColumns: ["id"]
           },
@@ -726,6 +768,13 @@ export type Database = {
             foreignKeyName: "notifications_log_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_log_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorms"
             referencedColumns: ["id"]
           },
@@ -785,6 +834,13 @@ export type Database = {
             foreignKeyName: "owner_notifications_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_notifications_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorms"
             referencedColumns: ["id"]
           },
@@ -818,10 +874,12 @@ export type Database = {
           email_verified: boolean | null
           full_name: string
           id: string
+          last_login: string | null
           notify_email: boolean | null
           notify_whatsapp: boolean | null
           phone_number: string | null
           phone_verified: boolean | null
+          status: string | null
           updated_at: string | null
           user_id: string
           whatsapp_language: string | null
@@ -832,10 +890,12 @@ export type Database = {
           email_verified?: boolean | null
           full_name: string
           id?: string
+          last_login?: string | null
           notify_email?: boolean | null
           notify_whatsapp?: boolean | null
           phone_number?: string | null
           phone_verified?: boolean | null
+          status?: string | null
           updated_at?: string | null
           user_id: string
           whatsapp_language?: string | null
@@ -846,10 +906,12 @@ export type Database = {
           email_verified?: boolean | null
           full_name?: string
           id?: string
+          last_login?: string | null
           notify_email?: boolean | null
           notify_whatsapp?: boolean | null
           phone_number?: string | null
           phone_verified?: boolean | null
+          status?: string | null
           updated_at?: string | null
           user_id?: string
           whatsapp_language?: string | null
@@ -1061,6 +1123,13 @@ export type Database = {
             foreignKeyName: "reviews_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorms"
             referencedColumns: ["id"]
           },
@@ -1163,6 +1232,13 @@ export type Database = {
             foreignKeyName: "rooms_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorms"
             referencedColumns: ["id"]
           },
@@ -1218,15 +1294,18 @@ export type Database = {
           full_name: string
           gender: string | null
           id: string
+          last_login: string | null
           phone_number: string | null
           phone_verified: boolean | null
           preferred_amenities: string[] | null
           preferred_room_types: string[] | null
           preferred_university: string | null
+          profile_completion_score: number | null
           profile_photo_url: string | null
           residential_area: string | null
           room_type: string | null
           roommate_needed: boolean | null
+          status: string | null
           university: string | null
           updated_at: string | null
           user_id: string
@@ -1242,15 +1321,18 @@ export type Database = {
           full_name: string
           gender?: string | null
           id?: string
+          last_login?: string | null
           phone_number?: string | null
           phone_verified?: boolean | null
           preferred_amenities?: string[] | null
           preferred_room_types?: string[] | null
           preferred_university?: string | null
+          profile_completion_score?: number | null
           profile_photo_url?: string | null
           residential_area?: string | null
           room_type?: string | null
           roommate_needed?: boolean | null
+          status?: string | null
           university?: string | null
           updated_at?: string | null
           user_id: string
@@ -1266,15 +1348,18 @@ export type Database = {
           full_name?: string
           gender?: string | null
           id?: string
+          last_login?: string | null
           phone_number?: string | null
           phone_verified?: boolean | null
           preferred_amenities?: string[] | null
           preferred_room_types?: string[] | null
           preferred_university?: string | null
+          profile_completion_score?: number | null
           profile_photo_url?: string | null
           residential_area?: string | null
           room_type?: string | null
           roommate_needed?: boolean | null
+          status?: string | null
           university?: string | null
           updated_at?: string | null
           user_id?: string
@@ -1373,6 +1458,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tour_bookings_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tour_bookings_dorm_id_fkey"
             columns: ["dorm_id"]
@@ -1487,6 +1579,13 @@ export type Database = {
             foreignKeyName: "analytics_events_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorms"
             referencedColumns: ["id"]
           },
@@ -1505,6 +1604,19 @@ export type Database = {
             referencedColumns: ["dorm_id"]
           },
         ]
+      }
+      dorm_performance_summary: {
+        Row: {
+          area: string | null
+          conversion_rate: number | null
+          favorites: number | null
+          id: string | null
+          inquiries: number | null
+          monthly_price: number | null
+          name: string | null
+          views: number | null
+        }
+        Relationships: []
       }
       dorms_public: {
         Row: {
@@ -1584,6 +1696,16 @@ export type Database = {
         }
         Relationships: []
       }
+      engagement_metrics_daily: {
+        Row: {
+          active_users: number | null
+          date: string | null
+          favorites: number | null
+          inquiries: number | null
+          views: number | null
+        }
+        Relationships: []
+      }
       owner_performance_view: {
         Row: {
           dorm_id: string | null
@@ -1602,6 +1724,28 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_activity_summary: {
+        Row: {
+          email: string | null
+          favorites: number | null
+          full_name: string | null
+          last_login: string | null
+          profile_completion_score: number | null
+          total_interactions: number | null
+          tours_booked: number | null
+          user_id: string | null
+          views: number | null
+        }
+        Relationships: []
+      }
+      user_growth_daily: {
+        Row: {
+          date: string | null
+          new_owners: number | null
+          new_students: number | null
+        }
+        Relationships: []
       }
     }
     Functions: {

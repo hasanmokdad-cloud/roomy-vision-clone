@@ -57,7 +57,12 @@ const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications")
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const ReviewManagement = lazy(() => import("./pages/owner/ReviewManagement"));
 const AdminDormOwnership = lazy(() => import("./pages/admin/AdminDormOwnership"));
+const AdminDormClaims = lazy(() => import("./pages/admin/AdminDormClaims"));
+const AdminOwners = lazy(() => import("./pages/admin/AdminOwners"));
+const AdminSystemMonitor = lazy(() => import("./pages/admin/AdminSystemMonitor"));
 const OwnerCalendar = lazy(() => import("./pages/owner/OwnerCalendar"));
+const RoommateProfile = lazy(() => import("./pages/RoommateProfile"));
+const AdminHome = lazy(() => import("./pages/admin/AdminHome"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -158,6 +163,7 @@ const AppRoutes = () => {
           <Route path="/settings" element={<ProtectedRoute element={<Settings />} />} />
           <Route path="/messages" element={<ProtectedRoute element={<Messages />} />} />
           <Route path="/student-profile/:id" element={<ProtectedRoute element={<StudentProfile />} />} />
+          <Route path="/roommate/:userId" element={<ProtectedRoute element={<RoommateProfile />} />} />
           <Route path="/ai-match" element={<ProtectedRoute element={<MobileSwipeLayout><AiMatch /></MobileSwipeLayout>} />} />
           <Route path="/ai-roommate-match" element={<ProtectedRoute element={<StudentMatch />} />} />
           <Route path="/boost-profile" element={<ProtectedRoute element={<BoostProfile />} />} />

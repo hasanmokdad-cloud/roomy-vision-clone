@@ -5,6 +5,9 @@ import { Building2, Users, TrendingUp, CheckCircle, Upload } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast';
 import { dormDataFromExcel } from '@/utils/excelParser';
 import { useAdminDormsQuery } from '@/hooks/useAdminDormsQuery';
+import { UserGrowthChart } from '@/components/admin/UserGrowthChart';
+import { EngagementChart } from '@/components/admin/EngagementChart';
+import { PendingApprovalsQueue } from '@/components/admin/PendingApprovalsQueue';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -118,7 +121,16 @@ export default function AdminHome() {
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl p-6 shadow-sm">
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <UserGrowthChart />
+        <EngagementChart />
+      </div>
+
+      {/* Pending Approvals */}
+      <PendingApprovalsQueue />
+
+      <div className="bg-white dark:bg-card rounded-2xl p-6 shadow-sm">
         <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <AlertDialog>
