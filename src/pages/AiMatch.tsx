@@ -577,7 +577,6 @@ Keep it conversational, concrete, and under 120 words.
   return (
     <div className="min-h-screen flex flex-col relative bg-background">
       <Navbar />
-      {step === 3 && <AIAvatar userName={profile.full_name.split(" ")[0] || "there"} />}
 
       <main className="flex-1 container mx-auto px-4 py-4 md:py-8 mt-16 md:mt-24 mb-20 md:mb-0">
         <div className="max-w-3xl mx-auto">

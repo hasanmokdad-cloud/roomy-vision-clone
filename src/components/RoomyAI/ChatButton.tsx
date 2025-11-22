@@ -13,7 +13,7 @@ export const ChatButton = ({ onClick }: ChatButtonProps) => {
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       onClick={onClick}
-      className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-[60] w-14 h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] transition-shadow duration-300 flex items-center justify-center group"
+      className="fixed bottom-8 right-8 z-[60] w-14 h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] transition-shadow duration-300 flex items-center justify-center group"
       aria-label="Open Roomy AI Chat"
     >
       <Bot className="w-6 h-6 md:w-8 md:h-8 text-white group-hover:animate-pulse" />
