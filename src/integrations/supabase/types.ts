@@ -85,13 +85,6 @@ export type Database = {
             foreignKeyName: "ai_recommendations_log_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
-            referencedRelation: "dorms_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_recommendations_log_dorm_id_fkey"
-            columns: ["dorm_id"]
-            isOneToOne: false
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
           },
@@ -168,13 +161,6 @@ export type Database = {
             foreignKeyName: "analytics_events_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
-            referencedRelation: "dorms_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "analytics_events_dorm_id_fkey"
-            columns: ["dorm_id"]
-            isOneToOne: false
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
           },
@@ -233,13 +219,6 @@ export type Database = {
             columns: ["dorm_id"]
             isOneToOne: false
             referencedRelation: "dorms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_dorm_id_fkey"
-            columns: ["dorm_id"]
-            isOneToOne: false
-            referencedRelation: "dorms_public"
             referencedColumns: ["id"]
           },
           {
@@ -382,13 +361,6 @@ export type Database = {
             foreignKeyName: "conversations_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
-            referencedRelation: "dorms_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "conversations_dorm_id_fkey"
-            columns: ["dorm_id"]
-            isOneToOne: false
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
           },
@@ -441,13 +413,6 @@ export type Database = {
             columns: ["dorm_id"]
             isOneToOne: false
             referencedRelation: "dorms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "dorm_claims_dorm_id_fkey"
-            columns: ["dorm_id"]
-            isOneToOne: false
-            referencedRelation: "dorms_public"
             referencedColumns: ["id"]
           },
           {
@@ -626,13 +591,6 @@ export type Database = {
             foreignKeyName: "inquiries_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
-            referencedRelation: "dorms_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inquiries_dorm_id_fkey"
-            columns: ["dorm_id"]
-            isOneToOne: false
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
           },
@@ -782,13 +740,6 @@ export type Database = {
             foreignKeyName: "notifications_log_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
-            referencedRelation: "dorms_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notifications_log_dorm_id_fkey"
-            columns: ["dorm_id"]
-            isOneToOne: false
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
           },
@@ -842,13 +793,6 @@ export type Database = {
             columns: ["dorm_id"]
             isOneToOne: false
             referencedRelation: "dorms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "owner_notifications_dorm_id_fkey"
-            columns: ["dorm_id"]
-            isOneToOne: false
-            referencedRelation: "dorms_public"
             referencedColumns: ["id"]
           },
           {
@@ -1137,13 +1081,6 @@ export type Database = {
             foreignKeyName: "reviews_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
-            referencedRelation: "dorms_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "reviews_dorm_id_fkey"
-            columns: ["dorm_id"]
-            isOneToOne: false
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
           },
@@ -1240,13 +1177,6 @@ export type Database = {
             columns: ["dorm_id"]
             isOneToOne: false
             referencedRelation: "dorms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rooms_dorm_id_fkey"
-            columns: ["dorm_id"]
-            isOneToOne: false
-            referencedRelation: "dorms_public"
             referencedColumns: ["id"]
           },
           {
@@ -1476,13 +1406,6 @@ export type Database = {
             foreignKeyName: "tour_bookings_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
-            referencedRelation: "dorms_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tour_bookings_dorm_id_fkey"
-            columns: ["dorm_id"]
-            isOneToOne: false
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
           },
@@ -1593,13 +1516,6 @@ export type Database = {
             foreignKeyName: "analytics_events_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
-            referencedRelation: "dorms_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "analytics_events_dorm_id_fkey"
-            columns: ["dorm_id"]
-            isOneToOne: false
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
           },
@@ -1615,84 +1531,6 @@ export type Database = {
           monthly_price: number | null
           name: string | null
           views: number | null
-        }
-        Relationships: []
-      }
-      dorms_public: {
-        Row: {
-          address: string | null
-          amenities: string[] | null
-          area: string | null
-          available: boolean | null
-          capacity: number | null
-          cover_image: string | null
-          created_at: string | null
-          description: string | null
-          dorm_name: string | null
-          gender_preference: string | null
-          id: string | null
-          image_url: string | null
-          location: string | null
-          monthly_price: number | null
-          name: string | null
-          price: number | null
-          room_types: string | null
-          room_types_json: Json | null
-          shuttle: boolean | null
-          type: string | null
-          university: string | null
-          updated_at: string | null
-          verification_status: string | null
-        }
-        Insert: {
-          address?: string | null
-          amenities?: string[] | null
-          area?: string | null
-          available?: boolean | null
-          capacity?: number | null
-          cover_image?: string | null
-          created_at?: string | null
-          description?: string | null
-          dorm_name?: string | null
-          gender_preference?: string | null
-          id?: string | null
-          image_url?: string | null
-          location?: string | null
-          monthly_price?: number | null
-          name?: string | null
-          price?: number | null
-          room_types?: string | null
-          room_types_json?: Json | null
-          shuttle?: boolean | null
-          type?: string | null
-          university?: string | null
-          updated_at?: string | null
-          verification_status?: string | null
-        }
-        Update: {
-          address?: string | null
-          amenities?: string[] | null
-          area?: string | null
-          available?: boolean | null
-          capacity?: number | null
-          cover_image?: string | null
-          created_at?: string | null
-          description?: string | null
-          dorm_name?: string | null
-          gender_preference?: string | null
-          id?: string | null
-          image_url?: string | null
-          location?: string | null
-          monthly_price?: number | null
-          name?: string | null
-          price?: number | null
-          room_types?: string | null
-          room_types_json?: Json | null
-          shuttle?: boolean | null
-          type?: string | null
-          university?: string | null
-          updated_at?: string | null
-          verification_status?: string | null
         }
         Relationships: []
       }
