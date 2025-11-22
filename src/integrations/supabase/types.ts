@@ -1329,6 +1329,45 @@ export type Database = {
           },
         ]
       }
+      shared_collections: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          expires_at: string | null
+          id: string
+          is_public: boolean | null
+          share_code: string
+          student_id: string
+          title: string | null
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_public?: boolean | null
+          share_code: string
+          student_id: string
+          title?: string | null
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_public?: boolean | null
+          share_code?: string
+          student_id?: string
+          title?: string | null
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: []
+      }
       students: {
         Row: {
           age: number | null
@@ -1741,10 +1780,15 @@ export type Database = {
         Args: { p_owner_id: string }
         Returns: boolean
       }
+      generate_share_code: { Args: never; Returns: string }
       get_user_role: { Args: { p_user_id: string }; Returns: string }
       has_role: {
         Args: { _role_name: string; _user_id: string }
         Returns: boolean
+      }
+      increment_collection_views: {
+        Args: { p_share_code: string }
+        Returns: undefined
       }
       is_admin: { Args: { check_user_id: string }; Returns: boolean }
       recompute_dorm_engagement_scores: { Args: never; Returns: Json }

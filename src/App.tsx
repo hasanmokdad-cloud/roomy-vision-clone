@@ -65,6 +65,7 @@ const AdminSystemMonitor = lazy(() => import("./pages/admin/AdminSystemMonitor")
 const OwnerCalendar = lazy(() => import("./pages/owner/OwnerCalendar"));
 const RoommateProfile = lazy(() => import("./pages/RoommateProfile"));
 const AdminHome = lazy(() => import("./pages/admin/AdminHome"));
+const SharedCollection = lazy(() => import("./pages/SharedCollection"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -151,6 +152,7 @@ const AppRoutes = () => {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="/shared/:shareCode" element={<SharedCollection />} />
           <Route 
             path="/select-role" 
             element={
