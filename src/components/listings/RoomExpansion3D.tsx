@@ -195,7 +195,7 @@ export function RoomExpansion3D({
                       <div className="flex items-center justify-center gap-3 text-muted-foreground">
                         <div className="flex items-center gap-2 bg-muted/50 backdrop-blur-sm rounded-full px-4 py-2">
                           <Users className="w-5 h-5" />
-                          <span className="font-semibold">{room.capacity} person{room.capacity > 1 ? 's' : ''}</span>
+                          <span className="font-semibold">{room.capacity} student{room.capacity > 1 ? 's' : ''}</span>
                         </div>
                       </div>
                     </div>
@@ -252,7 +252,7 @@ export function RoomExpansion3D({
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Users className="w-4 h-4" />
-                          <span>Fits {room.capacity} person{room.capacity > 1 ? 's' : ''}</span>
+                          <span>Fits {room.capacity} student{room.capacity > 1 ? 's' : ''}</span>
                         </div>
                       </div>
                     </div>

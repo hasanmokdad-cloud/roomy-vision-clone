@@ -171,7 +171,7 @@ export default function OwnerRooms() {
                                     <h4 className="font-bold text-lg mb-1">{room.type}</h4>
                                     <div className="flex items-center gap-2 text-sm text-foreground/60">
                                       <Users className="w-4 h-4" />
-                                      <span>{room.capacity} {room.capacity === 1 ? 'person' : 'people'}</span>
+                                      <span>{room.capacity} {room.capacity === 1 ? 'student' : 'students'}</span>
                                     </div>
                                   </div>
                                   <div className="text-right">
