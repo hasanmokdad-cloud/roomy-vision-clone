@@ -36,11 +36,11 @@ export default function Profile() {
       >
         <Button
           variant="ghost"
-          onClick={() => navigate('/dashboard/student')}
+          onClick={() => navigate('/listings')}
           className="mb-6 hover:bg-white/10 hover:neon-glow"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
+          Back to Dorms
         </Button>
 
         <StudentProfileForm 
