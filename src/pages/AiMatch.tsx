@@ -344,7 +344,7 @@ Keep it conversational, concrete, and under 120 words.
     try {
       // Load all verified dorms
       const { data: dorms, error: dormsError } = await supabase
-        .from("dorms_public")
+        .from("dorms")
         .select("*")
         .eq("verification_status", "Verified");
 
