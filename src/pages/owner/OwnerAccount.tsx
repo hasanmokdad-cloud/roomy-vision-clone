@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
 
 export default function OwnerAccount() {
   const [loading, setLoading] = useState(true);
@@ -17,6 +18,7 @@ export default function OwnerAccount() {
     notify_email: true,
     notify_whatsapp: true,
     whatsapp_language: 'EN',
+    profile_photo_url: null as string | null,
   });
   const { toast } = useToast();
 
@@ -42,6 +44,7 @@ export default function OwnerAccount() {
         notify_email: data.notify_email ?? true,
         notify_whatsapp: data.notify_whatsapp ?? true,
         whatsapp_language: data.whatsapp_language || 'EN',
+        profile_photo_url: data.profile_photo_url || null,
       });
     }
     setLoading(false);
@@ -72,6 +75,11 @@ export default function OwnerAccount() {
     }
   };
 
+  const handlePhotoUploaded = async (url: string) => {
+    setFormData({ ...formData, profile_photo_url: url });
+    await loadOwnerData();
+  };
+
   if (loading) {
     return <div className="text-center py-12">Loading account settings...</div>;
   }
@@ -84,6 +92,17 @@ export default function OwnerAccount() {
       </div>
 
       <div className="glass-hover rounded-2xl p-6 space-y-6">
+        {/* Profile Photo Section */}
+        <div className="flex flex-col items-center pb-6 border-b border-white/10">
+          <h2 className="text-xl font-bold mb-6">Profile Photo</h2>
+          <ProfilePhotoUpload
+            userId={owner?.user_id}
+            currentUrl={formData.profile_photo_url}
+            onUploaded={handlePhotoUploaded}
+            tableName="owners"
+          />
+        </div>
+
         <div>
           <h2 className="text-xl font-bold mb-4">Profile Information</h2>
           
