@@ -28,10 +28,9 @@ export default function RoleSelection() {
       }
 
       const user = session.user;
-      const defaultAdminEmails = [
-        "hassan.mokdad01@lau.edu",
-        "hasan.mokdad@aiesec.net",
-      ];
+    const defaultAdminEmails = [
+      "hassan.mokdad01@lau.edu",
+    ];
 
       // Check if user already has a role
       const { data: roleRow } = await supabase
