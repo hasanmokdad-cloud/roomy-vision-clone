@@ -89,12 +89,12 @@ export default function Contact() {
     
     setErrors({});
 
-    // Submit to database
+    // Submit to database with sanitized input
     const { error } = await supabase.from('inquiries').insert({
       inquiry_type: 'contact',
-      student_name: `${formData.firstName} ${formData.lastName}`,
-      student_email: formData.email,
-      message: `University: ${formData.university}\n\n${formData.message}`,
+      student_name: sanitizeInput(`${formData.firstName} ${formData.lastName}`),
+      student_email: formData.email, // Email validation is sufficient
+      message: sanitizeInput(`University: ${formData.university}\n\n${formData.message}`),
       owner_id: '00000000-0000-0000-0000-000000000000' // General inquiry, no specific owner
     });
 

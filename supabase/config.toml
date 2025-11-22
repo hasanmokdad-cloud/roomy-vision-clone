@@ -16,7 +16,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.log-user-actions]
-verify_jwt = false
+verify_jwt = true
 
 [functions.train-recommender]
 verify_jwt = false

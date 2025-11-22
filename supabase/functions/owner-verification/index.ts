@@ -29,14 +29,12 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Check if requester is admin
-    const { data: adminCheck } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
+    // Check if requester is admin using security definer function
+    const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin', {
+      check_user_id: user.id
+    });
 
-    if (adminCheck?.role !== 'admin') {
+    if (adminError || !isAdmin) {
       throw new Error('Insufficient permissions - admin role required');
     }
 
