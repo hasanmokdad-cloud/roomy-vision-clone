@@ -485,6 +485,7 @@ export type Database = {
           description: string | null
           dorm_name: string | null
           email: string | null
+          gallery_images: string[] | null
           gender_preference: string | null
           id: string
           image_url: string | null
@@ -515,6 +516,7 @@ export type Database = {
           description?: string | null
           dorm_name?: string | null
           email?: string | null
+          gallery_images?: string[] | null
           gender_preference?: string | null
           id?: string
           image_url?: string | null
@@ -545,6 +547,7 @@ export type Database = {
           description?: string | null
           dorm_name?: string | null
           email?: string | null
+          gallery_images?: string[] | null
           gender_preference?: string | null
           id?: string
           image_url?: string | null
