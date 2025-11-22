@@ -817,6 +817,24 @@ Keep it conversational, concrete, and under 120 words.
                 </p>
               </motion.div>
 
+              {/* Toggle between Dorm and Roommate Matches */}
+              <div className="flex justify-center gap-2 mb-6">
+                <Button
+                  variant={matchMode === 'dorms' ? 'default' : 'outline'}
+                  onClick={() => setMatchMode('dorms')}
+                  className="px-6"
+                >
+                  Find Dorms
+                </Button>
+                <Button
+                  variant={matchMode === 'roommates' ? 'default' : 'outline'}
+                  onClick={() => setMatchMode('roommates')}
+                  className="px-6"
+                >
+                  Find Roommates
+                </Button>
+              </div>
+
               {/* 🔮 Roomy AI (Gemini) Summary Card */}
               {aiLoading && (
                 <motion.div
@@ -883,115 +901,181 @@ Keep it conversational, concrete, and under 120 words.
                 </motion.div>
               )}
 
-              {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[1, 2, 3].map((i) => (
-                    <MatchCardSkeleton key={i} />
-                  ))}
-                </div>
-              ) : (
-                <>
-                  <ErrorBoundary>
-                    <motion.div
-                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                      initial="hidden"
-                      animate="visible"
-                      variants={{
-                        visible: {
-                          transition: {
-                            staggerChildren: 0.15,
-                            delayChildren: 0.15,
-                          },
-                        },
-                      }}
-                    >
-                      {matches.map((match, idx) => (
-                        <motion.div
-                          key={match.id || idx}
-                          initial={{ opacity: 0, y: 30 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: idx * 0.1 }}
-                          className="bg-background/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 hover:shadow-xl hover:border-primary/40 transition-all duration-300"
-                        >
-                          <div className="flex items-start justify-between mb-3">
-                            <h3 className="text-2xl font-bold text-foreground">{match.dorm_name || match.name}</h3>
-                            <Badge
-                              variant={
-                                match.matchScore >= 80 ? "default" : match.matchScore >= 60 ? "secondary" : "outline"
-                              }
-                              className="ml-2"
-                            >
-                              {match.matchScore}% match
-                            </Badge>
-                          </div>
-
-                          {/* Match reasons */}
-                          {match.matchReasons && match.matchReasons.length > 0 && (
-                            <div className="space-y-1 mb-4">
-                              {match.matchReasons.map((reason: string, i: number) => (
-                                <div key={i} className="flex items-center text-sm text-foreground/70">
-                                  <span className="text-primary mr-2">✓</span>
-                                  {reason}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          <div className="space-y-2 text-sm text-foreground/70 mb-4">
-                            <p>📍 {match.area || match.location}</p>
-                            <p>💰 ${match.monthly_price}/month</p>
-                            <p>🛏️ {match.room_types || "Various types"}</p>
-                            {match.amenities && match.amenities.length > 0 && (
-                              <p>✨ {match.amenities.slice(0, 3).join(", ")}</p>
-                            )}
-                          </div>
-
-                          <Button
-                            onClick={() => navigate(`/dorm/${match.id}`)}
-                            className="w-full mt-4 bg-gradient-to-r from-primary to-secondary"
-                          >
-                            View Details
-                          </Button>
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  </ErrorBoundary>
-
-                  {matches.length === 0 && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="text-center bg-background/40 backdrop-blur-xl border border-white/10 rounded-3xl p-12"
-                    >
-                      <Sparkles className="w-12 h-12 mx-auto mb-4 text-primary" />
-                      <h3 className="text-xl font-bold text-foreground mb-2">No Perfect Match Yet</h3>
-                      <p className="text-foreground/70 text-lg mb-4">
-                        We couldn't find dorms that match all your criteria.
-                      </p>
-                      <p className="text-foreground/60 text-sm">
-                        Try adjusting your budget or location preferences and search again.
-                      </p>
-                    </motion.div>
-                  )}
-                </>
-              )}
-            </>
-            ) : (
-              // ROOMMATE MATCHES MODE
-              <div className="max-w-7xl mx-auto">
-                {roommateLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[...Array(6)].map((_, i) => <MatchCardSkeleton key={i} />)}
+              {matchMode === 'dorms' ? (
+                // DORM MATCHES MODE
+                loading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3].map((i) => (
+                      <MatchCardSkeleton key={i} />
+                    ))}
                   </div>
-                ) : roommateMatches.length === 0 ? (
-                  <Card className="p-8 text-center bg-background/40 backdrop-blur-xl">
-                    <p className="text-foreground/60">No roommate matches found. Complete your profile for better matches!</p>
-                  </Card>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {roommateMatches.map((match) => (
-                      <Card key={match.user_id} className="overflow-hidden hover:shadow-lg transition-shadow bg-background/40 backdrop-blur-xl">
-                        <CardContent className="p-6">
+                  <>
+                    {/* 🔮 Roomy AI (Gemini) Summary Card */}
+                    {aiLoading && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-background/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 md:p-6 shadow-lg"
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+                          <h3 className="text-lg md:text-xl font-semibold">Roomy AI is analyzing...</h3>
+                        </div>
+                        <div className="flex gap-2 mb-3">
+                          <Badge variant="secondary" className="text-xs">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            Gemini 2.5 Flash
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-foreground/70">
+                          Generating personalized insights based on your preferences.
+                        </p>
+                      </motion.div>
+                    )}
+
+                    {aiSummary && !aiLoading && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className="bg-primary/10 backdrop-blur-xl border border-primary/30 rounded-2xl p-4 md:p-6 shadow-[0_0_30px_rgba(129,140,248,0.35)]"
+                      >
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Sparkles className="w-5 h-5 text-primary" />
+                              <h3 className="text-lg md:text-xl font-bold">Roomy AI Insight</h3>
+                            </div>
+                            <div className="flex gap-2 flex-wrap">
+                              <Badge variant="secondary" className="text-xs">
+                                <Sparkles className="w-3 h-3 mr-1" />
+                                Gemini 2.5 Flash
+                              </Badge>
+                              {hasContext && (
+                                <>
+                                  <Badge variant="outline" className="text-xs">
+                                    Context Memory Active
+                                  </Badge>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleResetMemory}
+                                    className="ml-auto h-6"
+                                  >
+                                    <RotateCcw className="w-3 h-3 mr-1" />
+                                    Reset Memory
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="prose prose-sm max-w-none text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                          {aiSummary}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    <ErrorBoundary>
+                      <motion.div
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                        initial="hidden"
+                        animate="visible"
+                        variants={{
+                          visible: {
+                            transition: {
+                              staggerChildren: 0.15,
+                              delayChildren: 0.15,
+                            },
+                          },
+                        }}
+                      >
+                        {matches.map((match, idx) => (
+                          <motion.div
+                            key={match.id || idx}
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.1 }}
+                            className="bg-background/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 hover:shadow-xl hover:border-primary/40 transition-all duration-300"
+                          >
+                            <div className="flex items-start justify-between mb-3">
+                              <h3 className="text-2xl font-bold text-foreground">{match.dorm_name || match.name}</h3>
+                              <Badge
+                                variant={
+                                  match.matchScore >= 80 ? "default" : match.matchScore >= 60 ? "secondary" : "outline"
+                                }
+                                className="ml-2"
+                              >
+                                {match.matchScore}% match
+                              </Badge>
+                            </div>
+
+                            {/* Match reasons */}
+                            {match.matchReasons && match.matchReasons.length > 0 && (
+                              <div className="space-y-1 mb-4">
+                                {match.matchReasons.map((reason: string, i: number) => (
+                                  <div key={i} className="flex items-center text-sm text-foreground/70">
+                                    <span className="text-primary mr-2">✓</span>
+                                    {reason}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            <div className="space-y-2 text-sm text-foreground/70 mb-4">
+                              <p>📍 {match.area || match.location}</p>
+                              <p>💰 ${match.monthly_price}/month</p>
+                              <p>🛏️ {match.room_types || "Various types"}</p>
+                              {match.amenities && match.amenities.length > 0 && (
+                                <p>✨ {match.amenities.slice(0, 3).join(", ")}</p>
+                              )}
+                            </div>
+
+                            <Button
+                              onClick={() => navigate(`/dorm/${match.id}`)}
+                              className="w-full mt-4 bg-gradient-to-r from-primary to-secondary"
+                            >
+                              View Details
+                            </Button>
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    </ErrorBoundary>
+
+                    {matches.length === 0 && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-center bg-background/40 backdrop-blur-xl border border-white/10 rounded-3xl p-12"
+                      >
+                        <Sparkles className="w-12 h-12 mx-auto mb-4 text-primary" />
+                        <h3 className="text-xl font-bold text-foreground mb-2">No Perfect Match Yet</h3>
+                        <p className="text-foreground/70 text-lg mb-4">
+                          We couldn't find dorms that match all your criteria.
+                        </p>
+                        <p className="text-foreground/60 text-sm">
+                          Try adjusting your budget or location preferences and search again.
+                        </p>
+                      </motion.div>
+                    )}
+                  </>
+                )
+              ) : (
+                // ROOMMATE MATCHES MODE
+                <div className="max-w-7xl mx-auto">
+                  {roommateLoading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {[...Array(6)].map((_, i) => <MatchCardSkeleton key={i} />)}
+                    </div>
+                  ) : roommateMatches.length === 0 ? (
+                    <div className="text-center bg-background/40 backdrop-blur-xl border border-white/10 rounded-3xl p-12">
+                      <p className="text-foreground/60">No roommate matches found. Complete your profile for better matches!</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {roommateMatches.map((match) => (
+                        <div key={match.user_id} className="overflow-hidden hover:shadow-lg transition-shadow bg-background/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
                           <div className="flex items-start gap-4 mb-4">
                             <Avatar className="w-20 h-20 border-4 border-primary/20 shadow-md">
                               <AvatarImage src={match.profile_photo_url} alt={match.full_name} />
@@ -1030,13 +1114,12 @@ Keep it conversational, concrete, and under 120 words.
                             <MessageSquare className="w-4 h-4 mr-2" />
                             Send Message
                           </Button>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
