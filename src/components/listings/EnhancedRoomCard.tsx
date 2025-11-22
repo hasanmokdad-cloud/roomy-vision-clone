@@ -212,42 +212,44 @@ export function EnhancedRoomCard({
       }`}
     >
           <CardContent className="p-0">
-            {/* Image Carousel */}
-            <div className="relative overflow-hidden">
-            {displayImages.length > 1 ? (
-              <Carousel className="w-full">
-                <CarouselContent>
-                  {displayImages.slice(0, 10).map((img, idx) => (
-                    <CarouselItem key={idx}>
-                      <img
-                        src={img}
-                        alt={`${room.name} - Image ${idx + 1}`}
-                className="w-full h-48 object-cover transition-transform duration-700 group-hover:scale-110"
-                        loading="lazy"
-                      />
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious className="left-2" />
-                <CarouselNext className="right-12 top-1/2 -translate-y-1/2" />
-              </Carousel>
-            ) : (
-              <img
-                src={displayImages[0]}
-                alt={room.name}
-                className="w-full h-48 object-cover transition-transform duration-700 group-hover:scale-110"
-                loading="lazy"
-              />
-            )}
-            
-            {/* Persistent Save Button - Always Visible */}
-            {!isUnavailable && room.id && (
-              <div className="absolute top-2 right-2 z-30">
+            {/* Wrapper for entire image section with absolute positioning */}
+            <div className="relative">
+              {/* Image Container */}
+              <div className="relative overflow-hidden">
+                {displayImages.length > 1 ? (
+                  <Carousel className="w-full">
+                    <CarouselContent>
+                      {displayImages.slice(0, 10).map((img, idx) => (
+                        <CarouselItem key={idx}>
+                          <img
+                            src={img}
+                            alt={`${room.name} - Image ${idx + 1}`}
+                            className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110"
+                            loading="lazy"
+                          />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="left-2" />
+                    <CarouselNext className="right-2" />
+                  </Carousel>
+                ) : (
+                  <img
+                    src={displayImages[0]}
+                    alt={room.name}
+                    className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110"
+                    loading="lazy"
+                  />
+                )}
+              </div>
+
+              {/* Save Button - OUTSIDE carousel but positioned over it */}
+              {!isUnavailable && room.id && (
                 <Button
                   size="icon"
                   variant="secondary"
                   onClick={handleSave}
-                  className="h-10 w-10 rounded-full bg-white/95 backdrop-blur-sm hover:bg-white shadow-xl border-2 border-white hover:scale-110 transition-all duration-200"
+                  className="absolute top-3 right-3 z-50 h-10 w-10 rounded-full bg-white hover:bg-white shadow-2xl border-2 border-white/50 hover:scale-110 transition-all duration-200"
                 >
                   <Heart 
                     className={`w-5 h-5 ${
@@ -257,43 +259,41 @@ export function EnhancedRoomCard({
                     }`} 
                   />
                 </Button>
-              </div>
-            )}
+              )}
 
-            {/* Quick Actions Overlay - Appears on Hover */}
-            {!isUnavailable && (
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4 z-10">
-                <div className="w-full flex gap-2">
-                  <Button
-                    onClick={handleBookTour}
-                    size="sm"
-                    className="flex-1 bg-white text-black hover:bg-white/90 backdrop-blur-sm"
-                  >
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Book Tour
-                  </Button>
-                  <Button
-                    onClick={handleShare}
-                    size="sm"
-                    variant="secondary"
-                    className="backdrop-blur-sm"
-                  >
-                    <Share2 className="w-4 h-4" />
-                  </Button>
-                </div>
+              {/* Availability Badge */}
+              <div className="absolute top-3 left-3 z-40">
+                <Badge 
+                  variant={isUnavailable ? "secondary" : "default"}
+                  className={isUnavailable ? "bg-muted" : "bg-primary text-primary-foreground"}
+                >
+                  {isUnavailable ? '🔒 Reserved' : '✓ Available'}
+                </Badge>
               </div>
-            )}
-            
-            {/* Availability Badge */}
-            <div className="absolute top-2 left-2 z-10">
-              <Badge 
-                variant={isUnavailable ? "secondary" : "default"}
-                className={isUnavailable ? "bg-muted" : "bg-primary text-primary-foreground"}
-              >
-                {isUnavailable ? '🔒 Reserved' : '✓ Available'}
-              </Badge>
+
+              {/* Quick Actions Overlay - Appears on Hover */}
+              {!isUnavailable && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4 z-20">
+                  <div className="w-full flex gap-2">
+                    <Button
+                      onClick={handleBookTour}
+                      size="sm"
+                      className="flex-1 bg-white text-black hover:bg-white/90"
+                    >
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Book Tour
+                    </Button>
+                    <Button
+                      onClick={handleShare}
+                      size="sm"
+                      variant="secondary"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
 
           {/* Content */}
           <div className="p-4 space-y-3">
