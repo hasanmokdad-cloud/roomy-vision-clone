@@ -196,10 +196,10 @@ export default function AiChat() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#0F1624] via-[#15203B] to-[#1a2847]">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#0F1624] via-[#15203B] to-[#1a2847] w-full max-w-screen overflow-x-hidden">
       <Navbar />
       
-      <main className="flex-1 container max-w-4xl mx-auto px-4 py-8 mt-20 flex flex-col">
+      <main className="flex-1 container max-w-4xl mx-auto px-2 md:px-4 py-8 mt-20 flex flex-col overflow-x-hidden">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

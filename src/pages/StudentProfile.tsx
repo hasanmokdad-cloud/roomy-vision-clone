@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, User, Heart, MapPin, GraduationCap, DollarSign } from "lucide-react";
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
@@ -106,6 +106,11 @@ export default function StudentProfile() {
             <CardContent className="pt-6">
               <div className="flex flex-col md:flex-row items-center gap-6">
                 <Avatar className="w-24 h-24 border-4 border-primary/20">
+                  <AvatarImage 
+                    src={student.profile_photo_url || undefined} 
+                    alt={student.full_name} 
+                    className="object-cover"
+                  />
                   <AvatarFallback className="text-2xl bg-gradient-to-br from-primary to-secondary text-white">
                     {student.full_name?.charAt(0) || "S"}
                   </AvatarFallback>

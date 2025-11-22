@@ -221,7 +221,7 @@ export const ChatbotBubble = () => {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed bottom-24 right-6 w-96 h-[500px] glass rounded-2xl shadow-2xl flex flex-col z-50"
+            className="fixed bottom-28 right-6 w-96 h-[500px] glass rounded-2xl shadow-2xl flex flex-col z-50"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
@@ -313,7 +313,7 @@ export const ChatbotBubble = () => {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition-shadow duration-300 flex items-center justify-center z-50"
+        className="fixed bottom-20 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition-shadow duration-300 flex items-center justify-center z-50"
         aria-label="Open Roomy AI Chat"
       >
         <MessageCircle className="w-6 h-6 text-white" />

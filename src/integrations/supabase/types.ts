@@ -230,6 +230,39 @@ export type Database = {
           },
         ]
       }
+      bulk_dorm_assignments: {
+        Row: {
+          admin_user_id: string
+          created_at: string | null
+          csv_filename: string | null
+          errors: Json | null
+          failed_assignments: number
+          id: string
+          successful_assignments: number
+          total_rows: number
+        }
+        Insert: {
+          admin_user_id: string
+          created_at?: string | null
+          csv_filename?: string | null
+          errors?: Json | null
+          failed_assignments?: number
+          id?: string
+          successful_assignments?: number
+          total_rows?: number
+        }
+        Update: {
+          admin_user_id?: string
+          created_at?: string | null
+          csv_filename?: string | null
+          errors?: Json | null
+          failed_assignments?: number
+          id?: string
+          successful_assignments?: number
+          total_rows?: number
+        }
+        Relationships: []
+      }
       chat_logs: {
         Row: {
           created_at: string | null
@@ -1154,6 +1187,7 @@ export type Database = {
           preferred_amenities: string[] | null
           preferred_room_types: string[] | null
           preferred_university: string | null
+          profile_photo_url: string | null
           residential_area: string | null
           room_type: string | null
           roommate_needed: boolean | null
@@ -1177,6 +1211,7 @@ export type Database = {
           preferred_amenities?: string[] | null
           preferred_room_types?: string[] | null
           preferred_university?: string | null
+          profile_photo_url?: string | null
           residential_area?: string | null
           room_type?: string | null
           roommate_needed?: boolean | null
@@ -1200,6 +1235,7 @@ export type Database = {
           preferred_amenities?: string[] | null
           preferred_room_types?: string[] | null
           preferred_university?: string | null
+          profile_photo_url?: string | null
           residential_area?: string | null
           room_type?: string | null
           roommate_needed?: boolean | null
