@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +27,8 @@ import { NotificationsPanel } from '@/components/shared/NotificationsPanel';
 export default function Navbar() {
   const [authOpen, setAuthOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   const unreadCount = useUnreadCount(user?.id || null);
@@ -52,10 +54,44 @@ export default function Navbar() {
     };
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      const fetchRole = async () => {
+        const { data } = await supabase.rpc('get_user_role', { 
+          p_user_id: user.id 
+        });
+        
+        const defaultAdminEmails = [
+          'hassan.mokdad01@lau.edu',
+          'hasan.mokdad@aiesec.net',
+        ];
+        
+        const resolvedRole = data || 
+          (defaultAdminEmails.includes(user.email ?? '') ? 'admin' : null);
+        
+        setRole(resolvedRole);
+      };
+      
+      fetchRole();
+    } else {
+      setRole(null);
+    }
+  }, [user]);
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     sessionStorage.removeItem('intro-played');
     navigate('/auth');
+  };
+
+  const handleDashboardClick = () => {
+    if (role === 'admin') {
+      navigate('/admin');
+    } else if (role === 'owner') {
+      navigate('/owner');
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   return (
@@ -246,7 +282,7 @@ export default function Navbar() {
                       My Profile
                     </DropdownMenuItem>
                     <DropdownMenuItem 
-                      onClick={() => navigate('/dashboard')}
+                      onClick={handleDashboardClick}
                       role="menuitem"
                     >
                       <LayoutDashboard className="w-4 h-4 mr-2" aria-hidden="true" />
