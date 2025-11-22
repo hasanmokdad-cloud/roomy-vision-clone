@@ -71,10 +71,10 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.address) {
+    if (!formData.name || !formData.address || !formData.area || !formData.monthly_price || !formData.capacity) {
       toast({
         title: "Error",
-        description: "Name and address are required",
+        description: "Name, address, area, price, and room capacity are required",
         variant: "destructive",
       });
       return;
@@ -167,12 +167,13 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="area">Area</Label>
+              <Label htmlFor="area">Area *</Label>
               <Input
                 id="area"
                 value={formData.area}
                 onChange={(e) => setFormData({ ...formData, area: e.target.value })}
                 placeholder="e.g., Hamra"
+                required
               />
             </div>
 
@@ -189,7 +190,7 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="monthly_price">Starting Price ($)</Label>
+              <Label htmlFor="monthly_price">Starting/Monthly Price ($) *</Label>
               <Input
                 id="monthly_price"
                 type="number"
@@ -197,17 +198,19 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
                 value={formData.monthly_price}
                 onChange={(e) => setFormData({ ...formData, monthly_price: e.target.value })}
                 placeholder="500"
+                required
               />
             </div>
 
             <div>
-              <Label htmlFor="capacity">Total Capacity</Label>
+              <Label htmlFor="capacity">Room Capacity (i.e. Total Number of Rooms) *</Label>
               <Input
                 id="capacity"
                 type="number"
                 value={formData.capacity}
                 onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
                 placeholder="20"
+                required
               />
             </div>
           </div>
