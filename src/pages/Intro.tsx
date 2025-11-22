@@ -57,7 +57,7 @@ export default function Intro() {
     } else if (role === "owner") {
       navigate("/owner", { replace: true });
     } else if (role === "student") {
-      navigate("/dashboard", { replace: true });
+      navigate("/listings", { replace: true });
     }
   };
 
