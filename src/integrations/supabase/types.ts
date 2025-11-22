@@ -1838,6 +1838,29 @@ export type Database = {
         Args: { p_share_code: string }
         Returns: undefined
       }
+      insert_owner_dorm: {
+        Args: {
+          p_address: string
+          p_amenities: string[]
+          p_area: string
+          p_capacity: number
+          p_cover_image: string
+          p_description: string
+          p_dorm_name: string
+          p_email: string
+          p_gallery_images: string[]
+          p_gender_preference: string
+          p_image_url: string
+          p_monthly_price: number
+          p_name: string
+          p_owner_id: string
+          p_phone_number: string
+          p_shuttle: boolean
+          p_university: string
+          p_website: string
+        }
+        Returns: string
+      }
       is_admin: { Args: { check_user_id: string }; Returns: boolean }
       recompute_dorm_engagement_scores: { Args: never; Returns: Json }
       reset_student_ai_memory: {

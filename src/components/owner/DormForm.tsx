@@ -384,21 +384,42 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
         payload.verification_status = "Pending";
         payload.available = true;
         
-        console.log('🚀 Attempting INSERT with payload:', JSON.stringify(payload, null, 2));
-        
-        const { data, error } = await supabase.from("dorms").insert([payload]);
-        
-        console.log('📬 Insert Response:', { data, error });
-
-        if (error) {
-          console.error('❌ Insert Error Details:', {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code
-          });
-          throw error;
-        }
+      console.log('🚀 Attempting INSERT via RPC with ownerId:', ownerId);
+      
+      const { data: newDormId, error } = await supabase.rpc('insert_owner_dorm', {
+        p_owner_id: ownerId,
+        p_name: payload.name,
+        p_dorm_name: payload.dorm_name || payload.name,
+        p_address: payload.address,
+        p_area: payload.area,
+        p_university: payload.university || null,
+        p_description: payload.description || null,
+        p_image_url: payload.image_url || null,
+        p_cover_image: payload.cover_image || payload.image_url || null,
+        p_monthly_price: payload.monthly_price,
+        p_capacity: payload.capacity,
+        p_amenities: payload.amenities || [],
+        p_shuttle: payload.shuttle || false,
+        p_gender_preference: payload.gender_preference,
+        p_phone_number: payload.phone_number,
+        p_email: payload.email || null,
+        p_website: payload.website || null,
+        p_gallery_images: payload.gallery_images || []
+      });
+      
+      console.log('📬 RPC Response:', { newDormId, error });
+      
+      if (error) {
+        console.error('❌ RPC Error Details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw error;
+      }
+      
+      console.log('✅ Dorm created with ID:', newDormId);
         
         toast({ 
           title: "Success", 
