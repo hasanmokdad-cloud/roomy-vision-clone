@@ -11,9 +11,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DormForm } from '@/components/owner/DormForm';
 import { NotificationBell } from '@/components/owner/NotificationBell';
+import { useToast } from '@/hooks/use-toast';
 
 export default function OwnerHome() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { userId, role, loading: authLoading } = useRoleGuard('owner');
   const [ownerId, setOwnerId] = useState<string>();
   const { data: dorms, refetch: refetchDorms } = useOwnerDormsQuery(ownerId);
@@ -60,16 +62,39 @@ export default function OwnerHome() {
   }, [dorms]);
 
   const loadOwnerId = async () => {
-    if (!userId) return;
+    if (!userId) {
+      console.log('❌ No userId, cannot load ownerId');
+      return;
+    }
 
-    const { data: owner } = await supabase
+    console.log('🔍 Loading ownerId for userId:', userId);
+    
+    const { data: owner, error } = await supabase
       .from('owners')
       .select('id')
       .eq('user_id', userId)
       .maybeSingle();
 
+    if (error) {
+      console.error('❌ Error loading ownerId:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load owner information. Please refresh the page.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (owner) {
+      console.log('✅ Loaded ownerId:', owner.id);
       setOwnerId(owner.id);
+    } else {
+      console.log('⚠️ No owner record found for userId:', userId);
+      toast({
+        title: "Account Setup Required",
+        description: "Your owner account needs to be set up. Please contact support.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -92,6 +117,15 @@ export default function OwnerHome() {
     { title: 'Messages', value: unreadMessages, icon: MessageCircle, color: 'from-purple-500 to-pink-500' },
     { title: 'Verified', value: stats.verifiedDorms, icon: CheckCircle, color: 'from-orange-500 to-red-500' },
   ];
+
+  // Debug logging
+  console.log('=== Owner Home Debug ===');
+  console.log('showAddDorm:', showAddDorm);
+  console.log('ownerId:', ownerId);
+  console.log('dorms:', dorms);
+  console.log('dorms?.length:', dorms?.length);
+  console.log('!showAddDorm:', !showAddDorm);
+  console.log('Should show button:', !showAddDorm);
 
   if (authLoading) {
     return (
@@ -170,7 +204,7 @@ export default function OwnerHome() {
         </div>
 
         {/* Add New Dorm Button */}
-        {!showAddDorm && (
+        {true && (
           <Card className="glass-hover">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -180,14 +214,30 @@ export default function OwnerHome() {
                     Create a new dorm listing and add rooms to start receiving inquiries
                   </p>
                 </div>
-                <Button
-                  onClick={() => setShowAddDorm(true)}
-                  disabled={!ownerId}
-                  className="gap-2 bg-gradient-to-r from-primary to-secondary"
-                >
-                  <Plus className="w-4 h-4" />
-                  {ownerId ? 'Add New Dorm' : 'Loading...'}
-                </Button>
+                {showAddDorm ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      console.log('🔽 Hide Form clicked');
+                      setShowAddDorm(false);
+                    }}
+                    className="gap-2"
+                  >
+                    Hide Form
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => {
+                      console.log('🔼 Add New Dorm clicked, ownerId:', ownerId);
+                      setShowAddDorm(true);
+                    }}
+                    disabled={!ownerId}
+                    className="gap-2 bg-gradient-to-r from-primary to-secondary"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {ownerId ? 'Add New Dorm' : 'Loading...'}
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
