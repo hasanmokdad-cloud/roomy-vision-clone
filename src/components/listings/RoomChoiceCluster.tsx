@@ -51,7 +51,7 @@ export default function RoomChoiceCluster({
         <p className="text-sm text-foreground/60">Choose a room type</p>
       </div>
 
-      <div className={`grid gap-4 ${rooms.length === 1 ? 'grid-cols-1' : rooms.length === 2 ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
+      <div className={`grid gap-4 ${rooms.length === 1 ? 'grid-cols-1' : rooms.length === 2 ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3'}`}>
         {rooms.map((room, idx) => (
           <RoomCard
             key={`${room.type}-${idx}`}
