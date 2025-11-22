@@ -6,15 +6,18 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Clock, User } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Clock, User, CalendarClock } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
+import { OwnerAvailabilityManager } from '@/components/owner/OwnerAvailabilityManager';
 
 export default function OwnerCalendar() {
   const { userId } = useAuthGuard();
   const [bookings, setBookings] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [loading, setLoading] = useState(true);
+  const [ownerId, setOwnerId] = useState<string>('');
 
   useEffect(() => {
     if (!userId) return;
@@ -41,6 +44,8 @@ export default function OwnerCalendar() {
       .single();
 
     if (!owner) return;
+
+    setOwnerId(owner.id);
 
     const { data } = await supabase
       .from('tour_bookings')
@@ -79,9 +84,23 @@ export default function OwnerCalendar() {
       <div className="flex-1 flex mt-16">
         <OwnerSidebar />
         <main className="flex-1 p-8">
-          <h1 className="text-3xl font-bold gradient-text mb-6">Tour Calendar</h1>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="max-w-6xl mx-auto">
+            <h1 className="text-3xl font-bold mb-8">Calendar & Availability</h1>
+
+            <Tabs defaultValue="bookings" className="space-y-6">
+              <TabsList>
+                <TabsTrigger value="bookings" className="gap-2">
+                  <Clock className="w-4 h-4" />
+                  Tour Bookings
+                </TabsTrigger>
+                <TabsTrigger value="availability" className="gap-2">
+                  <CalendarClock className="w-4 h-4" />
+                  Manage Availability
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="bookings" className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardContent className="p-6">
                 <Calendar
@@ -174,6 +193,15 @@ export default function OwnerCalendar() {
                 </div>
               </CardContent>
             </Card>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="availability">
+                {ownerId && (
+                  <OwnerAvailabilityManager ownerId={ownerId} />
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         </main>
       </div>

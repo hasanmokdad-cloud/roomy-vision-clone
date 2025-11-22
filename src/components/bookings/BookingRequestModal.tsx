@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { logAnalyticsEvent, sendOwnerNotification, triggerRecommenderTraining } from '@/utils/analytics';
+import { useBookingConflicts } from '@/hooks/useBookingConflicts';
+import { AvailabilityIndicator } from './AvailabilityIndicator';
+import { AlternativeSlots } from './AlternativeSlots';
 
 interface BookingRequestModalProps {
   open: boolean;
@@ -25,6 +28,18 @@ export function BookingRequestModal({ open, onOpenChange, dormId, dormName, owne
   const [selectedTime, setSelectedTime] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showAlternatives, setShowAlternatives] = useState(false);
+  const { checking, lastCheck, checkAvailability } = useBookingConflicts(ownerId, dormId);
+
+  // Check availability when date/time changes
+  useEffect(() => {
+    if (selectedDate && selectedTime) {
+      const timer = setTimeout(() => {
+        checkAvailability(selectedDate, selectedTime);
+      }, 500); // Debounce for 500ms
+      return () => clearTimeout(timer);
+    }
+  }, [selectedDate, selectedTime]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +47,18 @@ export function BookingRequestModal({ open, onOpenChange, dormId, dormName, owne
       toast({
         title: 'Missing Information',
         description: 'Please select a date and time',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Final conflict check
+    const conflictCheck = await checkAvailability(selectedDate, selectedTime);
+    if (!conflictCheck.isAvailable) {
+      setShowAlternatives(true);
+      toast({
+        title: 'Time Slot Unavailable',
+        description: 'This time slot is no longer available. Please select an alternative.',
         variant: 'destructive'
       });
       return;
@@ -131,14 +158,36 @@ export function BookingRequestModal({ open, onOpenChange, dormId, dormName, owne
               <Clock className="h-4 w-4" />
               Select Time
             </Label>
-            <Input
-              id="time"
-              type="time"
-              value={selectedTime}
-              onChange={(e) => setSelectedTime(e.target.value)}
-              required
-            />
+            <div className="flex gap-2">
+              <Input
+                id="time"
+                type="time"
+                value={selectedTime}
+                onChange={(e) => setSelectedTime(e.target.value)}
+                required
+                className="flex-1"
+              />
+              {selectedDate && selectedTime && (
+                <AvailabilityIndicator
+                  isAvailable={lastCheck?.isAvailable ?? null}
+                  conflictType={lastCheck?.conflictType}
+                  isChecking={checking}
+                />
+              )}
+            </div>
           </div>
+
+          {/* Show alternatives if slot is unavailable */}
+          {showAlternatives && selectedDate && !lastCheck?.isAvailable && (
+            <AlternativeSlots
+              date={selectedDate}
+              blockedSlots={[selectedTime]}
+              onSelectSlot={(time) => {
+                setSelectedTime(time);
+                setShowAlternatives(false);
+              }}
+            />
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="message">Additional Message (Optional)</Label>
