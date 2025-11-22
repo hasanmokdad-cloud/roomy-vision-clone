@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload, Loader2, Camera } from 'lucide-react';
+import { Upload, Loader2, Camera, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { compressImage } from '@/utils/imageCompression';
 
@@ -16,6 +16,10 @@ export function ProfilePhotoUpload({ userId, currentUrl, onUploaded }: ProfilePh
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(currentUrl);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setPreviewUrl(currentUrl);
+  }, [currentUrl]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -85,6 +89,50 @@ export function ProfilePhotoUpload({ userId, currentUrl, onUploaded }: ProfilePh
     }
   };
 
+  const handleDeletePhoto = async () => {
+    if (!previewUrl) return;
+    
+    setUploading(true);
+    
+    try {
+      // Extract file path from URL
+      const urlParts = previewUrl.split('/');
+      const filePath = urlParts.slice(-2).join('/'); // Get "userId/timestamp.ext"
+      
+      // Delete from storage
+      const { error: deleteError } = await supabase.storage
+        .from('profile-photos')
+        .remove([filePath]);
+      
+      if (deleteError) throw deleteError;
+      
+      // Update database
+      const { error: updateError } = await supabase
+        .from('students')
+        .update({ profile_photo_url: null })
+        .eq('user_id', userId);
+      
+      if (updateError) throw updateError;
+      
+      setPreviewUrl(null);
+      onUploaded(''); // Notify parent of deletion
+      
+      toast({
+        title: 'Success',
+        description: 'Profile photo deleted successfully',
+      });
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast({
+        title: 'Delete failed',
+        description: error.message || 'Failed to delete photo',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center gap-4">
       <Avatar className="w-32 h-32 ring-4 ring-primary/20">
@@ -120,6 +168,18 @@ export function ProfilePhotoUpload({ userId, currentUrl, onUploaded }: ProfilePh
           />
         </label>
       </Button>
+
+      {previewUrl && (
+        <Button
+          variant="outline"
+          onClick={handleDeletePhoto}
+          disabled={uploading}
+          className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-400"
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          Delete Photo
+        </Button>
+      )}
 
       <p className="text-xs text-muted-foreground text-center">
         Max size: 5MB. Recommended: 800x800px

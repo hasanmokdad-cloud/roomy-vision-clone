@@ -58,7 +58,7 @@ export default function RoleSelection() {
       }
       
       if (roleName === "student") {
-        navigate("/dashboard", { replace: true });
+        navigate("/listings", { replace: true });
         return;
       }
 
@@ -138,7 +138,7 @@ export default function RoleSelection() {
         } else if (result.role === "owner") {
           navigate("/owner", { replace: true });
         } else if (result.role === "student") {
-          navigate("/dashboard", { replace: true });
+          navigate("/listings", { replace: true });
         }
         return;
       }
@@ -193,7 +193,7 @@ export default function RoleSelection() {
       // This ensures fresh session data is loaded on the next page
       setTimeout(() => {
         if (assignedRole === "student") {
-          window.location.href = "/dashboard";
+          window.location.href = "/listings";
         } else if (assignedRole === "owner") {
           window.location.href = "/owner";
         } else if (assignedRole === "admin") {
@@ -201,7 +201,7 @@ export default function RoleSelection() {
         } else {
           // Fallback to chosen_role if assignedRole is still undefined
           if (chosen_role === "student") {
-            window.location.href = "/dashboard";
+            window.location.href = "/listings";
           } else {
             window.location.href = "/owner";
           }
