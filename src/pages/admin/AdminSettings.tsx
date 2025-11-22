@@ -7,7 +7,7 @@ import { useRoleGuard } from '@/hooks/useRoleGuard';
 export default function AdminSettings() {
   const { userId } = useRoleGuard('admin');
   const [loading, setLoading] = useState(true);
-  const [ownerData, setOwnerData] = useState<any>(null);
+  const [adminData, setAdminData] = useState<any>(null);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -17,17 +17,30 @@ export default function AdminSettings() {
   }, [userId]);
 
   const loadAdminData = async () => {
-    // Check if admin has an owner profile (admins can also be owners)
-    const { data: owner } = await supabase
-      .from('owners')
-      .select('*, profile_photo_url')
+    // Fetch admin profile from admins table
+    const { data: admin, error } = await supabase
+      .from('admins')
+      .select('*')
       .eq('user_id', userId)
       .maybeSingle();
 
-    if (owner) {
-      setOwnerData(owner);
-      setProfilePhotoUrl(owner.profile_photo_url);
+    if (error) {
+      console.error('Error loading admin data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load admin profile',
+        variant: 'destructive'
+      });
     }
+
+    if (admin) {
+      setAdminData(admin);
+      setProfilePhotoUrl(admin.profile_photo_url);
+    } else {
+      // Admin profile doesn't exist, might need to create it
+      console.warn('Admin profile not found for user:', userId);
+    }
+    
     setLoading(false);
   };
 
@@ -51,24 +64,27 @@ export default function AdminSettings() {
         <p className="text-foreground/60 mt-2">Manage your admin account preferences</p>
       </div>
 
-      {ownerData && (
-        <div className="glass-hover rounded-2xl p-6">
-          <h2 className="text-xl font-bold mb-6 text-center">Profile Photo</h2>
+      {/* Profile Photo Section - Always show for admins */}
+      <div className="glass-hover rounded-2xl p-6">
+        <h2 className="text-xl font-bold mb-6 text-center">Profile Photo</h2>
+        {adminData ? (
           <ProfilePhotoUpload
             userId={userId!}
             currentUrl={profilePhotoUrl}
             onUploaded={handlePhotoUploaded}
-            tableName="owners"
+            tableName="admins"
           />
-        </div>
-      )}
+        ) : (
+          <div className="text-center text-foreground/60">
+            <p>Admin profile not found. Please contact support.</p>
+          </div>
+        )}
+      </div>
 
       <div className="glass-hover rounded-2xl p-6">
         <h2 className="text-xl font-bold mb-4">Platform Configuration</h2>
         <p className="text-foreground/60">
-          {ownerData 
-            ? 'Additional admin settings coming soon...' 
-            : 'Profile photo upload requires an owner profile. Contact support to set up your admin-owner account.'}
+          Additional admin settings coming soon...
         </p>
       </div>
     </div>
