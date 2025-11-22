@@ -1616,6 +1616,7 @@ export type Database = {
         Args: { _role_name: string; _user_id: string }
         Returns: boolean
       }
+      is_admin: { Args: { check_user_id: string }; Returns: boolean }
       recompute_dorm_engagement_scores: { Args: never; Returns: Json }
       reset_student_ai_memory: {
         Args: { p_student_id: string }
