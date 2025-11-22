@@ -114,14 +114,17 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
         if (error) throw error;
         toast({ title: "Success", description: "Dorm updated successfully" });
       } else {
-        // Create new dorm
+        // Create new dorm with Pending status
         payload.verification_status = "Pending";
         payload.available = true;
         
         const { error } = await supabase.from("dorms").insert([payload]);
 
         if (error) throw error;
-        toast({ title: "Success", description: "Dorm created successfully" });
+        toast({ 
+          title: "Success", 
+          description: "Dorm submitted for verification. You'll be notified once it's approved.",
+        });
       }
 
       onSaved();

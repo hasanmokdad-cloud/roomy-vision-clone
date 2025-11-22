@@ -36,9 +36,13 @@ export default function AdminHome() {
   }, [dorms]);
 
   const loadStats = async () => {
-    const { data: studentsRes } = await supabase
+    const { data: studentsRes, count: studentsCount } = await supabase
       .from('students')
       .select('budget', { count: 'exact' });
+
+    const { count: ownersCount } = await supabase
+      .from('owners')
+      .select('*', { count: 'exact', head: true });
 
     const verifiedCount = dorms?.filter(
       d => d.verification_status === 'Verified'
@@ -50,7 +54,7 @@ export default function AdminHome() {
     setStats({
       totalDorms: dorms?.length || 0,
       verifiedDorms: verifiedCount,
-      totalStudents: studentsRes?.length || 0,
+      totalStudents: studentsCount || 0,
       avgBudget: Math.round(avgBudget),
     });
   };
