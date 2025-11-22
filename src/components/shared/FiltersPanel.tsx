@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { } from 'react';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
@@ -104,33 +104,6 @@ const acceptableRoomTypes = [
 ];
 
 export default function FiltersPanel({ filters, onFilterChange, dorms }: FiltersPanelProps) {
-  const [roomTypes, setRoomTypes] = useState<string[]>([]);
-
-  useEffect(() => {
-    const types = new Set<string>();
-    
-    dorms.forEach(dorm => {
-      if (dorm.room_types) {
-        dorm.room_types.split(',').forEach((type: string) => {
-          const trimmedType = type.trim();
-          // Only add if in acceptable list
-          if (acceptableRoomTypes.includes(trimmedType)) {
-            types.add(trimmedType);
-          }
-        });
-      }
-    });
-    
-    // Sort room types by the order in acceptableRoomTypes
-    const sortedTypes = Array.from(types).sort((a, b) => {
-      const indexA = acceptableRoomTypes.indexOf(a);
-      const indexB = acceptableRoomTypes.indexOf(b);
-      return indexA - indexB;
-    });
-    
-    setRoomTypes(sortedTypes);
-  }, [dorms]);
-
   const handleReset = () => {
     onFilterChange({
       priceRange: [0, 2000],
@@ -344,11 +317,11 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
       </div>
 
       {/* Room Types */}
-      {roomTypes.length > 0 && (
-        <div className="space-y-3">
-          <Label className="text-base font-semibold">Room Type</Label>
-          <div className="space-y-2 rounded-lg border border-white/10 p-2">
-            {roomTypes.map(type => (
+      <div className="space-y-3">
+        <Label className="text-base font-semibold">Room Type</Label>
+        <ScrollArea className="h-48 rounded-lg border border-white/10 p-2">
+          <div className="space-y-2">
+            {acceptableRoomTypes.map(type => (
               <div key={type} className="flex items-center space-x-2 hover:bg-white/5 p-1 rounded transition-colors">
                 <Checkbox
                   id={`room-${type}`}
@@ -364,8 +337,8 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
               </div>
             ))}
           </div>
-        </div>
-      )}
+        </ScrollArea>
+      </div>
     </aside>
   );
 }
