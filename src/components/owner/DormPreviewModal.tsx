@@ -1,0 +1,79 @@
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { CinematicDormCard } from "@/components/listings/CinematicDormCard";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+interface DormPreviewModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: () => void;
+  formData: {
+    name: string;
+    address: string;
+    area: string;
+    university: string;
+    description: string;
+    monthly_price: string;
+    capacity: string;
+    image_url: string;
+  };
+}
+
+export function DormPreviewModal({ isOpen, onClose, onSubmit, formData }: DormPreviewModalProps) {
+  // Transform form data to match CinematicDormCard props
+  const previewDorm = {
+    id: "preview-temp-id",
+    dorm_name: formData.name,
+    area: formData.area,
+    university: formData.university || undefined,
+    address: formData.address,
+    monthly_price: formData.monthly_price ? parseFloat(formData.monthly_price) : 0,
+    cover_image: formData.image_url || undefined,
+    verification_status: "Pending",
+    amenities: [],
+    shuttle: false,
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold">Preview Your Listing</h2>
+            <p className="text-muted-foreground">
+              This is how students will see your dorm listing
+            </p>
+          </div>
+
+          {/* Preview Card */}
+          <div className="flex justify-center py-8 bg-gradient-to-b from-background/50 to-background rounded-xl">
+            <div className="w-full max-w-md">
+              <CinematicDormCard dorm={previewDorm} index={0} />
+            </div>
+          </div>
+
+          {/* Info Alert */}
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              This is a preview. Your listing will be submitted with "Pending" status
+              and will require admin approval before being visible to students.
+            </AlertDescription>
+          </Alert>
+
+          {/* Action Buttons */}
+          <div className="flex gap-4 justify-end">
+            <Button variant="outline" onClick={onClose}>
+              Back to Editing
+            </Button>
+            <Button onClick={onSubmit}>
+              Looks Good, Submit
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

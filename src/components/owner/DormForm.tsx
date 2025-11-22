@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, X, Upload } from "lucide-react";
+import { Loader2, X, Upload, Eye } from "lucide-react";
 import { compressImage } from "@/utils/imageCompression";
+import { DormPreviewModal } from "./DormPreviewModal";
 
 interface DormFormProps {
   dorm?: any;
@@ -20,6 +21,7 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const [formData, setFormData] = useState({
     name: dorm?.name || dorm?.dorm_name || "",
@@ -68,18 +70,7 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.name || !formData.address || !formData.area || !formData.monthly_price || !formData.capacity) {
-      toast({
-        title: "Error",
-        description: "Name, address, area, price, and room capacity are required",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const submitDorm = async () => {
     setLoading(true);
     try {
       const payload: any = {
@@ -139,10 +130,42 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.name || !formData.address || !formData.area || !formData.monthly_price || !formData.capacity) {
+      toast({
+        title: "Error",
+        description: "Name, address, area, price, and room capacity are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await submitDorm();
+  };
+
+  const handlePreview = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    // Basic validation before preview
+    if (!formData.name || !formData.address || !formData.area) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in name, address, and area to preview",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setShowPreview(true);
+  };
+
   return (
-    <Card className="glass-hover">
-      <CardContent className="p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <>
+      <Card className="glass-hover">
+        <CardContent className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <Label htmlFor="name">Dorm Name *</Label>
             <Input
@@ -279,11 +302,20 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
                 type="button"
                 variant="outline"
                 onClick={onCancel}
-                className="flex-1"
               >
                 Cancel
               </Button>
             )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handlePreview}
+              disabled={loading}
+              className="gap-2"
+            >
+              <Eye className="w-4 h-4" />
+              Preview Listing
+            </Button>
             <Button type="submit" disabled={loading} className="flex-1">
               {loading ? (
                 <>
@@ -293,12 +325,23 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
               ) : dorm ? (
                 "Update Dorm"
               ) : (
-                "Create Dorm"
+                "Submit for Verification"
               )}
             </Button>
           </div>
         </form>
       </CardContent>
     </Card>
+
+    <DormPreviewModal
+      isOpen={showPreview}
+      onClose={() => setShowPreview(false)}
+      onSubmit={async () => {
+        setShowPreview(false);
+        await submitDorm();
+      }}
+      formData={formData}
+    />
+    </>
   );
 }
