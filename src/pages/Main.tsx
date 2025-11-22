@@ -9,7 +9,7 @@ import { HowItWorks } from '@/components/HowItWorks';
 import { DormListings } from '@/components/DormListings';
 import { Footer } from '@/components/Footer';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
-import { RoomyAI } from '@/components/RoomyAI';
+
 import { SkipToContent } from '@/components/SkipToContent';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -76,7 +76,6 @@ const Main = () => {
       </main>
       <Footer />
       <WhatsAppButton />
-      <RoomyAI />
     </div>
   );
 };

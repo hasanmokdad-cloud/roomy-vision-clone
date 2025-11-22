@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { RoomyAI } from '@/components/RoomyAI';
+
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { Button } from '@/components/ui/button';
 import { User, LogOut, Home, MessageSquare, Search, Award, Eye, TrendingUp, CheckCircle } from 'lucide-react';
@@ -124,7 +124,6 @@ export default function Dashboard() {
         </Button>
       </nav>
 
-      <RoomyAI />
       <WhatsAppButton />
       
       <div className="container mx-auto px-6 py-20 relative z-10">
