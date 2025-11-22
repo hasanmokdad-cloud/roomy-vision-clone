@@ -31,6 +31,7 @@ interface Filters {
   capacity?: number;
   cities?: string[];
   shuttle?: 'all' | 'available' | 'none';
+  genderPreference?: string[];
 }
 
 interface DormModeResult {
@@ -119,7 +120,7 @@ export function useListingsQuery(filters: Filters) {
     // Build base query with specific columns
     let query = supabase
       .from('dorms')
-      .select('id, dorm_name, monthly_price, area, university, verification_status, cover_image, image_url, room_types, room_types_json, capacity, amenities, gender_preference, shuttle, available, created_at, updated_at, type, description, address')
+      .select('id, dorm_name, monthly_price, area, university, verification_status, cover_image, image_url, room_types, room_types_json, capacity, amenities, gender_preference, shuttle, available, created_at, updated_at, type, description, address, phone_number, email, website')
       .eq('available', true)
       .eq('verification_status', 'Verified')
       .order('dorm_name', { ascending: true });
@@ -140,6 +141,11 @@ export function useListingsQuery(filters: Filters) {
     if (filters.shuttle && filters.shuttle !== 'all') {
       const shuttleValue = filters.shuttle === 'available';
       query = query.eq('shuttle', shuttleValue);
+    }
+    
+    // Gender preference filter
+    if (filters.genderPreference && filters.genderPreference.length > 0) {
+      query = query.in('gender_preference', filters.genderPreference);
     }
 
     const { data: dorms, error } = await query;

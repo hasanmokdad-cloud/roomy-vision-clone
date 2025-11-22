@@ -223,6 +223,34 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
       return;
     }
 
+    // Validate required fields
+    const missingFields: string[] = [];
+    
+    if (formData.amenities.length === 0) {
+      missingFields.push("At least one amenity");
+    }
+    
+    if (!formData.gender_preference) {
+      missingFields.push("Gender preference");
+    }
+    
+    if (!formData.image_url) {
+      missingFields.push("Exterior building image");
+    }
+    
+    if (!formData.phone_number) {
+      missingFields.push("Phone number");
+    }
+    
+    if (missingFields.length > 0) {
+      toast({
+        title: "Missing Required Fields",
+        description: `Please provide: ${missingFields.join(", ")}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const payload: any = {

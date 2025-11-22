@@ -15,6 +15,7 @@ interface FiltersPanelProps {
     capacity?: number;
     cities?: string[];
     shuttle?: 'all' | 'available' | 'none';
+    genderPreference?: string[];
   };
   onFilterChange: (filters: any) => void;
   dorms: any[];
@@ -183,6 +184,35 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
                 className="text-sm cursor-pointer flex-1 capitalize"
               >
                 {option === 'all' ? 'All' : option === 'available' ? 'Shuttle Available' : 'No Shuttle'}
+              </label>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Gender Preference Filter */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold">Gender Preference</Label>
+        <div className="space-y-2">
+          {['Male', 'Female', 'Mixed'].map((gender) => (
+            <div key={gender} className="flex items-center space-x-2 hover:bg-white/5 p-2 rounded transition-colors">
+              <Checkbox
+                id={`gender-${gender}`}
+                checked={filters.genderPreference?.includes(gender) || false}
+                onCheckedChange={(checked) => {
+                  const newGender = checked
+                    ? [...(filters.genderPreference || []), gender]
+                    : (filters.genderPreference || []).filter((g: string) => g !== gender);
+                  onFilterChange({ ...filters, genderPreference: newGender });
+                }}
+              />
+              <label
+                htmlFor={`gender-${gender}`}
+                className="text-sm cursor-pointer flex-1"
+              >
+                {gender === 'Male' && '♂ Male Only'}
+                {gender === 'Female' && '♀ Female Only'}
+                {gender === 'Mixed' && '⚥ Co-ed'}
               </label>
             </div>
           ))}
