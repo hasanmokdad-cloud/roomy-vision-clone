@@ -200,11 +200,11 @@ export default function Settings() {
       <div className="container mx-auto px-6 py-32 max-w-4xl">
         <Button
           variant="ghost"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate(role === 'student' ? '/listings' : '/dashboard')}
           className="mb-6 text-white/70 hover:text-white hover:bg-white/10"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
+          {role === 'student' ? 'Back to Dorms' : 'Back to Dashboard'}
         </Button>
 
         <motion.div
@@ -302,7 +302,7 @@ export default function Settings() {
                  <Button
                    variant="outline"
                    className="w-full"
-                   onClick={() => navigate('/profile')}
+                   onClick={() => navigate('/saved-dorms')}
                  >
                    View Saved Items
                  </Button>
@@ -438,7 +438,7 @@ export default function Settings() {
             <div className="flex justify-end gap-3 pt-4">
               <Button
                 variant="outline"
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate(role === 'student' ? '/listings' : '/dashboard')}
                 className="border-white/20 text-white/70 hover:text-white"
               >
                 Cancel

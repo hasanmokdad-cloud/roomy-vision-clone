@@ -36,6 +36,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Unauthorized = lazy(() => import("./pages/Unauthorized"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Messages = lazy(() => import("./pages/Messages"));
+const SavedDorms = lazy(() => import("./pages/SavedDorms"));
 const OwnerAddDorm = lazy(() => import("./pages/owner/OwnerAddDorm"));
 const AddNewDorm = lazy(() => import("./pages/owner/AddNewDorm"));
 const OwnerRooms = lazy(() => import("./pages/owner/OwnerRooms"));
@@ -161,6 +162,7 @@ const AppRoutes = () => {
           <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
           <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
           <Route path="/settings" element={<ProtectedRoute element={<Settings />} />} />
+          <Route path="/saved-dorms" element={<ProtectedRoute element={<SavedDorms />} />} />
           <Route path="/messages" element={<ProtectedRoute element={<Messages />} />} />
           <Route path="/student-profile/:id" element={<ProtectedRoute element={<StudentProfile />} />} />
           <Route path="/roommate/:userId" element={<ProtectedRoute element={<RoommateProfile />} />} />
