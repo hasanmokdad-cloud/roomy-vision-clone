@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, X, Upload, Eye } from "lucide-react";
 import { compressImage } from "@/utils/imageCompression";
 import { DormPreviewModal } from "./DormPreviewModal";
@@ -49,6 +51,9 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
     capacity: dorm?.capacity?.toString() || "",
     image_url: dorm?.image_url || dorm?.cover_image || "",
     amenities: (dorm?.amenities || []) as string[],
+    withinWalkingDistance: !dorm?.shuttle,
+    shuttle: dorm?.shuttle || false,
+    gender_preference: dorm?.gender_preference || "",
   });
 
   const toggleAmenity = (amenity: string) => {
@@ -57,6 +62,14 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
       amenities: prev.amenities.includes(amenity)
         ? prev.amenities.filter(a => a !== amenity)
         : [...prev.amenities, amenity]
+    }));
+  };
+
+  const handleWalkingDistanceChange = (checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      withinWalkingDistance: checked,
+      shuttle: checked ? false : prev.shuttle,
     }));
   };
 
@@ -123,6 +136,12 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
 
       if (formData.amenities.length > 0) {
         payload.amenities = formData.amenities;
+      }
+
+      payload.shuttle = formData.shuttle;
+
+      if (formData.gender_preference) {
+        payload.gender_preference = formData.gender_preference;
       }
 
       if (dorm?.id) {
@@ -298,6 +317,85 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Transportation Section */}
+          <div className="space-y-4">
+            <Label>Transportation</Label>
+            
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="walking-distance" className="text-base font-medium">
+                  Within Walking Distance
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Dorm is within walking distance to nearby universities
+                </p>
+              </div>
+              <Switch
+                id="walking-distance"
+                checked={formData.withinWalkingDistance}
+                onCheckedChange={handleWalkingDistanceChange}
+              />
+            </div>
+
+            {!formData.withinWalkingDistance && (
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-0.5">
+                  <Label htmlFor="shuttle-service" className="text-base font-medium">
+                    Shuttle Service Available
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Provides transportation to nearby universities
+                  </p>
+                </div>
+                <Switch
+                  id="shuttle-service"
+                  checked={formData.shuttle}
+                  onCheckedChange={(checked) => 
+                    setFormData({ ...formData, shuttle: checked })
+                  }
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Gender Preference Section */}
+          <div className="space-y-4">
+            <div>
+              <Label>Gender Preference</Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                Specify the accommodation policy for your dorm
+              </p>
+            </div>
+            
+            <RadioGroup
+              value={formData.gender_preference}
+              onValueChange={(value) => 
+                setFormData({ ...formData, gender_preference: value })
+              }
+            >
+              <div className="flex items-center space-x-2 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
+                <RadioGroupItem value="Male" id="male" />
+                <Label htmlFor="male" className="flex-1 cursor-pointer">
+                  Male Only
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
+                <RadioGroupItem value="Female" id="female" />
+                <Label htmlFor="female" className="flex-1 cursor-pointer">
+                  Female Only
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
+                <RadioGroupItem value="Mixed" id="mixed" />
+                <Label htmlFor="mixed" className="flex-1 cursor-pointer">
+                  Mixed (Co-ed)
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
 
           <div>
