@@ -3,13 +3,14 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { X, Star, AlertCircle, CheckCircle, Loader2, GripVertical } from 'lucide-react';
+import { X, Star, AlertCircle, CheckCircle, Loader2, GripVertical, Edit } from 'lucide-react';
 import { formatFileSize } from '@/utils/fileUtils';
 import type { ImageUploadState } from '@/hooks/useImageUpload';
 
 interface ImagePreviewCardProps {
   image: ImageUploadState;
   onDelete: () => void;
+  onEdit?: () => void;
   onSetPrimary?: () => void;
   isPrimary?: boolean;
   isDragging?: boolean;
@@ -18,6 +19,7 @@ interface ImagePreviewCardProps {
 export function ImagePreviewCard({
   image,
   onDelete,
+  onEdit,
   onSetPrimary,
   isPrimary = false,
   isDragging = false,
@@ -90,6 +92,17 @@ export function ImagePreviewCard({
 
           {/* Actions */}
           <div className="flex gap-1">
+            {onEdit && image.status === 'pending' && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={onEdit}
+                className="h-8 w-8"
+                title="Edit image"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+            )}
             {onSetPrimary && !isPrimary && image.status === 'success' && (
               <Button
                 size="icon"

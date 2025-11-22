@@ -136,6 +136,21 @@ export const useImageUpload = (bucketName: string = 'room-images', folder: strin
     });
   };
 
+  const replaceImage = (imageId: string, newFile: File) => {
+    setImages((prev) =>
+      prev.map((img) =>
+        img.id === imageId
+          ? {
+              ...img,
+              file: newFile,
+              preview: URL.createObjectURL(newFile),
+              originalSize: newFile.size,
+            }
+          : img
+      )
+    );
+  };
+
   const reset = () => {
     images.forEach((img) => URL.revokeObjectURL(img.preview));
     setImages([]);
@@ -149,6 +164,7 @@ export const useImageUpload = (bucketName: string = 'room-images', folder: strin
     uploadAll,
     removeImage,
     reorderImages,
+    replaceImage,
     updateImageState,
     reset,
   };

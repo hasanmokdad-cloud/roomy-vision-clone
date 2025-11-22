@@ -352,68 +352,14 @@ export default function DormDetail() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Key Details */}
+          <div className="space-y-6">
+
+            {/* Available Room Options */}
+            {(rooms.length > 0 || roomTypes.length > 0) && (
               <Card className="glass-hover">
                 <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold mb-4">Key Details</h2>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-5 h-5 text-primary" />
-                      <div>
-                        <div className="text-sm text-foreground/60">Room Type</div>
-                        <div className="font-semibold">{dorm.room_types || 'Not specified'}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-5 h-5 text-primary" />
-                      <div>
-                        <div className="text-sm text-foreground/60">University</div>
-                        <div className="font-semibold">{dorm.university || 'Various'}</div>
-                      </div>
-                    </div>
-                    {dorm.capacity && (
-                      <div className="flex items-center gap-2">
-                        <Users className="w-5 h-5 text-primary" />
-                        <div>
-                          <div className="text-sm text-foreground/60">Capacity</div>
-                          <div className="font-semibold">{dorm.capacity} students</div>
-                        </div>
-                      </div>
-                    )}
-                    {dorm.gender_preference && (
-                      <div className="flex items-center gap-2">
-                        <Users className="w-5 h-5 text-primary" />
-                        <div>
-                          <div className="text-sm text-foreground/60">Gender Preference</div>
-                          <div className="font-semibold">{dorm.gender_preference}</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Description */}
-              {dorm.description && (
-                <Card className="glass-hover">
-                  <CardContent className="p-6">
-                    <h2 className="text-2xl font-bold mb-4">About This Dorm</h2>
-                    <p className="text-foreground/80 leading-relaxed whitespace-pre-line">
-                      {dorm.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Available Room Options - Merged Section */}
-              {(rooms.length > 0 || roomTypes.length > 0) && (
-                <Card className="glass-hover">
-                  <CardContent className="p-6">
-                    <h2 className="text-2xl font-bold mb-4">Available Room Options</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <h2 className="text-2xl font-bold mb-4">Available Room Options</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                       {/* Database Rooms */}
                       {rooms.map((room, idx) => (
                         <EnhancedRoomCard
@@ -446,212 +392,79 @@ export default function DormDetail() {
                           isLegacy={true}
                           index={rooms.length + idx}
                         />
-                      ))}
-                    </div>
-                    
-                    {rooms.length === 0 && roomTypes.length === 0 && (
-                      <p className="text-center text-foreground/60 py-8">
-                        No room options available yet. Contact the owner for more information.
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Amenities & Services */}
-              {dorm.services_amenities && (
-                <Card className="glass-hover">
-                  <CardContent className="p-6">
-                    <h2 className="text-2xl font-bold mb-4">Amenities & Services</h2>
-                    <p className="text-foreground/80 whitespace-pre-line">
-                      {dorm.services_amenities}
+                    ))}
+                  </div>
+                  
+                  {rooms.length === 0 && roomTypes.length === 0 && (
+                    <p className="text-center text-foreground/60 py-8">
+                      No room options available yet. Contact the owner for more information.
                     </p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* 3D Room Viewer */}
-              {rooms.length > 0 && rooms.some(r => r.three_d_model_url) && (
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold mb-4">3D Room Preview</h2>
-                  {rooms
-                    .filter(r => r.three_d_model_url)
-                    .map((room) => (
-                      <div key={room.id} className="mb-4">
-                        <h3 className="text-lg font-semibold mb-2">{room.name}</h3>
-                        <ThreeDViewer modelUrl={room.three_d_model_url} alt={`${room.name} 3D Model`} />
-                      </div>
-                    ))}
-                </div>
-              )}
-
-              {/* Virtual Tour for Rooms from Database */}
-              {rooms.length > 0 && rooms.some(r => r.panorama_urls && r.panorama_urls.length > 0) && (
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold mb-4">360° Virtual Tours</h2>
-                  {rooms
-                    .filter(r => r.panorama_urls && r.panorama_urls.length > 0)
-                    .map((room) => (
-                      <div key={room.id} className="mb-4">
-                        <h3 className="text-lg font-semibold mb-2">{room.name}</h3>
-                        <VirtualTourGallery
-                          roomId={room.id}
-                          panoramaUrls={room.panorama_urls}
-                          editable={false}
-                        />
-                      </div>
-                    ))}
-                </div>
-              )}
-
-
-              {/* Location */}
-              {dorm.address && (
-                <Card className="glass-hover">
-                  <CardContent className="p-6">
-                    <h2 className="text-2xl font-bold mb-4">Location</h2>
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-5 h-5 text-primary mt-1" />
-                      <div>
-                        <p className="font-semibold">{dorm.area}</p>
-                        <p className="text-foreground/70">{dorm.address}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Ask Roomy AI */}
-              <Card className="glass-hover border-primary/30">
-                <CardContent className="p-6">
-                  <h3 className="text-xl font-bold mb-4 gradient-text">
-                    Need Help Deciding?
-                  </h3>
-                  <p className="text-sm text-foreground/70 mb-4">
-                    Ask Roomy AI anything about this dorm and get instant answers!
-                  </p>
-                  <Button
-                    onClick={handleChatWithRoomy}
-                    className="w-full bg-gradient-to-r from-primary to-secondary"
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Ask Roomy AI
-                  </Button>
+                  )}
                 </CardContent>
               </Card>
+            )}
 
-              {/* Booking Calendar */}
-              {user && (
-                <BookingCalendar
-                  dormId={dorm.id}
-                  dormName={displayName}
-                  ownerId={dorm.owner_id}
-                  onSuccess={() => {
-                    toast({
-                      title: "Success!",
-                      description: "Your viewing request has been sent",
-                    });
-                  }}
-                />
-              )}
-
-              {/* Contact Information */}
-              {user && (
-                <Card className="glass-hover">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold mb-4">Contact Owner</h3>
-                    <div className="space-y-3">
-                      {dorm.phone_number && (
-                        <a
-                          href={`tel:${dorm.phone_number}`}
-                          className="flex items-center gap-2 p-3 rounded-lg bg-background/50 hover:bg-background/80 transition-colors"
-                        >
-                          <Phone className="w-5 h-5 text-primary" />
-                          <span className="text-sm">{dorm.phone_number}</span>
-                        </a>
-                      )}
-                      {dorm.email && (
-                        <a
-                          href={`mailto:${dorm.email}`}
-                          className="flex items-center gap-2 p-3 rounded-lg bg-background/50 hover:bg-background/80 transition-colors"
-                        >
-                          <Mail className="w-5 h-5 text-primary" />
-                          <span className="text-sm">{dorm.email}</span>
-                        </a>
-                      )}
-                      {dorm.website && (
-                        <a
-                          href={dorm.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 p-3 rounded-lg bg-background/50 hover:bg-background/80 transition-colors"
-                        >
-                          <Globe className="w-5 h-5 text-primary" />
-                          <span className="text-sm">Visit Website</span>
-                        </a>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {!user && (
-                <Card className="glass-hover border-primary/30">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold mb-3">Want to Contact?</h3>
-                    <p className="text-sm text-foreground/70 mb-4">
-                      Sign in to view owner contact details and send inquiries.
-                    </p>
-                    <Button
-                      onClick={() => navigate('/auth')}
-                      className="w-full bg-gradient-to-r from-primary to-secondary"
-                    >
-                      Sign In to Contact
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Price Breakdown */}
+            {/* Amenities & Services */}
+            {dorm.services_amenities && (
               <Card className="glass-hover">
                 <CardContent className="p-6">
-                  <h3 className="text-xl font-bold mb-4">Pricing</h3>
-                  <div className="space-y-2">
-                    {roomTypes.length > 0 ? (
-                      <>
-                        <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                          <span className="text-foreground/70">Starting from</span>
-                          <span className="font-bold text-xl gradient-text">
-                            ${startingPrice}
-                          </span>
-                        </div>
-                        <div className="text-sm text-foreground/60 pt-2">
-                          {roomTypes.length} room {roomTypes.length === 1 ? 'option' : 'options'} available
-                        </div>
-                      </>
-                    ) : (
-                      <div className="flex justify-between items-center">
-                        <span className="text-foreground/70">Monthly Rent</span>
-                        <span className="font-bold text-xl gradient-text">
-                          ${dorm.monthly_price}
-                        </span>
-                      </div>
-                    )}
-                    {dorm.shuttle && (
-                      <div className="pt-2 border-t border-white/10">
-                        <Badge variant="secondary">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Shuttle Service Included
-                        </Badge>
-                      </div>
-                    )}
+                  <h2 className="text-2xl font-bold mb-4">Amenities & Services</h2>
+                  <p className="text-foreground/80 whitespace-pre-line">
+                    {dorm.services_amenities}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 3D Room Viewer */}
+            {rooms.length > 0 && rooms.some(r => r.three_d_model_url) && (
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold mb-4">3D Room Preview</h2>
+                {rooms
+                  .filter(r => r.three_d_model_url)
+                  .map((room) => (
+                    <div key={room.id} className="mb-4">
+                      <h3 className="text-lg font-semibold mb-2">{room.name}</h3>
+                      <ThreeDViewer modelUrl={room.three_d_model_url} alt={`${room.name} 3D Model`} />
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            {/* Virtual Tour for Rooms from Database */}
+            {rooms.length > 0 && rooms.some(r => r.panorama_urls && r.panorama_urls.length > 0) && (
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold mb-4">360° Virtual Tours</h2>
+                {rooms
+                  .filter(r => r.panorama_urls && r.panorama_urls.length > 0)
+                  .map((room) => (
+                    <div key={room.id} className="mb-4">
+                      <h3 className="text-lg font-semibold mb-2">{room.name}</h3>
+                      <VirtualTourGallery
+                        roomId={room.id}
+                        panoramaUrls={room.panorama_urls}
+                        editable={false}
+                      />
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            {/* Location */}
+            {dorm.address && (
+              <Card className="glass-hover">
+                <CardContent className="p-6">
+                  <h2 className="text-2xl font-bold mb-4">Location</h2>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-5 h-5 text-primary mt-1" />
+                    <div>
+                      <p className="font-semibold">{dorm.area}</p>
+                      <p className="text-foreground/70">{dorm.address}</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            )}
           </div>
         </div>
       </main>

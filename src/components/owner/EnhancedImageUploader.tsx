@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ImageDropzone } from './ImageDropzone';
 import { ImagePreviewCard } from './ImagePreviewCard';
 import { UploadProgressBar } from './UploadProgressBar';
+import { ImageEditorModal } from './ImageEditorModal';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { Upload, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -35,9 +36,12 @@ export function EnhancedImageUploader({
     uploadAll,
     removeImage,
     reorderImages,
+    replaceImage,
   } = useImageUpload(bucketName, folder);
 
   const { toast } = useToast();
+  const [editingImageId, setEditingImageId] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
 
   // Handle file selection
   const handleFilesAdded = (files: File[]) => {
@@ -106,9 +110,23 @@ export function EnhancedImageUploader({
     }
   }, [uploadedUrls.length, isUploading]);
 
+  const handleEdit = (imageId: string) => {
+    setEditingImageId(imageId);
+    setEditorOpen(true);
+  };
+
+  const handleSaveEdit = (editedFile: File) => {
+    if (!editingImageId) return;
+    replaceImage(editingImageId, editedFile);
+    setEditorOpen(false);
+    setEditingImageId(null);
+  };
+
   const completedCount = images.filter((img) => img.status === 'success').length;
   const failedCount = images.filter((img) => img.status === 'error').length;
   const pendingCount = images.filter((img) => img.status === 'pending').length;
+  
+  const editingImage = images.find(img => img.id === editingImageId);
 
   return (
     <div className="space-y-4">
@@ -204,6 +222,7 @@ export function EnhancedImageUploader({
                           <ImagePreviewCard
                             image={image}
                             onDelete={() => removeImage(image.id)}
+                            onEdit={image.status === 'pending' ? () => handleEdit(image.id) : undefined}
                             onSetPrimary={
                               index !== 0 && image.status === 'success'
                                 ? () => reorderImages(index, 0)
@@ -231,6 +250,19 @@ export function EnhancedImageUploader({
             No images uploaded yet. Add up to {maxImages} images to showcase this room.
           </p>
         </Card>
+      )}
+
+      {/* Image Editor Modal */}
+      {editorOpen && editingImage && (
+        <ImageEditorModal
+          isOpen={editorOpen}
+          onClose={() => {
+            setEditorOpen(false);
+            setEditingImageId(null);
+          }}
+          imageFile={editingImage.file}
+          onSave={handleSaveEdit}
+        />
       )}
     </div>
   );
