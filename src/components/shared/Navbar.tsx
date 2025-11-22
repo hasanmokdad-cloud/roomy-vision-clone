@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/sheet';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
 import { useTheme } from '@/contexts/ThemeContext';
+import { NotificationsPanel } from '@/components/shared/NotificationsPanel';
 
 export default function Navbar() {
   const [authOpen, setAuthOpen] = useState(false);
@@ -197,7 +198,29 @@ export default function Navbar() {
               </Button>
 
               {user ? (
-                <DropdownMenu>
+                <div className="flex items-center gap-2">
+                  {/* Notifications Panel */}
+                  <NotificationsPanel userId={user.id} />
+                  
+                  {/* Messages with Unread Badge */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative"
+                    asChild
+                  >
+                    <Link to="/messages" aria-label="Messages">
+                      <MessageSquare className="w-5 h-5" />
+                      {unreadCount > 0 && (
+                        <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                          {unreadCount}
+                        </Badge>
+                      )}
+                    </Link>
+                  </Button>
+
+                  {/* User Menu */}
+                  <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
                       variant="default" 
@@ -244,8 +267,9 @@ export default function Navbar() {
                       <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
                       Sign Out
                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               ) : (
                 <Button 
                   onClick={() => setAuthOpen(true)}

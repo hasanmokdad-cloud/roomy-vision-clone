@@ -57,6 +57,7 @@ const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications")
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const ReviewManagement = lazy(() => import("./pages/owner/ReviewManagement"));
 const AdminDormOwnership = lazy(() => import("./pages/admin/AdminDormOwnership"));
+const OwnerCalendar = lazy(() => import("./pages/owner/OwnerCalendar"));
 
 // Loading fallback component
 const PageLoader = () => (
