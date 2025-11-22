@@ -244,7 +244,7 @@ export default function DormDetail() {
           Back to Listings
         </Button>
 
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-6 animate-fade-in">
             <div className="flex items-start justify-between gap-4">
@@ -359,7 +359,7 @@ export default function DormDetail() {
               <Card className="glass-hover">
                 <CardContent className="p-6">
                   <h2 className="text-2xl font-bold mb-4">Available Room Options</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-8">
                       {/* Database Rooms */}
                       {rooms.map((room, idx) => (
                         <EnhancedRoomCard
