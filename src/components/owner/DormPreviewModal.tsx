@@ -18,6 +18,9 @@ interface DormPreviewModalProps {
     capacity: string;
     image_url: string;
     amenities: string[];
+    withinWalkingDistance: boolean;
+    shuttle: boolean;
+    gender_preference: string;
   };
 }
 
@@ -33,7 +36,8 @@ export function DormPreviewModal({ isOpen, onClose, onSubmit, formData }: DormPr
     cover_image: formData.image_url || undefined,
     verification_status: "Pending",
     amenities: formData.amenities || [],
-    shuttle: false,
+    shuttle: formData.shuttle,
+    gender_preference: formData.gender_preference || undefined,
   };
 
   return (
