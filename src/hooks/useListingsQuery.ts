@@ -61,8 +61,42 @@ export function useListingsQuery(filters: Filters) {
   const [data, setData] = useState<ListingsResult>({ mode: 'dorm', dorms: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  // Wait for auth to be ready before querying
+  useEffect(() => {
+    let isMounted = true;
+    
+    supabase.auth.getSession().then(() => {
+      if (isMounted) {
+        setAuthReady(true);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+      if (isMounted) {
+        setAuthReady(true);
+        // Reload listings when auth state changes (login/logout)
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          loadListings();
+        }
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
+    if (!authReady) {
+      console.log('Waiting for auth to be ready...');
+      return; // Don't query until auth is ready
+    }
+
+    console.log('Auth ready, loading listings...');
     loadListings();
 
     const channel = supabase
@@ -75,10 +109,15 @@ export function useListingsQuery(filters: Filters) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [filters]);
+  }, [filters, authReady]);
 
   const loadListings = async () => {
     setLoading(true);
+    console.log('Loading listings with filters:', filters);
+    
+    // Get current session for debugging
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('Current session:', session?.user?.id ? 'Authenticated' : 'Anonymous');
 
     // Build base query with specific columns
     let query = supabase
