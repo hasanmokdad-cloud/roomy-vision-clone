@@ -31,8 +31,8 @@ export const validateEmail = (email: string): boolean => {
 };
 
 export const validatePhone = (phone: string): boolean => {
-  // Allow international format with multiple spaces/separators: +XXX... or local format
-  const phoneRegex = /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]*[0-9]{1,4}[-\s\.]*[0-9]{1,9}$/;
+  // Allow international format with flexible digit groups separated by spaces/dashes/dots
+  const phoneRegex = /^[\+]?[(]?[0-9]{1,4}[)]?([-\s\.]?[0-9]+)*$/;
   return phoneRegex.test(phone) && phone.length <= 20;
 };
 
