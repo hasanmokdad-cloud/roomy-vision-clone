@@ -64,7 +64,7 @@ export default function Settings() {
       supabase
         .from('saved_rooms')
         .select('*')
-        .eq('student_id', userId)
+        .eq('user_id', userId)
         .then(({ data }) => setSavedRooms(data || []));
 
       // Load shared collections
@@ -80,15 +80,28 @@ export default function Settings() {
         setEmailVerified(!!user?.email_confirmed_at);
       });
 
-      supabase
-        .from('students')
-        .select('phone_verified, profile_photo_url')
-        .eq('user_id', userId)
-        .maybeSingle()
-        .then(({ data }) => {
-          setPhoneVerified(data?.phone_verified || false);
-          setProfilePhotoUrl(data?.profile_photo_url || null);
-        });
+      // Load phone verification and profile photo based on role
+      if (role === 'student') {
+        supabase
+          .from('students')
+          .select('phone_verified, profile_photo_url')
+          .eq('user_id', userId)
+          .maybeSingle()
+          .then(({ data }) => {
+            setPhoneVerified(data?.phone_verified || false);
+            setProfilePhotoUrl(data?.profile_photo_url || null);
+          });
+      } else if (role === 'owner' || role === 'admin') {
+        supabase
+          .from('owners')
+          .select('phone_verified, profile_photo_url')
+          .eq('user_id', userId)
+          .maybeSingle()
+          .then(({ data }) => {
+            setPhoneVerified(data?.phone_verified || false);
+            setProfilePhotoUrl(data?.profile_photo_url || null);
+          });
+      }
     }
   }, [loading, userId]);
 
@@ -233,14 +246,15 @@ export default function Settings() {
           <p className="text-white/60 mb-8">Manage your account preferences and personalization</p>
 
           <div className="space-y-6">
-            {/* Profile Photo (Students Only) */}
-            {role === 'student' && userId && (
+            {/* Profile Photo - For all roles */}
+            {userId && (
               <Card className="glass p-6 border-white/20">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Profile Photo</h3>
                 <ProfilePhotoUpload
                   userId={userId}
                   currentUrl={profilePhotoUrl}
                   onUploaded={(url) => setProfilePhotoUrl(url)}
+                  tableName={role === 'student' ? 'students' : 'owners'}
                 />
               </Card>
             )}
@@ -304,8 +318,8 @@ export default function Settings() {
               </div>
             </Card>
 
-            {/* Saved Items - Only show for students */}
-            {role === 'student' && (
+            {/* Saved Items - For students and admins */}
+            {(role === 'student' || role === 'admin') && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Saved Dorms */}
                 <Card className="glass p-6 border-white/20">

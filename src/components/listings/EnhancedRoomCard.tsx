@@ -53,7 +53,7 @@ export function EnhancedRoomCard({
       const { data } = await supabase
         .from('saved_rooms')
         .select('id')
-        .eq('student_id', user.id)
+        .eq('user_id', user.id)
         .eq('room_id', room.id)
         .maybeSingle();
 
@@ -150,7 +150,7 @@ export function EnhancedRoomCard({
       await supabase
         .from('saved_rooms')
         .delete()
-        .eq('student_id', user.id)
+        .eq('user_id', user.id)
         .eq('room_id', room.id);
       
       setIsSaved(false);
@@ -159,7 +159,7 @@ export function EnhancedRoomCard({
       await supabase
         .from('saved_rooms')
         .insert({ 
-          student_id: user.id, 
+          user_id: user.id, 
           room_id: room.id,
           dorm_id: dormId 
         });

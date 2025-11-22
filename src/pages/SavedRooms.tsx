@@ -80,7 +80,7 @@ export default function SavedRooms() {
       const { data: savedItems, error: savedError } = await supabase
         .from('saved_rooms')
         .select('room_id, dorm_id, created_at')
-        .eq('student_id', userId)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (savedError) throw savedError;

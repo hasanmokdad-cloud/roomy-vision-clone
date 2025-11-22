@@ -61,7 +61,7 @@ export default function SharedCollection() {
       const { data: savedItems } = await supabase
         .from('saved_rooms')
         .select('room_id, dorm_id')
-        .eq('student_id', collectionData.student_id);
+        .eq('user_id', collectionData.student_id);
 
       if (savedItems && savedItems.length > 0) {
         const roomIds = savedItems.map(item => item.room_id);
