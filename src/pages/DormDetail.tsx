@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home, Video, Bookmark } from 'lucide-react';
+import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home, Video, Bookmark, Images, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedRoomCard } from '@/components/listings/EnhancedRoomCard';
 import { DormDetailSkeleton } from '@/components/skeletons/DormDetailSkeleton';
@@ -221,7 +221,7 @@ export default function DormDetail() {
 
   if (!dorm) return null;
 
-  const images = dorm.image_url ? [dorm.image_url] : [];
+  const images = dorm.cover_image ? [dorm.cover_image] : (dorm.image_url ? [dorm.image_url] : []);
   const displayName = dorm.dorm_name || dorm.name;
   
   // Parse room types from JSON
@@ -352,6 +352,18 @@ export default function DormDetail() {
             </div>
           )}
 
+          {/* Description Section */}
+          {dorm.description && (
+            <Card className="mb-8 glass-hover animate-fade-in">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-bold mb-4">About This Dorm</h2>
+                <p className="text-foreground/80 whitespace-pre-line leading-relaxed">
+                  {dorm.description}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="space-y-6">
 
             {/* Available Room Options */}
@@ -375,7 +387,6 @@ export default function DormDetail() {
                       
                       {/* Legacy room_types_json Rooms */}
                       {roomTypes.map((room, idx) => {
-                        // Generate stable ID for legacy rooms to enable save functionality
                         const legacyRoomId = `legacy-${dorm.id}-${room.type.toLowerCase().replace(/\s+/g, '-')}`;
                         
                         return (
@@ -406,6 +417,37 @@ export default function DormDetail() {
                       No room options available yet. Contact the owner for more information.
                     </p>
                   )}
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Common Area & Facilities Gallery */}
+            {dorm.gallery_images && dorm.gallery_images.length > 0 && (
+              <Card className="glass-hover mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <Images className="w-6 h-6" />
+                    Common Area & Facilities
+                  </h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {dorm.gallery_images.map((img: string, idx: number) => (
+                      <div
+                        key={idx}
+                        className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group"
+                        onClick={() => openGallery(dorm.gallery_images, idx)}
+                      >
+                        <img
+                          src={img}
+                          alt={`${displayName} - Facility ${idx + 1}`}
+                          loading="lazy"
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                          <Eye className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             )}

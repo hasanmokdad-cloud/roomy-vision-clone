@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, CheckCircle, Wifi, Zap, Home, Navigation, Bookmark, Star } from "lucide-react";
+import { MapPin, CheckCircle, Wifi, Zap, Home, Navigation, Bookmark, Star, Phone, Mail, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -34,6 +34,10 @@ interface CinematicDormCardProps {
     shuttle?: boolean;
     address?: string;
     university?: string;
+    gender_preference?: string;
+    phone_number?: string;
+    email?: string;
+    website?: string;
   };
   index: number;
 }
@@ -307,6 +311,15 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
                   </Badge>
                 )}
               </div>
+              
+              {/* Gender Preference Badge */}
+              {dorm.gender_preference && (
+                <Badge variant="outline" className="mt-2 w-fit text-xs">
+                  {dorm.gender_preference === 'Male' && '♂ Male Only'}
+                  {dorm.gender_preference === 'Female' && '♀ Female Only'}
+                  {dorm.gender_preference === 'Mixed' && '⚥ Co-ed'}
+                </Badge>
+              )}
             </div>
           </div>
 
@@ -360,12 +373,18 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
                   </div>
                 )}
 
-                {dorm.shuttle && (
+                {/* Transportation - Show either shuttle or walking distance */}
+                {dorm.shuttle ? (
                   <Badge variant="secondary" className="w-fit">
                     <Zap className="w-3 h-3 mr-1" />
                     Shuttle Available
                   </Badge>
-                )}
+                ) : dorm.shuttle === false ? (
+                  <Badge variant="secondary" className="w-fit">
+                    <MapPin className="w-3 h-3 mr-1" />
+                    Within Walking Distance
+                  </Badge>
+                ) : null}
 
                 {dorm.address && (
                   <div className="text-sm text-foreground">
@@ -385,6 +404,42 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+                
+                {/* Contact Information */}
+                {(dorm.phone_number || dorm.email || dorm.website) && (
+                  <div className="space-y-2 pt-2 border-t border-border/50">
+                    <p className="text-xs font-semibold text-muted-foreground">Contact:</p>
+                    
+                    {dorm.phone_number && (
+                      <div className="flex items-center gap-2 text-xs text-foreground">
+                        <Phone className="w-3 h-3" />
+                        <span>{dorm.phone_number}</span>
+                      </div>
+                    )}
+                    
+                    {dorm.email && (
+                      <div className="flex items-center gap-2 text-xs text-foreground">
+                        <Mail className="w-3 h-3" />
+                        <span className="truncate">{dorm.email}</span>
+                      </div>
+                    )}
+                    
+                    {dorm.website && (
+                      <div className="flex items-center gap-2 text-xs text-foreground">
+                        <Globe className="w-3 h-3" />
+                        <a 
+                          href={dorm.website} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline truncate"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Visit Website
+                        </a>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
