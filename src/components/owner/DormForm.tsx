@@ -9,9 +9,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, X, Upload, Eye } from "lucide-react";
+import { Loader2, X, Upload, Eye, Phone, Mail, Globe, Images } from "lucide-react";
 import { compressImage } from "@/utils/imageCompression";
 import { DormPreviewModal } from "./DormPreviewModal";
+import { validateEmail, validatePhone, validateUrl, sanitizeInput } from "@/utils/inputValidation";
+import { ImageDropzone } from "./ImageDropzone";
+import { DraggableImageList } from "./DraggableImageList";
 
 const AMENITIES_OPTIONS = [
   "WiFi",
@@ -54,7 +57,19 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
     withinWalkingDistance: !dorm?.shuttle,
     shuttle: dorm?.shuttle || false,
     gender_preference: dorm?.gender_preference || "",
+    phone_number: dorm?.phone_number || "",
+    email: dorm?.email || "",
+    website: dorm?.website || "",
+    gallery_images: (dorm?.gallery_images || []) as string[],
   });
+
+  const [validationErrors, setValidationErrors] = useState<{
+    phone?: string;
+    email?: string;
+    website?: string;
+  }>({});
+
+  const [galleryUploading, setGalleryUploading] = useState(false);
 
   const toggleAmenity = (amenity: string) => {
     setFormData(prev => ({
@@ -71,6 +86,95 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
       withinWalkingDistance: checked,
       shuttle: checked ? false : prev.shuttle,
     }));
+  };
+
+  const validateContactInfo = (): boolean => {
+    const errors: typeof validationErrors = {};
+    let isValid = true;
+
+    if (formData.phone_number && !validatePhone(formData.phone_number)) {
+      errors.phone = "Invalid phone number format. Use +XXX... or local format.";
+      isValid = false;
+    }
+
+    if (formData.email && !validateEmail(formData.email)) {
+      errors.email = "Invalid email address format.";
+      isValid = false;
+    }
+
+    if (formData.website && !validateUrl(formData.website)) {
+      errors.website = "Invalid website URL. Must start with http:// or https://";
+      isValid = false;
+    }
+
+    setValidationErrors(errors);
+    return isValid;
+  };
+
+  const handleGalleryUpload = async (files: File[]) => {
+    const maxImages = 10;
+    const currentCount = formData.gallery_images.length;
+    
+    if (currentCount + files.length > maxImages) {
+      toast({
+        title: "Too many images",
+        description: `You can upload up to ${maxImages} gallery images. You have ${currentCount}, trying to add ${files.length}.`,
+        variant: "destructive",
+      });
+      files = files.slice(0, maxImages - currentCount);
+    }
+
+    if (files.length === 0) return;
+
+    setGalleryUploading(true);
+    const uploadedUrls: string[] = [];
+
+    try {
+      for (const file of files) {
+        const compressed = await compressImage(file);
+        const fileName = `${Date.now()}-${file.name}`;
+        const filePath = `dorm-gallery/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("dorm-uploads")
+          .upload(filePath, compressed);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("dorm-uploads")
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      setFormData({
+        ...formData,
+        gallery_images: [...formData.gallery_images, ...uploadedUrls],
+      });
+
+      toast({
+        title: "Success",
+        description: `${uploadedUrls.length} image(s) uploaded to gallery`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Upload Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setGalleryUploading(false);
+    }
+  };
+
+  const handleRemoveGalleryImage = (index: number) => {
+    const newImages = formData.gallery_images.filter((_, i) => i !== index);
+    setFormData({ ...formData, gallery_images: newImages });
+  };
+
+  const handleReorderGalleryImages = (reorderedImages: string[]) => {
+    setFormData({ ...formData, gallery_images: reorderedImages });
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,6 +214,15 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
   };
 
   const submitDorm = async () => {
+    if (!validateContactInfo()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fix the contact information errors before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const payload: any = {
@@ -142,6 +255,20 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
 
       if (formData.gender_preference) {
         payload.gender_preference = formData.gender_preference;
+      }
+
+      if (formData.phone_number) {
+        payload.phone_number = sanitizeInput(formData.phone_number);
+      }
+      if (formData.email) {
+        payload.email = sanitizeInput(formData.email);
+      }
+      if (formData.website) {
+        payload.website = sanitizeInput(formData.website);
+      }
+
+      if (formData.gallery_images.length > 0) {
+        payload.gallery_images = formData.gallery_images;
       }
 
       if (dorm?.id) {
@@ -395,10 +522,167 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
                   Mixed (Co-ed)
                 </Label>
               </div>
-            </RadioGroup>
+          </RadioGroup>
+        </div>
+
+        {/* Contact Information Section */}
+        <div className="space-y-4">
+          <div>
+            <Label className="text-lg font-semibold">Contact Information</Label>
+            <p className="text-sm text-muted-foreground mt-1">
+              Provide contact details for student inquiries
+            </p>
           </div>
 
+          {/* Phone Number */}
           <div>
+            <Label htmlFor="phone_number" className="flex items-center gap-2">
+              <Phone className="w-4 h-4" />
+              Phone Number
+            </Label>
+            <Input
+              id="phone_number"
+              type="tel"
+              value={formData.phone_number}
+              onChange={(e) => {
+                setFormData({ ...formData, phone_number: e.target.value });
+                if (validationErrors.phone) {
+                  setValidationErrors({ ...validationErrors, phone: undefined });
+                }
+              }}
+              placeholder="+961 XX XXX XXX"
+              className={validationErrors.phone ? "border-destructive" : ""}
+            />
+            {validationErrors.phone && (
+              <p className="text-sm text-destructive mt-1">{validationErrors.phone}</p>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              Students can call this number for inquiries
+            </p>
+          </div>
+
+          {/* Email */}
+          <div>
+            <Label htmlFor="email" className="flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              Email Address
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => {
+                setFormData({ ...formData, email: e.target.value });
+                if (validationErrors.email) {
+                  setValidationErrors({ ...validationErrors, email: undefined });
+                }
+              }}
+              placeholder="contact@example.com"
+              className={validationErrors.email ? "border-destructive" : ""}
+            />
+            {validationErrors.email && (
+              <p className="text-sm text-destructive mt-1">{validationErrors.email}</p>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              Students can send inquiries to this email
+            </p>
+          </div>
+
+          {/* Website */}
+          <div>
+            <Label htmlFor="website" className="flex items-center gap-2">
+              <Globe className="w-4 h-4" />
+              Website (Optional)
+            </Label>
+            <Input
+              id="website"
+              type="url"
+              value={formData.website}
+              onChange={(e) => {
+                setFormData({ ...formData, website: e.target.value });
+                if (validationErrors.website) {
+                  setValidationErrors({ ...validationErrors, website: undefined });
+                }
+              }}
+              placeholder="https://www.example.com"
+              className={validationErrors.website ? "border-destructive" : ""}
+            />
+            {validationErrors.website && (
+              <p className="text-sm text-destructive mt-1">{validationErrors.website}</p>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              Link to your dorm's official website
+            </p>
+          </div>
+        </div>
+
+        {/* Gallery Images Section */}
+        <div className="space-y-4">
+          <div>
+            <Label className="text-lg font-semibold flex items-center gap-2">
+              <Images className="w-5 h-5" />
+              Gallery Images
+            </Label>
+            <p className="text-sm text-muted-foreground mt-1">
+              Add photos of common areas, kitchen, facilities, etc. (Max 10 images)
+            </p>
+          </div>
+
+          {/* Image Dropzone */}
+          {formData.gallery_images.length < 10 && (
+            <ImageDropzone
+              onFilesAdded={handleGalleryUpload}
+              multiple={true}
+              className="border-2 border-dashed border-border hover:border-primary transition-colors"
+            >
+              <div className="text-center py-6">
+                <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+                <p className="text-sm font-medium mb-1">
+                  Drop images here or click to browse
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {formData.gallery_images.length} / 10 images uploaded
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  PNG, JPG, WEBP up to 10MB each
+                </p>
+              </div>
+            </ImageDropzone>
+          )}
+
+          {/* Loading State */}
+          {galleryUploading && (
+            <div className="flex items-center justify-center gap-2 p-4 bg-primary/5 rounded-lg">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-sm">Uploading images...</span>
+            </div>
+          )}
+
+          {/* Draggable Image List */}
+          {formData.gallery_images.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">
+                Drag to reorder • First image appears as main gallery photo
+              </p>
+              <DraggableImageList
+                images={formData.gallery_images}
+                onReorder={handleReorderGalleryImages}
+                onRemove={handleRemoveGalleryImage}
+              />
+            </div>
+          )}
+
+          {/* Helper Text */}
+          {formData.gallery_images.length === 0 && !galleryUploading && (
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground text-center">
+                No gallery images yet. Add photos to showcase your dorm's facilities.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div>
             <Label>Exterior Building Image</Label>
             <div className="mt-2 space-y-3">
               <input
