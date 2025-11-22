@@ -83,6 +83,19 @@ export const ChatbotBubble = () => {
     }
   }, [messages]);
 
+  // ✅ Listen for programmatic open events
+  useEffect(() => {
+    const handleOpenChat = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setIsOpen(true);
+      if (customEvent.detail?.dormContext?.initialPrompt) {
+        setInput(customEvent.detail.dormContext.initialPrompt);
+      }
+    };
+    window.addEventListener('openRoomyChatbot', handleOpenChat);
+    return () => window.removeEventListener('openRoomyChatbot', handleOpenChat);
+  }, []);
+
   // ✅ Core send function (calls Edge Function)
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
