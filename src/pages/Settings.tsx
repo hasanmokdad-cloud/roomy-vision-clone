@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Save, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Save, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home, Share2, Copy } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import BottomNav from '@/components/BottomNav';
@@ -35,6 +35,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [savedItems, setSavedItems] = useState<any[]>([]);
   const [savedRooms, setSavedRooms] = useState<any[]>([]);
+  const [sharedCollections, setSharedCollections] = useState<any[]>([]);
   const [emailVerified, setEmailVerified] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [keepSignedIn, setKeepSignedIn] = useState(true);
@@ -65,6 +66,14 @@ export default function Settings() {
         .select('*')
         .eq('student_id', userId)
         .then(({ data }) => setSavedRooms(data || []));
+
+      // Load shared collections
+      supabase
+        .from('shared_collections')
+        .select('*')
+        .eq('student_id', userId)
+        .order('created_at', { ascending: false })
+        .then(({ data }) => setSharedCollections(data || []));
 
       // Check verification status
       supabase.auth.getUser().then(({ data: { user } }) => {
@@ -335,6 +344,58 @@ export default function Settings() {
                     onClick={() => navigate('/saved-rooms')}
                   >
                     View Saved Rooms
+                  </Button>
+                </Card>
+
+                {/* Shared Collections */}
+                <Card className="glass p-6 border-white/20">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <Share2 className="w-6 h-6 text-accent" />
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">Shared Collections</h3>
+                        <p className="text-sm text-white/60">
+                          Manage your shareable room collections
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {sharedCollections.length === 0 ? (
+                    <p className="text-white/50 text-sm mb-4">
+                      No shared collections yet. Share your saved rooms to create one!
+                    </p>
+                  ) : (
+                    <div className="space-y-3 mb-4">
+                      {sharedCollections.map((collection: any) => (
+                        <div key={collection.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                          <div className="flex-1">
+                            <p className="text-white font-medium">{collection.title || 'Untitled Collection'}</p>
+                            <p className="text-white/50 text-xs">
+                              {collection.view_count} views • Created {new Date(collection.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/shared/${collection.share_code}`);
+                              toast({ title: 'Link copied!' });
+                            }}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => navigate('/saved-rooms')}
+                  >
+                    Go to Saved Rooms
                   </Button>
                 </Card>
               </div>
