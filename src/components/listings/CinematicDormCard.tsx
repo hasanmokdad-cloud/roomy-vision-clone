@@ -2,13 +2,14 @@ import { motion } from "framer-motion";
 import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, CheckCircle, Wifi, Zap, Home, Navigation, Bookmark } from "lucide-react";
+import { MapPin, CheckCircle, Wifi, Zap, Home, Navigation, Bookmark, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ShareButton } from "@/components/shared/ShareButton";
+import { ReviewFormModal } from "@/components/reviews/ReviewFormModal";
 
 interface RoomType {
   type: string;
@@ -41,6 +42,9 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
   const [isFlipped, setIsFlipped] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [averageRating, setAverageRating] = useState<number | null>(null);
+  const [reviewCount, setReviewCount] = useState(0);
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const isMobile = useIsMobile();
@@ -48,22 +52,41 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
 
   // Load user and check if dorm is saved
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       const uid = session?.user?.id || null;
       setUserId(uid);
       
       if (uid) {
-        const { data } = await supabase
+        supabase
           .from("saved_items")
           .select("id")
           .eq("user_id", uid)
           .eq("item_id", dorm.id)
           .eq("item_type", "dorm")
-          .maybeSingle();
-        
-        setIsSaved(!!data);
+          .maybeSingle()
+          .then(({ data }) => {
+            setIsSaved(!!data);
+          });
       }
     });
+  }, [dorm.id]);
+
+  // Fetch average rating
+  useEffect(() => {
+    const fetchRating = async () => {
+      const { data } = await supabase
+        .from('reviews')
+        .select('rating')
+        .eq('dorm_id', dorm.id)
+        .eq('status', 'approved');
+      
+      if (data && data.length > 0) {
+        const avg = data.reduce((sum, r) => sum + r.rating, 0) / data.length;
+        setAverageRating(Math.round(avg * 10) / 10);
+        setReviewCount(data.length);
+      }
+    };
+    fetchRating();
   }, [dorm.id]);
 
   // Memoized room types calculations
@@ -188,7 +211,8 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
   );
 
   return (
-    <motion.div
+    <>
+      <motion.div
         variants={cardVariants}
         initial="hidden"
         animate="visible"
@@ -239,6 +263,12 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
 
               {/* Badges */}
               <div className="absolute top-4 left-4 flex gap-2">
+                {averageRating && (
+                  <Badge variant="secondary" className="backdrop-blur-sm">
+                    <Star className="w-3 h-3 mr-1 fill-primary text-primary" />
+                    {averageRating} ({reviewCount})
+                  </Badge>
+                )}
                 {isVerified && (
                   <Badge variant="secondary" className="neon-glow backdrop-blur-sm">
                     <CheckCircle className="w-3 h-3 mr-1" />
@@ -360,8 +390,20 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
               </div>
 
               <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setReviewModalOpen(true);
+                }}
+                variant="outline"
+                className="w-full mb-2"
+              >
+                <Star className="w-4 h-4 mr-2" />
+                Rate & Review
+              </Button>
+
+              <Button
                 onClick={handleLearnMore}
-                className="w-full mt-4"
+                className="w-full"
                 aria-label={
                   hasMultipleRooms
                     ? `View all ${roomTypes.length} room types for ${dorm.dorm_name}`
@@ -374,6 +416,33 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
           </div>
         </motion.div>
       </motion.div>
+
+      <ReviewFormModal
+        open={reviewModalOpen}
+        onOpenChange={setReviewModalOpen}
+        dormId={dorm.id}
+        dormName={dorm.dorm_name}
+        onSubmitSuccess={() => {
+          toast({
+            title: "Review Submitted",
+            description: "Thank you for your feedback!"
+          });
+          // Refresh rating
+          supabase
+            .from('reviews')
+            .select('rating')
+            .eq('dorm_id', dorm.id)
+            .eq('status', 'approved')
+            .then(({ data }) => {
+              if (data && data.length > 0) {
+                const avg = data.reduce((sum, r) => sum + r.rating, 0) / data.length;
+                setAverageRating(Math.round(avg * 10) / 10);
+                setReviewCount(data.length);
+              }
+            });
+        }}
+      />
+    </>
   );
 };
 

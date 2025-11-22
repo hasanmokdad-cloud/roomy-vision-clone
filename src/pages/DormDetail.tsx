@@ -9,7 +9,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home, Video, Bookmark } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import RoomContactCard from '@/components/listings/RoomContactCard';
+import { EnhancedRoomCard } from '@/components/listings/EnhancedRoomCard';
 import { DormDetailSkeleton } from '@/components/skeletons/DormDetailSkeleton';
 import { ImageGallery } from '@/components/shared/ImageGallery';
 import { BookTourModal } from '@/components/bookings/BookTourModal';
@@ -106,11 +106,16 @@ export default function DormDetail() {
   };
 
   const handleChatWithRoomy = () => {
-    // Open chatbot with pre-context about this dorm
-    toast({
-      title: 'Opening Roomy AI',
-      description: `Let me help you learn more about ${dorm.dorm_name || dorm.name}`,
-    });
+    // Dispatch custom event to open chatbot
+    window.dispatchEvent(new CustomEvent('openRoomyChatbot', {
+      detail: { 
+        dormContext: {
+          dormId: dorm.id,
+          dormName: displayName,
+          initialPrompt: `Tell me about ${displayName}` 
+        }
+      }
+    }));
   };
 
   const toggleSave = async () => {
@@ -296,16 +301,8 @@ export default function DormDetail() {
           {/* Action Buttons */}
           <div className="mb-8 flex flex-wrap gap-3 animate-fade-in">
             <Button
-              onClick={() => setTourModalOpen(true)}
-              className="bg-gradient-to-r from-purple-600 to-blue-500 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
-            >
-              <Video className="w-4 h-4 mr-2" />
-              Book Virtual Tour
-            </Button>
-            <Button
               onClick={handleChatWithRoomy}
-              variant="outline"
-              className="px-6 py-3 rounded-xl"
+              className="bg-gradient-to-r from-purple-600 to-blue-500 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
             >
               <MessageSquare className="w-4 h-4 mr-2" />
               Chat with Roomy AI
@@ -411,179 +408,52 @@ export default function DormDetail() {
                 </Card>
               )}
 
-              {/* Rooms from Database */}
-              {rooms.length > 0 && (
+              {/* Available Room Options - Merged Section */}
+              {(rooms.length > 0 || roomTypes.length > 0) && (
                 <Card className="glass-hover">
                   <CardContent className="p-6">
-                    <h2 className="text-2xl font-bold mb-4">Available Rooms</h2>
-                    <div className="grid gap-4">
-                      {rooms.map((room) => {
-                        const isUnavailable = !room.available;
-                        return (
-                          <div
-                            key={room.id}
-                            className={`flex flex-col gap-3 p-4 rounded-xl border transition-colors ${
-                              isUnavailable
-                                ? 'bg-muted/30 border-muted opacity-60 grayscale'
-                                : 'bg-gradient-to-r from-primary/5 to-secondary/5 border-primary/10 hover:border-primary/30'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                                  isUnavailable
-                                    ? 'bg-muted'
-                                    : 'bg-gradient-to-br from-primary to-secondary'
-                                }`}>
-                                  <Home className={`w-6 h-6 ${isUnavailable ? 'text-muted-foreground' : 'text-white'}`} />
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="font-bold text-lg">{room.name}</h3>
-                                    {isUnavailable && (
-                                      <Badge variant="secondary" className="text-xs">Reserved</Badge>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-foreground/60">
-                                    {room.type} • {room.area_m2 ? `${room.area_m2}m²` : 'Size not specified'}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-2xl font-bold gradient-text">${room.price}</div>
-                                <div className="text-xs text-foreground/60">per month</div>
-                                {(room as any).deposit && (
-                                  <div className="text-sm text-foreground/60 mt-1">
-                                    Deposit: ${(room as any).deposit}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {room.description && (
-                              <p className="text-sm text-foreground/70">{room.description}</p>
-                            )}
-
-                            {/* Room Images */}
-                            {room.images && room.images.length > 0 && (
-                              <div className="flex gap-2 overflow-x-auto pb-2">
-                                {room.images.slice(0, 4).map((image: string, imgIdx: number) => (
-                                  <button
-                                    key={imgIdx}
-                                    onClick={() => openGallery(room.images!, imgIdx)}
-                                    className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-colors cursor-pointer"
-                                  >
-                                    <img
-                                      src={image}
-                                      alt={`${room.name} - Image ${imgIdx + 1}`}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </button>
-                                ))}
-                                {room.images.length > 4 && (
-                                  <button
-                                    onClick={() => openGallery(room.images!, 0)}
-                                    className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-colors cursor-pointer bg-primary/10 flex items-center justify-center"
-                                  >
-                                    <span className="text-sm font-medium">
-                                      +{room.images.length - 4} more
-                                    </span>
-                                  </button>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Contact Button */}
-                            <Button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleContactOwner(room);
-                              }}
-                              disabled={isUnavailable}
-                              className="w-full mt-2"
-                            >
-                              <MessageSquare className="w-4 h-4 mr-2" />
-                              {isUnavailable ? 'Not Available' : 'Contact About This Room'}
-                            </Button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Room Options (Legacy room_types_json) */}
-              {roomTypes.length > 0 && (
-                <Card className="glass-hover">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-2xl font-bold">Available Room Options</h2>
-                      {getAllRoomImages().length > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openGallery(getAllRoomImages())}
-                        >
-                          View All {getAllRoomImages().length} Images
-                        </Button>
-                      )}
-                    </div>
-                    <div className="grid gap-4">
+                    <h2 className="text-2xl font-bold mb-4">Available Room Options</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Database Rooms */}
+                      {rooms.map((room, idx) => (
+                        <EnhancedRoomCard
+                          key={`db-${room.id}`}
+                          room={room}
+                          dormId={dorm.id}
+                          dormName={displayName}
+                          ownerId={dorm.owner_id}
+                          isLegacy={false}
+                          index={idx}
+                        />
+                      ))}
+                      
+                      {/* Legacy room_types_json Rooms */}
                       {roomTypes.map((room, idx) => (
-                        <div
-                          key={idx}
-                          className="flex flex-col gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/10 hover:border-primary/30 transition-colors"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                                <Home className="w-6 h-6 text-white" />
-                              </div>
-                              <div>
-                                <h3 className="font-bold text-lg">{room.type}</h3>
-                                <p className="text-sm text-foreground/60">
-                                  Capacity: {room.capacity} {room.capacity === 1 ? 'person' : 'people'}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-2xl font-bold gradient-text">${room.price}</div>
-                              <div className="text-xs text-foreground/60">per month</div>
-                            </div>
-                          </div>
-                          
-                          {/* Room Images */}
-                          {room.images && room.images.length > 0 && (
-                            <div className="flex gap-2 overflow-x-auto pb-2">
-                              {room.images.slice(0, 4).map((image, imgIdx) => (
-                                <button
-                                  key={imgIdx}
-                                  onClick={() => openGallery(room.images!, imgIdx)}
-                                  className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-colors cursor-pointer"
-                                >
-                                  <img
-                                    src={image}
-                                    alt={`${room.type} - Image ${imgIdx + 1}`}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </button>
-                              ))}
-                              {room.images.length > 4 && (
-                                <button
-                                  onClick={() => openGallery(room.images!, 0)}
-                                  className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-colors cursor-pointer bg-primary/10 flex items-center justify-center"
-                                >
-                                  <span className="text-sm font-medium">
-                                    +{room.images.length - 4} more
-                                  </span>
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                        <EnhancedRoomCard
+                          key={`legacy-${idx}`}
+                          room={{
+                            name: room.type,
+                            type: room.type,
+                            price: room.price,
+                            capacity: room.capacity,
+                            available: room.available !== false,
+                            images: room.images || [],
+                            amenities: room.amenities || []
+                          }}
+                          dormId={dorm.id}
+                          dormName={displayName}
+                          ownerId={dorm.owner_id}
+                          isLegacy={true}
+                          index={rooms.length + idx}
+                        />
                       ))}
                     </div>
+                    
+                    {rooms.length === 0 && roomTypes.length === 0 && (
+                      <p className="text-center text-foreground/60 py-8">
+                        No room options available yet. Contact the owner for more information.
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -634,22 +504,6 @@ export default function DormDetail() {
                 </div>
               )}
 
-              {/* Room Contact Cards */}
-              {roomTypes.length > 0 && (
-                <div className="space-y-4">
-                  <h2 className="text-2xl font-bold">Contact for Rooms</h2>
-                  {roomTypes.map((room, idx) => (
-                    <RoomContactCard
-                      key={idx}
-                      room={room}
-                      dormId={dorm.id}
-                      dormName={displayName}
-                      ownerId={dorm.owner_id}
-                      index={idx}
-                    />
-                  ))}
-                </div>
-              )}
 
               {/* Location */}
               {dorm.address && (
