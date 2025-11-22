@@ -19,6 +19,7 @@ import { settingsManager, type UserSettings } from '@/utils/settings';
 import { supabase } from '@/integrations/supabase/client';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
+import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ export default function Settings() {
   const [show2FASetup, setShow2FASetup] = useState(false);
   const [qrCode, setQrCode] = useState('');
   const [factorId, setFactorId] = useState('');
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && userId) {
@@ -60,10 +62,13 @@ export default function Settings() {
 
       supabase
         .from('students')
-        .select('phone_verified')
+        .select('phone_verified, profile_photo_url')
         .eq('user_id', userId)
         .maybeSingle()
-        .then(({ data }) => setPhoneVerified(data?.phone_verified || false));
+        .then(({ data }) => {
+          setPhoneVerified(data?.phone_verified || false);
+          setProfilePhotoUrl(data?.profile_photo_url || null);
+        });
     }
   }, [loading, userId]);
 
@@ -208,6 +213,18 @@ export default function Settings() {
           <p className="text-white/60 mb-8">Manage your account preferences and personalization</p>
 
           <div className="space-y-6">
+            {/* Profile Photo (Students Only) */}
+            {role === 'student' && userId && (
+              <Card className="glass p-6 border-white/20">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Profile Photo</h3>
+                <ProfilePhotoUpload
+                  userId={userId}
+                  currentUrl={profilePhotoUrl}
+                  onUploaded={(url) => setProfilePhotoUrl(url)}
+                />
+              </Card>
+            )}
+
             {/* Theme */}
             <Card className="glass p-6 border-white/20">
               <div className="flex items-center justify-between">

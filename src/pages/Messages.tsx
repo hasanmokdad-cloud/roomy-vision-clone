@@ -5,7 +5,7 @@ import Navbar from '@/components/shared/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, ArrowLeft, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +23,7 @@ type Conversation = {
   other_user_name?: string;
   dorm_name?: string;
   last_message?: string;
+  other_user_photo?: string | null;
 };
 
 type Message = {
@@ -175,6 +176,7 @@ export default function Messages() {
           .maybeSingle();
 
         let otherUserName = 'User';
+        let otherUserPhoto: string | null = null;
         if (student) {
           const { data: ownerData } = await supabase
             .from('owners')
@@ -185,10 +187,11 @@ export default function Messages() {
         } else {
           const { data: studentData } = await supabase
             .from('students')
-            .select('full_name')
+            .select('full_name, profile_photo_url')
             .eq('id', conv.student_id)
             .maybeSingle();
           otherUserName = studentData?.full_name || 'Student';
+          otherUserPhoto = studentData?.profile_photo_url || null;
         }
 
         // Get last message
@@ -203,6 +206,7 @@ export default function Messages() {
         return {
           ...conv,
           other_user_name: otherUserName,
+          other_user_photo: otherUserPhoto,
           dorm_name: dorm?.dorm_name || dorm?.name || 'Dorm',
           last_message: lastMsg?.body
         };
@@ -374,6 +378,7 @@ export default function Messages() {
                   >
                     <div className="flex items-start gap-3">
                       <Avatar className="w-10 h-10">
+                        <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
                         <AvatarFallback className="bg-primary/20 text-primary">
                           {conv.other_user_name?.charAt(0) || 'U'}
                         </AvatarFallback>
@@ -399,6 +404,15 @@ export default function Messages() {
                       <ArrowLeft className="w-5 h-5" />
                     </Button>
                   )}
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage 
+                      src={conversations.find(c => c.id === selectedConversation)?.other_user_photo || undefined} 
+                      alt="User" 
+                    />
+                    <AvatarFallback className="bg-primary/20 text-primary">
+                      {conversations.find(c => c.id === selectedConversation)?.other_user_name?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="flex-1">
                     <h3 className="font-semibold">
                       {conversations.find(c => c.id === selectedConversation)?.other_user_name}

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, UserCheck, UserX, Mail, Building2, MapPin } from 'lucide-react';
+import { Search, UserCheck, UserX, Mail, Building2, MapPin, Upload, Download, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -47,6 +47,8 @@ export default function AdminDormOwnership() {
   const [searchOwner, setSearchOwner] = useState('');
   const [selectedDorm, setSelectedDorm] = useState<Dorm | null>(null);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [uploadingCSV, setUploadingCSV] = useState(false);
+  const [bulkResults, setBulkResults] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -164,6 +166,105 @@ export default function AdminDormOwnership() {
     }
   };
 
+  const handleCSVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingCSV(true);
+    setBulkResults(null);
+
+    try {
+      const text = await file.text();
+      const lines = text.split('\n').filter(l => l.trim());
+      
+      // Validate CSV format (dorm_id,owner_email)
+      const header = lines[0].toLowerCase();
+      if (!header.includes('dorm_id') || !header.includes('owner_email')) {
+        throw new Error('Invalid CSV format. Expected headers: dorm_id,owner_email');
+      }
+
+      const assignments = lines.slice(1).map(line => {
+        const [dormId, ownerEmail] = line.split(',').map(s => s.trim());
+        return { dormId, ownerEmail };
+      });
+
+      let successful = 0;
+      let failed = 0;
+      const errors: any[] = [];
+
+      // Get current user for audit logging
+      const { data: { user } } = await supabase.auth.getUser();
+
+      for (const { dormId, ownerEmail } of assignments) {
+        try {
+          // Find owner by email
+          const { data: owner } = await supabase
+            .from('owners')
+            .select('id')
+            .eq('email', ownerEmail)
+            .single();
+
+          if (!owner) {
+            throw new Error(`Owner not found: ${ownerEmail}`);
+          }
+
+          // Assign owner to dorm
+          const { error } = await supabase
+            .from('dorms')
+            .update({ owner_id: owner.id })
+            .eq('id', dormId);
+
+          if (error) throw error;
+          successful++;
+        } catch (err: any) {
+          failed++;
+          errors.push({ dormId, ownerEmail, error: err.message });
+        }
+      }
+
+      // Log bulk assignment
+      await supabase.from('bulk_dorm_assignments').insert({
+        admin_user_id: user?.id,
+        total_rows: assignments.length,
+        successful_assignments: successful,
+        failed_assignments: failed,
+        errors: errors,
+        csv_filename: file.name,
+      });
+
+      setBulkResults({ successful, failed, errors, total: assignments.length });
+
+      toast({
+        title: 'Bulk Assignment Complete',
+        description: `${successful} successful, ${failed} failed`,
+      });
+
+      if (successful > 0) {
+        loadData();
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Upload Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingCSV(false);
+      e.target.value = '';
+    }
+  };
+
+  const downloadCSVTemplate = () => {
+    const template = 'dorm_id,owner_email\n';
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bulk_assignment_template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const filteredDorms = dorms.filter(dorm => {
     const dormName = (dorm.dorm_name || dorm.name || '').toLowerCase();
     const area = (dorm.area || dorm.location || '').toLowerCase();
@@ -212,6 +313,79 @@ export default function AdminDormOwnership() {
                   className="pl-9"
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Bulk Upload */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Bulk Assignment</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={downloadCSVTemplate}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Template
+                </Button>
+                
+                <Button
+                  variant="default"
+                  size="sm"
+                  disabled={uploadingCSV}
+                  className="relative"
+                >
+                  <label className="cursor-pointer flex items-center gap-2">
+                    {uploadingCSV ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        Upload CSV
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      hidden
+                      accept=".csv"
+                      onChange={handleCSVUpload}
+                      disabled={uploadingCSV}
+                    />
+                  </label>
+                </Button>
+              </div>
+
+              {bulkResults && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default">{bulkResults.successful} Successful</Badge>
+                    {bulkResults.failed > 0 && (
+                      <Badge variant="destructive">{bulkResults.failed} Failed</Badge>
+                    )}
+                  </div>
+                  
+                  {bulkResults.errors.length > 0 && (
+                    <details className="text-sm">
+                      <summary className="cursor-pointer text-muted-foreground">
+                        View errors ({bulkResults.errors.length})
+                      </summary>
+                      <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
+                        {bulkResults.errors.map((err: any, i: number) => (
+                          <div key={i} className="text-xs text-destructive">
+                            {err.dormId}: {err.error}
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
