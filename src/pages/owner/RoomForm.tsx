@@ -9,9 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Loader2, Upload, X } from "lucide-react";
-import { compressImage } from "@/utils/imageCompression";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { VirtualTourGallery } from "@/components/rooms/VirtualTourGallery";
+import { EnhancedImageUploader } from "@/components/owner/EnhancedImageUploader";
 
 const ROOM_TYPES = ["Single", "Double", "Triple", "Studio", "Suite", "Shared"];
 
@@ -76,52 +76,7 @@ export default function RoomForm() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setUploading(true);
-    const newImages: string[] = [];
-
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const compressed = await compressImage(file);
-        const fileName = `${Date.now()}-${i}-${file.name}`;
-        const filePath = `room-images/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("dorm-uploads")
-          .upload(filePath, compressed);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from("dorm-uploads")
-          .getPublicUrl(filePath);
-
-        newImages.push(publicUrl);
-      }
-
-      setImages([...images, ...newImages]);
-      toast({
-        title: "Success",
-        description: `${newImages.length} image(s) uploaded`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
-  };
+  // Image upload is now handled by EnhancedImageUploader component
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -280,54 +235,17 @@ export default function RoomForm() {
 
           <div>
             <Label>Room Images</Label>
-            <div className="mt-2">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-                className="hidden"
-                id="image-upload"
-                disabled={uploading}
-              />
-              <label htmlFor="image-upload">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full gap-2"
-                  disabled={uploading}
-                  onClick={() => document.getElementById("image-upload")?.click()}
-                >
-                  {uploading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Upload className="w-4 h-4" />
-                  )}
-                  {uploading ? "Uploading..." : "Upload Images"}
-                </Button>
-              </label>
-            </div>
-
-            {images.length > 0 && (
-              <div className="grid grid-cols-3 gap-4 mt-4">
-                {images.map((url, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={url}
-                      alt={`Room ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+            <p className="text-xs text-muted-foreground mb-2">
+              Upload up to 10 images. Drag to reorder, first image is the cover.
+            </p>
+            <EnhancedImageUploader
+              existingImages={images}
+              onChange={setImages}
+              maxImages={10}
+              bucketName="room-images"
+              folder="rooms"
+              allowReorder={true}
+            />
           </div>
 
           {/* Virtual Tour Panoramas */}

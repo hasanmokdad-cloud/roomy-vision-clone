@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Clock, Send } from "lucide-react";
+import { useBookingConflicts } from "@/hooks/useBookingConflicts";
+import { AvailabilityIndicator } from "./AvailabilityIndicator";
 
 interface BookingCalendarProps {
   dormId: string;
@@ -29,6 +31,31 @@ export function BookingCalendar({ dormId, dormName, ownerId, onSuccess }: Bookin
   const [time, setTime] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [blockedDates, setBlockedDates] = useState<string[]>([]);
+  const { checking, lastCheck, checkAvailability } = useBookingConflicts(ownerId, dormId);
+
+  // Load blocked dates
+  useEffect(() => {
+    const loadBlockedDates = async () => {
+      const { data } = await supabase
+        .from('owner_availability')
+        .select('blocked_date')
+        .eq('owner_id', ownerId)
+        .eq('all_day', true);
+      
+      if (data) {
+        setBlockedDates(data.map(d => d.blocked_date));
+      }
+    };
+    loadBlockedDates();
+  }, [ownerId]);
+
+  // Check availability when time changes
+  useEffect(() => {
+    if (date && time) {
+      checkAvailability(date, time);
+    }
+  }, [date, time]);
 
   const handleSubmit = async () => {
     if (!date || !time) {
@@ -115,13 +142,39 @@ export function BookingCalendar({ dormId, dormName, ownerId, onSuccess }: Bookin
             mode="single"
             selected={date}
             onSelect={setDate}
-            disabled={(date) => date < new Date()}
+            disabled={(checkDate) => {
+              if (checkDate < new Date()) return true;
+              const dateStr = format(checkDate, 'yyyy-MM-dd');
+              return blockedDates.includes(dateStr);
+            }}
             className="rounded-md border"
+            modifiers={{
+              blocked: (checkDate) => {
+                const dateStr = format(checkDate, 'yyyy-MM-dd');
+                return blockedDates.includes(dateStr);
+              },
+            }}
+            modifiersStyles={{
+              blocked: {
+                backgroundColor: 'hsl(var(--destructive) / 0.2)',
+                color: 'hsl(var(--destructive))',
+                textDecoration: 'line-through',
+              },
+            }}
           />
         </div>
 
         <div>
-          <Label htmlFor="time" className="mb-2 block">Select Time</Label>
+          <div className="flex items-center justify-between mb-2">
+            <Label htmlFor="time">Select Time</Label>
+            {date && time && (
+              <AvailabilityIndicator
+                isAvailable={lastCheck?.isAvailable ?? null}
+                conflictType={lastCheck?.conflictType}
+                isChecking={checking}
+              />
+            )}
+          </div>
           <Select value={time} onValueChange={setTime}>
             <SelectTrigger id="time">
               <SelectValue placeholder="Choose a time slot" />

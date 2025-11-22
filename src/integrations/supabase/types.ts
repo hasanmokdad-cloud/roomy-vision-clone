@@ -752,6 +752,74 @@ export type Database = {
           },
         ]
       }
+      owner_availability: {
+        Row: {
+          all_day: boolean | null
+          blocked_date: string
+          blocked_time_end: string | null
+          blocked_time_start: string | null
+          created_at: string | null
+          dorm_id: string | null
+          id: string
+          owner_id: string
+          reason: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          all_day?: boolean | null
+          blocked_date: string
+          blocked_time_end?: string | null
+          blocked_time_start?: string | null
+          created_at?: string | null
+          dorm_id?: string | null
+          id?: string
+          owner_id: string
+          reason?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          all_day?: boolean | null
+          blocked_date?: string
+          blocked_time_end?: string | null
+          blocked_time_start?: string | null
+          created_at?: string | null
+          dorm_id?: string | null
+          id?: string
+          owner_id?: string
+          reason?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_availability_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_availability_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_availability_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "owner_availability_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_notifications: {
         Row: {
           body: string
@@ -1596,6 +1664,19 @@ export type Database = {
         Returns: {
           date: string
           value: number
+        }[]
+      }
+      check_booking_conflicts: {
+        Args: {
+          p_dorm_id: string
+          p_owner_id: string
+          p_requested_date: string
+          p_requested_time: string
+        }
+        Returns: {
+          conflict_details: Json
+          conflict_type: string
+          is_available: boolean
         }[]
       }
       check_notification_debounce: {
