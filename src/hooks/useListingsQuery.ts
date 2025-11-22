@@ -77,10 +77,7 @@ export function useListingsQuery(filters: Filters) {
       console.log('Auth state changed:', event, session?.user?.id);
       if (isMounted) {
         setAuthReady(true);
-        // Reload listings when auth state changes (login/logout)
-        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-          loadListings();
-        }
+        // Second useEffect will handle reload via authReady dependency
       }
     });
 
