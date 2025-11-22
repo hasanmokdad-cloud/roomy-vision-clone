@@ -240,9 +240,29 @@ export function EnhancedRoomCard({
               />
             )}
             
+            {/* Persistent Save Button - Always Visible */}
+            {!isUnavailable && room.id && (
+              <div className="absolute top-3 right-3 z-20">
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  onClick={handleSave}
+                  className="h-10 w-10 rounded-full bg-white/95 backdrop-blur-sm hover:bg-white shadow-lg hover:scale-110 transition-all duration-200"
+                >
+                  <Heart 
+                    className={`w-5 h-5 ${
+                      isSaved 
+                        ? 'fill-red-500 text-red-500' 
+                        : 'text-gray-700'
+                    }`} 
+                  />
+                </Button>
+              </div>
+            )}
+
             {/* Quick Actions Overlay - Appears on Hover */}
             {!isUnavailable && (
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4 z-10">
                 <div className="w-full flex gap-2">
                   <Button
                     onClick={handleBookTour}
@@ -251,14 +271,6 @@ export function EnhancedRoomCard({
                   >
                     <Calendar className="w-4 h-4 mr-2" />
                     Book Tour
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    size="sm"
-                    variant="secondary"
-                    className="backdrop-blur-sm"
-                  >
-                    <Heart className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
                   </Button>
                   <Button
                     onClick={handleShare}
