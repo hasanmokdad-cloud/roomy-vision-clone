@@ -95,7 +95,7 @@ export default function RoomCard({ room, dormName, dormArea, university, onViewD
           <div className="flex flex-wrap gap-2 justify-center text-xs">
             <div className="glass px-3 py-1.5 rounded-full flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5 text-secondary" />
-              <span>{room.capacity} {room.capacity === 1 ? 'Person' : 'People'}</span>
+              <span>{room.capacity} {room.capacity === 1 ? 'Student' : 'Students'}</span>
             </div>
             <div className="glass px-3 py-1.5 rounded-full flex items-center gap-1.5">
               <Tag className="w-3.5 h-3.5 text-secondary" />

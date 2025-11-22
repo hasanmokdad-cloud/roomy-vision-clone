@@ -153,7 +153,7 @@ export default function RoomContactCard({ room, dormId, dormName, ownerId, index
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-foreground/60" />
-                <span className="text-sm text-foreground/80">{room.capacity} {room.capacity === 1 ? 'person' : 'people'}</span>
+                <span className="text-sm text-foreground/80">{room.capacity} {room.capacity === 1 ? 'student' : 'students'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-primary" />

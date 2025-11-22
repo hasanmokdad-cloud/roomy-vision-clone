@@ -205,7 +205,7 @@ export function EnhancedRoomCard({
         className="relative h-full"
       >
         <Card 
-          className={`overflow-hidden h-full shadow-lg transition-shadow duration-300 ${
+          className={`overflow-hidden h-full min-h-[520px] shadow-lg transition-shadow duration-300 ${
             isUnavailable 
               ? 'opacity-60 grayscale pointer-events-none' 
               : 'hover:shadow-2xl cursor-pointer group'
@@ -222,7 +222,7 @@ export function EnhancedRoomCard({
                       <img
                         src={img}
                         alt={`${room.name} - Image ${idx + 1}`}
-                        className="w-full h-48 object-cover transition-transform duration-700 group-hover:scale-110"
+                        className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110"
                         loading="lazy"
                       />
                     </CarouselItem>
@@ -235,7 +235,7 @@ export function EnhancedRoomCard({
               <img
                 src={displayImages[0]}
                 alt={room.name}
-                className="w-full h-48 object-cover transition-transform duration-700 group-hover:scale-110"
+                className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110"
                 loading="lazy"
               />
             )}
@@ -285,7 +285,7 @@ export function EnhancedRoomCard({
             )}
             
             {/* Availability Badge */}
-            <div className="absolute top-2 right-2">
+            <div className="absolute top-2 left-2 z-10">
               <Badge 
                 variant={isUnavailable ? "secondary" : "default"}
                 className={isUnavailable ? "bg-muted" : "bg-primary text-primary-foreground"}
@@ -309,7 +309,6 @@ export function EnhancedRoomCard({
                 </div>
                 <div>
                   <h3 className="font-bold text-lg">{room.name}</h3>
-                  <p className="text-sm text-foreground/60">{room.type}</p>
                 </div>
               </div>
               <div className="text-right">
@@ -321,13 +320,12 @@ export function EnhancedRoomCard({
             {/* Details Grid */}
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="flex items-center gap-1 text-foreground/70">
-                <DollarSign className="w-4 h-4" />
                 <span>Deposit: ${room.price}</span>
               </div>
               {room.capacity && (
                 <div className="flex items-center gap-1 text-foreground/70">
                   <Users className="w-4 h-4" />
-                  <span>{room.capacity} person{room.capacity > 1 ? 's' : ''}</span>
+                  <span>{room.capacity} student{room.capacity > 1 ? 's' : ''}</span>
                 </div>
               )}
               {room.area_m2 && (

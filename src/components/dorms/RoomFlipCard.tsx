@@ -109,7 +109,7 @@ export const RoomFlipCard: React.FC<RoomFlipCardProps> = ({
               <div className="flex items-center justify-center gap-6 mb-6 text-sm">
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-primary" />
-                  <span>{room.capacity} {room.capacity === 1 ? 'Person' : 'People'}</span>
+                  <span>{room.capacity} {room.capacity === 1 ? 'Student' : 'Students'}</span>
                 </div>
                 <div className="text-foreground/50">•</div>
                 <div>{room.roomType}</div>
