@@ -6,9 +6,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, X, Upload, Eye } from "lucide-react";
 import { compressImage } from "@/utils/imageCompression";
 import { DormPreviewModal } from "./DormPreviewModal";
+
+const AMENITIES_OPTIONS = [
+  "WiFi",
+  "Parking",
+  "Laundry",
+  "Gym",
+  "Study Room",
+  "Common Area",
+  "Kitchen",
+  "Air Conditioning",
+  "Heating",
+  "Security",
+  "Elevator",
+  "Cleaning Service",
+];
 
 interface DormFormProps {
   dorm?: any;
@@ -32,7 +48,17 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
     monthly_price: dorm?.monthly_price?.toString() || dorm?.price?.toString() || "",
     capacity: dorm?.capacity?.toString() || "",
     image_url: dorm?.image_url || dorm?.cover_image || "",
+    amenities: (dorm?.amenities || []) as string[],
   });
+
+  const toggleAmenity = (amenity: string) => {
+    setFormData(prev => ({
+      ...prev,
+      amenities: prev.amenities.includes(amenity)
+        ? prev.amenities.filter(a => a !== amenity)
+        : [...prev.amenities, amenity]
+    }));
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -93,6 +119,10 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
 
       if (formData.capacity) {
         payload.capacity = parseInt(formData.capacity);
+      }
+
+      if (formData.amenities.length > 0) {
+        payload.amenities = formData.amenities;
       }
 
       if (dorm?.id) {
@@ -247,6 +277,27 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
               placeholder="Describe your dorm..."
               rows={4}
             />
+          </div>
+
+          <div>
+            <Label>Amenities</Label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-3">
+              {AMENITIES_OPTIONS.map((amenity) => (
+                <div key={amenity} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={amenity}
+                    checked={formData.amenities.includes(amenity)}
+                    onCheckedChange={() => toggleAmenity(amenity)}
+                  />
+                  <label
+                    htmlFor={amenity}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    {amenity}
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div>
