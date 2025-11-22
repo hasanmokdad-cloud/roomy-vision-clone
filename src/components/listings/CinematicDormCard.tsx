@@ -90,7 +90,12 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
     [navigate, dorm.id],
   );
 
-  const handleCardClick = useCallback(() => {
+  const handleCardClick = useCallback((e: React.MouseEvent) => {
+    // Don't navigate if clicking on save button
+    const target = e.target as HTMLElement;
+    if (target.closest('.save-button')) {
+      return;
+    }
     navigate(`/dorm/${dorm.id}`);
   }, [navigate, dorm.id]);
 
@@ -201,7 +206,7 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            handleCardClick();
+            navigate(`/dorm/${dorm.id}`);
           }
         }}
         role="article"
@@ -246,18 +251,6 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
                 )}
               </div>
 
-              {/* Save Button */}
-              <button
-                onClick={toggleSave}
-                className="absolute top-4 right-4 p-2 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:bg-background transition-colors"
-                aria-label={isSaved ? "Remove from favorites" : "Save to favorites"}
-              >
-                <Bookmark
-                  className={`w-5 h-5 transition-colors ${
-                    isSaved ? "fill-primary text-primary" : "text-muted-foreground"
-                  }`}
-                />
-              </button>
             </div>
 
             {/* Content */}
@@ -288,13 +281,28 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
 
           {/* Back Face */}
           <div
-            className="absolute inset-0 flip-card-3d glass-hover rounded-3xl overflow-hidden border border-border shadow-xl p-6"
+            className="absolute inset-0 flip-card-3d glass-hover rounded-3xl overflow-visible border border-border shadow-xl"
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateX(180deg)",
             }}
           >
-            <div className="flex flex-col h-full justify-between">
+            <div className="flex flex-col h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/30 p-6">
+              {/* Save Button */}
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={toggleSave}
+                  className="save-button p-2 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:bg-background transition-colors"
+                  aria-label={isSaved ? "Remove from favorites" : "Save to favorites"}
+                >
+                  <Bookmark
+                    className={`w-5 h-5 transition-colors ${
+                      isSaved ? "fill-primary text-primary" : "text-muted-foreground"
+                    }`}
+                  />
+                </button>
+              </div>
+
               <div className="space-y-4">
                 <div>
                   <h3 className="text-xl font-black gradient-text mb-2 line-clamp-2">{dorm.dorm_name}</h3>
@@ -345,7 +353,7 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
 
               <Button
                 onClick={handleLearnMore}
-                className="w-full"
+                className="w-full mt-4"
                 aria-label={
                   hasMultipleRooms
                     ? `View all ${roomTypes.length} room types for ${dorm.dorm_name}`
