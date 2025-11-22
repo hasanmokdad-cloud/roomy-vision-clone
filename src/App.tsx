@@ -38,8 +38,6 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Messages = lazy(() => import("./pages/Messages"));
 const OwnerAddDorm = lazy(() => import("./pages/owner/OwnerAddDorm"));
 const AddNewDorm = lazy(() => import("./pages/owner/AddNewDorm"));
-const ClaimDorm = lazy(() => import("./pages/owner/ClaimDorm"));
-const ClaimDormNew = lazy(() => import("./pages/owner/ClaimDormNew"));
 const OwnerRooms = lazy(() => import("./pages/owner/OwnerRooms"));
 const OwnerBookings = lazy(() => import("./pages/owner/OwnerBookings"));
 const OwnerListings = lazy(() => import("./pages/owner/OwnerListings"));
@@ -57,8 +55,8 @@ const AdminDorms = lazy(() => import("./pages/admin/AdminDorms"));
 const AdminLogs = lazy(() => import("./pages/admin/AdminLogs"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
-const AdminDormClaims = lazy(() => import("./pages/admin/AdminDormClaims"));
 const ReviewManagement = lazy(() => import("./pages/owner/ReviewManagement"));
+const AdminDormOwnership = lazy(() => import("./pages/admin/AdminDormOwnership"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -168,14 +166,12 @@ const AppRoutes = () => {
           <Route path="/owner" element={<ProtectedRoute element={<OwnerDashboard />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/listings" element={<ProtectedRoute element={<OwnerListings />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/dorms/new" element={<ProtectedRoute element={<AddNewDorm />} allowedRoles={["owner", "admin"]} />} />
-          <Route path="/owner/claim" element={<ProtectedRoute element={<ClaimDormNew />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/dorms/:dormId/rooms" element={<ProtectedRoute element={<DormRooms />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/dorms/:dormId/rooms/new" element={<ProtectedRoute element={<RoomForm />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/dorms/:dormId/rooms/:roomId/edit" element={<ProtectedRoute element={<RoomForm />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/bulk-import" element={<ProtectedRoute element={<BulkImport />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/performance" element={<ProtectedRoute element={<OwnerPerformance />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/add-dorm" element={<ProtectedRoute element={<OwnerAddDorm />} allowedRoles={["owner", "admin"]} />} />
-          <Route path="/owner/claim-dorm" element={<ProtectedRoute element={<ClaimDorm />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/rooms" element={<ProtectedRoute element={<OwnerRooms />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/bookings" element={<ProtectedRoute element={<OwnerBookings />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/bulk-operations" element={<ProtectedRoute element={<BulkRoomOps />} allowedRoles={["owner", "admin"]} />} />
@@ -187,7 +183,7 @@ const AppRoutes = () => {
           <Route path="/admin/trends" element={<ProtectedRoute element={<Trends />} requiredRole="admin" />} />
           <Route path="/admin/students" element={<ProtectedRoute element={<AdminStudents />} requiredRole="admin" />} />
           <Route path="/admin/dorms" element={<ProtectedRoute element={<AdminDorms />} requiredRole="admin" />} />
-          <Route path="/admin/claims" element={<ProtectedRoute element={<AdminDormClaims />} requiredRole="admin" />} />
+          <Route path="/admin/ownership" element={<ProtectedRoute element={<AdminDormOwnership />} requiredRole="admin" />} />
           <Route path="/admin/logs" element={<ProtectedRoute element={<AdminLogs />} requiredRole="admin" />} />
           <Route path="/admin/notifications" element={<ProtectedRoute element={<AdminNotifications />} requiredRole="admin" />} />
           <Route path="/admin/settings" element={<ProtectedRoute element={<AdminSettings />} requiredRole="admin" />} />

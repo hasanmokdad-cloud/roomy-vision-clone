@@ -6,7 +6,7 @@ import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Home, MessageSquare, TrendingUp } from "lucide-react";
+import { PlusCircle, Home, MessageSquare, TrendingUp, Building2 } from "lucide-react";
 import { NotificationBell } from "@/components/owner/NotificationBell";
 import { DormForm } from "@/components/owner/DormForm";
 import { subscribeTo, unsubscribeFrom } from "@/lib/supabaseRealtime";
@@ -162,22 +162,6 @@ export default function OwnerDashboard() {
             </CardContent>
           </Card>
 
-          <Card
-            className="cursor-pointer hover:shadow-xl transition-shadow bg-gradient-to-br from-accent/10 to-primary/10 border-accent/20"
-            onClick={() => navigate('/owner/claim-dorm')}
-          >
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center">
-                  <Home className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold">Claim Existing Dorm</h3>
-                  <p className="text-sm text-foreground/60">Link your verified dorm</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           <Card
             className="cursor-pointer hover:shadow-xl transition-shadow bg-gradient-to-br from-secondary/10 to-accent/10 border-secondary/20"
@@ -304,9 +288,18 @@ export default function OwnerDashboard() {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-foreground/60 py-6">
-                  You haven't listed any dorms yet.
-                </p>
+                <div className="text-center py-12 space-y-4">
+                  <Building2 className="w-16 h-16 mx-auto text-muted-foreground/50" />
+                  <div>
+                    <p className="text-lg font-semibold text-foreground">No Dorms Assigned Yet</p>
+                    <p className="text-sm text-foreground/60 mt-2">
+                      Contact Roomy support to have your dorm assigned to your account.
+                    </p>
+                    <p className="text-sm text-foreground/60">
+                      Email: <a href="mailto:nader.safa@lau.edu" className="text-primary hover:underline">nader.safa@lau.edu</a>
+                    </p>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

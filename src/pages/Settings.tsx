@@ -310,17 +310,9 @@ export default function Settings() {
                   </Badge>
                 </div>
 
-                <div className="flex items-center justify-between py-3 border-b border-white/10">
-                  <div className="flex items-center gap-3">
-                    {phoneVerified ? (
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                    ) : (
-                      <XCircle className="w-5 h-5 text-red-500" />
-                    )}
-                    <span className="text-white">Phone Verification</span>
-                  </div>
-                  <Badge variant="secondary">Coming Soon</Badge>
-                </div>
+                  <p className="text-sm text-white/60">
+                    Owners should contact Roomy support for dorm assignment
+                  </p>
 
                 <Button
                   variant="outline"
