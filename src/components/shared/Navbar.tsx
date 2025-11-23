@@ -131,13 +131,15 @@ export default function Navbar() {
               >
                 Home
               </Link>
-              <Link 
-                to="/listings" 
-                className="text-foreground/80 hover:text-foreground transition-colors story-link"
-                role="menuitem"
-              >
-                Dorms
-              </Link>
+              {role !== 'owner' && (
+                <Link 
+                  to="/listings" 
+                  className="text-foreground/80 hover:text-foreground transition-colors story-link"
+                  role="menuitem"
+                >
+                  Dorms
+                </Link>
+              )}
               <Link 
                 to="/messages" 
                 className="text-foreground/80 hover:text-foreground transition-colors story-link"
@@ -145,13 +147,15 @@ export default function Navbar() {
               >
                 Messages
               </Link>
-              <Link 
-                to="/ai-match" 
-                className="text-foreground/80 hover:text-foreground transition-colors story-link"
-                role="menuitem"
-              >
-                AI Match
-              </Link>
+              {role !== 'owner' && (
+                <Link 
+                  to="/ai-match" 
+                  className="text-foreground/80 hover:text-foreground transition-colors story-link"
+                  role="menuitem"
+                >
+                  AI Match
+                </Link>
+              )}
               <Link 
                 to="/about" 
                 className="text-foreground/80 hover:text-foreground transition-colors story-link"
@@ -193,20 +197,24 @@ export default function Navbar() {
                     >
                       Home
                     </Link>
-                    <Link 
-                      to="/listings" 
-                      className="text-foreground/80 hover:text-foreground transition-colors py-2"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Dorms
-                    </Link>
-                    <Link 
-                      to="/ai-match" 
-                      className="text-foreground/80 hover:text-foreground transition-colors py-2"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      AI Match
-                    </Link>
+                    {role !== 'owner' && (
+                      <>
+                        <Link 
+                          to="/listings" 
+                          className="text-foreground/80 hover:text-foreground transition-colors py-2"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          Dorms
+                        </Link>
+                        <Link 
+                          to="/ai-match" 
+                          className="text-foreground/80 hover:text-foreground transition-colors py-2"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          AI Match
+                        </Link>
+                      </>
+                    )}
                     <Link 
                       to="/about" 
                       className="text-foreground/80 hover:text-foreground transition-colors py-2"
@@ -286,7 +294,7 @@ export default function Navbar() {
                       role="menuitem"
                     >
                       <LayoutDashboard className="w-4 h-4 mr-2" aria-hidden="true" />
-                      Dashboard
+                      {role === 'student' ? 'Dashboard' : 'Control Panel'}
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => navigate('/settings')}

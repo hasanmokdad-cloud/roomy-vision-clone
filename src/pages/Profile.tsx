@@ -2,30 +2,95 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { StudentProfileForm } from '@/components/StudentProfileForm';
+import { OwnerProfileForm } from '@/components/OwnerProfileForm';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
 
 export default function Profile() {
   const [userId, setUserId] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const loadUserData = async () => {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
       if (!session) {
         navigate('/auth');
-      } else {
-        setUserId(session.user.id);
+        return;
       }
-    });
+
+      setUserId(session.user.id);
+
+      // Get user role
+      const { data: roleData } = await supabase.rpc('get_user_role', {
+        p_user_id: session.user.id
+      });
+
+      setRole(roleData);
+
+      // Get profile photo based on role
+      if (roleData === 'student') {
+        const { data: student } = await supabase
+          .from('students')
+          .select('profile_photo_url')
+          .eq('user_id', session.user.id)
+          .single();
+        setProfilePhotoUrl(student?.profile_photo_url || null);
+      } else if (roleData === 'owner') {
+        const { data: owner } = await supabase
+          .from('owners')
+          .select('profile_photo_url')
+          .eq('user_id', session.user.id)
+          .single();
+        setProfilePhotoUrl(owner?.profile_photo_url || null);
+      } else if (roleData === 'admin') {
+        const { data: admin } = await supabase
+          .from('admins')
+          .select('profile_photo_url')
+          .eq('user_id', session.user.id)
+          .single();
+        setProfilePhotoUrl(admin?.profile_photo_url || null);
+      }
+
+      setLoading(false);
+    };
+
+    loadUserData();
   }, [navigate]);
 
-  if (!userId) return null;
+  const handlePhotoUploaded = (url: string) => {
+    setProfilePhotoUrl(url);
+  };
+
+  if (!userId || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const getBackButtonText = () => {
+    if (role === 'owner' || role === 'admin') return 'Back to Control Panel';
+    return 'Back to Dorms';
+  };
+
+  const getBackButtonPath = () => {
+    if (role === 'owner') return '/owner';
+    if (role === 'admin') return '/admin';
+    return '/listings';
+  };
 
   return (
-    <div className="min-h-screen relative bg-gradient-to-b from-[#0f051d] via-[#1a0b2e] to-[#0d0418]">
+    <div className="min-h-screen relative bg-background">
       <Navbar />
       
       <motion.div 
@@ -36,17 +101,55 @@ export default function Profile() {
       >
         <Button
           variant="ghost"
-          onClick={() => navigate('/listings')}
-          className="mb-6 hover:bg-white/10 hover:neon-glow"
+          onClick={() => navigate(getBackButtonPath())}
+          className="mb-6"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dorms
+          {getBackButtonText()}
         </Button>
 
-        <StudentProfileForm 
-          userId={userId} 
-          onComplete={() => navigate('/ai-match')}
-        />
+        {role === 'student' && (
+          <>
+            {/* Profile Photo Section for Students */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.6 }}
+              className="max-w-2xl mx-auto mb-6"
+            >
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
+                <h3 className="text-xl font-bold text-foreground mb-4">Profile Photo</h3>
+                <div className="flex justify-center">
+                  <ProfilePhotoUpload
+                    userId={userId}
+                    currentUrl={profilePhotoUrl}
+                    onUploaded={handlePhotoUploaded}
+                    tableName="students"
+                  />
+                </div>
+              </div>
+            </motion.div>
+
+            <StudentProfileForm 
+              userId={userId} 
+              onComplete={() => navigate('/ai-match')}
+            />
+          </>
+        )}
+
+        {role === 'owner' && (
+          <OwnerProfileForm 
+            userId={userId} 
+            onComplete={() => navigate('/owner')}
+          />
+        )}
+
+        {role === 'admin' && (
+          <OwnerProfileForm 
+            userId={userId} 
+            onComplete={() => navigate('/admin')}
+          />
+        )}
       </motion.div>
 
       <Footer />
