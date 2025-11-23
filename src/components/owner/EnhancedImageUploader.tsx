@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ImageDropzone } from './ImageDropzone';
 import { ImagePreviewCard } from './ImagePreviewCard';
 import { UploadProgressBar } from './UploadProgressBar';
@@ -42,6 +43,12 @@ export function EnhancedImageUploader({
   const { toast } = useToast();
   const [editingImageId, setEditingImageId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>(existingImages);
+
+  // Update existing images when prop changes
+  useEffect(() => {
+    setExistingImageUrls(existingImages);
+  }, [existingImages]);
 
   // Handle file selection
   const handleFilesAdded = (files: File[]) => {
@@ -90,10 +97,17 @@ export function EnhancedImageUploader({
     reorderImages(result.source.index, result.destination.index);
   };
 
+  // Remove existing image
+  const handleRemoveExisting = (url: string) => {
+    const updated = existingImageUrls.filter(img => img !== url);
+    setExistingImageUrls(updated);
+    onChange([...updated, ...uploadedUrls]);
+  };
+
   // Upload all pending images
   const handleUploadAll = async () => {
     const urls = await uploadAll();
-    const allUrls = [...existingImages, ...urls];
+    const allUrls = [...existingImageUrls, ...urls];
     onChange(allUrls);
   };
 
@@ -105,7 +119,7 @@ export function EnhancedImageUploader({
   // Update parent when uploads complete
   useEffect(() => {
     if (uploadedUrls.length > 0 && !isUploading) {
-      const allUrls = [...existingImages, ...uploadedUrls];
+      const allUrls = [...existingImageUrls, ...uploadedUrls];
       onChange(allUrls);
     }
   }, [uploadedUrls.length, isUploading]);
@@ -130,6 +144,35 @@ export function EnhancedImageUploader({
 
   return (
     <div className="space-y-4">
+      {/* Existing Images */}
+      {existingImageUrls.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Existing Images ({existingImageUrls.length})</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {existingImageUrls.map((url, index) => (
+              <Card key={url} className="relative group overflow-hidden">
+                <img
+                  src={url}
+                  alt={`Existing ${index + 1}`}
+                  className="w-full h-32 object-cover"
+                />
+                {index === 0 && (
+                  <Badge className="absolute top-2 left-2 text-xs">Primary</Badge>
+                )}
+                <Button
+                  size="icon"
+                  variant="destructive"
+                  className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => handleRemoveExisting(url)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Upload Progress */}
       {images.length > 0 && (
         <UploadProgressBar
@@ -140,7 +183,7 @@ export function EnhancedImageUploader({
       )}
 
       {/* Dropzone */}
-      {images.length < maxImages && (
+      {(existingImageUrls.length + images.length) < maxImages && (
         <ImageDropzone
           onFilesAdded={handleFilesAdded}
           multiple={true}
@@ -152,7 +195,7 @@ export function EnhancedImageUploader({
               Drop images here or click to browse
             </p>
             <p className="text-xs text-muted-foreground">
-              {images.length} / {maxImages} images • PNG, JPG, WEBP up to 10MB
+              {existingImageUrls.length + images.length} / {maxImages} images • PNG, JPG, WEBP up to 10MB
             </p>
             <p className="text-xs text-muted-foreground mt-2">
               You can also paste images with Ctrl+V
@@ -244,7 +287,7 @@ export function EnhancedImageUploader({
       )}
 
       {/* Helper Text */}
-      {images.length === 0 && (
+      {images.length === 0 && existingImageUrls.length === 0 && (
         <Card className="p-4 bg-muted/50">
           <p className="text-sm text-center text-muted-foreground">
             No images uploaded yet. Add up to {maxImages} images to showcase this room.

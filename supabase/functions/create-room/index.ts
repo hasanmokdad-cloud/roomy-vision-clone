@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 interface RoomData {
+  room_id?: string; // Optional - if provided, will update instead of create
   dorm_id: string;
   name: string;
   type: string;
@@ -56,8 +57,9 @@ serve(async (req) => {
 
     // Parse the request body
     const roomData: RoomData = await req.json();
+    const isUpdate = !!roomData.room_id;
     
-    console.log('📝 Creating room for dorm:', roomData.dorm_id);
+    console.log(isUpdate ? '📝 Updating room:' : '📝 Creating room for dorm:', roomData.room_id || roomData.dorm_id);
 
     // Get the owner record for this user
     const { data: ownerRecord, error: ownerError } = await supabaseClient
@@ -87,39 +89,74 @@ serve(async (req) => {
       throw new Error('You do not own this dorm');
     }
 
-    console.log('✅ Ownership verified. Creating room...');
+    console.log('✅ Ownership verified.');
 
-    // Insert the room using service role (bypasses RLS)
-    const { data: newRoom, error: insertError } = await supabaseClient
-      .from('rooms')
-      .insert([{
-        dorm_id: roomData.dorm_id,
-        name: roomData.name,
-        type: roomData.type,
-        price: roomData.price,
-        deposit: roomData.deposit || null,
-        capacity: roomData.capacity || null,
-        area_m2: roomData.area_m2 || null,
-        description: roomData.description || null,
-        images: roomData.images || [],
-        panorama_urls: roomData.panorama_urls || [],
-        available: roomData.available,
-      }])
-      .select()
-      .single();
+    let resultRoom;
+    let operationError;
 
-    if (insertError) {
-      console.error('❌ Insert error:', insertError);
-      throw insertError;
+    if (isUpdate) {
+      // UPDATE existing room
+      console.log('Updating room:', roomData.room_id);
+      
+      const { data, error } = await supabaseClient
+        .from('rooms')
+        .update({
+          name: roomData.name,
+          type: roomData.type,
+          price: roomData.price,
+          deposit: roomData.deposit || null,
+          capacity: roomData.capacity || null,
+          area_m2: roomData.area_m2 || null,
+          description: roomData.description || null,
+          images: roomData.images || [],
+          panorama_urls: roomData.panorama_urls || [],
+          available: roomData.available,
+        })
+        .eq('id', roomData.room_id)
+        .eq('dorm_id', roomData.dorm_id)
+        .select()
+        .single();
+      
+      resultRoom = data;
+      operationError = error;
+    } else {
+      // INSERT new room
+      console.log('Creating new room...');
+      
+      const { data, error } = await supabaseClient
+        .from('rooms')
+        .insert([{
+          dorm_id: roomData.dorm_id,
+          name: roomData.name,
+          type: roomData.type,
+          price: roomData.price,
+          deposit: roomData.deposit || null,
+          capacity: roomData.capacity || null,
+          area_m2: roomData.area_m2 || null,
+          description: roomData.description || null,
+          images: roomData.images || [],
+          panorama_urls: roomData.panorama_urls || [],
+          available: roomData.available,
+        }])
+        .select()
+        .single();
+      
+      resultRoom = data;
+      operationError = error;
     }
 
-    console.log('✅ Room created successfully:', newRoom.id);
+    if (operationError) {
+      console.error('❌ Operation error:', operationError);
+      throw operationError;
+    }
+
+    console.log(`✅ Room ${isUpdate ? 'updated' : 'created'} successfully:`, resultRoom.id);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        room: newRoom,
-        message: 'Room created successfully'
+        room: resultRoom,
+        message: `Room ${isUpdate ? 'updated' : 'created'} successfully`
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

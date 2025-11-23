@@ -215,7 +215,7 @@ export function EnhancedRoomCard({
             {/* Wrapper for entire image section with absolute positioning */}
             <div className="relative">
               {/* Image Container */}
-              <div className="relative overflow-hidden">
+              <div className="relative overflow-hidden z-10">
                 {displayImages.length > 1 ? (
                   <Carousel className="w-full">
                     <CarouselContent>
@@ -230,8 +230,8 @@ export function EnhancedRoomCard({
                         </CarouselItem>
                       ))}
                     </CarouselContent>
-                    <CarouselPrevious className="left-2" />
-                    <CarouselNext className="right-2" />
+                    <CarouselPrevious className="left-2 z-30 bg-white hover:bg-white" />
+                    <CarouselNext className="right-2 z-30 bg-white hover:bg-white" />
                   </Carousel>
                 ) : (
                   <img
@@ -273,8 +273,8 @@ export function EnhancedRoomCard({
 
               {/* Quick Actions Overlay - Appears on Hover */}
               {!isUnavailable && (
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4 z-20">
-                  <div className="w-full flex gap-2">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4 z-20 pointer-events-none">
+                  <div className="w-full flex gap-2 pointer-events-auto">
                     <Button
                       onClick={handleBookTour}
                       size="sm"
