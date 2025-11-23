@@ -19,7 +19,7 @@ import { settingsManager, type UserSettings } from '@/utils/settings';
 import { supabase } from '@/integrations/supabase/client';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
-import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
+
 import { useTranslation } from 'react-i18next';
 
 export default function Settings() {
@@ -45,7 +45,7 @@ export default function Settings() {
   const [show2FASetup, setShow2FASetup] = useState(false);
   const [qrCode, setQrCode] = useState('');
   const [factorId, setFactorId] = useState('');
-  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+  
 
   useEffect(() => {
     if (!loading && userId) {
@@ -80,36 +80,33 @@ export default function Settings() {
         setEmailVerified(!!user?.email_confirmed_at);
       });
 
-      // Load phone verification and profile photo based on role
+      // Load phone verification based on role
       if (role === 'student') {
         supabase
           .from('students')
-          .select('phone_verified, profile_photo_url')
+          .select('phone_verified')
           .eq('user_id', userId)
           .maybeSingle()
           .then(({ data }) => {
             setPhoneVerified(data?.phone_verified || false);
-            setProfilePhotoUrl(data?.profile_photo_url || null);
           });
       } else if (role === 'owner') {
         supabase
           .from('owners')
-          .select('phone_verified, profile_photo_url')
+          .select('phone_verified')
           .eq('user_id', userId)
           .maybeSingle()
           .then(({ data }) => {
             setPhoneVerified(data?.phone_verified || false);
-            setProfilePhotoUrl(data?.profile_photo_url || null);
           });
       } else if (role === 'admin') {
         supabase
           .from('admins')
-          .select('phone_verified, profile_photo_url')
+          .select('phone_verified')
           .eq('user_id', userId)
           .maybeSingle()
           .then(({ data }) => {
             setPhoneVerified(data?.phone_verified || false);
-            setProfilePhotoUrl(data?.profile_photo_url || null);
           });
       }
     }
@@ -255,35 +252,8 @@ export default function Settings() {
           <h1 className="text-4xl font-bold mb-2 gradient-text">Settings</h1>
           <p className="text-foreground/60 mb-8">Manage your account preferences and personalization</p>
 
-          <div className="space-y-6">
-            {/* Profile Photo - For all roles */}
-            {userId && (
-              <Card className="glass p-6 border border-border/40">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Profile Photo</h3>
-              <ProfilePhotoUpload
-                userId={userId}
-                currentUrl={profilePhotoUrl}
-                onUploaded={async (url) => {
-                  setProfilePhotoUrl(url);
-                  // Refetch from correct table based on role
-                  let tableName: 'students' | 'owners' | 'admins' = 'students';
-                  if (role === 'owner') tableName = 'owners';
-                  if (role === 'admin') tableName = 'admins';
-                  
-                  const { data } = await supabase
-                    .from(tableName)
-                    .select('profile_photo_url')
-                    .eq('user_id', userId)
-                    .maybeSingle();
-                  
-                  if (data) setProfilePhotoUrl(data.profile_photo_url || null);
-                }}
-                tableName={role === 'student' ? 'students' : role === 'owner' ? 'owners' : 'admins'}
-              />
-              </Card>
-            )}
-
-            {/* Theme */}
+        <div className="space-y-6">
+          {/* Theme */}
             <Card className="glass p-6 border border-border/40">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
