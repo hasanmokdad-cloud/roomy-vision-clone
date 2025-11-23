@@ -5,13 +5,30 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, CheckCircle, XCircle } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { AdminDormPreviewModal } from './AdminDormPreviewModal';
+import { Clock, CheckCircle, XCircle, Eye } from 'lucide-react';
 
 export function PendingApprovalsQueue() {
   const [pendingDorms, setPendingDorms] = useState<any[]>([]);
   const [pendingClaims, setPendingClaims] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [selectedDorm, setSelectedDorm] = useState<any>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     loadPendingItems();
@@ -93,26 +110,35 @@ export function PendingApprovalsQueue() {
     }
   };
 
-  const rejectDorm = async (dormId: string) => {
+  const handleRejectClick = (dorm: any) => {
+    setSelectedDorm(dorm);
+    setShowRejectDialog(true);
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!selectedDorm || !rejectionReason.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please provide a rejection reason',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
-      console.log('🔍 [Reject] Starting rejection for dorm:', dormId);
+      console.log('🔍 [Reject] Starting rejection for dorm:', selectedDorm.id);
       
-      // Use RPC function directly
       const { data, error } = await supabase.rpc('admin_update_verification_status', {
-        p_dorm_id: dormId,
-        p_new_status: 'Rejected'
+        p_dorm_id: selectedDorm.id,
+        p_new_status: 'Rejected',
+        p_rejection_reason: rejectionReason,
       });
 
       if (error) {
-        console.error('❌ [Reject] RPC Error Details:', {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        });
+        console.error('❌ [Reject] RPC Error Details:', error);
         toast({
           title: 'Rejection Failed',
-          description: `${error.message}${error.hint ? ` - ${error.hint}` : ''}`,
+          description: error.message,
           variant: 'destructive',
         });
         return;
@@ -122,17 +148,15 @@ export function PendingApprovalsQueue() {
       
       toast({
         title: 'Success',
-        description: 'Dorm rejected successfully',
+        description: 'Dorm rejected with reason provided',
       });
 
-      // Reload the list
+      setShowRejectDialog(false);
+      setRejectionReason('');
+      setSelectedDorm(null);
       await loadPendingItems();
     } catch (error: any) {
-      console.error('❌ [Reject] Unexpected Error:', {
-        message: error.message,
-        type: error.constructor.name,
-        stack: error.stack
-      });
+      console.error('❌ [Reject] Unexpected Error:', error);
       toast({
         title: 'Error',
         description: error.message || 'An unexpected error occurred',
@@ -265,7 +289,19 @@ export function PendingApprovalsQueue() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedDorm(dorm);
+                          setShowPreview(true);
+                        }}
+                        className="gap-1"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Preview
+                      </Button>
                       <Button
                         size="sm"
                         onClick={() => approveDorm(dorm.id)}
@@ -277,7 +313,7 @@ export function PendingApprovalsQueue() {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => rejectDorm(dorm.id)}
+                        onClick={() => handleRejectClick(dorm)}
                         className="gap-1"
                       >
                         <XCircle className="w-4 h-4" />
@@ -335,6 +371,53 @@ export function PendingApprovalsQueue() {
           </TabsContent>
         </Tabs>
       </CardContent>
+
+      {/* Preview Modal */}
+      <AdminDormPreviewModal
+        dorm={selectedDorm}
+        isOpen={showPreview}
+        onClose={() => {
+          setShowPreview(false);
+          setSelectedDorm(null);
+        }}
+      />
+
+      {/* Reject Dialog */}
+      <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject Dorm Submission</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please provide a reason for rejecting this dorm. The owner will see this message.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 my-4">
+            <Label htmlFor="rejection-reason">Rejection Reason *</Label>
+            <Textarea
+              id="rejection-reason"
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="e.g., Images are unclear, missing contact information, incorrect pricing..."
+              rows={4}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setRejectionReason('');
+              setSelectedDorm(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRejectConfirm}
+              disabled={!rejectionReason.trim()}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Reject
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

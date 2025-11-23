@@ -495,6 +495,9 @@ export type Database = {
           owner_id: string | null
           phone_number: string | null
           price: number
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           room_types: string | null
           room_types_json: Json | null
           services_amenities: string | null
@@ -526,6 +529,9 @@ export type Database = {
           owner_id?: string | null
           phone_number?: string | null
           price: number
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           room_types?: string | null
           room_types_json?: Json | null
           services_amenities?: string | null
@@ -557,6 +563,9 @@ export type Database = {
           owner_id?: string | null
           phone_number?: string | null
           price?: number
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           room_types?: string | null
           room_types_json?: Json | null
           services_amenities?: string | null
@@ -1791,10 +1800,16 @@ export type Database = {
       }
     }
     Functions: {
-      admin_update_verification_status: {
-        Args: { p_dorm_id: string; p_new_status: string }
-        Returns: Json
-      }
+      admin_update_verification_status:
+        | { Args: { p_dorm_id: string; p_new_status: string }; Returns: Json }
+        | {
+            Args: {
+              p_dorm_id: string
+              p_new_status: string
+              p_rejection_reason?: string
+            }
+            Returns: Json
+          }
       analytics_summary: { Args: never; Returns: Json }
       analytics_timeseries: {
         Args: { p_days?: number; p_metric: string }
