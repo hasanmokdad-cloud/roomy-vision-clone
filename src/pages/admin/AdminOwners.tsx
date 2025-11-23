@@ -6,7 +6,18 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Download, Mail, Eye, Building2, CheckCircle, XCircle, UserX, ArrowLeft } from 'lucide-react';
+import { Search, Download, Eye, Building2, CheckCircle, XCircle, Ban, Trash2, ArrowLeft } from 'lucide-react';
+import { OwnerProfileModal } from '@/components/admin/OwnerProfileModal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Table,
   TableBody,
@@ -22,6 +33,10 @@ export default function AdminOwners() {
   const [filteredOwners, setFilteredOwners] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [ownerToDelete, setOwnerToDelete] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -84,7 +99,9 @@ export default function AdminOwners() {
     }
   };
 
-  const updateOwnerStatus = async (ownerId: string, newStatus: string) => {
+  const updateOwnerStatus = async (ownerId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+    
     try {
       const { error } = await supabase
         .from('owners')
@@ -107,6 +124,33 @@ export default function AdminOwners() {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleDeleteOwner = async () => {
+    if (!ownerToDelete) return;
+
+    const { error } = await supabase
+      .from('owners')
+      .delete()
+      .eq('id', ownerToDelete);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete owner',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({
+      title: 'Success',
+      description: 'Owner deleted successfully',
+    });
+
+    setDeleteDialogOpen(false);
+    setOwnerToDelete(null);
+    loadOwners();
   };
 
   const exportToCSV = () => {
@@ -249,23 +293,40 @@ export default function AdminOwners() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => window.location.href = `/admin/ownership?owner=${owner.id}`}
+                        onClick={() => {
+                          setSelectedOwnerId(owner.id);
+                          setProfileModalOpen(true);
+                        }}
+                        title="View Profile"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-4 h-4 text-blue-500" />
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => updateOwnerStatus(
-                          owner.id,
-                          owner.status === 'active' ? 'suspended' : 'active'
-                        )}
+                        onClick={() => navigate(`/admin/dorms?owner=${owner.id}`)}
+                        title="View Properties"
                       >
-                        {owner.status === 'active' ? (
-                          <UserX className="w-4 h-4 text-destructive" />
-                        ) : (
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                        )}
+                        <Building2 className="w-4 h-4 text-purple-500" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => updateOwnerStatus(owner.id, owner.status)}
+                        title={owner.status === 'active' ? 'Suspend' : 'Activate'}
+                      >
+                        <Ban className={`w-4 h-4 ${owner.status === 'active' ? 'text-orange-500' : 'text-green-500'}`} />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setOwnerToDelete(owner.id);
+                          setDeleteDialogOpen(true);
+                        }}
+                        title="Delete Owner"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
                       </Button>
                     </div>
                   </TableCell>
@@ -275,6 +336,37 @@ export default function AdminOwners() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Owner Profile Modal */}
+      {selectedOwnerId && (
+        <OwnerProfileModal
+          ownerId={selectedOwnerId}
+          isOpen={profileModalOpen}
+          onClose={() => {
+            setProfileModalOpen(false);
+            setSelectedOwnerId(null);
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the owner account
+              and may affect associated properties. Make sure to reassign properties first.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteOwner} className="bg-destructive">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

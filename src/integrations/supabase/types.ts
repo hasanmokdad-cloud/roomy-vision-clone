@@ -1324,6 +1324,75 @@ export type Database = {
         }
         Relationships: []
       }
+      room_contact_tracking: {
+        Row: {
+          created_at: string | null
+          dorm_id: string | null
+          id: string
+          room_id: string | null
+          student_email: string | null
+          student_id: string | null
+          student_name: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dorm_id?: string | null
+          id?: string
+          room_id?: string | null
+          student_email?: string | null
+          student_id?: string | null
+          student_name?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          dorm_id?: string | null
+          id?: string
+          room_id?: string | null
+          student_email?: string | null
+          student_id?: string | null
+          student_name?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_contact_tracking_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_contact_tracking_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_contact_tracking_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "room_contact_tracking_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_contact_tracking_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rooms: {
         Row: {
           area_m2: number | null

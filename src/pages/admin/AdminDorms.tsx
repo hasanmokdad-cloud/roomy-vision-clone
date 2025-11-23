@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Edit, Trash2, Plus, X, Eye, Search, ArrowLeft } from 'lucide-react';
+import { CheckCircle, Edit, Trash2, Plus, X, Eye, Search, ArrowLeft, Home } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Table,
@@ -226,6 +226,14 @@ export default function AdminDorms() {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => navigate(`/admin/dorms/${dorm.id}/rooms`)}
+                      title="View rooms"
+                    >
+                      <Home className="w-4 h-4 text-purple-500" />
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
