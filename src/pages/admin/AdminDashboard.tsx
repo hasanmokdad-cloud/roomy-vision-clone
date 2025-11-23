@@ -6,6 +6,7 @@ import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import {
   Users,
   Building2,
@@ -21,6 +22,7 @@ import {
 export default function AdminDashboard() {
   const { loading } = useRoleGuard("admin");
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [stats, setStats] = useState({
     students: 0,
     owners: 0,
@@ -56,13 +58,42 @@ export default function AdminDashboard() {
   }, []);
 
   const verifyDorm = async (id: string) => {
-    await supabase
-      .from("dorms")
-      .update({ verification_status: "Verified" })
-      .eq("id", id);
+    try {
+      console.log('🔍 [AdminDashboard] Starting verification for dorm:', id);
+      
+      const { data, error } = await supabase.rpc('admin_update_verification_status', {
+        p_dorm_id: id,
+        p_new_status: 'Verified'
+      });
 
-    setPendingList((prev) => prev.filter((d) => d.id !== id));
-    setStats(prev => ({ ...prev, pendingDorms: prev.pendingDorms - 1 }));
+      if (error) {
+        console.error('❌ [AdminDashboard] RPC Error:', error);
+        toast({
+          title: 'Verification Failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      console.log('✅ [AdminDashboard] Success!', data);
+      
+      // Update UI optimistically
+      setPendingList((prev) => prev.filter((d) => d.id !== id));
+      setStats(prev => ({ ...prev, pendingDorms: Math.max(0, prev.pendingDorms - 1) }));
+      
+      toast({
+        title: 'Success',
+        description: 'Dorm verified successfully',
+      });
+    } catch (error: any) {
+      console.error('❌ [AdminDashboard] Unexpected Error:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to verify dorm',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleSignOut = async () => {
