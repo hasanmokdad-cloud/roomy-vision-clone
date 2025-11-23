@@ -1900,6 +1900,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      user_owns_dorm: { Args: { p_dorm_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
