@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User, MapPin, GraduationCap, DollarSign, Home, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Confetti } from '@/components/profile/Confetti';
@@ -19,11 +20,13 @@ const studentProfileSchema = z.object({
   gender: z.enum(['Male', 'Female', 'Other']).optional(),
   university: z.string().optional(),
   residential_area: z.string().optional(),
-  preferred_university: z.string().optional(),
+  accommodation_status: z.enum(['need_dorm', 'have_dorm']).default('need_dorm'),
   room_type: z.string().optional(),
   roommate_needed: z.boolean().optional(),
   budget: z.number().min(0).optional(),
   distance_preference: z.string().optional(),
+  need_roommate: z.boolean().optional(),
+  roommates_needed: z.number().min(0).max(10).optional(),
 });
 
 type StudentProfile = z.infer<typeof studentProfileSchema>;
@@ -38,6 +41,8 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   const [hasProfile, setHasProfile] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [accommodationStatus, setAccommodationStatus] = useState<'need_dorm' | 'have_dorm'>('need_dorm');
+  const [needRoommate, setNeedRoommate] = useState(false);
   const { toast } = useToast();
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<StudentProfile>({
@@ -48,7 +53,15 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   
   // Calculate profile completion percentage
   const calculateProgress = () => {
-    const fields = ['full_name', 'age', 'gender', 'university', 'residential_area', 'preferred_university', 'room_type', 'budget'];
+    let fields = ['full_name', 'age', 'gender', 'university'];
+    
+    // Add conditional fields based on accommodation status
+    if (accommodationStatus === 'need_dorm') {
+      fields = [...fields, 'residential_area', 'room_type', 'budget', 'distance_preference'];
+    } else if (accommodationStatus === 'have_dorm' && needRoommate) {
+      fields = [...fields, 'roommates_needed'];
+    }
+    
     const filledFields = fields.filter(field => {
       const value = formValues[field as keyof StudentProfile];
       return value !== undefined && value !== null && value !== '';
@@ -71,6 +84,17 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
 
     if (data && !error) {
       setHasProfile(true);
+      
+      // Set accommodation status state
+      if (data.accommodation_status) {
+        setAccommodationStatus(data.accommodation_status as 'need_dorm' | 'have_dorm');
+      }
+      
+      // Set need roommate state
+      if (data.need_roommate !== undefined) {
+        setNeedRoommate(data.need_roommate);
+      }
+      
       Object.keys(data).forEach((key) => {
         if (key !== 'id' && key !== 'user_id' && key !== 'created_at' && key !== 'updated_at' && key !== 'email') {
           setValue(key as keyof StudentProfile, data[key]);
@@ -79,7 +103,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
     }
 
     // Load AI responses to auto-fill if profile is incomplete
-    if (!data || !data.budget || !data.preferred_university) {
+    if (!data || !data.budget) {
       const { data: aiResponses } = await supabase
         .from('students_ai_responses')
         .select('responses')
@@ -91,9 +115,6 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
       if (aiResponses?.responses) {
         const responses = aiResponses.responses as Record<string, any>;
         if (responses.budget && !data?.budget) setValue('budget', responses.budget);
-        if (responses.preferred_university && !data?.preferred_university) {
-          setValue('preferred_university', responses.preferred_university);
-        }
         if (responses.room_type && !data?.room_type) setValue('room_type', responses.room_type);
         if (responses[14] && !data?.age) setValue('age', parseInt(responses[14]));
         if (responses[15] && !data?.university) setValue('university', responses[15]);
@@ -110,22 +131,36 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
       
       if (!user) throw new Error('User not authenticated');
 
+      const updateData: any = {
+        user_id: userId,
+        email: user.email || '',
+        full_name: data.full_name,
+        age: data.age,
+        gender: data.gender,
+        university: data.university,
+        accommodation_status: accommodationStatus,
+        profile_completion_score: calculateProgress(),
+        updated_at: new Date().toISOString()
+      };
+
+      // Only include dorm-search fields if status is 'need_dorm'
+      if (accommodationStatus === 'need_dorm') {
+        updateData.residential_area = data.residential_area;
+        updateData.room_type = data.room_type;
+        updateData.roommate_needed = data.roommate_needed;
+        updateData.budget = data.budget;
+        updateData.distance_preference = data.distance_preference;
+      }
+
+      // Only include roommate fields if status is 'have_dorm'
+      if (accommodationStatus === 'have_dorm') {
+        updateData.need_roommate = needRoommate;
+        updateData.roommates_needed = needRoommate ? data.roommates_needed : 0;
+      }
+
       const { error } = await supabase
         .from('students')
-        .upsert({
-          user_id: userId,
-          email: user.email || '',
-          full_name: data.full_name,
-          age: data.age,
-          gender: data.gender,
-          university: data.university,
-          residential_area: data.residential_area,
-          preferred_university: data.preferred_university,
-          room_type: data.room_type,
-          roommate_needed: data.roommate_needed,
-          budget: data.budget,
-          distance_preference: data.distance_preference,
-        }, {
+        .upsert(updateData, {
           onConflict: 'user_id'
         });
 
@@ -230,7 +265,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
           </div>
 
           {/* Academic Information Section */}
-          <div className="space-y-4">
+          <div className="space-y-4 bg-primary/5 border border-primary/20 rounded-xl p-6">
             <h3 className="text-xl font-black text-primary flex items-center gap-2">
               <GraduationCap className="w-5 h-5" />
               Academic Information
@@ -241,111 +276,202 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
               <Input
                 id="university"
                 {...register('university')}
-                placeholder="e.g., UC Berkeley"
-                className="mt-2 w-full focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="preferred_university" className="text-foreground/80">Preferred University (for dorm search)</Label>
-              <Input
-                id="preferred_university"
-                {...register('preferred_university')}
-                placeholder="e.g., Stanford University"
+                placeholder="e.g., AUB, LAU, USJ"
                 className="mt-2 w-full focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
 
-          {/* Housing Preferences Section */}
-          <div className="space-y-4">
+          {/* Accommodation Status Section */}
+          <div className="space-y-4 bg-primary/5 border border-primary/20 rounded-xl p-6">
             <h3 className="text-xl font-black text-primary flex items-center gap-2">
               <Home className="w-5 h-5" />
-              Housing Preferences
+              Accommodation Status
             </h3>
-
-            <div>
-              <Label htmlFor="residential_area" className="text-foreground/80">Preferred Residential Area</Label>
-              <Input
-                id="residential_area"
-                {...register('residential_area')}
-                placeholder="e.g., Downtown, Campus Area"
-                className="mt-2 w-full focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="room_type" className="text-foreground/80">Preferred Room Type</Label>
-                <Select onValueChange={(value) => setValue('room_type', value)}>
-                  <SelectTrigger id="room_type" className="mt-2 w-full focus:ring-2 focus:ring-primary">
-                    <SelectValue placeholder="Select room type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Single">Single</SelectItem>
-                    <SelectItem value="Double">Double</SelectItem>
-                    <SelectItem value="Triple">Triple</SelectItem>
-                    <SelectItem value="Suite">Suite</SelectItem>
-                  </SelectContent>
-                </Select>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label className="text-base font-semibold text-foreground">
+                  Do you need a dorm?
+                </Label>
+                <p className="text-sm text-foreground/60">
+                  Toggle based on your current accommodation status
+                </p>
               </div>
-
-              <div>
-                <Label htmlFor="roommate_needed" className="text-foreground/80">Need a Roommate?</Label>
-                <Select onValueChange={(value) => setValue('roommate_needed', value === 'yes')}>
-                  <SelectTrigger id="roommate_needed" className="mt-2 w-full focus:ring-2 focus:ring-primary">
-                    <SelectValue placeholder="Select option" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center gap-4">
+                <span className={accommodationStatus === 'have_dorm' ? 'font-bold text-primary' : 'text-foreground/60'}>
+                  I Have a Dorm
+                </span>
+                <Switch
+                  checked={accommodationStatus === 'need_dorm'}
+                  onCheckedChange={(checked) => setAccommodationStatus(checked ? 'need_dorm' : 'have_dorm')}
+                />
+                <span className={accommodationStatus === 'need_dorm' ? 'font-bold text-primary' : 'text-foreground/60'}>
+                  I Need a Dorm
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Budget Section */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-black text-primary flex items-center gap-2">
-              <DollarSign className="w-5 h-5" />
-              Budget
-            </h3>
+          {/* Conditional: I Need a Dorm - Housing, Budget, Location */}
+          {accommodationStatus === 'need_dorm' && (
+            <>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-4 bg-primary/5 border border-primary/20 rounded-xl p-6"
+              >
+                <h3 className="text-xl font-black text-primary flex items-center gap-2">
+                  <Home className="w-5 h-5" />
+                  Housing Preferences
+                </h3>
 
-            <div>
-              <Label htmlFor="budget" className="text-foreground/80">Monthly Budget ($)</Label>
-              <Input
-                id="budget"
-                type="number"
-                {...register('budget', { valueAsNumber: true })}
-                placeholder="e.g., 1000"
-                className="mt-2 w-full focus:ring-2 focus:ring-primary"
-              />
-            </div>
-          </div>
+                <div>
+                  <Label htmlFor="residential_area" className="text-foreground/80">Preferred Residential Area</Label>
+                  <Input
+                    id="residential_area"
+                    {...register('residential_area')}
+                    placeholder="e.g., Hamra, Achrafieh, Jounieh"
+                    className="mt-2 w-full focus:ring-2 focus:ring-primary"
+                  />
+                </div>
 
-          {/* Location Preferences Section */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-black text-primary flex items-center gap-2">
-              <MapPin className="w-5 h-5" />
-              Location Preferences
-            </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="room_type" className="text-foreground/80">Preferred Room Type</Label>
+                    <Select onValueChange={(value) => setValue('room_type', value)}>
+                      <SelectTrigger id="room_type" className="mt-2 w-full focus:ring-2 focus:ring-primary">
+                        <SelectValue placeholder="Select room type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Single">Single</SelectItem>
+                        <SelectItem value="Double">Double</SelectItem>
+                        <SelectItem value="Triple">Triple</SelectItem>
+                        <SelectItem value="Suite">Suite</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            <div>
-              <Label htmlFor="distance_preference" className="text-foreground/80">Preferred Distance from Campus</Label>
-              <Select onValueChange={(value) => setValue('distance_preference', value)}>
-                <SelectTrigger id="distance_preference" className="mt-2 w-full focus:ring-2 focus:ring-primary">
-                  <SelectValue placeholder="Select distance" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Walking distance">Walking distance (&lt; 1 mile)</SelectItem>
-                  <SelectItem value="Short commute">Short commute (1-3 miles)</SelectItem>
-                  <SelectItem value="Moderate commute">Moderate commute (3-5 miles)</SelectItem>
-                  <SelectItem value="Long commute">Long commute (&gt; 5 miles)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                  <div>
+                    <Label htmlFor="roommate_needed" className="text-foreground/80">Need a Roommate?</Label>
+                    <Select onValueChange={(value) => setValue('roommate_needed', value === 'yes')}>
+                      <SelectTrigger id="roommate_needed" className="mt-2 w-full focus:ring-2 focus:ring-primary">
+                        <SelectValue placeholder="Select option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-4 bg-primary/5 border border-primary/20 rounded-xl p-6"
+              >
+                <h3 className="text-xl font-black text-primary flex items-center gap-2">
+                  <DollarSign className="w-5 h-5" />
+                  Budget
+                </h3>
+
+                <div>
+                  <Label htmlFor="budget" className="text-foreground/80">Monthly Budget (USD)</Label>
+                  <Input
+                    id="budget"
+                    type="number"
+                    {...register('budget', { valueAsNumber: true })}
+                    placeholder="e.g., 500, 800, 1200"
+                    className="mt-2 w-full focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-4 bg-primary/5 border border-primary/20 rounded-xl p-6"
+              >
+                <h3 className="text-xl font-black text-primary flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  Location Preferences
+                </h3>
+
+                <div>
+                  <Label htmlFor="distance_preference" className="text-foreground/80">Preferred Distance from Campus</Label>
+                  <Select onValueChange={(value) => setValue('distance_preference', value)}>
+                    <SelectTrigger id="distance_preference" className="mt-2 w-full focus:ring-2 focus:ring-primary">
+                      <SelectValue placeholder="Select distance" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Walking distance">Walking distance (&lt; 1 mile)</SelectItem>
+                      <SelectItem value="Short commute">Short commute (1-3 miles)</SelectItem>
+                      <SelectItem value="Moderate commute">Moderate commute (3-5 miles)</SelectItem>
+                      <SelectItem value="Long commute">Long commute (&gt; 5 miles)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </motion.div>
+            </>
+          )}
+
+          {/* Conditional: I Have a Dorm - Roommate Section */}
+          {accommodationStatus === 'have_dorm' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-4 bg-secondary/5 border border-secondary/20 rounded-xl p-6"
+            >
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label className="text-base font-semibold text-foreground">
+                    Need a Roommate?
+                  </Label>
+                  <p className="text-sm text-foreground/60">
+                    Looking for someone to share your dorm with?
+                  </p>
+                </div>
+                <Switch
+                  checked={needRoommate}
+                  onCheckedChange={setNeedRoommate}
+                />
+              </div>
+              
+              <AnimatePresence>
+                {needRoommate && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Label htmlFor="roommates_needed" className="text-foreground/80">
+                      How many Roommates Do You Need?
+                    </Label>
+                    <Input
+                      id="roommates_needed"
+                      type="number"
+                      min="1"
+                      max="10"
+                      {...register('roommates_needed', { valueAsNumber: true })}
+                      placeholder="e.g., 1, 2, 3"
+                      className="mt-2 w-full focus:ring-2 focus:ring-primary"
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
 
           <Button 
             type="submit" 

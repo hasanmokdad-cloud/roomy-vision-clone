@@ -1472,6 +1472,7 @@ export type Database = {
       }
       students: {
         Row: {
+          accommodation_status: string | null
           age: number | null
           ai_confidence_score: number | null
           budget: number | null
@@ -1483,6 +1484,7 @@ export type Database = {
           gender: string | null
           id: string
           last_login: string | null
+          need_roommate: boolean | null
           phone_number: string | null
           phone_verified: boolean | null
           preferred_amenities: string[] | null
@@ -1493,12 +1495,14 @@ export type Database = {
           residential_area: string | null
           room_type: string | null
           roommate_needed: boolean | null
+          roommates_needed: number | null
           status: string | null
           university: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          accommodation_status?: string | null
           age?: number | null
           ai_confidence_score?: number | null
           budget?: number | null
@@ -1510,6 +1514,7 @@ export type Database = {
           gender?: string | null
           id?: string
           last_login?: string | null
+          need_roommate?: boolean | null
           phone_number?: string | null
           phone_verified?: boolean | null
           preferred_amenities?: string[] | null
@@ -1520,12 +1525,14 @@ export type Database = {
           residential_area?: string | null
           room_type?: string | null
           roommate_needed?: boolean | null
+          roommates_needed?: number | null
           status?: string | null
           university?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          accommodation_status?: string | null
           age?: number | null
           ai_confidence_score?: number | null
           budget?: number | null
@@ -1537,6 +1544,7 @@ export type Database = {
           gender?: string | null
           id?: string
           last_login?: string | null
+          need_roommate?: boolean | null
           phone_number?: string | null
           phone_verified?: boolean | null
           preferred_amenities?: string[] | null
@@ -1547,6 +1555,7 @@ export type Database = {
           residential_area?: string | null
           room_type?: string | null
           roommate_needed?: boolean | null
+          roommates_needed?: number | null
           status?: string | null
           university?: string | null
           updated_at?: string | null
