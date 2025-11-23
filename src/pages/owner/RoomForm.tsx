@@ -120,6 +120,7 @@ export default function RoomForm() {
       await refreshSession();
 
       const roomData = {
+        room_id: roomId, // Include room_id for updates
         dorm_id: dormId,
         name: formData.name,
         type: formData.type,
@@ -133,32 +134,24 @@ export default function RoomForm() {
         available: formData.available,
       };
 
-      if (roomId) {
-        // Update existing room
-        const { error } = await supabase
-          .from("rooms")
-          .update(roomData)
-          .eq("id", roomId);
+      // Use Edge Function for both create and update (bypasses RLS issues)
+      const { data, error } = await supabase.functions.invoke('create-room', {
+        body: roomData
+      });
 
-        if (error) throw error;
-        toast({ title: "Success", description: "Room updated successfully" });
-      } else {
-        // Create new room using Edge Function (bypasses RLS issues)
-        const { data, error } = await supabase.functions.invoke('create-room', {
-          body: roomData
-        });
-
-        if (error) {
-          console.error('Edge function error:', error);
-          throw new Error(error.message || 'Failed to create room');
-        }
-
-        if (data?.error) {
-          throw new Error(data.error);
-        }
-
-        toast({ title: "Success", description: "Room created successfully" });
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || `Failed to ${roomId ? 'update' : 'create'} room`);
       }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast({ 
+        title: "Success", 
+        description: `Room ${roomId ? 'updated' : 'created'} successfully` 
+      });
 
       navigate(`/owner/dorms/${dormId}/rooms`);
     } catch (error: any) {
