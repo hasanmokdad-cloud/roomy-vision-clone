@@ -256,7 +256,7 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Footer Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -319,6 +319,19 @@ export default function AdminDashboard() {
               <Key className="w-12 h-12" />
               <h3 className="text-xl font-bold">Manage Properties</h3>
               <p className="text-sm opacity-90">View and edit all dorms</p>
+            </div>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/admin/rls-debugger")}
+            className="relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br from-red-500 to-pink-400 text-white shadow-xl hover:shadow-2xl transition-all group"
+          >
+            <div className="flex flex-col items-center gap-4">
+              <ShieldCheck className="w-12 h-12" />
+              <h3 className="text-xl font-bold">RLS Debugger</h3>
+              <p className="text-sm opacity-90">Debug permissions</p>
             </div>
           </motion.button>
         </div>
