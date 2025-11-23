@@ -56,7 +56,7 @@ export default function Profile() {
           .from('admins')
           .select('profile_photo_url')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
         setProfilePhotoUrl(admin?.profile_photo_url || null);
       }
 
@@ -139,15 +139,13 @@ export default function Profile() {
 
         {role === 'owner' && (
           <OwnerProfileForm 
-            userId={userId} 
-            onComplete={() => navigate('/owner')}
+            userId={userId}
           />
         )}
 
         {role === 'admin' && (
           <OwnerProfileForm 
-            userId={userId} 
-            onComplete={() => navigate('/admin')}
+            userId={userId}
           />
         )}
       </motion.div>
