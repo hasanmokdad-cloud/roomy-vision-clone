@@ -47,26 +47,44 @@ export function PendingApprovalsQueue() {
 
   const approveDorm = async (dormId: string) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔍 [Approve] Starting approval for dorm:', dormId);
       
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/owner-verification`, {
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔐 [Approve] Session:', {
+        exists: !!session,
+        hasToken: !!session?.access_token,
+        tokenLength: session?.access_token?.length
+      });
+      
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/owner-verification`;
+      const payload = {
+        dorm_id: dormId,
+        new_status: 'Verified'
+      };
+      
+      console.log('📡 [Approve] Calling:', url);
+      console.log('📦 [Approve] Payload:', payload);
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`
         },
-        body: JSON.stringify({
-          dorm_id: dormId,
-          new_status: 'Verified'
-        })
+        body: JSON.stringify(payload)
       });
 
+      console.log('📬 [Approve] Response status:', response.status, response.statusText);
+      
       const result = await response.json();
+      console.log('✉️ [Approve] Response data:', result);
       
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to approve dorm');
+        throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
+      console.log('✅ [Approve] Success!');
+      
       toast({
         title: 'Success',
         description: 'Dorm approved successfully',
@@ -74,7 +92,11 @@ export function PendingApprovalsQueue() {
 
       loadPendingItems();
     } catch (error: any) {
-      console.error('Error approving dorm:', error);
+      console.error('❌ [Approve] Error:', {
+        message: error.message,
+        type: error.constructor.name,
+        stack: error.stack
+      });
       toast({
         title: 'Error',
         description: error.message || 'Failed to approve dorm',
@@ -85,34 +107,54 @@ export function PendingApprovalsQueue() {
 
   const rejectDorm = async (dormId: string) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔍 [Reject] Starting rejection for dorm:', dormId);
       
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/owner-verification`, {
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔐 [Reject] Session:', {
+        exists: !!session,
+        hasToken: !!session?.access_token
+      });
+      
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/owner-verification`;
+      const payload = {
+        dorm_id: dormId,
+        new_status: 'Rejected'
+      };
+      
+      console.log('📡 [Reject] Calling:', url);
+      console.log('📦 [Reject] Payload:', payload);
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`
         },
-        body: JSON.stringify({
-          dorm_id: dormId,
-          new_status: 'Rejected'
-        })
+        body: JSON.stringify(payload)
       });
 
+      console.log('📬 [Reject] Response status:', response.status, response.statusText);
+      
       const result = await response.json();
+      console.log('✉️ [Reject] Response data:', result);
       
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to reject dorm');
+        throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
+      console.log('✅ [Reject] Success!');
+      
       toast({
         title: 'Success',
-        description: 'Dorm rejected',
+        description: 'Dorm rejected successfully',
       });
 
       loadPendingItems();
     } catch (error: any) {
-      console.error('Error rejecting dorm:', error);
+      console.error('❌ [Reject] Error:', {
+        message: error.message,
+        type: error.constructor.name
+      });
       toast({
         title: 'Error',
         description: error.message || 'Failed to reject dorm',
