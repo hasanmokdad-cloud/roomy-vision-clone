@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { StudentProfileForm } from '@/components/StudentProfileForm';
 import { OwnerProfileForm } from '@/components/OwnerProfileForm';
+import { AdminProfileForm } from '@/components/AdminProfileForm';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
@@ -144,7 +145,7 @@ export default function Profile() {
         )}
 
         {role === 'admin' && (
-          <OwnerProfileForm 
+          <AdminProfileForm 
             userId={userId}
           />
         )}
