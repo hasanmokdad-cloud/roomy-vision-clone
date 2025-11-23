@@ -67,6 +67,7 @@ const RoommateProfile = lazy(() => import("./pages/RoommateProfile"));
 const AdminHome = lazy(() => import("./pages/admin/AdminHome"));
 const SharedCollection = lazy(() => import("./pages/SharedCollection"));
 const AdminPendingReview = lazy(() => import("./pages/admin/AdminPendingReview"));
+const AdminRLSDebugger = lazy(() => import("./pages/admin/AdminRLSDebugger"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -192,6 +193,7 @@ const AppRoutes = () => {
 
           {/* Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />} />
+          <Route path="/admin/rls-debugger" element={<ProtectedRoute element={<AdminRLSDebugger />} requiredRole="admin" />} />
           <Route path="/admin/pending-review" element={<ProtectedRoute element={<AdminPendingReview />} requiredRole="admin" />} />
           <Route path="/admin/analytics" element={<ProtectedRoute element={<Analytics />} requiredRole="admin" />} />
           <Route path="/admin/trends" element={<ProtectedRoute element={<Trends />} requiredRole="admin" />} />

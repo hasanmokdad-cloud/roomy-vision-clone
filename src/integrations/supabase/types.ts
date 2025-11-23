@@ -1225,6 +1225,45 @@ export type Database = {
           },
         ]
       }
+      rls_errors_log: {
+        Row: {
+          auth_uid: string | null
+          created_at: string | null
+          error_message: string | null
+          expected_uid: string | null
+          id: string
+          jwt_claims: Json | null
+          operation: string
+          policy_evaluated: string[] | null
+          table_name: string
+          user_id: string | null
+        }
+        Insert: {
+          auth_uid?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          expected_uid?: string | null
+          id?: string
+          jwt_claims?: Json | null
+          operation: string
+          policy_evaluated?: string[] | null
+          table_name: string
+          user_id?: string | null
+        }
+        Update: {
+          auth_uid?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          expected_uid?: string | null
+          id?: string
+          jwt_claims?: Json | null
+          operation?: string
+          policy_evaluated?: string[] | null
+          table_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       roles: {
         Row: {
           created_at: string | null
@@ -1853,6 +1892,7 @@ export type Database = {
         Args: { p_owner_id: string }
         Returns: boolean
       }
+      debug_auth_state: { Args: never; Returns: Json }
       generate_share_code: { Args: never; Returns: string }
       get_user_role: { Args: { p_user_id: string }; Returns: string }
       has_role: {
