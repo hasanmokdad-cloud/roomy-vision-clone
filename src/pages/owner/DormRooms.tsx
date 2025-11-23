@@ -12,6 +12,7 @@ interface Room {
   name: string;
   type: string;
   price: number;
+  capacity: number | null;
   area_m2: number | null;
   description: string | null;
   images: string[];
@@ -103,7 +104,7 @@ export default function DormRooms() {
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
-            onClick={() => navigate("/owner/dorms")}
+            onClick={() => navigate("/owner")}
             className="gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -149,6 +150,7 @@ export default function DormRooms() {
               <h3 className="text-xl font-semibold mb-2">{room.name}</h3>
               <div className="space-y-1 text-sm text-muted-foreground mb-4">
                 <p>Type: {room.type}</p>
+                {room.capacity && <p>Capacity: {room.capacity} student(s)</p>}
                 <p className="text-lg font-bold text-foreground">
                   ${room.price}/month
                 </p>

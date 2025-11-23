@@ -47,6 +47,7 @@ export default function RoomForm() {
     type: "",
     price: "",
     deposit: "",
+    capacity: "",
     area_m2: "",
     description: "",
     available: true,
@@ -78,6 +79,7 @@ export default function RoomForm() {
         type: data.type,
         price: data.price.toString(),
         deposit: (data as any).deposit?.toString() || "",
+        capacity: (data as any).capacity?.toString() || "",
         area_m2: data.area_m2?.toString() || "",
         description: data.description || "",
         available: data.available,
@@ -117,6 +119,7 @@ export default function RoomForm() {
       type: formData.type,
       price: parseFloat(formData.price),
       deposit: formData.deposit ? parseFloat(formData.deposit) : null,
+      capacity: formData.capacity ? parseInt(formData.capacity) : null,
       area_m2: formData.area_m2 ? parseFloat(formData.area_m2) : null,
       description: formData.description || null,
       images: images,
@@ -213,6 +216,37 @@ export default function RoomForm() {
                 placeholder="500"
                 required
               />
+            </div>
+
+            <div>
+              <Label htmlFor="deposit">Deposit ($)</Label>
+              <Input
+                id="deposit"
+                type="number"
+                step="0.01"
+                value={formData.deposit}
+                onChange={(e) => setFormData({ ...formData, deposit: e.target.value })}
+                placeholder="200"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="capacity">Room Capacity (students) *</Label>
+              <Input
+                id="capacity"
+                type="number"
+                step="1"
+                min="1"
+                value={formData.capacity}
+                onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                placeholder="e.g., 1, 2, 3..."
+                required
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Number of students this room can accommodate
+              </p>
             </div>
 
             <div>

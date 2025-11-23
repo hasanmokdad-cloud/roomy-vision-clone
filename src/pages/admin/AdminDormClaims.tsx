@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
 import { useToast } from '@/hooks/use-toast';
@@ -7,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Loader2, ArrowLeft } from 'lucide-react';
 
 export default function AdminDormClaims() {
   useRoleGuard('admin');
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [claims, setClaims] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,9 +167,14 @@ export default function AdminDormClaims() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold gradient-text">Dorm Ownership Claims</h1>
-        <p className="text-foreground/60 mt-2">Review and approve ownership claims</p>
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" onClick={() => navigate('/admin')} className="gap-2">
+          <ArrowLeft className="w-4 h-4" /> Back
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold gradient-text">Dorm Ownership Claims</h1>
+          <p className="text-foreground/60 mt-2">Review and approve ownership claims</p>
+        </div>
       </div>
 
       {/* Pending Claims */}

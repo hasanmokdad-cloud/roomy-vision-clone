@@ -1247,7 +1247,9 @@ export type Database = {
         Row: {
           area_m2: number | null
           available: boolean | null
+          capacity: number | null
           created_at: string
+          deposit: number | null
           description: string | null
           dorm_id: string
           id: string
@@ -1262,7 +1264,9 @@ export type Database = {
         Insert: {
           area_m2?: number | null
           available?: boolean | null
+          capacity?: number | null
           created_at?: string
+          deposit?: number | null
           description?: string | null
           dorm_id: string
           id?: string
@@ -1277,7 +1281,9 @@ export type Database = {
         Update: {
           area_m2?: number | null
           available?: boolean | null
+          capacity?: number | null
           created_at?: string
+          deposit?: number | null
           description?: string | null
           dorm_id?: string
           id?: string
