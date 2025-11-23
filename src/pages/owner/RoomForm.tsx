@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthSession } from "@/hooks/useAuthSession";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,9 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import { VirtualTourGallery } from "@/components/rooms/VirtualTourGallery";
 import { EnhancedImageUploader } from "@/components/owner/EnhancedImageUploader";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const ROOM_TYPES = [
   'Single',
@@ -39,6 +41,7 @@ export default function RoomForm() {
   const { roomId } = useParams<{ roomId?: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuthSession();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -155,6 +158,31 @@ export default function RoomForm() {
       setLoading(false);
     }
   };
+
+  // Show loading state while checking authentication
+  if (isAuthenticated === null) {
+    return (
+      <div className="container mx-auto p-6 max-w-3xl">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if not authenticated
+  if (isAuthenticated === false) {
+    return (
+      <div className="container mx-auto p-6 max-w-3xl">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Your session has expired. Redirecting to login...
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 max-w-3xl">
