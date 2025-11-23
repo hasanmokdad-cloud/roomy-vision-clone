@@ -84,10 +84,12 @@ function ProtectedRoute({
   element,
   requiredRole,
   allowedRoles,
+  forbiddenRoles,
 }: {
   element: JSX.Element;
   requiredRole?: "admin" | "owner" | "student";
   allowedRoles?: ("admin" | "owner" | "student" | "none")[];
+  forbiddenRoles?: ("admin" | "owner" | "student")[];
 }) {
   const location = useLocation();
   const { loading, role } = useRoleGuard(requiredRole);
@@ -115,6 +117,11 @@ function ProtectedRoute({
   // Handle "none" role (users with no assigned role)
   if (allowedRoles?.includes("none") && !role) {
     return element;
+  }
+
+  // Check if role is forbidden for this route
+  if (forbiddenRoles && role && forbiddenRoles.includes(role)) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
   // If allowedRoles is provided, check if current role is in the list
@@ -149,7 +156,7 @@ const AppRoutes = () => {
           <Route path="/" element={<Main />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/intro" element={<Intro />} />
-          <Route path="/listings" element={<MobileSwipeLayout><Listings /></MobileSwipeLayout>} />
+          <Route path="/listings" element={<ProtectedRoute element={<MobileSwipeLayout><Listings /></MobileSwipeLayout>} forbiddenRoles={["owner"]} />} />
           <Route path="/dorm/:id" element={<DormDetail />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
@@ -172,7 +179,7 @@ const AppRoutes = () => {
           <Route path="/messages" element={<ProtectedRoute element={<Messages />} />} />
           <Route path="/student-profile/:id" element={<ProtectedRoute element={<StudentProfile />} />} />
           <Route path="/roommate/:userId" element={<ProtectedRoute element={<RoommateProfile />} />} />
-          <Route path="/ai-match" element={<ProtectedRoute element={<MobileSwipeLayout><AiMatch /></MobileSwipeLayout>} />} />
+          <Route path="/ai-match" element={<ProtectedRoute element={<MobileSwipeLayout><AiMatch /></MobileSwipeLayout>} forbiddenRoles={["owner"]} />} />
           <Route path="/ai-roommate-match" element={<ProtectedRoute element={<StudentMatch />} />} />
           <Route path="/boost-profile" element={<ProtectedRoute element={<BoostProfile />} />} />
           <Route path="/ai-chat" element={<ProtectedRoute element={<MobileSwipeLayout><AiChat /></MobileSwipeLayout>} />} />

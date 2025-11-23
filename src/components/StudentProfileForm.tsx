@@ -166,7 +166,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6 }}
-        className="max-w-2xl mx-auto bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl"
+        className="max-w-2xl mx-auto bg-card border border-border rounded-2xl p-6 md:p-8 shadow-lg"
       >
         <div className="space-y-2 mb-6">
           <h2 className="text-3xl font-black text-primary">
