@@ -13,7 +13,26 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { VirtualTourGallery } from "@/components/rooms/VirtualTourGallery";
 import { EnhancedImageUploader } from "@/components/owner/EnhancedImageUploader";
 
-const ROOM_TYPES = ["Single", "Double", "Triple", "Studio", "Suite", "Shared"];
+const ROOM_TYPES = [
+  'Single',
+  'Double',
+  'Triple',
+  'Apartment',
+  'Junior Suite',
+  'Royal Suite',
+  'Standard Single',
+  'High Standard Single',
+  'Standard Double',
+  'High Standard Double',
+  'Small Single',
+  'Medium Single',
+  'Large Single',
+  'Small Double',
+  'Medium Double',
+  'Large Double',
+  'Large Quadruple',
+  'Studio'
+];
 
 export default function RoomForm() {
   const { dormId } = useParams<{ dormId: string }>();
@@ -158,7 +177,7 @@ export default function RoomForm() {
               id="name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g., Room 101"
+              placeholder="e.g., B1 or 14"
               required
             />
           </div>
