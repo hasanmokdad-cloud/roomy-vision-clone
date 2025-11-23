@@ -124,13 +124,15 @@ export default function Navbar() {
             </Link>
 
             <div className="hidden md:flex items-center gap-8" role="menubar" aria-label="Main menu">
-              <Link 
-                to="/" 
-                className="text-foreground/80 hover:text-foreground transition-colors story-link"
-                role="menuitem"
-              >
-                Home
-              </Link>
+              {role !== 'owner' && (
+                <Link 
+                  to="/" 
+                  className="text-foreground/80 hover:text-foreground transition-colors story-link"
+                  role="menuitem"
+                >
+                  Home
+                </Link>
+              )}
               {role !== 'owner' && (
                 <Link 
                   to="/listings" 
@@ -190,13 +192,15 @@ export default function Navbar() {
                     <SheetTitle>Menu</SheetTitle>
                   </SheetHeader>
                   <nav className="flex flex-col gap-4 mt-6" role="navigation" aria-label="Mobile navigation">
-                    <Link 
-                      to="/" 
-                      className="text-foreground/80 hover:text-foreground transition-colors py-2"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Home
-                    </Link>
+                    {role !== 'owner' && (
+                      <Link 
+                        to="/" 
+                        className="text-foreground/80 hover:text-foreground transition-colors py-2"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Home
+                      </Link>
+                    )}
                     {role !== 'owner' && (
                       <>
                         <Link 
@@ -289,13 +293,15 @@ export default function Navbar() {
                       <User className="w-4 h-4 mr-2" aria-hidden="true" />
                       My Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={handleDashboardClick}
-                      role="menuitem"
-                    >
-                      <LayoutDashboard className="w-4 h-4 mr-2" aria-hidden="true" />
-                      {role === 'student' ? 'Dashboard' : 'Control Panel'}
-                    </DropdownMenuItem>
+                    {(role === 'owner' || role === 'admin') && (
+                      <DropdownMenuItem 
+                        onClick={handleDashboardClick}
+                        role="menuitem"
+                      >
+                        <LayoutDashboard className="w-4 h-4 mr-2" aria-hidden="true" />
+                        Control Panel
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem 
                       onClick={() => navigate('/settings')}
                       role="menuitem"

@@ -194,6 +194,9 @@ export default function AdminDashboard() {
       <div className="max-w-6xl mx-auto px-4 md:px-12 py-16 space-y-12">
         {/* Header */}
         <div className="text-center mb-8">
+          <h2 className="text-2xl font-semibold text-foreground/70 mb-2">
+            Welcome Back, CEO
+          </h2>
           <h1 className="text-5xl font-extrabold gradient-text">
             Admin Control Panel
           </h1>
