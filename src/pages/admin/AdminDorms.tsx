@@ -4,7 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Edit, Trash2, Plus, X } from 'lucide-react';
+import { CheckCircle, Edit, Trash2, Plus, X, Eye, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -13,34 +14,54 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import DormEditModal from '@/components/admin/DormEditModal';
+import { AdminDormPreviewModal } from '@/components/admin/AdminDormPreviewModal';
+import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
 
 export default function AdminDorms() {
   const [dorms, setDorms] = useState<any[]>([]);
+  const [filteredDorms, setFilteredDorms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDorm, setSelectedDorm] = useState<any>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     loadDorms();
 
-    const channel = supabase
-      .channel('admin-dorms')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'dorms'
-        },
-        () => {
-          loadDorms();
-        }
-      )
-      .subscribe();
+    // Real-time subscription
+    const channel = subscribeTo('dorms', (payload) => {
+      console.log('Dorm changed:', payload);
+      loadDorms();
+      toast({
+        title: 'Real-time Update',
+        description: 'Dorms list updated',
+      });
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      unsubscribeFrom(channel);
     };
   }, []);
+
+  // Filter dorms based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredDorms(dorms);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = dorms.filter(dorm => 
+      (dorm.dorm_name || dorm.name || '').toLowerCase().includes(query) ||
+      (dorm.area || '').toLowerCase().includes(query) ||
+      (dorm.university || '').toLowerCase().includes(query) ||
+      (dorm.verification_status || '').toLowerCase().includes(query)
+    );
+    setFilteredDorms(filtered);
+  }, [searchQuery, dorms]);
 
   const loadDorms = async () => {
     const { data, error } = await supabase
@@ -50,6 +71,7 @@ export default function AdminDorms() {
 
     if (!error && data) {
       setDorms(data);
+      setFilteredDorms(data);
     }
     setLoading(false);
   };
@@ -129,13 +151,46 @@ export default function AdminDorms() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold gradient-text">Dorm Listings</h1>
-          <p className="text-foreground/60 mt-2">Manage all dorm listings</p>
+          <h1 className="text-3xl font-bold gradient-text">Manage Properties</h1>
+          <p className="text-foreground/60 mt-2">View and manage all dorm listings in real-time</p>
         </div>
-        <Button className="bg-gradient-to-r from-primary to-secondary">
-          <Plus className="w-4 h-4 mr-2" />
-          Add New Dorm
-        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="glass-hover rounded-xl p-4">
+          <p className="text-sm text-foreground/60">Total Dorms</p>
+          <p className="text-2xl font-bold">{dorms.length}</p>
+        </div>
+        <div className="glass-hover rounded-xl p-4">
+          <p className="text-sm text-foreground/60">Verified</p>
+          <p className="text-2xl font-bold text-green-500">
+            {dorms.filter(d => d.verification_status === 'Verified').length}
+          </p>
+        </div>
+        <div className="glass-hover rounded-xl p-4">
+          <p className="text-sm text-foreground/60">Pending</p>
+          <p className="text-2xl font-bold text-yellow-500">
+            {dorms.filter(d => d.verification_status === 'Pending').length}
+          </p>
+        </div>
+        <div className="glass-hover rounded-xl p-4">
+          <p className="text-sm text-foreground/60">Rejected</p>
+          <p className="text-2xl font-bold text-red-500">
+            {dorms.filter(d => d.verification_status === 'Rejected').length}
+          </p>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40" />
+        <Input
+          placeholder="Search by name, area, university, or status..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
       <div className="glass-hover rounded-2xl overflow-hidden">
@@ -151,7 +206,7 @@ export default function AdminDorms() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {dorms.map((dorm) => (
+            {filteredDorms.map((dorm) => (
               <TableRow key={dorm.id}>
                 <TableCell className="font-medium">{dorm.dorm_name || dorm.name}</TableCell>
                 <TableCell>{dorm.area || dorm.location}</TableCell>
@@ -166,6 +221,28 @@ export default function AdminDorms() {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setSelectedDorm(dorm);
+                        setPreviewModalOpen(true);
+                      }}
+                      title="Preview dorm"
+                    >
+                      <Eye className="w-4 h-4 text-blue-500" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setSelectedDorm(dorm);
+                        setEditModalOpen(true);
+                      }}
+                      title="Edit dorm"
+                    >
+                      <Edit className="w-4 h-4 text-primary" />
+                    </Button>
                     {dorm.verification_status !== 'Verified' && (
                       <Button
                         size="sm"
@@ -186,13 +263,11 @@ export default function AdminDorms() {
                         <X className="w-4 h-4 text-red-500" />
                       </Button>
                     )}
-                    <Button size="sm" variant="ghost">
-                      <Edit className="w-4 h-4" />
-                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => handleDelete(dorm.id)}
+                      title="Delete dorm"
                     >
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </Button>
@@ -203,6 +278,31 @@ export default function AdminDorms() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Edit Modal */}
+      {selectedDorm && (
+        <DormEditModal
+          dorm={selectedDorm}
+          isOpen={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setSelectedDorm(null);
+          }}
+          onUpdate={loadDorms}
+        />
+      )}
+
+      {/* Preview Modal */}
+      {selectedDorm && (
+        <AdminDormPreviewModal
+          dorm={selectedDorm}
+          isOpen={previewModalOpen}
+          onClose={() => {
+            setPreviewModalOpen(false);
+            setSelectedDorm(null);
+          }}
+        />
+      )}
     </div>
   );
 }
