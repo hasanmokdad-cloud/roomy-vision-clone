@@ -35,28 +35,72 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const loadStats = async () => {
-      const [{ count: studentCount }, { count: ownerCount }, { count: dormCount }] =
-        await Promise.all([
-          supabase.from("students").select("*", { count: "exact", head: true }),
-          supabase.from("owners").select("*", { count: "exact", head: true }),
-          supabase.from("dorms").select("*", { count: "exact", head: true }),
-        ]);
-
-      const { data: pendingDorms } = await supabase
+      // Count students
+      const { count: studentCount } = await supabase
+        .from("students")
+        .select("id", { count: "exact", head: true });
+      
+      // Count owners
+      const { count: ownerCount } = await supabase
+        .from("owners")
+        .select("id", { count: "exact", head: true });
+      
+      // Count ONLY VERIFIED dorms
+      const { count: verifiedDormCount } = await supabase
         .from("dorms")
-        .select("*")
+        .select("id", { count: "exact", head: true })
+        .eq("verification_status", "Verified");
+      
+      // Count pending dorms
+      const { data: pendingDorms, count: pendingCount } = await supabase
+        .from("dorms")
+        .select("*", { count: "exact" })
         .eq("verification_status", "Pending");
 
       setStats({
         students: studentCount || 0,
         owners: ownerCount || 0,
-        dorms: dormCount || 0,
-        pendingDorms: pendingDorms?.length || 0,
+        dorms: verifiedDormCount || 0,
+        pendingDorms: pendingCount || 0,
       });
       setPendingList(pendingDorms || []);
     };
 
     loadStats();
+
+    // Set up real-time subscriptions
+    const studentsChannel = supabase
+      .channel('admin-students-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'students' },
+        () => loadStats()
+      )
+      .subscribe();
+
+    const ownersChannel = supabase
+      .channel('admin-owners-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'owners' },
+        () => loadStats()
+      )
+      .subscribe();
+
+    const dormsChannel = supabase
+      .channel('admin-dorms-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'dorms' },
+        () => loadStats()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(studentsChannel);
+      supabase.removeChannel(ownersChannel);
+      supabase.removeChannel(dormsChannel);
+    };
   }, []);
 
   const verifyDorm = async (id: string) => {
@@ -80,9 +124,13 @@ export default function AdminDashboard() {
 
       console.log('✅ [AdminDashboard] Success!', data);
       
-      // Update UI optimistically
+      // Update both pending and verified counts
       setPendingList((prev) => prev.filter((d) => d.id !== id));
-      setStats(prev => ({ ...prev, pendingDorms: Math.max(0, prev.pendingDorms - 1) }));
+      setStats(prev => ({ 
+        ...prev, 
+        pendingDorms: Math.max(0, prev.pendingDorms - 1),
+        dorms: prev.dorms + 1  // Increment verified count
+      }));
       
       toast({
         title: 'Success',

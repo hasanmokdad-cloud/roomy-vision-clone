@@ -91,6 +91,41 @@ export default function OwnerHome() {
     }
   }, [dorms]);
 
+  // Subscribe to real-time analytics events for views
+  useEffect(() => {
+    if (!dorms) return;
+
+    const dormIds = dorms
+      .filter(d => d.verification_status === 'Verified')
+      .map(d => d.id);
+
+    if (dormIds.length === 0) return;
+
+    // Real-time subscription for new views
+    const viewsChannel = supabase
+      .channel('owner-views-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'analytics_events',
+          filter: `type=eq.view`
+        },
+        (payload) => {
+          // Check if the new view is for one of this owner's dorms
+          if (dormIds.includes(payload.new.dorm_id)) {
+            setStats(prev => ({ ...prev, totalViews: prev.totalViews + 1 }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(viewsChannel);
+    };
+  }, [dorms]);
+
   const loadOwnerId = async () => {
     if (!userId) {
       console.log('❌ No userId, cannot load ownerId');

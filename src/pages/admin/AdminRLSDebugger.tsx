@@ -15,11 +15,14 @@ import {
   Activity,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  ArrowLeft
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export default function AdminRLSDebugger() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [rlsErrors, setRlsErrors] = useState<any[]>([]);
@@ -136,8 +139,17 @@ export default function AdminRLSDebugger() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/admin')}
+          className="gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </Button>
+        <div className="flex-1">
           <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
             <Shield className="w-8 h-8" />
             RLS Security Debugger
