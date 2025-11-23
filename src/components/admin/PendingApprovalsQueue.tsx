@@ -56,8 +56,18 @@ export function PendingApprovalsQueue() {
       });
 
       if (error) {
-        console.error('❌ [Approve] RPC Error:', error);
-        throw new Error(error.message || 'Failed to verify dorm');
+        console.error('❌ [Approve] RPC Error Details:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        toast({
+          title: 'Verification Failed',
+          description: `${error.message}${error.hint ? ` - ${error.hint}` : ''}`,
+          variant: 'destructive',
+        });
+        return;
       }
 
       console.log('✅ [Approve] Success!', data);
@@ -70,14 +80,14 @@ export function PendingApprovalsQueue() {
       // Reload the list
       await loadPendingItems();
     } catch (error: any) {
-      console.error('❌ [Approve] Error:', {
+      console.error('❌ [Approve] Unexpected Error:', {
         message: error.message,
         type: error.constructor.name,
         stack: error.stack
       });
       toast({
         title: 'Error',
-        description: error.message || 'Failed to verify dorm',
+        description: error.message || 'An unexpected error occurred',
         variant: 'destructive',
       });
     }
@@ -94,8 +104,18 @@ export function PendingApprovalsQueue() {
       });
 
       if (error) {
-        console.error('❌ [Reject] RPC Error:', error);
-        throw new Error(error.message || 'Failed to reject dorm');
+        console.error('❌ [Reject] RPC Error Details:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        toast({
+          title: 'Rejection Failed',
+          description: `${error.message}${error.hint ? ` - ${error.hint}` : ''}`,
+          variant: 'destructive',
+        });
+        return;
       }
 
       console.log('✅ [Reject] Success!', data);
@@ -108,14 +128,14 @@ export function PendingApprovalsQueue() {
       // Reload the list
       await loadPendingItems();
     } catch (error: any) {
-      console.error('❌ [Reject] Error:', {
+      console.error('❌ [Reject] Unexpected Error:', {
         message: error.message,
         type: error.constructor.name,
         stack: error.stack
       });
       toast({
         title: 'Error',
-        description: error.message || 'Failed to reject dorm',
+        description: error.message || 'An unexpected error occurred',
         variant: 'destructive',
       });
     }
