@@ -25,7 +25,6 @@ const Analytics = lazy(() => import("./pages/admin/Analytics"));
 const Trends = lazy(() => import("./pages/admin/Trends"));
 const OwnerHome = lazy(() => import("./pages/owner/OwnerHome"));
 const OwnerPerformance = lazy(() => import("./pages/owner/Performance"));
-const StudentDashboard = lazy(() => import("./pages/dashboard/StudentDashboard"));
 const Listings = lazy(() => import("./pages/Listings"));
 const AiMatch = lazy(() => import("./pages/AiMatch"));
 const AiChat = lazy(() => import("./pages/AiChat"));
@@ -153,7 +152,7 @@ const AppRoutes = () => {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<Main />} />
+          <Route path="/" element={<ProtectedRoute element={<Main />} forbiddenRoles={["owner"]} />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/intro" element={<Intro />} />
           <Route path="/listings" element={<ProtectedRoute element={<MobileSwipeLayout><Listings /></MobileSwipeLayout>} forbiddenRoles={["owner"]} />} />

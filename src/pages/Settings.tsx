@@ -234,14 +234,14 @@ export default function Settings() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen relative bg-gradient-to-b from-[#0F1624] to-[#15203B]">
+    <div className="min-h-screen relative bg-gradient-to-b from-background to-muted/20">
       <Navbar />
 
       <div className="container mx-auto px-6 py-32 max-w-4xl">
         <Button
           variant="ghost"
           onClick={() => navigate(role === 'student' ? '/listings' : '/dashboard')}
-          className="mb-6 text-white/70 hover:text-white hover:bg-white/10"
+          className="mb-6"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           {role === 'student' ? 'Back to Dorms' : 'Back to Dashboard'}
@@ -253,12 +253,12 @@ export default function Settings() {
           transition={{ duration: 0.6 }}
         >
           <h1 className="text-4xl font-bold mb-2 gradient-text">Settings</h1>
-          <p className="text-white/60 mb-8">Manage your account preferences and personalization</p>
+          <p className="text-foreground/60 mb-8">Manage your account preferences and personalization</p>
 
           <div className="space-y-6">
             {/* Profile Photo - For all roles */}
             {userId && (
-              <Card className="glass p-6 border-white/20">
+              <Card className="glass p-6 border border-border/40">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Profile Photo</h3>
               <ProfilePhotoUpload
                 userId={userId}
@@ -284,7 +284,7 @@ export default function Settings() {
             )}
 
             {/* Theme */}
-            <Card className="glass p-6 border-white/20">
+            <Card className="glass p-6 border border-border/40">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <motion.div
@@ -316,13 +316,13 @@ export default function Settings() {
             </Card>
 
             {/* Notifications */}
-            <Card className="glass p-6 border-white/20">
+            <Card className="glass p-6 border border-border/40">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <Bell className="w-6 h-6 text-primary" />
                   <div>
-                    <h3 className="text-lg font-semibold text-white">Notifications</h3>
-                    <p className="text-sm text-white/60">
+                    <h3 className="text-lg font-semibold text-foreground">Notifications</h3>
+                    <p className="text-sm text-foreground/60">
                       {role === 'owner' 
                         ? (currentLang === 'ar' 
                             ? 'استقبل إشعارات عن الحجوزات الجديدة' 
@@ -346,12 +346,12 @@ export default function Settings() {
             {(role === 'student' || role === 'admin') && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Saved Dorms */}
-                <Card className="glass p-6 border-white/20">
+                <Card className="glass p-6 border border-border/40">
                   <div className="flex items-center gap-4 mb-4">
                     <Heart className="w-6 h-6 text-primary" />
                     <div>
-                      <h3 className="text-lg font-semibold text-white">Saved Dorms</h3>
-                      <p className="text-sm text-white/60">
+                      <h3 className="text-lg font-semibold text-foreground">Saved Dorms</h3>
+                      <p className="text-sm text-foreground/60">
                         {savedItems.length} {savedItems.length === 1 ? 'dorm' : 'dorms'} saved
                       </p>
                     </div>
@@ -366,12 +366,12 @@ export default function Settings() {
                 </Card>
 
                 {/* Saved Rooms */}
-                <Card className="glass p-6 border-white/20">
+                <Card className="glass p-6 border border-border/40">
                   <div className="flex items-center gap-4 mb-4">
                     <Home className="w-6 h-6 text-secondary" />
                     <div>
-                      <h3 className="text-lg font-semibold text-white">Saved Rooms</h3>
-                      <p className="text-sm text-white/60">
+                      <h3 className="text-lg font-semibold text-foreground">Saved Rooms</h3>
+                      <p className="text-sm text-foreground/60">
                         {savedRooms.length} {savedRooms.length === 1 ? 'room' : 'rooms'} saved
                       </p>
                     </div>
@@ -386,13 +386,13 @@ export default function Settings() {
                 </Card>
 
                 {/* Shared Collections */}
-                <Card className="glass p-6 border-white/20">
+                <Card className="glass p-6 border border-border/40">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-4">
                       <Share2 className="w-6 h-6 text-accent" />
                       <div>
-                        <h3 className="text-lg font-semibold text-white">Shared Collections</h3>
-                        <p className="text-sm text-white/60">
+                        <h3 className="text-lg font-semibold text-foreground">Shared Collections</h3>
+                        <p className="text-sm text-foreground/60">
                           Manage your shareable room collections
                         </p>
                       </div>
@@ -400,16 +400,16 @@ export default function Settings() {
                   </div>
                   
                   {sharedCollections.length === 0 ? (
-                    <p className="text-white/50 text-sm mb-4">
+                    <p className="text-foreground/50 text-sm mb-4">
                       No shared collections yet. Share your saved rooms to create one!
                     </p>
                   ) : (
                     <div className="space-y-3 mb-4">
                       {sharedCollections.map((collection: any) => (
-                        <div key={collection.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                        <div key={collection.id} className="flex items-center justify-between p-3 bg-muted/10 rounded-lg">
                           <div className="flex-1">
-                            <p className="text-white font-medium">{collection.title || 'Untitled Collection'}</p>
-                            <p className="text-white/50 text-xs">
+                            <p className="text-foreground font-medium">{collection.title || 'Untitled Collection'}</p>
+                            <p className="text-foreground/50 text-xs">
                               {collection.view_count} views • Created {new Date(collection.created_at).toLocaleDateString()}
                             </p>
                           </div>
@@ -440,31 +440,31 @@ export default function Settings() {
             )}
 
             {/* Password & Security */}
-            <Card className="glass p-6 border-white/20">
+            <Card className="glass p-6 border border-border/40">
               <div className="flex items-center gap-4 mb-6">
                 <Lock className="w-6 h-6 text-primary" />
                 <div>
-                  <h3 className="text-lg font-semibold text-white">Password & Security</h3>
-                  <p className="text-sm text-white/60">Manage your account security</p>
+                  <h3 className="text-lg font-semibold text-foreground">Password & Security</h3>
+                  <p className="text-sm text-foreground/60">Manage your account security</p>
                 </div>
               </div>
               
               <div className="space-y-4">
-                <div className="flex items-center justify-between py-3 border-b border-white/10">
+                <div className="flex items-center justify-between py-3 border-b border-border/10">
                   <div className="flex items-center gap-3">
                     {emailVerified ? (
                       <CheckCircle className="w-5 h-5 text-green-500" />
                     ) : (
                       <XCircle className="w-5 h-5 text-red-500" />
                     )}
-                    <span className="text-white">Email Verification</span>
+                    <span className="text-foreground">Email Verification</span>
                   </div>
                   <Badge variant={emailVerified ? "default" : "destructive"}>
                     {emailVerified ? 'Verified' : 'Unverified'}
                   </Badge>
                 </div>
 
-                  <p className="text-sm text-white/60">
+                  <p className="text-sm text-foreground/60">
                     Owners should contact Roomy support for dorm assignment
                   </p>
 
@@ -489,11 +489,11 @@ export default function Settings() {
 
             {/* Keep Signed In (Mobile) */}
             {isMobile && (
-              <Card className="glass p-6 border-white/20">
+              <Card className="glass p-6 border border-border/40">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-white">Keep me signed in</h3>
-                    <p className="text-sm text-white/60">Stay logged in on this device</p>
+                    <h3 className="text-lg font-semibold text-foreground">Keep me signed in</h3>
+                    <p className="text-sm text-foreground/60">Stay logged in on this device</p>
                   </div>
                   <Switch
                     checked={keepSignedIn}
@@ -502,13 +502,13 @@ export default function Settings() {
                 </div>
               </Card>
             )}
-            <Card className="glass p-6 border-white/20">
+            <Card className="glass p-6 border border-border/40">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <Globe className="w-6 h-6 text-primary" />
                   <div>
-                    <h3 className="text-lg font-semibold text-white">Language</h3>
-                    <p className="text-sm text-white/60">
+                    <h3 className="text-lg font-semibold text-foreground">Language</h3>
+                    <p className="text-sm text-foreground/60">
                       Current: {settings.language.toUpperCase()}
                     </p>
                   </div>
@@ -521,7 +521,7 @@ export default function Settings() {
                       language: e.target.value as 'en' | 'ar' | 'fr',
                     }))
                   }
-                  className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white backdrop-blur-md"
+                  className="bg-muted/10 border border-border/40 rounded-lg px-4 py-2 text-foreground backdrop-blur-md"
                 >
                   <option value="en">English</option>
                   <option value="ar">العربية</option>
@@ -531,13 +531,13 @@ export default function Settings() {
             </Card>
 
             {/* AI Memory */}
-            <Card className="glass p-6 border-white/20">
+            <Card className="glass p-6 border border-border/40">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <Brain className="w-6 h-6 text-primary" />
                   <div>
-                    <h3 className="text-lg font-semibold text-white">AI Memory</h3>
-                    <p className="text-sm text-white/60">
+                    <h3 className="text-lg font-semibold text-foreground">AI Memory</h3>
+                    <p className="text-sm text-foreground/60">
                       Allow AI to remember your preferences
                     </p>
                   </div>
@@ -550,7 +550,7 @@ export default function Settings() {
                 />
               </div>
               {settings.aiMemory && (
-                <div className="mt-4 pt-4 border-t border-white/10">
+                <div className="mt-4 pt-4 border-t border-border/10">
                   <Button
                     onClick={handleClearAIMemory}
                     variant="outline"
@@ -569,7 +569,6 @@ export default function Settings() {
               <Button
                 variant="outline"
                 onClick={() => navigate(role === 'student' ? '/listings' : '/dashboard')}
-                className="border-white/20 text-white/70 hover:text-white"
               >
                 Cancel
               </Button>
@@ -588,31 +587,31 @@ export default function Settings() {
 
       {/* Password Change Modal */}
       <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
-        <DialogContent className="bg-card/95 backdrop-blur-xl border-white/20">
+        <DialogContent className="bg-card/95 backdrop-blur-xl border border-border/40">
           <DialogHeader>
             <DialogTitle className="gradient-text">Change Password</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="new-password" className="text-white">New Password</Label>
+              <Label htmlFor="new-password" className="text-foreground">New Password</Label>
               <Input
                 id="new-password"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password"
-                className="bg-black/20 border-white/10"
+                className="bg-muted/20 border-border/40"
               />
             </div>
             <div>
-              <Label htmlFor="confirm-password" className="text-white">Confirm Password</Label>
+              <Label htmlFor="confirm-password" className="text-foreground">Confirm Password</Label>
               <Input
                 id="confirm-password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
-                className="bg-black/20 border-white/10"
+                className="bg-muted/20 border-border/40"
               />
             </div>
             <Button 
@@ -627,12 +626,12 @@ export default function Settings() {
 
       {/* 2FA Setup Modal */}
       <Dialog open={show2FASetup} onOpenChange={setShow2FASetup}>
-        <DialogContent className="bg-card/95 backdrop-blur-xl border-white/20">
+        <DialogContent className="bg-card/95 backdrop-blur-xl border border-border/40">
           <DialogHeader>
             <DialogTitle className="gradient-text">Enable Two-Factor Authentication</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-white/70">
+            <p className="text-sm text-foreground/70">
               Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
             </p>
             {qrCode && (

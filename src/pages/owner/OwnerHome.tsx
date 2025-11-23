@@ -224,11 +224,11 @@ export default function OwnerHome() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/contact')}
                   className="gap-2"
                 >
-                  <Home className="w-4 h-4" />
-                  Home
+                  <MessageCircle className="w-4 h-4" />
+                  Reach Us
                 </Button>
               </div>
             </div>
