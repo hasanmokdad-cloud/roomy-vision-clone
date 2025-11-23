@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Table,
@@ -11,9 +12,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, ShieldOff } from 'lucide-react';
+import { Shield, ShieldOff, ArrowLeft } from 'lucide-react';
 
 export default function AdminStudents() {
+  const navigate = useNavigate();
   const [students, setStudents] = useState<any[]>([]);
   const [userRoles, setUserRoles] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
@@ -93,9 +95,14 @@ export default function AdminStudents() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold gradient-text">Students Overview</h1>
-        <p className="text-foreground/60 mt-2">View all registered students</p>
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" onClick={() => navigate('/admin')} className="gap-2">
+          <ArrowLeft className="w-4 h-4" /> Back
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold gradient-text">Students Overview</h1>
+          <p className="text-foreground/60 mt-2">View all registered students</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

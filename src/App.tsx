@@ -198,6 +198,8 @@ const AppRoutes = () => {
           <Route path="/admin/students" element={<ProtectedRoute element={<AdminStudents />} requiredRole="admin" />} />
           <Route path="/admin/dorms" element={<ProtectedRoute element={<AdminDorms />} requiredRole="admin" />} />
           <Route path="/admin/ownership" element={<ProtectedRoute element={<AdminDormOwnership />} requiredRole="admin" />} />
+          <Route path="/admin/owners" element={<ProtectedRoute element={<AdminOwners />} requiredRole="admin" />} />
+          <Route path="/admin/claims" element={<ProtectedRoute element={<AdminDormClaims />} requiredRole="admin" />} />
           <Route path="/admin/logs" element={<ProtectedRoute element={<AdminLogs />} requiredRole="admin" />} />
           <Route path="/admin/notifications" element={<ProtectedRoute element={<AdminNotifications />} requiredRole="admin" />} />
           <Route path="/admin/settings" element={<ProtectedRoute element={<AdminSettings />} requiredRole="admin" />} />

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Edit, Trash2, Plus, X, Eye, Search } from 'lucide-react';
+import { CheckCircle, Edit, Trash2, Plus, X, Eye, Search, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Table,
@@ -19,6 +20,7 @@ import { AdminDormPreviewModal } from '@/components/admin/AdminDormPreviewModal'
 import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
 
 export default function AdminDorms() {
+  const navigate = useNavigate();
   const [dorms, setDorms] = useState<any[]>([]);
   const [filteredDorms, setFilteredDorms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,7 +151,10 @@ export default function AdminDorms() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" onClick={() => navigate('/admin')} className="gap-2">
+          <ArrowLeft className="w-4 h-4" /> Back
+        </Button>
         <div>
           <h1 className="text-3xl font-bold gradient-text">Manage Properties</h1>
           <p className="text-foreground/60 mt-2">View and manage all dorm listings in real-time</p>

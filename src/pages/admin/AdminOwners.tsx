@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Download, Mail, Eye, Building2, CheckCircle, XCircle, UserX } from 'lucide-react';
+import { Search, Download, Mail, Eye, Building2, CheckCircle, XCircle, UserX, ArrowLeft } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/table";
 
 export default function AdminOwners() {
+  const navigate = useNavigate();
   const [owners, setOwners] = useState<any[]>([]);
   const [filteredOwners, setFilteredOwners] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -141,9 +143,14 @@ export default function AdminOwners() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold gradient-text">Owner Management</h1>
-        <p className="text-foreground/60 mt-2">Manage all property owners and their listings</p>
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" onClick={() => navigate('/admin')} className="gap-2">
+          <ArrowLeft className="w-4 h-4" /> Back
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold gradient-text">Owner Management</h1>
+          <p className="text-foreground/60 mt-2">Manage all property owners and their listings</p>
+        </div>
       </div>
 
       {/* Stats Cards */}
