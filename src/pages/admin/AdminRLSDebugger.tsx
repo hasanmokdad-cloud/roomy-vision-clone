@@ -165,22 +165,30 @@ export default function AdminRLSDebugger() {
       </div>
 
       <Tabs defaultValue="errors" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid grid-cols-2 lg:grid-cols-6">
           <TabsTrigger value="errors">
             <AlertCircle className="w-4 h-4 mr-2" />
-            Error Log ({rlsErrors.length})
+            Errors
           </TabsTrigger>
           <TabsTrigger value="realtime">
             <Activity className="w-4 h-4 mr-2" />
-            Live Monitor ({realtimeErrors.length})
+            Live
           </TabsTrigger>
           <TabsTrigger value="auth">
             <Users className="w-4 h-4 mr-2" />
-            Auth State
+            Auth
           </TabsTrigger>
           <TabsTrigger value="stats">
             <Database className="w-4 h-4 mr-2" />
-            Statistics
+            Stats
+          </TabsTrigger>
+          <TabsTrigger value="failing">
+            <XCircle className="w-4 h-4 mr-2" />
+            Failing
+          </TabsTrigger>
+          <TabsTrigger value="restricted">
+            <Shield className="w-4 h-4 mr-2" />
+            Restricted
           </TabsTrigger>
         </TabsList>
 
@@ -349,6 +357,66 @@ export default function AdminRLSDebugger() {
                   </div>
                 ))}
             </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="failing">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Tables Failing RLS</h3>
+            <div className="space-y-2">
+              {Object.entries(
+                rlsErrors.reduce((acc: any, e) => {
+                  acc[e.table_name] = (acc[e.table_name] || 0) + 1;
+                  return acc;
+                }, {})
+              )
+                .sort((a: any, b: any) => b[1] - a[1])
+                .map(([table, count]: any) => (
+                  <div key={table} className="flex items-center justify-between p-3 rounded-lg bg-destructive/10">
+                    <div>
+                      <p className="font-semibold">{table}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {count} error{count > 1 ? 's' : ''} detected
+                      </p>
+                    </div>
+                    <Badge variant="destructive">{count}</Badge>
+                  </div>
+                ))}
+              {Object.keys(rlsErrors).length === 0 && (
+                <p className="text-center text-muted-foreground py-8">
+                  No tables with RLS errors
+                </p>
+              )}
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="restricted">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Last 20 Restricted Queries</h3>
+            <ScrollArea className="h-[600px]">
+              {rlsErrors.slice(0, 20).map((error) => (
+                <Card key={error.id} className="p-3 mb-2 border-l-4 border-l-destructive">
+                  <div className="flex items-start gap-2">
+                    <Shield className="w-4 h-4 text-destructive mt-1" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant="outline">{error.operation}</Badge>
+                        <Badge variant="outline">{error.table_name}</Badge>
+                        <span className="text-xs text-muted-foreground ml-auto">
+                          {new Date(error.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{error.error_message}</p>
+                      <div className="mt-2 p-2 bg-muted rounded text-xs">
+                        <span className="text-muted-foreground">User:</span>{' '}
+                        <code>{error.user_id || 'NULL'}</code>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </ScrollArea>
           </Card>
         </TabsContent>
       </Tabs>
