@@ -133,14 +133,6 @@ export default function AdminDashboard() {
             </Button>
             <Button
               variant="ghost"
-              onClick={() => navigate("/admin")}
-              className="flex items-center gap-2"
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              Dashboard
-            </Button>
-            <Button
-              variant="ghost"
               onClick={handleSignOut}
               className="flex items-center gap-2"
             >
