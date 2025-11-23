@@ -1791,6 +1791,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_update_verification_status: {
+        Args: { p_dorm_id: string; p_new_status: string }
+        Returns: Json
+      }
       analytics_summary: { Args: never; Returns: Json }
       analytics_timeseries: {
         Args: { p_days?: number; p_metric: string }

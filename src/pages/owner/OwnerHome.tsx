@@ -34,6 +34,36 @@ export default function OwnerHome() {
     }
   }, [userId]);
 
+  // Subscribe to real-time verification status changes
+  useEffect(() => {
+    if (!ownerId) return;
+
+    console.log('🔄 Setting up real-time subscription for ownerId:', ownerId);
+
+    const channel = supabase
+      .channel('dorm-verification-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'dorms',
+          filter: `owner_id=eq.${ownerId}`
+        },
+        (payload) => {
+          console.log('🔔 Dorm updated:', payload);
+          // Refetch dorms when verification status changes
+          refetchDorms();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔌 Cleaning up real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [ownerId, refetchDorms]);
+
   useEffect(() => {
     if (dorms) {
       const verified = dorms.filter(d => d.verification_status === 'Verified').length;
