@@ -41,7 +41,7 @@ export default function RoomForm() {
   const { roomId } = useParams<{ roomId?: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAuthenticated } = useAuthSession();
+  const { isAuthenticated, userId, refreshSession } = useAuthSession();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -116,6 +116,33 @@ export default function RoomForm() {
 
     setLoading(true);
     try {
+      // CRITICAL: Refresh session before database operation
+      console.log('🔐 Refreshing session before room creation...');
+      const { session, error: sessionError } = await refreshSession();
+      
+      if (sessionError || !session) {
+        toast({
+          title: "Authentication Required",
+          description: "Your session expired. Please log out and log back in.",
+          variant: "destructive",
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                navigate('/auth');
+              }}
+            >
+              Log Out
+            </Button>
+          ),
+        });
+        return;
+      }
+
+      console.log('✅ Session refreshed. User ID:', session.user.id);
+
     const roomData = {
       dorm_id: dormId,
       name: formData.name,
@@ -130,25 +157,58 @@ export default function RoomForm() {
       available: formData.available,
     };
 
+      console.log('📝 Attempting to save room...', { roomId, dormId });
+
       if (roomId) {
         const { error } = await supabase
           .from("rooms")
           .update(roomData)
           .eq("id", roomId);
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Update error:', error);
+          throw error;
+        }
         toast({ title: "Success", description: "Room updated successfully" });
       } else {
         const { error } = await supabase
           .from("rooms")
           .insert([roomData]);
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Insert error:', error);
+          
+          // Check if it's an RLS error
+          if (error.message?.includes('permission denied') || 
+              error.message?.includes('policy')) {
+            toast({
+              title: "Permission Error",
+              description: "Session authentication issue. Please log out and log back in.",
+              variant: "destructive",
+              action: (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    navigate('/auth');
+                  }}
+                >
+                  Log Out & Retry
+                </Button>
+              ),
+            });
+            return;
+          }
+          
+          throw error;
+        }
         toast({ title: "Success", description: "Room created successfully" });
       }
 
       navigate(`/owner/dorms/${dormId}/rooms`);
     } catch (error: any) {
+      console.error("❌ Error saving room:", error);
       toast({
         title: "Error",
         description: error.message,
