@@ -116,8 +116,8 @@ export default function RoomForm() {
 
     setLoading(true);
     try {
-      // CRITICAL: Refresh session before database operation
-      console.log('🔐 Refreshing session before room creation...');
+      // CRITICAL: Refresh session and verify JWT token before database operation
+      console.log('🔐 Step 1: Refreshing session...');
       const { session, error: sessionError } = await refreshSession();
       
       if (sessionError || !session) {
@@ -141,7 +141,38 @@ export default function RoomForm() {
         return;
       }
 
-      console.log('✅ Session refreshed. User ID:', session.user.id);
+      console.log('✅ Step 2: Session refreshed. User ID:', session.user.id);
+
+      // CRITICAL: Get current session to verify JWT token exists
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (!currentSession?.access_token) {
+        console.error('❌ No JWT token found after refresh!');
+        toast({
+          title: "Token Missing",
+          description: "Authentication token is missing. Please log out and log back in.",
+          variant: "destructive",
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                navigate('/auth');
+              }}
+            >
+              Force Re-Login
+            </Button>
+          ),
+        });
+        return;
+      }
+
+      console.log('✅ Step 3: JWT token verified:', currentSession.access_token.substring(0, 20) + '...');
+
+      // CRITICAL: Small delay to ensure token propagates to all API calls
+      await new Promise(resolve => setTimeout(resolve, 150));
+      console.log('✅ Step 4: Token propagation delay complete');
 
     const roomData = {
       dorm_id: dormId,
