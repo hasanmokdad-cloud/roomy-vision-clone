@@ -17,6 +17,7 @@ import {
   LayoutDashboard,
   ShieldCheck,
   ClipboardCheck,
+  FileText,
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -266,6 +267,19 @@ export default function AdminDashboard() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/admin/pending-review")}
+            className="relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br from-indigo-500 to-purple-400 text-white shadow-xl hover:shadow-2xl transition-all group"
+          >
+            <div className="flex flex-col items-center gap-4">
+              <FileText className="w-12 h-12" />
+              <h3 className="text-xl font-bold">Review Forms</h3>
+              <p className="text-sm opacity-90">Detailed submissions</p>
+            </div>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate("/admin/students")}
             className="relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br from-blue-500 to-cyan-400 text-white shadow-xl hover:shadow-2xl transition-all group"
           >
@@ -286,19 +300,6 @@ export default function AdminDashboard() {
               <Building2 className="w-12 h-12" />
               <h3 className="text-xl font-bold">Manage Owners</h3>
               <p className="text-sm opacity-90">Oversee owners</p>
-            </div>
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate("/admin")}
-            className="relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br from-purple-500 to-pink-400 text-white shadow-xl hover:shadow-2xl transition-all group"
-          >
-            <div className="flex flex-col items-center gap-4">
-              <ShieldCheck className="w-12 h-12" />
-              <h3 className="text-xl font-bold">Pending Dorms</h3>
-              <p className="text-sm opacity-90">Verify listings</p>
             </div>
           </motion.button>
 
