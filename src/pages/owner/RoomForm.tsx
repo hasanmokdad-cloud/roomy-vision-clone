@@ -116,133 +116,56 @@ export default function RoomForm() {
 
     setLoading(true);
     try {
-      // CRITICAL: Refresh session and verify JWT token before database operation
-      console.log('🔐 Step 1: Refreshing session...');
-      const { session, error: sessionError } = await refreshSession();
-      
-      if (sessionError || !session) {
-        toast({
-          title: "Authentication Required",
-          description: "Your session expired. Please log out and log back in.",
-          variant: "destructive",
-          action: (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate('/auth');
-              }}
-            >
-              Log Out
-            </Button>
-          ),
-        });
-        return;
-      }
+      // Refresh session for better security
+      await refreshSession();
 
-      console.log('✅ Step 2: Session refreshed. User ID:', session.user.id);
-
-      // CRITICAL: Get current session to verify JWT token exists
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      
-      if (!currentSession?.access_token) {
-        console.error('❌ No JWT token found after refresh!');
-        toast({
-          title: "Token Missing",
-          description: "Authentication token is missing. Please log out and log back in.",
-          variant: "destructive",
-          action: (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate('/auth');
-              }}
-            >
-              Force Re-Login
-            </Button>
-          ),
-        });
-        return;
-      }
-
-      console.log('✅ Step 3: JWT token verified:', currentSession.access_token.substring(0, 20) + '...');
-
-      // CRITICAL: Small delay to ensure token propagates to all API calls
-      await new Promise(resolve => setTimeout(resolve, 150));
-      console.log('✅ Step 4: Token propagation delay complete');
-
-    const roomData = {
-      dorm_id: dormId,
-      name: formData.name,
-      type: formData.type,
-      price: parseFloat(formData.price),
-      deposit: formData.deposit ? parseFloat(formData.deposit) : null,
-      capacity: formData.capacity ? parseInt(formData.capacity) : null,
-      area_m2: formData.area_m2 ? parseFloat(formData.area_m2) : null,
-      description: formData.description || null,
-      images: images,
-      panorama_urls: panoramaUrls,
-      available: formData.available,
-    };
-
-      console.log('📝 Attempting to save room...', { roomId, dormId });
+      const roomData = {
+        dorm_id: dormId,
+        name: formData.name,
+        type: formData.type,
+        price: parseFloat(formData.price),
+        deposit: formData.deposit ? parseFloat(formData.deposit) : null,
+        capacity: formData.capacity ? parseInt(formData.capacity) : null,
+        area_m2: formData.area_m2 ? parseFloat(formData.area_m2) : null,
+        description: formData.description || null,
+        images: images,
+        panorama_urls: panoramaUrls,
+        available: formData.available,
+      };
 
       if (roomId) {
+        // Update existing room
         const { error } = await supabase
           .from("rooms")
           .update(roomData)
           .eq("id", roomId);
 
-        if (error) {
-          console.error('❌ Update error:', error);
-          throw error;
-        }
+        if (error) throw error;
         toast({ title: "Success", description: "Room updated successfully" });
       } else {
-        const { error } = await supabase
-          .from("rooms")
-          .insert([roomData]);
+        // Create new room using Edge Function (bypasses RLS issues)
+        const { data, error } = await supabase.functions.invoke('create-room', {
+          body: roomData
+        });
 
         if (error) {
-          console.error('❌ Insert error:', error);
-          
-          // Check if it's an RLS error
-          if (error.message?.includes('permission denied') || 
-              error.message?.includes('policy')) {
-            toast({
-              title: "Permission Error",
-              description: "Session authentication issue. Please log out and log back in.",
-              variant: "destructive",
-              action: (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    navigate('/auth');
-                  }}
-                >
-                  Log Out & Retry
-                </Button>
-              ),
-            });
-            return;
-          }
-          
-          throw error;
+          console.error('Edge function error:', error);
+          throw new Error(error.message || 'Failed to create room');
         }
+
+        if (data?.error) {
+          throw new Error(data.error);
+        }
+
         toast({ title: "Success", description: "Room created successfully" });
       }
 
       navigate(`/owner/dorms/${dormId}/rooms`);
     } catch (error: any) {
-      console.error("❌ Error saving room:", error);
+      console.error("Error saving room:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to save room",
         variant: "destructive",
       });
     } finally {
