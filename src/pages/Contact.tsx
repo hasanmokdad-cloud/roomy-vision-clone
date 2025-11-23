@@ -89,36 +89,38 @@ export default function Contact() {
     setErrors({});
 
     // Submit to database with sanitized input
-    const { error } = await supabase.from('inquiries').insert({
-      inquiry_type: 'contact',
-      student_name: sanitizeInput(`${formData.firstName} ${formData.lastName}`),
-      student_email: formData.email, // Email validation is sufficient
-      message: sanitizeInput(`University: ${formData.university}\n\n${formData.message}`),
-      owner_id: '00000000-0000-0000-0000-000000000000' // General inquiry, no specific owner
-    });
+    try {
+      const { error } = await supabase.from('contact_messages').insert({
+        first_name: sanitizeInput(formData.firstName),
+        last_name: sanitizeInput(formData.lastName),
+        email: formData.email,
+        university: sanitizeInput(formData.university),
+        message: sanitizeInput(formData.message),
+        status: 'new'
+      });
 
-    if (error) {
+      if (error) throw error;
+
+      toast({
+        title: 'Message Sent Successfully! ✨',
+        description: "Thank you for contacting Roomy! We'll get back to you within 24 hours.",
+      });
+
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        university: '',
+        message: ''
+      });
+    } catch (error) {
       toast({
         title: 'Error',
         description: 'Failed to send message. Please try again.',
         variant: 'destructive'
       });
-      setIsSubmitting(false);
-      return;
     }
     
-    toast({
-      title: 'Message Sent!',
-      description: "Thanks! We'll get back to you within 24 hours.",
-    });
-
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      university: '',
-      message: ''
-    });
     setIsSubmitting(false);
   };
 
