@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import WhatsAppFab from '@/components/shared/WhatsAppFab';
 import { UnderwaterScene } from '@/components/UnderwaterScene';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -277,7 +276,6 @@ export default function Contact() {
       </main>
 
       <Footer />
-      <WhatsAppFab />
     </div>
   );
 }
