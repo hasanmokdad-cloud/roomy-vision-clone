@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { findExistingSupportConversation } from '@/lib/messagingSupport';
 import {
   Mail,
   MailOpen,
@@ -38,6 +40,7 @@ import {
 
 interface ContactMessage {
   id: string;
+  user_id: string | null;
   first_name: string;
   last_name: string;
   email: string;
@@ -53,6 +56,7 @@ interface ContactMessage {
 export default function AdminMessagesInbox() {
   const { loading } = useRoleGuard('admin');
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [filteredMessages, setFilteredMessages] = useState<ContactMessage[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -149,6 +153,40 @@ export default function AdminMessagesInbox() {
       });
       loadMessages();
       setSelectedMessage(null);
+    }
+  };
+
+  const openConversation = async (contactMessage: ContactMessage) => {
+    if (!contactMessage.user_id) {
+      toast({
+        title: "Cannot Open Conversation",
+        description: "This message was submitted anonymously (no user account).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const conversationId = await findExistingSupportConversation(contactMessage.user_id);
+
+      if (conversationId) {
+        navigate('/messages', {
+          state: { selectedConversationId: conversationId }
+        });
+      } else {
+        toast({
+          title: "No Conversation Found",
+          description: "This user hasn't started a support conversation yet.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("[AdminInbox] Error opening conversation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to open conversation",
+        variant: "destructive",
+      });
     }
   };
 
@@ -423,6 +461,15 @@ export default function AdminMessagesInbox() {
                       Archive
                     </Button>
                   </div>
+                  <Button
+                    onClick={() => openConversation(selectedMessage)}
+                    disabled={!selectedMessage.user_id}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Open Conversation
+                  </Button>
                   <Button
                     onClick={() => {
                       setAdminNotes(selectedMessage.admin_notes || '');

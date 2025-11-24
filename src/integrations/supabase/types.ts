@@ -372,6 +372,7 @@ export type Database = {
           replied_at: string | null
           status: string | null
           university: string | null
+          user_id: string | null
         }
         Insert: {
           admin_notes?: string | null
@@ -385,6 +386,7 @@ export type Database = {
           replied_at?: string | null
           status?: string | null
           university?: string | null
+          user_id?: string | null
         }
         Update: {
           admin_notes?: string | null
@@ -398,31 +400,35 @@ export type Database = {
           replied_at?: string | null
           status?: string | null
           university?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
       conversations: {
         Row: {
+          conversation_type: string | null
           created_at: string
           dorm_id: string | null
           id: string
-          owner_id: string
+          owner_id: string | null
           student_id: string
           updated_at: string
         }
         Insert: {
+          conversation_type?: string | null
           created_at?: string
           dorm_id?: string | null
           id?: string
-          owner_id: string
+          owner_id?: string | null
           student_id: string
           updated_at?: string
         }
         Update: {
+          conversation_type?: string | null
           created_at?: string
           dorm_id?: string | null
           id?: string
-          owner_id?: string
+          owner_id?: string | null
           student_id?: string
           updated_at?: string
         }
