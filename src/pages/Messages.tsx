@@ -365,12 +365,9 @@ export default function Messages() {
     if (admin) {
       // Admins see all support conversations
       query = query.eq('conversation_type', 'support');
-    } else if (student) {
-      query = query.eq('student_id', student.id);
-    } else if (owner) {
-      query = query.eq('owner_id', owner.id);
     } else {
-      return;
+      // For students and owners: find conversations where user is a participant
+      query = query.or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`);
     }
 
     // Filter archived
@@ -402,16 +399,31 @@ export default function Messages() {
         // Handle support conversations differently
         if (conv.conversation_type === 'support') {
           if (admin) {
-            // Admin viewing: show student name
+            // Admin sees the other participant (non-admin user)
+            const otherUserId = conv.user_a_id === userId ? conv.user_b_id : conv.user_a_id;
+            
+            // Try to find in students first
             const { data: studentData } = await supabase
               .from('students')
               .select('full_name, profile_photo_url')
-              .eq('id', conv.student_id)
+              .eq('user_id', otherUserId)
               .maybeSingle();
-            otherUserName = studentData?.full_name || 'Student';
-            otherUserPhoto = studentData?.profile_photo_url || null;
+            
+            if (studentData) {
+              otherUserName = studentData.full_name || 'Student';
+              otherUserPhoto = studentData.profile_photo_url;
+            } else {
+              // Try owners
+              const { data: ownerData } = await supabase
+                .from('owners')
+                .select('full_name, profile_photo_url')
+                .eq('user_id', otherUserId)
+                .maybeSingle();
+              otherUserName = ownerData?.full_name || 'Owner';
+              otherUserPhoto = ownerData?.profile_photo_url;
+            }
           } else {
-            // Student viewing: show "Roomy Support"
+            // User viewing: show "Roomy Support"
             otherUserName = 'Roomy Support';
           }
         } else {
