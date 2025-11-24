@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -10,23 +11,36 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, MapPin, GraduationCap, DollarSign, Home, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { User, MapPin, GraduationCap, DollarSign, Home, CheckCircle, ArrowRight, ArrowLeft, Users } from 'lucide-react';
 import { Confetti } from '@/components/profile/Confetti';
 import { ProfileProgress } from '@/components/profile/ProfileProgress';
+import { residentialAreas, type Governorate, type District } from '@/data/residentialAreas';
+import { universities } from '@/data/universities';
+import { housingAreas } from '@/data/housingAreas';
+import { roomTypes, isSingleRoom } from '@/data/roomTypes';
 
 const studentProfileSchema = z.object({
+  // Step 1 - Personal Info
   full_name: z.string().min(2, 'Name must be at least 2 characters').max(100),
   age: z.number().min(16, 'Must be at least 16').max(100).optional(),
-  gender: z.enum(['Male', 'Female', 'Other']).optional(),
+  gender: z.enum(['Male', 'Female']).optional(),
+  governorate: z.string().optional(),
+  district: z.string().optional(),
+  town_village: z.string().optional(),
+  
+  // Step 1 - Academic Info
   university: z.string().optional(),
-  residential_area: z.string().optional(),
+  major: z.string().optional(),
+  year_of_study: z.number().min(1).max(5).optional(),
+  
+  // Step 1 - Accommodation
   accommodation_status: z.enum(['need_dorm', 'have_dorm']).default('need_dorm'),
-  room_type: z.string().optional(),
-  roommate_needed: z.boolean().optional(),
-  budget: z.number().min(0).optional(),
-  distance_preference: z.string().optional(),
   need_roommate: z.boolean().optional(),
-  roommates_needed: z.number().min(0).max(10).optional(),
+  
+  // Step 2 - Housing Preferences (only if need_dorm)
+  budget: z.number().min(0).optional(),
+  preferred_housing_area: z.string().optional(),
+  room_type: z.string().optional(),
 });
 
 type StudentProfile = z.infer<typeof studentProfileSchema>;
@@ -41,25 +55,36 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   const [hasProfile, setHasProfile] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Step management
+  const [currentStep, setCurrentStep] = useState(1);
   const [accommodationStatus, setAccommodationStatus] = useState<'need_dorm' | 'have_dorm'>('need_dorm');
   const [needRoommate, setNeedRoommate] = useState(false);
+  
+  // Hierarchical location state
+  const [selectedGovernorate, setSelectedGovernorate] = useState<Governorate | ''>('');
+  const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [availableDistricts, setAvailableDistricts] = useState<string[]>([]);
+  const [availableTowns, setAvailableTowns] = useState<string[]>([]);
+  
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<StudentProfile>({
     resolver: zodResolver(studentProfileSchema),
+    defaultValues: {
+      accommodation_status: 'need_dorm'
+    }
   });
 
   const formValues = watch();
   
   // Calculate profile completion percentage
   const calculateProgress = () => {
-    let fields = ['full_name', 'age', 'gender', 'university'];
+    let fields = ['full_name', 'age', 'gender', 'governorate', 'district', 'town_village', 'university', 'major', 'year_of_study'];
     
-    // Add conditional fields based on accommodation status
     if (accommodationStatus === 'need_dorm') {
-      fields = [...fields, 'residential_area', 'room_type', 'budget', 'distance_preference'];
-    } else if (accommodationStatus === 'have_dorm' && needRoommate) {
-      fields = [...fields, 'roommates_needed'];
+      fields = [...fields, 'budget', 'preferred_housing_area', 'room_type'];
     }
     
     const filledFields = fields.filter(field => {
@@ -75,6 +100,29 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
     loadProfile();
   }, [userId]);
 
+  // Handle governorate selection
+  useEffect(() => {
+    if (selectedGovernorate) {
+      const districts = Object.keys(residentialAreas[selectedGovernorate]);
+      setAvailableDistricts(districts);
+      setSelectedDistrict('');
+      setAvailableTowns([]);
+      setValue('governorate', selectedGovernorate);
+      setValue('district', '');
+      setValue('town_village', '');
+    }
+  }, [selectedGovernorate]);
+
+  // Handle district selection
+  useEffect(() => {
+    if (selectedGovernorate && selectedDistrict) {
+      const towns = residentialAreas[selectedGovernorate][selectedDistrict as District<typeof selectedGovernorate>];
+      setAvailableTowns(towns);
+      setValue('district', selectedDistrict);
+      setValue('town_village', '');
+    }
+  }, [selectedDistrict]);
+
   const loadProfile = async () => {
     const { data, error } = await supabase
       .from('students')
@@ -85,48 +133,77 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
     if (data && !error) {
       setHasProfile(true);
       
-      // Set accommodation status state
+      // Set accommodation status
       if (data.accommodation_status) {
         setAccommodationStatus(data.accommodation_status as 'need_dorm' | 'have_dorm');
+        setValue('accommodation_status', data.accommodation_status as any);
       }
       
-      // Set need roommate state
+      // Set need roommate
       if (data.need_roommate !== undefined) {
         setNeedRoommate(data.need_roommate);
+        setValue('need_roommate', data.need_roommate);
+      }
+
+      // Set location fields
+      if (data.governorate) {
+        setSelectedGovernorate(data.governorate as Governorate);
+        setValue('governorate', data.governorate);
+      }
+      if (data.district) {
+        setSelectedDistrict(data.district);
+        setValue('district', data.district);
+      }
+      if (data.town_village) {
+        setValue('town_village', data.town_village);
       }
       
+      // Set other fields
       Object.keys(data).forEach((key) => {
         if (key !== 'id' && key !== 'user_id' && key !== 'created_at' && key !== 'updated_at' && key !== 'email') {
-          setValue(key as keyof StudentProfile, data[key]);
+          const value = data[key];
+          if (value !== null && value !== undefined) {
+            setValue(key as keyof StudentProfile, value);
+          }
         }
       });
     }
+  };
 
-    // Load AI responses to auto-fill if profile is incomplete
-    if (!data || !data.budget) {
-      const { data: aiResponses } = await supabase
-        .from('students_ai_responses')
-        .select('responses')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (aiResponses?.responses) {
-        const responses = aiResponses.responses as Record<string, any>;
-        if (responses.budget && !data?.budget) setValue('budget', responses.budget);
-        if (responses.room_type && !data?.room_type) setValue('room_type', responses.room_type);
-        if (responses[14] && !data?.age) setValue('age', parseInt(responses[14]));
-        if (responses[15] && !data?.university) setValue('university', responses[15]);
+  const handleStep1Complete = async (data: StudentProfile) => {
+    if (accommodationStatus === 'have_dorm') {
+      if (needRoommate) {
+        // Save profile then navigate to roommate matching
+        await saveProfile(data);
+        navigate('/ai-match?mode=roommate');
+      } else {
+        // Just save profile
+        await saveProfile(data);
       }
+    } else {
+      // Continue to Step 2
+      setCurrentStep(2);
     }
   };
 
-  const onSubmit = async (data: StudentProfile) => {
+  const handleStep2Complete = async (data: StudentProfile) => {
+    const selectedRoomType = watch('room_type');
+    const isSingle = selectedRoomType ? isSingleRoom(selectedRoomType) : false;
+    
+    // Save profile first
+    await saveProfile(data);
+    
+    if (!isSingle && needRoommate) {
+      navigate('/ai-match?mode=roommate');
+    } else {
+      navigate('/ai-match?mode=dorm');
+    }
+  };
+
+  const saveProfile = async (data: StudentProfile) => {
     setLoading(true);
     setIsSaving(true);
     try {
-      // Get user email from auth
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) throw new Error('User not authenticated');
@@ -137,25 +214,23 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         full_name: data.full_name,
         age: data.age,
         gender: data.gender,
+        governorate: data.governorate,
+        district: data.district,
+        town_village: data.town_village,
         university: data.university,
+        major: data.major,
+        year_of_study: data.year_of_study,
         accommodation_status: accommodationStatus,
+        need_roommate: needRoommate,
         profile_completion_score: calculateProgress(),
         updated_at: new Date().toISOString()
       };
 
-      // Only include dorm-search fields if status is 'need_dorm'
+      // Only include housing preferences if need_dorm
       if (accommodationStatus === 'need_dorm') {
-        updateData.residential_area = data.residential_area;
-        updateData.room_type = data.room_type;
-        updateData.roommate_needed = data.roommate_needed;
         updateData.budget = data.budget;
-        updateData.distance_preference = data.distance_preference;
-      }
-
-      // Only include roommate fields if status is 'have_dorm'
-      if (accommodationStatus === 'have_dorm') {
-        updateData.need_roommate = needRoommate;
-        updateData.roommates_needed = needRoommate ? data.roommates_needed : 0;
+        updateData.preferred_housing_area = data.preferred_housing_area;
+        updateData.room_type = data.room_type;
       }
 
       const { error } = await supabase
@@ -166,13 +241,12 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
 
       if (error) throw error;
 
-      // Show confetti on successful save
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2000);
 
       toast({
         title: 'Profile saved! ✨',
-        description: 'Your preferences will help Roomy AI find perfect matches.',
+        description: 'Your profile has been updated successfully.',
       });
 
       onComplete?.();
@@ -186,6 +260,14 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
     } finally {
       setLoading(false);
       setTimeout(() => setIsSaving(false), 800);
+    }
+  };
+
+  const onSubmit = (data: StudentProfile) => {
+    if (currentStep === 1) {
+      handleStep1Complete(data);
+    } else {
+      handleStep2Complete(data);
     }
   };
 
@@ -205,305 +287,410 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
       >
         <div className="space-y-2 mb-6">
           <h2 className="text-3xl font-black text-primary">
-            {hasProfile ? 'Update Your Profile' : 'Complete Your Profile'}
+            {currentStep === 1 ? 'Create Your Profile' : 'Set Your Preferences'}
           </h2>
           <p className="text-foreground/60">
-            Help Roomy AI find dorms that match your needs perfectly
+            {currentStep === 1 
+              ? 'Tell us about yourself to get started' 
+              : 'Let us know your housing preferences'}
           </p>
+          <div className="flex gap-2 mt-4">
+            <div className={`h-2 flex-1 rounded-full ${currentStep >= 1 ? 'bg-primary' : 'bg-muted'}`} />
+            <div className={`h-2 flex-1 rounded-full ${currentStep >= 2 ? 'bg-primary' : 'bg-muted'}`} />
+          </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Personal Information Section */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-black text-primary flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Personal Information
-            </h3>
-
-            <div>
-              <Label htmlFor="full_name" className="text-foreground/80">Full Name *</Label>
-              <Input
-                id="full_name"
-                {...register('full_name')}
-                placeholder="Your full name"
-                className="mt-2 w-full focus:ring-2 focus:ring-primary"
-              />
-              {errors.full_name && (
-                <p className="text-destructive text-sm mt-1">{errors.full_name.message}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="age" className="text-foreground/80">Age</Label>
-                <Input
-                  id="age"
-                  type="number"
-                  {...register('age', { valueAsNumber: true })}
-                  placeholder="Your age"
-                  className="mt-2 w-full focus:ring-2 focus:ring-primary"
-                />
-                {errors.age && (
-                  <p className="text-destructive text-sm mt-1">{errors.age.message}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="gender" className="text-foreground/80">Gender</Label>
-                <Select onValueChange={(value) => setValue('gender', value as any)}>
-                  <SelectTrigger id="gender" className="mt-2 w-full focus:ring-2 focus:ring-primary">
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          {/* Academic Information Section */}
-          <div className="space-y-4 bg-primary/5 border border-primary/20 rounded-xl p-6">
-            <h3 className="text-xl font-black text-primary flex items-center gap-2">
-              <GraduationCap className="w-5 h-5" />
-              Academic Information
-            </h3>
-
-            <div>
-              <Label htmlFor="university" className="text-foreground/80">Current University</Label>
-              <Input
-                id="university"
-                {...register('university')}
-                placeholder="e.g., AUB, LAU, USJ"
-                className="mt-2 w-full focus:ring-2 focus:ring-primary"
-              />
-            </div>
-          </div>
-
-          {/* Accommodation Status Section */}
-          <div className="space-y-4 bg-primary/5 border border-primary/20 rounded-xl p-6">
-            <h3 className="text-xl font-black text-primary flex items-center gap-2">
-              <Home className="w-5 h-5" />
-              Accommodation Status
-            </h3>
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label className="text-base font-semibold text-foreground">
-                  Do you need a dorm?
-                </Label>
-                <p className="text-sm text-foreground/60">
-                  Toggle based on your current accommodation status
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className={accommodationStatus === 'have_dorm' ? 'font-bold text-primary' : 'text-foreground/60'}>
-                  I Have a Dorm
-                </span>
-                <Switch
-                  checked={accommodationStatus === 'need_dorm'}
-                  onCheckedChange={(checked) => setAccommodationStatus(checked ? 'need_dorm' : 'have_dorm')}
-                />
-                <span className={accommodationStatus === 'need_dorm' ? 'font-bold text-primary' : 'text-foreground/60'}>
-                  I Need a Dorm
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Conditional: I Need a Dorm - Housing, Budget, Location */}
-          {accommodationStatus === 'need_dorm' && (
-            <>
+          <AnimatePresence mode="wait">
+            {currentStep === 1 && (
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
+                key="step1"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
-                className="space-y-4 bg-primary/5 border border-primary/20 rounded-xl p-6"
+                className="space-y-6"
               >
-                <h3 className="text-xl font-black text-primary flex items-center gap-2">
-                  <Home className="w-5 h-5" />
-                  Housing Preferences
-                </h3>
-
-                <div>
-                  <Label htmlFor="residential_area" className="text-foreground/80">Preferred Residential Area</Label>
-                  <Input
-                    id="residential_area"
-                    {...register('residential_area')}
-                    placeholder="e.g., Hamra, Achrafieh, Jounieh"
-                    className="mt-2 w-full focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="room_type" className="text-foreground/80">Preferred Room Type</Label>
-                    <Select onValueChange={(value) => setValue('room_type', value)}>
-                      <SelectTrigger id="room_type" className="mt-2 w-full focus:ring-2 focus:ring-primary">
-                        <SelectValue placeholder="Select room type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Single">Single</SelectItem>
-                        <SelectItem value="Double">Double</SelectItem>
-                        <SelectItem value="Triple">Triple</SelectItem>
-                        <SelectItem value="Suite">Suite</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {/* Personal Information Section */}
+                <div className="space-y-4">
+                  <h3 className="text-xl font-black text-primary flex items-center gap-2">
+                    <User className="w-5 h-5" />
+                    Personal Information
+                  </h3>
 
                   <div>
-                    <Label htmlFor="roommate_needed" className="text-foreground/80">Need a Roommate?</Label>
-                    <Select onValueChange={(value) => setValue('roommate_needed', value === 'yes')}>
-                      <SelectTrigger id="roommate_needed" className="mt-2 w-full focus:ring-2 focus:ring-primary">
-                        <SelectValue placeholder="Select option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="yes">Yes</SelectItem>
-                        <SelectItem value="no">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-4 bg-primary/5 border border-primary/20 rounded-xl p-6"
-              >
-                <h3 className="text-xl font-black text-primary flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  Budget
-                </h3>
-
-                <div>
-                  <Label htmlFor="budget" className="text-foreground/80">Monthly Budget (USD)</Label>
-                  <Input
-                    id="budget"
-                    type="number"
-                    {...register('budget', { valueAsNumber: true })}
-                    placeholder="e.g., 500, 800, 1200"
-                    className="mt-2 w-full focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-4 bg-primary/5 border border-primary/20 rounded-xl p-6"
-              >
-                <h3 className="text-xl font-black text-primary flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  Location Preferences
-                </h3>
-
-                <div>
-                  <Label htmlFor="distance_preference" className="text-foreground/80">Preferred Distance from Campus</Label>
-                  <Select onValueChange={(value) => setValue('distance_preference', value)}>
-                    <SelectTrigger id="distance_preference" className="mt-2 w-full focus:ring-2 focus:ring-primary">
-                      <SelectValue placeholder="Select distance" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Walking distance">Walking distance (&lt; 1 mile)</SelectItem>
-                      <SelectItem value="Short commute">Short commute (1-3 miles)</SelectItem>
-                      <SelectItem value="Moderate commute">Moderate commute (3-5 miles)</SelectItem>
-                      <SelectItem value="Long commute">Long commute (&gt; 5 miles)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </motion.div>
-            </>
-          )}
-
-          {/* Conditional: I Have a Dorm - Roommate Section */}
-          {accommodationStatus === 'have_dorm' && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-4 bg-secondary/5 border border-secondary/20 rounded-xl p-6"
-            >
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label className="text-base font-semibold text-foreground">
-                    Need a Roommate?
-                  </Label>
-                  <p className="text-sm text-foreground/60">
-                    Looking for someone to share your dorm with?
-                  </p>
-                </div>
-                <Switch
-                  checked={needRoommate}
-                  onCheckedChange={setNeedRoommate}
-                />
-              </div>
-              
-              <AnimatePresence>
-                {needRoommate && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <Label htmlFor="roommates_needed" className="text-foreground/80">
-                      How many Roommates Do You Need?
-                    </Label>
+                    <Label htmlFor="full_name" className="text-foreground/80">Full Name *</Label>
                     <Input
-                      id="roommates_needed"
+                      id="full_name"
+                      {...register('full_name')}
+                      placeholder="Your full name"
+                      className="mt-2"
+                    />
+                    {errors.full_name && (
+                      <p className="text-destructive text-sm mt-1">{errors.full_name.message}</p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="age" className="text-foreground/80">Age</Label>
+                      <Input
+                        id="age"
+                        type="number"
+                        {...register('age', { valueAsNumber: true })}
+                        placeholder="Your age"
+                        className="mt-2"
+                      />
+                      {errors.age && (
+                        <p className="text-destructive text-sm mt-1">{errors.age.message}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="gender" className="text-foreground/80">Gender</Label>
+                      <Select 
+                        onValueChange={(value) => setValue('gender', value as any)}
+                        value={formValues.gender}
+                      >
+                        <SelectTrigger id="gender" className="mt-2">
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          <SelectItem value="Male">Male</SelectItem>
+                          <SelectItem value="Female">Female</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Hierarchical Location Selector */}
+                  <div className="space-y-4">
+                    <Label className="text-foreground/80">Residential Area</Label>
+                    
+                    <div>
+                      <Label htmlFor="governorate" className="text-sm text-foreground/60">Governorate</Label>
+                      <Select 
+                        onValueChange={(value) => setSelectedGovernorate(value as Governorate)}
+                        value={selectedGovernorate}
+                      >
+                        <SelectTrigger id="governorate" className="mt-1">
+                          <SelectValue placeholder="Select governorate" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          {Object.keys(residentialAreas).map((gov) => (
+                            <SelectItem key={gov} value={gov}>{gov}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {availableDistricts.length > 0 && (
+                      <div>
+                        <Label htmlFor="district" className="text-sm text-foreground/60">District</Label>
+                        <Select 
+                          onValueChange={setSelectedDistrict}
+                          value={selectedDistrict}
+                        >
+                          <SelectTrigger id="district" className="mt-1">
+                            <SelectValue placeholder="Select district" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background z-50">
+                            {availableDistricts.map((district) => (
+                              <SelectItem key={district} value={district}>{district}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {availableTowns.length > 0 && (
+                      <div>
+                        <Label htmlFor="town_village" className="text-sm text-foreground/60">Town/Village</Label>
+                        <Select 
+                          onValueChange={(value) => setValue('town_village', value)}
+                          value={formValues.town_village}
+                        >
+                          <SelectTrigger id="town_village" className="mt-1">
+                            <SelectValue placeholder="Select town/village" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background z-50 max-h-[300px]">
+                            {availableTowns.map((town) => (
+                              <SelectItem key={town} value={town}>{town}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Academic Information Section */}
+                <div className="space-y-4 bg-primary/5 border border-primary/20 rounded-xl p-6">
+                  <h3 className="text-xl font-black text-primary flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5" />
+                    Academic Information
+                  </h3>
+
+                  <div>
+                    <Label htmlFor="university" className="text-foreground/80">University</Label>
+                    <Select 
+                      onValueChange={(value) => setValue('university', value)}
+                      value={formValues.university}
+                    >
+                      <SelectTrigger id="university" className="mt-2">
+                        <SelectValue placeholder="Select university" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50">
+                        {universities.map((uni) => (
+                          <SelectItem key={uni} value={uni}>{uni}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="major" className="text-foreground/80">Major</Label>
+                    <Input
+                      id="major"
+                      {...register('major')}
+                      placeholder="e.g., Computer Science"
+                      className="mt-2"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="year_of_study" className="text-foreground/80">Year of Study</Label>
+                    <Input
+                      id="year_of_study"
                       type="number"
                       min="1"
-                      max="10"
-                      {...register('roommates_needed', { valueAsNumber: true })}
-                      placeholder="e.g., 1, 2, 3"
-                      className="mt-2 w-full focus:ring-2 focus:ring-primary"
+                      max="5"
+                      {...register('year_of_study', { valueAsNumber: true })}
+                      placeholder="1-5"
+                      className="mt-2"
                     />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          )}
+                  </div>
+                </div>
 
-          <Button 
-            type="submit" 
-            disabled={isSaving}
-            className="w-full py-6 text-lg font-bold bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Saving Profile...
-              </>
-            ) : (
-              <>
-                {hasProfile ? 'Update Profile' : 'Create Profile'}
-              </>
-            )}
-          </Button>
+                {/* Accommodation Status Section */}
+                <div className="space-y-4 bg-primary/5 border border-primary/20 rounded-xl p-6">
+                  <h3 className="text-xl font-black text-primary flex items-center gap-2">
+                    <Home className="w-5 h-5" />
+                    Accommodation Status
+                  </h3>
+                  
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-base font-semibold text-foreground">
+                        Do you need a dorm?
+                      </Label>
+                      <p className="text-sm text-foreground/60">
+                        Toggle based on your current situation
+                      </p>
+                    </div>
+                    <Switch
+                      checked={accommodationStatus === 'need_dorm'}
+                      onCheckedChange={(checked) => {
+                        setAccommodationStatus(checked ? 'need_dorm' : 'have_dorm');
+                        setValue('accommodation_status', checked ? 'need_dorm' : 'have_dorm');
+                      }}
+                    />
+                  </div>
 
-          {/* Profile Status Indicator */}
-          <div className="flex items-center justify-center gap-2 p-4 rounded-xl bg-primary/5 border border-primary/20">
-            {progress === 100 ? (
-              <>
-                <CheckCircle className="w-5 h-5 text-primary" />
-                <span className="text-sm font-semibold text-foreground">Profile Complete!</span>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="w-5 h-5 text-primary" />
-                <span className="text-sm text-foreground/70">Complete your profile to get better AI matches</span>
-              </>
+                  {accommodationStatus === 'have_dorm' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="pt-4 border-t border-border"
+                    >
+                      <div className="flex items-center justify-between flex-wrap gap-4">
+                        <div className="space-y-1">
+                          <Label className="text-base font-semibold text-foreground flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            Need a Roommate?
+                          </Label>
+                          <p className="text-sm text-foreground/60">
+                            We'll help you find compatible roommates
+                          </p>
+                        </div>
+                        <Switch
+                          checked={needRoommate}
+                          onCheckedChange={(checked) => {
+                            setNeedRoommate(checked);
+                            setValue('need_roommate', checked);
+                          }}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Step 1 Action Buttons */}
+                <div className="flex gap-3 pt-4">
+                  {accommodationStatus === 'have_dorm' && !needRoommate ? (
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="flex-1 bg-primary hover:bg-primary/90"
+                    >
+                      {loading ? 'Saving...' : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Save Profile
+                        </>
+                      )}
+                    </Button>
+                  ) : accommodationStatus === 'have_dorm' && needRoommate ? (
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="flex-1 bg-primary hover:bg-primary/90"
+                    >
+                      {loading ? 'Saving...' : (
+                        <>
+                          <Users className="w-4 h-4 mr-2" />
+                          Find Roommate Matches
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      onClick={() => setCurrentStep(2)}
+                      className="flex-1 bg-primary hover:bg-primary/90"
+                    >
+                      Continue to Step 2
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  )}
+                </div>
+              </motion.div>
             )}
-          </div>
+
+            {currentStep === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setCurrentStep(1)}
+                  className="mb-4"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Profile
+                </Button>
+
+                {/* Housing Preferences */}
+                <div className="space-y-4 bg-primary/5 border border-primary/20 rounded-xl p-6">
+                  <h3 className="text-xl font-black text-primary flex items-center gap-2">
+                    <Home className="w-5 h-5" />
+                    Housing Preferences
+                  </h3>
+
+                  <div>
+                    <Label htmlFor="budget" className="text-foreground/80">Monthly Budget (USD)</Label>
+                    <Input
+                      id="budget"
+                      type="number"
+                      {...register('budget', { valueAsNumber: true })}
+                      placeholder="e.g., 500"
+                      className="mt-2"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="preferred_housing_area" className="text-foreground/80">Preferred Housing Area</Label>
+                    <Select 
+                      onValueChange={(value) => setValue('preferred_housing_area', value)}
+                      value={formValues.preferred_housing_area}
+                    >
+                      <SelectTrigger id="preferred_housing_area" className="mt-2">
+                        <SelectValue placeholder="Select area" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50 max-h-[300px]">
+                        {housingAreas.map((area) => (
+                          <SelectItem key={area} value={area}>{area}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="room_type" className="text-foreground/80">Preferred Room Type</Label>
+                    <Select 
+                      onValueChange={(value) => setValue('room_type', value)}
+                      value={formValues.room_type}
+                    >
+                      <SelectTrigger id="room_type" className="mt-2">
+                        <SelectValue placeholder="Select room type" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50 max-h-[300px]">
+                        {roomTypes.map((type) => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Roommate Toggle for Non-Single Rooms */}
+                  {formValues.room_type && !isSingleRoom(formValues.room_type) && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="pt-4 border-t border-border"
+                    >
+                      <div className="flex items-center justify-between flex-wrap gap-4">
+                        <div className="space-y-1">
+                          <Label className="text-base font-semibold text-foreground flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            Need a Roommate?
+                          </Label>
+                          <p className="text-sm text-foreground/60">
+                            We'll help you find compatible roommates
+                          </p>
+                        </div>
+                        <Switch
+                          checked={needRoommate}
+                          onCheckedChange={(checked) => {
+                            setNeedRoommate(checked);
+                            setValue('need_roommate', checked);
+                          }}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Step 2 Action Button */}
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-primary hover:bg-primary/90"
+                >
+                  {loading ? 'Saving...' : (
+                    formValues.room_type && !isSingleRoom(formValues.room_type) && needRoommate ? (
+                      <>
+                        <Users className="w-4 h-4 mr-2" />
+                        Find Roommate Matches
+                      </>
+                    ) : (
+                      <>
+                        <Home className="w-4 h-4 mr-2" />
+                        Find Dorm Matches
+                      </>
+                    )
+                  )}
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </form>
       </motion.div>
     </>

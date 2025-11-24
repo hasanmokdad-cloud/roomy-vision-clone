@@ -1643,16 +1643,20 @@ export type Database = {
           budget: number | null
           created_at: string | null
           distance_preference: string | null
+          district: string | null
           email: string
           favorite_areas: string[] | null
           full_name: string
           gender: string | null
+          governorate: string | null
           id: string
           last_login: string | null
+          major: string | null
           need_roommate: boolean | null
           phone_number: string | null
           phone_verified: boolean | null
           preferred_amenities: string[] | null
+          preferred_housing_area: string | null
           preferred_room_types: string[] | null
           preferred_university: string | null
           profile_completion_score: number | null
@@ -1662,9 +1666,11 @@ export type Database = {
           roommate_needed: boolean | null
           roommates_needed: number | null
           status: string | null
+          town_village: string | null
           university: string | null
           updated_at: string | null
           user_id: string
+          year_of_study: number | null
         }
         Insert: {
           accommodation_status?: string | null
@@ -1673,16 +1679,20 @@ export type Database = {
           budget?: number | null
           created_at?: string | null
           distance_preference?: string | null
+          district?: string | null
           email: string
           favorite_areas?: string[] | null
           full_name: string
           gender?: string | null
+          governorate?: string | null
           id?: string
           last_login?: string | null
+          major?: string | null
           need_roommate?: boolean | null
           phone_number?: string | null
           phone_verified?: boolean | null
           preferred_amenities?: string[] | null
+          preferred_housing_area?: string | null
           preferred_room_types?: string[] | null
           preferred_university?: string | null
           profile_completion_score?: number | null
@@ -1692,9 +1702,11 @@ export type Database = {
           roommate_needed?: boolean | null
           roommates_needed?: number | null
           status?: string | null
+          town_village?: string | null
           university?: string | null
           updated_at?: string | null
           user_id: string
+          year_of_study?: number | null
         }
         Update: {
           accommodation_status?: string | null
@@ -1703,16 +1715,20 @@ export type Database = {
           budget?: number | null
           created_at?: string | null
           distance_preference?: string | null
+          district?: string | null
           email?: string
           favorite_areas?: string[] | null
           full_name?: string
           gender?: string | null
+          governorate?: string | null
           id?: string
           last_login?: string | null
+          major?: string | null
           need_roommate?: boolean | null
           phone_number?: string | null
           phone_verified?: boolean | null
           preferred_amenities?: string[] | null
+          preferred_housing_area?: string | null
           preferred_room_types?: string[] | null
           preferred_university?: string | null
           profile_completion_score?: number | null
@@ -1722,9 +1738,11 @@ export type Database = {
           roommate_needed?: boolean | null
           roommates_needed?: number | null
           status?: string | null
+          town_village?: string | null
           university?: string | null
           updated_at?: string | null
           user_id?: string
+          year_of_study?: number | null
         }
         Relationships: []
       }
