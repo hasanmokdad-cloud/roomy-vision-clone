@@ -138,7 +138,7 @@ export default function Contact() {
       toast({
         title: 'Message Sent Successfully! ✉️',
         description: user?.id
-          ? "We've received your message and started a conversation. Check /messages to chat with our team!"
+          ? "We've received your message and started a conversation. Check your inbox to chat with our team!"
           : "Thank you for contacting Roomy! We'll get back to you within 24 hours.",
       });
 

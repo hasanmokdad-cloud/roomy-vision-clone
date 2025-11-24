@@ -256,11 +256,14 @@ export default function Messages() {
     if (data) {
       // Enrich with dorm and user names
       const enriched = await Promise.all(data.map(async (conv) => {
-        const { data: dorm } = await supabase
-          .from('dorms')
-          .select('dorm_name, name')
-          .eq('id', conv.dorm_id || '')
-          .maybeSingle();
+        // Only fetch dorm if dorm_id exists and conversation is not support type
+        const { data: dorm } = conv.dorm_id && conv.conversation_type !== 'support'
+          ? await supabase
+              .from('dorms')
+              .select('dorm_name, name')
+              .eq('id', conv.dorm_id)
+              .maybeSingle()
+          : { data: null };
 
         let otherUserName = 'User';
         let otherUserPhoto: string | null = null;
@@ -481,7 +484,10 @@ export default function Messages() {
                 conversations.map((conv) => (
                   <button
                     key={conv.id}
-                    onClick={() => loadMessages(conv.id)}
+                    onClick={() => {
+                      setSelectedConversation(conv.id);
+                      loadMessages(conv.id);
+                    }}
                     className={`w-full p-4 border-b border-border hover:bg-muted/50 transition-colors text-left ${
                       selectedConversation === conv.id ? 'bg-muted' : ''
                     }`}
