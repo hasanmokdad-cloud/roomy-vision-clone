@@ -54,6 +54,21 @@ type TypingStatus = {
   typing?: boolean;
 };
 
+// Format message body to handle old contact form submissions
+const formatMessageBody = (msg: Message): string => {
+  if (!msg.body) return '';
+  
+  // Detect old contact form format
+  if (msg.body.includes('**Contact Form Submission**')) {
+    const messageMatch = msg.body.match(/\*\*Message:\*\*\s*(.+)$/s);
+    if (messageMatch) {
+      return messageMatch[1].trim();
+    }
+  }
+  
+  return msg.body;
+};
+
 const MessageStatusIcon = ({ status }: { status?: 'sent' | 'delivered' | 'seen' }) => {
   switch (status) {
     case 'sent':
@@ -230,7 +245,7 @@ export default function Messages() {
       loadConversations();
     });
 
-    // Subscribe to message updates for real-time status changes
+    // Subscribe to message updates - only update status fields to prevent flickering
     const messagesUpdateChannel = supabase
       .channel('messages-updates')
       .on(
@@ -242,9 +257,25 @@ export default function Messages() {
         },
         (payload) => {
           const updatedMessage = payload.new as Message;
-          setMessages(prev =>
-            prev.map(m => (m.id === updatedMessage.id ? updatedMessage : m))
-          );
+          
+          // Only update if this message belongs to current conversation
+          if (updatedMessage.conversation_id === selectedConversation) {
+            setMessages(prev =>
+              prev.map(m => {
+                if (m.id === updatedMessage.id) {
+                  // Preserve local state, only update status-related fields
+                  return {
+                    ...m,
+                    status: updatedMessage.status,
+                    read: updatedMessage.read,
+                    delivered_at: updatedMessage.delivered_at,
+                    seen_at: updatedMessage.seen_at,
+                  };
+                }
+                return m;
+              })
+            );
+          }
         }
       )
       .subscribe();
@@ -931,7 +962,7 @@ export default function Messages() {
       );
     }
 
-    return <p className="text-sm whitespace-pre-wrap break-words">{msg.body}</p>;
+    return <p className="text-sm whitespace-pre-wrap break-words">{formatMessageBody(msg)}</p>;
   };
 
   const totalUnreadCount = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
@@ -1014,15 +1045,15 @@ export default function Messages() {
                         </div>
                       </div>
                     </button>
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ConversationContextMenu
-                        conversationId={conv.id}
-                        isPinned={conv.is_pinned || false}
-                        isArchived={conv.is_archived || false}
-                        mutedUntil={conv.muted_until || null}
-                        onUpdate={() => loadConversations()}
-                      />
-                    </div>
+              <div className="absolute top-2 right-2">
+                <ConversationContextMenu
+                  conversationId={conv.id}
+                  isPinned={conv.is_pinned || false}
+                  isArchived={conv.is_archived || false}
+                  mutedUntil={conv.muted_until || null}
+                  onUpdate={() => loadConversations()}
+                />
+              </div>
                   </div>
                 ))
               )}
@@ -1080,11 +1111,11 @@ export default function Messages() {
                                 minute: '2-digit',
                               })}
                             </span>
-                            {msg.sender_id === userId && msg.status && (
-                              <span className="ml-1">
-                                <MessageStatusIcon status={msg.status} />
-                              </span>
-                            )}
+                    {msg.sender_id === userId && (
+                      <span className="ml-1">
+                        <MessageStatusIcon status={msg.status || 'sent'} />
+                      </span>
+                    )}
                           </div>
                         </div>
                       </div>
