@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -263,24 +264,39 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate }: DormE
               </div>
             </div>
 
-            {/* Toggles */}
-            <div className="flex items-center gap-6">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="shuttle"
-                  checked={formData.shuttle}
-                  onCheckedChange={(checked) => setFormData({ ...formData, shuttle: checked as boolean })}
+            {/* Transportation */}
+            <div className="space-y-4">
+              <Label>Transportation</Label>
+              
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
+                <div className="flex-1">
+                  <Label htmlFor="walking-distance" className="font-medium">Within Walking Distance</Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Dorm is within walking distance to nearby universities
+                  </p>
+                </div>
+                <Switch
+                  id="walking-distance"
+                  checked={!formData.shuttle}
+                  onCheckedChange={(checked) => setFormData({ ...formData, shuttle: !checked })}
                 />
-                <label htmlFor="shuttle" className="text-sm cursor-pointer">Shuttle Available</label>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="available"
-                  checked={formData.available}
-                  onCheckedChange={(checked) => setFormData({ ...formData, available: checked as boolean })}
-                />
-                <label htmlFor="available" className="text-sm cursor-pointer">Available</label>
-              </div>
+
+              {formData.shuttle && (
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
+                  <div className="flex-1">
+                    <Label htmlFor="shuttle-service" className="font-medium">Shuttle Service Available</Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Provides transportation to nearby universities
+                    </p>
+                  </div>
+                  <Switch
+                    id="shuttle-service"
+                    checked={formData.shuttle}
+                    onCheckedChange={(checked) => setFormData({ ...formData, shuttle: checked })}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </ScrollArea>

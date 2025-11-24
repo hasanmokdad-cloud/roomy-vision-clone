@@ -171,7 +171,6 @@ export function AdminDormPreviewModal({ dorm, isOpen, onClose }: AdminDormPrevie
               <h4 className="font-semibold mb-2">Additional Features</h4>
               <div className="space-y-1 text-sm text-foreground/70">
                 <p>🚌 Shuttle Service: {dorm.shuttle ? 'Yes' : 'No'}</p>
-                <p>📦 Available: {dorm.available ? 'Yes' : 'No'}</p>
               </div>
             </div>
 
