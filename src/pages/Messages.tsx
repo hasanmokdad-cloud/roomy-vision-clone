@@ -186,16 +186,17 @@ export default function Messages() {
     // Subscribe to new messages using realtime utility
     const messagesChannel = subscribeTo("messages", async (payload) => {
       const newMessage = payload.new as Message;
+      
       if (newMessage.conversation_id === selectedConversation) {
-        // Add deduplication to prevent infinite loops
-        setMessages(prev => {
-          const exists = prev.some(m => m.id === newMessage.id);
-          if (exists) return prev;
-          return [...prev, newMessage];
-        });
-        
-        // Automatically mark as delivered when received
+        // Only add messages from OTHER users - sender's messages already added optimistically
         if (newMessage.sender_id !== userId) {
+          setMessages(prev => {
+            const exists = prev.some(m => m.id === newMessage.id);
+            if (exists) return prev;
+            return [...prev, newMessage];
+          });
+          
+          // Automatically mark as delivered when received
           await supabase
             .from('messages')
             .update({ 
@@ -206,6 +207,11 @@ export default function Messages() {
           
           // Mark as seen since conversation is open
           markAsRead(newMessage.id);
+        } else {
+          // Update the sender's own message status if it was updated
+          setMessages(prev =>
+            prev.map(m => (m.id === newMessage.id ? { ...m, ...newMessage } : m))
+          );
         }
       } else {
         // Message in different conversation, just mark as delivered
@@ -219,6 +225,9 @@ export default function Messages() {
             .eq('id', newMessage.id);
         }
       }
+      
+      // Reload conversations to update last message & unread counts
+      loadConversations();
     });
 
     // Subscribe to message updates for real-time status changes
@@ -490,9 +499,19 @@ export default function Messages() {
           unreadCount = count || 0;
         }
 
-        const lastMessage = lastMsg?.attachment_type
-          ? `📎 ${lastMsg.attachment_type === 'image' ? 'Photo' : lastMsg.attachment_type === 'video' ? 'Video' : 'Voice message'}`
-          : lastMsg?.body || '';
+        // Format last message preview with emojis
+        let lastMessage = '';
+        if (lastMsg) {
+          if (lastMsg.attachment_type === 'audio') {
+            lastMessage = '🎤 Voice message';
+          } else if (lastMsg.attachment_type === 'image') {
+            lastMessage = '📷 Photo';
+          } else if (lastMsg.attachment_type === 'video') {
+            lastMessage = '🎥 Video';
+          } else {
+            lastMessage = lastMsg.body?.substring(0, 50) || '';
+          }
+        }
 
         return {
           ...conv,
@@ -829,6 +848,24 @@ export default function Messages() {
     if (!messageInput.trim() || !selectedConversation || !userId) return;
 
     setSending(true);
+    const tempId = crypto.randomUUID();
+    const messageText = messageInput.trim();
+    
+    // Create optimistic message
+    const optimisticMessage: Message = {
+      id: tempId,
+      conversation_id: selectedConversation,
+      sender_id: userId,
+      body: messageText,
+      created_at: new Date().toISOString(),
+      status: 'sent',
+      read: false
+    };
+    
+    // Add optimistically for instant feedback
+    setMessages(prev => [...prev, optimisticMessage]);
+    setMessageInput('');
+    
     try {
       // Stop typing indicator
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -836,19 +873,32 @@ export default function Messages() {
         presenceChannelRef.current.untrack();
       }
 
-      const { error } = await supabase.from('messages').insert({
-        conversation_id: selectedConversation,
-        sender_id: userId,
-        body: messageInput.trim(),
-        status: 'sent',
-      });
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: selectedConversation,
+          sender_id: userId,
+          body: messageText,
+          status: 'sent',
+        })
+        .select()
+        .single();
 
       if (error) throw error;
-
-      setMessageInput('');
+      
+      if (data) {
+        // Replace temp message with real one
+        setMessages(prev => 
+          prev.map(m => m.id === tempId ? data as Message : m)
+        );
+      }
     } catch (error: any) {
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      setMessageInput(messageText); // Restore input
+      
       toast({
-        title: 'Error',
+        title: 'Failed to send message',
         description: error.message,
         variant: 'destructive',
       });
@@ -954,9 +1004,9 @@ export default function Messages() {
                               <p className="font-semibold text-sm truncate">{conv.other_user_name}</p>
                             </div>
                             {conv.unreadCount > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date()) && (
-                              <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-primary-foreground bg-primary rounded-full shrink-0">
-                                {conv.unreadCount}
-                              </span>
+                              <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-primary-foreground bg-primary rounded-full shrink-0">
+                                {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
+                              </div>
                             )}
                           </div>
                           <p className="text-xs text-foreground/60 truncate">{conv.last_message}</p>
