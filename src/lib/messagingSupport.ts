@@ -70,25 +70,13 @@ export async function createSupportThreadAndMessage({
       console.log("[SupportDM] Created new conversation:", conversationId);
     }
 
-    // 4. Insert formatted message
-    const composedText = [
-      "📨 **Contact Form Submission**",
-      "",
-      `**Name:** ${meta.first_name} ${meta.last_name || ""}`,
-      `**Email:** ${meta.email}`,
-      meta.university ? `**University:** ${meta.university}` : null,
-      "",
-      "**Message:**",
-      messageText,
-    ]
-      .filter(Boolean)
-      .join("\n");
-
+    // 4. Insert plain message text only
     const { error: msgError } = await supabase.from("messages").insert({
       conversation_id: conversationId,
       sender_id: senderUserId,
-      body: composedText,
+      body: messageText,
       read: false,
+      status: 'sent',
     });
 
     if (msgError) {

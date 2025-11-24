@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, ArrowLeft, MessageSquare } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Check, CheckCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -34,6 +34,9 @@ type Message = {
   body: string;
   created_at: string;
   read?: boolean;
+  status?: 'sent' | 'delivered' | 'seen';
+  delivered_at?: string | null;
+  seen_at?: string | null;
 };
 
 type TypingStatus = {
@@ -59,7 +62,7 @@ export default function Messages() {
 
   // Debug log for cache verification
   useEffect(() => {
-    console.log('[Messages] Component mounted - version 2.0');
+    console.log('[Messages] Component mounted - version 3.0 with typing & status');
   }, []);
 
   // Handle auto-open from navigation state
@@ -131,7 +134,8 @@ export default function Messages() {
               conversation_id: conversationId,
               sender_id: userId,
               body: initialMessage,
-              read: false
+              read: false,
+              status: 'sent',
             });
           }
         }
@@ -149,10 +153,23 @@ export default function Messages() {
     loadConversations();
 
     // Subscribe to new messages using realtime utility
-    const messagesChannel = subscribeTo("messages", (payload) => {
+    const messagesChannel = subscribeTo("messages", async (payload) => {
       const newMessage = payload.new as Message;
       if (newMessage.conversation_id === selectedConversation) {
         setMessages(prev => [...prev, newMessage]);
+        
+        // Mark as delivered if received by other user
+        if (newMessage.sender_id !== userId && newMessage.status === 'sent') {
+          await supabase
+            .from('messages')
+            .update({ 
+              status: 'delivered',
+              delivered_at: new Date().toISOString()
+            })
+            .eq('id', newMessage.id);
+        }
+        
+        // Mark as read if it's from someone else
         if (newMessage.sender_id !== userId) {
           markAsRead(newMessage.id);
         }
@@ -196,7 +213,11 @@ export default function Messages() {
   const markAsRead = async (messageId: string) => {
     await supabase
       .from('messages')
-      .update({ read: true })
+      .update({ 
+        read: true,
+        status: 'seen',
+        seen_at: new Date().toISOString()
+      })
       .eq('id', messageId);
   };
 
@@ -343,14 +364,19 @@ export default function Messages() {
       .order('created_at', { ascending: true });
 
     if (data) {
-      setMessages(data);
-      // Mark all as read
-      const unreadIds = data.filter(m => m.sender_id !== userId && !m.read).map(m => m.id);
-      if (unreadIds.length > 0) {
+      setMessages(data as Message[]);
+      
+      // Mark all unseen messages as seen
+      const unseenIds = data.filter(m => m.sender_id !== userId && m.status !== 'seen').map(m => m.id);
+      if (unseenIds.length > 0) {
         await supabase
           .from('messages')
-          .update({ read: true })
-          .in('id', unreadIds);
+          .update({ 
+            read: true,
+            status: 'seen',
+            seen_at: new Date().toISOString()
+          })
+          .in('id', unseenIds);
       }
     }
   };
@@ -414,6 +440,7 @@ export default function Messages() {
           conversation_id: conversationId,
           sender_id: userId,
           body: initialMessage,
+          status: 'sent',
         });
 
         await loadMessages(conversationId);
@@ -434,19 +461,21 @@ export default function Messages() {
 
     setSending(true);
     try {
+      // Stop typing indicator
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      const channel = supabase.channel('typing-presence');
+      channel.untrack();
+
       const { error } = await supabase.from('messages').insert({
         conversation_id: selectedConversation,
         sender_id: userId,
         body: messageInput.trim(),
+        status: 'sent',
       });
 
       if (error) throw error;
 
       setMessageInput('');
-      
-      // Stop typing indicator
-      const channel = supabase.channel('typing-presence');
-      channel.untrack();
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -560,16 +589,35 @@ export default function Messages() {
                               : 'bg-muted text-foreground'
                           }`}
                         >
-                          <p className="text-sm">{msg.body}</p>
-                          <p className="text-xs opacity-70 mt-1">
-                            {new Date(msg.created_at).toLocaleTimeString('en-US', {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })}
-                          </p>
+                          <p className="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
+                          <div className="flex items-center gap-1 text-xs opacity-70 mt-1">
+                            <span>
+                              {new Date(msg.created_at).toLocaleTimeString('en-US', {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                            {msg.sender_id === userId && msg.status && (
+                              <span className="ml-1">
+                                {msg.status === 'sent' && <Check className="w-3 h-3 inline" />}
+                                {msg.status === 'delivered' && <CheckCheck className="w-3 h-3 inline" />}
+                                {msg.status === 'seen' && <CheckCheck className="w-3 h-3 inline text-blue-400" />}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
+                    
+                    {/* Typing indicator */}
+                    {typingUsers.size > 0 && (
+                      <div className="flex justify-start">
+                        <div className="bg-muted rounded-2xl px-4 py-3 text-foreground/60 italic text-sm">
+                          Typing...
+                        </div>
+                      </div>
+                    )}
+                    
                     <div ref={messagesEndRef} />
                   </div>
                 </ScrollArea>
@@ -579,7 +627,10 @@ export default function Messages() {
                     <Input
                       placeholder="Type a message..."
                       value={messageInput}
-                      onChange={(e) => setMessageInput(e.target.value)}
+                      onChange={(e) => {
+                        setMessageInput(e.target.value);
+                        handleTyping();
+                      }}
                       onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                       disabled={sending}
                     />
