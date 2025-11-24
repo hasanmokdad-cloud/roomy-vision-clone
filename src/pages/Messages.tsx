@@ -17,8 +17,9 @@ import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
 type Conversation = {
   id: string;
   dorm_id: string | null;
-  owner_id: string;
+  owner_id: string | null;
   student_id: string;
+  conversation_type?: string;
   updated_at: string;
   other_user_name?: string;
   dorm_name?: string;
@@ -56,74 +57,86 @@ export default function Messages() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Handle auto-open/auto-send from match links
+  // Handle auto-open from navigation state
   useEffect(() => {
-    if (!userId || !location.state?.openThreadWithUserId) return;
-    
-    const openAndSendMessage = async () => {
-      const targetUserId = location.state.openThreadWithUserId;
-      const initialMessage = location.state.initialMessage;
+    if (!userId) return;
 
-      // Find or create conversation
-      const { data: student } = await supabase
-        .from('students')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      const { data: targetStudent } = await supabase
-        .from('students')
-        .select('id')
-        .eq('user_id', targetUserId)
-        .maybeSingle();
-
-      if (!student || !targetStudent) return;
-
-      // Check if conversation exists
-      let conversationId: string | null = null;
-      const { data: existingConv } = await supabase
-        .from('conversations')
-        .select('id')
-        .or(`and(student_id.eq.${student.id},owner_id.eq.${targetStudent.id}),and(student_id.eq.${targetStudent.id},owner_id.eq.${student.id})`)
-        .maybeSingle();
-
-      if (existingConv) {
-        conversationId = existingConv.id;
-      } else {
-        // Create new conversation (treating both as students, use a placeholder for owner_id)
-        const { data: newConv } = await supabase
-          .from('conversations')
-          .insert({
-            student_id: student.id,
-            owner_id: targetStudent.id, // Using as peer
-            dorm_id: null
-          })
-          .select('id')
-          .single();
-        
-        if (newConv) conversationId = newConv.id;
-      }
-
-      if (conversationId) {
-        setSelectedConversation(conversationId);
-        await loadMessages(conversationId);
-
-        // Send initial message if provided
-        if (initialMessage) {
-          await supabase.from('messages').insert({
-            conversation_id: conversationId,
-            sender_id: userId,
-            body: initialMessage,
-            read: false
-          });
-        }
-      }
-
-      // Clear location state
+    // Check for pre-selected conversation from navigation state (e.g., from admin inbox)
+    if (location.state?.selectedConversationId) {
+      setSelectedConversation(location.state.selectedConversationId);
+      loadMessages(location.state.selectedConversationId);
+      // Clear state
       navigate(location.pathname, { replace: true, state: {} });
-    };
+      return;
+    }
 
-    openAndSendMessage();
+    // Handle auto-open/auto-send from match links
+    if (location.state?.openThreadWithUserId) {
+      const openAndSendMessage = async () => {
+        const targetUserId = location.state.openThreadWithUserId;
+        const initialMessage = location.state.initialMessage;
+
+        // Find or create conversation
+        const { data: student } = await supabase
+          .from('students')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        const { data: targetStudent } = await supabase
+          .from('students')
+          .select('id')
+          .eq('user_id', targetUserId)
+          .maybeSingle();
+
+        if (!student || !targetStudent) return;
+
+        // Check if conversation exists
+        let conversationId: string | null = null;
+        const { data: existingConv } = await supabase
+          .from('conversations')
+          .select('id')
+          .or(`and(student_id.eq.${student.id},owner_id.eq.${targetStudent.id}),and(student_id.eq.${targetStudent.id},owner_id.eq.${student.id})`)
+          .maybeSingle();
+
+        if (existingConv) {
+          conversationId = existingConv.id;
+        } else {
+          // Create new conversation (treating both as students, use a placeholder for owner_id)
+          const { data: newConv } = await supabase
+            .from('conversations')
+            .insert({
+              student_id: student.id,
+              owner_id: targetStudent.id, // Using as peer
+              dorm_id: null
+            })
+            .select('id')
+            .single();
+          
+          if (newConv) conversationId = newConv.id;
+        }
+
+        if (conversationId) {
+          setSelectedConversation(conversationId);
+          await loadMessages(conversationId);
+
+          // Send initial message if provided
+          if (initialMessage) {
+            await supabase.from('messages').insert({
+              conversation_id: conversationId,
+              sender_id: userId,
+              body: initialMessage,
+              read: false
+            });
+          }
+        }
+
+        // Clear location state
+        navigate(location.pathname, { replace: true, state: {} });
+      };
+
+      openAndSendMessage();
+    }
   }, [userId, location.state]);
 
   useEffect(() => {
@@ -207,7 +220,13 @@ export default function Messages() {
   const loadConversations = async () => {
     if (!userId) return;
 
-    // Get user role
+    // Get user role - check admin first
+    const { data: admin } = await supabase
+      .from('admins')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
     const { data: student } = await supabase
       .from('students')
       .select('id')
@@ -222,7 +241,10 @@ export default function Messages() {
 
     let query = supabase.from('conversations').select('*').order('updated_at', { ascending: false });
 
-    if (student) {
+    if (admin) {
+      // Admins see all support conversations
+      query = query.eq('conversation_type', 'support');
+    } else if (student) {
       query = query.eq('student_id', student.id);
     } else if (owner) {
       query = query.eq('owner_id', owner.id);
@@ -242,21 +264,44 @@ export default function Messages() {
 
         let otherUserName = 'User';
         let otherUserPhoto: string | null = null;
-        if (student) {
-          const { data: ownerData } = await supabase
-            .from('owners')
-            .select('full_name')
-            .eq('id', conv.owner_id)
-            .maybeSingle();
-          otherUserName = ownerData?.full_name || 'Owner';
+
+        // Handle support conversations differently
+        if (conv.conversation_type === 'support') {
+          if (admin) {
+            // Admin viewing: show student name
+            const { data: studentData } = await supabase
+              .from('students')
+              .select('full_name, profile_photo_url')
+              .eq('id', conv.student_id)
+              .maybeSingle();
+            otherUserName = studentData?.full_name || 'Student';
+            otherUserPhoto = studentData?.profile_photo_url || null;
+          } else {
+            // Student viewing: show "Roomy Support"
+            otherUserName = 'Roomy Support';
+          }
         } else {
-          const { data: studentData } = await supabase
-            .from('students')
-            .select('full_name, profile_photo_url')
-            .eq('id', conv.student_id)
-            .maybeSingle();
-          otherUserName = studentData?.full_name || 'Student';
-          otherUserPhoto = studentData?.profile_photo_url || null;
+          // Regular dorm conversations
+          if (student) {
+            if (conv.owner_id) {
+              const { data: ownerData } = await supabase
+                .from('owners')
+                .select('full_name')
+                .eq('id', conv.owner_id)
+                .maybeSingle();
+              otherUserName = ownerData?.full_name || 'Owner';
+            } else {
+              otherUserName = 'Support';
+            }
+          } else {
+            const { data: studentData } = await supabase
+              .from('students')
+              .select('full_name, profile_photo_url')
+              .eq('id', conv.student_id)
+              .maybeSingle();
+            otherUserName = studentData?.full_name || 'Student';
+            otherUserPhoto = studentData?.profile_photo_url || null;
+          }
         }
 
         // Get last message
@@ -272,7 +317,7 @@ export default function Messages() {
           ...conv,
           other_user_name: otherUserName,
           other_user_photo: otherUserPhoto,
-          dorm_name: dorm?.dorm_name || dorm?.name || 'Dorm',
+          dorm_name: dorm?.dorm_name || dorm?.name || (conv.conversation_type === 'support' ? 'Support' : 'Dorm'),
           last_message: lastMsg?.body
         };
       }));
