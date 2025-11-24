@@ -691,7 +691,8 @@ export default function Messages() {
         audioChunksRef.current = [];
       };
 
-      mediaRecorder.start(100);
+      // Use larger timeslice for more reliable recording
+      mediaRecorder.start(1000); // 1 second chunks
       setRecording(true);
       
       toast({
@@ -715,10 +716,27 @@ export default function Messages() {
     }
   };
 
+  // Helper to calculate audio duration
+  const getAudioDuration = async (blob: Blob): Promise<number> => {
+    try {
+      const arrayBuffer = await blob.arrayBuffer();
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      await audioContext.close();
+      return Math.round(audioBuffer.duration);
+    } catch (error) {
+      console.error('Error calculating audio duration:', error);
+      return 0;
+    }
+  };
+
   const uploadVoiceMessage = async (audioBlob: Blob) => {
     if (!selectedConversation || !userId) return;
 
     try {
+      // Calculate duration
+      const duration = await getAudioDuration(audioBlob);
+      
       // Determine file extension based on MIME type
       const extension = audioBlob.type.includes('webm') ? 'webm' 
         : audioBlob.type.includes('mp4') ? 'mp4' 
@@ -748,6 +766,8 @@ export default function Messages() {
         body: '',
         attachment_type: 'audio',
         attachment_url: publicUrl,
+        attachment_duration: duration,
+        attachment_metadata: { mimeType: audioBlob.type },
         status: 'sent',
       });
 

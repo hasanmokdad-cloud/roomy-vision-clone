@@ -16,6 +16,7 @@ interface FiltersPanelProps {
     cities?: string[];
     shuttle?: 'all' | 'available' | 'none';
     genderPreference?: string[];
+    amenities?: string[];
   };
   onFilterChange: (filters: any) => void;
   dorms: any[];
@@ -83,6 +84,26 @@ const budgetPresets = [
 
 const capacityOptions = [1, 2, 3, 4, 5, 6];
 
+// Amenities options matching DormForm
+const amenitiesOptions = [
+  'WiFi',
+  'Laundry',
+  'Gym',
+  'Pool',
+  'Parking',
+  'Security',
+  'Kitchen',
+  'Study Room',
+  'Garden',
+  'Common Area',
+  'Air Conditioning',
+  'Heating',
+  'Elevator',
+  'Furnished',
+  'Pet Friendly',
+  'Cleaning Service',
+];
+
 // Whitelist of acceptable room types in order
 const acceptableRoomTypes = [
   'Single',
@@ -113,11 +134,12 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
       roomTypes: [],
       capacity: undefined,
       cities: [],
-      shuttle: 'all'
+      shuttle: 'all',
+      amenities: []
     });
   };
 
-  const toggleFilter = (category: 'universities' | 'areas' | 'roomTypes' | 'cities', value: string) => {
+  const toggleFilter = (category: 'universities' | 'areas' | 'roomTypes' | 'cities' | 'amenities', value: string) => {
     const current = filters[category] as string[];
     const updated = current.includes(value)
       ? current.filter(v => v !== value)
@@ -363,6 +385,30 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
                   className="text-sm cursor-pointer flex-1"
                 >
                   {type}
+                </label>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Amenities */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold">Amenities</Label>
+        <ScrollArea className="h-48 rounded-lg border border-white/10 p-2">
+          <div className="space-y-2">
+            {amenitiesOptions.map(amenity => (
+              <div key={amenity} className="flex items-center space-x-2 hover:bg-white/5 p-1 rounded transition-colors">
+                <Checkbox
+                  id={`amenity-${amenity}`}
+                  checked={filters.amenities?.includes(amenity) || false}
+                  onCheckedChange={() => toggleFilter('amenities', amenity)}
+                />
+                <label
+                  htmlFor={`amenity-${amenity}`}
+                  className="text-sm cursor-pointer flex-1"
+                >
+                  {amenity}
                 </label>
               </div>
             ))}

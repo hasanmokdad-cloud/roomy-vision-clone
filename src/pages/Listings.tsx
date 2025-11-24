@@ -43,6 +43,7 @@ export default function Listings() {
     cities: [] as string[],
     shuttle: 'all' as 'all' | 'available' | 'none',
     genderPreference: [] as string[],
+    amenities: [] as string[],
   });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
