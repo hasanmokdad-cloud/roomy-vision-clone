@@ -108,7 +108,7 @@ export default function Navbar() {
         role="navigation"
         aria-label="Main navigation"
         style={{ opacity: scrolled ? 0.98 : 1 }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`hidden md:block fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled 
             ? theme === "light"
               ? 'bg-white/95 backdrop-blur-xl shadow-lg text-gray-900'
