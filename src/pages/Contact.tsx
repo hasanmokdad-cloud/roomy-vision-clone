@@ -90,7 +90,11 @@ export default function Contact() {
 
     // Submit to database with sanitized input
     try {
-      const { error } = await supabase.from('contact_messages').insert({
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // 1. Insert into contact_messages for admin tracking
+      const { error: contactError } = await supabase.from('contact_messages').insert({
         first_name: sanitizeInput(formData.firstName),
         last_name: sanitizeInput(formData.lastName),
         email: formData.email,
@@ -99,7 +103,64 @@ export default function Contact() {
         status: 'new'
       });
 
-      if (error) throw error;
+      if (contactError) throw contactError;
+
+      // 2. If user is logged in, create a conversation with admin
+      if (user) {
+        // Get student_id
+        const { data: studentData } = await supabase
+          .from('students')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (studentData) {
+          // Get first admin owner record (admins don't use conversations table properly, so we'll use owner_id as null)
+          // Check if conversation already exists
+          let conversationId;
+          const { data: existingConv } = await supabase
+            .from('conversations')
+            .select('id')
+            .eq('student_id', studentData.id)
+            .is('dorm_id', null)
+            .maybeSingle();
+
+          if (existingConv) {
+            conversationId = existingConv.id;
+          } else {
+            // Create new conversation - use a dummy owner_id since conversations require it
+            // We'll need to get the first owner (which could be admin acting as owner)
+            const { data: firstOwner } = await supabase
+              .from('owners')
+              .select('id')
+              .limit(1)
+              .maybeSingle();
+
+            if (firstOwner) {
+              const { data: newConv } = await supabase
+                .from('conversations')
+                .insert({
+                  student_id: studentData.id,
+                  owner_id: firstOwner.id,
+                  dorm_id: null
+                })
+                .select('id')
+                .single();
+
+              conversationId = newConv?.id;
+            }
+          }
+
+          // Insert message
+          if (conversationId) {
+            await supabase.from('messages').insert({
+              conversation_id: conversationId,
+              sender_id: user.id,
+              body: `[Contact Form Submission]\n\nUniversity: ${sanitizeInput(formData.university)}\n\n${sanitizeInput(formData.message)}`,
+            });
+          }
+        }
+      }
 
       toast({
         title: 'Message Sent Successfully! ✨',

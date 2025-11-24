@@ -7,7 +7,7 @@ interface MobileSwipeLayoutProps {
   children: ReactNode;
 }
 
-const mobilePages = ['/dashboard', '/messages', '/listings', '/ai-match', '/profile'];
+const mobilePages = ['/settings', '/messages', '/listings', '/ai-match', '/profile'];
 
 export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
   const isMobile = useIsMobile();

@@ -237,11 +237,15 @@ export default function Settings() {
       <div className="container mx-auto px-6 py-32 max-w-4xl">
         <Button
           variant="ghost"
-          onClick={() => navigate(role === 'student' ? '/listings' : '/dashboard')}
+          onClick={() => {
+            if (role === 'admin') navigate('/admin');
+            else if (role === 'owner') navigate('/owner');
+            else navigate('/listings');
+          }}
           className="mb-6"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          {role === 'student' ? 'Back to Dorms' : 'Back to Dashboard'}
+          {(role === 'admin' || role === 'owner') ? 'Back to Control Panel' : 'Back to Dorms'}
         </Button>
 
         <motion.div

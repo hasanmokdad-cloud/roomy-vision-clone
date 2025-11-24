@@ -14,9 +14,9 @@ interface MobileProfileMenuProps {
 }
 
 export function MobileProfileMenu({ open, onClose, onSignOut, userEmail }: MobileProfileMenuProps) {
-  const [dashboardHref, setDashboardHref] = useState('/dashboard');
+  const [controlPanelHref, setControlPanelHref] = useState<string | null>(null);
 
-  // Fetch user role and set appropriate dashboard link
+  // Fetch user role and set control panel link
   useEffect(() => {
     const fetchUserRole = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -31,11 +31,11 @@ export function MobileProfileMenu({ open, onClose, onSignOut, userEmail }: Mobil
       const roleName = roleRow?.roles?.name;
 
       if (roleName === "admin") {
-        setDashboardHref("/admin");
+        setControlPanelHref("/admin");
       } else if (roleName === "owner") {
-        setDashboardHref("/owner");
+        setControlPanelHref("/owner");
       } else {
-        setDashboardHref("/dashboard");
+        setControlPanelHref(null);
       }
     };
 
@@ -47,8 +47,7 @@ export function MobileProfileMenu({ open, onClose, onSignOut, userEmail }: Mobil
   const menuItems = [
     { icon: User, label: 'My Profile', href: '/profile' },
     { icon: Edit, label: 'Edit Profile', href: '/profile' },
-    { icon: Settings, label: 'Settings', href: '/settings' },
-    { icon: LayoutDashboard, label: 'Dashboard', href: dashboardHref },
+    ...(controlPanelHref ? [{ icon: LayoutDashboard, label: 'Control Panel', href: controlPanelHref }] : []),
   ];
 
   return (
