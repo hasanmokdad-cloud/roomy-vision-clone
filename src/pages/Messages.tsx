@@ -296,6 +296,8 @@ export default function Messages() {
   }, [showArchived]);
 
   const markAsRead = async (messageId: string) => {
+    if (!userId || !selectedConversation) return;
+    
     await supabase
       .from('messages')
       .update({ 
@@ -304,6 +306,16 @@ export default function Messages() {
         seen_at: new Date().toISOString()
       })
       .eq('id', messageId);
+    
+    // Update user_thread_state to reflect the latest read time
+    await supabase.from('user_thread_state').upsert(
+      {
+        thread_id: selectedConversation,
+        user_id: userId,
+        last_read_at: new Date().toISOString(),
+      },
+      { onConflict: 'thread_id,user_id' }
+    );
   };
 
   const handleTyping = () => {
@@ -641,7 +653,10 @@ export default function Messages() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm') 
+      // Prefer opus codec for better quality and compatibility
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
         ? 'audio/webm'
         : MediaRecorder.isTypeSupported('audio/mp4')
         ? 'audio/mp4'
@@ -704,12 +719,22 @@ export default function Messages() {
     if (!selectedConversation || !userId) return;
 
     try {
-      const fileName = `voice-${Date.now()}.webm`;
+      // Determine file extension based on MIME type
+      const extension = audioBlob.type.includes('webm') ? 'webm' 
+        : audioBlob.type.includes('mp4') ? 'mp4' 
+        : audioBlob.type.includes('ogg') ? 'ogg' 
+        : 'webm';
+      
+      const fileName = `voice-${Date.now()}.${extension}`;
       const filePath = `${userId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('message-media')
-        .upload(filePath, audioBlob);
+        .upload(filePath, audioBlob, {
+          contentType: audioBlob.type || 'audio/webm',
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) throw uploadError;
 
@@ -728,6 +753,7 @@ export default function Messages() {
 
       toast({ title: 'Voice message sent' });
     } catch (error: any) {
+      console.error('Voice message upload error:', error);
       toast({
         title: 'Upload failed',
         description: error.message,
@@ -979,6 +1005,8 @@ export default function Messages() {
                       size="icon"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploading}
+                      aria-label="Attach image or video"
+                      title="Attach image or video"
                     >
                       {uploading ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -995,6 +1023,8 @@ export default function Messages() {
                       onMouseUp={stopRecording}
                       onTouchStart={startRecording}
                       onTouchEnd={stopRecording}
+                      aria-label="Record voice message"
+                      title="Hold to record voice message"
                     >
                       <Mic className={`w-5 h-5 ${recording ? 'text-red-500' : ''}`} />
                     </Button>
@@ -1009,9 +1039,16 @@ export default function Messages() {
                       onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                       disabled={sending}
                       className="flex-1"
+                      aria-label="Message input"
                     />
 
-                    <Button onClick={sendMessage} disabled={sending || !messageInput.trim()} size="icon">
+                    <Button 
+                      onClick={sendMessage} 
+                      disabled={sending || !messageInput.trim()} 
+                      size="icon"
+                      aria-label="Send message"
+                      title="Send message"
+                    >
                       <Send className="w-4 h-4" />
                     </Button>
                   </div>
