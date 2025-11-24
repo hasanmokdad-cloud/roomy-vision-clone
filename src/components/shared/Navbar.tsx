@@ -22,7 +22,6 @@ import {
 } from '@/components/ui/sheet';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
 import { useTheme } from '@/contexts/ThemeContext';
-import { NotificationsPanel } from '@/components/shared/NotificationsPanel';
 
 export default function Navbar() {
   const [authOpen, setAuthOpen] = useState(false);
@@ -32,14 +31,6 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   const { unreadCount, refresh } = useUnreadCount(user?.id || null);
-
-  // Make refresh available globally for Messages page
-  useEffect(() => {
-    (window as any).refreshUnreadCount = refresh;
-    return () => {
-      delete (window as any).refreshUnreadCount;
-    };
-  }, [refresh]);
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -255,21 +246,18 @@ export default function Navbar() {
 
               {user ? (
                 <div className="flex items-center gap-2">
-                  {/* Notifications Panel */}
-                  <NotificationsPanel userId={user.id} />
-                  
-                  {/* Messages with Unread Badge */}
+                  {/* Messages with Unread Badge - Hidden on mobile */}
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="relative"
+                    className="relative hidden md:flex"
                     asChild
                   >
                     <Link to="/messages" aria-label="Messages">
                       <MessageSquare className="w-5 h-5" />
                       {unreadCount > 0 && (
-                        <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                          {unreadCount}
+                        <Badge className="absolute -top-1 -right-1 h-5 min-w-[20px] flex items-center justify-center p-0 text-[10px]">
+                          {unreadCount > 9 ? '9+' : unreadCount}
                         </Badge>
                       )}
                     </Link>

@@ -109,8 +109,20 @@ export default function RoomContactCard({ room, dormId, dormName, ownerId, index
         });
       }
 
-      // Navigate to messages
-      navigate('/messages');
+      // Navigate to messages with room metadata
+      navigate('/messages', {
+        state: {
+          openConversationId: conversationId,
+          roomPreview: {
+            dormId,
+            dormName,
+            roomType: room.type,
+            roomPrice: room.price,
+            roomCapacity: room.capacity,
+          }
+        }
+      });
+      
       toast({
         title: 'Conversation started',
         description: 'You can now chat with the dorm owner',

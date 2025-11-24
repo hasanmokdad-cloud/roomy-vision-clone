@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { supabase } from "@/integrations/supabase/client";
+import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { MobileProfileMenu } from "@/components/mobile/MobileProfileMenu";
 import {
   Settings,
@@ -19,11 +20,16 @@ export default function MobileTabs() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string>();
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const { unreadCount } = useUnreadCount(userId);
 
   useEffect(() => {
-    const fetchUserRole = async () => {
+    const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      setUserId(user.id);
+      setUserEmail(user.email);
 
       const { data: roleRow } = await supabase
         .from("user_roles")
@@ -34,19 +40,19 @@ export default function MobileTabs() {
       setUserRole(roleRow?.roles?.name || null);
     };
 
-    fetchUserRole();
+    fetchUserData();
   }, []);
 
   // Owner has unique 3-icon layout
   const tabs = userRole === 'owner' 
     ? [
         { path: "/settings", icon: Settings, label: "Settings" },
-        { path: "/messages", icon: MessageSquare, label: "Messages", center: true },
+        { path: "/messages", icon: MessageSquare, label: "Messages", center: true, badge: unreadCount },
         { path: "/profile", icon: User, label: "Profile", isProfile: true },
       ]
     : [
         { path: "/settings", icon: Settings, label: "Settings" },
-        { path: "/messages", icon: MessageSquare, label: "Messages" },
+        { path: "/messages", icon: MessageSquare, label: "Messages", badge: unreadCount },
         { path: "/listings", icon: Building2, label: "Dorms", center: true },
         { path: "/ai-match", icon: Sparkles, label: "AI Match" },
         { path: "/profile", icon: User, label: "Profile", isProfile: true },
@@ -94,7 +100,7 @@ export default function MobileTabs() {
         className="fixed bottom-0 left-0 w-full bg-background/95 dark:bg-background/98 backdrop-blur-lg shadow-[0_-2px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_-2px_20px_rgba(0,0,0,0.3)] border-t border-border md:hidden flex justify-around items-center py-2 z-50 safe-area-inset-bottom"
         {...swipeHandlers}
       >
-        {tabs.map(({ path, icon: Icon, label, center, isProfile }) => {
+        {tabs.map(({ path, icon: Icon, label, center, isProfile, badge }) => {
           const active = location.pathname === path || location.pathname.startsWith(path);
           
           if (center) {
@@ -139,6 +145,11 @@ export default function MobileTabs() {
                       className="absolute -bottom-1 w-1 h-1 rounded-full bg-primary"
                       transition={{ type: "spring", stiffness: 380, damping: 30 }}
                     />
+                  )}
+                  {badge !== undefined && badge > 0 && (
+                    <div className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
+                      {badge > 9 ? '9+' : badge}
+                    </div>
                   )}
                 </>
               )}
