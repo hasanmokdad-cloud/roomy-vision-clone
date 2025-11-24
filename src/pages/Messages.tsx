@@ -158,57 +158,96 @@ export default function Messages() {
       return;
     }
 
-    // Handle auto-open/auto-send from match links
+    // Handle auto-open/auto-send from match links or Contact button
     if (location.state?.openThreadWithUserId) {
       const openAndSendMessage = async () => {
         const targetUserId = location.state.openThreadWithUserId;
-        const initialMessage = location.state.initialMessage;
+        const initialMessage = location.state.initialMessage || 'Hi there!';
+        const roomPreview = location.state.roomPreview;
 
-        // Find or create conversation
+        // Get current user's student profile
         const { data: student } = await supabase
           .from('students')
           .select('id')
           .eq('user_id', userId)
           .maybeSingle();
 
-        const { data: targetStudent } = await supabase
-          .from('students')
+        if (!student) return;
+
+        let conversationId: string | null = null;
+
+        // Check if target is an owner
+        const { data: targetOwner } = await supabase
+          .from('owners')
           .select('id')
           .eq('user_id', targetUserId)
           .maybeSingle();
 
-        if (!student || !targetStudent) return;
-
-        // Check if conversation exists
-        let conversationId: string | null = null;
-        const { data: existingConv } = await supabase
-          .from('conversations')
-          .select('id')
-          .or(`and(student_id.eq.${student.id},owner_id.eq.${targetStudent.id}),and(student_id.eq.${targetStudent.id},owner_id.eq.${student.id})`)
-          .maybeSingle();
-
-        if (existingConv) {
-          conversationId = existingConv.id;
-        } else {
-          // Create new conversation (treating both as students, use a placeholder for owner_id)
-          const { data: newConv } = await supabase
+        if (targetOwner) {
+          // Student → Owner conversation
+          const { data: existingConv } = await supabase
             .from('conversations')
-            .insert({
-              student_id: student.id,
-              owner_id: targetStudent.id, // Using as peer
-              dorm_id: null
-            })
             .select('id')
-            .single();
-          
-          if (newConv) conversationId = newConv.id;
+            .eq('student_id', student.id)
+            .eq('owner_id', targetOwner.id)
+            .maybeSingle();
+
+          if (existingConv) {
+            conversationId = existingConv.id;
+          } else {
+            // Create new student-owner conversation
+            const { data: newConv } = await supabase
+              .from('conversations')
+              .insert({
+                student_id: student.id,
+                owner_id: targetOwner.id,
+                dorm_id: roomPreview?.dormId || null
+              })
+              .select('id')
+              .single();
+            
+            if (newConv) conversationId = newConv.id;
+          }
+        } else {
+          // Check if target is a student (roommate matching)
+          const { data: targetStudent } = await supabase
+            .from('students')
+            .select('id')
+            .eq('user_id', targetUserId)
+            .maybeSingle();
+
+          if (!targetStudent) return;
+
+          // Student → Student conversation
+          const { data: existingConv } = await supabase
+            .from('conversations')
+            .select('id')
+            .or(`and(student_id.eq.${student.id},owner_id.eq.${targetStudent.id}),and(student_id.eq.${targetStudent.id},owner_id.eq.${student.id})`)
+            .maybeSingle();
+
+          if (existingConv) {
+            conversationId = existingConv.id;
+          } else {
+            // Create new conversation (treating as peer-to-peer)
+            const { data: newConv } = await supabase
+              .from('conversations')
+              .insert({
+                student_id: student.id,
+                owner_id: targetStudent.id,
+                dorm_id: null
+              })
+              .select('id')
+              .single();
+            
+            if (newConv) conversationId = newConv.id;
+          }
         }
 
         if (conversationId) {
           setSelectedConversation(conversationId);
           await loadMessages(conversationId);
 
-          // Send initial message if provided
+          // Send initial message with room preview metadata if provided
           if (initialMessage) {
             await supabase.from('messages').insert({
               conversation_id: conversationId,
@@ -216,6 +255,10 @@ export default function Messages() {
               body: initialMessage,
               read: false,
               status: 'sent',
+              attachment_metadata: roomPreview ? {
+                type: 'room_inquiry',
+                ...roomPreview
+              } : null
             });
           }
         }

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Building2, Home, Sparkles, Info, Phone, MessageSquare, Menu, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import {
@@ -11,8 +13,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Building2, User, LogOut, LayoutDashboard, Menu, MessageSquare } from 'lucide-react';
-import AuthModal from './AuthModal';
 import {
   Sheet,
   SheetContent,
@@ -21,17 +21,15 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
-import { useTheme } from '@/contexts/ThemeContext';
+import AuthModal from './AuthModal';
 
 export default function Navbar() {
+  const navigate = useNavigate();
   const [authOpen, setAuthOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [role, setRole] = useState<string | null>(null);
-  const [scrolled, setScrolled] = useState(false);
-  const navigate = useNavigate();
-  const { unreadCount, refresh } = useUnreadCount(user?.id || null);
-  const { theme } = useTheme();
+  const { unreadCount } = useUnreadCount(user?.id || null);
 
   useEffect(() => {
     // Check auth
@@ -43,13 +41,8 @@ export default function Navbar() {
       setUser(session?.user ?? null);
     });
 
-    // Handle scroll
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-
     return () => {
       subscription.unsubscribe();
-      window.removeEventListener('scroll', handleScroll);
     };
   }, []);
 
@@ -93,242 +86,168 @@ export default function Navbar() {
     }
   };
 
+  const navItems = [
+    { icon: Home, label: 'Home', href: '/', show: role !== 'owner' },
+    { icon: Building2, label: 'Dorms', href: '/listings', show: role !== 'owner' },
+    { icon: MessageSquare, label: 'Messages', href: '/messages', show: true },
+    { icon: Sparkles, label: 'AI Match', href: '/ai-match', show: role !== 'owner' },
+    { icon: Info, label: 'About', href: '/about', show: true },
+    { icon: Phone, label: 'Contact', href: '/contact', show: true },
+  ].filter(item => item.show);
+
   return (
     <>
-      <nav 
-        role="navigation"
-        aria-label="Main navigation"
-        style={{ opacity: scrolled ? 0.98 : 1 }}
-        className={`hidden md:block fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled 
-            ? theme === "light"
-              ? 'bg-white/95 backdrop-blur-xl shadow-lg text-gray-900'
-              : 'bg-black/80 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.4)] text-white'
-            : theme === "light"
-              ? 'bg-white/80 backdrop-blur-md text-gray-900'
-              : 'bg-black/60 backdrop-blur-md text-white'
-        }`}
+      <motion.nav
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: [0.6, 0.05, 0.01, 0.9] }}
+        className="fixed top-0 left-0 right-0 z-50 px-6 py-4"
       >
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-20">
-            <Link 
-              to="/" 
-              className="flex items-center gap-2 hover-scale"
-              aria-label="Roomy - Home"
+        <div className="max-w-7xl mx-auto glass rounded-2xl px-6 py-3 flex items-center justify-between">
+          <Link to="/">
+            <motion.div
+              className="flex items-center gap-2"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2 }}
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center" aria-hidden="true">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center glow-purple">
                 <Building2 className="w-6 h-6 text-white" />
               </div>
               <span className="text-2xl font-bold gradient-text">Roomy</span>
-            </Link>
+            </motion.div>
+          </Link>
 
-            <div className="hidden md:flex items-center gap-8" role="menubar" aria-label="Main menu">
-              {role !== 'owner' && (
-                <Link 
-                  to="/" 
-                  className="text-foreground/80 hover:text-foreground transition-colors story-link"
-                  role="menuitem"
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-1">
+            {navItems.map((item, index) => (
+              <Link key={item.label} to={item.href}>
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-white/5 transition-all"
                 >
-                  Home
-                </Link>
-              )}
-              {role !== 'owner' && (
-                <Link 
-                  to="/listings" 
-                  className="text-foreground/80 hover:text-foreground transition-colors story-link"
-                  role="menuitem"
-                >
-                  Dorms
-                </Link>
-              )}
-              <Link 
-                to="/messages" 
-                className="text-foreground/80 hover:text-foreground transition-colors story-link"
-                role="menuitem"
-              >
-                Messages
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </motion.div>
               </Link>
-              {role !== 'owner' && (
-                <Link 
-                  to="/ai-match" 
-                  className="text-foreground/80 hover:text-foreground transition-colors story-link"
-                  role="menuitem"
-                >
-                  AI Match
-                </Link>
-              )}
-              <Link 
-                to="/about" 
-                className="text-foreground/80 hover:text-foreground transition-colors story-link"
-                role="menuitem"
-              >
-                About
-              </Link>
-              <Link 
-                to="/contact" 
-                className="text-foreground/80 hover:text-foreground transition-colors story-link"
-                role="menuitem"
-              >
-                Contact
-              </Link>
-            </div>
+            ))}
+          </div>
 
-            <div className="flex items-center gap-3">
-              {/* Mobile menu button */}
-              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                <SheetTrigger asChild className="md:hidden">
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    aria-label="Open mobile menu"
-                    aria-expanded={mobileMenuOpen}
-                  >
-                    <Menu className="w-5 h-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-64">
-                  <SheetHeader>
-                    <SheetTitle>Menu</SheetTitle>
-                  </SheetHeader>
-                  <nav className="flex flex-col gap-4 mt-6" role="navigation" aria-label="Mobile navigation">
-                    {role !== 'owner' && (
-                      <Link 
-                        to="/" 
-                        className="text-foreground/80 hover:text-foreground transition-colors py-2"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Home
-                      </Link>
-                    )}
-                    {role !== 'owner' && (
-                      <>
-                        <Link 
-                          to="/listings" 
-                          className="text-foreground/80 hover:text-foreground transition-colors py-2"
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          Dorms
-                        </Link>
-                        <Link 
-                          to="/ai-match" 
-                          className="text-foreground/80 hover:text-foreground transition-colors py-2"
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          AI Match
-                        </Link>
-                      </>
-                    )}
+          {/* Right Side Actions */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="flex items-center gap-2"
+          >
+            {/* Mobile Menu */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild className="md:hidden">
+                <Button variant="ghost" size="icon">
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-64">
+                <SheetHeader>
+                  <SheetTitle>Menu</SheetTitle>
+                </SheetHeader>
+                <nav className="flex flex-col gap-4 mt-6">
+                  {navItems.map((item) => (
                     <Link 
-                      to="/about" 
-                      className="text-foreground/80 hover:text-foreground transition-colors py-2"
+                      key={item.label}
+                      to={item.href} 
+                      className="text-foreground/80 hover:text-foreground transition-colors py-2 flex items-center gap-2"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      About
+                      <item.icon className="w-4 h-4" />
+                      {item.label}
                     </Link>
-                    <Link 
-                      to="/contact" 
-                      className="text-foreground/80 hover:text-foreground transition-colors py-2"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Contact
-                    </Link>
-                  </nav>
-                </SheetContent>
-              </Sheet>
+                  ))}
+                </nav>
+              </SheetContent>
+            </Sheet>
 
-              <Button 
-                variant="outline" 
-                asChild 
-                className="hidden md:inline-flex"
-              >
-                <Link to="/contact" aria-label="Contact us - Reach out">Reach Us</Link>
-              </Button>
+            {/* Reach Us Button */}
+            <Button
+              variant="ghost"
+              asChild
+              className="hidden md:flex items-center gap-2"
+            >
+              <Link to="/contact">
+                <Phone className="w-4 h-4" />
+                Reach Us
+              </Link>
+            </Button>
 
-              {user ? (
-                <div className="flex items-center gap-2">
-                  {/* Messages with Unread Badge - Hidden on mobile */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative hidden md:flex"
-                    asChild
-                  >
-                    <Link to="/messages" aria-label="Messages">
-                      <MessageSquare className="w-5 h-5" />
-                      {unreadCount > 0 && (
-                        <Badge className="absolute -top-1 -right-1 h-5 min-w-[20px] flex items-center justify-center p-0 text-[10px]">
-                          {unreadCount > 9 ? '9+' : unreadCount}
-                        </Badge>
-                      )}
-                    </Link>
-                  </Button>
+            {user ? (
+              <>
+                {/* Messages Icon with Badge - Hidden on mobile */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative hidden md:flex"
+                  asChild
+                >
+                  <Link to="/messages">
+                    <MessageSquare className="w-5 h-5" />
+                    {unreadCount > 0 && (
+                      <Badge className="absolute -top-1 -right-1 h-5 min-w-[20px] flex items-center justify-center p-0 text-[10px]">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </Badge>
+                    )}
+                  </Link>
+                </Button>
 
-                  {/* User Menu */}
-                  <DropdownMenu>
+                {/* Profile Dropdown */}
+                <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
-                      variant="default" 
-                      className="bg-gradient-to-r from-primary to-secondary"
-                      aria-label="User profile menu"
-                      aria-haspopup="menu"
+                      className="bg-gradient-to-r from-primary to-secondary text-white font-semibold px-6 py-2 rounded-xl hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] transition-all duration-300"
                     >
-                      <User className="w-4 h-4 mr-2" aria-hidden="true" />
+                      <User className="w-4 h-4 mr-2" />
                       Profile
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent 
                     align="end"
-                    className="bg-background/95 backdrop-blur-sm border border-white/10 z-[60]"
-                    role="menu"
-                    aria-label="User menu"
+                    className="bg-background/95 backdrop-blur-sm border border-white/10"
                   >
-                    <DropdownMenuItem 
-                      onClick={() => navigate('/profile')}
-                      role="menuitem"
-                    >
-                      <User className="w-4 h-4 mr-2" aria-hidden="true" />
+                    <DropdownMenuItem onClick={() => navigate('/profile')}>
+                      <User className="w-4 h-4 mr-2" />
                       My Profile
                     </DropdownMenuItem>
                     {(role === 'owner' || role === 'admin') && (
-                      <DropdownMenuItem 
-                        onClick={handleDashboardClick}
-                        role="menuitem"
-                      >
-                        <LayoutDashboard className="w-4 h-4 mr-2" aria-hidden="true" />
+                      <DropdownMenuItem onClick={handleDashboardClick}>
+                        <LayoutDashboard className="w-4 h-4 mr-2" />
                         Control Panel
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem 
-                      onClick={() => navigate('/settings')}
-                      role="menuitem"
-                    >
-                      <User className="w-4 h-4 mr-2" aria-hidden="true" />
+                    <DropdownMenuItem onClick={() => navigate('/settings')}>
+                      <User className="w-4 h-4 mr-2" />
                       Settings
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      onClick={handleSignOut}
-                      role="menuitem"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="w-4 h-4 mr-2" />
                       Sign Out
                     </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              ) : (
-                <Button 
-                  onClick={() => setAuthOpen(true)}
-                  className="bg-gradient-to-r from-primary to-secondary"
-                  aria-label="Sign in or create account"
-                >
-                  Get Started
-                </Button>
-              )}
-            </div>
-          </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <Button
+                onClick={() => setAuthOpen(true)}
+                className="bg-gradient-to-r from-primary to-secondary text-white font-semibold px-6 py-2 rounded-xl hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] transition-all duration-300"
+              >
+                Get Started
+              </Button>
+            )}
+          </motion.div>
         </div>
-      </nav>
+      </motion.nav>
 
       <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
     </>

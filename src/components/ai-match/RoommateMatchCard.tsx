@@ -21,7 +21,8 @@ export const RoommateMatchCard = ({ roommate, index }: RoommateMatchCardProps) =
     return "text-orange-500";
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name: string | undefined | null) => {
+    if (!name) return '??';
     return name
       .split(' ')
       .map(n => n[0])

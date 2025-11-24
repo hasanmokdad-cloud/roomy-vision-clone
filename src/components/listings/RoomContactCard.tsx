@@ -45,18 +45,27 @@ export default function RoomContactCard({ room, dormId, dormName, ownerId, index
       return;
     }
 
+    if (!ownerId) {
+      toast({
+        title: 'Error',
+        description: 'Owner information not available',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Get student ID
-      const { data: student } = await supabase
-        .from('students')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Get owner's user_id from the owners table
+      const { data: ownerData, error: ownerError } = await supabase
+        .from('owners')
+        .select('user_id')
+        .eq('id', ownerId)
+        .single();
 
-      if (!student || !ownerId) {
-        throw new Error('Unable to create conversation');
+      if (ownerError || !ownerData) {
+        throw new Error('Owner not found');
       }
 
       // Log contact click
@@ -67,52 +76,11 @@ export default function RoomContactCard({ room, dormId, dormName, ownerId, index
         metadata: { room_type: room.type }
       });
 
-      // Check if conversation already exists
-      const { data: existingConv } = await supabase
-        .from('conversations')
-        .select('id')
-        .eq('student_id', student.id)
-        .eq('owner_id', ownerId)
-        .eq('dorm_id', dormId)
-        .maybeSingle();
-
-      let conversationId = existingConv?.id;
-
-      // Create conversation if it doesn't exist
-      if (!conversationId) {
-        const { data: newConv, error } = await supabase
-          .from('conversations')
-          .insert({
-            student_id: student.id,
-            owner_id: ownerId,
-            dorm_id: dormId,
-          })
-          .select('id')
-          .single();
-
-        if (error) throw error;
-        conversationId = newConv.id;
-
-        // Send initial message
-        await supabase.from('messages').insert({
-          conversation_id: conversationId,
-          sender_id: user.id,
-          body: `Hi, I'm interested in the ${room.type} at ${dormName}. Is it still available?`,
-        });
-
-        // Send notification to owner
-        await sendOwnerNotification({
-          ownerId: ownerId,
-          dormId: dormId,
-          event: 'new_message',
-          message: `New inquiry about ${room.type}`
-        });
-      }
-
-      // Navigate to messages with room metadata
+      // Navigate to messages with owner's user_id and room preview
       navigate('/messages', {
         state: {
-          openConversationId: conversationId,
+          openThreadWithUserId: ownerData.user_id,
+          initialMessage: `Hi, I'm interested in the ${room.type} at ${dormName}. Is it still available?`,
           roomPreview: {
             dormId,
             dormName,
@@ -124,8 +92,8 @@ export default function RoomContactCard({ room, dormId, dormName, ownerId, index
       });
       
       toast({
-        title: 'Conversation started',
-        description: 'You can now chat with the dorm owner',
+        title: 'Opening conversation',
+        description: 'Connecting you with the dorm owner...',
       });
     } catch (error) {
       console.error('Error creating conversation:', error);
