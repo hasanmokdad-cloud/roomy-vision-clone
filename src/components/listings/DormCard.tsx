@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, CheckCircle } from 'lucide-react';
+import { MapPin, CheckCircle, MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import RoomChoiceCluster from './RoomChoiceCluster';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { createDormConversation } from '@/lib/conversationUtils';
 
 interface RoomType {
   type: string;
@@ -23,16 +27,78 @@ interface DormCardProps {
     cover_image?: string;
     image_url?: string;
     room_types_json?: RoomType[];
+    owner_id?: string;
   };
   index?: number;
 }
 
 export default function DormCard({ dorm, index = 0 }: DormCardProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
+
+  const handleContactOwner = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    // Check if user is logged in and is a student
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: 'Sign in required',
+        description: 'Please sign in to contact the owner',
+        variant: 'destructive',
+      });
+      navigate('/auth');
+      return;
+    }
+
+    // Get owner's user_id
+    if (!dorm.owner_id) {
+      toast({
+        title: 'Error',
+        description: 'Owner information not available',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const { data: ownerData } = await supabase
+      .from('owners')
+      .select('user_id')
+      .eq('id', dorm.owner_id)
+      .single();
+
+    if (!ownerData?.user_id) {
+      toast({
+        title: 'Error',
+        description: 'Could not find owner contact information',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Create or get conversation
+    const conversationId = await createDormConversation(
+      user.id,
+      ownerData.user_id,
+      dorm.dorm_name,
+      dorm.area,
+      dorm.university
+    );
+
+    if (conversationId) {
+      navigate('/messages');
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Could not create conversation',
+        variant: 'destructive',
+      });
+    }
+  };
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -135,15 +201,27 @@ export default function DormCard({ dorm, index = 0 }: DormCardProps) {
             </div>
           )}
 
-          {rooms.length > 0 ? (
-            <p className="text-sm text-foreground/70 mt-auto">
-              Click to explore room options →
-            </p>
-          ) : (
-            <p className="text-sm text-foreground/70 mt-auto">
-              Click for details →
-            </p>
-          )}
+          <div className="mt-auto flex flex-col gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleContactOwner}
+              className="w-full"
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Contact Owner
+            </Button>
+
+            {rooms.length > 0 ? (
+              <p className="text-xs text-center text-foreground/70">
+                Or hover to explore rooms →
+              </p>
+            ) : (
+              <p className="text-xs text-center text-foreground/70">
+                Click for more details →
+              </p>
+            )}
+          </div>
         </div>
       </motion.div>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { UnderwaterScene } from '@/components/UnderwaterScene';
@@ -13,8 +13,37 @@ import { useToast } from '@/hooks/use-toast';
 import { validateName, validateEmail, sanitizeInput, validateMessage } from '@/utils/inputValidation';
 import { supabase } from '@/integrations/supabase/client';
 import { WhatsAppDropdown } from '@/components/shared/WhatsAppDropdown';
-import { createSupportThreadAndMessage } from '@/lib/messagingSupport';
 import { triggerContactEmailNotification } from '@/lib/contactNotifications';
+
+// Dynamic field component that shows "University" for students or "Dorm Name" for owners
+function UniversityOrDormField({ value, onChange, error }: { value: string; onChange: (v: string) => void; error?: string }) {
+  const [label, setLabel] = useState('University / Dorm Name');
+
+  useEffect(() => {
+    const getUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        const { data: roleData } = await supabase.rpc('get_user_role', { p_user_id: user.id });
+        setLabel(roleData === 'owner' ? 'Dorm Name' : 'University');
+      }
+    };
+    getUserRole();
+  }, []);
+
+  return (
+    <div>
+      <Label>{label}</Label>
+      <Input
+        required
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`bg-black/20 border-white/10 ${error ? 'border-destructive' : ''}`}
+        placeholder={label === 'Dorm Name' ? 'Enter your dorm name' : 'Enter your university'}
+      />
+      {error && <p className="text-sm text-destructive mt-1">{error}</p>}
+    </div>
+  );
+}
 
 export default function Contact() {
   const { toast } = useToast();
@@ -74,7 +103,7 @@ export default function Contact() {
       newErrors.email = 'Please enter a valid email address';
     }
     if (!formData.university.trim()) {
-      newErrors.university = 'University is required';
+      newErrors.university = 'University or Dorm Name is required';
     }
     
     const messageValidation = validateMessage(formData.message);
@@ -95,6 +124,13 @@ export default function Contact() {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
+      // Get user role to determine field label
+      let userRole = null;
+      if (user?.id) {
+        const { data: roleData } = await supabase.rpc('get_user_role', { p_user_id: user.id });
+        userRole = roleData;
+      }
+      
       // 1. Insert into contact_messages
       const { error: contactError } = await supabase.from('contact_messages').insert({
         user_id: user?.id || null,
@@ -108,19 +144,16 @@ export default function Contact() {
 
       if (contactError) throw contactError;
 
-      // 2. Create support conversation (only for logged-in users)
+      // 2. Create support conversation with admin (only for logged-in users)
+      let conversationId = null;
       if (user?.id) {
-        const conversationId = await createSupportThreadAndMessage({
-          senderUserId: user.id,
-          messageText: sanitizeInput(formData.message),
-          meta: {
-            first_name: sanitizeInput(formData.firstName),
-            last_name: sanitizeInput(formData.lastName),
-            email: formData.email,
-            university: sanitizeInput(formData.university) || null,
-          },
-        });
-
+        const { createSupportConversation } = await import('@/lib/conversationUtils');
+        
+        const fieldLabel = userRole === 'owner' ? 'Dorm Name' : 'University';
+        const formattedMessage = `**Contact Form Submission**\n\n**Name:** ${sanitizeInput(formData.firstName)} ${sanitizeInput(formData.lastName)}\n**Email:** ${formData.email}\n**${fieldLabel}:** ${sanitizeInput(formData.university)}\n\n**Message:**\n${sanitizeInput(formData.message)}`;
+        
+        conversationId = await createSupportConversation(user.id, formattedMessage);
+        
         if (conversationId) {
           console.log("[Contact] ✅ Support conversation created:", conversationId);
         }
@@ -137,10 +170,17 @@ export default function Contact() {
 
       toast({
         title: 'Message Sent Successfully! ✉️',
-        description: user?.id
-          ? "We've received your message and started a conversation. Check your inbox to chat with our team!"
+        description: user?.id && conversationId
+          ? "We've received your message! Redirecting to chat with Roomy Support..."
           : "Thank you for contacting Roomy! We'll get back to you within 24 hours.",
       });
+
+      // Redirect to messages if conversation was created
+      if (user?.id && conversationId) {
+        setTimeout(() => {
+          window.location.href = '/messages';
+        }, 1500);
+      }
 
       setFormData({
         firstName: '',
@@ -224,16 +264,11 @@ export default function Contact() {
                   />
                   {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
                 </div>
-                <div>
-                  <Label>University</Label>
-                  <Input
-                    required
-                    value={formData.university}
-                    onChange={(e) => setFormData({ ...formData, university: e.target.value })}
-                    className={`bg-black/20 border-white/10 ${errors.university ? 'border-destructive' : ''}`}
-                  />
-                  {errors.university && <p className="text-sm text-destructive mt-1">{errors.university}</p>}
-                </div>
+                <UniversityOrDormField
+                  value={formData.university}
+                  onChange={(value) => setFormData({ ...formData, university: value })}
+                  error={errors.university}
+                />
                 <div>
                   <Label>Message</Label>
                   <Textarea
