@@ -124,6 +124,40 @@ export default function Messages() {
       return;
     }
 
+    // Handle auto-open conversation with room preview (from Contact button)
+    if (location.state?.openConversationId) {
+      const openConversationWithPreview = async () => {
+        const conversationId = location.state.openConversationId;
+        const roomPreview = location.state.roomPreview;
+
+        setSelectedConversation(conversationId);
+        await loadMessages(conversationId);
+
+        // Send initial message with room metadata if provided
+        if (roomPreview) {
+          const messageText = `Hi, I'm interested in the ${roomPreview.roomType} at ${roomPreview.dormName}. Is it still available?`;
+          
+          await supabase.from('messages').insert({
+            conversation_id: conversationId,
+            sender_id: userId,
+            body: messageText,
+            read: false,
+            status: 'sent',
+            attachment_metadata: {
+              type: 'room_inquiry',
+              ...roomPreview
+            }
+          });
+        }
+
+        // Clear location state
+        navigate(location.pathname, { replace: true, state: {} });
+      };
+
+      openConversationWithPreview();
+      return;
+    }
+
     // Handle auto-open/auto-send from match links
     if (location.state?.openThreadWithUserId) {
       const openAndSendMessage = async () => {

@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
+import Navbar from "@/components/shared/Navbar";
+import Footer from "@/components/shared/Footer";
 import { ProfileIncompleteCard } from "@/components/ai-match/ProfileIncompleteCard";
 import { LoadingState } from "@/components/ai-match/LoadingState";
 import { AIInsightsCard } from "@/components/ai-match/AIInsightsCard";
@@ -272,7 +272,7 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
 
   if (profileStatus === 'loading') {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pt-24 md:pt-28">
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <LoadingState />
@@ -283,7 +283,7 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
 
   if (profileStatus === 'incomplete') {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pt-24 md:pt-28">
         <Navbar />
         <ProfileIncompleteCard percentage={studentProfile?.profile_completion_score || 0} />
         <Footer />
@@ -292,7 +292,7 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-24 md:pt-28">
       <Navbar />
       
       <div className="container mx-auto px-4 py-8 space-y-8">

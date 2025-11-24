@@ -119,43 +119,55 @@ export function useRoommateMatch(userId?: string) {
     const fetchMatches = async () => {
       setLoading(true);
 
-      // Load current user's profile
-      const { data: myProfile } = await supabase
-        .from("students")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
+      try {
+        // Load current user's profile
+        const { data: myProfile, error: profileError } = await supabase
+          .from("students")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
 
-      if (!myProfile) {
+        if (profileError) throw profileError;
+
+        if (!myProfile) {
+          setMatches([]);
+          setLoading(false);
+          return;
+        }
+
+        // Load all other students
+        const { data: allStudents, error: studentsError } = await supabase
+          .from("students")
+          .select("user_id, full_name, profile_photo_url, university, age, gender, budget, preferred_university, favorite_areas, preferred_room_types, preferred_amenities, ai_confidence_score")
+          .neq("user_id", userId);
+
+        if (studentsError) throw studentsError;
+
+        if (!allStudents || allStudents.length === 0) {
+          setMatches([]);
+          setLoading(false);
+          return;
+        }
+
+        // Compute similarity scores
+        const scoredMatches = allStudents.map(student => ({
+          ...student,
+          matchScore: computeSimilarity(myProfile, student),
+          matchReasons: generateMatchReasons(myProfile, student)
+        }));
+
+        // Sort by score and take top 10
+        const topMatches = scoredMatches
+          .sort((a, b) => b.matchScore - a.matchScore)
+          .slice(0, 10);
+
+        setMatches(topMatches);
         setLoading(false);
-        return;
-      }
-
-      // Load all other students
-      const { data: allStudents } = await supabase
-        .from("students")
-        .select("user_id, full_name, profile_photo_url, university, age, gender, budget, preferred_university, favorite_areas, preferred_room_types, preferred_amenities, ai_confidence_score")
-        .neq("user_id", userId);
-
-      if (!allStudents) {
+      } catch (error) {
+        console.error('Error fetching roommate matches:', error);
+        setMatches([]);
         setLoading(false);
-        return;
       }
-
-      // Compute similarity scores
-      const scoredMatches = allStudents.map(student => ({
-        ...student,
-        matchScore: computeSimilarity(myProfile, student),
-        matchReasons: generateMatchReasons(myProfile, student)
-      }));
-
-      // Sort by score and take top 10
-      const topMatches = scoredMatches
-        .sort((a, b) => b.matchScore - a.matchScore)
-        .slice(0, 10);
-
-      setMatches(topMatches);
-      setLoading(false);
     };
 
     fetchMatches();
