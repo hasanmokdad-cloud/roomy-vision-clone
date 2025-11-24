@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, ArrowLeft, MessageSquare, Check, CheckCheck } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import BottomNav from '@/components/BottomNav';
 import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 type Conversation = {
   id: string;
@@ -25,6 +26,7 @@ type Conversation = {
   dorm_name?: string;
   last_message?: string;
   other_user_photo?: string | null;
+  unreadCount?: number;
 };
 
 type Message = {
@@ -37,6 +39,9 @@ type Message = {
   status?: 'sent' | 'delivered' | 'seen';
   delivered_at?: string | null;
   seen_at?: string | null;
+  attachment_type?: 'image' | 'video' | 'audio' | null;
+  attachment_url?: string | null;
+  attachment_duration?: number | null;
 };
 
 type TypingStatus = {
@@ -57,8 +62,14 @@ export default function Messages() {
   const [messageInput, setMessageInput] = useState('');
   const [sending, setSending] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const [uploading, setUploading] = useState(false);
+  const [recording, setRecording] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const presenceChannelRef = useRef<RealtimeChannel | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Debug log for cache verification
   useEffect(() => {
@@ -180,31 +191,54 @@ export default function Messages() {
       loadConversations();
     });
 
-    // Subscribe to typing indicators using presence
-    const presenceChannel = supabase.channel('typing-presence', {
-      config: { presence: { key: userId } }
-    });
-
-    presenceChannel
-      .on('presence', { event: 'sync' }, () => {
-        const state = presenceChannel.presenceState();
-        const typingSet = new Set<string>();
-        Object.entries(state).forEach(([key, presences]) => {
-          const presence = presences[0] as any;
-          if (presence?.conversationId === selectedConversation && presence?.userId !== userId && presence?.typing) {
-            typingSet.add(presence.userId);
-          }
-        });
-        setTypingUsers(typingSet);
-      })
-      .subscribe();
-
     return () => {
       unsubscribeFrom(messagesChannel);
       unsubscribeFrom(conversationsChannel);
-      supabase.removeChannel(presenceChannel);
+      if (presenceChannelRef.current) {
+        supabase.removeChannel(presenceChannelRef.current);
+        presenceChannelRef.current = null;
+      }
     };
   }, [userId, selectedConversation]);
+
+  // Setup typing presence
+  useEffect(() => {
+    if (!selectedConversation || !userId) {
+      if (presenceChannelRef.current) {
+        supabase.removeChannel(presenceChannelRef.current);
+        presenceChannelRef.current = null;
+      }
+      return;
+    }
+
+    const channel = supabase.channel(`typing-${selectedConversation}`);
+    
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const typingSet = new Set<string>();
+        Object.values(state).forEach((presences: any[]) => {
+          presences.forEach((presence) => {
+            if (presence.userId !== userId && presence.typing) {
+              typingSet.add(presence.userId);
+            }
+          });
+        });
+        setTypingUsers(typingSet);
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          presenceChannelRef.current = channel;
+        }
+      });
+
+    return () => {
+      if (presenceChannelRef.current) {
+        supabase.removeChannel(presenceChannelRef.current);
+        presenceChannelRef.current = null;
+      }
+    };
+  }, [selectedConversation, userId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -222,24 +256,20 @@ export default function Messages() {
   };
 
   const handleTyping = () => {
-    if (!selectedConversation || !userId) return;
+    if (!selectedConversation || !userId || !presenceChannelRef.current) return;
 
-    // Clear existing timeout
+    presenceChannelRef.current.track({
+      userId,
+      typing: true,
+      timestamp: Date.now()
+    });
+
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // Track presence for typing
-    const channel = supabase.channel('typing-presence');
-    channel.track({
-      userId,
-      conversationId: selectedConversation,
-      typing: true
-    });
-
-    // Stop typing after 2 seconds of inactivity
     typingTimeoutRef.current = setTimeout(() => {
-      channel.untrack();
+      presenceChannelRef.current?.untrack();
     }, 2000);
   };
 
@@ -338,18 +368,49 @@ export default function Messages() {
         // Get last message
         const { data: lastMsg } = await supabase
           .from('messages')
-          .select('body')
+          .select('body, attachment_type')
           .eq('conversation_id', conv.id)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+
+        // Get unread count from user_thread_state
+        const { data: threadState } = await supabase
+          .from('user_thread_state')
+          .select('last_read_at')
+          .eq('thread_id', conv.id)
+          .eq('user_id', userId!)
+          .maybeSingle();
+
+        let unreadCount = 0;
+        if (threadState?.last_read_at) {
+          const { count } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', conv.id)
+            .neq('sender_id', userId!)
+            .gt('created_at', threadState.last_read_at);
+          unreadCount = count || 0;
+        } else {
+          const { count } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', conv.id)
+            .neq('sender_id', userId!);
+          unreadCount = count || 0;
+        }
+
+        const lastMessage = lastMsg?.attachment_type
+          ? `📎 ${lastMsg.attachment_type === 'image' ? 'Photo' : lastMsg.attachment_type === 'video' ? 'Video' : 'Voice message'}`
+          : lastMsg?.body || '';
 
         return {
           ...conv,
           other_user_name: otherUserName,
           other_user_photo: otherUserPhoto,
           dorm_name: dorm?.dorm_name || dorm?.name || (conv.conversation_type === 'support' ? 'Support' : 'Dorm'),
-          last_message: lastMsg?.body
+          last_message: lastMessage,
+          unreadCount
         };
       }));
       setConversations(enriched);
@@ -377,6 +438,19 @@ export default function Messages() {
             seen_at: new Date().toISOString()
           })
           .in('id', unseenIds);
+      }
+
+      // Update user_thread_state
+      if (userId) {
+        await supabase.from('user_thread_state').upsert(
+          {
+            thread_id: conversationId,
+            user_id: userId,
+            last_read_at: new Date().toISOString(),
+          },
+          { onConflict: 'thread_id,user_id' }
+        );
+        loadConversations();
       }
     }
   };
@@ -456,6 +530,124 @@ export default function Messages() {
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedConversation || !userId) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `${userId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('message-media')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('message-media')
+        .getPublicUrl(filePath);
+
+      const attachmentType = file.type.startsWith('image/')
+        ? 'image'
+        : file.type.startsWith('video/')
+        ? 'video'
+        : null;
+
+      await supabase.from('messages').insert({
+        conversation_id: selectedConversation,
+        sender_id: userId,
+        body: '',
+        attachment_type: attachmentType,
+        attachment_url: publicUrl,
+        status: 'sent',
+      });
+
+      toast({ title: 'File sent successfully' });
+    } catch (error: any) {
+      toast({
+        title: 'Upload failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        await uploadVoiceMessage(audioBlob);
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start();
+      setRecording(true);
+    } catch (error) {
+      toast({
+        title: 'Microphone access denied',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && recording) {
+      mediaRecorderRef.current.stop();
+      setRecording(false);
+    }
+  };
+
+  const uploadVoiceMessage = async (audioBlob: Blob) => {
+    if (!selectedConversation || !userId) return;
+
+    try {
+      const fileName = `voice-${Date.now()}.webm`;
+      const filePath = `${userId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('message-media')
+        .upload(filePath, audioBlob);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('message-media')
+        .getPublicUrl(filePath);
+
+      await supabase.from('messages').insert({
+        conversation_id: selectedConversation,
+        sender_id: userId,
+        body: '',
+        attachment_type: 'audio',
+        attachment_url: publicUrl,
+        status: 'sent',
+      });
+
+      toast({ title: 'Voice message sent' });
+    } catch (error: any) {
+      toast({
+        title: 'Upload failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   const sendMessage = async () => {
     if (!messageInput.trim() || !selectedConversation || !userId) return;
 
@@ -463,8 +655,9 @@ export default function Messages() {
     try {
       // Stop typing indicator
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      const channel = supabase.channel('typing-presence');
-      channel.untrack();
+      if (presenceChannelRef.current) {
+        presenceChannelRef.current.untrack();
+      }
 
       const { error } = await supabase.from('messages').insert({
         conversation_id: selectedConversation,
@@ -486,6 +679,35 @@ export default function Messages() {
       setSending(false);
     }
   };
+
+  const renderMessageContent = (msg: Message) => {
+    if (msg.attachment_type === 'image') {
+      return (
+        <img
+          src={msg.attachment_url || ''}
+          alt="Shared image"
+          className="max-w-xs rounded-lg cursor-pointer"
+          onClick={() => window.open(msg.attachment_url, '_blank')}
+        />
+      );
+    }
+
+    if (msg.attachment_type === 'video') {
+      return <video src={msg.attachment_url || ''} controls className="max-w-xs rounded-lg" />;
+    }
+
+    if (msg.attachment_type === 'audio') {
+      return (
+        <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2">
+          <audio controls src={msg.attachment_url || ''} className="w-48" />
+        </div>
+      );
+    }
+
+    return <p className="text-sm whitespace-pre-wrap break-words">{msg.body}</p>;
+  };
+
+  const totalUnreadCount = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
 
   if (authLoading) {
     return (
@@ -528,7 +750,7 @@ export default function Messages() {
                       selectedConversation === conv.id ? 'bg-muted' : ''
                     }`}
                   >
-                    <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-3">
                       <Avatar className="w-10 h-10">
                         <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
                         <AvatarFallback className="bg-primary/20 text-primary">
@@ -536,7 +758,15 @@ export default function Messages() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{conv.other_user_name}</p>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-semibold text-sm truncate">{conv.other_user_name}</p>
+                          {conv.unreadCount > 0 && (
+                            <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-primary-foreground bg-primary rounded-full shrink-0">
+                              {conv.unreadCount}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-foreground/60 truncate">{conv.last_message}</p>
                         <p className="text-xs text-foreground/60 truncate">{conv.dorm_name}</p>
                       </div>
                     </div>
@@ -589,7 +819,7 @@ export default function Messages() {
                               : 'bg-muted text-foreground'
                           }`}
                         >
-                          <p className="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
+                          {renderMessageContent(msg)}
                           <div className="flex items-center gap-1 text-xs opacity-70 mt-1">
                             <span>
                               {new Date(msg.created_at).toLocaleTimeString('en-US', {
@@ -601,7 +831,7 @@ export default function Messages() {
                               <span className="ml-1">
                                 {msg.status === 'sent' && <Check className="w-3 h-3 inline" />}
                                 {msg.status === 'delivered' && <CheckCheck className="w-3 h-3 inline" />}
-                                {msg.status === 'seen' && <CheckCheck className="w-3 h-3 inline text-blue-400" />}
+                                {msg.status === 'seen' && <CheckCheck className="w-3 h-3 inline text-primary" />}
                               </span>
                             )}
                           </div>
@@ -623,7 +853,40 @@ export default function Messages() {
                 </ScrollArea>
 
                 <div className="p-4 border-t border-border">
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*,video/*"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                    >
+                      {uploading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Paperclip className="w-5 h-5" />
+                      )}
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onMouseDown={startRecording}
+                      onMouseUp={stopRecording}
+                      onTouchStart={startRecording}
+                      onTouchEnd={stopRecording}
+                    >
+                      <Mic className={`w-5 h-5 ${recording ? 'text-red-500' : ''}`} />
+                    </Button>
+
                     <Input
                       placeholder="Type a message..."
                       value={messageInput}
@@ -633,7 +896,9 @@ export default function Messages() {
                       }}
                       onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                       disabled={sending}
+                      className="flex-1"
                     />
+
                     <Button onClick={sendMessage} disabled={sending || !messageInput.trim()} size="icon">
                       <Send className="w-4 h-4" />
                     </Button>

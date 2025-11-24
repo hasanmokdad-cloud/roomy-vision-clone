@@ -714,6 +714,9 @@ export type Database = {
       }
       messages: {
         Row: {
+          attachment_duration: number | null
+          attachment_type: string | null
+          attachment_url: string | null
           body: string
           conversation_id: string
           created_at: string
@@ -725,6 +728,9 @@ export type Database = {
           status: string | null
         }
         Insert: {
+          attachment_duration?: number | null
+          attachment_type?: string | null
+          attachment_url?: string | null
           body: string
           conversation_id: string
           created_at?: string
@@ -736,6 +742,9 @@ export type Database = {
           status?: string | null
         }
         Update: {
+          attachment_duration?: number | null
+          attachment_type?: string | null
+          attachment_url?: string | null
           body?: string
           conversation_id?: string
           created_at?: string
@@ -1880,6 +1889,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_thread_state: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_read_at: string | null
+          thread_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_read_at?: string | null
+          thread_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_read_at?: string | null
+          thread_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_thread_state_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
