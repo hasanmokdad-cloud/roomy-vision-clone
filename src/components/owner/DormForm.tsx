@@ -52,9 +52,7 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
     name: dorm?.name || dorm?.dorm_name || "",
     address: dorm?.address || "",
     area: dorm?.area || "",
-    university: dorm?.university || "",
     description: dorm?.description || "",
-    monthly_price: dorm?.monthly_price?.toString() || dorm?.price?.toString() || "",
     capacity: dorm?.capacity?.toString() || "",
     image_url: dorm?.image_url || dorm?.cover_image || "",
     amenities: (dorm?.amenities || []) as string[],
@@ -318,17 +316,11 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
         dorm_name: formData.name,
         address: formData.address,
         area: formData.area || null,
-        university: formData.university || null,
         description: formData.description || null,
         image_url: formData.image_url || null,
         cover_image: formData.image_url || null,
         location: formData.area || formData.address,
       };
-
-      if (formData.monthly_price) {
-        payload.monthly_price = parseFloat(formData.monthly_price);
-        payload.price = parseFloat(formData.monthly_price);
-      }
 
       if (formData.capacity) {
         payload.capacity = parseInt(formData.capacity);
@@ -396,11 +388,11 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
         p_dorm_name: payload.dorm_name || payload.name,
         p_address: payload.address,
         p_area: payload.area,
-        p_university: payload.university || null,
+        p_university: null,
         p_description: payload.description || null,
         p_image_url: payload.image_url || null,
         p_cover_image: payload.cover_image || payload.image_url || null,
-        p_monthly_price: payload.monthly_price,
+        p_monthly_price: null,
         p_capacity: payload.capacity,
         p_amenities: payload.amenities || [],
         p_shuttle: payload.shuttle || false,
@@ -447,10 +439,10 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.address || !formData.area || !formData.monthly_price || !formData.capacity) {
+    if (!formData.name || !formData.address || !formData.area || !formData.capacity) {
       toast({
         title: "Error",
-        description: "Name, address, area, price, and room capacity are required",
+        description: "Name, address, area, and room capacity are required",
         variant: "destructive",
       });
       return;
@@ -502,54 +494,27 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="area">Area *</Label>
-              <Input
-                id="area"
-                value={formData.area}
-                onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                placeholder="e.g., Hamra"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="university">Nearby University</Label>
-              <Input
-                id="university"
-                value={formData.university}
-                onChange={(e) => setFormData({ ...formData, university: e.target.value })}
-                placeholder="e.g., AUB"
-              />
-            </div>
+          <div>
+            <Label htmlFor="area">Area *</Label>
+            <Input
+              id="area"
+              value={formData.area}
+              onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+              placeholder="e.g., Hamra"
+              required
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="monthly_price">Starting/Monthly Price ($) *</Label>
-              <Input
-                id="monthly_price"
-                type="number"
-                step="0.01"
-                value={formData.monthly_price}
-                onChange={(e) => setFormData({ ...formData, monthly_price: e.target.value })}
-                placeholder="500"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="capacity">Room Capacity (i.e. Total Number of Rooms) *</Label>
-              <Input
-                id="capacity"
-                type="number"
-                value={formData.capacity}
-                onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                placeholder="20"
-                required
-              />
-            </div>
+          <div>
+            <Label htmlFor="capacity">Room Capacity (i.e. Total Number of Rooms) *</Label>
+            <Input
+              id="capacity"
+              type="number"
+              value={formData.capacity}
+              onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+              placeholder="20"
+              required
+            />
           </div>
 
           <div>

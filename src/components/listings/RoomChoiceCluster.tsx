@@ -14,7 +14,6 @@ interface RoomChoiceClusterProps {
   rooms: RoomType[];
   dormName: string;
   dormArea?: string;
-  university?: string;
   isOpen: boolean;
   onClose: () => void;
   onViewDetails: (roomType: string) => void;
@@ -25,7 +24,6 @@ export default function RoomChoiceCluster({
   rooms, 
   dormName, 
   dormArea, 
-  university, 
   isOpen, 
   onClose,
   onViewDetails,
@@ -58,7 +56,6 @@ export default function RoomChoiceCluster({
             room={room}
             dormName={dormName}
             dormArea={dormArea}
-            university={university}
             onViewDetails={() => onViewDetails(room.type)}
             index={idx}
           />

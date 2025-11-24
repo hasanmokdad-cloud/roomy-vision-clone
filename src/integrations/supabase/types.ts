@@ -557,7 +557,7 @@ export type Database = {
           name: string
           owner_id: string | null
           phone_number: string | null
-          price: number
+          price: number | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -591,7 +591,7 @@ export type Database = {
           name: string
           owner_id?: string | null
           phone_number?: string | null
-          price: number
+          price?: number | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -625,7 +625,7 @@ export type Database = {
           name?: string
           owner_id?: string | null
           phone_number?: string | null
-          price?: number
+          price?: number | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null

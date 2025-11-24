@@ -33,9 +33,7 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate }: DormE
     dorm_name: dorm.dorm_name || dorm.name || '',
     address: dorm.address || '',
     area: dorm.area || '',
-    university: dorm.university || '',
     description: dorm.description || '',
-    monthly_price: dorm.monthly_price || dorm.price || 0,
     capacity: dorm.capacity || 1,
     amenities: dorm.amenities || [],
     shuttle: dorm.shuttle || false,
@@ -57,10 +55,7 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate }: DormE
           dorm_name: formData.dorm_name,
           address: formData.address,
           area: formData.area,
-          university: formData.university,
           description: formData.description,
-          monthly_price: formData.monthly_price,
-          price: formData.monthly_price, // Keep price in sync
           capacity: formData.capacity,
           amenities: formData.amenities,
           shuttle: formData.shuttle,
@@ -139,26 +134,6 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate }: DormE
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="university">University</Label>
-                <Input
-                  id="university"
-                  value={formData.university}
-                  onChange={(e) => setFormData({ ...formData, university: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="monthly_price">Monthly Price ($)</Label>
-                <Input
-                  id="monthly_price"
-                  type="number"
-                  value={formData.monthly_price}
-                  onChange={(e) => setFormData({ ...formData, monthly_price: Number(e.target.value) })}
-                />
-              </div>
             </div>
 
             <div>

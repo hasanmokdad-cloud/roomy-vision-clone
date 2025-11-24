@@ -192,12 +192,10 @@ export default function DormCard({ dorm, index = 0 }: DormCardProps) {
         <div className="p-5 flex-1 flex flex-col">
           <h3 className="text-xl font-bold mb-2">{dorm.dorm_name}</h3>
           
-          {(dorm.area || dorm.university) && (
+          {dorm.area && (
             <div className="flex items-center gap-2 text-sm text-foreground/60 mb-3">
               <MapPin className="w-4 h-4" />
-              <span>
-                {dorm.area && dorm.university ? `${dorm.area} • ${dorm.university}` : dorm.area || dorm.university}
-              </span>
+              <span>{dorm.area}</span>
             </div>
           )}
 
@@ -231,7 +229,6 @@ export default function DormCard({ dorm, index = 0 }: DormCardProps) {
           rooms={rooms}
           dormName={dorm.dorm_name}
           dormArea={dorm.area}
-          university={dorm.university}
           isOpen={isExpanded}
           onClose={() => setIsExpanded(false)}
           onViewDetails={handleViewDetails}

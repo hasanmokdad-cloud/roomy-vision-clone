@@ -149,10 +149,8 @@ export default function Contact() {
       if (user?.id) {
         const { createSupportConversation } = await import('@/lib/conversationUtils');
         
-        const fieldLabel = userRole === 'owner' ? 'Dorm Name' : 'University';
-        const formattedMessage = `**Contact Form Submission**\n\n**Name:** ${sanitizeInput(formData.firstName)} ${sanitizeInput(formData.lastName)}\n**Email:** ${formData.email}\n**${fieldLabel}:** ${sanitizeInput(formData.university)}\n\n**Message:**\n${sanitizeInput(formData.message)}`;
-        
-        conversationId = await createSupportConversation(user.id, formattedMessage);
+        // Send only the message text, not formatted data
+        conversationId = await createSupportConversation(user.id, sanitizeInput(formData.message));
         
         if (conversationId) {
           console.log("[Contact] ✅ Support conversation created:", conversationId);

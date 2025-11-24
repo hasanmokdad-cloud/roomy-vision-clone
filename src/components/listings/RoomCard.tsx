@@ -14,12 +14,11 @@ interface RoomCardProps {
   };
   dormName: string;
   dormArea?: string;
-  university?: string;
   onViewDetails: () => void;
   index?: number;
 }
 
-export default function RoomCard({ room, dormName, dormArea, university, onViewDetails, index = 0 }: RoomCardProps) {
+export default function RoomCard({ room, dormName, dormArea, onViewDetails, index = 0 }: RoomCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
   const handleFlip = () => {
@@ -101,10 +100,10 @@ export default function RoomCard({ room, dormName, dormArea, university, onViewD
               <Tag className="w-3.5 h-3.5 text-secondary" />
               <span>{room.type}</span>
             </div>
-            {university && (
+            {dormArea && (
               <div className="glass px-3 py-1.5 rounded-full flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-secondary" />
-                <span>Near {university}</span>
+                <span>{dormArea}</span>
               </div>
             )}
           </div>
