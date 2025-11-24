@@ -34,8 +34,8 @@ export function useUnreadCount(userId: string | null) {
 
         if (!admin && !student && !owner) return;
 
-        // Get conversations
-        let conversationsQuery = supabase.from('conversations').select('id');
+        // Get conversations with muted_until
+        let conversationsQuery = supabase.from('conversations').select('id, muted_until');
         
         if (admin) {
           conversationsQuery = conversationsQuery.eq('conversation_type', 'support');
@@ -51,10 +51,20 @@ export function useUnreadCount(userId: string | null) {
           return;
         }
 
+        // Filter out muted conversations
+        const activeConversations = conversations.filter(
+          c => !c.muted_until || new Date(c.muted_until) <= new Date()
+        );
+
+        if (activeConversations.length === 0) {
+          setUnreadCount(0);
+          return;
+        }
+
         // Calculate unread count using user_thread_state
         let totalUnread = 0;
         
-        for (const conv of conversations) {
+        for (const conv of activeConversations) {
           const { data: threadState } = await supabase
             .from('user_thread_state')
             .select('last_read_at')

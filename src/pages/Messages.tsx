@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2 } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive } from 'lucide-react';
+import { ConversationContextMenu } from '@/components/messages/ConversationContextMenu';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -27,6 +28,9 @@ type Conversation = {
   last_message?: string;
   other_user_photo?: string | null;
   unreadCount?: number;
+  is_pinned?: boolean;
+  is_archived?: boolean;
+  muted_until?: string | null;
 };
 
 type Message = {
@@ -50,6 +54,19 @@ type TypingStatus = {
   typing?: boolean;
 };
 
+const MessageStatusIcon = ({ status }: { status?: 'sent' | 'delivered' | 'seen' }) => {
+  switch (status) {
+    case 'sent':
+      return <Check className="w-3 h-3 text-muted-foreground" />;
+    case 'delivered':
+      return <CheckCheck className="w-3 h-3 text-muted-foreground" />;
+    case 'seen':
+      return <CheckCheck className="w-3 h-3 text-blue-500" />;
+    default:
+      return null;
+  }
+};
+
 export default function Messages() {
   const { loading: authLoading, userId } = useAuthGuard();
   const isMobile = useIsMobile();
@@ -64,6 +81,7 @@ export default function Messages() {
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
@@ -187,12 +205,32 @@ export default function Messages() {
       }
     });
 
+    // Subscribe to message updates for real-time status changes
+    const messagesUpdateChannel = supabase
+      .channel('messages-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+        },
+        (payload) => {
+          const updatedMessage = payload.new as Message;
+          setMessages(prev =>
+            prev.map(m => (m.id === updatedMessage.id ? updatedMessage : m))
+          );
+        }
+      )
+      .subscribe();
+
     const conversationsChannel = subscribeTo("conversations", () => {
       loadConversations();
     });
 
     return () => {
       unsubscribeFrom(messagesChannel);
+      supabase.removeChannel(messagesUpdateChannel);
       unsubscribeFrom(conversationsChannel);
       if (presenceChannelRef.current) {
         supabase.removeChannel(presenceChannelRef.current);
@@ -243,6 +281,10 @@ export default function Messages() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    loadConversations();
+  }, [showArchived]);
 
   const markAsRead = async (messageId: string) => {
     await supabase
@@ -295,7 +337,7 @@ export default function Messages() {
       .eq('user_id', userId)
       .maybeSingle();
 
-    let query = supabase.from('conversations').select('*').order('updated_at', { ascending: false });
+    let query = supabase.from('conversations').select('*');
 
     if (admin) {
       // Admins see all support conversations
@@ -307,6 +349,14 @@ export default function Messages() {
     } else {
       return;
     }
+
+    // Filter archived
+    if (!showArchived) {
+      query = query.or('is_archived.is.null,is_archived.eq.false');
+    }
+
+    // Sort pinned first, then by updated_at
+    query = query.order('is_pinned', { ascending: false }).order('updated_at', { ascending: false });
 
     const { data } = await query;
     if (data) {
@@ -581,21 +631,33 @@ export default function Messages() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') 
+        ? 'audio/webm'
+        : MediaRecorder.isTypeSupported('audio/mp4')
+        ? 'audio/mp4'
+        : 'audio/ogg';
+      
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (e) => {
-        audioChunksRef.current.push(e.data);
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        await uploadVoiceMessage(audioBlob);
+        if (audioChunksRef.current.length > 0) {
+          const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+          await uploadVoiceMessage(audioBlob);
+        }
         stream.getTracks().forEach((track) => track.stop());
+        audioChunksRef.current = [];
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(100);
       setRecording(true);
     } catch (error) {
       toast({
@@ -726,10 +788,20 @@ export default function Messages() {
           {/* Conversations List */}
           <Card className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-80 rounded-none md:rounded-lg border-0 md:border`}>
             <div className="p-4 border-b border-border">
-              <h2 className="text-2xl font-bold gradient-text flex items-center gap-2">
-                <MessageSquare className="w-6 h-6" />
-                Messages
-              </h2>
+              <div className="flex items-center justify-between w-full">
+                <h2 className="text-2xl font-bold gradient-text flex items-center gap-2">
+                  <MessageSquare className="w-6 h-6" />
+                  Messages
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowArchived(!showArchived)}
+                >
+                  <Archive className="w-4 h-4 mr-2" />
+                  {showArchived ? 'Hide' : 'Archived'}
+                </Button>
+              </div>
             </div>
             <ScrollArea className="flex-1">
               {conversations.length === 0 ? (
@@ -740,37 +812,53 @@ export default function Messages() {
                 </div>
               ) : (
                 conversations.map((conv) => (
-                  <button
-                    key={conv.id}
-                    onClick={() => {
-                      setSelectedConversation(conv.id);
-                      loadMessages(conv.id);
-                    }}
-                    className={`w-full p-4 border-b border-border hover:bg-muted/50 transition-colors text-left ${
-                      selectedConversation === conv.id ? 'bg-muted' : ''
-                    }`}
-                  >
+                  <div key={conv.id} className="relative group">
+                    <button
+                      onClick={() => {
+                        setSelectedConversation(conv.id);
+                        loadMessages(conv.id);
+                      }}
+                      className={`w-full p-4 border-b border-border hover:bg-muted/50 transition-colors text-left ${
+                        selectedConversation === conv.id ? 'bg-muted' : ''
+                      }`}
+                    >
                       <div className="flex items-start gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
-                        <AvatarFallback className="bg-primary/20 text-primary">
-                          {conv.other_user_name?.charAt(0) || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-semibold text-sm truncate">{conv.other_user_name}</p>
-                          {conv.unreadCount > 0 && (
-                            <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-primary-foreground bg-primary rounded-full shrink-0">
-                              {conv.unreadCount}
-                            </span>
-                          )}
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
+                          <AvatarFallback className="bg-primary/20 text-primary">
+                            {conv.other_user_name?.charAt(0) || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1">
+                              {conv.is_pinned && <Pin className="w-3 h-3 text-primary" />}
+                              {conv.muted_until && new Date(conv.muted_until) > new Date() && (
+                                <BellOff className="w-3 h-3 text-muted-foreground" />
+                              )}
+                              <p className="font-semibold text-sm truncate">{conv.other_user_name}</p>
+                            </div>
+                            {conv.unreadCount > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date()) && (
+                              <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-primary-foreground bg-primary rounded-full shrink-0">
+                                {conv.unreadCount}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-foreground/60 truncate">{conv.last_message}</p>
+                          <p className="text-xs text-foreground/60 truncate">{conv.dorm_name}</p>
                         </div>
-                        <p className="text-xs text-foreground/60 truncate">{conv.last_message}</p>
-                        <p className="text-xs text-foreground/60 truncate">{conv.dorm_name}</p>
                       </div>
+                    </button>
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ConversationContextMenu
+                        conversationId={conv.id}
+                        isPinned={conv.is_pinned || false}
+                        isArchived={conv.is_archived || false}
+                        mutedUntil={conv.muted_until || null}
+                        onUpdate={() => loadConversations()}
+                      />
                     </div>
-                  </button>
+                  </div>
                 ))
               )}
             </ScrollArea>
@@ -829,9 +917,7 @@ export default function Messages() {
                             </span>
                             {msg.sender_id === userId && msg.status && (
                               <span className="ml-1">
-                                {msg.status === 'sent' && <Check className="w-3 h-3 inline" />}
-                                {msg.status === 'delivered' && <CheckCheck className="w-3 h-3 inline" />}
-                                {msg.status === 'seen' && <CheckCheck className="w-3 h-3 inline text-primary" />}
+                                <MessageStatusIcon status={msg.status} />
                               </span>
                             )}
                           </div>
