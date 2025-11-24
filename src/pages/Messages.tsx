@@ -187,7 +187,21 @@ export default function Messages() {
       if (newMessage.conversation_id === selectedConversation) {
         setMessages(prev => [...prev, newMessage]);
         
-        // Mark as delivered if received by other user
+        // Automatically mark as delivered when received
+        if (newMessage.sender_id !== userId) {
+          await supabase
+            .from('messages')
+            .update({ 
+              status: 'delivered',
+              delivered_at: new Date().toISOString()
+            })
+            .eq('id', newMessage.id);
+          
+          // Mark as seen since conversation is open
+          markAsRead(newMessage.id);
+        }
+      } else {
+        // Message in different conversation, just mark as delivered
         if (newMessage.sender_id !== userId && newMessage.status === 'sent') {
           await supabase
             .from('messages')
@@ -196,11 +210,6 @@ export default function Messages() {
               delivered_at: new Date().toISOString()
             })
             .eq('id', newMessage.id);
-        }
-        
-        // Mark as read if it's from someone else
-        if (newMessage.sender_id !== userId) {
-          markAsRead(newMessage.id);
         }
       }
     });
@@ -651,7 +660,17 @@ export default function Messages() {
       mediaRecorder.onstop = async () => {
         if (audioChunksRef.current.length > 0) {
           const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-          await uploadVoiceMessage(audioBlob);
+          
+          // Validate blob has actual data
+          if (audioBlob.size > 0) {
+            await uploadVoiceMessage(audioBlob);
+          } else {
+            toast({
+              title: 'Recording error',
+              description: 'No audio data captured. Please try again.',
+              variant: 'destructive',
+            });
+          }
         }
         stream.getTracks().forEach((track) => track.stop());
         audioChunksRef.current = [];
@@ -659,9 +678,16 @@ export default function Messages() {
 
       mediaRecorder.start(100);
       setRecording(true);
+      
+      toast({
+        title: 'Recording...',
+        description: 'Voice message is being recorded',
+      });
     } catch (error) {
+      console.error('Recording error:', error);
       toast({
         title: 'Microphone access denied',
+        description: 'Please allow microphone access to record voice messages.',
         variant: 'destructive',
       });
     }

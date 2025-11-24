@@ -18,16 +18,20 @@ import { DraggableImageList } from "./DraggableImageList";
 
 const AMENITIES_OPTIONS = [
   "WiFi",
-  "Parking",
   "Laundry",
   "Gym",
-  "Study Room",
-  "Common Area",
+  "Pool",
+  "Parking",
+  "Security",
   "Kitchen",
+  "Study Room",
+  "Garden",
+  "Common Area",
   "Air Conditioning",
   "Heating",
-  "Security",
   "Elevator",
+  "Furnished",
+  "Pet Friendly",
   "Cleaning Service",
 ];
 

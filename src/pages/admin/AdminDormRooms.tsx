@@ -4,8 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Users, DollarSign, Home } from 'lucide-react';
+import { ArrowLeft, Users, DollarSign, Home, Pencil } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import RoomEditModal from '@/components/admin/RoomEditModal';
 
 export default function AdminDormRooms() {
   const { dormId } = useParams();
@@ -14,6 +15,7 @@ export default function AdminDormRooms() {
   const [rooms, setRooms] = useState<any[]>([]);
   const [contactCounts, setContactCounts] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
+  const [editingRoom, setEditingRoom] = useState<any>(null);
 
   useEffect(() => {
     if (dormId) {
@@ -101,9 +103,20 @@ export default function AdminDormRooms() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>{room.name}</span>
-                    <Badge variant={room.available ? 'default' : 'secondary'}>
-                      {room.available ? 'Available' : 'Unavailable'}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={room.available ? 'default' : 'secondary'}>
+                        {room.available ? 'Available' : 'Unavailable'}
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingRoom(room)}
+                        className="gap-2"
+                      >
+                        <Pencil className="w-4 h-4" />
+                        Edit
+                      </Button>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -185,6 +198,18 @@ export default function AdminDormRooms() {
             );
           })}
         </div>
+      )}
+
+      {editingRoom && (
+        <RoomEditModal
+          room={editingRoom}
+          isOpen={!!editingRoom}
+          onClose={() => setEditingRoom(null)}
+          onUpdate={() => {
+            loadData();
+            setEditingRoom(null);
+          }}
+        />
       )}
     </div>
   );
