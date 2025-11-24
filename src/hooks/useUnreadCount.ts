@@ -1,16 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useUnreadCount(userId: string | null) {
   const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
+  // Memoize loadUnreadCount so it can be called externally
+  const loadUnreadCount = useCallback(async () => {
     if (!userId) {
       setUnreadCount(0);
       return;
     }
-
-    const loadUnreadCount = async () => {
       try {
         // Check admin first
         const { data: admin } = await supabase
@@ -94,7 +93,13 @@ export function useUnreadCount(userId: string | null) {
       } catch (error) {
         console.error('Error loading unread count:', error);
       }
-    };
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) {
+      setUnreadCount(0);
+      return;
+    }
 
     loadUnreadCount();
 
@@ -125,7 +130,7 @@ export function useUnreadCount(userId: string | null) {
       supabase.removeChannel(messagesChannel);
       supabase.removeChannel(threadStateChannel);
     };
-  }, [userId]);
+  }, [userId, loadUnreadCount]);
 
-  return unreadCount;
+  return { unreadCount, refresh: loadUnreadCount };
 }

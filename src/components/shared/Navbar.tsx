@@ -31,7 +31,15 @@ export default function Navbar() {
   const [role, setRole] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
-  const unreadCount = useUnreadCount(user?.id || null);
+  const { unreadCount, refresh } = useUnreadCount(user?.id || null);
+
+  // Make refresh available globally for Messages page
+  useEffect(() => {
+    (window as any).refreshUnreadCount = refresh;
+    return () => {
+      delete (window as any).refreshUnreadCount;
+    };
+  }, [refresh]);
   const { theme } = useTheme();
 
   useEffect(() => {

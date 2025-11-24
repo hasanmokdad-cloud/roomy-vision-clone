@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Eye, MessageCircle, TrendingUp, Home, LogOut, Plus, Clock, CheckCircle, Loader2 } from 'lucide-react';
+import { Building2, Eye, MessageCircle, TrendingUp, Home, LogOut, Plus, Clock, CheckCircle, Loader2, Pencil } from 'lucide-react';
 import { useOwnerDormsQuery } from '@/hooks/useOwnerDormsQuery';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DormForm } from '@/components/owner/DormForm';
+import DormEditModal from '@/components/admin/DormEditModal';
 import { NotificationBell } from '@/components/owner/NotificationBell';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,6 +22,7 @@ export default function OwnerHome() {
   const { data: dorms, refetch: refetchDorms } = useOwnerDormsQuery(ownerId);
   const { count: unreadMessages } = useUnreadMessagesCount(userId, role);
   const [showAddDorm, setShowAddDorm] = useState(false);
+  const [editingDorm, setEditingDorm] = useState<any | null>(null);
   const [stats, setStats] = useState({
     totalDorms: 0,
     verifiedDorms: 0,
@@ -415,16 +417,29 @@ export default function OwnerHome() {
                         <Badge variant="outline" className="text-green-500 border-green-500">
                           Verified
                         </Badge>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/owner/dorms/${dorm.id}/rooms`);
-                          }}
-                        >
-                          Manage Rooms
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingDorm(dorm);
+                            }}
+                          >
+                            <Pencil className="w-4 h-4 mr-1" />
+                            Edit Dorm
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/owner/dorms/${dorm.id}/rooms`);
+                            }}
+                          >
+                            Manage Rooms
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -454,6 +469,19 @@ export default function OwnerHome() {
           </Card>
         )}
       </div>
+
+      {/* Edit Dorm Modal */}
+      {editingDorm && (
+        <DormEditModal
+          dorm={editingDorm}
+          isOpen={!!editingDorm}
+          onClose={() => setEditingDorm(null)}
+          onUpdate={() => {
+            setEditingDorm(null);
+            refetchDorms();
+          }}
+        />
+      )}
     </div>
   );
 }
