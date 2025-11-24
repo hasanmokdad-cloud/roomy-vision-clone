@@ -187,7 +187,12 @@ export default function Messages() {
     const messagesChannel = subscribeTo("messages", async (payload) => {
       const newMessage = payload.new as Message;
       if (newMessage.conversation_id === selectedConversation) {
-        setMessages(prev => [...prev, newMessage]);
+        // Add deduplication to prevent infinite loops
+        setMessages(prev => {
+          const exists = prev.some(m => m.id === newMessage.id);
+          if (exists) return prev;
+          return [...prev, newMessage];
+        });
         
         // Automatically mark as delivered when received
         if (newMessage.sender_id !== userId) {
@@ -797,10 +802,11 @@ export default function Messages() {
         .from('message-media')
         .getPublicUrl(filePath);
 
+      // Ensure body is null for voice messages, not empty string
       await supabase.from('messages').insert({
         conversation_id: selectedConversation,
         sender_id: userId,
-        body: '',
+        body: null,
         attachment_type: 'audio',
         attachment_url: publicUrl,
         attachment_duration: duration,

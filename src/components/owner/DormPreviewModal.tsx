@@ -12,9 +12,7 @@ interface DormPreviewModalProps {
     name: string;
     address: string;
     area: string;
-    university: string;
     description: string;
-    monthly_price: string;
     capacity: string;
     image_url: string;
     amenities: string[];
@@ -34,9 +32,7 @@ export function DormPreviewModal({ isOpen, onClose, onSubmit, formData }: DormPr
     id: "preview-temp-id",
     dorm_name: formData.name,
     area: formData.area,
-    university: formData.university || undefined,
     address: formData.address,
-    monthly_price: formData.monthly_price ? parseFloat(formData.monthly_price) : 0,
     cover_image: formData.image_url || undefined,
     verification_status: "Pending",
     amenities: formData.amenities || [],
