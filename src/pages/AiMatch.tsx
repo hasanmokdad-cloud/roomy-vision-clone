@@ -129,9 +129,14 @@ const AiMatch = () => {
         findDormMatches(studentProfile);
       } else {
         // Roommate matches are handled by the hook
-        if (roommateMatches.length > 0 && !roommateLoading) {
-          setMatches(roommateMatches);
-          fetchAIInsights(studentProfile, roommateMatches, 'roommates');
+        if (!roommateLoading) {
+          if (roommateMatches && roommateMatches.length > 0) {
+            setMatches(roommateMatches);
+            fetchAIInsights(studentProfile, roommateMatches, 'roommates');
+          } else {
+            setMatches([]);
+            setAiInsights('No compatible roommates found at the moment. Try updating your preferences!');
+          }
         }
       }
     }
