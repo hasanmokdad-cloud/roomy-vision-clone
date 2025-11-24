@@ -103,25 +103,60 @@ export async function createSupportConversation(userId: string, initialMessage: 
     return null;
   }
 
-  const conversationId = await createOrGetConversation(userId, adminId);
-  if (!conversationId) {
+  try {
+    // Check for existing support conversation
+    const smallerId = userId < adminId ? userId : adminId;
+    const largerId = userId < adminId ? adminId : userId;
+    
+    const { data: existingConv } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('user_a_id', smallerId)
+      .eq('user_b_id', largerId)
+      .eq('conversation_type', 'support')
+      .maybeSingle();
+
+    let conversationId = existingConv?.id;
+
+    // Create new support conversation if doesn't exist
+    if (!conversationId) {
+      const { data: newConv, error: convError } = await supabase
+        .from('conversations')
+        .insert({
+          user_a_id: smallerId,
+          user_b_id: largerId,
+          conversation_type: 'support'
+        })
+        .select('id')
+        .single();
+
+      if (convError) {
+        console.error('Error creating support conversation:', convError);
+        return null;
+      }
+      conversationId = newConv?.id;
+    }
+
+    if (!conversationId) return null;
+
+    // Create initial message
+    const { error } = await supabase.from('messages').insert({
+      conversation_id: conversationId,
+      sender_id: userId,
+      body: initialMessage,
+      type: 'text',
+    });
+
+    if (error) {
+      console.error('Error creating support message:', error);
+      return null;
+    }
+
+    return conversationId;
+  } catch (error) {
+    console.error('Error in createSupportConversation:', error);
     return null;
   }
-
-  // Create initial message
-  const { error } = await supabase.from('messages').insert({
-    conversation_id: conversationId,
-    sender_id: userId,
-    body: initialMessage,
-    type: 'text',
-  });
-
-  if (error) {
-    console.error('Error creating support message:', error);
-    return null;
-  }
-
-  return conversationId;
 }
 
 /**

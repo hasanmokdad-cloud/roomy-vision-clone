@@ -81,12 +81,14 @@ export default function Messages() {
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
   const [showArchived, setShowArchived] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout>();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Debug log for cache verification
@@ -689,11 +691,23 @@ export default function Messages() {
         }
         stream.getTracks().forEach((track) => track.stop());
         audioChunksRef.current = [];
+        
+        // Clear timer
+        if (recordingTimerRef.current) {
+          clearInterval(recordingTimerRef.current);
+        }
+        setRecordingDuration(0);
       };
 
       // Use larger timeslice for more reliable recording
       mediaRecorder.start(1000); // 1 second chunks
       setRecording(true);
+      setRecordingDuration(0);
+      
+      // Start duration counter
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
       
       toast({
         title: 'Recording...',
@@ -713,6 +727,17 @@ export default function Messages() {
     if (mediaRecorderRef.current && recording) {
       mediaRecorderRef.current.stop();
       setRecording(false);
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+    }
+  };
+
+  const toggleRecording = () => {
+    if (recording) {
+      stopRecording();
+    } else {
+      startRecording();
     }
   };
 
@@ -855,7 +880,7 @@ export default function Messages() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
-      <main className="flex-1 container mx-auto px-0 md:px-4 py-0 md:py-8 mt-16 md:mt-20 mb-16 md:mb-0">
+      <main className={`flex-1 container mx-auto px-0 md:px-4 py-0 md:py-8 mt-16 md:mt-20 ${isMobile ? 'mb-20' : 'mb-0'}`}>
         <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-12rem)] flex flex-col md:flex-row gap-0 md:gap-4">
           {/* Conversations List */}
           <Card className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-80 rounded-none md:rounded-lg border-0 md:border`}>
@@ -1011,6 +1036,15 @@ export default function Messages() {
                 </ScrollArea>
 
                 <div className="p-4 border-t border-border">
+                  {recording && (
+                    <div className="flex items-center justify-center gap-2 bg-red-500/10 text-red-500 px-3 py-2 rounded-lg mb-2 animate-pulse">
+                      <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                      <span className="text-sm font-medium">
+                        Recording... {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
+                      </span>
+                    </div>
+                  )}
+                  
                   <div className="flex items-center gap-2">
                     <input
                       ref={fileInputRef}
@@ -1024,7 +1058,7 @@ export default function Messages() {
                       variant="ghost"
                       size="icon"
                       onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
+                      disabled={uploading || recording}
                       aria-label="Attach image or video"
                       title="Attach image or video"
                     >
@@ -1035,18 +1069,21 @@ export default function Messages() {
                       )}
                     </Button>
 
+                    {/* Desktop: Click to toggle, Mobile: Hold to record */}
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant={recording ? "destructive" : "ghost"}
                       size="icon"
-                      onMouseDown={startRecording}
-                      onMouseUp={stopRecording}
-                      onTouchStart={startRecording}
-                      onTouchEnd={stopRecording}
-                      aria-label="Record voice message"
-                      title="Hold to record voice message"
+                      onClick={isMobile ? undefined : toggleRecording}
+                      onMouseDown={isMobile ? startRecording : undefined}
+                      onMouseUp={isMobile ? stopRecording : undefined}
+                      onTouchStart={isMobile ? startRecording : undefined}
+                      onTouchEnd={isMobile ? stopRecording : undefined}
+                      className={recording ? "animate-pulse" : ""}
+                      aria-label={recording ? "Stop recording" : "Record voice message"}
+                      title={isMobile ? "Hold to record voice message" : "Click to record voice message"}
                     >
-                      <Mic className={`w-5 h-5 ${recording ? 'text-red-500' : ''}`} />
+                      <Mic className="w-5 h-5" />
                     </Button>
 
                     <Input
@@ -1057,14 +1094,14 @@ export default function Messages() {
                         handleTyping();
                       }}
                       onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                      disabled={sending}
+                      disabled={sending || recording}
                       className="flex-1"
                       aria-label="Message input"
                     />
 
                     <Button 
                       onClick={sendMessage} 
-                      disabled={sending || !messageInput.trim()} 
+                      disabled={sending || !messageInput.trim() || recording} 
                       size="icon"
                       aria-label="Send message"
                       title="Send message"

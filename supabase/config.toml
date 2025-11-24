@@ -29,3 +29,6 @@ verify_jwt = true
 
 [functions.create-room]
 verify_jwt = true
+
+[functions.contact-form-email]
+verify_jwt = false
