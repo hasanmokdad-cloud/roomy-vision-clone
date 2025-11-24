@@ -12,6 +12,13 @@ export function useUnreadCount(userId: string | null) {
 
     const loadUnreadCount = async () => {
       try {
+        // Check admin first
+        const { data: admin } = await supabase
+          .from('admins')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
         // Get user role
         const { data: student } = await supabase
           .from('students')
@@ -25,31 +32,55 @@ export function useUnreadCount(userId: string | null) {
           .eq('user_id', userId)
           .maybeSingle();
 
-        if (!student && !owner) return;
+        if (!admin && !student && !owner) return;
 
         // Get conversations
         let conversationsQuery = supabase.from('conversations').select('id');
         
-        if (student) {
+        if (admin) {
+          conversationsQuery = conversationsQuery.eq('conversation_type', 'support');
+        } else if (student) {
           conversationsQuery = conversationsQuery.eq('student_id', student.id);
         } else if (owner) {
           conversationsQuery = conversationsQuery.eq('owner_id', owner.id);
         }
 
         const { data: conversations } = await conversationsQuery;
-        if (!conversations || conversations.length === 0) return;
+        if (!conversations || conversations.length === 0) {
+          setUnreadCount(0);
+          return;
+        }
 
-        const conversationIds = conversations.map(c => c.id);
+        // Calculate unread count using user_thread_state
+        let totalUnread = 0;
+        
+        for (const conv of conversations) {
+          const { data: threadState } = await supabase
+            .from('user_thread_state')
+            .select('last_read_at')
+            .eq('thread_id', conv.id)
+            .eq('user_id', userId)
+            .maybeSingle();
 
-        // Count unread messages
-        const { count } = await supabase
-          .from('messages')
-          .select('*', { count: 'exact', head: true })
-          .in('conversation_id', conversationIds)
-          .neq('sender_id', userId)
-          .eq('read', false);
+          if (threadState?.last_read_at) {
+            const { count } = await supabase
+              .from('messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('conversation_id', conv.id)
+              .neq('sender_id', userId)
+              .gt('created_at', threadState.last_read_at);
+            totalUnread += count || 0;
+          } else {
+            const { count } = await supabase
+              .from('messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('conversation_id', conv.id)
+              .neq('sender_id', userId);
+            totalUnread += count || 0;
+          }
+        }
 
-        setUnreadCount(count || 0);
+        setUnreadCount(totalUnread);
       } catch (error) {
         console.error('Error loading unread count:', error);
       }
@@ -57,18 +88,11 @@ export function useUnreadCount(userId: string | null) {
 
     loadUnreadCount();
 
-    // Subscribe to new messages
-    const channel = supabase
+    // Subscribe to new messages and thread state updates
+    const messagesChannel = supabase
       .channel('unread-messages')
       .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages'
-      }, () => {
-        loadUnreadCount();
-      })
-      .on('postgres_changes', {
-        event: 'UPDATE',
+        event: '*',
         schema: 'public',
         table: 'messages'
       }, () => {
@@ -76,8 +100,20 @@ export function useUnreadCount(userId: string | null) {
       })
       .subscribe();
 
+    const threadStateChannel = supabase
+      .channel('unread-thread-state')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_thread_state'
+      }, () => {
+        loadUnreadCount();
+      })
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(threadStateChannel);
     };
   }, [userId]);
 
