@@ -1,1173 +1,380 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import Navbar from "@/components/shared/Navbar";
-import Footer from "@/components/shared/Footer";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { MatchCard } from "@/components/ai-match/MatchCard";
-import { AIAvatar } from "@/components/ai-match/AIAvatar";
-import { mockMatches } from "@/data/mockMatches";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, ArrowLeft, ArrowRight, RotateCcw } from "lucide-react";
-import { useAuthGuard, useProfileCompletion } from "@/hooks/useAuthGuard";
-import { MatchCardSkeleton } from "@/components/skeletons/MatchCardSkeleton";
-import ErrorBoundary from "@/components/ErrorBoundary";
-import { generateReasonText } from "@/utils/aiLogic";
-import { questions, profileQuestions, preferenceQuestions, Question } from "@/data/questions";
-import { logAnalyticsEvent } from "@/utils/analytics";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
+import { ProfileIncompleteCard } from "@/components/ai-match/ProfileIncompleteCard";
+import { LoadingState } from "@/components/ai-match/LoadingState";
+import { AIInsightsCard } from "@/components/ai-match/AIInsightsCard";
+import { DormMatchCard } from "@/components/ai-match/DormMatchCard";
+import { RoommateMatchCard } from "@/components/ai-match/RoommateMatchCard";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Home, Users } from "lucide-react";
+import { rankDorms } from "@/ai-engine/recommendationModel";
 import { useRoommateMatch } from "@/hooks/useRoommateMatch";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CheckCircle, MessageSquare } from "lucide-react";
 
-const universities = [
-  "LAU (Byblos)",
-  "LAU (Beirut)",
-  "AUB",
-  "USEK",
-  "USJ",
-  "LU (Hadat)",
-  "Balamand (Dekwaneh)",
-  "Balamand (ALBA)",
-  "BAU",
-  "Haigazian",
-];
+type ProfileStatus = 'loading' | 'incomplete' | 'complete';
+type MatchMode = 'dorms' | 'roommates';
 
-export default function AiMatch() {
-  const { loading: authLoading, userId } = useAuthGuard();
-  const { checkingProfile } = useProfileCompletion(userId);
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [matches, setMatches] = useState<any[]>([]);
-  const [matchMode, setMatchMode] = useState<'dorms' | 'roommates'>('dorms');
-  const { toast } = useToast();
+const AiMatch = () => {
   const navigate = useNavigate();
-  const { loading: roommateLoading, matches: roommateMatches } = useRoommateMatch(userId);
+  const { toast } = useToast();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [profileStatus, setProfileStatus] = useState<ProfileStatus>('loading');
+  const [matchMode, setMatchMode] = useState<MatchMode>('dorms');
+  const [studentProfile, setStudentProfile] = useState<any>(null);
+  const [matches, setMatches] = useState<any[]>([]);
+  const [aiInsights, setAiInsights] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [sessionId] = useState(crypto.randomUUID());
+  const [showModeToggle, setShowModeToggle] = useState(false);
 
-  const [profile, setProfile] = useState({
-    full_name: "",
-    email: "",
-    age: "",
-    gender: "",
-    university: "",
-    residential_area: "",
-  });
+  // Get roommate matches using the hook
+  const { loading: roommateLoading, matches: roommateMatches } = useRoommateMatch(
+    matchMode === 'roommates' ? userId || undefined : undefined
+  );
 
-  const [preferences, setPreferences] = useState({
-    room_type: "",
-    roommate_needed: false,
-    budget: 1000,
-    preferred_university: "",
-    distance_preference: "No preference",
-  });
-
-  // 🧠 AI-related state
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [hasContext, setHasContext] = useState(false);
-  const [aiSummary, setAiSummary] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  
-  // 📋 Survey answers state
-  const [surveyAnswers, setSurveyAnswers] = useState<Record<number, any>>({});
-  
-  // Initialize session ID on mount
+  // Check authentication and load profile
   useEffect(() => {
-    if (!sessionId) {
-      setSessionId(crypto.randomUUID());
-    }
-  }, []);
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to use AI Match",
+          variant: "destructive"
+        });
+        navigate('/auth');
+        return;
+      }
+      setUserId(user.id);
+    };
 
+    checkAuth();
+  }, [navigate, toast]);
+
+  // Load and check profile completion
   useEffect(() => {
     if (!userId) return;
 
-    const loadProfile = async () => {
-      const { data } = await supabase.from("students").select("*").eq("user_id", userId).maybeSingle();
+    const checkProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('students')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
 
-      if (data) {
-        setProfile({
-          full_name: data.full_name || "",
-          email: data.email || "",
-          age: data.age?.toString() || "",
-          gender: data.gender || "",
-          university: data.university || "",
-          residential_area: data.residential_area || "",
-        });
-        setPreferences({
-          room_type: data.room_type || "",
-          roommate_needed: data.roommate_needed || false,
-          budget: data.budget || 1000,
-          preferred_university: data.preferred_university || "",
-          distance_preference: data.distance_preference || "No preference",
-        });
-      }
+        if (error) {
+          console.error('Error loading profile:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load your profile",
+            variant: "destructive"
+          });
+          return;
+        }
 
-      // Load stored survey answers from students_ai_responses
-      const { data: aiResponses } = await supabase
-        .from("students_ai_responses")
-        .select("responses")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        if (!data) {
+          setProfileStatus('incomplete');
+          return;
+        }
 
-      if (aiResponses?.responses) {
-        setSurveyAnswers(aiResponses.responses as Record<number, any>);
+        const completionScore = data.profile_completion_score || 0;
         
-        // Pre-fill profile fields from survey if available
-        const responses = aiResponses.responses as Record<number, any>;
-        if (responses[14] && !data?.age) {
-          setProfile(prev => ({ ...prev, age: responses[14].toString() }));
+        if (completionScore < 80) {
+          setProfileStatus('incomplete');
+          setStudentProfile({ ...data, profile_completion_score: completionScore });
+        } else {
+          setProfileStatus('complete');
+          setStudentProfile(data);
+          determineMatchMode(data);
         }
-        if (responses[15] && !data?.university) {
-          setProfile(prev => ({ ...prev, university: responses[15] }));
-        }
+      } catch (err) {
+        console.error('Error in checkProfile:', err);
+        setProfileStatus('incomplete');
       }
     };
 
-    loadProfile();
-  }, [userId]);
+    checkProfile();
+  }, [userId, toast]);
 
-  const handleStep1Submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Determine which match mode to show based on profile
+  const determineMatchMode = (profile: any) => {
+    const needsDorm = profile.accommodation_status === 'need_dorm';
+    const needsRoommate = profile.need_roommate === true;
 
-    if (!profile.full_name || !profile.email) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
+    // Show toggle if both conditions are true
+    if (needsDorm && needsRoommate) {
+      setShowModeToggle(true);
+      setMatchMode('dorms'); // Default to dorms
+    } else if (needsDorm) {
+      setShowModeToggle(false);
+      setMatchMode('dorms');
+    } else if (needsRoommate) {
+      setShowModeToggle(false);
+      setMatchMode('roommates');
+    } else {
+      // Default to dorms if neither is set
+      setShowModeToggle(false);
+      setMatchMode('dorms');
     }
-
-    // Upsert student profile
-    const studentData = {
-      user_id: userId,
-      full_name: profile.full_name,
-      email: profile.email,
-      age: profile.age ? parseInt(profile.age) : null,
-      gender: profile.gender,
-      university: profile.university,
-      residential_area: profile.residential_area,
-    };
-
-    const { error } = await supabase.from("students").upsert(studentData, { onConflict: userId ? "user_id" : "email" });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save profile",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setStep(2);
   };
 
-  const handleStep2Submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Update student preferences
-    const { error } = await supabase
-      .from("students")
-      .update({
-        room_type: preferences.room_type,
-        roommate_needed: preferences.roommate_needed,
-        budget: preferences.budget,
-        preferred_university: preferences.preferred_university,
-        distance_preference: preferences.distance_preference,
-      })
-      .eq("email", profile.email);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save preferences",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Save survey answers to students_ai_responses
-    const responsesPayload = {
-      ...surveyAnswers,
-      budget: preferences.budget,
-      room_type: preferences.room_type,
-      roommate_needed: preferences.roommate_needed,
-      preferred_university: preferences.preferred_university,
-      distance_preference: preferences.distance_preference,
-    };
-
-    await supabase
-      .from("students_ai_responses")
-      .insert({
-        user_id: userId || "",
-        responses: responsesPayload,
-      });
-
-    // Log AI match start
-    if (userId) {
-      await logAnalyticsEvent({
-        eventType: 'ai_match_start',
-        userId,
-        metadata: { 
-          preferences: preferences,
-          budget: preferences.budget 
+  // Fetch matches when mode changes
+  useEffect(() => {
+    if (profileStatus === 'complete' && studentProfile) {
+      if (matchMode === 'dorms') {
+        findDormMatches(studentProfile);
+      } else {
+        // Roommate matches are handled by the hook
+        if (roommateMatches.length > 0 && !roommateLoading) {
+          setMatches(roommateMatches);
+          fetchAIInsights(studentProfile, roommateMatches, 'roommates');
         }
-      });
+      }
+    }
+  }, [matchMode, profileStatus, studentProfile, roommateMatches, roommateLoading]);
+
+  // Generate match reasons for dorms
+  const generateDormMatchReasons = (dorm: any, profile: any): string[] => {
+    const reasons: string[] = [];
+
+    if (profile.budget && dorm.monthly_price && Math.abs(profile.budget - dorm.monthly_price) < 100) {
+      reasons.push(`Budget-friendly at $${dorm.monthly_price}`);
     }
 
-    setStep(3);
-    findMatches();
-  };
-
-  // 🔮 Call Roomy Gemini backend for a natural-language summary
-  const fetchAiSummary = async (userProfile: any, rankedDorms: any[]) => {
-    try {
-      setAiLoading(true);
-      setAiSummary(null);
-
-      const topDormNames =
-        rankedDorms
-          .slice(0, 3)
-          .map((d) => d.dorm_name || d.name)
-          .filter(Boolean)
-          .join(", ") || "a few suitable dorms";
-
-      const surveyValues = surveyAnswers[18] ? (Array.isArray(surveyAnswers[18]) ? surveyAnswers[18].join(", ") : "Not specified") : "Not specified";
-      
-      const prompt = `
-You are Roomy, an AI assistant helping Lebanese university students find dorms.
-
-User preferences (from their profile + survey):
-- Budget: $${userProfile.budget} / month
-- Preferred university: ${userProfile.preferred_university || "None specified"}
-- Distance preference: ${userProfile.distance_preference || "Not specified"}
-- Values: ${surveyValues}
-- Social preference: ${surveyAnswers[1] || "Not specified"}
-- Study environment: ${surveyAnswers[2] || "Not specified"}
-
-We have identified these candidate dorms: ${topDormNames}.
-
-In 3 short bullet points, explain why these dorms fit the user and what tradeoffs they should consider.
-Keep it conversational, concrete, and under 120 words.
-      `.trim();
-
-      const { data, error } = await supabase.functions.invoke("roomy-chat", {
-        body: {
-          message: prompt,
-          userId: userId || "anonymous",
-          sessionId,
-        },
-      });
-
-      if (error) {
-        console.error("Roomy AI summary error:", error);
-        toast({
-          title: "AI Error",
-          description: "Roomy AI could not summarize your matches. Matches are still shown below.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const responseText = (data as any)?.response || "Roomy AI could not generate a summary at the moment.";
-
-      // Handle session data from backend
-      if ((data as any)?.sessionId && (data as any).sessionId !== sessionId) {
-        setSessionId((data as any).sessionId);
-      }
-      if (typeof (data as any)?.hasContext === "boolean") {
-        setHasContext((data as any).hasContext);
-      }
-      if ((data as any)?.sessionReset) {
-        setSessionId(null);
-        setHasContext(false);
-      }
-
-      setAiSummary(responseText);
-    } catch (err) {
-      console.error("Roomy AI summary unexpected error:", err);
-      toast({
-        title: "AI Error",
-        description: "Something went wrong while talking to Roomy AI.",
-        variant: "destructive",
-      });
-    } finally {
-      setAiLoading(false);
+    if (profile.university && dorm.university && 
+        profile.university.toLowerCase() === dorm.university.toLowerCase()) {
+      reasons.push('Near your university');
     }
-  };
 
-  // 🔄 Reset AI Memory
-  const handleResetMemory = async () => {
-    if (!sessionId || !userId) return;
-    
-    try {
-      await supabase
-        .from('ai_chat_sessions')
-        .delete()
-        .eq('session_id', sessionId)
-        .eq('user_id', userId);
-      
-      // Generate new session ID
-      const newSessionId = crypto.randomUUID();
-      setSessionId(newSessionId);
-      setHasContext(false);
-      setAiSummary(null);
-      
-      toast({
-        title: "Memory Reset",
-        description: "Roomy AI's memory has been cleared. Starting fresh!",
-      });
-    } catch (err) {
-      console.error("Error resetting AI memory:", err);
-      toast({
-        title: "Error",
-        description: "Failed to reset AI memory. Please try again.",
-        variant: "destructive",
-      });
+    if (profile.preferred_housing_area && dorm.area &&
+        profile.preferred_housing_area.toLowerCase() === dorm.area.toLowerCase()) {
+      reasons.push('Preferred location');
     }
+
+    if (dorm.amenities && profile.preferred_amenities) {
+      const matchedAmenities = dorm.amenities.filter((a: string) => 
+        profile.preferred_amenities.includes(a)
+      );
+      if (matchedAmenities.length > 0) {
+        reasons.push(`${matchedAmenities.length} amenities match`);
+      }
+    }
+
+    if (reasons.length === 0) {
+      reasons.push('Verified listing', 'Great location');
+    }
+
+    return reasons.slice(0, 3);
   };
 
-  const findMatches = async () => {
+  // Find and rank dorm matches
+  const findDormMatches = async (profile: any) => {
     setLoading(true);
-    setAiSummary(null);
-    setAiLoading(false);
 
     try {
-      // Load all verified dorms
+      // 1. Fetch verified dorms
       const { data: dorms, error: dormsError } = await supabase
-        .from("dorms")
-        .select("*")
-        .eq("verification_status", "Verified");
+        .from('dorms')
+        .select('*')
+        .eq('verification_status', 'Verified')
+        .eq('available', true);
 
       if (dormsError) throw dormsError;
 
-      // Load engagement signals
+      // 2. Fetch engagement signals
       const { data: signals } = await supabase
-        .from("dorm_engagement_view")
-        .select("dorm_id, views, favorites, inquiries");
+        .from('dorm_engagement_view')
+        .select('*');
 
-      const signalsMap: Record<string, any> = {};
-      (signals ?? []).forEach((s: any) => (signalsMap[s.dorm_id] = s));
+      const signalsMap = signals?.reduce((acc, s) => ({ ...acc, [s.dorm_id]: s }), {}) || {};
 
-      // Build user profile for recommendation engine enriched with survey data
+      // 3. Build user profile for ranking
       const userProfile = {
-        budget: preferences.budget,
-        preferred_university: preferences.preferred_university || profile.university || null,
-        favorite_areas: surveyAnswers[13] === "Near campus" ? ["campus"] : surveyAnswers[13] === "City area" ? ["city"] : [],
-        preferred_room_types: preferences.room_type ? [preferences.room_type] : [],
-        preferred_amenities: Array.isArray(surveyAnswers[18]) ? surveyAnswers[18] : [],
-        ai_confidence_score: 85, // Default confidence
-        distance_preference: preferences.distance_preference,
+        budget: profile.budget,
+        preferred_university: profile.university || profile.preferred_university,
+        favorite_areas: profile.favorite_areas || (profile.preferred_housing_area ? [profile.preferred_housing_area] : []),
+        preferred_room_types: profile.preferred_room_types || (profile.room_type ? [profile.room_type] : []),
+        preferred_amenities: profile.preferred_amenities || [],
+        ai_confidence_score: profile.ai_confidence_score || 75
       };
 
-      // Use recommendation engine to rank dorms
-      const { rankDorms } = await import("@/ai-engine/recommendationModel");
-      const rankedDorms = rankDorms(dorms ?? [], userProfile, signalsMap);
+      // 4. Rank dorms using recommendation engine
+      const ranked = rankDorms(dorms || [], userProfile, signalsMap);
+      const top10 = ranked.slice(0, 10);
 
-      // Take top 8 matches
-      const topMatches = rankedDorms.slice(0, 8).map((dorm: any) => ({
+      // 5. Add match reasons to each dorm
+      const withReasons = top10.map(dorm => ({
         ...dorm,
-        matchScore: dorm.matchScore,
-        matchReasons: generateMatchReasons(dorm, userProfile),
+        matchReasons: generateDormMatchReasons(dorm, profile)
       }));
 
-      setMatches(topMatches);
+      setMatches(withReasons);
 
-      // 🔮 Ask Roomy AI (Gemini) for a natural-language explanation
-      if (topMatches.length > 0) {
-        await fetchAiSummary(userProfile, topMatches);
-      }
+      // 6. Get AI insights
+      await fetchAIInsights(profile, withReasons, 'dorms');
+
     } catch (error) {
-      console.error("Error finding matches:", error);
+      console.error('Error finding dorm matches:', error);
       toast({
         title: "Error",
-        description: "Failed to find matches. Please try again.",
-        variant: "destructive",
+        description: "Failed to load dorm matches",
+        variant: "destructive"
       });
-      setMatches([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Generate human-readable match reasons
-  const generateMatchReasons = (dorm: any, userProfile: any): string[] => {
-    const reasons: string[] = [];
+  // Fetch AI insights from Gemini
+  const fetchAIInsights = async (profile: any, matchList: any[], mode: MatchMode) => {
+    try {
+      let prompt = '';
 
-    // Budget fit
-    if (userProfile.budget && dorm.monthly_price <= userProfile.budget) {
-      const savings = userProfile.budget - dorm.monthly_price;
-      if (savings > 100) {
-        reasons.push(`Within budget - saves you $${savings}/month`);
+      if (mode === 'dorms') {
+        const topDorms = matchList.slice(0, 3).map(d => d.dorm_name || d.name).join(', ');
+        prompt = `You are Roomy AI, a friendly Lebanese student housing assistant. Based on this student's profile:
+- Budget: $${profile.budget || 'flexible'}/month
+- University: ${profile.university || 'not specified'}
+- Preferred area: ${profile.preferred_housing_area || profile.favorite_areas?.[0] || 'flexible'}
+- Room type: ${profile.room_type || 'any'}
+
+Top matches: ${topDorms}
+
+In 2-3 friendly, conversational sentences, explain why these dorms are great fits for them. Be warm and encouraging.`;
       } else {
-        reasons.push("Perfectly within your budget");
+        const topRoommates = matchList.slice(0, 3).map(r => r.full_name).join(', ');
+        prompt = `You are Roomy AI, a friendly Lebanese student housing assistant. Based on this student's profile and their top 3 roommate matches (${topRoommates}), explain in 2-3 friendly sentences why these people would be compatible roommates. Focus on shared universities, similar budgets, and compatible preferences.`;
       }
-    }
 
-    // University match
-    if (userProfile.preferred_university && dorm.university) {
-      if (dorm.university.toLowerCase().includes(userProfile.preferred_university.toLowerCase())) {
-        reasons.push(`Close to ${userProfile.preferred_university}`);
-      }
-    }
+      const { data, error } = await supabase.functions.invoke('roomy-chat', {
+        body: { message: prompt, userId, sessionId }
+      });
 
-    // Room type match
-    if (userProfile.preferred_room_types?.length && dorm.room_types) {
-      const hasMatch = userProfile.preferred_room_types.some((t: string) =>
-        dorm.room_types.toLowerCase().includes(t.toLowerCase()),
-      );
-      if (hasMatch) {
-        reasons.push(`Has your preferred room type`);
-      }
-    }
+      if (error) throw error;
 
-    // Verification status
-    if (dorm.verification_status === "Verified") {
-      reasons.push("Verified and trusted");
+      setAiInsights(data?.response || 'AI insights are currently unavailable, but we found great matches for you!');
+    } catch (error) {
+      console.error('Error fetching AI insights:', error);
+      setAiInsights('We found great matches for you based on your preferences!');
     }
-
-    // Popular choice
-    if (dorm.matchScore && dorm.matchScore > 70) {
-      reasons.push("Highly recommended for you");
-    }
-
-    return reasons.slice(0, 3); // Max 3 reasons
   };
 
-  const restart = () => {
-    setStep(1);
-    setMatches([]);
-    setAiSummary(null);
-    setSessionId(null);
-    setHasContext(false);
+  // Handle mode toggle
+  const handleModeChange = (value: string) => {
+    if (value) {
+      setMatchMode(value as MatchMode);
+    }
   };
 
-  // Helper to render survey questions
-  const renderQuestion = (q: Question) => {
-    const value = surveyAnswers[q.id];
-
-    if (q.type === "scale" && q.options) {
-      return (
-        <div key={q.id} className="space-y-2">
-          <Label className="text-sm">{q.text}</Label>
-          <div className="flex gap-2">
-            {q.options.map((opt, idx) => (
-              <Button
-                key={opt}
-                type="button"
-                size="sm"
-                variant={value === opt ? "default" : "outline"}
-                onClick={() => setSurveyAnswers({ ...surveyAnswers, [q.id]: opt })}
-                className="flex-1 h-auto py-2 text-xs"
-              >
-                {opt}
-              </Button>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    if (q.type === "single" && q.options) {
-      return (
-        <div key={q.id} className="space-y-2">
-          <Label className="text-sm">{q.text}</Label>
-          <div className="flex flex-wrap gap-2">
-            {q.options.map((opt) => (
-              <Button
-                key={opt}
-                type="button"
-                size="sm"
-                variant={value === opt ? "default" : "outline"}
-                onClick={() => setSurveyAnswers({ ...surveyAnswers, [q.id]: opt })}
-                className="h-auto py-2 text-xs"
-              >
-                {opt}
-              </Button>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    if (q.type === "multi" && q.options) {
-      const selected = Array.isArray(value) ? value : [];
-      return (
-        <div key={q.id} className="space-y-2">
-          <Label className="text-sm">{q.text}</Label>
-          <div className="flex flex-wrap gap-2">
-            {q.options.map((opt) => {
-              const isSelected = selected.includes(opt);
-              return (
-                <Button
-                  key={opt}
-                  type="button"
-                  size="sm"
-                  variant={isSelected ? "default" : "outline"}
-                  onClick={() => {
-                    const newSelected = isSelected
-                      ? selected.filter((s) => s !== opt)
-                      : [...selected, opt];
-                    setSurveyAnswers({ ...surveyAnswers, [q.id]: newSelected });
-                  }}
-                  className="h-auto py-2 text-xs"
-                >
-                  {opt}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
-      );
-    }
-
-    if (q.type === "number") {
-      return (
-        <div key={q.id} className="space-y-2">
-          <Label className="text-sm">{q.text}</Label>
-          <Input
-            type="number"
-            value={value || ""}
-            onChange={(e) => setSurveyAnswers({ ...surveyAnswers, [q.id]: parseInt(e.target.value) || 0 })}
-            className="bg-background/40 border border-white/10 text-foreground"
-          />
-        </div>
-      );
-    }
-
-    if (q.type === "text") {
-      return (
-        <div key={q.id} className="space-y-2">
-          <Label className="text-sm">{q.text}</Label>
-          <Input
-            type="text"
-            value={value || ""}
-            onChange={(e) => setSurveyAnswers({ ...surveyAnswers, [q.id]: e.target.value })}
-            className="bg-background/40 border border-white/10 text-foreground"
-          />
-        </div>
-      );
-    }
-
-    return null;
-  };
-
-  if (authLoading || checkingProfile) {
+  if (profileStatus === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground/60">Loading...</p>
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <LoadingState />
         </div>
       </div>
     );
   }
 
-  const progress = (step / 3) * 100;
+  if (profileStatus === 'incomplete') {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <ProfileIncompleteCard percentage={studentProfile?.profile_completion_score || 0} />
+        <Footer />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex flex-col relative bg-background">
+    <div className="min-h-screen bg-background">
       <Navbar />
-
-      <main className="flex-1 container mx-auto px-4 py-4 md:py-8 mt-16 md:mt-24 mb-20 md:mb-0">
-        <div className="max-w-3xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-4 md:mb-8"
-          >
-            <Badge variant="secondary" className="mb-4 neon-glow">
-              <Sparkles className="w-4 h-4 mr-2" />
-              AI-Powered Matching
-            </Badge>
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black gradient-text mb-3 md:mb-6">
-              Find Your Perfect Dorm
-            </h1>
-            <p className="text-base md:text-xl text-foreground/80">
-              Answer a few quick questions and let AI do the work
-            </p>
-          </motion.div>
-
-          <Progress value={progress} className="mb-4 md:mb-8" />
-
-          {step === 1 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="bg-background/40 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-10 shadow-2xl"
-            >
-              <h2 className="text-xl md:text-3xl font-black mb-4 md:mb-8 gradient-text">
-                Step 1 — Create your profile
-              </h2>
-              <form onSubmit={handleStep1Submit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Full Name *</Label>
-                    <Input
-                      required
-                      value={profile.full_name}
-                      onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-                      className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/40"
-                    />
-                  </div>
-                  <div>
-                    <Label>Email *</Label>
-                    <Input
-                      type="email"
-                      required
-                      value={profile.email}
-                      onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                      className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/40"
-                    />
-                  </div>
-                  <div>
-                    <Label>Age</Label>
-                    <Input
-                      type="number"
-                      value={profile.age}
-                      onChange={(e) => setProfile({ ...profile, age: e.target.value })}
-                      className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/40"
-                    />
-                  </div>
-                  <div>
-                    <Label>Gender</Label>
-                    <Select value={profile.gender} onValueChange={(v) => setProfile({ ...profile, gender: v })}>
-                      <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border border-white/10">
-                        <SelectItem value="Male">Male</SelectItem>
-                        <SelectItem value="Female">Female</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>University</Label>
-                    <Select value={profile.university} onValueChange={(v) => setProfile({ ...profile, university: v })}>
-                      <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
-                        <SelectValue placeholder="Select university" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border border-white/10">
-                        {universities.map((u) => (
-                          <SelectItem key={u} value={u}>
-                            {u}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Residential Area</Label>
-                    <Input
-                      value={profile.residential_area}
-                      onChange={(e) => setProfile({ ...profile, residential_area: e.target.value })}
-                      className="bg-background/40 border border-white/10 text-foreground placeholder:text-foreground/40"
-                    />
-                  </div>
-                </div>
-
-                {/* About You - Survey Questions */}
-                <div className="mt-6 p-6 bg-background/40 backdrop-blur-xl border border-white/10 rounded-xl space-y-4">
-                  <h3 className="text-lg font-bold gradient-text mb-4">About You</h3>
-                  {profileQuestions.slice(0, 5).map(renderQuestion)}
-                </div>
-
-                <Button type="submit" className="w-full bg-gradient-to-r from-primary to-secondary">
-                  Next <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </form>
-            </motion.div>
-          )}
-
-          {step === 2 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="bg-background/40 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-10 shadow-2xl"
-            >
-              <h2 className="text-2xl md:text-3xl font-black mb-6 md:mb-8 gradient-text">
-                Step 2 — Set your preferences
-              </h2>
-              <form onSubmit={handleStep2Submit} className="space-y-6">
-                <div>
-                  <Label>Room Type</Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
-                    {["Private Room", "Shared Room", "Studio Apartment"].map((type) => (
-                      <Button
-                        key={type}
-                        type="button"
-                        variant={preferences.room_type === type ? "default" : "outline"}
-                        onClick={() => setPreferences({ ...preferences, room_type: type })}
-                        className="h-auto py-3 text-sm"
-                      >
-                        {type}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-background/40 rounded-xl border border-white/10">
-                  <div>
-                    <Label>Roommate Needed?</Label>
-                    <p className="text-sm text-foreground/60">Looking for a compatible roommate</p>
-                  </div>
-                  <Switch
-                    checked={preferences.roommate_needed}
-                    onCheckedChange={(checked) => setPreferences({ ...preferences, roommate_needed: checked })}
-                  />
-                </div>
-
-                <div>
-                  <Label>Budget: ${preferences.budget} / month</Label>
-                  <Slider
-                    value={[preferences.budget]}
-                    onValueChange={([v]) => setPreferences({ ...preferences, budget: v })}
-                    min={0}
-                    max={2000}
-                    step={50}
-                    className="mt-2"
-                  />
-                </div>
-
-                <div>
-                  <Label>Preferred University</Label>
-                  <Select
-                    value={preferences.preferred_university}
-                    onValueChange={(v) => setPreferences({ ...preferences, preferred_university: v })}
-                  >
-                    <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
-                      <SelectValue placeholder="Select university" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border border-white/10">
-                      {universities.map((u) => (
-                        <SelectItem key={u} value={u}>
-                          {u}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Distance Preference</Label>
-                  <Select
-                    value={preferences.distance_preference}
-                    onValueChange={(v) => setPreferences({ ...preferences, distance_preference: v })}
-                  >
-                    <SelectTrigger className="bg-background/40 border border-white/10 text-foreground">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border border-white/10">
-                      <SelectItem value="Walking distance">Walking distance</SelectItem>
-                      <SelectItem value="Shuttle OK">Shuttle OK</SelectItem>
-                      <SelectItem value="No preference">No preference</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Lifestyle & Dorm Preferences - Survey Questions */}
-                <div className="p-6 bg-background/40 backdrop-blur-xl border border-white/10 rounded-xl space-y-4">
-                  <h3 className="text-lg font-bold gradient-text mb-4">Lifestyle & Dorm Preferences</h3>
-                  {preferenceQuestions.slice(0, 7).map(renderQuestion)}
-                </div>
-
-                <div className="flex gap-3">
-                  <Button type="button" variant="outline" onClick={() => setStep(1)} className="flex-1">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back
-                  </Button>
-                  <Button type="submit" className="flex-1 bg-gradient-to-r from-primary to-secondary">
-                    Find Matches <Sparkles className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              </form>
-            </motion.div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-6 md:space-y-8 mb-20 md:mb-0">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="text-center"
-              >
-                <Badge variant="secondary" className="mb-4 neon-glow">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  AI-Powered Results
-                </Badge>
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4 gradient-text">
-                  {loading ? "Analyzing your preferences..." : "Your Perfect Matches"}
-                </h2>
-                <p className="text-base md:text-lg text-foreground/70">
-                  Personalized recommendations based on your profile
-                </p>
-              </motion.div>
-
-              {/* Toggle between Dorm and Roommate Matches */}
-              <div className="flex justify-center gap-2 mb-6">
-                <Button
-                  variant={matchMode === 'dorms' ? 'default' : 'outline'}
-                  onClick={() => setMatchMode('dorms')}
-                  className="px-6"
-                >
-                  Find Dorms
-                </Button>
-                <Button
-                  variant={matchMode === 'roommates' ? 'default' : 'outline'}
-                  onClick={() => setMatchMode('roommates')}
-                  className="px-6"
-                >
-                  Find Roommates
-                </Button>
-              </div>
-
-              {/* 🔮 Roomy AI (Gemini) Summary Card */}
-              {aiLoading && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-background/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 md:p-6 shadow-lg"
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-                    <h3 className="text-lg md:text-xl font-semibold">Roomy AI is analyzing...</h3>
-                  </div>
-                  <div className="flex gap-2 mb-3">
-                    <Badge variant="secondary" className="text-xs">
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      Gemini 2.5 Flash
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-foreground/70">
-                    Generating personalized insights based on your preferences.
-                  </p>
-                </motion.div>
-              )}
-
-              {aiSummary && !aiLoading && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5 }}
-                  className="bg-primary/10 backdrop-blur-xl border border-primary/30 rounded-2xl p-4 md:p-6 shadow-[0_0_30px_rgba(129,140,248,0.35)]"
-                >
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-5 h-5 text-primary" />
-                        <h3 className="text-lg md:text-xl font-bold">Roomy AI Insight</h3>
-                      </div>
-                      <div className="flex gap-2 flex-wrap">
-                        <Badge variant="secondary" className="text-xs">
-                          <Sparkles className="w-3 h-3 mr-1" />
-                          Gemini 2.5 Flash
-                        </Badge>
-                        {hasContext && (
-                          <>
-                            <Badge variant="outline" className="text-xs">
-                              Context Memory Active
-                            </Badge>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={handleResetMemory}
-                              className="ml-auto h-6"
-                            >
-                              <RotateCcw className="w-3 h-3 mr-1" />
-                              Reset Memory
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="prose prose-sm max-w-none text-foreground/90 whitespace-pre-wrap leading-relaxed">
-                    {aiSummary}
-                  </div>
-                </motion.div>
-              )}
-
-              {matchMode === 'dorms' ? (
-                // DORM MATCHES MODE
-                loading ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[1, 2, 3].map((i) => (
-                      <MatchCardSkeleton key={i} />
-                    ))}
-                  </div>
-                ) : (
-                  <>
-                    {/* 🔮 Roomy AI (Gemini) Summary Card */}
-                    {aiLoading && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-background/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 md:p-6 shadow-lg"
-                      >
-                        <div className="flex items-center gap-3 mb-2">
-                          <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-                          <h3 className="text-lg md:text-xl font-semibold">Roomy AI is analyzing...</h3>
-                        </div>
-                        <div className="flex gap-2 mb-3">
-                          <Badge variant="secondary" className="text-xs">
-                            <Sparkles className="w-3 h-3 mr-1" />
-                            Gemini 2.5 Flash
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-foreground/70">
-                          Generating personalized insights based on your preferences.
-                        </p>
-                      </motion.div>
-                    )}
-
-                    {aiSummary && !aiLoading && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5 }}
-                        className="bg-primary/10 backdrop-blur-xl border border-primary/30 rounded-2xl p-4 md:p-6 shadow-[0_0_30px_rgba(129,140,248,0.35)]"
-                      >
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Sparkles className="w-5 h-5 text-primary" />
-                              <h3 className="text-lg md:text-xl font-bold">Roomy AI Insight</h3>
-                            </div>
-                            <div className="flex gap-2 flex-wrap">
-                              <Badge variant="secondary" className="text-xs">
-                                <Sparkles className="w-3 h-3 mr-1" />
-                                Gemini 2.5 Flash
-                              </Badge>
-                              {hasContext && (
-                                <>
-                                  <Badge variant="outline" className="text-xs">
-                                    Context Memory Active
-                                  </Badge>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleResetMemory}
-                                    className="ml-auto h-6"
-                                  >
-                                    <RotateCcw className="w-3 h-3 mr-1" />
-                                    Reset Memory
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="prose prose-sm max-w-none text-foreground/90 whitespace-pre-wrap leading-relaxed">
-                          {aiSummary}
-                        </div>
-                      </motion.div>
-                    )}
-
-                    <ErrorBoundary>
-                      <motion.div
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                        initial="hidden"
-                        animate="visible"
-                        variants={{
-                          visible: {
-                            transition: {
-                              staggerChildren: 0.15,
-                              delayChildren: 0.15,
-                            },
-                          },
-                        }}
-                      >
-                        {matches.map((match, idx) => (
-                          <motion.div
-                            key={match.id || idx}
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.1 }}
-                            className="bg-background/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 hover:shadow-xl hover:border-primary/40 transition-all duration-300"
-                          >
-                            <div className="flex items-start justify-between mb-3">
-                              <h3 className="text-2xl font-bold text-foreground">{match.dorm_name || match.name}</h3>
-                              <Badge
-                                variant={
-                                  match.matchScore >= 80 ? "default" : match.matchScore >= 60 ? "secondary" : "outline"
-                                }
-                                className="ml-2"
-                              >
-                                {match.matchScore}% match
-                              </Badge>
-                            </div>
-
-                            {/* Match reasons */}
-                            {match.matchReasons && match.matchReasons.length > 0 && (
-                              <div className="space-y-1 mb-4">
-                                {match.matchReasons.map((reason: string, i: number) => (
-                                  <div key={i} className="flex items-center text-sm text-foreground/70">
-                                    <span className="text-primary mr-2">✓</span>
-                                    {reason}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            <div className="space-y-2 text-sm text-foreground/70 mb-4">
-                              <p>📍 {match.area || match.location}</p>
-                              <p>💰 ${match.monthly_price}/month</p>
-                              <p>🛏️ {match.room_types || "Various types"}</p>
-                              {match.amenities && match.amenities.length > 0 && (
-                                <p>✨ {match.amenities.slice(0, 3).join(", ")}</p>
-                              )}
-                            </div>
-
-                            <Button
-                              onClick={() => navigate(`/dorm/${match.id}`)}
-                              className="w-full mt-4 bg-gradient-to-r from-primary to-secondary"
-                            >
-                              View Details
-                            </Button>
-                          </motion.div>
-                        ))}
-                      </motion.div>
-                    </ErrorBoundary>
-
-                    {matches.length === 0 && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-center bg-background/40 backdrop-blur-xl border border-white/10 rounded-3xl p-12"
-                      >
-                        <Sparkles className="w-12 h-12 mx-auto mb-4 text-primary" />
-                        <h3 className="text-xl font-bold text-foreground mb-2">No Perfect Match Yet</h3>
-                        <p className="text-foreground/70 text-lg mb-4">
-                          We couldn't find dorms that match all your criteria.
-                        </p>
-                        <p className="text-foreground/60 text-sm">
-                          Try adjusting your budget or location preferences and search again.
-                        </p>
-                      </motion.div>
-                    )}
-                  </>
-                )
-              ) : (
-                // ROOMMATE MATCHES MODE
-                <div className="max-w-7xl mx-auto">
-                  {roommateLoading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {[...Array(6)].map((_, i) => <MatchCardSkeleton key={i} />)}
-                    </div>
-                  ) : roommateMatches.length === 0 ? (
-                    <div className="text-center bg-background/40 backdrop-blur-xl border border-white/10 rounded-3xl p-12">
-                      <p className="text-foreground/60">No roommate matches found. Complete your profile for better matches!</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {roommateMatches.map((match) => (
-                        <div key={match.user_id} className="overflow-hidden hover:shadow-lg transition-shadow bg-background/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-                          <div className="flex items-start gap-4 mb-4">
-                            <Avatar className="w-20 h-20 border-4 border-primary/20 shadow-md">
-                              <AvatarImage src={match.profile_photo_url} alt={match.full_name} />
-                              <AvatarFallback className="bg-primary/20 text-primary text-2xl">
-                                {match.full_name?.charAt(0) || 'U'}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <h3 className="text-xl font-bold">{match.full_name}</h3>
-                              <p className="text-sm text-foreground/60">{match.university}</p>
-                              <Badge variant="secondary" className="mt-2">
-                                {match.matchScore}% Match
-                              </Badge>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-2 mb-4">
-                            {match.matchReasons.map((reason: string, idx: number) => (
-                              <div key={idx} className="flex items-center gap-2 text-sm">
-                                <CheckCircle className="w-4 h-4 text-primary" />
-                                <span>{reason}</span>
-                              </div>
-                            ))}
-                          </div>
-
-                          <Button
-                            className="w-full"
-                            onClick={() => navigate("/messages", {
-                              state: {
-                                openThreadWithUserId: match.user_id,
-                                initialMessage: `Hi ${match.full_name}! We're a ${match.matchScore}% match on Roomy. Want to discuss finding a place together?`,
-                                matchProfile: match
-                              }
-                            })}
-                          >
-                            <MessageSquare className="w-4 h-4 mr-2" />
-                            Send Message
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-                className="flex flex-wrap gap-3 justify-center mt-8"
-              >
-                <Button
-                  variant="outline"
-                  onClick={() => setStep(2)}
-                  className="bg-white/10 border-white/20 hover:bg.white/20 text-white"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" /> Adjust Preferences
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleResetMemory}
-                  disabled={!hasContext}
-                  className="bg-white/10 border-white/20 hover:bg-white/20 text-white"
-                  title={hasContext ? "Clear Roomy AI's memory" : "No memory to reset"}
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" /> Reset AI Memory
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={restart}
-                  className="bg-white/10 border-white/20 hover:bg-white/20 text-white hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]"
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" /> Start Over
-                </Button>
-                <Button
-                  onClick={() => navigate("/listings")}
-                  className="bg-gradient-to-r from-primary to-secondary hover:shadow-[0_0_30px_rgba(168,85,247,0.4)]"
-                >
-                  Browse All Dorms
-                </Button>
-                <Button
-                  onClick={() => navigate("/ai-chat")}
-                  className="bg-gradient-to-r from-purple-600 via-blue-500 to-emerald-400 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-[0_0_40px_rgba(168,85,247,0.5)] transition-all hover:scale-105"
-                >
-                  💬 Chat with Roomy AI
-                </Button>
-              </motion.div>
-            </div>
-          )}
+      
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-3">
+          <h1 className="text-4xl md:text-5xl font-bold gradient-text">
+            AI-Powered {matchMode === 'dorms' ? 'Dorm' : 'Roommate'} Matching
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Powered by Gemini AI, personalized just for you
+          </p>
         </div>
-      </main>
+
+        {/* Mode Toggle */}
+        {showModeToggle && (
+          <div className="flex justify-center">
+            <ToggleGroup 
+              type="single" 
+              value={matchMode} 
+              onValueChange={handleModeChange}
+              className="bg-muted p-1 rounded-lg"
+            >
+              <ToggleGroupItem 
+                value="dorms" 
+                className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground px-6 py-2"
+              >
+                <Home className="mr-2 w-4 h-4" />
+                Find Dorms
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="roommates"
+                className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground px-6 py-2"
+              >
+                <Users className="mr-2 w-4 h-4" />
+                Find Roommates
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {(loading || (matchMode === 'roommates' && roommateLoading)) && <LoadingState />}
+
+        {/* Results */}
+        {!loading && !(matchMode === 'roommates' && roommateLoading) && matches.length > 0 && (
+          <>
+            {/* AI Insights */}
+            {aiInsights && (
+              <AIInsightsCard insights={aiInsights} />
+            )}
+
+            {/* Matches Grid */}
+            <div>
+              <h2 className="text-2xl font-bold mb-6">
+                {matchMode === 'dorms' ? 'Top Dorm Matches' : 'Compatible Roommates'}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {matches.map((match, index) => (
+                  matchMode === 'dorms' ? (
+                    <DormMatchCard key={match.id} dorm={match} index={index} />
+                  ) : (
+                    <RoommateMatchCard key={match.user_id} roommate={match} index={index} />
+                  )
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* No Matches */}
+        {!loading && !(matchMode === 'roommates' && roommateLoading) && matches.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground text-lg">
+              No matches found. Try updating your preferences in your profile.
+            </p>
+          </div>
+        )}
+      </div>
 
       <Footer />
     </div>
   );
-}
+};
+
+export default AiMatch;
