@@ -410,6 +410,9 @@ export type Database = {
           created_at: string
           dorm_id: string | null
           id: string
+          is_archived: boolean | null
+          is_pinned: boolean | null
+          muted_until: string | null
           owner_id: string | null
           student_id: string
           updated_at: string
@@ -419,6 +422,9 @@ export type Database = {
           created_at?: string
           dorm_id?: string | null
           id?: string
+          is_archived?: boolean | null
+          is_pinned?: boolean | null
+          muted_until?: string | null
           owner_id?: string | null
           student_id: string
           updated_at?: string
@@ -428,6 +434,9 @@ export type Database = {
           created_at?: string
           dorm_id?: string | null
           id?: string
+          is_archived?: boolean | null
+          is_pinned?: boolean | null
+          muted_until?: string | null
           owner_id?: string | null
           student_id?: string
           updated_at?: string
