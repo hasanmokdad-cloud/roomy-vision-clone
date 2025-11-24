@@ -1,12 +1,12 @@
 // Instagram-style mobile bottom navbar with icons only
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileProfileMenu } from "@/components/mobile/MobileProfileMenu";
 import {
-  Home,
+  Settings,
   MessageSquare,
   User,
   Sparkles,
@@ -18,14 +18,39 @@ export default function MobileTabs() {
   const location = useLocation();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string>();
+  const [userRole, setUserRole] = useState<string | null>(null);
 
-  const tabs = [
-    { path: "/dashboard", icon: Home, label: "Home" },
-    { path: "/messages", icon: MessageSquare, label: "Messages" },
-    { path: "/listings", icon: Building2, label: "Dorms", center: true },
-    { path: "/ai-match", icon: Sparkles, label: "AI Match" },
-    { path: "/profile", icon: User, label: "Profile", isProfile: true },
-  ];
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: roleRow } = await supabase
+        .from("user_roles")
+        .select("roles(name)")
+        .eq("user_id", user.id)
+        .single();
+
+      setUserRole(roleRow?.roles?.name || null);
+    };
+
+    fetchUserRole();
+  }, []);
+
+  // Owner has unique 3-icon layout
+  const tabs = userRole === 'owner' 
+    ? [
+        { path: "/settings", icon: Settings, label: "Settings" },
+        { path: "/messages", icon: MessageSquare, label: "Messages", center: true },
+        { path: "/profile", icon: User, label: "Profile", isProfile: true },
+      ]
+    : [
+        { path: "/settings", icon: Settings, label: "Settings" },
+        { path: "/messages", icon: MessageSquare, label: "Messages" },
+        { path: "/listings", icon: Building2, label: "Dorms", center: true },
+        { path: "/ai-match", icon: Sparkles, label: "AI Match" },
+        { path: "/profile", icon: User, label: "Profile", isProfile: true },
+      ];
 
   const handleProfileClick = async () => {
     const { data: { user } } = await supabase.auth.getUser();

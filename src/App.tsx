@@ -18,7 +18,6 @@ const Main = lazy(() => import("./pages/Main"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Intro = lazy(() => import("./pages/Intro"));
 const Profile = lazy(() => import("./pages/Profile"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
 const DormDetail = lazy(() => import("./pages/DormDetail"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const Analytics = lazy(() => import("./pages/admin/Analytics"));
@@ -112,7 +111,7 @@ function ProtectedRoute({
   if (location.pathname === "/select-role" && role) {
     if (role === "admin") return <Navigate to="/admin" replace />;
     if (role === "owner") return <Navigate to="/owner" replace />;
-    if (role === "student") return <Navigate to="/dashboard" replace />;
+    if (role === "student") return <Navigate to="/listings" replace />;
   }
 
   // Handle "none" role (users with no assigned role)
@@ -172,7 +171,6 @@ const AppRoutes = () => {
 
           {/* Student Routes - Admins can access all student routes */}
           <Route path="/onboarding" element={<ProtectedRoute element={<Onboarding />} />} />
-          <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
           <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
           <Route path="/settings" element={<ProtectedRoute element={<Settings />} />} />
           <Route path="/saved-dorms" element={<ProtectedRoute element={<SavedDorms />} />} />
