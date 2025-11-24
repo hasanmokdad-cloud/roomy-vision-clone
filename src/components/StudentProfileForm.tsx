@@ -405,13 +405,13 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
 
                     {availableTowns.length > 0 && (
                       <div>
-                        <Label htmlFor="town_village" className="text-sm text-foreground/60">Town/Village</Label>
+                        <Label htmlFor="town_village" className="text-sm text-foreground/60">Area</Label>
                         <Select 
                           onValueChange={(value) => setValue('town_village', value)}
                           value={formValues.town_village}
                         >
                           <SelectTrigger id="town_village" className="mt-1">
-                            <SelectValue placeholder="Select town/village" />
+                            <SelectValue placeholder="Select area" />
                           </SelectTrigger>
                           <SelectContent className="bg-background z-50 max-h-[300px]">
                             {availableTowns.map((town) => (
