@@ -717,25 +717,34 @@ export type Database = {
           body: string
           conversation_id: string
           created_at: string
+          delivered_at: string | null
           id: string
           read: boolean
+          seen_at: string | null
           sender_id: string
+          status: string | null
         }
         Insert: {
           body: string
           conversation_id: string
           created_at?: string
+          delivered_at?: string | null
           id?: string
           read?: boolean
+          seen_at?: string | null
           sender_id: string
+          status?: string | null
         }
         Update: {
           body?: string
           conversation_id?: string
           created_at?: string
+          delivered_at?: string | null
           id?: string
           read?: boolean
+          seen_at?: string | null
           sender_id?: string
+          status?: string | null
         }
         Relationships: [
           {
