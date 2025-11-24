@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Download, Eye, Building2, CheckCircle, XCircle, Ban, Trash2, ArrowLeft } from 'lucide-react';
+import { Search, Download, Eye, Building2, CheckCircle, XCircle, Ban, Trash2, ArrowLeft, MessageCircle } from 'lucide-react';
 import { OwnerProfileModal } from '@/components/admin/OwnerProfileModal';
+import { createOrGetConversation } from '@/lib/conversationUtils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -151,6 +152,38 @@ export default function AdminOwners() {
     setDeleteDialogOpen(false);
     setOwnerToDelete(null);
     loadOwners();
+  };
+
+  const handleMessageOwner = async (ownerId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: ownerData } = await supabase
+      .from('owners')
+      .select('user_id')
+      .eq('id', ownerId)
+      .single();
+
+    if (!ownerData?.user_id) {
+      toast({
+        title: 'Error',
+        description: 'Could not find owner contact information',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const conversationId = await createOrGetConversation(user.id, ownerData.user_id);
+
+    if (conversationId) {
+      navigate('/messages');
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Could not create conversation',
+        variant: 'destructive',
+      });
+    }
   };
 
   const exportToCSV = () => {
@@ -300,6 +333,14 @@ export default function AdminOwners() {
                         title="View Profile"
                       >
                         <Eye className="w-4 h-4 text-blue-500" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleMessageOwner(owner.id)}
+                        title="Message Owner"
+                      >
+                        <MessageCircle className="w-4 h-4 text-green-500" />
                       </Button>
                       <Button
                         size="sm"

@@ -416,6 +416,8 @@ export type Database = {
           owner_id: string | null
           student_id: string
           updated_at: string
+          user_a_id: string | null
+          user_b_id: string | null
         }
         Insert: {
           conversation_type?: string | null
@@ -428,6 +430,8 @@ export type Database = {
           owner_id?: string | null
           student_id: string
           updated_at?: string
+          user_a_id?: string | null
+          user_b_id?: string | null
         }
         Update: {
           conversation_type?: string | null
@@ -440,6 +444,8 @@ export type Database = {
           owner_id?: string | null
           student_id?: string
           updated_at?: string
+          user_a_id?: string | null
+          user_b_id?: string | null
         }
         Relationships: [
           {
@@ -724,6 +730,7 @@ export type Database = {
       messages: {
         Row: {
           attachment_duration: number | null
+          attachment_metadata: Json | null
           attachment_type: string | null
           attachment_url: string | null
           body: string
@@ -732,12 +739,17 @@ export type Database = {
           delivered_at: string | null
           id: string
           read: boolean
+          read_at: string | null
+          receiver_id: string | null
           seen_at: string | null
           sender_id: string
+          sent_at: string | null
           status: string | null
+          type: string | null
         }
         Insert: {
           attachment_duration?: number | null
+          attachment_metadata?: Json | null
           attachment_type?: string | null
           attachment_url?: string | null
           body: string
@@ -746,12 +758,17 @@ export type Database = {
           delivered_at?: string | null
           id?: string
           read?: boolean
+          read_at?: string | null
+          receiver_id?: string | null
           seen_at?: string | null
           sender_id: string
+          sent_at?: string | null
           status?: string | null
+          type?: string | null
         }
         Update: {
           attachment_duration?: number | null
+          attachment_metadata?: Json | null
           attachment_type?: string | null
           attachment_url?: string | null
           body?: string
@@ -760,9 +777,13 @@ export type Database = {
           delivered_at?: string | null
           id?: string
           read?: boolean
+          read_at?: string | null
+          receiver_id?: string | null
           seen_at?: string | null
           sender_id?: string
+          sent_at?: string | null
           status?: string | null
+          type?: string | null
         }
         Relationships: [
           {
@@ -2079,6 +2100,11 @@ export type Database = {
       }
       debug_auth_state: { Args: never; Returns: Json }
       generate_share_code: { Args: never; Returns: string }
+      get_or_create_conversation: {
+        Args: { p_user_a_id: string; p_user_b_id: string }
+        Returns: string
+      }
+      get_support_admin_id: { Args: never; Returns: string }
       get_user_role: { Args: { p_user_id: string }; Returns: string }
       has_role: {
         Args: { _role_name: string; _user_id: string }
