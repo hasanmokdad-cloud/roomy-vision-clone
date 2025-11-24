@@ -57,6 +57,11 @@ export default function Messages() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
+  // Debug log for cache verification
+  useEffect(() => {
+    console.log('[Messages] Component mounted - version 2.0');
+  }, []);
+
   // Handle auto-open from navigation state
   useEffect(() => {
     if (!userId) return;
@@ -256,14 +261,16 @@ export default function Messages() {
     if (data) {
       // Enrich with dorm and user names
       const enriched = await Promise.all(data.map(async (conv) => {
-        // Only fetch dorm if dorm_id exists and conversation is not support type
-        const { data: dorm } = conv.dorm_id && conv.conversation_type !== 'support'
-          ? await supabase
-              .from('dorms')
-              .select('dorm_name, name')
-              .eq('id', conv.dorm_id)
-              .maybeSingle()
-          : { data: null };
+        // Phase 1: Explicit dorm query protection - never executes for support conversations
+        let dorm = null;
+        if (conv.dorm_id && conv.conversation_type !== 'support') {
+          const { data: dormData } = await supabase
+            .from('dorms')
+            .select('dorm_name, name')
+            .eq('id', conv.dorm_id)
+            .maybeSingle();
+          dorm = dormData;
+        }
 
         let otherUserName = 'User';
         let otherUserPhoto: string | null = null;
