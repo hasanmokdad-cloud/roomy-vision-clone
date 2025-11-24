@@ -414,7 +414,7 @@ export type Database = {
           is_pinned: boolean | null
           muted_until: string | null
           owner_id: string | null
-          student_id: string
+          student_id: string | null
           updated_at: string
           user_a_id: string | null
           user_b_id: string | null
@@ -428,7 +428,7 @@ export type Database = {
           is_pinned?: boolean | null
           muted_until?: string | null
           owner_id?: string | null
-          student_id: string
+          student_id?: string | null
           updated_at?: string
           user_a_id?: string | null
           user_b_id?: string | null
@@ -442,7 +442,7 @@ export type Database = {
           is_pinned?: boolean | null
           muted_until?: string | null
           owner_id?: string | null
-          student_id?: string
+          student_id?: string | null
           updated_at?: string
           user_a_id?: string | null
           user_b_id?: string | null
@@ -733,7 +733,7 @@ export type Database = {
           attachment_metadata: Json | null
           attachment_type: string | null
           attachment_url: string | null
-          body: string
+          body: string | null
           conversation_id: string
           created_at: string
           delivered_at: string | null
@@ -752,7 +752,7 @@ export type Database = {
           attachment_metadata?: Json | null
           attachment_type?: string | null
           attachment_url?: string | null
-          body: string
+          body?: string | null
           conversation_id: string
           created_at?: string
           delivered_at?: string | null
@@ -771,7 +771,7 @@ export type Database = {
           attachment_metadata?: Json | null
           attachment_type?: string | null
           attachment_url?: string | null
-          body?: string
+          body?: string | null
           conversation_id?: string
           created_at?: string
           delivered_at?: string | null
