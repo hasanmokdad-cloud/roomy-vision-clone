@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Message {
   role: "user" | "assistant";
@@ -26,17 +28,51 @@ export const ChatbotBubble = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [hasContext, setHasContext] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [shouldShow, setShouldShow] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const location = useLocation();
+  const isMobile = useIsMobile();
 
-  // ✅ Load Supabase user session and chat history
+  // ✅ Load Supabase user session and chat history + check user role
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       const uid = session?.user?.id || null;
       setUserId(uid);
       
-      // Load previous messages if user is logged in
+      // Check user role for visibility rules
       if (uid) {
+        const { data: ownerData } = await supabase
+          .from('owners')
+          .select('id')
+          .eq('user_id', uid)
+          .maybeSingle();
+        
+        if (ownerData) {
+          setUserRole('owner');
+        } else {
+          const { data: studentData } = await supabase
+            .from('students')
+            .select('id')
+            .eq('user_id', uid)
+            .maybeSingle();
+          
+          if (studentData) {
+            setUserRole('student');
+          } else {
+            const { data: adminData } = await supabase
+              .from('admins')
+              .select('id')
+              .eq('user_id', uid)
+              .maybeSingle();
+            
+            if (adminData) {
+              setUserRole('admin');
+            }
+          }
+        }
+        
         const tempSessionId = `session_${uid}_${Date.now()}`;
         setSessionId(tempSessionId);
         
@@ -82,6 +118,31 @@ export const ChatbotBubble = () => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // ✅ Visibility rules based on role and route
+  useEffect(() => {
+    // Owners never see the chatbot
+    if (userRole === 'owner') {
+      setShouldShow(false);
+      return;
+    }
+    
+    // Students on mobile: only on /listings page
+    if (userRole === 'student' && isMobile) {
+      setShouldShow(location.pathname === '/listings');
+      return;
+    }
+    
+    // Students on desktop: show everywhere (existing behavior)
+    // Admins: show everywhere (existing behavior)
+    if (userRole === 'student' || userRole === 'admin') {
+      setShouldShow(true);
+      return;
+    }
+    
+    // Default: hide if no role determined yet
+    setShouldShow(false);
+  }, [userRole, location.pathname, isMobile]);
 
   // ✅ Listen for programmatic open events
   useEffect(() => {
@@ -226,6 +287,9 @@ export const ChatbotBubble = () => {
     }
   };
 
+  // Don't render if shouldn't show
+  if (!shouldShow) return null;
+
   return (
     <>
       <AnimatePresence>
@@ -234,7 +298,10 @@ export const ChatbotBubble = () => {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed bottom-36 md:bottom-28 right-6 w-96 h-[500px] glass rounded-2xl shadow-2xl flex flex-col z-50"
+            className="fixed bottom-28 right-4 w-[calc(100vw-2rem)] max-w-96 h-[500px] glass rounded-2xl shadow-2xl flex flex-col z-50"
+            style={{
+              paddingBottom: 'env(safe-area-inset-bottom)',
+            }}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
@@ -326,7 +393,10 @@ export const ChatbotBubble = () => {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-24 md:bottom-8 right-6 md:right-8 w-14 h-14 rounded-full bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition-shadow duration-300 flex items-center justify-center z-50"
+        className="fixed bottom-28 right-4 w-14 h-14 rounded-full bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition-shadow duration-300 flex items-center justify-center z-50"
+        style={{
+          marginBottom: 'env(safe-area-inset-bottom)',
+        }}
         aria-label="Open Roomy AI Chat"
       >
         <MessageCircle className="w-6 h-6 text-white" />
