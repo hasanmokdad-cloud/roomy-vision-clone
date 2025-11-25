@@ -302,6 +302,7 @@ export default function AdminDorms() {
             setSelectedDorm(null);
           }}
           onUpdate={loadDorms}
+          isAdmin={true}
         />
       )}
 
