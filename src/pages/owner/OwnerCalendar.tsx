@@ -12,6 +12,7 @@ import { Clock, User, CalendarClock } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
 import { OwnerAvailabilityManager } from '@/components/owner/OwnerAvailabilityManager';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 export default function OwnerCalendar() {
   const { userId } = useAuthGuard();
@@ -82,11 +83,12 @@ export default function OwnerCalendar() {
   const datesWithBookings = bookings.map(b => new Date(b.scheduled_time));
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-      <div className="flex-1 flex mt-16">
-        <OwnerSidebar />
-        <main className="flex-1 p-8">
+    <SidebarProvider>
+      <div className="min-h-screen flex flex-col bg-background w-full">
+        <Navbar />
+        <div className="flex-1 flex mt-16">
+          <OwnerSidebar />
+          <main className="flex-1 p-8">
           <div className="max-w-6xl mx-auto">
             <h1 className="text-3xl font-bold mb-8">Calendar & Availability</h1>
 
@@ -209,5 +211,6 @@ export default function OwnerCalendar() {
         </main>
       </div>
     </div>
+    </SidebarProvider>
   );
 }

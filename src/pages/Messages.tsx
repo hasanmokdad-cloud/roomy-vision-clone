@@ -210,7 +210,14 @@ export default function Messages() {
             console.log('✅ Found existing conversation:', conversationId);
           } else {
             // Create new student-owner conversation
-            console.log('📝 Creating new conversation...');
+            console.log('📝 Creating new conversation with data:', {
+              student_id: student.id,
+              owner_id: targetOwner.id,
+              user_a_id: userId,
+              user_b_id: targetUserId,
+              dorm_id: roomPreview?.dormId || null
+            });
+            
             const { data: newConv, error: createError } = await supabase
               .from('conversations')
               .insert({
@@ -225,7 +232,13 @@ export default function Messages() {
               .single();
 
             if (createError) {
-              console.error('❌ Error creating conversation:', createError);
+              console.error('❌ Error creating conversation:', {
+                error: createError,
+                code: createError.code,
+                message: createError.message,
+                details: createError.details,
+                hint: createError.hint
+              });
               toast({
                 title: 'Error',
                 description: 'Failed to create conversation with owner',
@@ -240,7 +253,9 @@ export default function Messages() {
               console.log('✅ Created new conversation:', conversationId);
               
               // Reload conversations list to show the new conversation
+              console.log('🔄 Reloading conversations list...');
               await loadConversations();
+              console.log('✅ Conversations reloaded');
             }
           }
         } else {
@@ -520,6 +535,8 @@ export default function Messages() {
 
   const loadConversations = async () => {
     if (!userId) return;
+    
+    console.log('🔄 Loading conversations for user:', userId);
 
     // Get user role - check admin first
     const { data: admin } = await supabase
@@ -540,6 +557,8 @@ export default function Messages() {
       .eq('user_id', userId)
       .maybeSingle();
 
+    console.log('👤 User role:', { admin: !!admin, student: !!student, owner: !!owner });
+
     let query = supabase.from('conversations').select('*');
 
     if (admin) {
@@ -558,7 +577,15 @@ export default function Messages() {
     // Sort pinned first, then by updated_at
     query = query.order('is_pinned', { ascending: false }).order('updated_at', { ascending: false });
 
-    const { data } = await query;
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('❌ Error loading conversations:', error);
+      return;
+    }
+    
+    console.log(`✅ Loaded ${data?.length || 0} conversations`);
+    
     if (data) {
       // Enrich with dorm and user names
       const enriched = await Promise.all(data.map(async (conv) => {
