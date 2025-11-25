@@ -83,6 +83,32 @@ const MessageStatusIcon = ({ status }: { status?: 'sent' | 'delivered' | 'seen' 
   }
 };
 
+const AudioPlayer = ({ url }: { url: string }) => {
+  const [audioError, setAudioError] = useState(false);
+
+  if (audioError) {
+    return (
+      <div className="flex items-center gap-2 text-xs opacity-70">
+        <span>Audio unavailable</span>
+        <a href={url} download className="underline hover:text-primary">
+          Download
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2">
+      <audio 
+        controls 
+        src={url} 
+        className="w-48"
+        onError={() => setAudioError(true)}
+      />
+    </div>
+  );
+};
+
 export default function Messages() {
   const { loading: authLoading, userId } = useAuthGuard();
   const isMobile = useIsMobile();
@@ -1208,32 +1234,6 @@ export default function Messages() {
     } finally {
       setSending(false);
     }
-  };
-
-  const AudioPlayer = ({ url }: { url: string }) => {
-    const [audioError, setAudioError] = useState(false);
-
-    if (audioError) {
-      return (
-        <div className="flex items-center gap-2 text-xs opacity-70">
-          <span>Audio unavailable</span>
-          <a href={url} download className="underline hover:text-primary">
-            Download
-          </a>
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2">
-        <audio 
-          controls 
-          src={url} 
-          className="w-48"
-          onError={() => setAudioError(true)}
-        />
-      </div>
-    );
   };
 
   const renderMessageContent = (msg: Message) => {
