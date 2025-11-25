@@ -100,6 +100,7 @@ export default function Messages() {
   const [showArchived, setShowArchived] = useState(false);
   const [isRecordingActive, setIsRecordingActive] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
+  const [shouldUploadVoice, setShouldUploadVoice] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
@@ -917,6 +918,33 @@ export default function Messages() {
     return iOS && webkit && !/CriOS|FxiOS|OPiOS|mercury/.test(ua);
   };
 
+  // Enhanced format detection for better iOS compatibility
+  const getSupportedMimeType = () => {
+    // iOS Safari prefers mp4 with AAC codec
+    if (isIOSSafari()) {
+      if (MediaRecorder.isTypeSupported('audio/mp4;codecs=mp4a.40.2')) {
+        return 'audio/mp4;codecs=mp4a.40.2';
+      }
+      if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        return 'audio/mp4';
+      }
+      return undefined; // Let browser choose default
+    }
+    
+    // Other browsers prefer WebM
+    if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+      return 'audio/webm;codecs=opus';
+    }
+    if (MediaRecorder.isTypeSupported('audio/webm')) {
+      return 'audio/webm';
+    }
+    if (MediaRecorder.isTypeSupported('audio/mp4')) {
+      return 'audio/mp4';
+    }
+    
+    return undefined; // Let browser choose
+  };
+
   const startRecording = async () => {
     // Prevent multiple recordings
     if (isRecordingActive || recording) {
@@ -926,21 +954,14 @@ export default function Messages() {
 
     try {
       setIsRecordingActive(true);
+      setShouldUploadVoice(true); // Reset flag for new recording
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      // Use MP4 for iOS Safari, WebM for others
-      let mimeType = 'audio/webm;codecs=opus';
-      if (isIOSSafari()) {
-        mimeType = 'audio/mp4';
-      } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-        mimeType = 'audio/webm;codecs=opus';
-      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
-        mimeType = 'audio/webm';
-      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-        mimeType = 'audio/mp4';
-      }
+      const mimeType = getSupportedMimeType();
+      const mediaRecorder = mimeType 
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream); // Use browser default
       
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -952,11 +973,15 @@ export default function Messages() {
 
       mediaRecorder.onstop = async () => {
         setIsRecordingActive(false);
-        if (audioChunksRef.current.length > 0) {
-          const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        
+        // Only upload if not cancelled
+        if (shouldUploadVoice && audioChunksRef.current.length > 0) {
+          const actualMimeType = mimeType || mediaRecorder.mimeType;
+          const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
           
           if (audioBlob.size > 0) {
-            const duration = recordingDuration || 1;
+            // Calculate duration from actual recording time
+            const duration = Math.max(1, Math.ceil((Date.now() - recordingStartTime) / 1000));
             await uploadVoiceMessage(audioBlob, duration);
           } else {
             toast({
@@ -966,6 +991,7 @@ export default function Messages() {
             });
           }
         }
+        
         stream.getTracks().forEach((track) => track.stop());
         audioChunksRef.current = [];
         
@@ -1015,40 +1041,58 @@ export default function Messages() {
 
   const handleTouchStart = (e: React.TouchEvent) => {
     e.preventDefault();
-    touchStartTimeRef.current = Date.now();
-    if (!recording && !isRecordingActive) {
-      startRecording();
+    e.stopPropagation();
+    
+    // Prevent multiple starts
+    if (recording || isRecordingActive) {
+      console.log('Already recording, ignoring touch start');
+      return;
     }
+    
+    touchStartTimeRef.current = Date.now();
+    setShouldUploadVoice(true);
+    startRecording();
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    // Ignore if not recording
+    if (!recording && !isRecordingActive) {
+      return;
+    }
+    
     const touchDuration = Date.now() - touchStartTimeRef.current;
     
-    // Only stop if recording has been active for at least 500ms
-    if (recording && touchDuration >= 500) {
-      stopRecording();
-    } else if (touchDuration < 500) {
-      // Too quick, cancel the recording
-      if (mediaRecorderRef.current) {
+    if (touchDuration < 500) {
+      // Cancel recording - set flag BEFORE stopping
+      setShouldUploadVoice(false);
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop();
-        setRecording(false);
-        setIsRecordingActive(false);
-        audioChunksRef.current = [];
-        if (recordingTimerRef.current) {
-          clearInterval(recordingTimerRef.current);
-        }
       }
+      setRecording(false);
+      setIsRecordingActive(false);
+      
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+      
+      toast({ 
+        title: 'Recording cancelled', 
+        description: 'Hold the button longer to record',
+        duration: 2000
+      });
+    } else {
+      // Stop and upload
+      stopRecording();
     }
   };
 
-  const uploadVoiceMessage = async (audioBlob: Blob, fallbackDuration: number) => {
+  const uploadVoiceMessage = async (audioBlob: Blob, duration: number) => {
     if (!selectedConversation || !userId) return;
 
     try {
-      // Use fallback duration from timer (more reliable on iOS)
-      const duration = fallbackDuration || 1;
-      
       const extension = audioBlob.type.includes('mp4') ? 'mp4' : 'webm';
       const fileName = `voice-${Date.now()}.${extension}`;
       const filePath = `${userId}/${fileName}`;
@@ -1152,6 +1196,32 @@ export default function Messages() {
     }
   };
 
+  const AudioPlayer = ({ url }: { url: string }) => {
+    const [audioError, setAudioError] = useState(false);
+
+    if (audioError) {
+      return (
+        <div className="flex items-center gap-2 text-xs opacity-70">
+          <span>Audio unavailable</span>
+          <a href={url} download className="underline hover:text-primary">
+            Download
+          </a>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2">
+        <audio 
+          controls 
+          src={url} 
+          className="w-48"
+          onError={() => setAudioError(true)}
+        />
+      </div>
+    );
+  };
+
   const renderMessageContent = (msg: Message) => {
     if (msg.attachment_type === 'image') {
       return (
@@ -1169,11 +1239,7 @@ export default function Messages() {
     }
 
     if (msg.attachment_type === 'audio') {
-      return (
-        <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2">
-          <audio controls src={msg.attachment_url || ''} className="w-48" />
-        </div>
-      );
+      return <AudioPlayer url={msg.attachment_url || ''} />;
     }
 
     return <p className="text-sm whitespace-pre-wrap break-words">{formatMessageBody(msg)}</p>;
@@ -1366,12 +1432,20 @@ export default function Messages() {
                     paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))'
                   } : undefined}
                 >
+                  {isMobile && !recording && (
+                    <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-2">
+                      <Mic className="w-3 h-3" />
+                      <span>Hold mic button to record voice message</span>
+                    </div>
+                  )}
+                  
                   {recording && (
                     <div className="flex items-center justify-center gap-2 bg-red-500/10 text-red-500 px-3 py-2 rounded-lg mb-2 animate-pulse">
                       <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                       <span className="text-sm font-medium">
                         Recording... {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
                       </span>
+                      {isMobile && <span className="text-xs opacity-70 ml-2">Release to send</span>}
                     </div>
                   )}
                   
