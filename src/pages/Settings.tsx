@@ -232,7 +232,7 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen relative bg-gradient-to-b from-background to-muted/20">
-      <Navbar />
+      {!isMobile && <Navbar />}
 
       <div className="container mx-auto px-6 py-32 max-w-4xl">
         <Button

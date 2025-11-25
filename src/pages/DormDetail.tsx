@@ -21,11 +21,13 @@ import { logAnalyticsEvent } from '@/utils/analytics';
 import { ThreeDViewer } from '@/components/rooms/ThreeDViewer';
 import { ScrollToTopButton } from '@/components/listings/ScrollToTopButton';
 import { ShareButton } from '@/components/shared/ShareButton';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function DormDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [dorm, setDorm] = useState<any>(null);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -228,7 +230,7 @@ export default function DormDetail() {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
+        {!isMobile && <Navbar />}
         <DormDetailSkeleton />
         <Footer />
       </div>
@@ -248,7 +250,7 @@ export default function DormDetail() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
+      {!isMobile && <Navbar />}
       
       <main className="flex-1 container mx-auto px-4 py-8 mt-20">
         <Button

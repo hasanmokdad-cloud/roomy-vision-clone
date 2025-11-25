@@ -98,6 +98,8 @@ export default function Messages() {
   const [recording, setRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [showArchived, setShowArchived] = useState(false);
+  const [isRecordingActive, setIsRecordingActive] = useState(false);
+  const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
@@ -105,6 +107,7 @@ export default function Messages() {
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout>();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const touchStartTimeRef = useRef<number>(0);
 
   // Debug log for cache verification
   useEffect(() => {
@@ -906,18 +909,36 @@ export default function Messages() {
     }
   };
 
+  // Detect iOS Safari
+  const isIOSSafari = () => {
+    const ua = navigator.userAgent;
+    const iOS = /iPad|iPhone|iPod/.test(ua);
+    const webkit = /WebKit/.test(ua);
+    return iOS && webkit && !/CriOS|FxiOS|OPiOS|mercury/.test(ua);
+  };
+
   const startRecording = async () => {
+    // Prevent multiple recordings
+    if (isRecordingActive || recording) {
+      console.log('Recording already in progress, skipping...');
+      return;
+    }
+
     try {
+      setIsRecordingActive(true);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      // Prefer opus codec for better quality and compatibility
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
-        ? 'audio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('audio/webm')
-        ? 'audio/webm'
-        : MediaRecorder.isTypeSupported('audio/mp4')
-        ? 'audio/mp4'
-        : 'audio/ogg';
+      // Use MP4 for iOS Safari, WebM for others
+      let mimeType = 'audio/webm;codecs=opus';
+      if (isIOSSafari()) {
+        mimeType = 'audio/mp4';
+      } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        mimeType = 'audio/webm;codecs=opus';
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+        mimeType = 'audio/webm';
+      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        mimeType = 'audio/mp4';
+      }
       
       const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
@@ -930,16 +951,17 @@ export default function Messages() {
       };
 
       mediaRecorder.onstop = async () => {
+        setIsRecordingActive(false);
         if (audioChunksRef.current.length > 0) {
           const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
           
-          // Validate blob has actual data
           if (audioBlob.size > 0) {
-            await uploadVoiceMessage(audioBlob);
+            const duration = recordingDuration || 1;
+            await uploadVoiceMessage(audioBlob, duration);
           } else {
             toast({
               title: 'Recording error',
-              description: 'No audio data captured. Please try again.',
+              description: 'No audio data captured',
               variant: 'destructive',
             });
           }
@@ -947,32 +969,27 @@ export default function Messages() {
         stream.getTracks().forEach((track) => track.stop());
         audioChunksRef.current = [];
         
-        // Clear timer
         if (recordingTimerRef.current) {
           clearInterval(recordingTimerRef.current);
         }
         setRecordingDuration(0);
       };
 
-      // Use larger timeslice for more reliable recording
-      mediaRecorder.start(1000); // 1 second chunks
+      mediaRecorder.start(100);
       setRecording(true);
+      setRecordingStartTime(Date.now());
       setRecordingDuration(0);
       
-      // Start duration counter
       recordingTimerRef.current = setInterval(() => {
         setRecordingDuration((prev) => prev + 1);
       }, 1000);
       
-      toast({
-        title: 'Recording...',
-        description: 'Voice message is being recorded',
-      });
     } catch (error) {
       console.error('Recording error:', error);
+      setIsRecordingActive(false);
       toast({
         title: 'Microphone access denied',
-        description: 'Please allow microphone access to record voice messages.',
+        description: 'Please allow microphone access',
         variant: 'destructive',
       });
     }
@@ -988,7 +1005,7 @@ export default function Messages() {
     }
   };
 
-  const toggleRecording = () => {
+  const handleVoiceButtonClick = () => {
     if (recording) {
       stopRecording();
     } else {
@@ -996,40 +1013,50 @@ export default function Messages() {
     }
   };
 
-  // Helper to calculate audio duration
-  const getAudioDuration = async (blob: Blob): Promise<number> => {
-    try {
-      const arrayBuffer = await blob.arrayBuffer();
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      await audioContext.close();
-      return Math.round(audioBuffer.duration);
-    } catch (error) {
-      console.error('Error calculating audio duration:', error);
-      return 0;
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    touchStartTimeRef.current = Date.now();
+    if (!recording && !isRecordingActive) {
+      startRecording();
     }
   };
 
-  const uploadVoiceMessage = async (audioBlob: Blob) => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    const touchDuration = Date.now() - touchStartTimeRef.current;
+    
+    // Only stop if recording has been active for at least 500ms
+    if (recording && touchDuration >= 500) {
+      stopRecording();
+    } else if (touchDuration < 500) {
+      // Too quick, cancel the recording
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+        setRecording(false);
+        setIsRecordingActive(false);
+        audioChunksRef.current = [];
+        if (recordingTimerRef.current) {
+          clearInterval(recordingTimerRef.current);
+        }
+      }
+    }
+  };
+
+  const uploadVoiceMessage = async (audioBlob: Blob, fallbackDuration: number) => {
     if (!selectedConversation || !userId) return;
 
     try {
-      // Calculate duration
-      const duration = await getAudioDuration(audioBlob);
+      // Use fallback duration from timer (more reliable on iOS)
+      const duration = fallbackDuration || 1;
       
-      // Determine file extension based on MIME type
-      const extension = audioBlob.type.includes('webm') ? 'webm' 
-        : audioBlob.type.includes('mp4') ? 'mp4' 
-        : audioBlob.type.includes('ogg') ? 'ogg' 
-        : 'webm';
-      
+      const extension = audioBlob.type.includes('mp4') ? 'mp4' : 'webm';
       const fileName = `voice-${Date.now()}.${extension}`;
       const filePath = `${userId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('message-media')
         .upload(filePath, audioBlob, {
-          contentType: audioBlob.type || 'audio/webm',
+          contentType: audioBlob.type,
           cacheControl: '3600',
           upsert: false
         });
@@ -1040,7 +1067,6 @@ export default function Messages() {
         .from('message-media')
         .getPublicUrl(filePath);
 
-      // Ensure body is null for voice messages, not empty string
       await supabase.from('messages').insert({
         conversation_id: selectedConversation,
         sender_id: userId,
@@ -1373,21 +1399,24 @@ export default function Messages() {
                       )}
                     </Button>
 
-                    {/* Desktop: Click to toggle, Mobile: Hold to record */}
+                    {/* Desktop: Click to toggle, Mobile: Touch to record */}
                     <Button
                       type="button"
                       variant={recording ? "destructive" : "ghost"}
                       size="icon"
-                      onClick={isMobile ? undefined : toggleRecording}
-                      onMouseDown={isMobile ? startRecording : undefined}
-                      onMouseUp={isMobile ? stopRecording : undefined}
-                      onTouchStart={isMobile ? startRecording : undefined}
-                      onTouchEnd={isMobile ? stopRecording : undefined}
+                      onClick={isMobile ? undefined : handleVoiceButtonClick}
+                      onTouchStart={isMobile ? handleTouchStart : undefined}
+                      onTouchEnd={isMobile ? handleTouchEnd : undefined}
                       className={recording ? "animate-pulse" : ""}
                       aria-label={recording ? "Stop recording" : "Record voice message"}
                       title={isMobile ? "Hold to record voice message" : "Click to record voice message"}
                     >
                       <Mic className="w-5 h-5" />
+                      {recording && isMobile && (
+                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs whitespace-nowrap bg-background px-2 py-1 rounded">
+                          {recordingDuration}s
+                        </span>
+                      )}
                     </Button>
 
                     <Input

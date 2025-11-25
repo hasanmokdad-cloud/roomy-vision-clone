@@ -66,7 +66,7 @@ const Main = () => {
   return (
     <div className="relative min-h-screen">
       <SkipToContent />
-      <Navbar />
+      {!isMobile && <Navbar />}
       <main id="main-content">
         <Hero />
         <HowItWorks />

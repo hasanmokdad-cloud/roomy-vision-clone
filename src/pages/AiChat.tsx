@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Send, Sparkles, RefreshCw } from "lucide-react";
 import { sanitizeInput } from "@/utils/inputValidation";
 import { logAnalyticsEvent } from "@/utils/analytics";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type Message = {
   role: "user" | "assistant";
@@ -17,6 +18,7 @@ type Message = {
 };
 
 export default function AiChat() {
+  const isMobile = useIsMobile();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -197,7 +199,7 @@ export default function AiChat() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#0F1624] via-[#15203B] to-[#1a2847] w-full max-w-screen overflow-x-hidden">
-      <Navbar />
+      {!isMobile && <Navbar />}
       
       <main className="flex-1 container max-w-4xl mx-auto px-2 md:px-4 py-8 mt-20 flex flex-col overflow-x-hidden">
         <motion.div

@@ -14,6 +14,7 @@ import { validateName, validateEmail, sanitizeInput, validateMessage } from '@/u
 import { supabase } from '@/integrations/supabase/client';
 import { WhatsAppDropdown } from '@/components/shared/WhatsAppDropdown';
 import { triggerContactEmailNotification } from '@/lib/contactNotifications';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Dynamic field component that shows "University" for students or "Dorm Name" for owners
 function UniversityOrDormField({ value, onChange, error }: { value: string; onChange: (v: string) => void; error?: string }) {
@@ -47,6 +48,7 @@ function UniversityOrDormField({ value, onChange, error }: { value: string; onCh
 
 export default function Contact() {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',

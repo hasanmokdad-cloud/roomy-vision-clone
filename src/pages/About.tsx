@@ -4,12 +4,15 @@ import { UnderwaterScene } from '@/components/UnderwaterScene';
 import { Sparkles, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function About() {
+  const isMobile = useIsMobile();
+  
   return (
     <div className="min-h-screen flex flex-col bg-background relative">
       <UnderwaterScene />
-      <Navbar />
+      {!isMobile && <Navbar />}
       
       <main className="flex-1 container mx-auto px-4 py-16 mt-20">
         <div className="max-w-4xl mx-auto">
