@@ -170,18 +170,6 @@ export default function Navbar() {
               </SheetContent>
             </Sheet>
 
-            {/* Reach Us Button */}
-            <Button
-              variant="ghost"
-              asChild
-              className="hidden md:flex items-center gap-2"
-            >
-              <Link to="/contact">
-                <Phone className="w-4 h-4" />
-                Reach Us
-              </Link>
-            </Button>
-
             {user ? (
               <>
                 {/* Messages Icon with Badge - Hidden on mobile */}
