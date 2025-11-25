@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import BottomNav from '@/components/BottomNav';
+import { useBottomNav } from '@/contexts/BottomNavContext';
 import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -88,6 +89,7 @@ export default function Messages() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const { setHideBottomNav } = useBottomNav();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -373,6 +375,18 @@ export default function Messages() {
       openAndSendMessage();
     }
   }, [userId, location.state]);
+
+  // Hide bottom nav when in conversation view on mobile (Instagram-style)
+  useEffect(() => {
+    if (isMobile && selectedConversation) {
+      setHideBottomNav(true);
+    } else {
+      setHideBottomNav(false);
+    }
+    
+    // Cleanup when leaving the page
+    return () => setHideBottomNav(false);
+  }, [isMobile, selectedConversation, setHideBottomNav]);
 
   useEffect(() => {
     if (!userId) return;
@@ -1381,7 +1395,7 @@ export default function Messages() {
                   </div>
                 </div>
 
-                <ScrollArea className="flex-1 p-4">
+                <ScrollArea className={`flex-1 p-4 ${isMobile ? 'pb-32' : ''}`}>
                   <div className="space-y-4">
                     {messages.map((msg) => (
                       <div
@@ -1427,7 +1441,7 @@ export default function Messages() {
                 </ScrollArea>
 
                 <div 
-                  className={`${isMobile ? 'p-3' : 'p-4'} border-t border-border bg-background`}
+                  className={`${isMobile ? 'p-3 fixed bottom-0 left-0 right-0 bg-background z-10' : 'p-4'} border-t border-border`}
                   style={isMobile ? { 
                     paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))'
                   } : undefined}

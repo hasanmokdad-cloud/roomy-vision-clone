@@ -6,6 +6,7 @@ import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { supabase } from "@/integrations/supabase/client";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { MobileProfileMenu } from "@/components/mobile/MobileProfileMenu";
+import { useBottomNav } from "@/contexts/BottomNavContext";
 import {
   Settings,
   MessageSquare,
@@ -17,11 +18,15 @@ import {
 export default function MobileTabs() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { hideBottomNav } = useBottomNav();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string>();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const { unreadCount } = useUnreadCount(userId);
+
+  // Hide completely when in conversation view
+  if (hideBottomNav) return null;
 
   useEffect(() => {
     const fetchUserData = async () => {
