@@ -102,14 +102,6 @@ export function BookingRequestModal({ open, onOpenChange, dormId, dormName, owne
         }
       });
 
-      // Send notification to owner
-      await sendOwnerNotification({
-        ownerId: ownerId,
-        dormId: dormId,
-        event: 'new_booking',
-        message: `New viewing request for ${dormName}`
-      });
-
       // Trigger recommender training
       await triggerRecommenderTraining(user.id);
 

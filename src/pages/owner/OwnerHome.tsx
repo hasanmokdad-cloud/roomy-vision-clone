@@ -282,6 +282,50 @@ export default function OwnerHome() {
           ))}
         </div>
 
+        {/* Calendar & Availability Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="glass-hover">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold mb-2">Tour Calendar</h3>
+                  <p className="text-foreground/60">
+                    View upcoming tour bookings and manage your schedule
+                  </p>
+                </div>
+                <Button
+                  onClick={() => navigate('/owner/calendar')}
+                  className="gap-2"
+                >
+                  <Clock className="w-4 h-4" />
+                  View Calendar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-hover">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold mb-2">Set Availability</h3>
+                  <p className="text-foreground/60">
+                    Block dates and times when you're not available
+                  </p>
+                </div>
+                <Button
+                  onClick={() => navigate('/owner/calendar?tab=availability')}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Clock className="w-4 h-4" />
+                  Manage Schedule
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Add New Dorm Button */}
         {true && (
           <Card className="glass-hover">
