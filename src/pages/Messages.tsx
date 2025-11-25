@@ -216,7 +216,10 @@ export default function Messages() {
               .insert({
                 student_id: student.id,
                 owner_id: targetOwner.id,
-                dorm_id: roomPreview?.dormId || null
+                user_a_id: userId,              // Current user's auth.uid()
+                user_b_id: targetUserId,        // Target owner's auth.uid()
+                dorm_id: roomPreview?.dormId || null,
+                conversation_type: 'dorm'
               })
               .select('id')
               .single();

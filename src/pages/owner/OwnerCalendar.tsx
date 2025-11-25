@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { Calendar } from '@/components/ui/calendar';
@@ -14,10 +15,12 @@ import { OwnerAvailabilityManager } from '@/components/owner/OwnerAvailabilityMa
 
 export default function OwnerCalendar() {
   const { userId } = useAuthGuard();
+  const [searchParams] = useSearchParams();
   const [bookings, setBookings] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [loading, setLoading] = useState(true);
   const [ownerId, setOwnerId] = useState<string>('');
+  const defaultTab = searchParams.get('tab') || 'bookings';
 
   useEffect(() => {
     if (!userId) return;
@@ -87,7 +90,7 @@ export default function OwnerCalendar() {
           <div className="max-w-6xl mx-auto">
             <h1 className="text-3xl font-bold mb-8">Calendar & Availability</h1>
 
-            <Tabs defaultValue="bookings" className="space-y-6">
+            <Tabs defaultValue={defaultTab} className="space-y-6">
               <TabsList>
                 <TabsTrigger value="bookings" className="gap-2">
                   <Clock className="w-4 h-4" />
