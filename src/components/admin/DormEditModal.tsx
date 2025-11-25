@@ -17,6 +17,7 @@ interface DormEditModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: () => void;
+  isAdmin?: boolean;
 }
 
 const AMENITIES = [
@@ -25,7 +26,7 @@ const AMENITIES = [
   'Heating', 'Elevator', 'Furnished', 'Pet Friendly'
 ];
 
-export default function DormEditModal({ dorm, isOpen, onClose, onUpdate }: DormEditModalProps) {
+export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin = false }: DormEditModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -48,25 +49,31 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate }: DormE
   const handleSave = async () => {
     setLoading(true);
     try {
+      const updateData: any = {
+        name: formData.name,
+        dorm_name: formData.dorm_name,
+        address: formData.address,
+        area: formData.area,
+        description: formData.description,
+        capacity: formData.capacity,
+        amenities: formData.amenities,
+        shuttle: formData.shuttle,
+        gender_preference: formData.gender_preference,
+        phone_number: formData.phone_number,
+        email: formData.email,
+        website: formData.website,
+        available: formData.available,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Only include verification_status if user is admin
+      if (isAdmin) {
+        updateData.verification_status = formData.verification_status;
+      }
+
       const { error } = await supabase
         .from('dorms')
-        .update({
-          name: formData.name,
-          dorm_name: formData.dorm_name,
-          address: formData.address,
-          area: formData.area,
-          description: formData.description,
-          capacity: formData.capacity,
-          amenities: formData.amenities,
-          shuttle: formData.shuttle,
-          gender_preference: formData.gender_preference,
-          phone_number: formData.phone_number,
-          email: formData.email,
-          website: formData.website,
-          available: formData.available,
-          verification_status: formData.verification_status,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', dorm.id);
 
       if (error) throw error;
@@ -176,7 +183,7 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate }: DormE
             </div>
 
             {/* Settings */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className={`grid ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}>
               <div>
                 <Label htmlFor="capacity">Capacity</Label>
                 <Input
@@ -202,22 +209,24 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate }: DormE
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="status">Verification Status</Label>
-                <Select
-                  value={formData.verification_status}
-                  onValueChange={(value) => setFormData({ ...formData, verification_status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="Verified">Verified</SelectItem>
-                    <SelectItem value="Rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {isAdmin && (
+                <div>
+                  <Label htmlFor="status">Verification Status</Label>
+                  <Select
+                    value={formData.verification_status}
+                    onValueChange={(value) => setFormData({ ...formData, verification_status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Verified">Verified</SelectItem>
+                      <SelectItem value="Rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             {/* Amenities */}

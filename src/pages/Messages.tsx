@@ -238,6 +238,9 @@ export default function Messages() {
             if (newConv) {
               conversationId = newConv.id;
               console.log('✅ Created new conversation:', conversationId);
+              
+              // Reload conversations list to show the new conversation
+              await loadConversations();
             }
           }
         } else {

@@ -524,6 +524,7 @@ export default function OwnerHome() {
             setEditingDorm(null);
             refetchDorms();
           }}
+          isAdmin={false}
         />
       )}
     </div>
