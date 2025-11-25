@@ -107,8 +107,6 @@ export default function BoostProfile() {
   const [existingPreferences, setExistingPreferences] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [hasBoostData, setHasBoostData] = useState(false);
-  const { toast } = useToast();
-  const navigate = useNavigate();
 
   const progress = ((currentStep + 1) / boostQuestions.length) * 100;
   const isLastQuestion = currentStep === boostQuestions.length - 1;
