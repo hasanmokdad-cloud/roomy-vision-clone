@@ -165,23 +165,43 @@ export default function Messages() {
         const initialMessage = location.state.initialMessage || 'Hi there!';
         const roomPreview = location.state.roomPreview;
 
+        console.log('🎯 Opening conversation with:', { 
+          targetUserId, 
+          currentUserId: userId,
+          hasRoomPreview: !!roomPreview 
+        });
+
         // Get current user's student profile
-        const { data: student } = await supabase
+        console.log('📋 Fetching student profile for user_id:', userId);
+        const { data: student, error: studentError } = await supabase
           .from('students')
           .select('id')
           .eq('user_id', userId)
           .maybeSingle();
 
-        if (!student) return;
+        console.log('📋 Student query result:', { student, studentError });
+
+        if (!student) {
+          console.error('❌ No student profile found for user:', userId);
+          toast({
+            title: 'Error',
+            description: 'Could not find your student profile',
+            variant: 'destructive'
+          });
+          return;
+        }
 
         let conversationId: string | null = null;
 
         // Check if target is an owner
-        const { data: targetOwner } = await supabase
+        console.log('🔍 Checking if target is an owner:', targetUserId);
+        const { data: targetOwner, error: ownerError } = await supabase
           .from('owners')
           .select('id')
           .eq('user_id', targetUserId)
           .maybeSingle();
+
+        console.log('🔍 Owner query result:', { targetOwner, ownerError });
 
         if (targetOwner) {
           // Student → Owner conversation
