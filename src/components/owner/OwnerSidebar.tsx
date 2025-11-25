@@ -27,11 +27,17 @@ const menuItems = [
   { title: 'Account', url: '/owner/account', icon: Settings },
 ];
 
-export function OwnerSidebar() {
+interface OwnerSidebarProps {
+  hiddenItems?: string[];
+}
+
+export function OwnerSidebar({ hiddenItems = [] }: OwnerSidebarProps) {
   const { state } = useSidebar();
 
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-white/5';
+
+  const visibleMenuItems = menuItems.filter(item => !hiddenItems.includes(item.title));
 
   return (
     <Sidebar className={state === 'collapsed' ? 'w-14' : 'w-60'} collapsible="icon">
@@ -46,7 +52,7 @@ export function OwnerSidebar() {
           <SidebarGroupLabel>Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {visibleMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavCls}>

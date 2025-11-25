@@ -256,6 +256,12 @@ export default function Messages() {
               console.log('🔄 Reloading conversations list...');
               await loadConversations();
               console.log('✅ Conversations reloaded');
+              
+              // Wait for UI to update, then select the conversation
+              setTimeout(() => {
+                console.log('🎯 Setting active conversation:', conversationId);
+                setSelectedConversation(conversationId);
+              }, 300);
             }
           }
         } else {

@@ -4,8 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Plus, DoorOpen } from 'lucide-react';
+import { Edit, Trash2, Plus, DoorOpen, ArrowLeft } from 'lucide-react';
 import { useOwnerDormsQuery } from '@/hooks/useOwnerDormsQuery';
+import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import {
   Table,
   TableBody,
@@ -66,16 +68,40 @@ export default function OwnerListings() {
   };
 
   if (loading) {
-    return <div className="text-center py-12">Loading your listings...</div>;
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full">
+          <OwnerSidebar />
+          <main className="flex-1 p-8">
+            <div className="text-center py-12">Loading your listings...</div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold gradient-text">My Listings</h1>
-          <p className="text-foreground/60 mt-2">Manage your dorm properties</p>
-        </div>
+    <SidebarProvider>
+      <div className="min-h-screen flex bg-background w-full">
+        <OwnerSidebar />
+        <main className="flex-1 p-8">
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 mb-6">
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/owner/calendar')}
+                className="gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Calendar
+              </Button>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold gradient-text">My Listings</h1>
+                <p className="text-foreground/60 mt-2">Manage your dorm properties</p>
+              </div>
         <Button
           onClick={() => navigate('/owner/dorms/new')}
           className="bg-gradient-to-r from-primary to-secondary"
@@ -149,6 +175,9 @@ export default function OwnerListings() {
           </Table>
         </div>
       )}
-    </div>
+          </div>
+        </main>
+      </div>
+    </SidebarProvider>
   );
 }

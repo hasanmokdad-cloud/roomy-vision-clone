@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -260,6 +260,9 @@ export function OwnerAvailabilityManager({ ownerId, dormId }: OwnerAvailabilityM
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Block Date</DialogTitle>
+            <DialogDescription>
+              Mark this date as unavailable for tour bookings
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
