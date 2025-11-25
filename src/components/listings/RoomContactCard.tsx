@@ -64,8 +64,26 @@ export default function RoomContactCard({ room, dormId, dormName, ownerId, index
         .eq('id', ownerId)
         .single();
 
-      if (ownerError || !ownerData) {
-        throw new Error('Owner not found');
+      console.log('Owner query result:', { ownerData, ownerError, ownerId });
+
+      if (ownerError) {
+        console.error('Owner fetch error:', ownerError);
+        toast({
+          title: 'Error',
+          description: 'Could not find owner information. Please try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (!ownerData || !ownerData.user_id) {
+        console.error('Owner data missing or invalid:', ownerData);
+        toast({
+          title: 'Error',
+          description: 'Owner information not available. Please contact support.',
+          variant: 'destructive',
+        });
+        return;
       }
 
       // Log contact click
