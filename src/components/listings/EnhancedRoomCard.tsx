@@ -99,11 +99,27 @@ export function EnhancedRoomCard({
       return;
     }
 
+    // Fetch owner's auth user_id from owners table
+    const { data: ownerData, error: ownerError } = await supabase
+      .from('owners')
+      .select('user_id')
+      .eq('id', ownerId)
+      .single();
+
+    if (ownerError || !ownerData?.user_id) {
+      toast({
+        title: 'Error',
+        description: 'Could not find owner information',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const deposit = room.price;
     
     navigate('/messages', {
       state: {
-        openThreadWithUserId: ownerId,
+        openThreadWithUserId: ownerData.user_id,
         initialMessage: `Hello! I am interested in ${room.name} (${room.type}) at ${dormName}.\n\nPrice: $${room.price}/month\nDeposit: $${deposit}\n\nIs it still available?`,
         roomPreview: {
           roomId: room.id,
