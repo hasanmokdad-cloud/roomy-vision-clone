@@ -190,12 +190,28 @@ export default function DormDetail() {
     return allImages;
   };
 
-  const handleContactOwner = (room: any) => {
+  const handleContactOwner = async (room: any) => {
     if (!room.available) return;
+    
+    // Fetch owner's auth user_id from owners table
+    const { data: ownerData, error: ownerError } = await supabase
+      .from('owners')
+      .select('user_id')
+      .eq('id', dorm.owner_id)
+      .single();
+
+    if (ownerError || !ownerData?.user_id) {
+      toast({
+        title: 'Error',
+        description: 'Could not find owner information. Please try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     navigate('/messages', {
       state: {
-        openThreadWithUserId: dorm.owner_id,
+        openThreadWithUserId: ownerData.user_id,
         initialMessage: `Hello! I am interested in ${room.name} at ${displayName}.`,
         roomPreview: room,
         metadata: {
