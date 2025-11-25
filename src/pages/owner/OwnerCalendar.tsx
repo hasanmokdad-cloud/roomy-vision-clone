@@ -28,9 +28,9 @@ export default function OwnerCalendar() {
     loadBookings();
 
     const channel = supabase
-      .channel('tour_bookings')
+      .channel('bookings')
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'tour_bookings' },
+        { event: '*', schema: 'public', table: 'bookings' },
         () => loadBookings()
       )
       .subscribe();
@@ -52,14 +52,14 @@ export default function OwnerCalendar() {
     setOwnerId(owner.id);
 
     const { data } = await supabase
-      .from('tour_bookings')
+      .from('bookings')
       .select(`
         *,
         dorms(dorm_name, name),
         students(full_name, email, profile_photo_url)
       `)
       .eq('owner_id', owner.id)
-      .order('scheduled_time', { ascending: true });
+      .order('requested_date', { ascending: true });
 
     setBookings(data || []);
     setLoading(false);
@@ -67,7 +67,7 @@ export default function OwnerCalendar() {
 
   const updateBookingStatus = async (bookingId: string, status: string) => {
     await supabase
-      .from('tour_bookings')
+      .from('bookings')
       .update({ status })
       .eq('id', bookingId);
 
@@ -76,18 +76,18 @@ export default function OwnerCalendar() {
 
   const bookingsForSelectedDate = bookings.filter(b => {
     if (!selectedDate) return false;
-    const bookingDate = new Date(b.scheduled_time);
+    const bookingDate = new Date(b.requested_date);
     return bookingDate.toDateString() === selectedDate.toDateString();
   });
 
-  const datesWithBookings = bookings.map(b => new Date(b.scheduled_time));
+  const datesWithBookings = bookings.map(b => new Date(b.requested_date));
 
   return (
     <SidebarProvider>
       <div className="min-h-screen flex flex-col bg-background w-full">
         <Navbar />
         <div className="flex-1 flex mt-16">
-          <OwnerSidebar />
+          <OwnerSidebar hiddenItems={['Bookings', 'Tour Calendar', 'Reviews', 'Add New Dorm', 'Bulk Import', 'Statistics', 'Account']} />
           <main className="flex-1 p-8">
           <div className="max-w-6xl mx-auto">
             <h1 className="text-3xl font-bold mb-8">Calendar & Availability</h1>
@@ -160,15 +160,12 @@ export default function OwnerCalendar() {
 
                           <div className="flex items-center gap-2 text-sm text-foreground/60 mb-3">
                             <Clock className="w-4 h-4" />
-                            {new Date(booking.scheduled_time).toLocaleTimeString('en-US', {
-                              hour: 'numeric',
-                              minute: '2-digit'
-                            })}
+                            {booking.requested_time}
                           </div>
 
-                          {booking.student_message && (
+                          {booking.message && (
                             <p className="text-sm bg-muted p-2 rounded mb-3">
-                              {booking.student_message}
+                              {booking.message}
                             </p>
                           )}
 

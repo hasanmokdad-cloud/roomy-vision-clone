@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Home, DollarSign, Users, Edit, CheckCircle, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import type { RoomType } from '@/types/RoomType';
 
 export default function OwnerRooms() {
@@ -85,20 +86,23 @@ export default function OwnerRooms() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex">
-        <OwnerSidebar />
-        <main className="flex-1 p-8">
-          <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          </div>
-        </main>
-      </div>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full">
+          <OwnerSidebar />
+          <main className="flex-1 p-8">
+            <div className="flex items-center justify-center h-full">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
     );
   }
 
   return (
-    <div className="min-h-screen flex bg-background">
-      <OwnerSidebar />
+    <SidebarProvider>
+      <div className="min-h-screen flex bg-background w-full">
+        <OwnerSidebar />
       
       <main className="flex-1 p-4 md:p-8 overflow-auto pb-20 md:pb-8">
         <div className="max-w-7xl mx-auto">
@@ -242,6 +246,7 @@ export default function OwnerRooms() {
           )}
         </div>
       </main>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 }
