@@ -185,18 +185,33 @@ export default function Messages() {
 
         if (targetOwner) {
           // Student → Owner conversation
-          const { data: existingConv } = await supabase
+          console.log('🔍 Checking for existing conversation between student:', student.id, 'and owner:', targetOwner.id);
+          
+          const { data: existingConv, error: convCheckError } = await supabase
             .from('conversations')
             .select('id')
             .eq('student_id', student.id)
             .eq('owner_id', targetOwner.id)
             .maybeSingle();
 
+          if (convCheckError) {
+            console.error('❌ Error checking conversation:', convCheckError);
+            toast({
+              title: 'Error',
+              description: 'Failed to check existing conversation',
+              variant: 'destructive'
+            });
+            navigate(location.pathname, { replace: true, state: {} });
+            return;
+          }
+
           if (existingConv) {
             conversationId = existingConv.id;
+            console.log('✅ Found existing conversation:', conversationId);
           } else {
             // Create new student-owner conversation
-            const { data: newConv } = await supabase
+            console.log('📝 Creating new conversation...');
+            const { data: newConv, error: createError } = await supabase
               .from('conversations')
               .insert({
                 student_id: student.id,
@@ -205,8 +220,22 @@ export default function Messages() {
               })
               .select('id')
               .single();
+
+            if (createError) {
+              console.error('❌ Error creating conversation:', createError);
+              toast({
+                title: 'Error',
+                description: 'Failed to create conversation with owner',
+                variant: 'destructive'
+              });
+              navigate(location.pathname, { replace: true, state: {} });
+              return;
+            }
             
-            if (newConv) conversationId = newConv.id;
+            if (newConv) {
+              conversationId = newConv.id;
+              console.log('✅ Created new conversation:', conversationId);
+            }
           }
         } else {
           // Check if target is a student (roommate matching)
@@ -244,12 +273,13 @@ export default function Messages() {
         }
 
         if (conversationId) {
+          console.log('📤 Loading conversation and sending initial message');
           setSelectedConversation(conversationId);
           await loadMessages(conversationId);
 
           // Send initial message with room preview metadata if provided
           if (initialMessage) {
-            await supabase.from('messages').insert({
+            const { data: messageData, error: messageError } = await supabase.from('messages').insert({
               conversation_id: conversationId,
               sender_id: userId,
               body: initialMessage,
@@ -259,8 +289,30 @@ export default function Messages() {
                 type: 'room_inquiry',
                 ...roomPreview
               } : null
-            });
+            }).select('id').single();
+
+            if (messageError) {
+              console.error('❌ Error sending message:', messageError);
+              toast({
+                title: 'Error',
+                description: 'Failed to send initial message',
+                variant: 'destructive'
+              });
+            } else {
+              console.log('✅ Message sent successfully:', messageData?.id);
+              toast({
+                title: 'Success',
+                description: 'Conversation started with owner',
+              });
+            }
           }
+        } else {
+          console.error('❌ No conversation ID available');
+          toast({
+            title: 'Error',
+            description: 'Failed to start conversation',
+            variant: 'destructive'
+          });
         }
 
         // Clear location state
