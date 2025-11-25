@@ -1165,15 +1165,21 @@ export default function Messages() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
+      {/* Hide Navbar on mobile, show on desktop */}
+      {!isMobile && <Navbar />}
       
-      <main className={`flex-1 container mx-auto px-0 md:px-4 py-0 md:py-8 mt-16 md:mt-20 ${isMobile ? 'mb-20' : 'mb-0'}`}>
-        <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-12rem)] flex flex-col md:flex-row gap-0 md:gap-4">
+      <main 
+        className={`flex-1 container mx-auto px-0 md:px-4 py-0 md:py-8 ${isMobile ? 'pt-0 pb-20' : 'mt-20 mb-0'}`}
+        style={isMobile ? { 
+          paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))'
+        } : undefined}
+      >
+        <div className={`${isMobile ? 'h-screen' : 'h-[calc(100vh-12rem)]'} flex flex-col md:flex-row gap-0 md:gap-4`}>
           {/* Conversations List */}
-          <Card className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-80 rounded-none md:rounded-lg border-0 md:border`}>
-            <div className="p-4 border-b border-border">
+          <Card className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-80 rounded-none md:rounded-lg border-0 md:border shadow-none md:shadow-sm`}>
+            <div className={`p-4 border-b border-border ${isMobile ? 'pt-6' : ''}`}>
               <div className="flex items-center justify-between w-full">
-                <h2 className="text-2xl font-bold gradient-text flex items-center gap-2">
+                <h2 className={`${isMobile ? 'text-3xl' : 'text-2xl'} font-bold flex items-center gap-2`}>
                   <MessageSquare className="w-6 h-6" />
                   Messages
                 </h2>
@@ -1249,16 +1255,22 @@ export default function Messages() {
           </Card>
 
           {/* Chat Window */}
-          <Card className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} flex-col flex-1 rounded-none md:rounded-lg border-0 md:border`}>
+          <Card className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} flex-col flex-1 rounded-none md:rounded-lg border-0 md:border shadow-none md:shadow-sm`}>
             {selectedConversation ? (
               <>
-                <div className="p-4 border-b border-border flex items-center gap-2">
+                {/* Instagram-style conversation header */}
+                <div className={`${isMobile ? 'p-3' : 'p-4'} border-b border-border flex items-center gap-3 bg-background`}>
                   {isMobile && (
-                    <Button variant="ghost" size="icon" onClick={() => setSelectedConversation(null)}>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setSelectedConversation(null)}
+                      className="shrink-0"
+                    >
                       <ArrowLeft className="w-5 h-5" />
                     </Button>
                   )}
-                  <Avatar className="w-10 h-10">
+                  <Avatar className="w-10 h-10 shrink-0">
                     <AvatarImage 
                       src={conversations.find(c => c.id === selectedConversation)?.other_user_photo || undefined} 
                       alt="User" 
@@ -1267,11 +1279,11 @@ export default function Messages() {
                       {conversations.find(c => c.id === selectedConversation)?.other_user_name?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
-                    <h3 className="font-semibold">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-base truncate">
                       {conversations.find(c => c.id === selectedConversation)?.other_user_name}
                     </h3>
-                    <p className="text-xs text-foreground/60">
+                    <p className="text-xs text-muted-foreground truncate">
                       {conversations.find(c => c.id === selectedConversation)?.dorm_name}
                     </p>
                   </div>
@@ -1322,7 +1334,12 @@ export default function Messages() {
                   </div>
                 </ScrollArea>
 
-                <div className="p-4 border-t border-border">
+                <div 
+                  className={`${isMobile ? 'p-3' : 'p-4'} border-t border-border bg-background`}
+                  style={isMobile ? { 
+                    paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))'
+                  } : undefined}
+                >
                   {recording && (
                     <div className="flex items-center justify-center gap-2 bg-red-500/10 text-red-500 px-3 py-2 rounded-lg mb-2 animate-pulse">
                       <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
