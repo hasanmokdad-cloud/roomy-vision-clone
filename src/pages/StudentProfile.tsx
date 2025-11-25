@@ -10,12 +10,14 @@ import { MessageSquare, User, Heart, MapPin, GraduationCap, DollarSign } from "l
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function StudentProfile() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [student, setStudent] = useState<any>(null);
   const [preferences, setPreferences] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -82,7 +84,7 @@ export default function StudentProfile() {
   if (!student) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
+        {!isMobile && <Navbar />}
         <main className="flex-1 flex items-center justify-center">
           <p className="text-foreground/60">Student not found</p>
         </main>
@@ -93,7 +95,7 @@ export default function StudentProfile() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
-      <Navbar />
+      {!isMobile && <Navbar />}
 
       <main className="flex-1 container max-w-4xl mx-auto px-4 py-8 mt-20">
         <motion.div

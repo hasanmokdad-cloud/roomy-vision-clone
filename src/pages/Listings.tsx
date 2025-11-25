@@ -29,9 +29,11 @@ import { SkipToContent } from '@/components/SkipToContent';
 import { logAnalyticsEvent } from '@/utils/analytics';
 import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
 import { useQueryClient } from '@tanstack/react-query';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function Listings() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [filters, setFilters] = useState({
@@ -174,7 +176,7 @@ export default function Listings() {
   return (
     <div className="min-h-screen flex flex-col relative">
       <SkipToContent />
-      <Navbar />
+      {!isMobile && <Navbar />}
       
       <ScrollImmersion>
         <main id="main-content" className="flex-1 container mx-auto px-4 py-8 mt-20" role="main">

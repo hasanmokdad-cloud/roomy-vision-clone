@@ -12,6 +12,7 @@ import Footer from "@/components/shared/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Sparkles, ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface BoostQuestion {
   id: string;
@@ -97,6 +98,9 @@ const boostQuestions: BoostQuestion[] = [
 ];
 
 export default function BoostProfile() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
   const { loading: authLoading, userId } = useAuthGuard();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
@@ -212,7 +216,7 @@ export default function BoostProfile() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
-      <Navbar />
+      {!isMobile && <Navbar />}
 
       <main className="flex-1 container max-w-3xl mx-auto px-4 py-8 mt-20">
         <motion.div

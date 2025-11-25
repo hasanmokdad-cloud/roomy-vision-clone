@@ -8,10 +8,12 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function SharedCollection() {
   const { shareCode } = useParams<{ shareCode: string }>();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [collection, setCollection] = useState<any>(null);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +104,7 @@ export default function SharedCollection() {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#0F1624] to-[#15203B]">
-        <Navbar />
+        {!isMobile && <Navbar />}
         <div className="container mx-auto px-4 py-32 max-w-2xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -133,7 +135,7 @@ export default function SharedCollection() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0F1624] to-[#15203B]">
-      <Navbar />
+      {!isMobile && <Navbar />}
       
       <div className="container mx-auto px-4 md:px-6 py-32 max-w-7xl">
         {/* Header */}

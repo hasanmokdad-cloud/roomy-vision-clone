@@ -13,6 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Home, Users } from "lucide-react";
 import { rankDorms } from "@/ai-engine/recommendationModel";
 import { useRoommateMatch } from "@/hooks/useRoommateMatch";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type ProfileStatus = 'loading' | 'incomplete' | 'complete';
 type MatchMode = 'dorms' | 'roommates';
@@ -20,6 +21,7 @@ type MatchMode = 'dorms' | 'roommates';
 const AiMatch = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [userId, setUserId] = useState<string | null>(null);
   const [profileStatus, setProfileStatus] = useState<ProfileStatus>('loading');
   const [matchMode, setMatchMode] = useState<MatchMode>('dorms');
@@ -278,7 +280,7 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
   if (profileStatus === 'loading') {
     return (
       <div className="min-h-screen bg-background pt-24 md:pt-28">
-        <Navbar />
+        {!isMobile && <Navbar />}
         <div className="container mx-auto px-4 py-8">
           <LoadingState />
         </div>
@@ -289,7 +291,7 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
   if (profileStatus === 'incomplete') {
     return (
       <div className="min-h-screen bg-background pt-24 md:pt-28">
-        <Navbar />
+        {!isMobile && <Navbar />}
         <ProfileIncompleteCard percentage={studentProfile?.profile_completion_score || 0} />
         <Footer />
       </div>
@@ -298,7 +300,7 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
 
   return (
     <div className="min-h-screen bg-background pt-24 md:pt-28">
-      <Navbar />
+      {!isMobile && <Navbar />}
       
       <div className="container mx-auto px-4 py-8 space-y-8">
         {/* Header */}

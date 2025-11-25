@@ -10,8 +10,10 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function Profile() {
+  const isMobile = useIsMobile();
   const [userId, setUserId] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
@@ -92,7 +94,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen relative bg-background">
-      <Navbar />
+      {!isMobile && <Navbar />}
       
       <motion.div 
         initial={{ opacity: 0, y: 20 }}

@@ -13,11 +13,13 @@ import { MatchReasonsBadges } from '@/components/match/MatchReasonsBadges';
 import { computeSimilarity } from '@/hooks/useRoommateMatch';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function RoommateProfile() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [profile, setProfile] = useState<any>(null);
   const [myProfile, setMyProfile] = useState<any>(null);
   const [matchScore, setMatchScore] = useState(0);
@@ -124,7 +126,7 @@ export default function RoommateProfile() {
 
   return (
     <>
-      <Navbar />
+      {!isMobile && <Navbar />}
       <div className="min-h-screen pt-20 pb-16">
         <div className="container mx-auto px-4 max-w-5xl">
           {/* Back Button */}

@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Users, MessageSquare, Eye, Filter, Sparkles } from "lucide-react";
 import { MatchCardSkeleton } from "@/components/skeletons/MatchCardSkeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface StudentMatch {
   id: string;
@@ -47,13 +48,14 @@ const universities = [
 ];
 
 export default function StudentMatch() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
   const { loading: authLoading, userId } = useAuthGuard();
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<StudentMatch[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<StudentMatch[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const { toast } = useToast();
-  const navigate = useNavigate();
 
   // Filter states
   const [budgetRange, setBudgetRange] = useState<[number, number]>([0, 2000]);
@@ -353,7 +355,7 @@ export default function StudentMatch() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
-        <Navbar />
+        {!isMobile && <Navbar />}
         <main className="flex-1 container max-w-6xl mx-auto px-4 py-8 mt-20">
           <div className="space-y-6">
             <MatchCardSkeleton />
@@ -368,7 +370,7 @@ export default function StudentMatch() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
-      <Navbar />
+      {!isMobile && <Navbar />}
 
       <main className="flex-1 container max-w-6xl mx-auto px-4 py-8 mt-20">
         <motion.div
