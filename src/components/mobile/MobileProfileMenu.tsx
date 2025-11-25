@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { User, Edit, Settings, LayoutDashboard, LogOut, X } from 'lucide-react';
+import { User, Settings, LayoutDashboard, LogOut, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useState, useEffect } from 'react';
@@ -46,7 +46,6 @@ export function MobileProfileMenu({ open, onClose, onSignOut, userEmail }: Mobil
 
   const menuItems = [
     { icon: User, label: 'My Profile', href: '/profile' },
-    { icon: Edit, label: 'Edit Profile', href: '/profile' },
     ...(controlPanelHref ? [{ icon: LayoutDashboard, label: 'Control Panel', href: controlPanelHref }] : []),
   ];
 
