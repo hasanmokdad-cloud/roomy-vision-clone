@@ -15,11 +15,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { sanitizeInput } from "@/utils/inputValidation";
 import { z } from "zod";
-import { Phone } from "lucide-react";
 
 const emailSchema = z.string().email("Invalid email address").max(255);
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters").max(72);
-const phoneSchema = z.string().min(10, "Phone number must be at least 10 digits");
 
 interface AuthModalProps {
   open: boolean;
@@ -32,9 +30,6 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
   const [signUpData, setSignUpData] = useState({ email: '', password: '', confirmPassword: '' });
   const [signInData, setSignInData] = useState({ email: '', password: '' });
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [awaitingVerification, setAwaitingVerification] = useState(false);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,57 +109,6 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
     }
   };
 
-  const handlePhoneLogin = async () => {
-    try {
-      phoneSchema.parse(phoneNumber);
-      
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: phoneNumber,
-      });
-      
-      if (error) throw error;
-      
-      setAwaitingVerification(true);
-      toast({
-        title: 'Verification code sent',
-        description: 'Check your phone for the code',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Invalid phone number',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleVerifyCode = async () => {
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        phone: phoneNumber,
-        token: verificationCode,
-        type: 'sms',
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: 'Welcome!',
-        description: 'Signed in successfully',
-      });
-      
-      onOpenChange(false);
-      setAwaitingVerification(false);
-      setPhoneNumber('');
-      setVerificationCode('');
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -183,12 +127,9 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
         </DialogHeader>
 
         <Tabs defaultValue="signin" className="w-full">
-          <TabsList className="grid w-full grid-cols-3" role="tablist" aria-label="Authentication options">
+          <TabsList className="grid w-full grid-cols-2" role="tablist" aria-label="Authentication options">
             <TabsTrigger value="signin" role="tab" aria-controls="signin-panel">
-              Email
-            </TabsTrigger>
-            <TabsTrigger value="phone" role="tab" aria-controls="phone-panel">
-              Phone
+              Log In
             </TabsTrigger>
             <TabsTrigger value="signup" role="tab" aria-controls="signup-panel">
               Sign Up
@@ -227,64 +168,6 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 {loading ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
-          </TabsContent>
-
-          <TabsContent value="phone" id="phone-panel" role="tabpanel" aria-labelledby="phone-tab">
-            {!awaitingVerification ? (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="phone-number">Phone Number</Label>
-                  <Input
-                    id="phone-number"
-                    type="tel"
-                    placeholder="+1234567890"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="bg-black/20 border-white/10"
-                  />
-                  <p className="text-xs text-foreground/60 mt-1">Include country code (e.g., +961...)</p>
-                </div>
-                <Button 
-                  onClick={handlePhoneLogin}
-                  className="w-full bg-gradient-to-r from-primary to-secondary"
-                  disabled={loading}
-                >
-                  <Phone className="w-4 h-4 mr-2" />
-                  Send Verification Code
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="verification-code">Verification Code</Label>
-                  <Input
-                    id="verification-code"
-                    type="text"
-                    placeholder="Enter 6-digit code"
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value)}
-                    className="bg-black/20 border-white/10"
-                  />
-                </div>
-                <Button 
-                  onClick={handleVerifyCode}
-                  className="w-full bg-gradient-to-r from-primary to-secondary"
-                  disabled={loading}
-                >
-                  Verify & Sign In
-                </Button>
-                <Button 
-                  variant="ghost"
-                  onClick={() => {
-                    setAwaitingVerification(false);
-                    setVerificationCode('');
-                  }}
-                  className="w-full"
-                >
-                  Back
-                </Button>
-              </div>
-            )}
           </TabsContent>
 
           <TabsContent value="signup" id="signup-panel" role="tabpanel" aria-labelledby="signup-tab">
