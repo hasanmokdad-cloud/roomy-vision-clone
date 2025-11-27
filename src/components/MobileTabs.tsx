@@ -24,6 +24,7 @@ export default function MobileTabs() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const { unreadCount } = useUnreadCount(userId);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -45,9 +46,6 @@ export default function MobileTabs() {
     fetchUserData();
   }, []);
 
-  // Hide completely when in conversation view
-  if (hideBottomNav) return null;
-
   // Owner has unique 3-icon layout
   const tabs = userRole === 'owner' 
     ? [
@@ -63,25 +61,13 @@ export default function MobileTabs() {
         { path: "/profile", icon: User, label: "Profile", isProfile: true },
       ];
 
-  const handleProfileClick = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setUserEmail(user?.email);
-    setProfileMenuOpen(true);
-  };
+  // Update current index when location changes
+  useEffect(() => {
+    const idx = tabs.findIndex(tab => location.pathname.startsWith(tab.path));
+    setCurrentIndex(idx >= 0 ? idx : 0);
+  }, [location.pathname, tabs]);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    sessionStorage.removeItem('intro-played');
-    navigate('/auth');
-  };
-
-  // Hide on auth page and owner pages
-  if (location.pathname === "/auth" || location.pathname.startsWith("/owner") || location.pathname.startsWith("/admin")) return null;
-
-  // Get current tab index
-  const currentIndex = tabs.findIndex(tab => location.pathname.startsWith(tab.path));
-
-  // Swipe handlers
+  // Swipe handlers - called unconditionally before any returns
   const swipeHandlers = useSwipeGesture({
     onSwipeLeft: () => {
       if (currentIndex < tabs.length - 1) {
@@ -95,6 +81,22 @@ export default function MobileTabs() {
     },
     threshold: 75,
   });
+
+  const handleProfileClick = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUserEmail(user?.email);
+    setProfileMenuOpen(true);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    sessionStorage.removeItem('intro-played');
+    navigate('/auth');
+  };
+
+  // All hooks called above - now safe to have conditional returns
+  if (hideBottomNav) return null;
+  if (location.pathname === "/auth" || location.pathname.startsWith("/owner") || location.pathname.startsWith("/admin")) return null;
 
   return (
     <>
