@@ -99,16 +99,21 @@ export default function OwnerBookings() {
           .eq('id', booking.dorm_id)
           .single();
 
-        const { data: student } = await supabase
+        const { data: student, error: studentError } = await supabase
           .from('students')
-          .select('full_name')
+          .select('full_name, email')
           .eq('id', booking.student_id)
           .single();
 
+        if (studentError) {
+          console.error('Error fetching student:', studentError);
+        }
+
         return {
           ...booking,
-          dorm_name: dorm?.dorm_name || dorm?.name,
-          student_name: student?.full_name
+          dorm_name: dorm?.dorm_name || dorm?.name || 'Unknown Dorm',
+          student_name: student?.full_name || 'Unknown Student',
+          student_email: student?.email || ''
         };
       }));
 

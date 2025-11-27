@@ -49,28 +49,61 @@ export default function OwnerCalendar() {
   }, [userId]);
 
   const loadBookings = async () => {
-    const { data: owner } = await supabase
-      .from('owners')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
+    if (!userId) {
+      console.log('No userId, cannot load bookings');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const { data: owner, error: ownerError } = await supabase
+        .from('owners')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
 
-    if (!owner) return;
+      if (ownerError || !owner) {
+        console.error('Owner lookup error:', ownerError);
+        setLoading(false);
+        return;
+      }
 
-    setOwnerId(owner.id);
+      setOwnerId(owner.id);
+      console.log('Fetching bookings for owner:', owner.id);
 
-    const { data } = await supabase
-      .from('bookings')
-      .select(`
-        *,
-        dorms(dorm_name, name),
-        students(full_name, email, profile_photo_url)
-      `)
-      .eq('owner_id', owner.id)
-      .order('requested_date', { ascending: true });
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          dorms(dorm_name, name),
+          students(full_name, email, profile_photo_url)
+        `)
+        .eq('owner_id', owner.id)
+        .order('requested_date', { ascending: true });
 
-    setBookings(data || []);
-    setLoading(false);
+      if (error) {
+        console.error('Bookings query error:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load bookings',
+          variant: 'destructive'
+        });
+        setLoading(false);
+        return;
+      }
+
+      console.log('Bookings fetched:', data?.length, data);
+      setBookings(data || []);
+    } catch (error) {
+      console.error('Error in loadBookings:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load bookings',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateBookingStatus = async (bookingId: string, status: string) => {

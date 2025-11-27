@@ -18,10 +18,12 @@ import { format } from 'date-fns';
 function UpcomingToursWidget({ ownerId }: { ownerId: string }) {
   const navigate = useNavigate();
   const [tours, setTours] = useState<any[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadTours();
+    loadPendingCount();
   }, [ownerId]);
 
   const loadTours = async () => {
@@ -43,6 +45,16 @@ function UpcomingToursWidget({ ownerId }: { ownerId: string }) {
     setLoading(false);
   };
 
+  const loadPendingCount = async () => {
+    const { count } = await supabase
+      .from('bookings')
+      .select('*', { count: 'exact', head: true })
+      .eq('owner_id', ownerId)
+      .eq('status', 'pending');
+
+    setPendingCount(count || 0);
+  };
+
   if (loading) {
     return (
       <Card className="glass-hover">
@@ -61,7 +73,14 @@ function UpcomingToursWidget({ ownerId }: { ownerId: string }) {
     <Card className="glass-hover">
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold">Upcoming Tours</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-xl font-bold">Upcoming Tours</h3>
+            {pendingCount > 0 && (
+              <Badge variant="default" className="bg-orange-500">
+                {pendingCount} Pending
+              </Badge>
+            )}
+          </div>
           <Button variant="ghost" size="sm" onClick={() => navigate('/owner/calendar')}>
             View All
           </Button>
