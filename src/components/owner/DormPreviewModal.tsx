@@ -1,7 +1,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CinematicDormCard } from "@/components/listings/CinematicDormCard";
-import { AlertCircle, Phone, Mail, Globe, Images } from "lucide-react";
+import { AlertCircle, Images } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface DormPreviewModalProps {
@@ -19,9 +19,6 @@ interface DormPreviewModalProps {
     withinWalkingDistance: boolean;
     shuttle: boolean;
     gender_preference: string;
-    phone_number: string;
-    email: string;
-    website: string;
     gallery_images: string[];
   };
 }
@@ -38,9 +35,6 @@ export function DormPreviewModal({ isOpen, onClose, onSubmit, formData }: DormPr
     amenities: formData.amenities || [],
     shuttle: formData.shuttle,
     gender_preference: formData.gender_preference || undefined,
-    phone_number: formData.phone_number || undefined,
-    email: formData.email || undefined,
-    website: formData.website || undefined,
   };
 
   return (
@@ -61,43 +55,6 @@ export function DormPreviewModal({ isOpen, onClose, onSubmit, formData }: DormPr
               <CinematicDormCard dorm={previewDorm} index={0} />
             </div>
           </div>
-
-          {/* Contact Information Preview */}
-          {(formData.phone_number || formData.email || formData.website) && (
-            <div className="p-4 border rounded-lg">
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                Contact Information
-              </h3>
-              <div className="space-y-2 text-sm">
-                {formData.phone_number && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-muted-foreground" />
-                    <span>{formData.phone_number}</span>
-                  </div>
-                )}
-                {formData.email && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-muted-foreground" />
-                    <span>{formData.email}</span>
-                  </div>
-                )}
-                {formData.website && (
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-muted-foreground" />
-                    <a 
-                      href={formData.website} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      {formData.website}
-                    </a>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Gallery Images Preview */}
           {formData.gallery_images.length > 0 && (

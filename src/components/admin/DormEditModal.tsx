@@ -39,9 +39,6 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin
     amenities: dorm.amenities || [],
     shuttle: dorm.shuttle || false,
     gender_preference: dorm.gender_preference || 'Mixed',
-    phone_number: dorm.phone_number || '',
-    email: dorm.email || '',
-    website: dorm.website || '',
     available: dorm.available ?? true,
     verification_status: dorm.verification_status || 'Pending',
   });
@@ -59,9 +56,6 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin
         amenities: formData.amenities,
         shuttle: formData.shuttle,
         gender_preference: formData.gender_preference,
-        phone_number: formData.phone_number,
-        email: formData.email,
-        website: formData.website,
         available: formData.available,
         updated_at: new Date().toISOString(),
       };
@@ -151,35 +145,6 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
               />
-            </div>
-
-            {/* Contact Info */}
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone_number}
-                  onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="website">Website</Label>
-                <Input
-                  id="website"
-                  value={formData.website}
-                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                />
-              </div>
             </div>
 
             {/* Settings */}

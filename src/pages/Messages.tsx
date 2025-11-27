@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/shared/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive } from 'lucide-react';
@@ -47,6 +47,16 @@ type Message = {
   attachment_type?: 'image' | 'video' | 'audio' | null;
   attachment_url?: string | null;
   attachment_duration?: number | null;
+  attachment_metadata?: {
+    type?: 'room_inquiry' | string;
+    roomId?: string;
+    roomName?: string;
+    roomType?: string;
+    price?: number;
+    deposit?: number;
+    dormId?: string;
+    dormName?: string;
+  } | null;
 };
 
 type TypingStatus = {
@@ -106,6 +116,52 @@ const AudioPlayer = ({ url }: { url: string }) => {
         onError={() => setAudioError(true)}
       />
     </div>
+  );
+};
+
+const RoomPreviewCard = ({ metadata }: { metadata: Message['attachment_metadata'] }) => {
+  const navigate = useNavigate();
+  
+  if (!metadata || metadata.type !== 'room_inquiry') return null;
+
+  return (
+    <Card className="mt-2 max-w-xs bg-card/50 backdrop-blur-sm border-primary/20">
+      <CardContent className="p-3 space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-sm truncate">{metadata.roomName}</h4>
+            <p className="text-xs text-muted-foreground truncate">{metadata.dormName}</p>
+          </div>
+          <div className="flex flex-col items-end shrink-0">
+            <span className="font-bold text-sm text-primary">${metadata.price}/mo</span>
+            {metadata.deposit && (
+              <span className="text-xs text-muted-foreground">${metadata.deposit} deposit</span>
+            )}
+          </div>
+        </div>
+        
+        {metadata.roomType && (
+          <div className="text-xs">
+            <span className="text-muted-foreground">Type: </span>
+            <span className="font-medium">{metadata.roomType}</span>
+          </div>
+        )}
+        
+        <Button
+          size="sm"
+          variant="outline"
+          className="w-full h-7 text-xs"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (metadata.dormId) {
+              navigate(`/dorm/${metadata.dormId}`);
+            }
+          }}
+        >
+          View Details
+        </Button>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -1239,6 +1295,16 @@ export default function Messages() {
   };
 
   const renderMessageContent = (msg: Message) => {
+    // Room preview card if present
+    if (msg.attachment_metadata?.type === 'room_inquiry') {
+      return (
+        <>
+          <p className="text-sm whitespace-pre-wrap break-words">{formatMessageBody(msg)}</p>
+          <RoomPreviewCard metadata={msg.attachment_metadata} />
+        </>
+      );
+    }
+
     if (msg.attachment_type === 'image') {
       return (
         <img
