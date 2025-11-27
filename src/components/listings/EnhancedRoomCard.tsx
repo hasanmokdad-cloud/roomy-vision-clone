@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { Calendar, MessageSquare, Home, Users, DollarSign, Heart, Share2 } from 'lucide-react';
+import { Calendar, MessageSquare, Home, Users, Heart, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BookingRequestModal } from '@/components/bookings/BookingRequestModal';
 import { motion } from 'framer-motion';
@@ -210,6 +210,16 @@ export function EnhancedRoomCard({
     }
   };
 
+  const handleReserve = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isUnavailable) return;
+    
+    toast({
+      title: 'Coming Soon',
+      description: 'Room reservation feature will be available soon!',
+    });
+  };
+
   return (
     <>
       <motion.div
@@ -377,23 +387,23 @@ export function EnhancedRoomCard({
             {/* Action Buttons */}
             <div className="flex gap-2 pt-2">
               <Button
-                onClick={handleBookTour}
+                onClick={handleContact}
                 disabled={isUnavailable}
                 variant="outline"
                 size="sm"
                 className="flex-1"
               >
-                <Calendar className="w-4 h-4 mr-2" />
-                Book Tour
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Contact
               </Button>
               <Button
-                onClick={handleContact}
+                onClick={handleReserve}
                 disabled={isUnavailable}
                 size="sm"
                 className="flex-1"
               >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Contact
+                <Calendar className="w-4 h-4 mr-2" />
+                Reserve
               </Button>
             </div>
           </div>

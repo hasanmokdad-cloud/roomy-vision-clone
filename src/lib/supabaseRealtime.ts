@@ -6,8 +6,13 @@ export function subscribeTo(
   callback: (payload: any) => void,
   filter?: { column: string; value: any }
 ): RealtimeChannel {
+  // Use stable channel name based on table and filter to prevent WebSocket conflicts
+  const channelId = filter 
+    ? `${table}-${filter.column}-${filter.value}` 
+    : `${table}-updates`;
+  
   let channel = supabase
-    .channel(`${table}-updates-${Date.now()}`)
+    .channel(channelId)
     .on(
       "postgres_changes",
       {
