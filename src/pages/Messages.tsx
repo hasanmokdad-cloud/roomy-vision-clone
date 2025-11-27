@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive } from 'lucide-react';
 import { ConversationContextMenu } from '@/components/messages/ConversationContextMenu';
+import { VoiceRecordingOverlay } from '@/components/messages/VoiceRecordingOverlay';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -185,6 +186,9 @@ export default function Messages() {
   const [isRecordingActive, setIsRecordingActive] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
   const [shouldUploadVoice, setShouldUploadVoice] = useState(true);
+  const [slideOffset, setSlideOffset] = useState({ x: 0, y: 0 });
+  const [isLocked, setIsLocked] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
@@ -193,6 +197,7 @@ export default function Messages() {
   const recordingTimerRef = useRef<NodeJS.Timeout>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const touchStartTimeRef = useRef<number>(0);
+  const touchStartPosRef = useRef({ x: 0, y: 0 });
 
   // Debug log for cache verification
   useEffect(() => {
@@ -1137,7 +1142,7 @@ export default function Messages() {
     }
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleVoiceTouchStart = (e: React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -1147,12 +1152,26 @@ export default function Messages() {
       return;
     }
     
+    const touch = e.touches[0];
+    touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
     touchStartTimeRef.current = Date.now();
     setShouldUploadVoice(true);
+    setSlideOffset({ x: 0, y: 0 });
+    setIsLocked(false);
     startRecording();
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleVoiceTouchMove = (e: React.TouchEvent) => {
+    if (!recording || isLocked) return;
+
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStartPosRef.current.x;
+    const deltaY = touch.clientY - touchStartPosRef.current.y;
+
+    setSlideOffset({ x: deltaX, y: deltaY });
+  };
+
+  const handleVoiceTouchEnd = (e: React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -1162,15 +1181,49 @@ export default function Messages() {
     }
     
     const touchDuration = Date.now() - touchStartTimeRef.current;
-    
-    if (touchDuration < 500) {
-      // Cancel recording - set flag BEFORE stopping
+
+    // Check if slid up to lock
+    if (slideOffset.y < -80 && !isLocked) {
+      setIsLocked(true);
+      setSlideOffset({ x: 0, y: 0 });
+      toast({ title: 'Recording locked', description: 'Tap stop when done' });
+      return;
+    }
+
+    // Check if slid left to cancel
+    if (slideOffset.x < -100) {
+      // Cancel recording
       setShouldUploadVoice(false);
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop();
       }
       setRecording(false);
       setIsRecordingActive(false);
+      setIsLocked(false);
+      setSlideOffset({ x: 0, y: 0 });
+      
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+      
+      toast({ 
+        title: 'Recording cancelled', 
+        description: 'Voice message deleted',
+        duration: 2000
+      });
+      return;
+    }
+    
+    if (touchDuration < 500) {
+      // Too short - cancel
+      setShouldUploadVoice(false);
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      setRecording(false);
+      setIsRecordingActive(false);
+      setIsLocked(false);
+      setSlideOffset({ x: 0, y: 0 });
       
       if (recordingTimerRef.current) {
         clearInterval(recordingTimerRef.current);
@@ -1181,19 +1234,64 @@ export default function Messages() {
         description: 'Hold the button longer to record',
         duration: 2000
       });
-    } else {
+    } else if (!isLocked) {
       // Stop and upload
+      setSlideOffset({ x: 0, y: 0 });
       stopRecording();
     }
+  };
+
+  const cancelRecording = () => {
+    setShouldUploadVoice(false);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    setRecording(false);
+    setIsRecordingActive(false);
+    setIsLocked(false);
+    setSlideOffset({ x: 0, y: 0 });
+    
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+    }
+    
+    toast({ title: 'Recording cancelled' });
+  };
+
+  const handleStopLockedRecording = () => {
+    setIsLocked(false);
+    setSlideOffset({ x: 0, y: 0 });
+    stopRecording();
   };
 
   const uploadVoiceMessage = async (audioBlob: Blob, duration: number) => {
     if (!selectedConversation || !userId) return;
 
+    const tempId = crypto.randomUUID();
+    
+    // Create optimistic message with uploading state
+    const optimisticMessage: Message = {
+      id: tempId,
+      conversation_id: selectedConversation,
+      sender_id: userId,
+      body: null,
+      created_at: new Date().toISOString(),
+      attachment_type: 'audio',
+      attachment_url: '', // Will be filled after upload
+      attachment_duration: duration,
+      status: 'sent',
+    };
+    
+    // Add optimistically for instant display
+    setMessages(prev => [...prev, optimisticMessage]);
+    setUploadProgress(10);
+
     try {
       const extension = audioBlob.type.includes('mp4') ? 'mp4' : 'webm';
       const fileName = `voice-${Date.now()}.${extension}`;
       const filePath = `${userId}/${fileName}`;
+
+      setUploadProgress(30);
 
       const { error: uploadError } = await supabase.storage
         .from('message-media')
@@ -1205,11 +1303,15 @@ export default function Messages() {
 
       if (uploadError) throw uploadError;
 
+      setUploadProgress(60);
+
       const { data: { publicUrl } } = supabase.storage
         .from('message-media')
         .getPublicUrl(filePath);
 
-      await supabase.from('messages').insert({
+      setUploadProgress(80);
+
+      const { data, error } = await supabase.from('messages').insert({
         conversation_id: selectedConversation,
         sender_id: userId,
         body: null,
@@ -1218,16 +1320,33 @@ export default function Messages() {
         attachment_duration: duration,
         attachment_metadata: { mimeType: audioBlob.type },
         status: 'sent',
-      });
+      }).select().single();
+
+      if (error) throw error;
+
+      setUploadProgress(100);
+
+      // Replace temp message with real one
+      if (data) {
+        setMessages(prev => 
+          prev.map(m => m.id === tempId ? data as Message : m)
+        );
+      }
 
       toast({ title: 'Voice message sent' });
     } catch (error: any) {
       console.error('Voice message upload error:', error);
+      
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      
       toast({
         title: 'Upload failed',
         description: error.message,
         variant: 'destructive',
       });
+    } finally {
+      setUploadProgress(0);
     }
   };
 
@@ -1514,23 +1633,18 @@ export default function Messages() {
                     paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))'
                   } : undefined}
                 >
-                  {isMobile && !recording && (
-                    <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-2">
-                      <Mic className="w-3 h-3" />
-                      <span>Hold mic button to record voice message</span>
+                  {uploadProgress > 0 && uploadProgress < 100 && (
+                    <div className="mb-2">
+                      <div className="h-1 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary transition-all duration-300"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
                     </div>
                   )}
                   
-                  {recording && (
-                    <div className="flex items-center justify-center gap-2 bg-red-500/10 text-red-500 px-3 py-2 rounded-lg mb-2 animate-pulse">
-                      <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                      <span className="text-sm font-medium">
-                        Recording... {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
-                      </span>
-                      {isMobile && <span className="text-xs opacity-70 ml-2">Release to send</span>}
-                    </div>
-                  )}
-                  
+                  {/* WhatsApp-style input layout */}
                   <div className="flex items-center gap-2">
                     <input
                       ref={fileInputRef}
@@ -1555,26 +1669,6 @@ export default function Messages() {
                       )}
                     </Button>
 
-                    {/* Desktop: Click to toggle, Mobile: Touch to record */}
-                    <Button
-                      type="button"
-                      variant={recording ? "destructive" : "ghost"}
-                      size="icon"
-                      onClick={isMobile ? undefined : handleVoiceButtonClick}
-                      onTouchStart={isMobile ? handleTouchStart : undefined}
-                      onTouchEnd={isMobile ? handleTouchEnd : undefined}
-                      className={recording ? "animate-pulse" : ""}
-                      aria-label={recording ? "Stop recording" : "Record voice message"}
-                      title={isMobile ? "Hold to record voice message" : "Click to record voice message"}
-                    >
-                      <Mic className="w-5 h-5" />
-                      {recording && isMobile && (
-                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs whitespace-nowrap bg-background px-2 py-1 rounded">
-                          {recordingDuration}s
-                        </span>
-                      )}
-                    </Button>
-
                     <Input
                       placeholder="Type a message..."
                       value={messageInput}
@@ -1588,17 +1682,46 @@ export default function Messages() {
                       aria-label="Message input"
                     />
 
-                    <Button 
-                      onClick={sendMessage} 
-                      disabled={sending || !messageInput.trim() || recording} 
-                      size="icon"
-                      aria-label="Send message"
-                      title="Send message"
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
+                    {/* Dynamic button: Mic when empty, Send when typing */}
+                    {messageInput.trim() ? (
+                      <Button 
+                        onClick={sendMessage} 
+                        disabled={sending} 
+                        size="icon"
+                        aria-label="Send message"
+                        title="Send message"
+                        className="shrink-0"
+                      >
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={isMobile ? undefined : handleVoiceButtonClick}
+                        onTouchStart={isMobile ? handleVoiceTouchStart : undefined}
+                        onTouchMove={isMobile ? handleVoiceTouchMove : undefined}
+                        onTouchEnd={isMobile ? handleVoiceTouchEnd : undefined}
+                        className="shrink-0"
+                        aria-label="Record voice message"
+                        title={isMobile ? "Hold to record voice message" : "Click to record voice message"}
+                      >
+                        <Mic className="w-5 h-5" />
+                      </Button>
+                    )}
                   </div>
                 </div>
+
+                {/* Voice Recording Overlay */}
+                <VoiceRecordingOverlay
+                  isRecording={recording}
+                  duration={recordingDuration}
+                  isLocked={isLocked}
+                  slideOffset={slideOffset}
+                  onCancel={cancelRecording}
+                  onStop={handleStopLockedRecording}
+                />
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center text-foreground/60">
