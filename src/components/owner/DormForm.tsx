@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, X, Upload, Eye, Phone, Mail, Globe, Images } from "lucide-react";
+import { Loader2, X, Upload, Eye, Images } from "lucide-react";
 import { compressImage } from "@/utils/imageCompression";
 import { DormPreviewModal } from "./DormPreviewModal";
 import { validateEmail, validatePhone, validateUrl, sanitizeInput } from "@/utils/inputValidation";
@@ -59,17 +59,8 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
     withinWalkingDistance: !dorm?.shuttle,
     shuttle: dorm?.shuttle || false,
     gender_preference: dorm?.gender_preference || "",
-    phone_number: dorm?.phone_number || "",
-    email: dorm?.email || "",
-    website: dorm?.website || "",
     gallery_images: (dorm?.gallery_images || []) as string[],
   });
-
-  const [validationErrors, setValidationErrors] = useState<{
-    phone?: string;
-    email?: string;
-    website?: string;
-  }>({});
 
   const [galleryUploading, setGalleryUploading] = useState(false);
 
@@ -90,28 +81,6 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
     }));
   };
 
-  const validateContactInfo = (): boolean => {
-    const errors: typeof validationErrors = {};
-    let isValid = true;
-
-    if (formData.phone_number && !validatePhone(formData.phone_number)) {
-      errors.phone = "Invalid phone number format. Use +XXX... or local format.";
-      isValid = false;
-    }
-
-    if (formData.email && !validateEmail(formData.email)) {
-      errors.email = "Invalid email address format.";
-      isValid = false;
-    }
-
-    if (formData.website && !validateUrl(formData.website)) {
-      errors.website = "Invalid website URL. Must start with http:// or https://";
-      isValid = false;
-    }
-
-    setValidationErrors(errors);
-    return isValid;
-  };
 
   const handleGalleryUpload = async (files: File[]) => {
     const maxImages = 10;
@@ -271,15 +240,6 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
 
     console.log('📝 Owner ID from props:', ownerId);
 
-    if (!validateContactInfo()) {
-      toast({
-        title: "Validation Error",
-        description: "Please fix the contact information errors before submitting.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     // Validate required fields
     const missingFields: string[] = [];
     
@@ -293,10 +253,6 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
     
     if (!formData.image_url) {
       missingFields.push("Exterior building image");
-    }
-    
-    if (!formData.phone_number) {
-      missingFields.push("Phone number");
     }
     
     if (missingFields.length > 0) {
@@ -334,16 +290,6 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
 
       if (formData.gender_preference) {
         payload.gender_preference = formData.gender_preference;
-      }
-
-      if (formData.phone_number) {
-        payload.phone_number = sanitizeInput(formData.phone_number);
-      }
-      if (formData.email) {
-        payload.email = sanitizeInput(formData.email);
-      }
-      if (formData.website) {
-        payload.website = sanitizeInput(formData.website);
       }
 
       if (formData.gallery_images.length > 0) {
@@ -626,97 +572,6 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
                 </Label>
               </div>
           </RadioGroup>
-        </div>
-
-        {/* Contact Information Section */}
-        <div className="space-y-4">
-          <div>
-            <Label className="text-lg font-semibold">Contact Information</Label>
-            <p className="text-sm text-muted-foreground mt-1">
-              Provide contact details for student inquiries
-            </p>
-          </div>
-
-          {/* Phone Number */}
-          <div>
-            <Label htmlFor="phone_number" className="flex items-center gap-2">
-              <Phone className="w-4 h-4" />
-              Phone Number
-            </Label>
-            <Input
-              id="phone_number"
-              type="tel"
-              value={formData.phone_number}
-              onChange={(e) => {
-                setFormData({ ...formData, phone_number: e.target.value });
-                if (validationErrors.phone) {
-                  setValidationErrors({ ...validationErrors, phone: undefined });
-                }
-              }}
-              placeholder="+961 XX XXX XXX"
-              className={validationErrors.phone ? "border-destructive" : ""}
-            />
-            {validationErrors.phone && (
-              <p className="text-sm text-destructive mt-1">{validationErrors.phone}</p>
-            )}
-            <p className="text-xs text-muted-foreground mt-1">
-              Students can call this number for inquiries
-            </p>
-          </div>
-
-          {/* Email */}
-          <div>
-            <Label htmlFor="email" className="flex items-center gap-2">
-              <Mail className="w-4 h-4" />
-              Email Address
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => {
-                setFormData({ ...formData, email: e.target.value });
-                if (validationErrors.email) {
-                  setValidationErrors({ ...validationErrors, email: undefined });
-                }
-              }}
-              placeholder="contact@example.com"
-              className={validationErrors.email ? "border-destructive" : ""}
-            />
-            {validationErrors.email && (
-              <p className="text-sm text-destructive mt-1">{validationErrors.email}</p>
-            )}
-            <p className="text-xs text-muted-foreground mt-1">
-              Students can send inquiries to this email
-            </p>
-          </div>
-
-          {/* Website */}
-          <div>
-            <Label htmlFor="website" className="flex items-center gap-2">
-              <Globe className="w-4 h-4" />
-              Website (Optional)
-            </Label>
-            <Input
-              id="website"
-              type="url"
-              value={formData.website}
-              onChange={(e) => {
-                setFormData({ ...formData, website: e.target.value });
-                if (validationErrors.website) {
-                  setValidationErrors({ ...validationErrors, website: undefined });
-                }
-              }}
-              placeholder="https://www.example.com"
-              className={validationErrors.website ? "border-destructive" : ""}
-            />
-            {validationErrors.website && (
-              <p className="text-sm text-destructive mt-1">{validationErrors.website}</p>
-            )}
-            <p className="text-xs text-muted-foreground mt-1">
-              Link to your dorm's official website
-            </p>
-          </div>
         </div>
 
         {/* Gallery Images Section */}
