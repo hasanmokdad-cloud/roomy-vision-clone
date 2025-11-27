@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { sendNotification, NotificationTemplates } from "@/lib/sendNotification";
+import { sendTourSystemMessage } from "@/lib/tourMessaging";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar, Clock, CheckCircle2 } from "lucide-react";
+import { format } from "date-fns";
 
 interface BookTourModalProps {
   open: boolean;
@@ -94,8 +96,21 @@ export const BookTourModal = ({
       // Combine date and time
       const scheduledTime = new Date(`${selectedDate}T${selectedTime}`);
 
-      // Insert tour booking
-      const { error } = await supabase.from("tour_bookings").insert({
+      // Insert booking into bookings table
+      const { error: bookingError } = await supabase.from("bookings").insert({
+        student_id: student.id,
+        owner_id: ownerId,
+        dorm_id: dormId,
+        requested_date: selectedDate,
+        requested_time: selectedTime,
+        message: message || null,
+        status: 'pending'
+      });
+
+      if (bookingError) throw bookingError;
+
+      // Also insert into tour_bookings for AI questions (legacy)
+      await supabase.from("tour_bookings").insert({
         student_id: student.id,
         owner_id: ownerId,
         dorm_id: dormId,
@@ -104,9 +119,7 @@ export const BookTourModal = ({
         ai_suggested_questions: aiQuestions,
       });
 
-      if (error) throw error;
-
-      // Send notification to owner
+      // Send notification and system message to owner
       const { data: owner } = await supabase
         .from('owners')
         .select('whatsapp_language, user_id')
@@ -120,6 +133,18 @@ export const BookTourModal = ({
           NotificationTemplates.TOUR_BOOKED,
           ownerLang,
           { dormId, dormName, scheduledTime: scheduledTime.toISOString() }
+        );
+
+        // Send system message in conversation
+        await sendTourSystemMessage(
+          user.id,
+          owner.user_id,
+          'requested',
+          {
+            dormName,
+            date: format(new Date(selectedDate), 'PPP'),
+            time: selectedTime
+          }
         );
       }
 

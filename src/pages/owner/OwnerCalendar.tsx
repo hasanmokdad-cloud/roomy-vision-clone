@@ -8,19 +8,27 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, User, CalendarClock } from 'lucide-react';
+import { Clock, User, CalendarClock, Video } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
 import { OwnerAvailabilityManager } from '@/components/owner/OwnerAvailabilityManager';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { AcceptBookingModal } from '@/components/bookings/AcceptBookingModal';
+import { sendTourSystemMessage } from '@/lib/tourMessaging';
+import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 export default function OwnerCalendar() {
   const { userId } = useAuthGuard();
+  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [bookings, setBookings] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [loading, setLoading] = useState(true);
   const [ownerId, setOwnerId] = useState<string>('');
+  const [acceptModalOpen, setAcceptModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [acceptLoading, setAcceptLoading] = useState(false);
   const defaultTab = searchParams.get('tab') || 'bookings';
 
   useEffect(() => {
@@ -72,6 +80,109 @@ export default function OwnerCalendar() {
       .eq('id', bookingId);
 
     loadBookings();
+  };
+
+  const handleAcceptBooking = async (meetingLink: string, notes?: string) => {
+    if (!selectedBooking) return;
+    
+    setAcceptLoading(true);
+    try {
+      // Update booking with meeting link
+      const { error } = await supabase
+        .from('bookings')
+        .update({ 
+          status: 'accepted',
+          meeting_link: meetingLink,
+          owner_notes: notes || null
+        })
+        .eq('id', selectedBooking.id);
+
+      if (error) throw error;
+
+      // Get student user_id for messaging
+      const { data: student } = await supabase
+        .from('students')
+        .select('user_id')
+        .eq('id', selectedBooking.student_id)
+        .single();
+
+      if (student && userId) {
+        // Send system message
+        await sendTourSystemMessage(
+          student.user_id,
+          userId,
+          'accepted',
+          {
+            dormName: selectedBooking.dorms?.dorm_name || selectedBooking.dorms?.name,
+            date: format(new Date(selectedBooking.requested_date), 'PPP'),
+            time: selectedBooking.requested_time,
+            meetingLink
+          }
+        );
+      }
+
+      toast({
+        title: 'Tour Accepted',
+        description: 'The student has been notified with the meeting link'
+      });
+
+      setAcceptModalOpen(false);
+      setSelectedBooking(null);
+      loadBookings();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setAcceptLoading(false);
+    }
+  };
+
+  const handleDeclineBooking = async (bookingId: string) => {
+    const booking = bookings.find(b => b.id === bookingId);
+    if (!booking) return;
+
+    try {
+      await supabase
+        .from('bookings')
+        .update({ status: 'declined' })
+        .eq('id', bookingId);
+
+      // Get student user_id for messaging
+      const { data: student } = await supabase
+        .from('students')
+        .select('user_id')
+        .eq('id', booking.student_id)
+        .single();
+
+      if (student && userId) {
+        await sendTourSystemMessage(
+          student.user_id,
+          userId,
+          'declined',
+          {
+            dormName: booking.dorms?.dorm_name || booking.dorms?.name,
+            date: format(new Date(booking.requested_date), 'PPP'),
+            time: booking.requested_time
+          }
+        );
+      }
+
+      toast({
+        title: 'Tour Declined',
+        description: 'The student has been notified'
+      });
+
+      loadBookings();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
   };
 
   const bookingsForSelectedDate = bookings.filter(b => {
@@ -169,22 +280,36 @@ export default function OwnerCalendar() {
                             </p>
                           )}
 
+                          {booking.status === 'accepted' && booking.meeting_link && (
+                            <Button
+                              size="sm"
+                              onClick={() => window.open(booking.meeting_link, '_blank')}
+                              className="w-full mb-2 gap-2 bg-gradient-to-r from-green-600 to-emerald-500"
+                            >
+                              <Video className="w-4 h-4" />
+                              Join Meeting
+                            </Button>
+                          )}
+
                           {booking.status === 'pending' && (
                             <div className="flex gap-2">
                               <Button
                                 size="sm"
-                                onClick={() => updateBookingStatus(booking.id, 'confirmed')}
+                                onClick={() => {
+                                  setSelectedBooking(booking);
+                                  setAcceptModalOpen(true);
+                                }}
                                 className="flex-1"
                               >
-                                Confirm
+                                Accept
                               </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => updateBookingStatus(booking.id, 'cancelled')}
+                                onClick={() => handleDeclineBooking(booking.id)}
                                 className="flex-1"
                               >
-                                Cancel
+                                Decline
                               </Button>
                             </div>
                           )}
@@ -198,7 +323,7 @@ export default function OwnerCalendar() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="availability">
+               <TabsContent value="availability">
                 {ownerId && (
                   <OwnerAvailabilityManager ownerId={ownerId} />
                 )}
@@ -207,6 +332,17 @@ export default function OwnerCalendar() {
           </div>
         </main>
       </div>
+
+      {/* Accept Booking Modal */}
+      {selectedBooking && (
+        <AcceptBookingModal
+          open={acceptModalOpen}
+          onOpenChange={setAcceptModalOpen}
+          booking={selectedBooking}
+          onConfirm={handleAcceptBooking}
+          loading={acceptLoading}
+        />
+      )}
     </div>
     </SidebarProvider>
   );

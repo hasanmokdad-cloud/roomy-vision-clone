@@ -15,6 +15,7 @@ import { logAnalyticsEvent, sendOwnerNotification, triggerRecommenderTraining } 
 import { useBookingConflicts } from '@/hooks/useBookingConflicts';
 import { AvailabilityIndicator } from './AvailabilityIndicator';
 import { AlternativeSlots } from './AlternativeSlots';
+import { sendTourSystemMessage } from '@/lib/tourMessaging';
 
 interface BookingRequestModalProps {
   open: boolean;
@@ -104,6 +105,27 @@ export function BookingRequestModal({ open, onOpenChange, dormId, dormName, owne
 
       // Trigger recommender training
       await triggerRecommenderTraining(user.id);
+
+      // Get owner user_id for messaging
+      const { data: owner } = await supabase
+        .from('owners')
+        .select('user_id')
+        .eq('id', ownerId)
+        .single();
+
+      if (owner) {
+        // Send system message in conversation
+        await sendTourSystemMessage(
+          user.id,
+          owner.user_id,
+          'requested',
+          {
+            dormName,
+            date: format(selectedDate, 'PPP'),
+            time: selectedTime
+          }
+        );
+      }
 
       toast({
         title: 'Viewing Requested',
