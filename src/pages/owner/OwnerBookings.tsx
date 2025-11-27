@@ -9,11 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Clock, MapPin, User, CheckCircle, XCircle, MessageSquare } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, CheckCircle, XCircle, MessageSquare, Video } from 'lucide-react';
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import BottomNav from '@/components/BottomNav';
 import { sendOwnerNotification } from '@/utils/analytics';
+import { AcceptBookingModal } from '@/components/bookings/AcceptBookingModal';
+import { sendTourSystemMessage } from '@/lib/tourMessaging';
 
 type Booking = {
   id: string;
@@ -38,6 +40,10 @@ export default function OwnerBookings() {
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<string | null>(null);
   const [ownerNotes, setOwnerNotes] = useState('');
+  const [acceptModalOpen, setAcceptModalOpen] = useState(false);
+  const [bookingToAccept, setBookingToAccept] = useState<Booking | null>(null);
+  const [acceptLoading, setAcceptLoading] = useState(false);
+  const { userId } = useAuthGuard();
 
   useEffect(() => {
     if (!authLoading && !roleLoading) {
@@ -118,20 +124,43 @@ export default function OwnerBookings() {
     }
   };
 
-  const handleApprove = async (bookingId: string) => {
-    try {
-      const booking = bookings.find(b => b.id === bookingId);
-      if (!booking) return;
+  const handleApprove = async (meetingLink: string, notes?: string) => {
+    if (!bookingToAccept) return;
 
+    setAcceptLoading(true);
+    try {
       const { error } = await supabase
         .from('bookings')
         .update({ 
-          status: 'approved',
-          owner_notes: ownerNotes.trim() || null
+          status: 'accepted',
+          meeting_link: meetingLink,
+          owner_notes: notes || null
         })
-        .eq('id', bookingId);
+        .eq('id', bookingToAccept.id);
 
       if (error) throw error;
+
+      // Get student user_id for messaging
+      const { data: student } = await supabase
+        .from('students')
+        .select('user_id')
+        .eq('id', bookingToAccept.student_id)
+        .single();
+
+      if (student && userId) {
+        // Send system message
+        await sendTourSystemMessage(
+          student.user_id,
+          userId,
+          'accepted',
+          {
+            dormName: bookingToAccept.dorm_name || 'the property',
+            date: format(new Date(bookingToAccept.requested_date), 'PPP'),
+            time: bookingToAccept.requested_time,
+            meetingLink
+          }
+        );
+      }
 
       // Send notification to owner
       const { data: { user } } = await supabase.auth.getUser();
@@ -142,21 +171,23 @@ export default function OwnerBookings() {
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (owner && booking.dorm_id) {
+        if (owner && bookingToAccept.dorm_id) {
           await sendOwnerNotification({
             ownerId: owner.id,
-            dormId: booking.dorm_id,
+            dormId: bookingToAccept.dorm_id,
             event: 'booking_approved',
-            message: `Viewing request approved for ${booking.student_name}`
+            message: `Viewing request approved for ${bookingToAccept.student_name}`
           });
         }
       }
 
       toast({
         title: 'Viewing Approved',
-        description: 'The viewing request has been approved'
+        description: 'The student has been notified with the meeting link'
       });
 
+      setAcceptModalOpen(false);
+      setBookingToAccept(null);
       setSelectedBooking(null);
       setOwnerNotes('');
       loadBookings();
@@ -166,6 +197,8 @@ export default function OwnerBookings() {
         description: error.message,
         variant: 'destructive'
       });
+    } finally {
+      setAcceptLoading(false);
     }
   };
 
@@ -183,6 +216,27 @@ export default function OwnerBookings() {
         .eq('id', bookingId);
 
       if (error) throw error;
+
+      // Get student user_id for messaging
+      const { data: student } = await supabase
+        .from('students')
+        .select('user_id')
+        .eq('id', booking.student_id)
+        .single();
+
+      if (student && userId) {
+        await sendTourSystemMessage(
+          student.user_id,
+          userId,
+          'declined',
+          {
+            dormName: booking.dorm_name || 'the property',
+            date: format(new Date(booking.requested_date), 'PPP'),
+            time: booking.requested_time,
+            reason: ownerNotes.trim() || undefined
+          }
+        );
+      }
 
       // Send notification to owner
       const { data: { user } } = await supabase.auth.getUser();
@@ -223,7 +277,7 @@ export default function OwnerBookings() {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
       pending: 'default',
-      approved: 'default',
+      accepted: 'default',
       declined: 'destructive',
       cancelled: 'secondary',
       completed: 'default'
@@ -231,7 +285,7 @@ export default function OwnerBookings() {
 
     return (
       <Badge variant={variants[status]} className={
-        status === 'approved' ? 'bg-green-500' : 
+        status === 'accepted' ? 'bg-green-500' : 
         status === 'completed' ? 'bg-blue-500' : ''
       }>
         {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -248,7 +302,7 @@ export default function OwnerBookings() {
   }
 
   const pendingBookings = bookings.filter(b => b.status === 'pending');
-  const upcomingBookings = bookings.filter(b => b.status === 'approved');
+  const upcomingBookings = bookings.filter(b => b.status === 'accepted');
   const pastBookings = bookings.filter(b => ['declined', 'cancelled', 'completed'].includes(b.status));
 
   return (
@@ -322,7 +376,10 @@ export default function OwnerBookings() {
                             {selectedBooking === booking.id ? (
                               <>
                                 <Button
-                                  onClick={() => handleApprove(booking.id)}
+                                  onClick={() => {
+                                    setBookingToAccept(booking);
+                                    setAcceptModalOpen(true);
+                                  }}
                                   className="flex-1 md:flex-none"
                                 >
                                   <CheckCircle className="h-4 w-4 mr-2" />
@@ -410,6 +467,15 @@ export default function OwnerBookings() {
                             <p>{booking.owner_notes}</p>
                           </div>
                         )}
+                        {(booking as any).meeting_link && (
+                          <Button
+                            onClick={() => window.open((booking as any).meeting_link, '_blank')}
+                            className="w-full gap-2 bg-gradient-to-r from-green-600 to-emerald-500"
+                          >
+                            <Video className="h-4 w-4" />
+                            Join Meeting
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -458,6 +524,17 @@ export default function OwnerBookings() {
         </main>
       </div>
       {isMobile && <BottomNav />}
+      
+      {/* Accept Booking Modal */}
+      {bookingToAccept && (
+        <AcceptBookingModal
+          open={acceptModalOpen}
+          onOpenChange={setAcceptModalOpen}
+          booking={bookingToAccept}
+          onConfirm={handleApprove}
+          loading={acceptLoading}
+        />
+      )}
     </div>
   );
 }

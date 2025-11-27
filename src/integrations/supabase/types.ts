@@ -211,8 +211,11 @@ export type Database = {
       bookings: {
         Row: {
           created_at: string
+          decline_reason: string | null
           dorm_id: string
+          end_time: string | null
           id: string
+          meeting_link: string | null
           message: string | null
           owner_id: string
           owner_notes: string | null
@@ -224,8 +227,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          decline_reason?: string | null
           dorm_id: string
+          end_time?: string | null
           id?: string
+          meeting_link?: string | null
           message?: string | null
           owner_id: string
           owner_notes?: string | null
@@ -237,8 +243,11 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          decline_reason?: string | null
           dorm_id?: string
+          end_time?: string | null
           id?: string
+          meeting_link?: string | null
           message?: string | null
           owner_id?: string
           owner_notes?: string | null

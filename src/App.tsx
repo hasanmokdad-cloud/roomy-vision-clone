@@ -69,6 +69,7 @@ const AdminPendingReview = lazy(() => import("./pages/admin/AdminPendingReview")
 const AdminRLSDebugger = lazy(() => import("./pages/admin/AdminRLSDebugger"));
 const AdminMessagesInbox = lazy(() => import("./pages/admin/AdminMessagesInbox"));
 const AdminDormRooms = lazy(() => import("./pages/admin/AdminDormRooms"));
+const StudentTours = lazy(() => import("./pages/StudentTours"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -170,7 +171,7 @@ const AppRoutes = () => {
             } 
           />
 
-          {/* Student Routes - Admins can access all student routes */}
+          <Route path="/my-tours" element={<ProtectedRoute element={<StudentTours />} forbiddenRoles={["owner"]} />} />
           <Route path="/onboarding" element={<ProtectedRoute element={<Onboarding />} />} />
           <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
           <Route path="/settings" element={<ProtectedRoute element={<Settings />} />} />

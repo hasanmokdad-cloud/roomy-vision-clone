@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Eye, MessageCircle, TrendingUp, Home, LogOut, Plus, Clock, CheckCircle, Loader2, Pencil } from 'lucide-react';
+import { Building2, Eye, MessageCircle, TrendingUp, Home, LogOut, Plus, Clock, CheckCircle, Loader2, Pencil, Video } from 'lucide-react';
 import { useOwnerDormsQuery } from '@/hooks/useOwnerDormsQuery';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
@@ -13,6 +13,95 @@ import { DormForm } from '@/components/owner/DormForm';
 import DormEditModal from '@/components/admin/DormEditModal';
 import { NotificationBell } from '@/components/owner/NotificationBell';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+
+function UpcomingToursWidget({ ownerId }: { ownerId: string }) {
+  const navigate = useNavigate();
+  const [tours, setTours] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadTours();
+  }, [ownerId]);
+
+  const loadTours = async () => {
+    const { data } = await supabase
+      .from('bookings')
+      .select(`
+        *,
+        dorms(dorm_name, name),
+        students(full_name)
+      `)
+      .eq('owner_id', ownerId)
+      .eq('status', 'accepted')
+      .gte('requested_date', new Date().toISOString().split('T')[0])
+      .order('requested_date', { ascending: true })
+      .order('requested_time', { ascending: true })
+      .limit(5);
+
+    setTours(data || []);
+    setLoading(false);
+  };
+
+  if (loading) {
+    return (
+      <Card className="glass-hover">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (tours.length === 0) return null;
+
+  return (
+    <Card className="glass-hover">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold">Upcoming Tours</h3>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/owner/calendar')}>
+            View All
+          </Button>
+        </div>
+        <div className="space-y-3">
+          {tours.map((tour) => (
+            <div
+              key={tour.id}
+              className="p-4 bg-muted/20 rounded-lg border border-border/40"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h4 className="font-semibold">{tour.students?.full_name}</h4>
+                  <p className="text-sm text-foreground/60">
+                    {tour.dorms?.dorm_name || tour.dorms?.name}
+                  </p>
+                </div>
+                <Badge className="bg-green-500/20 text-green-700">Accepted</Badge>
+              </div>
+              <div className="flex items-center gap-4 text-sm text-foreground/60 mb-3">
+                <span>{format(new Date(tour.requested_date), 'PPP')}</span>
+                <span>{tour.requested_time}</span>
+              </div>
+              {tour.meeting_link && (
+                <Button
+                  size="sm"
+                  onClick={() => window.open(tour.meeting_link, '_blank')}
+                  className="w-full gap-2 bg-gradient-to-r from-green-600 to-emerald-500"
+                >
+                  <Video className="w-4 h-4" />
+                  Join Meeting
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function OwnerHome() {
   const navigate = useNavigate();
@@ -325,6 +414,9 @@ export default function OwnerHome() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Upcoming Tours Widget */}
+        {ownerId && <UpcomingToursWidget ownerId={ownerId} />}
 
         {/* Add New Dorm Button */}
         {true && (
