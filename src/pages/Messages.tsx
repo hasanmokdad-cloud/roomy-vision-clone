@@ -354,9 +354,8 @@ export default function Messages() {
         if (conversationId) {
           console.log('📤 Loading conversation and sending initial message');
           setSelectedConversation(conversationId);
-          await loadMessages(conversationId);
 
-          // Send initial message with room preview metadata if provided
+          // Send initial message FIRST with room preview metadata if provided
           if (initialMessage) {
             const { data: messageData, error: messageError } = await supabase.from('messages').insert({
               conversation_id: conversationId,
@@ -385,6 +384,9 @@ export default function Messages() {
               });
             }
           }
+          
+          // THEN load messages to display them immediately
+          await loadMessages(conversationId);
         } else {
           console.error('❌ No conversation ID available');
           toast({
