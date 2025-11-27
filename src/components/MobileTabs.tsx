@@ -25,9 +25,6 @@ export default function MobileTabs() {
   const [userId, setUserId] = useState<string | null>(null);
   const { unreadCount } = useUnreadCount(userId);
 
-  // Hide completely when in conversation view
-  if (hideBottomNav) return null;
-
   useEffect(() => {
     const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -47,6 +44,9 @@ export default function MobileTabs() {
 
     fetchUserData();
   }, []);
+
+  // Hide completely when in conversation view
+  if (hideBottomNav) return null;
 
   // Owner has unique 3-icon layout
   const tabs = userRole === 'owner' 
