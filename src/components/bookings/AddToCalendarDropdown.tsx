@@ -5,8 +5,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Calendar, Download } from 'lucide-react';
-import { generateGoogleCalendarUrl, downloadICSFile, createCalendarEventFromBooking } from '@/lib/calendarUtils';
+import { Calendar, Download, Apple } from 'lucide-react';
+import { generateGoogleCalendarUrl, generateOutlookCalendarUrl, downloadICSFile, createCalendarEventFromBooking } from '@/lib/calendarUtils';
 
 interface AddToCalendarDropdownProps {
   booking: {
@@ -16,6 +16,7 @@ interface AddToCalendarDropdownProps {
     requested_date: string;
     requested_time: string;
     meeting_link?: string;
+    meeting_platform?: string;
     message?: string;
     owner_notes?: string;
     id: string;
@@ -32,6 +33,12 @@ export function AddToCalendarDropdown({
   const handleAddToGoogleCalendar = () => {
     const event = createCalendarEventFromBooking(booking);
     const url = generateGoogleCalendarUrl(event);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleAddToOutlookCalendar = () => {
+    const event = createCalendarEventFromBooking(booking);
+    const url = generateOutlookCalendarUrl(event);
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -52,7 +59,15 @@ export function AddToCalendarDropdown({
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem onClick={handleAddToGoogleCalendar} className="gap-2 cursor-pointer">
           <Calendar className="w-4 h-4" />
-          Add to Google Calendar
+          Google Calendar
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleAddToOutlookCalendar} className="gap-2 cursor-pointer">
+          <Calendar className="w-4 h-4" />
+          Outlook Calendar
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDownloadICS} className="gap-2 cursor-pointer">
+          <Apple className="w-4 h-4" />
+          Apple Calendar (.ics)
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleDownloadICS} className="gap-2 cursor-pointer">
           <Download className="w-4 h-4" />

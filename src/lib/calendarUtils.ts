@@ -76,6 +76,23 @@ export function generateGoogleCalendarUrl(event: CalendarEvent): string {
 }
 
 /**
+ * Generate Outlook Calendar URL
+ */
+export function generateOutlookCalendarUrl(event: CalendarEvent): string {
+  const baseUrl = 'https://outlook.office.com/calendar/0/deeplink/compose';
+  const params = new URLSearchParams({
+    subject: event.title,
+    startdt: event.startDate.toISOString(),
+    enddt: event.endDate.toISOString(),
+    body: event.description,
+    location: event.location,
+    path: '/calendar/action/compose',
+    rru: 'addevent'
+  });
+  return `${baseUrl}?${params.toString()}`;
+}
+
+/**
  * Trigger download of ICS file
  */
 export function downloadICSFile(event: CalendarEvent, filename: string = 'roomy-tour.ics'): void {

@@ -116,6 +116,108 @@ export function OwnerAvailabilityManager({ ownerId, dormId }: OwnerAvailabilityM
 
       if (error) throw error;
 
+      // Check for conflicting bookings and auto-reschedule
+      const { data: conflictingBookings } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('owner_id', ownerId)
+        .eq('requested_date', format(selectedDate, 'yyyy-MM-dd'))
+        .in('status', ['pending', 'approved']);
+
+      if (conflictingBookings && conflictingBookings.length > 0) {
+        for (const booking of conflictingBookings) {
+          const bookingTime = booking.requested_time;
+          
+          // Check if this booking conflicts with the blocked time
+          const isConflict = allDay || (
+            bookingTime >= startTime && bookingTime < endTime
+          );
+
+          if (isConflict) {
+            // Try to find next available slot
+            const { data: nextSlot } = await supabase.rpc('find_next_available_slot', {
+              p_owner_id: ownerId,
+              p_dorm_id: booking.dorm_id,
+              p_preferred_time: bookingTime,
+              p_start_from: format(new Date(selectedDate.getTime() + 86400000), 'yyyy-MM-dd')
+            });
+
+            if (nextSlot && nextSlot.length > 0) {
+              // Update booking with new date/time
+              await supabase
+                .from('bookings')
+                .update({
+                  requested_date: nextSlot[0].available_date,
+                  requested_time: nextSlot[0].available_time
+                })
+                .eq('id', booking.id);
+
+              // Delete old reminders
+              await supabase
+                .from('booking_reminders')
+                .delete()
+                .eq('booking_id', booking.id);
+
+              // Schedule new reminders
+              await supabase.functions.invoke('schedule-booking-reminders', {
+                body: { bookingId: booking.id }
+              });
+
+              // Send auto-reschedule messages
+              const { data: student } = await supabase
+                .from('students')
+                .select('user_id')
+                .eq('id', booking.student_id)
+                .single();
+
+              const { data: owner } = await supabase
+                .from('owners')
+                .select('user_id')
+                .eq('id', booking.owner_id)
+                .single();
+
+              const { data: dorm } = await supabase
+                .from('dorms')
+                .select('dorm_name, name')
+                .eq('id', booking.dorm_id)
+                .single();
+
+              if (student && owner && dorm) {
+                const { data: conversationId } = await supabase.rpc(
+                  'get_or_create_conversation',
+                  {
+                    p_user_a_id: student.user_id,
+                    p_user_b_id: owner.user_id
+                  }
+                );
+
+                if (conversationId) {
+                  const rescheduleMessage = `🔄 Your tour for ${dorm.dorm_name || dorm.name} has been automatically rescheduled.\n\nNew Date: ${format(new Date(nextSlot[0].available_date), 'PPP')}\nNew Time: ${nextSlot[0].available_time}\n\nReason: Owner availability changed`;
+
+                  await supabase.from('messages').insert({
+                    conversation_id: conversationId,
+                    sender_id: owner.user_id,
+                    body: rescheduleMessage,
+                    type: 'text'
+                  });
+                }
+              }
+
+              toast({
+                title: 'Booking Rescheduled',
+                description: `Tour automatically moved to ${format(new Date(nextSlot[0].available_date), 'PPP')} at ${nextSlot[0].available_time}`,
+              });
+            } else {
+              toast({
+                title: 'Manual Rescheduling Required',
+                description: 'Unable to find available slot. Please reschedule manually.',
+                variant: 'destructive'
+              });
+            }
+          }
+        }
+      }
+
       toast({
         title: 'Date Blocked',
         description: `${format(selectedDate, 'PPP')} has been marked as unavailable.`,

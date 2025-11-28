@@ -10,6 +10,7 @@ interface TourDetails {
   meetingLink?: string;
   reason?: string;
   platform?: MeetingPlatform;
+  bookingId?: string;
 }
 
 /**
@@ -40,30 +41,67 @@ export async function sendTourSystemMessage(
     // Build message based on type
     let messageBody = '';
     let senderId = studentUserId; // Default to student
+    let metadata: any = null;
 
     switch (type) {
       case 'requested':
         messageBody = `📅 New tour request for ${details.dormName} on ${details.date} at ${details.time}. Status: Pending`;
+        metadata = {
+          type: 'tour_booking',
+          status: 'requested',
+          booking_id: details.bookingId,
+          dorm_name: details.dormName,
+          requested_date: details.date,
+          requested_time: details.time
+        };
         break;
       case 'accepted':
         messageBody = `✅ Tour request accepted for ${details.dormName} on ${details.date} at ${details.time}.${details.meetingLink ? `\n\n🔗 Meeting Link: ${details.meetingLink}\n\n💡 Add this to your calendar!` : ''}`;
         senderId = ownerUserId;
+        metadata = {
+          type: 'tour_booking',
+          status: 'accepted',
+          booking_id: details.bookingId,
+          dorm_name: details.dormName,
+          requested_date: details.date,
+          requested_time: details.time,
+          meeting_link: details.meetingLink,
+          meeting_platform: details.platform
+        };
         break;
       case 'declined':
         messageBody = `❌ Tour request declined for ${details.dormName} on ${details.date} at ${details.time}.${details.reason ? `\n\nReason: ${details.reason}` : ''}`;
         senderId = ownerUserId;
+        metadata = {
+          type: 'tour_booking',
+          status: 'declined',
+          booking_id: details.bookingId,
+          dorm_name: details.dormName,
+          requested_date: details.date,
+          requested_time: details.time,
+          reason: details.reason
+        };
         break;
       case 'cancelled':
         messageBody = `🚫 Tour request cancelled for ${details.dormName} on ${details.date} at ${details.time}.`;
+        metadata = {
+          type: 'tour_booking',
+          status: 'cancelled',
+          booking_id: details.bookingId,
+          dorm_name: details.dormName,
+          requested_date: details.date,
+          requested_time: details.time
+        };
         break;
     }
 
-    // Insert system message
+    // Insert system message with metadata
     const { error: messageError } = await supabase.from('messages').insert({
       conversation_id: conversationId,
       sender_id: senderId,
       body: messageBody,
-      type: 'text'
+      type: 'text',
+      attachment_metadata: metadata
     });
 
     if (messageError) {

@@ -208,6 +208,50 @@ export type Database = {
           },
         ]
       }
+      booking_reminders: {
+        Row: {
+          booking_id: string
+          created_at: string | null
+          id: string
+          recipient_type: string
+          recipient_user_id: string
+          reminder_type: string
+          scheduled_at: string
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string | null
+          id?: string
+          recipient_type: string
+          recipient_user_id: string
+          reminder_type: string
+          scheduled_at: string
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string | null
+          id?: string
+          recipient_type?: string
+          recipient_user_id?: string
+          reminder_type?: string
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_reminders_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           created_at: string
@@ -1154,6 +1198,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth_key: string
+          created_at: string | null
+          endpoint: string
+          id: string
+          last_used_at: string | null
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          last_used_at?: string | null
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          last_used_at?: string | null
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       review_helpful_votes: {
         Row: {
@@ -2157,6 +2231,18 @@ export type Database = {
         Returns: boolean
       }
       debug_auth_state: { Args: never; Returns: Json }
+      find_next_available_slot: {
+        Args: {
+          p_dorm_id: string
+          p_owner_id: string
+          p_preferred_time: string
+          p_start_from: string
+        }
+        Returns: {
+          available_date: string
+          available_time: string
+        }[]
+      }
       generate_share_code: { Args: never; Returns: string }
       get_or_create_conversation: {
         Args: { p_user_a_id: string; p_user_b_id: string }

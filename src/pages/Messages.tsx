@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive } from 'lucide-react';
 import { ConversationContextMenu } from '@/components/messages/ConversationContextMenu';
 import { VoiceRecordingOverlay } from '@/components/messages/VoiceRecordingOverlay';
+import { TourMessageCard } from '@/components/messages/TourMessageCard';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -17,6 +18,7 @@ import BottomNav from '@/components/BottomNav';
 import { useBottomNav } from '@/contexts/BottomNavContext';
 import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { extractMeetingUrl } from '@/lib/meetingUtils';
 
 type Conversation = {
   id: string;
@@ -1414,6 +1416,11 @@ export default function Messages() {
   };
 
   const renderMessageContent = (msg: Message) => {
+    // Tour booking card if present
+    if (msg.attachment_metadata?.type === 'tour_booking' || msg.attachment_metadata?.type === 'tour_reminder') {
+      return <TourMessageCard metadata={msg.attachment_metadata as any} message={msg} />;
+    }
+    
     // Room preview card if present
     if (msg.attachment_metadata?.type === 'room_inquiry') {
       return (
