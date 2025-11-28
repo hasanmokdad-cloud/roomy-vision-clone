@@ -1167,6 +1167,74 @@ export type Database = {
         }
         Relationships: []
       }
+      personality_questions: {
+        Row: {
+          category: string
+          created_at: string | null
+          display_order: number
+          id: number
+          is_advanced: boolean | null
+          subcategory: string | null
+          text: string
+          weight: number
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          display_order: number
+          id?: number
+          is_advanced?: boolean | null
+          subcategory?: string | null
+          text: string
+          weight?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          display_order?: number
+          id?: number
+          is_advanced?: boolean | null
+          subcategory?: string | null
+          text?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      personality_responses: {
+        Row: {
+          created_at: string | null
+          id: string
+          question_id: number
+          response: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          question_id: number
+          response: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          question_id?: number
+          response?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personality_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "personality_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       preference_history: {
         Row: {
           created_at: string | null
@@ -1561,6 +1629,48 @@ export type Database = {
           },
         ]
       }
+      roommate_matches: {
+        Row: {
+          advanced_score: number | null
+          compatibility_score: number
+          computed_at: string | null
+          id: string
+          lifestyle_score: number | null
+          match_reasons: Json | null
+          personality_score: number | null
+          similarity_score: number | null
+          student1_id: string
+          student2_id: string
+          study_score: number | null
+        }
+        Insert: {
+          advanced_score?: number | null
+          compatibility_score: number
+          computed_at?: string | null
+          id?: string
+          lifestyle_score?: number | null
+          match_reasons?: Json | null
+          personality_score?: number | null
+          similarity_score?: number | null
+          student1_id: string
+          student2_id: string
+          study_score?: number | null
+        }
+        Update: {
+          advanced_score?: number | null
+          compatibility_score?: number
+          computed_at?: string | null
+          id?: string
+          lifestyle_score?: number | null
+          match_reasons?: Json | null
+          personality_score?: number | null
+          similarity_score?: number | null
+          student1_id?: string
+          student2_id?: string
+          study_score?: number | null
+        }
+        Relationships: []
+      }
       rooms: {
         Row: {
           area_m2: number | null
@@ -1752,9 +1862,11 @@ export type Database = {
       students: {
         Row: {
           accommodation_status: string | null
+          advanced_compatibility_enabled: boolean | null
           age: number | null
           ai_confidence_score: number | null
           budget: number | null
+          compatibility_test_completed: boolean | null
           created_at: string | null
           distance_preference: string | null
           district: string | null
@@ -1793,9 +1905,11 @@ export type Database = {
         }
         Insert: {
           accommodation_status?: string | null
+          advanced_compatibility_enabled?: boolean | null
           age?: number | null
           ai_confidence_score?: number | null
           budget?: number | null
+          compatibility_test_completed?: boolean | null
           created_at?: string | null
           distance_preference?: string | null
           district?: string | null
@@ -1834,9 +1948,11 @@ export type Database = {
         }
         Update: {
           accommodation_status?: string | null
+          advanced_compatibility_enabled?: boolean | null
           age?: number | null
           ai_confidence_score?: number | null
           budget?: number | null
+          compatibility_test_completed?: boolean | null
           created_at?: string | null
           distance_preference?: string | null
           district?: string | null

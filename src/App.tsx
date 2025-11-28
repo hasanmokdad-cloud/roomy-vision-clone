@@ -74,6 +74,8 @@ const AdminChats = lazy(() => import("./pages/admin/AdminChats"));
 const AdminChatView = lazy(() => import("./pages/admin/AdminChatView"));
 const AdminChatAnalytics = lazy(() => import("./pages/admin/AdminChatAnalytics"));
 const PersonalityTest = lazy(() => import("./pages/PersonalityTest"));
+const CompatibilityTest = lazy(() => import("./pages/CompatibilityTest"));
+const AdminPersonalityInsights = lazy(() => import("./pages/admin/AdminPersonalityInsights"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -188,6 +190,7 @@ const AppRoutes = () => {
           <Route path="/ai-roommate-match" element={<ProtectedRoute element={<StudentMatch />} />} />
           <Route path="/boost-profile" element={<ProtectedRoute element={<BoostProfile />} />} />
           <Route path="/personality" element={<ProtectedRoute element={<PersonalityTest />} requiredRole="student" />} />
+          <Route path="/compatibility-test" element={<ProtectedRoute element={<CompatibilityTest />} requiredRole="student" />} />
           <Route path="/ai-chat" element={<ProtectedRoute element={<MobileSwipeLayout><AiChat /></MobileSwipeLayout>} />} />
 
           {/* Owner Routes - Admins can access all owner routes */}
@@ -217,6 +220,7 @@ const AppRoutes = () => {
           <Route path="/admin/dorms/:dormId/rooms" element={<ProtectedRoute element={<AdminDormRooms />} requiredRole="admin" />} />
           <Route path="/admin/ownership" element={<ProtectedRoute element={<AdminDormOwnership />} requiredRole="admin" />} />
           <Route path="/admin/owners" element={<ProtectedRoute element={<AdminOwners />} requiredRole="admin" />} />
+          <Route path="/admin/personality-insights" element={<ProtectedRoute element={<AdminPersonalityInsights />} requiredRole="admin" />} />
           <Route path="/admin/claims" element={<ProtectedRoute element={<AdminDormClaims />} requiredRole="admin" />} />
           <Route path="/admin/logs" element={<ProtectedRoute element={<AdminLogs />} requiredRole="admin" />} />
           <Route path="/admin/notifications" element={<ProtectedRoute element={<AdminNotifications />} requiredRole="admin" />} />

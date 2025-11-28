@@ -1,4 +1,4 @@
-import { Home, Building2, Users, BarChart3, FileText, Settings, Star, UserCheck, Shield, Inbox, MessagesSquare } from 'lucide-react';
+import { Home, Building2, Users, BarChart3, FileText, Settings, Star, UserCheck, Shield, Inbox, MessagesSquare, Brain } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
   Sidebar,
@@ -23,6 +23,7 @@ const menuItems = [
   { title: 'Dorm Ownership', url: '/admin/ownership', icon: UserCheck },
   { title: 'Students', url: '/admin/students', icon: Users },
   { title: 'Owners', url: '/admin/owners', icon: Building2 },
+  { title: 'Personality Insights', url: '/admin/personality-insights', icon: Brain },
   { title: 'Notifications', url: '/admin/notifications', icon: FileText },
   { title: 'Analytics', url: '/admin/analytics', icon: BarChart3 },
   { title: 'System Monitor', url: '/admin/system-monitor', icon: BarChart3 },

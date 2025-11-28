@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign, Brain } from "lucide-react";
+import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign, Brain, BarChart2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { MatchBreakdownModal } from "./MatchBreakdownModal";
+import { CompatibilityScores } from "@/hooks/useCompatibilityMatch";
 
 interface RoommateMatchCardProps {
   roommate: any;
@@ -13,9 +16,21 @@ interface RoommateMatchCardProps {
 
 export const RoommateMatchCard = ({ roommate, index }: RoommateMatchCardProps) => {
   const navigate = useNavigate();
-  const matchScore = roommate.matchScore || 70;
-  const hasPersonalityMatch = roommate.hasPersonalityMatch || false;
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  
+  const matchScore = roommate.matchScore || roommate.scores?.overallScore || 70;
+  const hasPersonalityMatch = roommate.hasPersonalityMatch || roommate.scores !== undefined;
   const personalityScore = roommate.personalityMatchScore;
+  
+  // Get scores for breakdown modal
+  const scores: CompatibilityScores = roommate.scores || {
+    overallScore: matchScore,
+    lifestyleScore: 0,
+    studyScore: 0,
+    personalityScore: 0,
+    similarityScore: 0,
+    advancedScore: null
+  };
 
   const getMatchColor = (score: number) => {
     if (score >= 80) return "text-green-500";
@@ -124,17 +139,40 @@ export const RoommateMatchCard = ({ roommate, index }: RoommateMatchCardProps) =
             </div>
           )}
 
-          {/* Connect Button */}
-          <Button 
-            onClick={() => navigate(`/student-profile/${roommate.user_id}`)}
-            className="w-full"
-            variant="default"
-          >
-            <MessageCircle className="mr-2 w-4 h-4" />
-            View Profile
-          </Button>
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            {hasPersonalityMatch && roommate.scores && (
+              <Button 
+                onClick={() => setShowBreakdown(true)}
+                variant="outline"
+                className="flex-1"
+              >
+                <BarChart2 className="mr-2 w-4 h-4" />
+                View Breakdown
+              </Button>
+            )}
+            <Button 
+              onClick={() => navigate(`/student-profile/${roommate.user_id}`)}
+              className="flex-1"
+              variant="default"
+            >
+              <MessageCircle className="mr-2 w-4 h-4" />
+              View Profile
+            </Button>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Breakdown Modal */}
+      {hasPersonalityMatch && roommate.scores && (
+        <MatchBreakdownModal
+          open={showBreakdown}
+          onOpenChange={setShowBreakdown}
+          scores={scores}
+          matchReasons={roommate.matchReasons || []}
+          studentName={roommate.full_name || roommate.fullName || 'this student'}
+        />
+      )}
     </motion.div>
   );
 };
