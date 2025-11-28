@@ -100,7 +100,7 @@ export const RoommateMatchCard = ({ roommate, index }: RoommateMatchCardProps) =
                 </Badge>
               ) : (
                 <span className="text-xs text-muted-foreground">
-                  General match
+                  Basic match
                 </span>
               )}
             </div>
