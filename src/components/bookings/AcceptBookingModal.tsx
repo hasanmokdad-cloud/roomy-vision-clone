@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Clock, User, Video } from "lucide-react";
 import { format } from "date-fns";
+import { sanitizeMeetingLink, type MeetingPlatform } from "@/lib/meetingUtils";
 
 interface AcceptBookingModalProps {
   open: boolean;
@@ -18,7 +20,7 @@ interface AcceptBookingModalProps {
     requested_time: string;
     message?: string | null;
   };
-  onConfirm: (meetingLink: string, notes?: string) => Promise<void>;
+  onConfirm: (meetingLink: string, platform: MeetingPlatform, notes?: string) => Promise<void>;
   loading?: boolean;
 }
 
@@ -30,14 +32,47 @@ export function AcceptBookingModal({
   loading = false
 }: AcceptBookingModalProps) {
   const [meetingLink, setMeetingLink] = useState("");
+  const [platform, setPlatform] = useState<MeetingPlatform>('google_meet');
   const [notes, setNotes] = useState("");
+  const [urlError, setUrlError] = useState("");
 
   const handleSubmit = async () => {
-    if (!meetingLink.trim()) return;
+    if (!meetingLink.trim()) {
+      setUrlError("Meeting link is required");
+      return;
+    }
     
-    await onConfirm(meetingLink.trim(), notes.trim() || undefined);
+    // Sanitize and extract clean URL
+    const { url, platform: detectedPlatform } = sanitizeMeetingLink(meetingLink.trim());
+    
+    if (!url) {
+      setUrlError("Please enter a valid meeting URL");
+      return;
+    }
+    
+    // Use detected platform or fallback to selected platform
+    const finalPlatform = detectedPlatform || platform;
+    
+    await onConfirm(url, finalPlatform, notes.trim() || undefined);
+    
+    // Reset form
     setMeetingLink("");
+    setPlatform('google_meet');
     setNotes("");
+    setUrlError("");
+  };
+
+  const getPlatformPlaceholder = () => {
+    switch (platform) {
+      case 'google_meet':
+        return 'https://meet.google.com/xxx-xxxx-xxx';
+      case 'zoom':
+        return 'https://zoom.us/j/1234567890';
+      case 'teams':
+        return 'https://teams.microsoft.com/l/meetup-join/...';
+      default:
+        return 'Paste your meeting link here';
+    }
   };
 
   return (
@@ -72,22 +107,44 @@ export function AcceptBookingModal({
             )}
           </div>
 
-          {/* Google Meet Link */}
+          {/* Meeting Platform Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="platform">Meeting Platform *</Label>
+            <Select value={platform || 'google_meet'} onValueChange={(val) => setPlatform(val as MeetingPlatform)}>
+              <SelectTrigger id="platform">
+                <SelectValue placeholder="Select platform" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="google_meet">Google Meet</SelectItem>
+                <SelectItem value="zoom">Zoom</SelectItem>
+                <SelectItem value="teams">Microsoft Teams</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Meeting Link */}
           <div className="space-y-2">
             <Label htmlFor="meeting-link" className="flex items-center gap-2">
               <Video className="w-4 h-4" />
-              Google Meet Link *
+              Meeting Link *
             </Label>
             <Input
               id="meeting-link"
-              type="url"
+              type="text"
               value={meetingLink}
-              onChange={(e) => setMeetingLink(e.target.value)}
-              placeholder="https://meet.google.com/xxx-xxxx-xxx"
+              onChange={(e) => {
+                setMeetingLink(e.target.value);
+                setUrlError("");
+              }}
+              placeholder={getPlatformPlaceholder()}
               required
+              className={urlError ? "border-destructive" : ""}
             />
+            {urlError && (
+              <p className="text-xs text-destructive">{urlError}</p>
+            )}
             <p className="text-xs text-muted-foreground">
-              Create a meeting on Google Meet and paste the link here
+              Paste the meeting link here. Extra text from calendar invites will be automatically cleaned.
             </p>
           </div>
 

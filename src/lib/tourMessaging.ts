@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { type MeetingPlatform } from './meetingUtils';
 
 type TourMessageType = 'requested' | 'accepted' | 'declined' | 'cancelled';
 
@@ -8,6 +9,7 @@ interface TourDetails {
   time: string;
   meetingLink?: string;
   reason?: string;
+  platform?: MeetingPlatform;
 }
 
 /**
@@ -44,7 +46,7 @@ export async function sendTourSystemMessage(
         messageBody = `📅 New tour request for ${details.dormName} on ${details.date} at ${details.time}. Status: Pending`;
         break;
       case 'accepted':
-        messageBody = `✅ Tour request accepted for ${details.dormName} on ${details.date} at ${details.time}.${details.meetingLink ? `\n\n🔗 Meeting Link: ${details.meetingLink}` : ''}`;
+        messageBody = `✅ Tour request accepted for ${details.dormName} on ${details.date} at ${details.time}.${details.meetingLink ? `\n\n🔗 Meeting Link: ${details.meetingLink}\n\n💡 Add this to your calendar!` : ''}`;
         senderId = ownerUserId;
         break;
       case 'declined':

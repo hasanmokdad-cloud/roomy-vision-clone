@@ -216,6 +216,7 @@ export type Database = {
           end_time: string | null
           id: string
           meeting_link: string | null
+          meeting_platform: string | null
           message: string | null
           owner_id: string
           owner_notes: string | null
@@ -232,6 +233,7 @@ export type Database = {
           end_time?: string | null
           id?: string
           meeting_link?: string | null
+          meeting_platform?: string | null
           message?: string | null
           owner_id: string
           owner_notes?: string | null
@@ -248,6 +250,7 @@ export type Database = {
           end_time?: string | null
           id?: string
           meeting_link?: string | null
+          meeting_platform?: string | null
           message?: string | null
           owner_id?: string
           owner_notes?: string | null
