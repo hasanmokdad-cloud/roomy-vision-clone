@@ -72,6 +72,7 @@ const AdminDormRooms = lazy(() => import("./pages/admin/AdminDormRooms"));
 const StudentTours = lazy(() => import("./pages/StudentTours"));
 const AdminChats = lazy(() => import("./pages/admin/AdminChats"));
 const AdminChatView = lazy(() => import("./pages/admin/AdminChatView"));
+const AdminChatAnalytics = lazy(() => import("./pages/admin/AdminChatAnalytics"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -218,8 +219,9 @@ const AppRoutes = () => {
           <Route path="/admin/logs" element={<ProtectedRoute element={<AdminLogs />} requiredRole="admin" />} />
           <Route path="/admin/notifications" element={<ProtectedRoute element={<AdminNotifications />} requiredRole="admin" />} />
           <Route path="/admin/settings" element={<ProtectedRoute element={<AdminSettings />} requiredRole="admin" />} />
-          <Route path="/admin/chats" element={<ProtectedRoute element={<AdminChats />} requiredRole="admin" />} />
-          <Route path="/admin/chats/:conversationId" element={<ProtectedRoute element={<AdminChatView />} requiredRole="admin" />} />
+            <Route path="/admin/chats" element={<ProtectedRoute element={<AdminChats />} requiredRole="admin" />} />
+            <Route path="/admin/chats/:conversationId" element={<ProtectedRoute element={<AdminChatView />} requiredRole="admin" />} />
+            <Route path="/admin/chats/analytics" element={<ProtectedRoute element={<AdminChatAnalytics />} requiredRole="admin" />} />
 
           {/* 404 Fallback */}
           <Route path="*" element={<NotFound />} />
