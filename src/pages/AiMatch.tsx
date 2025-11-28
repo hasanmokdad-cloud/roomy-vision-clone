@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/shared/Navbar";
@@ -17,20 +17,22 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 type ProfileStatus = 'loading' | 'incomplete' | 'complete';
 type MatchMode = 'dorms' | 'roommates';
+type ActiveMode = 'dorm' | 'roommate' | 'combined';
 
 const AiMatch = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const [searchParams] = useSearchParams();
   const [userId, setUserId] = useState<string | null>(null);
   const [profileStatus, setProfileStatus] = useState<ProfileStatus>('loading');
   const [matchMode, setMatchMode] = useState<MatchMode>('dorms');
+  const [activeMode, setActiveMode] = useState<ActiveMode>('dorm');
   const [studentProfile, setStudentProfile] = useState<any>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [aiInsights, setAiInsights] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [sessionId] = useState(crypto.randomUUID());
-  const [showModeToggle, setShowModeToggle] = useState(false);
 
   // Get roommate matches using the hook
   const { loading: roommateLoading, matches: roommateMatches } = useRoommateMatch(
@@ -91,7 +93,6 @@ const AiMatch = () => {
         } else {
           setProfileStatus('complete');
           setStudentProfile(data);
-          determineMatchMode(data);
         }
       } catch (err) {
         console.error('Error in checkProfile:', err);
@@ -102,27 +103,54 @@ const AiMatch = () => {
     checkProfile();
   }, [userId, toast]);
 
-  // Determine which match mode to show based on profile
-  const determineMatchMode = (profile: any) => {
-    const needsDorm = profile.accommodation_status === 'need_dorm';
-    const needsRoommate = profile.need_roommate === true;
-
-    // Show toggle if both conditions are true
-    if (needsDorm && needsRoommate) {
-      setShowModeToggle(true);
-      setMatchMode('dorms'); // Default to dorms
-    } else if (needsDorm) {
-      setShowModeToggle(false);
+  // Determine which match mode to show based on profile (fallback for legacy)
+  const determineMatchModeFromProfile = (profile: any) => {
+    if (!profile) {
+      setActiveMode('dorm');
       setMatchMode('dorms');
-    } else if (needsRoommate) {
-      setShowModeToggle(false);
+      return;
+    }
+    
+    const needsDorm = profile.accommodation_status === 'need_dorm';
+    const needsRoommateCurrentPlace = profile.needs_roommate_current_place === true;
+    const needsRoommateNewDorm = profile.needs_roommate_new_dorm === true;
+    const legacyNeedsRoommate = profile.need_roommate === true;
+    
+    if (needsDorm && needsRoommateNewDorm) {
+      setActiveMode('combined');
+      setMatchMode('dorms');
+    } else if (needsDorm) {
+      setActiveMode('dorm');
+      setMatchMode('dorms');
+    } else if (needsRoommateCurrentPlace || legacyNeedsRoommate) {
+      setActiveMode('roommate');
       setMatchMode('roommates');
     } else {
-      // Default to dorms if neither is set
-      setShowModeToggle(false);
+      setActiveMode('dorm');
       setMatchMode('dorms');
     }
   };
+
+  // Read mode from URL params or determine from profile
+  useEffect(() => {
+    if (!studentProfile) return;
+
+    const urlMode = searchParams.get('mode');
+    
+    if (urlMode === 'dorm') {
+      setActiveMode('dorm');
+      setMatchMode('dorms');
+    } else if (urlMode === 'roommate') {
+      setActiveMode('roommate');
+      setMatchMode('roommates');
+    } else if (urlMode === 'combined') {
+      setActiveMode('combined');
+      setMatchMode('dorms'); // Default to dorms tab
+    } else {
+      // Fallback: determine from profile if no URL param
+      determineMatchModeFromProfile(studentProfile);
+    }
+  }, [searchParams, studentProfile]);
 
   // Fetch matches when mode changes
   useEffect(() => {
@@ -298,6 +326,25 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
     );
   }
 
+  // Determine tab visibility
+  const showDormTab = activeMode === 'dorm' || activeMode === 'combined';
+  const showRoommateTab = activeMode === 'roommate' || activeMode === 'combined';
+  const showToggle = activeMode === 'combined';
+
+  // Dynamic header text
+  const getHeaderTitle = () => {
+    switch (activeMode) {
+      case 'dorm':
+        return 'AI-Powered Dorm Matching';
+      case 'roommate':
+        return 'AI-Powered Roommate Matching';
+      case 'combined':
+        return 'AI-Powered Dorm & Roommate Matching';
+      default:
+        return 'AI-Powered Matching';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pt-24 md:pt-28">
       {!isMobile && <Navbar />}
@@ -306,7 +353,7 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
         {/* Header */}
         <div className="text-center space-y-3">
           <h1 className="text-4xl md:text-5xl font-bold gradient-text">
-            AI-Powered {matchMode === 'dorms' ? 'Dorm' : 'Roommate'} Matching
+            {getHeaderTitle()}
           </h1>
           <p className="text-muted-foreground text-lg">
             Powered by Gemini AI, personalized just for you
@@ -314,7 +361,7 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
         </div>
 
         {/* Mode Toggle */}
-        {showModeToggle && (
+        {showToggle && (
           <div className="flex justify-center">
             <ToggleGroup 
               type="single" 
@@ -322,20 +369,24 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
               onValueChange={handleModeChange}
               className="bg-muted p-1 rounded-lg"
             >
-              <ToggleGroupItem 
-                value="dorms" 
-                className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground px-6 py-2"
-              >
-                <Home className="mr-2 w-4 h-4" />
-                Find Dorms
-              </ToggleGroupItem>
-              <ToggleGroupItem 
-                value="roommates"
-                className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground px-6 py-2"
-              >
-                <Users className="mr-2 w-4 h-4" />
-                Find Roommates
-              </ToggleGroupItem>
+              {showDormTab && (
+                <ToggleGroupItem 
+                  value="dorms" 
+                  className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground px-6 py-2"
+                >
+                  <Home className="mr-2 w-4 h-4" />
+                  Find Dorms
+                </ToggleGroupItem>
+              )}
+              {showRoommateTab && (
+                <ToggleGroupItem 
+                  value="roommates"
+                  className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground px-6 py-2"
+                >
+                  <Users className="mr-2 w-4 h-4" />
+                  Find Roommates
+                </ToggleGroupItem>
+              )}
             </ToggleGroup>
           </div>
         )}

@@ -206,15 +206,14 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   };
 
   const handleStep2Complete = async (data: StudentProfile) => {
-    const selectedRoomType = watch('room_type');
-    const isSingle = selectedRoomType ? isSingleRoom(selectedRoomType) : false;
-    
     // Save profile first
     await saveProfile(data);
     
-    if (!isSingle && needsRoommateNewDorm) {
-      navigate('/ai-match?mode=roommate');
+    if (needsRoommateNewDorm) {
+      // Combined mode: both dorm and roommate matching
+      navigate('/ai-match?mode=combined');
     } else {
+      // Dorm-only mode
       navigate('/ai-match?mode=dorm');
     }
   };
@@ -548,7 +547,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                 </div>
 
                 {/* Personality Matching Section */}
-                {(needsRoommateCurrentPlace || (accommodationStatus === 'need_dorm' && needsRoommateNewDorm)) && (
+                {accommodationStatus === 'have_dorm' && needsRoommateCurrentPlace && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
@@ -719,7 +718,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                         <div className="space-y-1">
                           <Label className="text-base font-semibold text-foreground flex items-center gap-2">
                             <Users className="w-4 h-4" />
-                            Need a Roommate for This New Dorm?
+                            Need a Roommate?
                           </Label>
                           <p className="text-sm text-foreground/60">
                             We'll find students with matching preferences to share a dorm
@@ -737,6 +736,64 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                   )}
                 </div>
 
+                {/* Personality Matching Section for Step 2 */}
+                {needsRoommateNewDorm && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="space-y-4 bg-purple-500/10 border border-purple-500/20 rounded-xl p-6"
+                  >
+                    <h3 className="text-xl font-black text-purple-600 flex items-center gap-2">
+                      <Brain className="w-5 h-5" />
+                      Personality Matching (Optional)
+                    </h3>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Label className="text-base font-semibold">Enable Personality Matching?</Label>
+                        <p className="text-sm text-foreground/60">
+                          Recommended for better roommate compatibility
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={enablePersonalityMatching}
+                        onCheckedChange={(checked) => {
+                          setEnablePersonalityMatching(checked);
+                          setValue('enable_personality_matching', checked);
+                        }}
+                      />
+                    </div>
+                    
+                    {enablePersonalityMatching && !personalityTestCompleted && (
+                      <Button 
+                        type="button"
+                        onClick={() => navigate('/compatibility-test')} 
+                        variant="outline"
+                        className="w-full"
+                      >
+                        <Brain className="w-4 h-4 mr-2" />
+                        Take Compatibility Test
+                      </Button>
+                    )}
+                    
+                    {enablePersonalityMatching && personalityTestCompleted && (
+                      <div className="flex items-center justify-between">
+                        <Badge className="bg-green-100 text-green-700 border-green-300">
+                          ✔ Compatibility test completed
+                        </Badge>
+                        <Button 
+                          type="button"
+                          onClick={() => navigate('/compatibility-test')} 
+                          variant="ghost"
+                          size="sm"
+                        >
+                          View / Retake Test
+                        </Button>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
                 {/* Step 2 Action Button */}
                 <Button
                   type="submit"
@@ -744,10 +801,11 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                   className="w-full bg-primary hover:bg-primary/90"
                 >
                   {loading ? 'Saving...' : (
-                    formValues.room_type && !isSingleRoom(formValues.room_type) && needsRoommateNewDorm ? (
+                    needsRoommateNewDorm ? (
                       <>
+                        <Home className="w-4 h-4 mr-2" />
                         <Users className="w-4 h-4 mr-2" />
-                        Find Roommate Matches
+                        Find Matches
                       </>
                     ) : (
                       <>
