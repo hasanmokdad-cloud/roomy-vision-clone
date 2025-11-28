@@ -1865,9 +1865,11 @@ export type Database = {
           advanced_compatibility_enabled: boolean | null
           age: number | null
           ai_confidence_score: number | null
+          ai_match_plan: string | null
           budget: number | null
           compatibility_test_completed: boolean | null
           created_at: string | null
+          dealbreakers: string[] | null
           distance_preference: string | null
           district: string | null
           email: string
@@ -1876,6 +1878,10 @@ export type Database = {
           full_name: string
           gender: string | null
           governorate: string | null
+          habit_cleanliness: number | null
+          habit_noise: number | null
+          habit_sleep: string | null
+          habit_social: number | null
           id: string
           last_login: string | null
           major: string | null
@@ -1908,9 +1914,11 @@ export type Database = {
           advanced_compatibility_enabled?: boolean | null
           age?: number | null
           ai_confidence_score?: number | null
+          ai_match_plan?: string | null
           budget?: number | null
           compatibility_test_completed?: boolean | null
           created_at?: string | null
+          dealbreakers?: string[] | null
           distance_preference?: string | null
           district?: string | null
           email: string
@@ -1919,6 +1927,10 @@ export type Database = {
           full_name: string
           gender?: string | null
           governorate?: string | null
+          habit_cleanliness?: number | null
+          habit_noise?: number | null
+          habit_sleep?: string | null
+          habit_social?: number | null
           id?: string
           last_login?: string | null
           major?: string | null
@@ -1951,9 +1963,11 @@ export type Database = {
           advanced_compatibility_enabled?: boolean | null
           age?: number | null
           ai_confidence_score?: number | null
+          ai_match_plan?: string | null
           budget?: number | null
           compatibility_test_completed?: boolean | null
           created_at?: string | null
+          dealbreakers?: string[] | null
           distance_preference?: string | null
           district?: string | null
           email?: string
@@ -1962,6 +1976,10 @@ export type Database = {
           full_name?: string
           gender?: string | null
           governorate?: string | null
+          habit_cleanliness?: number | null
+          habit_noise?: number | null
+          habit_sleep?: string | null
+          habit_social?: number | null
           id?: string
           last_login?: string | null
           major?: string | null
