@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, MapPin, GraduationCap, DollarSign, Home, CheckCircle, ArrowRight, ArrowLeft, Users } from 'lucide-react';
+import { User, MapPin, GraduationCap, DollarSign, Home, CheckCircle, ArrowRight, ArrowLeft, Users, Brain } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Confetti } from '@/components/profile/Confetti';
 import { ProfileProgress } from '@/components/profile/ProfileProgress';
 import { residentialAreas, type Governorate, type District } from '@/data/residentialAreas';
@@ -35,7 +36,9 @@ const studentProfileSchema = z.object({
   
   // Step 1 - Accommodation
   accommodation_status: z.enum(['need_dorm', 'have_dorm']).default('need_dorm'),
-  need_roommate: z.boolean().optional(),
+  needs_roommate_current_place: z.boolean().optional(),
+  needs_roommate_new_dorm: z.boolean().optional(),
+  enable_personality_matching: z.boolean().optional(),
   
   // Step 2 - Housing Preferences (only if need_dorm)
   budget: z.number().min(0).optional(),
@@ -59,7 +62,10 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   // Step management
   const [currentStep, setCurrentStep] = useState(1);
   const [accommodationStatus, setAccommodationStatus] = useState<'need_dorm' | 'have_dorm'>('need_dorm');
-  const [needRoommate, setNeedRoommate] = useState(false);
+  const [needsRoommateCurrentPlace, setNeedsRoommateCurrentPlace] = useState(false);
+  const [needsRoommateNewDorm, setNeedsRoommateNewDorm] = useState(false);
+  const [enablePersonalityMatching, setEnablePersonalityMatching] = useState(false);
+  const [personalityTestCompleted, setPersonalityTestCompleted] = useState(false);
   
   // Hierarchical location state
   const [selectedGovernorate, setSelectedGovernorate] = useState<Governorate | ''>('');
@@ -139,10 +145,23 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         setValue('accommodation_status', data.accommodation_status as any);
       }
       
-      // Set need roommate
-      if (data.need_roommate !== undefined) {
-        setNeedRoommate(data.need_roommate);
-        setValue('need_roommate', data.need_roommate);
+      // Set roommate needs
+      if (data.needs_roommate_current_place !== undefined) {
+        setNeedsRoommateCurrentPlace(data.needs_roommate_current_place);
+        setValue('needs_roommate_current_place', data.needs_roommate_current_place);
+      }
+      if (data.needs_roommate_new_dorm !== undefined) {
+        setNeedsRoommateNewDorm(data.needs_roommate_new_dorm);
+        setValue('needs_roommate_new_dorm', data.needs_roommate_new_dorm);
+      }
+      
+      // Set personality matching
+      if (data.enable_personality_matching !== undefined) {
+        setEnablePersonalityMatching(data.enable_personality_matching);
+        setValue('enable_personality_matching', data.enable_personality_matching);
+      }
+      if (data.personality_test_completed !== undefined) {
+        setPersonalityTestCompleted(data.personality_test_completed);
       }
 
       // Set location fields
@@ -172,7 +191,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
 
   const handleStep1Complete = async (data: StudentProfile) => {
     if (accommodationStatus === 'have_dorm') {
-      if (needRoommate) {
+      if (needsRoommateCurrentPlace) {
         // Save profile then navigate to roommate matching
         await saveProfile(data);
         navigate('/ai-match?mode=roommate');
@@ -193,7 +212,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
     // Save profile first
     await saveProfile(data);
     
-    if (!isSingle && needRoommate) {
+    if (!isSingle && needsRoommateNewDorm) {
       navigate('/ai-match?mode=roommate');
     } else {
       navigate('/ai-match?mode=dorm');
@@ -221,7 +240,9 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         major: data.major,
         year_of_study: data.year_of_study,
         accommodation_status: accommodationStatus,
-        need_roommate: needRoommate,
+        needs_roommate_current_place: needsRoommateCurrentPlace,
+        needs_roommate_new_dorm: needsRoommateNewDorm,
+        enable_personality_matching: enablePersonalityMatching,
         profile_completion_score: calculateProgress(),
         updated_at: new Date().toISOString()
       };
@@ -508,17 +529,17 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                         <div className="space-y-1">
                           <Label className="text-base font-semibold text-foreground flex items-center gap-2">
                             <Users className="w-4 h-4" />
-                            Need a Roommate?
+                            Need a Roommate for Your Current Place?
                           </Label>
                           <p className="text-sm text-foreground/60">
-                            We'll help you find compatible roommates
+                            Find compatible people to share your existing accommodation
                           </p>
                         </div>
                         <Switch
-                          checked={needRoommate}
+                          checked={needsRoommateCurrentPlace}
                           onCheckedChange={(checked) => {
-                            setNeedRoommate(checked);
-                            setValue('need_roommate', checked);
+                            setNeedsRoommateCurrentPlace(checked);
+                            setValue('needs_roommate_current_place', checked);
                           }}
                         />
                       </div>
@@ -526,9 +547,57 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                   )}
                 </div>
 
+                {/* Personality Matching Section */}
+                {(needsRoommateCurrentPlace || (accommodationStatus === 'need_dorm' && needsRoommateNewDorm)) && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="space-y-4 bg-purple-500/10 border border-purple-500/20 rounded-xl p-6"
+                  >
+                    <h3 className="text-xl font-black text-purple-600 flex items-center gap-2">
+                      <Brain className="w-5 h-5" />
+                      Personality Matching (Optional)
+                    </h3>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Label className="text-base font-semibold">Enable Personality Matching?</Label>
+                        <p className="text-sm text-foreground/60">
+                          Recommended for better roommate compatibility
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={enablePersonalityMatching}
+                        onCheckedChange={(checked) => {
+                          setEnablePersonalityMatching(checked);
+                          setValue('enable_personality_matching', checked);
+                        }}
+                      />
+                    </div>
+                    
+                    {enablePersonalityMatching && !personalityTestCompleted && (
+                      <Button 
+                        type="button"
+                        onClick={() => navigate('/personality')} 
+                        variant="outline"
+                        className="w-full"
+                      >
+                        <Brain className="w-4 h-4 mr-2" />
+                        Take Personality Test
+                      </Button>
+                    )}
+                    
+                    {enablePersonalityMatching && personalityTestCompleted && (
+                      <Badge className="bg-green-100 text-green-700 border-green-300">
+                        ✔ Personality test completed – used for advanced matching
+                      </Badge>
+                    )}
+                  </motion.div>
+                )}
+
                 {/* Step 1 Action Buttons */}
                 <div className="flex gap-3 pt-4">
-                  {accommodationStatus === 'have_dorm' && !needRoommate ? (
+                  {accommodationStatus === 'have_dorm' && !needsRoommateCurrentPlace ? (
                     <Button
                       type="submit"
                       disabled={loading}
@@ -541,7 +610,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                         </>
                       )}
                     </Button>
-                  ) : accommodationStatus === 'have_dorm' && needRoommate ? (
+                  ) : accommodationStatus === 'have_dorm' && needsRoommateCurrentPlace ? (
                     <Button
                       type="submit"
                       disabled={loading}
@@ -650,17 +719,17 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                         <div className="space-y-1">
                           <Label className="text-base font-semibold text-foreground flex items-center gap-2">
                             <Users className="w-4 h-4" />
-                            Need a Roommate?
+                            Need a Roommate for This New Dorm?
                           </Label>
                           <p className="text-sm text-foreground/60">
-                            We'll help you find compatible roommates
+                            We'll find students with matching preferences to share a dorm
                           </p>
                         </div>
                         <Switch
-                          checked={needRoommate}
+                          checked={needsRoommateNewDorm}
                           onCheckedChange={(checked) => {
-                            setNeedRoommate(checked);
-                            setValue('need_roommate', checked);
+                            setNeedsRoommateNewDorm(checked);
+                            setValue('needs_roommate_new_dorm', checked);
                           }}
                         />
                       </div>
@@ -675,7 +744,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                   className="w-full bg-primary hover:bg-primary/90"
                 >
                   {loading ? 'Saving...' : (
-                    formValues.room_type && !isSingleRoom(formValues.room_type) && needRoommate ? (
+                    formValues.room_type && !isSingleRoom(formValues.room_type) && needsRoommateNewDorm ? (
                       <>
                         <Users className="w-4 h-4 mr-2" />
                         Find Roommate Matches
