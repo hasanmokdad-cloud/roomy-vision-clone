@@ -1759,6 +1759,7 @@ export type Database = {
           distance_preference: string | null
           district: string | null
           email: string
+          enable_personality_matching: boolean | null
           favorite_areas: string[] | null
           full_name: string
           gender: string | null
@@ -1767,6 +1768,10 @@ export type Database = {
           last_login: string | null
           major: string | null
           need_roommate: boolean | null
+          needs_roommate_current_place: boolean | null
+          needs_roommate_new_dorm: boolean | null
+          personality_data: Json | null
+          personality_test_completed: boolean | null
           phone_number: string | null
           phone_verified: boolean | null
           preferred_amenities: string[] | null
@@ -1795,6 +1800,7 @@ export type Database = {
           distance_preference?: string | null
           district?: string | null
           email: string
+          enable_personality_matching?: boolean | null
           favorite_areas?: string[] | null
           full_name: string
           gender?: string | null
@@ -1803,6 +1809,10 @@ export type Database = {
           last_login?: string | null
           major?: string | null
           need_roommate?: boolean | null
+          needs_roommate_current_place?: boolean | null
+          needs_roommate_new_dorm?: boolean | null
+          personality_data?: Json | null
+          personality_test_completed?: boolean | null
           phone_number?: string | null
           phone_verified?: boolean | null
           preferred_amenities?: string[] | null
@@ -1831,6 +1841,7 @@ export type Database = {
           distance_preference?: string | null
           district?: string | null
           email?: string
+          enable_personality_matching?: boolean | null
           favorite_areas?: string[] | null
           full_name?: string
           gender?: string | null
@@ -1839,6 +1850,10 @@ export type Database = {
           last_login?: string | null
           major?: string | null
           need_roommate?: boolean | null
+          needs_roommate_current_place?: boolean | null
+          needs_roommate_new_dorm?: boolean | null
+          personality_data?: Json | null
+          personality_test_completed?: boolean | null
           phone_number?: string | null
           phone_verified?: boolean | null
           preferred_amenities?: string[] | null

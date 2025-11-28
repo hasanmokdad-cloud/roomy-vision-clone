@@ -73,6 +73,7 @@ const StudentTours = lazy(() => import("./pages/StudentTours"));
 const AdminChats = lazy(() => import("./pages/admin/AdminChats"));
 const AdminChatView = lazy(() => import("./pages/admin/AdminChatView"));
 const AdminChatAnalytics = lazy(() => import("./pages/admin/AdminChatAnalytics"));
+const PersonalityTest = lazy(() => import("./pages/PersonalityTest"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -186,6 +187,7 @@ const AppRoutes = () => {
           <Route path="/ai-match" element={<ProtectedRoute element={<MobileSwipeLayout><AiMatch /></MobileSwipeLayout>} forbiddenRoles={["owner"]} />} />
           <Route path="/ai-roommate-match" element={<ProtectedRoute element={<StudentMatch />} />} />
           <Route path="/boost-profile" element={<ProtectedRoute element={<BoostProfile />} />} />
+          <Route path="/personality" element={<ProtectedRoute element={<PersonalityTest />} requiredRole="student" />} />
           <Route path="/ai-chat" element={<ProtectedRoute element={<MobileSwipeLayout><AiChat /></MobileSwipeLayout>} />} />
 
           {/* Owner Routes - Admins can access all owner routes */}

@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign } from "lucide-react";
+import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign, Brain } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -14,11 +14,21 @@ interface RoommateMatchCardProps {
 export const RoommateMatchCard = ({ roommate, index }: RoommateMatchCardProps) => {
   const navigate = useNavigate();
   const matchScore = roommate.matchScore || 70;
+  const hasPersonalityMatch = roommate.hasPersonalityMatch || false;
+  const personalityScore = roommate.personalityMatchScore;
 
   const getMatchColor = (score: number) => {
     if (score >= 80) return "text-green-500";
     if (score >= 60) return "text-yellow-500";
     return "text-orange-500";
+  };
+
+  const getPersonalityLabel = (score: number | null) => {
+    if (score === null) return '';
+    if (score >= 85) return 'Great fit';
+    if (score >= 70) return 'Good fit';
+    if (score >= 55) return 'Moderate fit';
+    return 'Different styles';
   };
 
   const getInitials = (name: string | undefined | null) => {
@@ -62,10 +72,23 @@ export const RoommateMatchCard = ({ roommate, index }: RoommateMatchCardProps) =
             </div>
 
             {/* Match Score */}
-            <Badge className={`${getMatchColor(matchScore)} bg-background border font-bold`}>
-              <TrendingUp className="w-3 h-3 mr-1" />
-              {matchScore}%
-            </Badge>
+            <div className="flex flex-col items-end gap-1">
+              <Badge className={`${getMatchColor(matchScore)} bg-background border font-bold`}>
+                <TrendingUp className="w-3 h-3 mr-1" />
+                {matchScore}%
+              </Badge>
+              
+              {hasPersonalityMatch ? (
+                <Badge variant="outline" className="text-xs text-purple-600 border-purple-300">
+                  <Brain className="w-3 h-3 mr-1" />
+                  {getPersonalityLabel(personalityScore)}
+                </Badge>
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  General match
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Details */}

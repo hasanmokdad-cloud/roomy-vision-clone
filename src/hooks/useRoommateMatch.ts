@@ -13,7 +13,18 @@ interface StudentProfile {
   favorite_areas?: string[];
   preferred_room_types?: string[];
   preferred_amenities?: string[];
-  ai_confidence_score?: number;
+  accommodation_status?: string;
+  needs_roommate_current_place?: boolean;
+  needs_roommate_new_dorm?: boolean;
+  enable_personality_matching?: boolean;
+  personality_test_completed?: boolean;
+  personality_data?: {
+    openness: number;
+    conscientiousness: number;
+    extraversion: number;
+    agreeableness: number;
+    neuroticism: number;
+  };
 }
 
 export const computeSimilarity = (profileA: any, profileB: any): number => {
@@ -78,6 +89,32 @@ export const computeSimilarity = (profileA: any, profileB: any): number => {
   return maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
 };
 
+// Compute personality compatibility using Big Five traits
+export const computePersonalityCompatibility = (profileA: any, profileB: any): number | null => {
+  // Only compute if both have personality data
+  if (!profileA.enable_personality_matching || !profileB.enable_personality_matching) return null;
+  if (!profileA.personality_test_completed || !profileB.personality_test_completed) return null;
+  if (!profileA.personality_data || !profileB.personality_data) return null;
+
+  const dataA = profileA.personality_data;
+  const dataB = profileB.personality_data;
+
+  // Calculate Euclidean distance and convert to similarity score
+  const traits = ['openness', 'conscientiousness', 'extraversion', 'agreeableness', 'neuroticism'];
+  let sumSquaredDiff = 0;
+
+  traits.forEach(trait => {
+    const diff = (dataA[trait] || 50) - (dataB[trait] || 50);
+    sumSquaredDiff += diff * diff;
+  });
+
+  const maxDistance = Math.sqrt(5 * 100 * 100); // Max possible distance
+  const actualDistance = Math.sqrt(sumSquaredDiff);
+  const similarity = Math.round((1 - actualDistance / maxDistance) * 100);
+
+  return similarity;
+};
+
 function generateMatchReasons(profileA: any, profileB: any): string[] {
   const reasons: string[] = [];
 
@@ -135,26 +172,70 @@ export function useRoommateMatch(userId?: string) {
           return;
         }
 
-        // Load all other students
-        const { data: allStudents, error: studentsError } = await supabase
+        // Determine matching case
+        const hasAccommodation = myProfile.accommodation_status === 'have_dorm';
+        const needsRoommateCurrentPlace = myProfile.needs_roommate_current_place === true;
+        const needsDorm = myProfile.accommodation_status === 'need_dorm';
+        const needsRoommateNewDorm = myProfile.needs_roommate_new_dorm === true;
+
+        // Load all other students based on matching case
+        let query = supabase
           .from("students")
-          .select("user_id, full_name, profile_photo_url, university, age, gender, budget, preferred_university, favorite_areas, preferred_room_types, preferred_amenities, ai_confidence_score")
+          .select("*")
           .neq("user_id", userId);
 
-        if (studentsError) throw studentsError;
+        let eligibleStudents: any[] = [];
 
-        if (!allStudents || allStudents.length === 0) {
+        if (hasAccommodation && needsRoommateCurrentPlace) {
+          // Case 1: Has accommodation, needs roommate for current place
+          // Match with students who also need roommate OR are looking for dorms
+          const { data: allStudents, error: studentsError } = await query;
+          if (studentsError) throw studentsError;
+          
+          eligibleStudents = (allStudents || []).filter(s => 
+            s.needs_roommate_current_place === true || s.accommodation_status === 'need_dorm'
+          );
+        } else if (needsDorm && needsRoommateNewDorm) {
+          // Case 2: Needs dorm + roommate for new dorm
+          // Match with students who also need dorm + roommate with compatible preferences
+          const { data: allStudents, error: studentsError } = await query;
+          if (studentsError) throw studentsError;
+          
+          eligibleStudents = (allStudents || []).filter(s => 
+            s.accommodation_status === 'need_dorm' && s.needs_roommate_new_dorm === true
+          );
+        } else {
+          // Fallback: general matching
+          const { data: allStudents, error: studentsError } = await query;
+          if (studentsError) throw studentsError;
+          eligibleStudents = allStudents || [];
+        }
+
+        if (eligibleStudents.length === 0) {
           setMatches([]);
           setLoading(false);
           return;
         }
 
         // Compute similarity scores
-        const scoredMatches = allStudents.map(student => ({
-          ...student,
-          matchScore: computeSimilarity(myProfile, student),
-          matchReasons: generateMatchReasons(myProfile, student)
-        }));
+        const scoredMatches = eligibleStudents.map(student => {
+          const generalScore = computeSimilarity(myProfile, student);
+          const personalityScore = computePersonalityCompatibility(myProfile, student);
+
+          // If personality scores available, weight them 60/40
+          const finalScore = personalityScore !== null 
+            ? Math.round(generalScore * 0.4 + personalityScore * 0.6)
+            : generalScore;
+
+          return {
+            ...student,
+            matchScore: finalScore,
+            generalMatchScore: generalScore,
+            personalityMatchScore: personalityScore,
+            hasPersonalityMatch: personalityScore !== null,
+            matchReasons: generateMatchReasons(myProfile, student)
+          };
+        });
 
         // Sort by score and take top 10
         const topMatches = scoredMatches

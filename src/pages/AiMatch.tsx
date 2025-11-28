@@ -10,7 +10,7 @@ import { AIInsightsCard } from "@/components/ai-match/AIInsightsCard";
 import { DormMatchCard } from "@/components/ai-match/DormMatchCard";
 import { RoommateMatchCard } from "@/components/ai-match/RoommateMatchCard";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Home, Users } from "lucide-react";
+import { Home, Users, Brain } from "lucide-react";
 import { rankDorms } from "@/ai-engine/recommendationModel";
 import { useRoommateMatch } from "@/hooks/useRoommateMatch";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -353,11 +353,32 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
 
             {/* Matches Grid */}
             <div>
+              {matchMode === 'roommates' && matches.some(m => m.hasPersonalityMatch) && (
+                <>
+                  <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <Brain className="w-6 h-6 text-purple-500" />
+                    Top Personality Matches
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    {matches.filter(m => m.hasPersonalityMatch).map((match, index) => (
+                      <RoommateMatchCard key={match.user_id} roommate={match} index={index} />
+                    ))}
+                  </div>
+                </>
+              )}
+
               <h2 className="text-2xl font-bold mb-6">
-                {matchMode === 'dorms' ? 'Top Dorm Matches' : 'Compatible Roommates'}
+                {matchMode === 'dorms' 
+                  ? 'Top Dorm Matches' 
+                  : matches.some(m => m.hasPersonalityMatch) 
+                    ? 'Other Compatible Roommates' 
+                    : 'Compatible Roommates'}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {matches.map((match, index) => (
+                {(matchMode === 'roommates' 
+                  ? matches.filter(m => !m.hasPersonalityMatch)
+                  : matches
+                ).map((match, index) => (
                   matchMode === 'dorms' ? (
                     <DormMatchCard key={match.id} dorm={match} index={index} />
                   ) : (
