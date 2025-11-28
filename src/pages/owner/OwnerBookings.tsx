@@ -137,7 +137,7 @@ export default function OwnerBookings() {
       const { error } = await supabase
         .from('bookings')
         .update({ 
-          status: 'accepted',
+          status: 'approved',
           meeting_link: meetingLink,
           owner_notes: notes || null
         })
@@ -282,7 +282,7 @@ export default function OwnerBookings() {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
       pending: 'default',
-      accepted: 'default',
+      approved: 'default',
       declined: 'destructive',
       cancelled: 'secondary',
       completed: 'default'
@@ -290,10 +290,10 @@ export default function OwnerBookings() {
 
     return (
       <Badge variant={variants[status]} className={
-        status === 'accepted' ? 'bg-green-500' : 
+        status === 'approved' ? 'bg-green-500' : 
         status === 'completed' ? 'bg-blue-500' : ''
       }>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {status === 'approved' ? 'Accepted' : status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
   };
@@ -307,7 +307,7 @@ export default function OwnerBookings() {
   }
 
   const pendingBookings = bookings.filter(b => b.status === 'pending');
-  const upcomingBookings = bookings.filter(b => b.status === 'accepted');
+  const upcomingBookings = bookings.filter(b => b.status === 'approved');
   const pastBookings = bookings.filter(b => ['declined', 'cancelled', 'completed'].includes(b.status));
 
   return (
