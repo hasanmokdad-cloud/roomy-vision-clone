@@ -279,6 +279,34 @@ export type Database = {
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
           },
+          {
+            foreignKeyName: "fk_bookings_dorm"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_bookings_dorm"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_bookings_dorm"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "fk_bookings_student"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
         ]
       }
       bulk_dorm_assignments: {
@@ -2165,6 +2193,10 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: { check_user_id: string }; Returns: boolean }
+      owner_can_view_student: {
+        Args: { p_student_id: string }
+        Returns: boolean
+      }
       recompute_dorm_engagement_scores: { Args: never; Returns: Json }
       reset_student_ai_memory: {
         Args: { p_student_id: string }
