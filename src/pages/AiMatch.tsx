@@ -14,6 +14,7 @@ import { Home, Users, Brain } from "lucide-react";
 import { rankDorms } from "@/ai-engine/recommendationModel";
 import { useRoommateMatch } from "@/hooks/useRoommateMatch";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { shouldShowCompatibilityScore, isVipPlan, type AiMatchPlan } from "@/utils/tierLogic";
 
 type ProfileStatus = 'loading' | 'incomplete' | 'complete';
 type MatchMode = 'dorms' | 'roommates';
@@ -29,6 +30,7 @@ const AiMatch = () => {
   const [matchMode, setMatchMode] = useState<MatchMode>('dorms');
   const [activeMode, setActiveMode] = useState<ActiveMode>('dorm');
   const [studentProfile, setStudentProfile] = useState<any>(null);
+  const [userPlan, setUserPlan] = useState<AiMatchPlan>('basic');
   const [matches, setMatches] = useState<any[]>([]);
   const [aiInsights, setAiInsights] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -93,6 +95,7 @@ const AiMatch = () => {
         } else {
           setProfileStatus('complete');
           setStudentProfile(data);
+          setUserPlan((data.ai_match_plan || 'basic') as AiMatchPlan);
         }
       } catch (err) {
         console.error('Error in checkProfile:', err);
@@ -330,6 +333,8 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
   const showDormTab = activeMode === 'dorm' || activeMode === 'combined';
   const showRoommateTab = activeMode === 'roommate' || activeMode === 'combined';
   const showToggle = activeMode === 'combined';
+  const showCompatibilityScores = shouldShowCompatibilityScore(userPlan);
+  const isVip = isVipPlan(userPlan);
 
   // Dynamic header text
   const getHeaderTitle = () => {
@@ -411,8 +416,14 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
                     Top Personality Matches
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    {matches.filter(m => m.hasPersonalityMatch).map((match, index) => (
-                      <RoommateMatchCard key={match.user_id} roommate={match} index={index} />
+                     {matches.filter(m => m.hasPersonalityMatch).map((match, index) => (
+                      <RoommateMatchCard 
+                        key={match.user_id} 
+                        roommate={match} 
+                        index={index}
+                        showCompatibilityScore={shouldShowCompatibilityScore(userPlan)}
+                        isVip={isVipPlan(userPlan)}
+                      />
                     ))}
                   </div>
                 </>
@@ -433,7 +444,13 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
                   matchMode === 'dorms' ? (
                     <DormMatchCard key={match.id} dorm={match} index={index} />
                   ) : (
-                    <RoommateMatchCard key={match.user_id} roommate={match} index={index} />
+                    <RoommateMatchCard 
+                      key={match.user_id} 
+                      roommate={match} 
+                      index={index}
+                      showCompatibilityScore={shouldShowCompatibilityScore(userPlan)}
+                      isVip={isVipPlan(userPlan)}
+                    />
                   )
                 ))}
               </div>

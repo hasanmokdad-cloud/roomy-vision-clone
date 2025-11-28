@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getMatchLimit, shouldUsePersonalityMatching, shuffleArray, type AiMatchPlan } from "@/utils/tierLogic";
 
 interface StudentProfile {
   user_id: string;
@@ -217,7 +218,30 @@ export function useRoommateMatch(userId?: string) {
           return;
         }
 
-        // Compute similarity scores
+        // Apply tier-based matching logic
+        const userPlan = (myProfile.ai_match_plan || 'basic') as AiMatchPlan;
+        const matchLimit = getMatchLimit(userPlan);
+        const usePersonality = shouldUsePersonalityMatching(userPlan);
+
+        // BASIC TIER: Random matches only, no personality
+        if (!usePersonality) {
+          const randomMatches = shuffleArray(eligibleStudents)
+            .slice(0, matchLimit)
+            .map(student => ({
+              ...student,
+              matchScore: null,
+              generalMatchScore: null,
+              personalityMatchScore: null,
+              hasPersonalityMatch: false,
+              matchReasons: []
+            }));
+
+          setMatches(randomMatches);
+          setLoading(false);
+          return;
+        }
+
+        // ADVANCED/VIP TIER: Compute similarity scores
         const scoredMatches = eligibleStudents.map(student => {
           const generalScore = computeSimilarity(myProfile, student);
           const personalityScore = computePersonalityCompatibility(myProfile, student);
@@ -237,10 +261,10 @@ export function useRoommateMatch(userId?: string) {
           };
         });
 
-        // Sort by score and take top 10
+        // Sort by score and limit based on tier
         const topMatches = scoredMatches
           .sort((a, b) => b.matchScore - a.matchScore)
-          .slice(0, 10);
+          .slice(0, matchLimit === Infinity ? scoredMatches.length : matchLimit);
 
         setMatches(topMatches);
         setLoading(false);

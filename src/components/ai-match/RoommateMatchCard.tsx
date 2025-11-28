@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign, Brain, BarChart2 } from "lucide-react";
+import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign, Brain, BarChart2, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MatchBreakdownModal } from "./MatchBreakdownModal";
@@ -12,9 +12,16 @@ import { CompatibilityScores } from "@/hooks/useCompatibilityMatch";
 interface RoommateMatchCardProps {
   roommate: any;
   index: number;
+  showCompatibilityScore?: boolean;
+  isVip?: boolean;
 }
 
-export const RoommateMatchCard = ({ roommate, index }: RoommateMatchCardProps) => {
+export const RoommateMatchCard = ({ 
+  roommate, 
+  index,
+  showCompatibilityScore = true,
+  isVip = false
+}: RoommateMatchCardProps) => {
   const navigate = useNavigate();
   const [showBreakdown, setShowBreakdown] = useState(false);
   
@@ -88,21 +95,31 @@ export const RoommateMatchCard = ({ roommate, index }: RoommateMatchCardProps) =
 
             {/* Match Score */}
             <div className="flex flex-col items-end gap-1">
-              <Badge className={`${getMatchColor(matchScore)} bg-background border font-bold`}>
-                <TrendingUp className="w-3 h-3 mr-1" />
-                {matchScore}%
-              </Badge>
+              {showCompatibilityScore ? (
+                <>
+                  <Badge className={`${getMatchColor(matchScore)} bg-background border font-bold`}>
+                    <TrendingUp className="w-3 h-3 mr-1" />
+                    {matchScore}%
+                  </Badge>
+                  {isVip && matchScore >= 85 && (
+                    <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-xs flex items-center gap-1">
+                      <Crown className="w-3 h-3" />
+                      VIP
+                    </Badge>
+                  )}
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground font-medium">
+                  Basic match
+                </span>
+              )}
               
-              {hasPersonalityMatch ? (
+              {showCompatibilityScore && hasPersonalityMatch ? (
                 <Badge variant="outline" className="text-xs text-purple-600 border-purple-300">
                   <Brain className="w-3 h-3 mr-1" />
                   {getPersonalityLabel(personalityScore)}
                 </Badge>
-              ) : (
-                <span className="text-xs text-muted-foreground">
-                  Basic match
-                </span>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -141,7 +158,7 @@ export const RoommateMatchCard = ({ roommate, index }: RoommateMatchCardProps) =
 
           {/* Action Buttons */}
           <div className="flex gap-2">
-            {hasPersonalityMatch && roommate.scores && (
+            {showCompatibilityScore && hasPersonalityMatch && roommate.scores && (
               <Button 
                 onClick={() => setShowBreakdown(true)}
                 variant="outline"

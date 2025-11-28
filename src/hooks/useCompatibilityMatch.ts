@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { compatibilityQuestions } from '@/data/compatibilityQuestions';
+import { getMatchLimit, shouldUsePersonalityMatching, shuffleArray, type AiMatchPlan } from '@/utils/tierLogic';
 
 export interface CompatibilityScores {
   overallScore: number;
@@ -216,6 +217,11 @@ export const useCompatibilityMatch = (userId?: string) => {
         return;
       }
 
+      // Get user's tier plan
+      const userPlan = (currentUser.ai_match_plan || 'basic') as AiMatchPlan;
+      const matchLimit = getMatchLimit(userPlan);
+      const usePersonality = shouldUsePersonalityMatching(userPlan);
+
       // Check if user completed compatibility test
       if (!currentUser.compatibility_test_completed) {
         setMatches([]);
@@ -274,6 +280,34 @@ export const useCompatibilityMatch = (userId?: string) => {
         return;
       }
 
+      // BASIC TIER: Return random matches without compatibility scoring
+      if (!usePersonality) {
+        const randomMatches: CompatibilityMatch[] = shuffleArray(potentialMatches)
+          .slice(0, matchLimit)
+          .map(student => ({
+            userId: student.user_id,
+            fullName: student.full_name,
+            age: student.age,
+            university: student.university,
+            major: student.major,
+            gender: student.gender,
+            profilePhotoUrl: student.profile_photo_url,
+            scores: {
+              overallScore: 0,
+              lifestyleScore: 0,
+              studyScore: 0,
+              personalityScore: 0,
+              similarityScore: 0,
+              advancedScore: null
+            },
+            matchReasons: []
+          }));
+
+        setMatches(randomMatches);
+        setLoading(false);
+        return;
+      }
+
       // Get all their responses
       const userIds = potentialMatches.map(m => m.user_id);
       const { data: allResponses } = await supabase
@@ -322,7 +356,7 @@ export const useCompatibilityMatch = (userId?: string) => {
           };
         })
         .sort((a, b) => b.scores.overallScore - a.scores.overallScore)
-        .slice(0, 20); // Top 20 matches
+        .slice(0, matchLimit === Infinity ? potentialMatches.length : matchLimit);
 
       setMatches(scoredMatches);
     } catch (error) {
