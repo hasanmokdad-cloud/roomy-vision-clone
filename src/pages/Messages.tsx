@@ -1423,6 +1423,39 @@ export default function Messages() {
         </>
       );
     }
+    
+    // Make URLs clickable and open externally (fixes 404 error)
+    const body = formatMessageBody(msg);
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = body.split(urlRegex);
+    
+    if (parts.length > 1) {
+      return (
+        <p className="text-sm whitespace-pre-wrap break-words">
+          {parts.map((part, index) => {
+            if (part.match(urlRegex)) {
+              return (
+                <a
+                  key={index}
+                  href={part}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:opacity-80"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.open(part, '_blank', 'noopener,noreferrer');
+                  }}
+                >
+                  {part}
+                </a>
+              );
+            }
+            return part;
+          })}
+        </p>
+      );
+    }
 
     if (msg.attachment_type === 'image') {
       return (

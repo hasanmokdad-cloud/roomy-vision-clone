@@ -9,13 +9,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Clock, MapPin, User, CheckCircle, XCircle, MessageSquare, Video } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, CheckCircle, XCircle, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import BottomNav from '@/components/BottomNav';
 import { sendOwnerNotification } from '@/utils/analytics';
 import { AcceptBookingModal } from '@/components/bookings/AcceptBookingModal';
+import { MeetingLinkButton } from '@/components/bookings/MeetingLinkButton';
+import { AddToCalendarDropdown } from '@/components/bookings/AddToCalendarDropdown';
 import { sendTourSystemMessage } from '@/lib/tourMessaging';
+import { type MeetingPlatform } from '@/lib/meetingUtils';
 
 type Booking = {
   id: string;
@@ -26,6 +29,8 @@ type Booking = {
   status: string;
   message: string | null;
   owner_notes: string | null;
+  meeting_link: string | null;
+  meeting_platform: string | null;
   created_at: string;
   dorm_name?: string;
   student_name?: string;
@@ -129,7 +134,7 @@ export default function OwnerBookings() {
     }
   };
 
-  const handleApprove = async (meetingLink: string, notes?: string) => {
+  const handleApprove = async (meetingLink: string, platform: MeetingPlatform, notes?: string) => {
     if (!bookingToAccept) return;
 
     setAcceptLoading(true);
@@ -139,6 +144,7 @@ export default function OwnerBookings() {
         .update({ 
           status: 'approved',
           meeting_link: meetingLink,
+          meeting_platform: platform,
           owner_notes: notes || null
         })
         .eq('id', bookingToAccept.id);
@@ -162,7 +168,8 @@ export default function OwnerBookings() {
             dormName: bookingToAccept.dorm_name || 'the property',
             date: format(new Date(bookingToAccept.requested_date), 'PPP'),
             time: bookingToAccept.requested_time,
-            meetingLink
+            meetingLink,
+            platform
           }
         );
       }
@@ -473,13 +480,19 @@ export default function OwnerBookings() {
                           </div>
                         )}
                         {(booking as any).meeting_link && (
-                          <Button
-                            onClick={() => window.open((booking as any).meeting_link, '_blank')}
-                            className="w-full gap-2 bg-gradient-to-r from-green-600 to-emerald-500"
-                          >
-                            <Video className="h-4 w-4" />
-                            Join Meeting
-                          </Button>
+                          <div className="flex flex-wrap gap-2">
+                            <MeetingLinkButton
+                              meetingLink={(booking as any).meeting_link}
+                              platform={(booking as any).meeting_platform as MeetingPlatform}
+                              className="flex-1 bg-gradient-to-r from-green-600 to-emerald-500"
+                            />
+                            <AddToCalendarDropdown
+                              booking={{
+                                ...booking,
+                                meeting_link: (booking as any).meeting_link
+                              }}
+                            />
+                          </div>
                         )}
                       </div>
                     </CardContent>

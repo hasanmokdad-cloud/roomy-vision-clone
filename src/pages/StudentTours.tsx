@@ -6,11 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Clock, MapPin, Video, XCircle, Loader2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, XCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import BottomNav from '@/components/BottomNav';
+import { MeetingLinkButton } from '@/components/bookings/MeetingLinkButton';
+import { AddToCalendarDropdown } from '@/components/bookings/AddToCalendarDropdown';
 import { sendTourSystemMessage } from '@/lib/tourMessaging';
+import { type MeetingPlatform } from '@/lib/meetingUtils';
 
 type TourBooking = {
   id: string;
@@ -21,6 +24,7 @@ type TourBooking = {
   status: string;
   message: string | null;
   meeting_link: string | null;
+  meeting_platform: string | null;
   created_at: string;
   dorm_name?: string;
   dorm_image?: string;
@@ -268,13 +272,19 @@ export default function StudentTours() {
                           {/* Actions */}
                           <div className="flex flex-wrap gap-2 pt-2">
                             {booking.status === 'approved' && booking.meeting_link && (
-                              <Button
-                                onClick={() => window.open(booking.meeting_link!, '_blank')}
-                                className="gap-2 bg-gradient-to-r from-green-600 to-emerald-500"
-                              >
-                                <Video className="w-4 h-4" />
-                                Join Meeting
-                              </Button>
+                              <div className="flex flex-wrap gap-2 w-full">
+                                <MeetingLinkButton
+                                  meetingLink={booking.meeting_link}
+                                  platform={booking.meeting_platform as MeetingPlatform}
+                                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-500"
+                                />
+                                <AddToCalendarDropdown
+                                  booking={{
+                                    ...booking,
+                                    owner_name: 'Property Owner'
+                                  }}
+                                />
+                              </div>
                             )}
                             {(booking.status === 'pending' || booking.status === 'approved') && (
                               <Button

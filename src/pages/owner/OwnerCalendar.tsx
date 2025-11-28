@@ -8,15 +8,18 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, User, CalendarClock, Video } from 'lucide-react';
+import { Clock, User, CalendarClock } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
 import { OwnerAvailabilityManager } from '@/components/owner/OwnerAvailabilityManager';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AcceptBookingModal } from '@/components/bookings/AcceptBookingModal';
+import { MeetingLinkButton } from '@/components/bookings/MeetingLinkButton';
+import { AddToCalendarDropdown } from '@/components/bookings/AddToCalendarDropdown';
 import { sendTourSystemMessage } from '@/lib/tourMessaging';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { type MeetingPlatform } from '@/lib/meetingUtils';
 
 export default function OwnerCalendar() {
   const { userId } = useAuthGuard();
@@ -127,17 +130,18 @@ export default function OwnerCalendar() {
     loadBookings();
   };
 
-  const handleAcceptBooking = async (meetingLink: string, notes?: string) => {
+  const handleAcceptBooking = async (meetingLink: string, platform: MeetingPlatform, notes?: string) => {
     if (!selectedBooking) return;
     
     setAcceptLoading(true);
     try {
-      // Update booking with meeting link
+      // Update booking with meeting link and platform
       const { error } = await supabase
         .from('bookings')
         .update({ 
           status: 'approved',
           meeting_link: meetingLink,
+          meeting_platform: platform,
           owner_notes: notes || null
         })
         .eq('id', selectedBooking.id);
@@ -161,7 +165,8 @@ export default function OwnerCalendar() {
             dormName: selectedBooking.dorms?.dorm_name || selectedBooking.dorms?.name,
             date: format(new Date(selectedBooking.requested_date), 'PPP'),
             time: selectedBooking.requested_time,
-            meetingLink
+            meetingLink,
+            platform
           }
         );
       }
@@ -326,14 +331,22 @@ export default function OwnerCalendar() {
                           )}
 
                           {booking.status === 'approved' && booking.meeting_link && (
-                            <Button
-                              size="sm"
-                              onClick={() => window.open(booking.meeting_link, '_blank')}
-                              className="w-full mb-2 gap-2 bg-gradient-to-r from-green-600 to-emerald-500"
-                            >
-                              <Video className="w-4 h-4" />
-                              Join Meeting
-                            </Button>
+                            <div className="flex flex-wrap gap-2">
+                              <MeetingLinkButton
+                                meetingLink={booking.meeting_link}
+                                platform={booking.meeting_platform as MeetingPlatform}
+                                size="sm"
+                                className="flex-1 bg-gradient-to-r from-green-600 to-emerald-500"
+                              />
+                              <AddToCalendarDropdown
+                                booking={{
+                                  ...booking,
+                                  dorm_name: booking.dorms?.dorm_name || booking.dorms?.name,
+                                  student_name: booking.students?.full_name
+                                }}
+                                size="sm"
+                              />
+                            </div>
                           )}
 
                           {booking.status === 'pending' && (
