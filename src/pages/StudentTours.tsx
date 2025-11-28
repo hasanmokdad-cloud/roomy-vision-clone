@@ -164,7 +164,7 @@ export default function StudentTours() {
   const getStatusBadge = (status: string) => {
     const config: Record<string, { variant: any; className: string }> = {
       pending: { variant: 'default', className: 'bg-yellow-500/20 text-yellow-700' },
-      accepted: { variant: 'default', className: 'bg-green-500/20 text-green-700' },
+      approved: { variant: 'default', className: 'bg-green-500/20 text-green-700' },
       declined: { variant: 'destructive', className: '' },
       cancelled_by_student: { variant: 'secondary', className: '' },
       cancelled_by_owner: { variant: 'secondary', className: '' },
@@ -175,7 +175,7 @@ export default function StudentTours() {
 
     return (
       <Badge variant={variant} className={className}>
-        {status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+        {status === 'approved' ? 'Accepted' : status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
       </Badge>
     );
   };
@@ -189,7 +189,7 @@ export default function StudentTours() {
   }
 
   const upcomingTours = bookings.filter(b => 
-    (b.status === 'pending' || b.status === 'accepted') &&
+    (b.status === 'pending' || b.status === 'approved') &&
     new Date(`${b.requested_date}T${b.requested_time}`) > new Date()
   );
 
@@ -267,7 +267,7 @@ export default function StudentTours() {
 
                           {/* Actions */}
                           <div className="flex flex-wrap gap-2 pt-2">
-                            {booking.status === 'accepted' && booking.meeting_link && (
+                            {booking.status === 'approved' && booking.meeting_link && (
                               <Button
                                 onClick={() => window.open(booking.meeting_link!, '_blank')}
                                 className="gap-2 bg-gradient-to-r from-green-600 to-emerald-500"
@@ -276,7 +276,7 @@ export default function StudentTours() {
                                 Join Meeting
                               </Button>
                             )}
-                            {(booking.status === 'pending' || booking.status === 'accepted') && (
+                            {(booking.status === 'pending' || booking.status === 'approved') && (
                               <Button
                                 variant="outline"
                                 onClick={() => handleCancel(booking)}

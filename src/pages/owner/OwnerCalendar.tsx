@@ -136,7 +136,7 @@ export default function OwnerCalendar() {
       const { error } = await supabase
         .from('bookings')
         .update({ 
-          status: 'accepted',
+          status: 'approved',
           meeting_link: meetingLink,
           owner_notes: notes || null
         })
@@ -325,7 +325,7 @@ export default function OwnerCalendar() {
                             </p>
                           )}
 
-                          {booking.status === 'accepted' && booking.meeting_link && (
+                          {booking.status === 'approved' && booking.meeting_link && (
                             <Button
                               size="sm"
                               onClick={() => window.open(booking.meeting_link, '_blank')}

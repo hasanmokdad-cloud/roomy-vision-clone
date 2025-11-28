@@ -32,7 +32,7 @@ function UpcomingToursWidget({ ownerId }: { ownerId: string }) {
       .from('bookings')
       .select('*')
       .eq('owner_id', ownerId)
-      .eq('status', 'accepted')
+      .eq('status', 'approved')
       .gte('requested_date', new Date().toISOString().split('T')[0])
       .order('requested_date', { ascending: true })
       .order('requested_time', { ascending: true })
