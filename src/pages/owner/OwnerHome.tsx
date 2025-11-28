@@ -27,13 +27,10 @@ function UpcomingToursWidget({ ownerId }: { ownerId: string }) {
   }, [ownerId]);
 
   const loadTours = async () => {
+    // Fetch bookings without embedded relations
     const { data } = await supabase
       .from('bookings')
-      .select(`
-        *,
-        dorms(dorm_name, name),
-        students(full_name)
-      `)
+      .select('*')
       .eq('owner_id', ownerId)
       .eq('status', 'accepted')
       .gte('requested_date', new Date().toISOString().split('T')[0])
@@ -41,7 +38,21 @@ function UpcomingToursWidget({ ownerId }: { ownerId: string }) {
       .order('requested_time', { ascending: true })
       .limit(5);
 
-    setTours(data || []);
+    // Enrich with dorm and student data separately
+    const enriched = await Promise.all((data || []).map(async (booking) => {
+      const [dormResult, studentResult] = await Promise.all([
+        supabase.from('dorms').select('dorm_name, name').eq('id', booking.dorm_id).maybeSingle(),
+        supabase.from('students').select('full_name').eq('id', booking.student_id).maybeSingle()
+      ]);
+      
+      return {
+        ...booking,
+        dorms: dormResult.data,
+        students: studentResult.data
+      };
+    }));
+
+    setTours(enriched);
     setLoading(false);
   };
 

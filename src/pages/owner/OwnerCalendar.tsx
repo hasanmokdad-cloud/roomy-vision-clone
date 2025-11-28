@@ -71,13 +71,10 @@ export default function OwnerCalendar() {
       setOwnerId(owner.id);
       console.log('Fetching bookings for owner:', owner.id);
 
+      // Fetch bookings without embedded relations
       const { data, error } = await supabase
         .from('bookings')
-        .select(`
-          *,
-          dorms(dorm_name, name),
-          students(full_name, email, profile_photo_url)
-        `)
+        .select('*')
         .eq('owner_id', owner.id)
         .order('requested_date', { ascending: true });
 
@@ -93,7 +90,22 @@ export default function OwnerCalendar() {
       }
 
       console.log('Bookings fetched:', data?.length, data);
-      setBookings(data || []);
+
+      // Enrich with dorm and student data separately
+      const enriched = await Promise.all((data || []).map(async (booking) => {
+        const [dormResult, studentResult] = await Promise.all([
+          supabase.from('dorms').select('dorm_name, name').eq('id', booking.dorm_id).maybeSingle(),
+          supabase.from('students').select('full_name, email, profile_photo_url').eq('id', booking.student_id).maybeSingle()
+        ]);
+        
+        return {
+          ...booking,
+          dorms: dormResult.data,
+          students: studentResult.data
+        };
+      }));
+
+      setBookings(enriched);
     } catch (error) {
       console.error('Error in loadBookings:', error);
       toast({
