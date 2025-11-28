@@ -11,8 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, MapPin, GraduationCap, DollarSign, Home, CheckCircle, ArrowRight, ArrowLeft, Users, Brain, Crown } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { User, MapPin, GraduationCap, DollarSign, Home, CheckCircle, ArrowRight, ArrowLeft, Users, Brain } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Confetti } from '@/components/profile/Confetti';
 import { ProfileProgress } from '@/components/profile/ProfileProgress';
@@ -67,7 +66,6 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   const [needsRoommateNewDorm, setNeedsRoommateNewDorm] = useState(false);
   const [enablePersonalityMatching, setEnablePersonalityMatching] = useState(false);
   const [personalityTestCompleted, setPersonalityTestCompleted] = useState(false);
-  const [aiMatchPlan, setAiMatchPlan] = useState<string>("basic");
   
   // Hierarchical location state
   const [selectedGovernorate, setSelectedGovernorate] = useState<Governorate | ''>('');
@@ -165,11 +163,6 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
       if (data.personality_test_completed !== undefined) {
         setPersonalityTestCompleted(data.personality_test_completed);
       }
-      
-      // Set AI match plan
-      if (data.ai_match_plan) {
-        setAiMatchPlan(data.ai_match_plan);
-      }
 
       // Set location fields
       if (data.governorate) {
@@ -249,7 +242,6 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         needs_roommate_current_place: needsRoommateCurrentPlace,
         needs_roommate_new_dorm: needsRoommateNewDorm,
         enable_personality_matching: enablePersonalityMatching,
-        ai_match_plan: aiMatchPlan,
         profile_completion_score: calculateProgress(),
         updated_at: new Date().toISOString()
       };
@@ -601,68 +593,6 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                     )}
                   </motion.div>
                 )}
-
-                {/* AI Match Plan Selection */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-4 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-6"
-                >
-                  <h3 className="text-xl font-black text-amber-600 flex items-center gap-2">
-                    <Crown className="w-5 h-5" />
-                    AI Match Plan (Preview Mode)
-                  </h3>
-                  <p className="text-sm text-foreground/60">
-                    Choose your matching tier to unlock different features
-                  </p>
-                  
-                  <RadioGroup value={aiMatchPlan} onValueChange={setAiMatchPlan}>
-                    <div className="grid gap-4">
-                      {/* Basic Plan */}
-                      <div className="flex items-start space-x-3 p-4 border border-muted rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                        <RadioGroupItem value="basic" id="basic" className="mt-1" />
-                        <Label htmlFor="basic" className="flex-1 cursor-pointer">
-                          <span className="font-bold text-base">Basic Match — Free</span>
-                          <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                            <li>• 1 roommate match only</li>
-                            <li>• No personality matching</li>
-                            <li>• Random matches</li>
-                          </ul>
-                        </Label>
-                      </div>
-                      
-                      {/* Advanced Plan */}
-                      <div className="flex items-start space-x-3 p-4 border-2 border-blue-300 rounded-lg bg-blue-50/50 hover:bg-blue-50 transition-colors cursor-pointer">
-                        <RadioGroupItem value="advanced" id="advanced" className="mt-1" />
-                        <Label htmlFor="advanced" className="flex-1 cursor-pointer">
-                          <span className="font-bold text-blue-600 text-base">Advanced Match — $4.99</span>
-                          <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                            <li>• Up to 3 matches</li>
-                            <li>• Personality compatibility scores</li>
-                            <li>• Premium chat features</li>
-                          </ul>
-                        </Label>
-                      </div>
-                      
-                      {/* VIP Plan */}
-                      <div className="flex items-start space-x-3 p-4 border-2 border-amber-300 rounded-lg bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 transition-colors cursor-pointer">
-                        <RadioGroupItem value="vip" id="vip" className="mt-1" />
-                        <Label htmlFor="vip" className="flex-1 cursor-pointer">
-                          <span className="font-bold text-amber-600 text-base flex items-center gap-1">
-                            <Crown className="w-4 h-4" />
-                            VIP Match — $9.99
-                          </span>
-                          <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                            <li>• Unlimited matches</li>
-                            <li>• Priority roommate suggestions</li>
-                            <li>• AI-guided onboarding</li>
-                            <li>• Priority support</li>
-                          </ul>
-                        </Label>
-                      </div>
-                    </div>
-                  </RadioGroup>
-                </motion.div>
 
                 {/* Step 1 Action Buttons */}
                 <div className="flex gap-3 pt-4">

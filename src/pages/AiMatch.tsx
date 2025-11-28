@@ -15,6 +15,7 @@ import { rankDorms } from "@/ai-engine/recommendationModel";
 import { useRoommateMatch } from "@/hooks/useRoommateMatch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { shouldShowCompatibilityScore, isVipPlan, type AiMatchPlan } from "@/utils/tierLogic";
+import { TierSelectionCard } from "@/components/ai-match/TierSelectionCard";
 
 type ProfileStatus = 'loading' | 'incomplete' | 'complete';
 type MatchMode = 'dorms' | 'roommates';
@@ -31,6 +32,7 @@ const AiMatch = () => {
   const [activeMode, setActiveMode] = useState<ActiveMode>('dorm');
   const [studentProfile, setStudentProfile] = useState<any>(null);
   const [userPlan, setUserPlan] = useState<AiMatchPlan>('basic');
+  const [selectedPlan, setSelectedPlan] = useState<AiMatchPlan>('basic');
   const [matches, setMatches] = useState<any[]>([]);
   const [aiInsights, setAiInsights] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -95,7 +97,9 @@ const AiMatch = () => {
         } else {
           setProfileStatus('complete');
           setStudentProfile(data);
-          setUserPlan((data.ai_match_plan || 'basic') as AiMatchPlan);
+          const plan = (data.ai_match_plan || 'basic') as AiMatchPlan;
+          setUserPlan(plan);
+          setSelectedPlan(plan);
         }
       } catch (err) {
         console.error('Error in checkProfile:', err);
@@ -308,6 +312,36 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
     }
   };
 
+  // Handle plan change with persistence
+  const handlePlanChange = async (plan: AiMatchPlan) => {
+    setSelectedPlan(plan);
+    setUserPlan(plan);
+    
+    // Save to database
+    if (userId) {
+      try {
+        const { error } = await supabase
+          .from('students')
+          .update({ ai_match_plan: plan })
+          .eq('user_id', userId);
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Plan Updated",
+          description: `Switched to ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan`,
+        });
+      } catch (error) {
+        console.error('Error updating plan:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update plan. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
   if (profileStatus === 'loading') {
     return (
       <div className="min-h-screen bg-background pt-24 md:pt-28">
@@ -394,6 +428,14 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
               )}
             </ToggleGroup>
           </div>
+        )}
+
+        {/* Tier Selection - Show only on roommate views */}
+        {(activeMode === 'roommate' || (activeMode === 'combined' && matchMode === 'roommates')) && (
+          <TierSelectionCard 
+            selectedPlan={selectedPlan}
+            onPlanChange={handlePlanChange}
+          />
         )}
 
         {/* Loading State */}
