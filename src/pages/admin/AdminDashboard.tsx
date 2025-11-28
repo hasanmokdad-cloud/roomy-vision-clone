@@ -387,16 +387,29 @@ export default function AdminDashboard() {
             </div>
           </motion.button>
 
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate("/admin/messages")}
-          className="relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br from-cyan-500 to-blue-400 text-white shadow-xl hover:shadow-2xl transition-all group"
-        >
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/admin/messages")}
+            className="relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br from-cyan-500 to-blue-400 text-white shadow-xl hover:shadow-2xl transition-all group"
+          >
             <div className="flex flex-col items-center gap-4">
               <MessageSquare className="w-12 h-12" />
               <h3 className="text-xl font-bold">Support Inbox</h3>
               <p className="text-sm opacity-90">Contact form messages</p>
+            </div>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/admin/chats")}
+            className="relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br from-pink-500 to-rose-400 text-white shadow-xl hover:shadow-2xl transition-all group"
+          >
+            <div className="flex flex-col items-center gap-4">
+              <MessageSquare className="w-12 h-12" />
+              <h3 className="text-xl font-bold">View Chats</h3>
+              <p className="text-sm opacity-90">All conversations</p>
             </div>
           </motion.button>
         </div>
