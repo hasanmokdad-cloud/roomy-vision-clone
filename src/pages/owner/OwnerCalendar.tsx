@@ -166,9 +166,15 @@ export default function OwnerCalendar() {
             date: format(new Date(selectedBooking.requested_date), 'PPP'),
             time: selectedBooking.requested_time,
             meetingLink,
-            platform
+            platform,
+            bookingId: selectedBooking.id
           }
         );
+
+        // Schedule reminders via edge function
+        await supabase.functions.invoke('schedule-booking-reminders', {
+          body: { bookingId: selectedBooking.id }
+        });
       }
 
       toast({
