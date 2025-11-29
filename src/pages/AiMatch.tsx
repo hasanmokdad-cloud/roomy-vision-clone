@@ -10,10 +10,11 @@ import { AIInsightsCard } from "@/components/ai-match/AIInsightsCard";
 import { DormMatchCard } from "@/components/ai-match/DormMatchCard";
 import { RoommateMatchCard } from "@/components/ai-match/RoommateMatchCard";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Home, Users, Brain } from "lucide-react";
+import { Home, Users, Brain, Bug } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { shouldShowCompatibilityScore, isVipPlan, type AiMatchPlan } from "@/utils/tierLogic";
 import { TierSelectionCard } from "@/components/ai-match/TierSelectionCard";
+import { Card, CardContent } from "@/components/ui/card";
 
 type ProfileStatus = 'loading' | 'incomplete' | 'complete';
 type MatchMode = 'dorms' | 'roommates';
@@ -34,6 +35,8 @@ const AiMatch = () => {
   const [matches, setMatches] = useState<any[]>([]);
   const [aiInsights, setAiInsights] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
 
   // Check authentication and load profile
   useEffect(() => {
@@ -49,6 +52,19 @@ const AiMatch = () => {
         return;
       }
       setUserId(user.id);
+
+      // Check if admin
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('*, roles(*)')
+        .eq('user_id', user.id);
+      
+      const adminRole = roles?.some(r => r.roles?.name === 'admin');
+      setIsAdmin(!!adminRole);
+
+      // Check for debug param
+      const urlParams = new URLSearchParams(window.location.search);
+      setShowDebug(urlParams.get('ai_debug') === '1' && !!adminRole);
     };
 
     checkAuth();
@@ -393,13 +409,14 @@ const AiMatch = () => {
                   matchMode === 'dorms' ? (
                     <DormMatchCard key={match.id} dorm={match} index={index} />
                   ) : (
-                    <RoommateMatchCard 
-                      key={match.user_id} 
-                      roommate={match} 
-                      index={index}
-                      showCompatibilityScore={shouldShowCompatibilityScore(userPlan)}
-                      isVip={isVipPlan(userPlan)}
-                    />
+                      <RoommateMatchCard 
+                        key={match.user_id} 
+                        roommate={match} 
+                        index={index}
+                        showCompatibilityScore={shouldShowCompatibilityScore(userPlan)}
+                        isVip={isVipPlan(userPlan)}
+                        matchTier={selectedPlan}
+                      />
                   )
                 ))}
               </div>
@@ -416,6 +433,58 @@ const AiMatch = () => {
           </div>
         )}
       </div>
+
+      {/* Admin Debug Overlay */}
+      {isAdmin && showDebug && matches.length > 0 && (
+        <Card className="fixed bottom-4 right-4 bg-background/95 backdrop-blur-sm border-2 border-amber-500 rounded-lg shadow-2xl max-w-md z-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Bug className="w-5 h-5 text-amber-500" />
+              <h4 className="font-bold text-sm">🔧 AI Debug Panel</h4>
+            </div>
+            
+            <div className="space-y-3 text-xs">
+              <div className="flex items-center justify-between pb-2 border-b">
+                <span className="text-muted-foreground">Mode:</span>
+                <span className="font-semibold">{activeMode}</span>
+              </div>
+              <div className="flex items-center justify-between pb-2 border-b">
+                <span className="text-muted-foreground">Tier:</span>
+                <span className="font-semibold uppercase">{selectedPlan}</span>
+              </div>
+              <div className="flex items-center justify-between pb-2 border-b">
+                <span className="text-muted-foreground">Personality:</span>
+                <span className="font-semibold">
+                  {studentProfile?.enable_personality_matching ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+              
+              <div>
+                <div className="text-muted-foreground mb-2 font-semibold">Top 3 Matches:</div>
+                {matches.slice(0, 3).map((m, i) => (
+                  <div key={i} className="mb-2 p-2 bg-muted/30 rounded">
+                    <div className="font-medium">
+                      {m.type === 'dorm' ? m.dorm_name || m.name : m.full_name}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-1">
+                      Overall: {Math.round(m.score)}%
+                    </div>
+                    {m.subScores && (
+                      <div className="text-[10px] text-muted-foreground">
+                        {m.type === 'dorm' ? (
+                          <>Loc:{m.subScores.location_score} • Bud:{m.subScores.budget_score} • Room:{m.subScores.room_type_score}</>
+                        ) : (
+                          <>Life:{m.subScores.lifestyle_score} • Clean:{m.subScores.cleanliness_score} • Study:{m.subScores.study_focus_score}</>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Footer />
     </div>
