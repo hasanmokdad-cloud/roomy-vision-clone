@@ -83,6 +83,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_match_logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          insights_generated: boolean | null
+          match_tier: string
+          mode: string
+          personality_used: boolean | null
+          processing_time_ms: number | null
+          result_count: number | null
+          student_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          insights_generated?: boolean | null
+          match_tier: string
+          mode: string
+          personality_used?: boolean | null
+          processing_time_ms?: number | null
+          result_count?: number | null
+          student_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          insights_generated?: boolean | null
+          match_tier?: string
+          mode?: string
+          personality_used?: boolean | null
+          processing_time_ms?: number | null
+          result_count?: number | null
+          student_id?: string
+        }
+        Relationships: []
+      }
       ai_recommendations_log: {
         Row: {
           action: string

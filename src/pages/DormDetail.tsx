@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home, Video, Bookmark, Images, Eye } from 'lucide-react';
+import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home, Video, Bookmark, Images, Eye, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedRoomCard } from '@/components/listings/EnhancedRoomCard';
 import { DormDetailSkeleton } from '@/components/skeletons/DormDetailSkeleton';
@@ -37,11 +37,40 @@ export default function DormDetail() {
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
   const [tourModalOpen, setTourModalOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [dormInsight, setDormInsight] = useState<string | null>(null);
 
   useEffect(() => {
     loadDorm();
     checkAuth();
   }, [id]);
+
+  // Fetch AI insight for this dorm
+  useEffect(() => {
+    if (user && dorm) {
+      fetchDormInsight();
+    }
+  }, [user, dorm]);
+
+  const fetchDormInsight = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('roomy-chat', {
+        body: {
+          message: `Briefly analyze how ${dorm.dorm_name || dorm.name} fits my preferences. One short sentence.`,
+          userId: user.id,
+          context: { dormId: dorm.id }
+        }
+      });
+      
+      if (!error && data?.response) {
+        setDormInsight(data.response);
+      }
+    } catch (err) {
+      // Silently fail, insight is optional
+      console.log('AI insight unavailable');
+    }
+  };
 
   // Check if dorm is saved
   useEffect(() => {
@@ -315,6 +344,16 @@ export default function DormDetail() {
               </button>
             </div>
           </div>
+
+          {/* AI Insight Card */}
+          {dormInsight && (
+            <Card className="mb-6 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-300/30 animate-fade-in">
+              <CardContent className="p-4 flex items-start gap-3">
+                <Sparkles className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-foreground/80">{dormInsight}</p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Action Buttons */}
           <div className="mb-8 flex flex-wrap gap-3 animate-fade-in">
