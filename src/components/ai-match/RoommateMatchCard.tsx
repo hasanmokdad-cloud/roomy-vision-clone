@@ -3,24 +3,28 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign, Brain, BarChart2, Crown } from "lucide-react";
+import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign, Brain, BarChart2, Crown, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MatchBreakdownModal } from "./MatchBreakdownModal";
 import { CompatibilityScores } from "@/hooks/useCompatibilityMatch";
+import { getMatchLabel, getBasicTierLabel } from "@/utils/matchLabels";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface RoommateMatchCardProps {
   roommate: any;
   index: number;
   showCompatibilityScore?: boolean;
   isVip?: boolean;
+  matchTier?: 'basic' | 'advanced' | 'vip';
 }
 
 export const RoommateMatchCard = ({ 
   roommate, 
   index,
   showCompatibilityScore = true,
-  isVip = false
+  isVip = false,
+  matchTier = 'basic'
 }: RoommateMatchCardProps) => {
   const navigate = useNavigate();
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -39,19 +43,10 @@ export const RoommateMatchCard = ({
     advancedScore: null
   };
 
-  const getMatchColor = (score: number) => {
-    if (score >= 80) return "text-green-500";
-    if (score >= 60) return "text-yellow-500";
-    return "text-orange-500";
-  };
-
-  const getPersonalityLabel = (score: number | null) => {
-    if (score === null) return '';
-    if (score >= 85) return 'Great fit';
-    if (score >= 70) return 'Good fit';
-    if (score >= 55) return 'Moderate fit';
-    return 'Different styles';
-  };
+  // Get match label based on tier
+  const matchLabel = matchTier === 'basic' 
+    ? getBasicTierLabel()
+    : getMatchLabel(matchScore);
 
   const getInitials = (name: string | undefined | null) => {
     if (!name) return '??';
@@ -93,33 +88,46 @@ export const RoommateMatchCard = ({
               </div>
             </div>
 
-            {/* Match Score */}
+            {/* Match Score & Label */}
             <div className="flex flex-col items-end gap-1">
-              {showCompatibilityScore ? (
-                <>
-                  <Badge className={`${getMatchColor(matchScore)} bg-background border font-bold`}>
-                    <TrendingUp className="w-3 h-3 mr-1" />
-                    {matchScore}%
-                  </Badge>
-                  {isVip && matchScore >= 85 && (
-                    <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-xs flex items-center gap-1">
-                      <Crown className="w-3 h-3" />
-                      VIP
-                    </Badge>
-                  )}
-                </>
-              ) : (
-                <span className="text-xs text-muted-foreground font-medium">
-                  Basic match
-                </span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1">
+                      <Badge className={`${matchLabel.color} bg-background border font-bold`}>
+                        {matchTier === 'basic' ? (
+                          matchLabel.label
+                        ) : (
+                          <>
+                            <TrendingUp className="w-3 h-3 mr-1" />
+                            {matchLabel.label} • {matchScore}%
+                          </>
+                        )}
+                      </Badge>
+                      {matchTier !== 'basic' && (
+                        <Info className="w-3 h-3 text-muted-foreground" />
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">{matchLabel.description}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              {isVip && matchScore >= 85 && (
+                <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-xs flex items-center gap-1">
+                  <Crown className="w-3 h-3" />
+                  VIP Recommended
+                </Badge>
               )}
               
-              {showCompatibilityScore && hasPersonalityMatch ? (
-                <Badge variant="outline" className="text-xs text-purple-600 border-purple-300">
-                  <Brain className="w-3 h-3 mr-1" />
-                  {getPersonalityLabel(personalityScore)}
-                </Badge>
-              ) : null}
+              {/* Sub-scores for debug */}
+              {roommate.subScores && matchTier !== 'basic' && (
+                <div className="text-[10px] text-muted-foreground text-right">
+                  L:{roommate.subScores.lifestyle_score} C:{roommate.subScores.cleanliness_score} S:{roommate.subScores.study_focus_score}
+                </div>
+              )}
             </div>
           </div>
 

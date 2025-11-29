@@ -170,12 +170,27 @@ async function fetchDormMatches(supabase: any, student: any, context: any = {}) 
   
   if (error) throw error;
 
-  // Pre-score dorms
-  return (data || []).map((dorm: any) => ({
-    ...dorm,
-    type: 'dorm',
-    score: calculateDormScore(dorm, student)
-  })).sort((a: any, b: any) => b.score - a.score);
+  // Pre-score dorms with sub-scores
+  return (data || []).map((dorm: any) => {
+    const locationScore = calculateLocationScore(dorm, student);
+    const budgetScore = calculateBudgetScore(dorm, student);
+    const roomTypeScore = calculateRoomTypeScore(dorm, student);
+    const amenitiesScore = calculateAmenitiesScore(dorm, student);
+    const overallScore = calculateDormScore(dorm, student);
+
+    return {
+      ...dorm,
+      type: 'dorm',
+      score: overallScore,
+      subScores: {
+        location_score: locationScore,
+        budget_score: budgetScore,
+        room_type_score: roomTypeScore,
+        amenities_score: amenitiesScore,
+        ai_heuristics_score: 60
+      }
+    };
+  }).sort((a: any, b: any) => b.score - a.score);
 }
 
 async function fetchRoommateMatches(
@@ -198,43 +213,144 @@ async function fetchRoommateMatches(
   
   if (error) throw error;
 
-  // Calculate compatibility scores
-  const scored = (data || []).map((candidate: any) => ({
-    ...candidate,
-    type: 'roommate',
-    score: usePersonality 
+  // Calculate compatibility scores with sub-scores
+  const scored = (data || []).map((candidate: any) => {
+    const lifestyleScore = calculateLifestyleScore(student, candidate);
+    const cleanlinessScore = calculateCleanlinessScore(student, candidate);
+    const studyFocusScore = calculateStudyFocusScore(student, candidate);
+    const overallScore = usePersonality 
       ? calculateCompatibilityScore(student, candidate)
-      : Math.random() * 100,
-    compatibility_score: usePersonality 
-      ? calculateCompatibilityScore(student, candidate)
-      : null
-  }));
+      : Math.random() * 100;
+
+    return {
+      ...candidate,
+      type: 'roommate',
+      score: overallScore,
+      compatibility_score: usePersonality ? overallScore : null,
+      subScores: {
+        lifestyle_score: lifestyleScore,
+        cleanliness_score: cleanlinessScore,
+        study_focus_score: studyFocusScore,
+        personality_score: usePersonality ? null : null // Will be filled by Gemini if available
+      }
+    };
+  });
 
   return scored.sort((a: any, b: any) => b.score - a.score).slice(0, limit);
 }
 
 function calculateDormScore(dorm: any, student: any): number {
+  // Calculate sub-scores
+  const locationScore = calculateLocationScore(dorm, student);
+  const budgetScore = calculateBudgetScore(dorm, student);
+  const roomTypeScore = calculateRoomTypeScore(dorm, student);
+  const amenitiesScore = calculateAmenitiesScore(dorm, student);
+  const aiHeuristicsScore = 60; // Base AI heuristics
+
+  // Weighted average (30% location, 25% budget, 15% room, 10% amenities, 20% AI)
+  const overall = 
+    (locationScore * 0.30) +
+    (budgetScore * 0.25) +
+    (roomTypeScore * 0.15) +
+    (amenitiesScore * 0.10) +
+    (aiHeuristicsScore * 0.20);
+
+  return Math.min(100, Math.round(overall));
+}
+
+function calculateLocationScore(dorm: any, student: any): number {
   let score = 50;
 
-  if (student.budget && dorm.monthly_price <= student.budget) {
-    score += 20 * (1 - dorm.monthly_price / student.budget);
+  // University proximity
+  if (student.preferred_university && dorm.university) {
+    if (dorm.university.toLowerCase().includes(student.preferred_university.toLowerCase())) {
+      score += 35;
+    }
   }
 
-  if (student.preferred_university && 
-      dorm.university?.toLowerCase().includes(student.preferred_university.toLowerCase())) {
-    score += 15;
-  }
-
-  if (student.favorite_areas?.some((area: string) => 
-      dorm.area?.toLowerCase().includes(area.toLowerCase()))) {
-    score += 15;
+  // Area preference
+  if (student.favorite_areas?.length > 0 && dorm.area) {
+    const areaMatch = student.favorite_areas.some((area: string) => 
+      dorm.area.toLowerCase().includes(area.toLowerCase())
+    );
+    if (areaMatch) score += 15;
   }
 
   return Math.min(100, score);
 }
 
+function calculateBudgetScore(dorm: any, student: any): number {
+  if (!student.budget || !dorm.monthly_price) return 50;
+
+  const diff = Math.abs(student.budget - dorm.monthly_price);
+  const percentDiff = diff / student.budget;
+
+  if (dorm.monthly_price <= student.budget) {
+    // Within budget - score based on how close
+    return Math.max(70, 100 - (percentDiff * 30));
+  } else {
+    // Over budget - penalize more
+    return Math.max(20, 50 - (percentDiff * 100));
+  }
+}
+
+function calculateRoomTypeScore(dorm: any, student: any): number {
+  if (!student.preferred_room_types || student.preferred_room_types.length === 0) return 50;
+  if (!dorm.room_types) return 50;
+
+  const dormTypes = typeof dorm.room_types === 'string' 
+    ? dorm.room_types.toLowerCase() 
+    : JSON.stringify(dorm.room_types).toLowerCase();
+  
+  const matchCount = student.preferred_room_types.filter((type: string) =>
+    dormTypes.includes(type.toLowerCase())
+  ).length;
+
+  return matchCount > 0 ? 80 + (matchCount * 10) : 40;
+}
+
+function calculateAmenitiesScore(dorm: any, student: any): number {
+  if (!student.preferred_amenities || student.preferred_amenities.length === 0) return 50;
+  if (!dorm.amenities || dorm.amenities.length === 0) return 30;
+
+  const matchedAmenities = dorm.amenities.filter((amenity: string) =>
+    student.preferred_amenities.some((pref: string) =>
+      amenity.toLowerCase().includes(pref.toLowerCase())
+    )
+  );
+
+  const matchRatio = matchedAmenities.length / student.preferred_amenities.length;
+  return 40 + (matchRatio * 60);
+}
+
 function calculateCompatibilityScore(student: any, candidate: any): number {
+  const lifestyleScore = calculateLifestyleScore(student, candidate);
+  const cleanlinessScore = calculateCleanlinessScore(student, candidate);
+  const studyFocusScore = calculateStudyFocusScore(student, candidate);
+  
+  // For now, return weighted average without personality (will be added in Gemini)
+  const overall = 
+    (lifestyleScore * 0.40) +
+    (cleanlinessScore * 0.30) +
+    (studyFocusScore * 0.30);
+
+  return Math.min(100, Math.round(overall));
+}
+
+function calculateLifestyleScore(student: any, candidate: any): number {
   let score = 50;
+
+  // Sleep schedule similarity (habit_noise as proxy)
+  if (student.habit_noise && candidate.habit_noise) {
+    const diff = Math.abs(student.habit_noise - candidate.habit_noise);
+    score += 20 * (1 - diff / 5);
+  }
+
+  // Social habits (habit_social)
+  if (student.habit_social && candidate.habit_social) {
+    const diff = Math.abs(student.habit_social - candidate.habit_social);
+    score += 15 * (1 - diff / 5);
+  }
 
   // Budget similarity
   if (student.budget && candidate.budget) {
@@ -242,21 +358,29 @@ function calculateCompatibilityScore(student: any, candidate: any): number {
     score += 15 * (1 - Math.min(budgetDiff / student.budget, 1));
   }
 
-  // University match
+  return Math.min(100, score);
+}
+
+function calculateCleanlinessScore(student: any, candidate: any): number {
+  if (!student.habit_cleanliness || !candidate.habit_cleanliness) return 50;
+
+  const diff = Math.abs(student.habit_cleanliness - candidate.habit_cleanliness);
+  const score = 100 - (diff * 20); // Each point diff = -20
+  return Math.max(30, score);
+}
+
+function calculateStudyFocusScore(student: any, candidate: any): number {
+  let score = 50;
+
+  // University match (strong indicator of study compatibility)
   if (student.university === candidate.university) {
-    score += 15;
+    score += 30;
   }
 
-  // Cleanliness match
-  if (student.habit_cleanliness && candidate.habit_cleanliness) {
-    const diff = Math.abs(student.habit_cleanliness - candidate.habit_cleanliness);
-    score += 10 * (1 - diff / 5);
-  }
-
-  // Noise tolerance match
-  if (student.habit_noise && candidate.habit_noise) {
-    const diff = Math.abs(student.habit_noise - candidate.habit_noise);
-    score += 10 * (1 - diff / 5);
+  // Year of study similarity
+  if (student.year_of_study && candidate.year_of_study) {
+    const yearDiff = Math.abs(student.year_of_study - candidate.year_of_study);
+    score += 20 * (1 - Math.min(yearDiff / 4, 1));
   }
 
   return Math.min(100, score);
@@ -271,14 +395,38 @@ async function enhanceWithGemini(
 ) {
   const topMatches = matches.slice(0, 10);
   
-  const prompt = mode === 'dorm' || mode === 'combined'
-    ? `Analyze these dorm matches for a student with budget $${student.budget}, studying at ${student.preferred_university}. 
-       Top matches: ${topMatches.filter(m => m.type === 'dorm').map(m => m.dorm_name || m.name).join(', ')}.
-       Provide a brief 2-sentence insight on why these are good matches.`
-    : `Analyze these roommate matches for a student at ${student.university}.
-       Top matches: ${topMatches.filter(m => m.type === 'roommate').map(m => m.full_name).join(', ')}.
-       ${usePersonality ? 'Consider personality compatibility.' : ''}
-       Provide a brief 2-sentence insight.`;
+  // Enhanced prompt with sub-scores
+  let prompt = '';
+  
+  if (mode === 'dorm' || mode === 'combined') {
+    const dormMatches = topMatches.filter(m => m.type === 'dorm');
+    const dormDetails = dormMatches.map(m => 
+      `${m.dorm_name || m.name} (Score: ${m.score}%, Location: ${m.subScores?.location_score}%, Budget fit: ${m.subScores?.budget_score}%, Room type: ${m.subScores?.room_type_score}%)`
+    ).join('\n- ');
+    
+    prompt = `Analyze these dorm matches for a Lebanese student:
+Budget: $${student.budget}, Near: ${student.preferred_university}, Areas: ${student.favorite_areas?.join(', ') || 'Any'}
+
+Top matches with scores:
+- ${dormDetails}
+
+Write 1-2 warm, concise sentences explaining why these are good matches. Be specific about budget, location, or room type when relevant.`;
+  } else {
+    const roommateMatches = topMatches.filter(m => m.type === 'roommate');
+    const roommateDetails = roommateMatches.map(m => 
+      `${m.full_name} (Score: ${m.score}%, Lifestyle: ${m.subScores?.lifestyle_score}%, Study habits: ${m.subScores?.study_focus_score}%, Cleanliness: ${m.subScores?.cleanliness_score}%)`
+    ).join('\n- ');
+    
+    prompt = `Analyze roommate compatibility for a student at ${student.university}:
+${usePersonality ? 'Using personality matching enabled.' : 'Basic preference matching only - DO NOT mention personality traits.'}
+
+Top matches:
+- ${roommateDetails}
+
+Write 1-2 warm sentences about compatibility. ${usePersonality 
+  ? 'Mention lifestyle traits like sleep schedule or study style.' 
+  : 'Focus ONLY on preferences like university and budget. DO NOT mention personality scores or traits.'}`;
+  }
 
   try {
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -290,33 +438,59 @@ async function enhanceWithGemini(
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "You are Roomy AI, a friendly Lebanese housing assistant. Be warm and concise." },
+          { role: "system", content: "You are Roomy AI, a friendly Lebanese housing assistant. Be warm, concise, and specific." },
           { role: "user", content: prompt }
         ],
       }),
     });
 
     if (!response.ok) {
+      console.error('Gemini API error:', response.status);
       throw new Error("Gemini API error");
     }
 
     const data = await response.json();
     const insights = data.choices?.[0]?.message?.content || "Great matches found based on your preferences!";
 
-    // Add reasoning to each match
-    const rankedMatches = topMatches.map((match, index) => ({
-      ...match,
-      reasoning: `Match #${index + 1}: ${match.type === 'dorm' ? 'Fits your budget and location preferences' : 'Compatible lifestyle and study habits'}`
-    }));
+    // Add detailed reasoning to each match
+    const rankedMatches = topMatches.map((match) => {
+      let reasoning = '';
+      
+      if (match.type === 'dorm') {
+        const reasons = [];
+        if (match.subScores?.budget_score >= 80) reasons.push('within budget');
+        if (match.subScores?.location_score >= 80) reasons.push('great location');
+        if (match.subScores?.room_type_score >= 80) reasons.push('preferred room type');
+        reasoning = reasons.length > 0 
+          ? `Great match: ${reasons.join(', ')}`
+          : `Fits your location and budget preferences`;
+      } else {
+        const reasons = [];
+        if (match.subScores?.lifestyle_score >= 80) reasons.push('similar lifestyle');
+        if (match.subScores?.study_focus_score >= 80) reasons.push('compatible study habits');
+        if (match.subScores?.cleanliness_score >= 80) reasons.push('matching cleanliness standards');
+        reasoning = reasons.length > 0
+          ? `Compatible: ${reasons.join(', ')}`
+          : 'Matches your university and preferences';
+      }
+      
+      return {
+        ...match,
+        reasoning
+      };
+    });
 
     return { rankedMatches, insights };
   } catch (error) {
     console.error('Gemini enhancement failed:', error);
     return {
-      rankedMatches: topMatches,
-      insights: mode === 'dorm' 
-        ? 'Top dorms matched based on your budget, location, and preferences.'
-        : 'Top roommates matched based on university and lifestyle compatibility.'
+      rankedMatches: topMatches.map(m => ({
+        ...m,
+        reasoning: m.type === 'dorm' 
+          ? 'Matches your preferences' 
+          : 'Compatible lifestyle and habits'
+      })),
+      insights: 'AI insights are currently unavailable, but we still found matches based on your preferences.'
     };
   }
 }

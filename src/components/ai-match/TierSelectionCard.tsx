@@ -34,9 +34,9 @@ export const TierSelectionCard = ({ selectedPlan, onPlanChange }: TierSelectionC
             <Label htmlFor="tier-basic" className="flex-1 cursor-pointer">
               <span className="font-bold text-base">Basic Match — Free</span>
               <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                <li>• 1 roommate match only</li>
-                <li>• No personality matching</li>
-                <li>• Random matches</li>
+                <li>• Random roommate suggestions based on basic preferences</li>
+                <li>• Personality matching is not included</li>
+                <li>• 1 match only</li>
               </ul>
             </Label>
           </div>
@@ -50,9 +50,9 @@ export const TierSelectionCard = ({ selectedPlan, onPlanChange }: TierSelectionC
               </span>
               <p className="text-xs text-muted-foreground italic mb-1">(Preview Mode – no payments yet)</p>
               <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                <li>• Up to 3 matches</li>
-                <li>• Personality compatibility scores</li>
-                <li>• Premium chat features (coming soon)</li>
+                <li>• Up to 3 matches with personality compatibility scores</li>
+                <li>• Smarter roommate suggestions based on lifestyle & study habits</li>
+                <li>• Premium AI insights</li>
               </ul>
             </Label>
           </div>
@@ -67,9 +67,9 @@ export const TierSelectionCard = ({ selectedPlan, onPlanChange }: TierSelectionC
               </span>
               <p className="text-xs text-muted-foreground italic mb-1">(Preview Mode – no payments yet)</p>
               <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                <li>• Unlimited matches</li>
+                <li>• Unlimited matches with full personality matching</li>
                 <li>• Priority roommate suggestions</li>
-                <li>• AI-guided onboarding (coming soon)</li>
+                <li>• VIP-exclusive match recommendations</li>
                 <li>• Priority support</li>
               </ul>
             </Label>

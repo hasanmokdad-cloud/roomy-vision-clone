@@ -1,9 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, DollarSign, Home, TrendingUp, ExternalLink } from "lucide-react";
+import { MapPin, DollarSign, Home, TrendingUp, ExternalLink, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { getDormMatchLabel } from "@/utils/matchLabels";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface DormMatchCardProps {
   dorm: any;
@@ -13,12 +15,7 @@ interface DormMatchCardProps {
 export const DormMatchCard = ({ dorm, index }: DormMatchCardProps) => {
   const navigate = useNavigate();
   const matchScore = Math.round(dorm.score || 75);
-
-  const getMatchColor = (score: number) => {
-    if (score >= 80) return "text-green-500";
-    if (score >= 60) return "text-yellow-500";
-    return "text-orange-500";
-  };
+  const matchLabel = getDormMatchLabel(matchScore);
 
   return (
     <motion.div
@@ -44,10 +41,22 @@ export const DormMatchCard = ({ dorm, index }: DormMatchCardProps) => {
             
             {/* Match Score Badge */}
             <div className="absolute top-3 right-3">
-              <Badge className={`${getMatchColor(matchScore)} bg-background/90 backdrop-blur-sm px-3 py-1 font-bold`}>
-                <TrendingUp className="w-3 h-3 mr-1" />
-                {matchScore}% Match
-              </Badge>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge className={`${matchLabel.color} bg-background/90 backdrop-blur-sm px-3 py-1 font-bold cursor-help`}>
+                      <TrendingUp className="w-3 h-3 mr-1" />
+                      {matchLabel.label} • {matchScore}%
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">{matchLabel.description}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Based on budget, location, and room type
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
 
@@ -72,13 +81,16 @@ export const DormMatchCard = ({ dorm, index }: DormMatchCardProps) => {
             </div>
 
             {/* Match Reasons */}
-            {dorm.matchReasons && dorm.matchReasons.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {dorm.matchReasons.slice(0, 3).map((reason: string, idx: number) => (
-                  <Badge key={idx} variant="secondary" className="text-xs">
-                    {reason}
-                  </Badge>
-                ))}
+            {dorm.reasoning && (
+              <p className="text-sm text-muted-foreground italic">
+                {dorm.reasoning}
+              </p>
+            )}
+            
+            {/* Sub-scores for debug */}
+            {dorm.subScores && (
+              <div className="text-[10px] text-muted-foreground">
+                Location: {dorm.subScores.location_score}% • Budget: {dorm.subScores.budget_score}% • Room: {dorm.subScores.room_type_score}%
               </div>
             )}
 
