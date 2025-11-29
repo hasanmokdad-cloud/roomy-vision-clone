@@ -73,6 +73,7 @@ const StudentTours = lazy(() => import("./pages/StudentTours"));
 const AdminChats = lazy(() => import("./pages/admin/AdminChats"));
 const AdminChatView = lazy(() => import("./pages/admin/AdminChatView"));
 const AdminChatAnalytics = lazy(() => import("./pages/admin/AdminChatAnalytics"));
+const AdminAiMatchLogs = lazy(() => import("./pages/admin/AdminAiMatchLogs"));
 const PersonalityTest = lazy(() => import("./pages/PersonalityTest"));
 const CompatibilityTest = lazy(() => import("./pages/CompatibilityTest"));
 const AdminPersonalityInsights = lazy(() => import("./pages/admin/AdminPersonalityInsights"));
@@ -223,6 +224,7 @@ const AppRoutes = () => {
           <Route path="/admin/personality-insights" element={<ProtectedRoute element={<AdminPersonalityInsights />} requiredRole="admin" />} />
           <Route path="/admin/claims" element={<ProtectedRoute element={<AdminDormClaims />} requiredRole="admin" />} />
           <Route path="/admin/logs" element={<ProtectedRoute element={<AdminLogs />} requiredRole="admin" />} />
+          <Route path="/admin/ai-match-logs" element={<ProtectedRoute element={<AdminAiMatchLogs />} requiredRole="admin" />} />
           <Route path="/admin/notifications" element={<ProtectedRoute element={<AdminNotifications />} requiredRole="admin" />} />
           <Route path="/admin/settings" element={<ProtectedRoute element={<AdminSettings />} requiredRole="admin" />} />
             <Route path="/admin/chats" element={<ProtectedRoute element={<AdminChats />} requiredRole="admin" />} />

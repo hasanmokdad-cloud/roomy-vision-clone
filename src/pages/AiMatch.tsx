@@ -11,8 +11,6 @@ import { DormMatchCard } from "@/components/ai-match/DormMatchCard";
 import { RoommateMatchCard } from "@/components/ai-match/RoommateMatchCard";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Home, Users, Brain } from "lucide-react";
-import { rankDorms } from "@/ai-engine/recommendationModel";
-import { useRoommateMatch } from "@/hooks/useRoommateMatch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { shouldShowCompatibilityScore, isVipPlan, type AiMatchPlan } from "@/utils/tierLogic";
 import { TierSelectionCard } from "@/components/ai-match/TierSelectionCard";
@@ -36,12 +34,6 @@ const AiMatch = () => {
   const [matches, setMatches] = useState<any[]>([]);
   const [aiInsights, setAiInsights] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [sessionId] = useState(crypto.randomUUID());
-
-  // Get roommate matches using the hook
-  const { loading: roommateLoading, matches: roommateMatches } = useRoommateMatch(
-    matchMode === 'roommates' ? userId || undefined : undefined
-  );
 
   // Check authentication and load profile
   useEffect(() => {
@@ -159,25 +151,11 @@ const AiMatch = () => {
     }
   }, [searchParams, studentProfile]);
 
-  // Fetch matches when mode changes
+  // Fetch matches when profile is complete
   useEffect(() => {
-    if (profileStatus === 'complete' && studentProfile) {
-      if (matchMode === 'dorms') {
-        findDormMatches(studentProfile);
-      } else {
-        // Roommate matches are handled by the hook
-        if (!roommateLoading) {
-          if (roommateMatches && roommateMatches.length > 0) {
-            setMatches(roommateMatches);
-            fetchAIInsights(studentProfile, roommateMatches, 'roommates');
-          } else {
-            setMatches([]);
-            setAiInsights('No compatible roommates found at the moment. Try updating your preferences!');
-          }
-        }
-      }
-    }
-  }, [matchMode, profileStatus, studentProfile, roommateMatches, roommateLoading]);
+    if (profileStatus !== 'complete' || !userId || !studentProfile) return;
+    fetchMatches();
+  }, [profileStatus, userId, studentProfile, activeMode, matchMode]);
 
   // Generate match reasons for dorms
   const generateDormMatchReasons = (dorm: any, profile: any): string[] => {
@@ -213,57 +191,34 @@ const AiMatch = () => {
     return reasons.slice(0, 3);
   };
 
-  // Find and rank dorm matches
-  const findDormMatches = async (profile: any) => {
+  // Fetch matches using AI Core
+  const fetchMatches = async () => {
     setLoading(true);
 
     try {
-      // 1. Fetch verified dorms
-      const { data: dorms, error: dormsError } = await supabase
-        .from('dorms')
-        .select('*')
-        .eq('verification_status', 'Verified')
-        .eq('available', true);
+      const { data, error } = await supabase.functions.invoke('roomy-ai-core', {
+        body: {
+          mode: activeMode,
+          match_tier: selectedPlan,
+          personality_enabled: studentProfile?.enable_personality_matching || false,
+          limit: matchMode === 'dorms' ? 10 : undefined,
+          context: {}
+        }
+      });
 
-      if (dormsError) throw dormsError;
+      if (error) throw error;
 
-      // 2. Fetch engagement signals
-      const { data: signals } = await supabase
-        .from('dorm_engagement_view')
-        .select('*');
-
-      const signalsMap = signals?.reduce((acc, s) => ({ ...acc, [s.dorm_id]: s }), {}) || {};
-
-      // 3. Build user profile for ranking
-      const userProfile = {
-        budget: profile.budget,
-        preferred_university: profile.university || profile.preferred_university,
-        favorite_areas: profile.favorite_areas || (profile.preferred_housing_area ? [profile.preferred_housing_area] : []),
-        preferred_room_types: profile.preferred_room_types || (profile.room_type ? [profile.room_type] : []),
-        preferred_amenities: profile.preferred_amenities || [],
-        ai_confidence_score: profile.ai_confidence_score || 75
-      };
-
-      // 4. Rank dorms using recommendation engine
-      const ranked = rankDorms(dorms || [], userProfile, signalsMap);
-      const top10 = ranked.slice(0, 10);
-
-      // 5. Add match reasons to each dorm
-      const withReasons = top10.map(dorm => ({
-        ...dorm,
-        matchReasons: generateDormMatchReasons(dorm, profile)
-      }));
-
-      setMatches(withReasons);
-
-      // 6. Get AI insights
-      await fetchAIInsights(profile, withReasons, 'dorms');
+      if (data.matches) {
+        setMatches(data.matches);
+        setAiInsights(data.insights_banner || '');
+      }
 
     } catch (error) {
-      console.error('Error finding dorm matches:', error);
+      console.error('Error fetching matches:', error);
+      setAiInsights('Roomy AI is temporarily unavailable. Showing cached results.');
       toast({
         title: "Error",
-        description: "Failed to load dorm matches",
+        description: "Failed to load matches. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -271,74 +226,26 @@ const AiMatch = () => {
     }
   };
 
-  // Fetch AI insights from Gemini
-  const fetchAIInsights = async (profile: any, matchList: any[], mode: MatchMode) => {
-    try {
-      let prompt = '';
-
-      if (mode === 'dorms') {
-        const topDorms = matchList.slice(0, 3).map(d => d.dorm_name || d.name).join(', ');
-        prompt = `You are Roomy AI, a friendly Lebanese student housing assistant. Based on this student's profile:
-- Budget: $${profile.budget || 'flexible'}/month
-- University: ${profile.university || 'not specified'}
-- Preferred area: ${profile.preferred_housing_area || profile.favorite_areas?.[0] || 'flexible'}
-- Room type: ${profile.room_type || 'any'}
-
-Top matches: ${topDorms}
-
-In 2-3 friendly, conversational sentences, explain why these dorms are great fits for them. Be warm and encouraging.`;
-      } else {
-        const topRoommates = matchList.slice(0, 3).map(r => r.full_name).join(', ');
-        prompt = `You are Roomy AI, a friendly Lebanese student housing assistant. Based on this student's profile and their top 3 roommate matches (${topRoommates}), explain in 2-3 friendly sentences why these people would be compatible roommates. Focus on shared universities, similar budgets, and compatible preferences.`;
-      }
-
-      const { data, error } = await supabase.functions.invoke('roomy-chat', {
-        body: { message: prompt, userId, sessionId }
-      });
-
-      if (error) throw error;
-
-      setAiInsights(data?.response || 'AI insights are currently unavailable, but we found great matches for you!');
-    } catch (error) {
-      console.error('Error fetching AI insights:', error);
-      setAiInsights('We found great matches for you based on your preferences!');
+  // Update plan and re-fetch matches
+  const handlePlanChange = async (plan: AiMatchPlan) => {
+    setSelectedPlan(plan);
+    setUserPlan(plan);
+    
+    if (userId) {
+      await supabase
+        .from('students')
+        .update({ ai_match_plan: plan })
+        .eq('user_id', userId);
     }
+    
+    // Re-fetch matches with new tier
+    fetchMatches();
   };
 
   // Handle mode toggle
   const handleModeChange = (value: string) => {
     if (value) {
       setMatchMode(value as MatchMode);
-    }
-  };
-
-  // Handle plan change with persistence
-  const handlePlanChange = async (plan: AiMatchPlan) => {
-    setSelectedPlan(plan);
-    setUserPlan(plan);
-    
-    // Save to database
-    if (userId) {
-      try {
-        const { error } = await supabase
-          .from('students')
-          .update({ ai_match_plan: plan })
-          .eq('user_id', userId);
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Plan Updated",
-          description: `Switched to ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan`,
-        });
-      } catch (error) {
-        console.error('Error updating plan:', error);
-        toast({
-          title: "Error",
-          description: "Failed to update plan. Please try again.",
-          variant: "destructive"
-        });
-      }
     }
   };
 
@@ -439,10 +346,10 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
         )}
 
         {/* Loading State */}
-        {(loading || (matchMode === 'roommates' && roommateLoading)) && <LoadingState />}
+        {loading && <LoadingState />}
 
         {/* Results */}
-        {!loading && !(matchMode === 'roommates' && roommateLoading) && matches.length > 0 && (
+        {!loading && matches.length > 0 && (
           <>
             {/* AI Insights */}
             {aiInsights && (
@@ -501,7 +408,7 @@ In 2-3 friendly, conversational sentences, explain why these dorms are great fit
         )}
 
         {/* No Matches */}
-        {!loading && !(matchMode === 'roommates' && roommateLoading) && matches.length === 0 && (
+        {!loading && matches.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground text-lg">
               No matches found. Try updating your preferences in your profile.
