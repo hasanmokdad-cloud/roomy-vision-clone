@@ -201,10 +201,6 @@ export default function Messages() {
   const touchStartTimeRef = useRef<number>(0);
   const touchStartPosRef = useRef({ x: 0, y: 0 });
 
-  // Debug log for cache verification
-  useEffect(() => {
-    console.log('[Messages] Component mounted - version 3.0 with typing & status');
-  }, []);
 
   // Handle auto-open from navigation state
   useEffect(() => {
@@ -260,24 +256,14 @@ export default function Messages() {
         const initialMessage = location.state.initialMessage || 'Hi there!';
         const roomPreview = location.state.roomPreview;
 
-        console.log('🎯 Opening conversation with:', { 
-          targetUserId, 
-          currentUserId: userId,
-          hasRoomPreview: !!roomPreview 
-        });
-
         // Get current user's student profile
-        console.log('📋 Fetching student profile for user_id:', userId);
         const { data: student, error: studentError } = await supabase
           .from('students')
           .select('id')
           .eq('user_id', userId)
           .maybeSingle();
 
-        console.log('📋 Student query result:', { student, studentError });
-
         if (!student) {
-          console.error('❌ No student profile found for user:', userId);
           toast({
             title: 'Error',
             description: 'Could not find your student profile',
@@ -289,19 +275,14 @@ export default function Messages() {
         let conversationId: string | null = null;
 
         // Check if target is an owner
-        console.log('🔍 Checking if target is an owner:', targetUserId);
         const { data: targetOwner, error: ownerError } = await supabase
           .from('owners')
           .select('id')
           .eq('user_id', targetUserId)
           .maybeSingle();
 
-        console.log('🔍 Owner query result:', { targetOwner, ownerError });
-
         if (targetOwner) {
           // Student → Owner conversation
-          console.log('🔍 Checking for existing conversation between student:', student.id, 'and owner:', targetOwner.id);
-          
           const { data: existingConv, error: convCheckError } = await supabase
             .from('conversations')
             .select('id')
@@ -310,7 +291,6 @@ export default function Messages() {
             .maybeSingle();
 
           if (convCheckError) {
-            console.error('❌ Error checking conversation:', convCheckError);
             toast({
               title: 'Error',
               description: 'Failed to check existing conversation',
@@ -322,17 +302,8 @@ export default function Messages() {
 
           if (existingConv) {
             conversationId = existingConv.id;
-            console.log('✅ Found existing conversation:', conversationId);
           } else {
             // Create new student-owner conversation
-            console.log('📝 Creating new conversation with data:', {
-              student_id: student.id,
-              owner_id: targetOwner.id,
-              user_a_id: userId,
-              user_b_id: targetUserId,
-              dorm_id: roomPreview?.dormId || null
-            });
-            
             const { data: newConv, error: createError } = await supabase
               .from('conversations')
               .insert({
@@ -347,13 +318,6 @@ export default function Messages() {
               .single();
 
             if (createError) {
-              console.error('❌ Error creating conversation:', {
-                error: createError,
-                code: createError.code,
-                message: createError.message,
-                details: createError.details,
-                hint: createError.hint
-              });
               toast({
                 title: 'Error',
                 description: 'Failed to create conversation with owner',
@@ -365,16 +329,12 @@ export default function Messages() {
             
             if (newConv) {
               conversationId = newConv.id;
-              console.log('✅ Created new conversation:', conversationId);
               
               // Reload conversations list to show the new conversation
-              console.log('🔄 Reloading conversations list...');
               await loadConversations();
-              console.log('✅ Conversations reloaded');
               
               // Wait for UI to update, then select the conversation
               setTimeout(() => {
-                console.log('🎯 Setting active conversation:', conversationId);
                 setSelectedConversation(conversationId);
               }, 300);
             }
@@ -415,7 +375,6 @@ export default function Messages() {
         }
 
         if (conversationId) {
-          console.log('📤 Loading conversation and sending initial message');
           setSelectedConversation(conversationId);
 
           // Send initial message FIRST with room preview metadata if provided
@@ -433,14 +392,12 @@ export default function Messages() {
             }).select('id').single();
 
             if (messageError) {
-              console.error('❌ Error sending message:', messageError);
               toast({
                 title: 'Error',
                 description: 'Failed to send initial message',
                 variant: 'destructive'
               });
             } else {
-              console.log('✅ Message sent successfully:', messageData?.id);
               toast({
                 title: 'Success',
                 description: 'Conversation started with owner',
@@ -451,7 +408,6 @@ export default function Messages() {
           // THEN load messages to display them immediately
           await loadMessages(conversationId);
         } else {
-          console.error('❌ No conversation ID available');
           toast({
             title: 'Error',
             description: 'Failed to start conversation',
