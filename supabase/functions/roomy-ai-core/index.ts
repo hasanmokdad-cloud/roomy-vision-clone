@@ -127,6 +127,19 @@ serve(async (req) => {
       processing_time_ms: Date.now() - startTime
     });
 
+    // Log AI event for learning
+    await supabase.from('ai_events').insert({
+      user_id: user.id,
+      event_type: 'match',
+      payload: {
+        mode,
+        tier: effectivePlan.tier,
+        personality_used: usePersonality,
+        result_count: matches.length,
+        processing_time_ms: Date.now() - startTime
+      }
+    });
+
     return new Response(
       JSON.stringify({
         ai_mode: mode,
@@ -229,13 +242,26 @@ async function fetchDormMatches(supabase: any, student: any, context: any = {}) 
   // Only include dorms that have available rooms
   const dormsWithAvailableRooms = dormsWithRooms.filter(d => d.hasAvailableRooms);
 
-  // Pre-score dorms with sub-scores
-  return dormsWithAvailableRooms.map((dorm: any) => {
+  // Pre-score dorms with sub-scores + feedback boost
+  const scoredDorms = await Promise.all(dormsWithAvailableRooms.map(async (dorm: any) => {
     const locationScore = calculateLocationScore(dorm, student);
     const budgetScore = calculateBudgetScore(dorm, student);
     const roomTypeScore = calculateRoomTypeScore(dorm, student);
     const amenitiesScore = calculateAmenitiesScore(dorm, student);
-    const overallScore = calculateDormScore(dorm, student);
+    let overallScore = calculateDormScore(dorm, student);
+
+    // Apply feedback boost from historical data
+    const { data: feedbacks } = await supabase
+      .from('ai_feedback')
+      .select('helpful_score')
+      .eq('ai_action', 'match_dorm')
+      .eq('target_id', dorm.id);
+    
+    if (feedbacks && feedbacks.length > 0) {
+      const avgScore = feedbacks.reduce((sum: number, f: any) => sum + f.helpful_score, 0) / feedbacks.length;
+      const feedbackBoost = (avgScore - 3) * 5; // Range: -10 to +10
+      overallScore = Math.min(100, Math.max(0, overallScore + feedbackBoost));
+    }
 
     return {
       ...dorm,
@@ -246,10 +272,13 @@ async function fetchDormMatches(supabase: any, student: any, context: any = {}) 
         budget_score: budgetScore,
         room_type_score: roomTypeScore,
         amenities_score: amenitiesScore,
-        ai_heuristics_score: 60
+        ai_heuristics_score: 60,
+        feedback_boost: feedbacks?.length || 0
       }
     };
-  }).sort((a: any, b: any) => b.score - a.score);
+  }));
+  
+  return scoredDorms.sort((a: any, b: any) => b.score - a.score);
 }
 
 async function fetchRoommateMatches(
@@ -444,43 +473,58 @@ function calculateAmenitiesScore(dorm: any, student: any): number {
 }
 
 function calculateCompatibilityScore(student: any, candidate: any, usePersonality: boolean = false, matchTier: string = 'basic'): number {
+  // Phase 11: Enhanced Personality Matching Formula
   const lifestyleScore = calculateLifestyleScore(student, candidate);
   const cleanlinessScore = calculateCleanlinessScore(student, candidate);
   const studyFocusScore = calculateStudyFocusScore(student, candidate);
   
-  // Calculate personality score if enabled
-  let personalityScore = 0;
-  let personalityWeight = 0;
+  // Calculate additional compatibility metrics
+  const sleepScore = calculateSleepScheduleScore(
+    student.personality_sleep_schedule,
+    candidate.personality_sleep_schedule
+  );
+  const noiseScore = calculateNoiseCompatibility(
+    student.personality_noise_tolerance,
+    candidate.personality_noise_tolerance,
+    student.personality_environment || 'moderate',
+    candidate.personality_environment || 'moderate'
+  );
+  const socialScore = calculateSocialStyleScore(
+    student.personality_introversion_extroversion,
+    candidate.personality_introversion_extroversion
+  );
+  const petsScore = student.personality_pets === candidate.personality_pets ? 100 : 50;
+  const guestsScore = Math.abs((student.personality_guest_policy || 0) - (candidate.personality_guest_policy || 0)) <= 2 ? 80 : 50;
   
+  // Calculate budget closeness
+  const budgetScore = student.budget && candidate.budget
+    ? Math.max(0, 100 - Math.abs(student.budget - candidate.budget) / Math.max(student.budget, candidate.budget) * 100)
+    : 50;
+  
+  // Phase 11 weights: More balanced distribution
   if (usePersonality && student.personality_test_completed && candidate.personality_test_completed) {
-    const personalityResult = calculatePersonalityCompatibility(student, candidate);
-    personalityScore = personalityResult.overall * 100;
+    // Use advanced personality-based scoring
+    const overall = 
+      (lifestyleScore * 0.35) +
+      (cleanlinessScore * 0.20) +
+      (sleepScore * 0.10) +
+      (noiseScore * 0.10) +
+      (socialScore * 0.10) +
+      (petsScore * 0.05) +
+      (guestsScore * 0.05) +
+      (budgetScore * 0.05);
     
-    // Set weight based on tier
-    if (matchTier === 'advanced') {
-      personalityWeight = 0.25;
-    } else if (matchTier === 'vip') {
-      personalityWeight = 0.45;
-    }
+    return Math.min(100, Math.round(overall));
+  } else {
+    // Basic tier: simplified formula without personality
+    const overall = 
+      (lifestyleScore * 0.40) +
+      (cleanlinessScore * 0.30) +
+      (studyFocusScore * 0.20) +
+      (budgetScore * 0.10);
+    
+    return Math.min(100, Math.round(overall));
   }
-  
-  // Adjust other weights when personality is used
-  const baseWeightMultiplier = 1 - personalityWeight;
-  const lifestyleWeight = 0.30 * baseWeightMultiplier;
-  const cleanlinessWeight = 0.15 * baseWeightMultiplier;
-  const studyWeight = 0.15 * baseWeightMultiplier;
-  const locationWeight = 0.15 * baseWeightMultiplier;
-  const budgetWeight = 0.10 * baseWeightMultiplier;
-  
-  const overall = 
-    (lifestyleScore * lifestyleWeight) +
-    (cleanlinessScore * cleanlinessWeight) +
-    (studyFocusScore * studyWeight) +
-    (50 * locationWeight) + // Default location score
-    (50 * budgetWeight) + // Default budget score
-    (personalityScore * personalityWeight);
-
-  return Math.min(100, Math.round(overall));
 }
 
 // New: Calculate personality compatibility with question-by-question scoring

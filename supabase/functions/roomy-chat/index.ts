@@ -149,6 +149,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const requestStartTime = Date.now();
   console.log('[roomy-chat] Request received');
   try {
     // Parse and validate request body
@@ -775,6 +776,24 @@ Present results engagingly. If match scores exist, mention why dorms are great f
               console.log("[roomy-chat] Logged conversation to ai_chat_sessions");
             } catch (logError) {
               console.error("[roomy-chat] Failed to log conversation:", logError);
+            }
+
+            // Log AI event for chat interaction
+            if (userId && !userId.startsWith('guest_')) {
+              try {
+                await supabase.from('ai_events').insert({
+                  user_id: userId,
+                  event_type: 'chat',
+                  payload: {
+                    query: message.substring(0, 100),
+                    response_length: fullResponse.length,
+                    context_used: Object.keys(filters).length > 0,
+                    processing_time_ms: Date.now() - requestStartTime
+                  }
+                });
+              } catch (eventError) {
+                console.error("[roomy-chat] Failed to log AI event:", eventError);
+              }
             }
           }
           

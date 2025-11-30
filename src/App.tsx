@@ -79,6 +79,7 @@ const AdminAiDebug = lazy(() => import("./pages/admin/AdminAiDebug"));
 const PersonalityTest = lazy(() => import("./pages/PersonalityTest"));
 const CompatibilityTest = lazy(() => import("./pages/CompatibilityTest"));
 const AdminPersonalityInsights = lazy(() => import("./pages/admin/AdminPersonalityInsights"));
+const AdminAiDiagnostics = lazy(() => import("./pages/admin/AdminAiDiagnostics"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -229,6 +230,7 @@ const AppRoutes = () => {
           <Route path="/admin/logs" element={<ProtectedRoute element={<AdminLogs />} requiredRole="admin" />} />
           <Route path="/admin/ai-match-logs" element={<ProtectedRoute element={<AdminAiMatchLogs />} requiredRole="admin" />} />
           <Route path="/admin/ai-debug" element={<ProtectedRoute element={<AdminAiDebug />} requiredRole="admin" />} />
+          <Route path="/admin/ai-diagnostics" element={<ProtectedRoute element={<AdminAiDiagnostics />} requiredRole="admin" />} />
           <Route path="/admin/notifications" element={<ProtectedRoute element={<AdminNotifications />} requiredRole="admin" />} />
           <Route path="/admin/settings" element={<ProtectedRoute element={<AdminSettings />} requiredRole="admin" />} />
             <Route path="/admin/chats" element={<ProtectedRoute element={<AdminChats />} requiredRole="admin" />} />

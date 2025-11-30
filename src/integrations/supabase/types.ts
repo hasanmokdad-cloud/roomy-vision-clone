@@ -83,6 +83,63 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_events: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          payload: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          payload?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      ai_feedback: {
+        Row: {
+          ai_action: string
+          context: Json | null
+          created_at: string | null
+          feedback_text: string | null
+          helpful_score: number
+          id: string
+          target_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          ai_action: string
+          context?: Json | null
+          created_at?: string | null
+          feedback_text?: string | null
+          helpful_score: number
+          id?: string
+          target_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          ai_action?: string
+          context?: Json | null
+          created_at?: string | null
+          feedback_text?: string | null
+          helpful_score?: number
+          id?: string
+          target_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       ai_match_logs: {
         Row: {
           created_at: string | null
