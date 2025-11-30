@@ -20,6 +20,7 @@ import {
   FileText,
   Key,
   MessageSquare,
+  Activity,
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -403,13 +404,26 @@ export default function AdminDashboard() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate("/admin/chats")}
+            onClick={() => navigate("/admin/chats/analytics")}
             className="relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br from-pink-500 to-rose-400 text-white shadow-xl hover:shadow-2xl transition-all group"
           >
             <div className="flex flex-col items-center gap-4">
               <MessageSquare className="w-12 h-12" />
-              <h3 className="text-xl font-bold">View Chats</h3>
-              <p className="text-sm opacity-90">All conversations</p>
+              <h3 className="text-xl font-bold">Chat Analytics</h3>
+              <p className="text-sm opacity-90">View chat metrics</p>
+            </div>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/admin/ai-diagnostics")}
+            className="relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br from-indigo-500 to-blue-400 text-white shadow-xl hover:shadow-2xl transition-all group"
+          >
+            <div className="flex flex-col items-center gap-4">
+              <Activity className="w-12 h-12" />
+              <h3 className="text-xl font-bold">AI Diagnostics</h3>
+              <p className="text-sm opacity-90">Performance & feedback</p>
             </div>
           </motion.button>
         </div>
