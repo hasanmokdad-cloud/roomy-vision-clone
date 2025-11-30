@@ -127,6 +127,12 @@ export const ChatbotBubble = () => {
       return;
     }
     
+    // Hide on /messages for all mobile users (students and admins)
+    if (isMobile && location.pathname === '/messages') {
+      setShouldShow(false);
+      return;
+    }
+    
     // Students on mobile: only on /listings page
     if (userRole === 'student' && isMobile) {
       setShouldShow(location.pathname === '/listings');
@@ -167,30 +173,29 @@ export const ChatbotBubble = () => {
     setIsLoading(true);
 
     try {
-      const res = await fetch("https://ujdkllljyjekglagjiyc.functions.supabase.co/roomy-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('roomy-chat', {
+        body: {
           message: userMessage,
           userId,
           sessionId,
-        }),
+        }
       });
 
-      const data = await res.json();
-      console.log("✅ Gemini response:", data);
+      if (error) {
+        throw error;
+      }
 
-      if (!res.ok || data.error) {
+      if (data.error) {
         throw new Error(data.error || "AI service unavailable.");
       }
 
-      const responseText = data.response || "Sorry, I could not process that request.";
+      const responseText = data?.response || "Sorry, I could not process that request.";
 
       // ✅ Update memory session data
-      if (data.sessionId) setSessionId(data.sessionId);
-      if (typeof data.hasContext === "boolean") setHasContext(data.hasContext);
+      if (data?.sessionId) setSessionId(data.sessionId);
+      if (typeof data?.hasContext === "boolean") setHasContext(data.hasContext);
 
-      if (data.sessionReset) {
+      if (data?.sessionReset) {
         setMessages([
           {
             role: "assistant",
