@@ -136,11 +136,18 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         return;
       }
 
-      const { data } = await supabase
+      let query = supabase
         .from('rooms')
         .select('id, name, type, capacity, capacity_occupied')
         .eq('dorm_id', currentDormId)
         .order('name');
+      
+      // CRITICAL: If seeking roommate for current place, only show multi-bed rooms (capacity > 1)
+      if (needsRoommateCurrentPlace && accommodationStatus === 'have_dorm') {
+        query = query.gt('capacity', 1);
+      }
+
+      const { data } = await query;
       
       if (data) {
         setAvailableRooms(data);
@@ -148,7 +155,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
     };
 
     loadRoomsForDorm();
-  }, [currentDormId]);
+  }, [currentDormId, needsRoommateCurrentPlace, accommodationStatus]);
 
   // Handle governorate selection
   useEffect(() => {
