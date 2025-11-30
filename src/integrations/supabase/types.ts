@@ -1203,6 +1203,69 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string | null
+          id: string
+          match_plan_type: string | null
+          payment_type: string
+          provider: string | null
+          raw_payload: Json | null
+          reservation_id: string | null
+          status: string | null
+          student_id: string
+          updated_at: string | null
+          whish_payment_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          match_plan_type?: string | null
+          payment_type: string
+          provider?: string | null
+          raw_payload?: Json | null
+          reservation_id?: string | null
+          status?: string | null
+          student_id: string
+          updated_at?: string | null
+          whish_payment_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          match_plan_type?: string | null
+          payment_type?: string
+          provider?: string | null
+          raw_payload?: Json | null
+          reservation_id?: string | null
+          status?: string | null
+          student_id?: string
+          updated_at?: string | null
+          whish_payment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       personality_questions: {
         Row: {
           category: string
@@ -1332,6 +1395,90 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reservations: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string | null
+          deposit_amount: number
+          dorm_id: string
+          id: string
+          meta: Json | null
+          paid_at: string | null
+          reservation_fee_amount: number
+          room_id: string
+          status: string
+          student_id: string
+          whish_checkout_url: string | null
+          whish_payment_id: string | null
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string | null
+          deposit_amount: number
+          dorm_id: string
+          id?: string
+          meta?: Json | null
+          paid_at?: string | null
+          reservation_fee_amount: number
+          room_id: string
+          status?: string
+          student_id: string
+          whish_checkout_url?: string | null
+          whish_payment_id?: string | null
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string | null
+          deposit_amount?: number
+          dorm_id?: string
+          id?: string
+          meta?: Json | null
+          paid_at?: string | null
+          reservation_fee_amount?: number
+          room_id?: string
+          status?: string
+          student_id?: string
+          whish_checkout_url?: string | null
+          whish_payment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "reservations_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       review_helpful_votes: {
         Row: {
@@ -1897,6 +2044,54 @@ export type Database = {
           view_count?: number | null
         }
         Relationships: []
+      }
+      student_match_plans: {
+        Row: {
+          expires_at: string
+          id: string
+          meta: Json | null
+          payment_id: string | null
+          plan_type: string
+          started_at: string | null
+          status: string | null
+          student_id: string
+        }
+        Insert: {
+          expires_at: string
+          id?: string
+          meta?: Json | null
+          payment_id?: string | null
+          plan_type: string
+          started_at?: string | null
+          status?: string | null
+          student_id: string
+        }
+        Update: {
+          expires_at?: string
+          id?: string
+          meta?: Json | null
+          payment_id?: string | null
+          plan_type?: string
+          started_at?: string | null
+          status?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_match_plans_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_match_plans_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       students: {
         Row: {

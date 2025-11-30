@@ -48,6 +48,7 @@ const BulkImport = lazy(() => import("./pages/owner/BulkImport"));
 const RoleSelection = lazy(() => import("./pages/RoleSelection"));
 const StudentProfile = lazy(() => import("./pages/StudentProfile"));
 const StudentMatch = lazy(() => import("./pages/StudentMatch"));
+const ReservationConfirmation = lazy(() => import("./pages/ReservationConfirmation"));
 const BoostProfile = lazy(() => import("./pages/BoostProfile"));
 const BulkRoomOps = lazy(() => import("./pages/owner/BulkRoomOps"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
@@ -194,6 +195,7 @@ const AppRoutes = () => {
           <Route path="/personality" element={<ProtectedRoute element={<PersonalityTest />} requiredRole="student" />} />
           <Route path="/compatibility-test" element={<ProtectedRoute element={<CompatibilityTest />} requiredRole="student" />} />
           <Route path="/ai-chat" element={<ProtectedRoute element={<MobileSwipeLayout><AiChat /></MobileSwipeLayout>} />} />
+          <Route path="/reservation/confirmation" element={<ProtectedRoute element={<ReservationConfirmation />} requiredRole="student" />} />
 
           {/* Owner Routes - Admins can access all owner routes */}
           <Route path="/owner" element={<ProtectedRoute element={<OwnerHome />} allowedRoles={["owner", "admin"]} />} />

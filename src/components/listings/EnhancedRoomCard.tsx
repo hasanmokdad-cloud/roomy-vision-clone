@@ -8,6 +8,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Calendar, MessageSquare, Home, Users, Heart, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BookingRequestModal } from '@/components/bookings/BookingRequestModal';
+import { ReservationConfirmModal } from '@/components/reservations/ReservationConfirmModal';
 import { motion } from 'framer-motion';
 
 interface EnhancedRoomCardProps {
@@ -16,7 +17,9 @@ interface EnhancedRoomCardProps {
     name: string;
     type: string;
     price: number;
+    deposit?: number;
     capacity?: number;
+    capacity_occupied?: number;
     available?: boolean;
     images?: string[];
     description?: string;
@@ -41,8 +44,13 @@ export function EnhancedRoomCard({
   const { toast } = useToast();
   const navigate = useNavigate();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [reservationModalOpen, setReservationModalOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const isUnavailable = room.available === false;
+  const isFull = room.capacity && room.capacity_occupied ? room.capacity_occupied >= room.capacity : false;
+  const capacityDisplay = room.capacity && room.capacity_occupied !== undefined 
+    ? `${room.capacity_occupied}/${room.capacity}` 
+    : undefined;
 
   // Check if room is saved on mount
   useEffect(() => {
@@ -210,14 +218,22 @@ export function EnhancedRoomCard({
     }
   };
 
-  const handleReserve = (e: React.MouseEvent) => {
+  const handleReserve = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isUnavailable) return;
+    if (isUnavailable || isFull) return;
     
-    toast({
-      title: 'Coming Soon',
-      description: 'Room reservation feature will be available soon!',
-    });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({ 
+        title: 'Sign in required', 
+        description: 'Please sign in to reserve a room',
+        variant: 'destructive' 
+      });
+      navigate('/auth');
+      return;
+    }
+
+    setReservationModalOpen(true);
   };
 
   return (
@@ -288,13 +304,23 @@ export function EnhancedRoomCard({
               )}
 
               {/* Availability Badge */}
-              <div className="absolute top-3 left-3 z-40">
+              <div className="absolute top-3 left-3 z-40 flex flex-col gap-2">
                 <Badge 
                   variant={isUnavailable ? "secondary" : "default"}
                   className={isUnavailable ? "bg-muted" : "bg-primary text-primary-foreground"}
                 >
                   {isUnavailable ? '🔒 Reserved' : '✓ Available'}
                 </Badge>
+                {capacityDisplay && (
+                  <Badge 
+                    variant={isFull ? "destructive" : "secondary"}
+                    className="bg-background/90 text-foreground border"
+                  >
+                    <Users className="w-3 h-3 mr-1" />
+                    {capacityDisplay}
+                    {isFull && ' (Full)'}
+                  </Badge>
+                )}
               </div>
 
               {/* Quick Actions Overlay - Appears on Hover */}
@@ -398,12 +424,12 @@ export function EnhancedRoomCard({
               </Button>
               <Button
                 onClick={handleReserve}
-                disabled={isUnavailable}
+                disabled={isUnavailable || isFull}
                 size="sm"
                 className="flex-1"
               >
                 <Calendar className="w-4 h-4 mr-2" />
-                Reserve
+                {isFull ? 'Full' : 'Reserve'}
               </Button>
             </div>
           </div>
@@ -417,6 +443,14 @@ export function EnhancedRoomCard({
         dormId={dormId}
         dormName={`${dormName} - ${room.name}`}
         ownerId={ownerId}
+      />
+
+      <ReservationConfirmModal
+        open={reservationModalOpen}
+        onOpenChange={setReservationModalOpen}
+        room={room}
+        dormName={dormName}
+        depositAmount={room.deposit || room.price}
       />
     </>
   );
