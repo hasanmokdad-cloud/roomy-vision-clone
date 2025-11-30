@@ -1,9 +1,10 @@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Home, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Home, AlertCircle, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
-import { createReservationCheckout } from '@/lib/payments/whishClient';
+import { createReservationCheckout, isWhishConfigured } from '@/lib/payments/whishClient';
 import { RESERVATION_FEE_PERCENT } from '@/lib/payments/config';
 import { useToast } from '@/hooks/use-toast';
 
@@ -30,6 +31,7 @@ export function ReservationConfirmModal({
   const [isProcessing, setIsProcessing] = useState(false);
   
   const reservationFee = depositAmount * RESERVATION_FEE_PERCENT;
+  const isPreviewMode = !isWhishConfigured();
 
   const handleConfirm = async () => {
     if (!room.id) {
@@ -75,6 +77,15 @@ export function ReservationConfirmModal({
           </DialogDescription>
         </DialogHeader>
 
+        {isPreviewMode && (
+          <Alert className="border-amber-500/50 bg-amber-500/10">
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <AlertDescription className="text-sm text-amber-700 dark:text-amber-400">
+              <strong>Preview Mode:</strong> Real payments will activate once Whish API keys are configured.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
@@ -87,7 +98,7 @@ export function ReservationConfirmModal({
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Monthly Price</span>
-              <span className="font-medium">${room.price.toFixed(2)}</span>
+              <span className="font-medium">${room.price?.toFixed(2)}</span>
             </div>
           </div>
 
@@ -132,7 +143,7 @@ export function ReservationConfirmModal({
             disabled={isProcessing}
             className="w-full sm:w-auto"
           >
-            {isProcessing ? 'Processing...' : `Pay $${reservationFee.toFixed(2)}`}
+            {isProcessing ? 'Processing...' : isPreviewMode ? 'Continue (Preview)' : `Pay $${reservationFee.toFixed(2)}`}
           </Button>
         </DialogFooter>
       </DialogContent>
