@@ -48,11 +48,10 @@ export const TierSelectionCard = ({ selectedPlan, onPlanChange }: TierSelectionC
               <span className="font-bold text-blue-600 dark:text-blue-400 text-base">
                 Advanced Match — $4.99
               </span>
-              <p className="text-xs text-muted-foreground italic mb-1">(Preview Mode – no payments yet)</p>
               <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                <li>• Up to 3 matches with personality compatibility scores</li>
+                <li>• Up to 3 roommate matches</li>
+                <li>• Personality compatibility scores (if survey completed)</li>
                 <li>• Smarter roommate suggestions based on lifestyle & personality</li>
-                <li>• Premium AI insights with compatibility breakdown</li>
               </ul>
             </Label>
           </div>
@@ -65,12 +64,11 @@ export const TierSelectionCard = ({ selectedPlan, onPlanChange }: TierSelectionC
                 <Crown className="w-4 h-4" />
                 VIP Match — $9.99
               </span>
-              <p className="text-xs text-muted-foreground italic mb-1">(Preview Mode – no payments yet)</p>
               <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                <li>• Unlimited matches with full personality matching</li>
+                <li>• Unlimited roommate matches</li>
+                <li>• Full personality matching</li>
                 <li>• Full compatibility breakdown (sleep, cleanliness, study habits)</li>
-                <li>• Priority roommate suggestions</li>
-                <li>• VIP-exclusive insights & support</li>
+                <li>• Priority roommate suggestions & VIP support</li>
               </ul>
             </Label>
           </div>

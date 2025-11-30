@@ -1,3 +1,6 @@
+import { supabase } from '@/integrations/supabase/client';
+import { PLAN_DURATION_DAYS } from '@/lib/payments/config';
+
 export type AiMatchPlan = 'basic' | 'advanced' | 'vip';
 
 /**
@@ -37,6 +40,41 @@ export const shouldShowCompatibilityScore = (plan: AiMatchPlan): boolean => {
 export const isVipPlan = (plan: AiMatchPlan): boolean => {
   return plan === 'vip';
 };
+
+/**
+ * Check if a plan has expired
+ */
+export const isPlanExpired = (expiresAt: string | null): boolean => {
+  if (!expiresAt) return false;
+  return new Date(expiresAt) < new Date();
+};
+
+/**
+ * Get active plan for a student
+ * Returns the highest tier active (non-expired) plan, or 'basic' as default
+ */
+export async function getActivePlan(studentId: string): Promise<AiMatchPlan> {
+  try {
+    const { data, error } = await supabase
+      .from('student_match_plans')
+      .select('plan_type, expires_at, status')
+      .eq('student_id', studentId)
+      .eq('status', 'active')
+      .gt('expires_at', new Date().toISOString())
+      .order('expires_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) {
+      return 'basic';
+    }
+
+    return data.plan_type as AiMatchPlan;
+  } catch (error) {
+    console.error('Error fetching active plan:', error);
+    return 'basic';
+  }
+}
 
 /**
  * Shuffle array for random matching (used in basic tier)

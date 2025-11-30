@@ -44,3 +44,12 @@ verify_jwt = false
 
 [functions.send-push-notification]
 verify_jwt = false
+
+[functions.roomy-create-reservation-checkout]
+verify_jwt = true
+
+[functions.roomy-create-match-plan-checkout]
+verify_jwt = true
+
+[functions.whish-webhook]
+verify_jwt = false
