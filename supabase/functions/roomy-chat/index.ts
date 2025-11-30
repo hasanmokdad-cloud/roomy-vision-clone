@@ -366,6 +366,24 @@ serve(async (req) => {
       }
     }
     
+    // Check current dorm capacity if student has one
+    let currentDormContext = "";
+    if (studentProfile?.current_dorm_id && studentProfile?.current_room_id) {
+      const { data: currentRoom } = await supabase
+        .from('rooms')
+        .select('*, dorm:dorms(name)')
+        .eq('id', studentProfile.current_room_id)
+        .single();
+      
+      if (currentRoom) {
+        const available = currentRoom.capacity - currentRoom.capacity_occupied;
+        currentDormContext = `\n\nCurrent Dorm Status:\n- Student lives in ${currentRoom.dorm?.name} (Room ${currentRoom.name})\n- Room capacity: ${currentRoom.capacity_occupied}/${currentRoom.capacity} occupied\n- Available spots: ${available}\n`;
+        if (available === 0) {
+          currentDormContext += "- Room is FULL - suggest finding new dorm together if asking about roommates\n";
+        }
+      }
+    }
+
     // Build conversation context from history (last 10 messages)
     const recentHistory = history.slice(-10);
     const conversationContext = recentHistory.length > 0
@@ -630,6 +648,27 @@ CORE PERSONALITY:
 - Use emojis naturally (🏠 💰 🎓 ✨)
 - THINK 10 STEPS AHEAD: Proactively warn about incompatibilities and suggest better options
 
+==== ADVISOR MODE ACTIVATED ====
+
+YOU ARE NOW IN ADVISOR MODE. This means:
+1. When users ask about dorms/roommates → DON'T just answer, RECOMMEND top 3 with reasons
+2. When explaining matches → Provide clear WHY explanations for each recommendation
+3. ALWAYS offer follow-up actions at the end:
+   - "View more like this"
+   - "Show only [gender] dorms"
+   - "Show cheaper options"
+   - "Filter by specific area"
+4. If user asks for "chill roommate who sleeps early" → Use personality matching (if tier allows)
+5. If dorm is near budget limit → Mention it proactively
+6. If gender mismatch detected → Warn IMMEDIATELY before suggesting
+
+FOLLOW-UP SUGGESTIONS FORMAT:
+After answering, ALWAYS include 2-3 actionable follow-ups:
+"💡 What's next?"
+• View more dorms in [area]
+• Show me cheaper options under $X
+• Find roommates in this dorm
+
 KEY CAPABILITIES:
 - Find dorms using live database queries with gender compatibility checks
 - Find compatible roommates based on university, budget, and preferences
@@ -668,6 +707,21 @@ CRITICAL RULES (YOU MUST FOLLOW THESE):
    - Recommend personality test if not completed: "Complete the personality test for better matches!"
    - Suggest tier upgrades for personality matching: "Upgrade to Advanced for compatibility scores"
 
+TIER-AWARE RESPONSES:
+${studentProfile?.ai_match_plan === 'basic' ? `
+- This user has BASIC TIER
+- DO NOT mention personality matching or compatibility scores
+- If they ask about personality: "Personality matching is available with Advanced Match or VIP Match to unlock deeper compatibility insights."
+` : studentProfile?.ai_match_plan === 'advanced' ? `
+- This user has ADVANCED TIER
+- You CAN mention personality factors briefly: "Based on personality factors, your match score is above average"
+- DO NOT provide detailed trait breakdowns (that's VIP only)
+` : `
+- This user has VIP TIER
+- Provide DETAILED personality insights when relevant
+- Example: "You and Ahmed have 85% compatibility based on sleep routines (both early birds), cleanliness preferences (both very organized), and study habits (both focused studiers)"
+`}
+
 CONVERSATIONAL INTELLIGENCE:
 - If you know user preferences, acknowledge them: "I know you prefer single rooms near AUB under $700..."
 - Only ask about missing preferences, not ones you already know
@@ -679,9 +733,10 @@ WHEN USER ASKS:
 - Generic greeting → Offer personalized search based on known preferences
 - New criteria → Update internal understanding and search accordingly
 
+${currentDormContext}
 ${genderEligibilityContext}${profileContext}${conversationContext}${conversationHistoryContext}${dormsContext}${roommatesContext}
 
-Present results engagingly. If match scores exist, mention why dorms are great fits. Keep responses concise but warm.`;
+Present results engagingly. If match scores exist, mention why dorms are great fits. Keep responses concise but warm. Always end with follow-up suggestions.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

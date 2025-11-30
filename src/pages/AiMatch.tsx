@@ -9,6 +9,7 @@ import { LoadingState } from "@/components/ai-match/LoadingState";
 import { AIInsightsCard } from "@/components/ai-match/AIInsightsCard";
 import { DormMatchCard } from "@/components/ai-match/DormMatchCard";
 import { RoommateMatchCard } from "@/components/ai-match/RoommateMatchCard";
+import { RoommateComparison } from "@/components/ai-match/RoommateComparison";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Home, Users, Brain, Bug } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -37,6 +38,7 @@ const AiMatch = () => {
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
+  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
   // Check authentication and load profile
   useEffect(() => {
@@ -208,7 +210,7 @@ const AiMatch = () => {
   };
 
   // Fetch matches using AI Core
-  const fetchMatches = async () => {
+  const fetchMatches = async (excludeIds?: string[]) => {
     setLoading(true);
 
     try {
@@ -218,7 +220,8 @@ const AiMatch = () => {
           match_tier: selectedPlan,
           personality_enabled: studentProfile?.enable_personality_matching || false,
           limit: matchMode === 'dorms' ? 10 : undefined,
-          context: {}
+          context: {},
+          exclude_ids: excludeIds
         }
       });
 
@@ -240,6 +243,37 @@ const AiMatch = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle match dismissal
+  const handleDismissMatch = async (matchId: string, matchType: 'dorm' | 'roommate') => {
+    // Log negative feedback
+    try {
+      if (userId) {
+        await supabase.from('ai_feedback').insert({
+          user_id: userId,
+          ai_action: matchType === 'dorm' ? 'match_dorm' : 'match_roommate',
+          target_id: matchId,
+          helpful_score: 2, // Low score for dismissal
+          context: { dismissed: true, tier: selectedPlan, mode: activeMode }
+        });
+      }
+    } catch (error) {
+      console.error('Error logging feedback:', error);
+    }
+
+    // Update dismissed IDs and remove from current matches
+    const newDismissedIds = [...dismissedIds, matchId];
+    setDismissedIds(newDismissedIds);
+    setMatches(prev => prev.filter(m => m.id !== matchId));
+
+    // Fetch alternative suggestions
+    toast({
+      title: "Finding alternatives...",
+      description: "Looking for other matches you might like",
+    });
+    
+    await fetchMatches(newDismissedIds);
   };
 
   // Update plan and re-fetch matches
@@ -372,6 +406,14 @@ const AiMatch = () => {
               <AIInsightsCard insights={aiInsights} />
             )}
 
+            {/* Roommate Comparison (only show for roommate mode) */}
+            {matchMode === 'roommates' && matches.length > 0 && (
+              <RoommateComparison 
+                roommates={matches} 
+                matchTier={selectedPlan}
+              />
+            )}
+
             {/* Matches Grid */}
             <div>
               {matchMode === 'roommates' && matches.some(m => m.hasPersonalityMatch) && (
@@ -407,7 +449,12 @@ const AiMatch = () => {
                   : matches
                 ).map((match, index) => (
                   matchMode === 'dorms' ? (
-                    <DormMatchCard key={match.id} dorm={match} index={index} />
+                    <DormMatchCard 
+                      key={match.id} 
+                      dorm={match} 
+                      index={index}
+                      onDismiss={(id) => handleDismissMatch(id, 'dorm')}
+                    />
                   ) : (
                       <RoommateMatchCard 
                         key={match.user_id} 
@@ -416,6 +463,7 @@ const AiMatch = () => {
                         showCompatibilityScore={shouldShowCompatibilityScore(userPlan)}
                         isVip={isVipPlan(userPlan)}
                         matchTier={selectedPlan}
+                        onDismiss={(id) => handleDismissMatch(id, 'roommate')}
                       />
                   )
                 ))}

@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign, Brain, BarChart2, Crown, Info, Lock } from "lucide-react";
+import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign, Brain, BarChart2, Crown, Info, Lock, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MatchBreakdownModal } from "./MatchBreakdownModal";
@@ -17,6 +17,7 @@ interface RoommateMatchCardProps {
   showCompatibilityScore?: boolean;
   isVip?: boolean;
   matchTier?: 'basic' | 'advanced' | 'vip';
+  onDismiss?: (roommateId: string) => void;
 }
 
 export const RoommateMatchCard = ({ 
@@ -24,7 +25,8 @@ export const RoommateMatchCard = ({
   index,
   showCompatibilityScore = true,
   isVip = false,
-  matchTier = 'basic'
+  matchTier = 'basic',
+  onDismiss
 }: RoommateMatchCardProps) => {
   const navigate = useNavigate();
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -56,6 +58,13 @@ export const RoommateMatchCard = ({
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const handleDismiss = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDismiss) {
+      onDismiss(roommate.id);
+    }
   };
 
   return (
@@ -90,6 +99,25 @@ export const RoommateMatchCard = ({
 
             {/* Match Score & Label */}
             <div className="flex flex-col items-end gap-1">
+              {onDismiss && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-6 h-6 hover:bg-destructive hover:text-destructive-foreground -mt-1 -mr-1"
+                        onClick={handleDismiss}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Not interested</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -153,16 +181,34 @@ export const RoommateMatchCard = ({
             )}
           </div>
 
-          {/* Match Reasons */}
-          {roommate.matchReasons && roommate.matchReasons.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {roommate.matchReasons.slice(0, 3).map((reason: string, idx: number) => (
-                <Badge key={idx} variant="secondary" className="text-xs">
-                  {reason}
-                </Badge>
-              ))}
-            </div>
-          )}
+            {/* Match Reasons */}
+            {roommate.matchReasons && roommate.matchReasons.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {roommate.matchReasons.slice(0, 3).map((reason: string, idx: number) => (
+                  <Badge key={idx} variant="secondary" className="text-xs">
+                    {reason}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            
+            {/* NEW: Why You Got This Match Explanations */}
+            {roommate.explanations && roommate.explanations.length > 0 && (
+              <div className="bg-primary/5 p-3 rounded-lg border border-primary/10">
+                <p className="text-xs font-semibold text-primary mb-1.5 flex items-center gap-1">
+                  <Info className="w-3 h-3" />
+                  Why this match?
+                </p>
+                <ul className="space-y-1">
+                  {roommate.explanations.map((explanation: string, idx: number) => (
+                    <li key={idx} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                      <span className="text-primary mt-0.5">•</span>
+                      <span>{explanation}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
           {/* Personality Compatibility - Tier-Based Display */}
           {matchTier === 'basic' && (

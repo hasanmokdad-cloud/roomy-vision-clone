@@ -7,6 +7,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { generateMatchExplanations } from "./explanations.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,7 +23,7 @@ serve(async (req) => {
   console.log('[roomy-ai-core] Request received');
 
   try {
-    const { mode, match_tier, personality_enabled, limit, context } = await req.json();
+    const { mode, match_tier, personality_enabled, limit, context, exclude_ids } = await req.json();
     
     // Get authenticated user
     const authHeader = req.headers.get('Authorization');
@@ -89,7 +90,7 @@ serve(async (req) => {
 
     // Fetch candidates based on mode
     if (mode === 'dorm' || mode === 'combined') {
-      matches = await fetchDormMatches(supabase, student, context);
+      matches = await fetchDormMatches(supabase, student, context, exclude_ids);
     }
 
     if (mode === 'roommate' || mode === 'combined') {
@@ -97,10 +98,17 @@ serve(async (req) => {
         supabase, 
         student, 
         usePersonality, 
-        tierLimit
+        tierLimit,
+        exclude_ids
       );
       matches = mode === 'combined' ? [...matches, ...roommateMatches] : roommateMatches;
     }
+    
+    // Generate detailed explanations for each match
+    matches = matches.map(match => ({
+      ...match,
+      explanations: generateMatchExplanations(match, student, effectivePlan.tier as 'basic' | 'advanced' | 'vip', usePersonality)
+    }));
 
     // Call Gemini for re-ranking and insights (only if matches found)
     if (matches.length > 0) {
@@ -186,12 +194,17 @@ async function getEffectiveMatchPlanForStudent(supabase: any, studentId: string)
   return { tier, isPersonalityEnabled };
 }
 
-async function fetchDormMatches(supabase: any, student: any, context: any = {}) {
+async function fetchDormMatches(supabase: any, student: any, context: any = {}, exclude_ids?: string[]) {
   let query = supabase
     .from('dorms')
     .select('*')
     .eq('verification_status', 'Verified')
     .eq('available', true);
+
+  // Exclude dismissed dorms
+  if (exclude_ids && exclude_ids.length > 0) {
+    query = query.not('id', 'in', `(${exclude_ids.join(',')})`);
+  }
 
   // CRITICAL: Gender compatibility filter
   if (student.gender) {
@@ -285,7 +298,8 @@ async function fetchRoommateMatches(
   supabase: any, 
   student: any, 
   usePersonality: boolean,
-  limit: number
+  limit: number,
+  exclude_ids?: string[]
 ) {
   // Determine matching strategy based on student's needs
   const hasCurrentPlace = !student.needs_dorm && student.current_dorm_id;
@@ -295,6 +309,11 @@ async function fetchRoommateMatches(
     .from('students')
     .select('*, current_dorm:dorms!current_dorm_id(name, area), current_room:rooms!current_room_id(name, type, capacity, capacity_occupied)')
     .neq('id', student.id);
+
+  // Exclude dismissed roommates
+  if (exclude_ids && exclude_ids.length > 0) {
+    query = query.not('id', 'in', `(${exclude_ids.join(',')})`);
+  }
 
   // CRITICAL: Gender hard rejection - roommates must match gender
   if (student.gender) {
