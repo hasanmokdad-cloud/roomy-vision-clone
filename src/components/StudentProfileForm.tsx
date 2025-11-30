@@ -603,6 +603,46 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                           }}
                         />
                       </div>
+                      
+                      {/* Current Dorm Selection */}
+                      <div className="space-y-4 pt-4 border-t border-border mt-4">
+                        <Label className="text-base font-semibold">Your Current Dorm</Label>
+                        <p className="text-sm text-foreground/60">Select your current accommodation</p>
+                        
+                        <div>
+                          <Label htmlFor="current_dorm" className="text-sm text-foreground/60">Dorm</Label>
+                          <Select value={currentDormId} onValueChange={setCurrentDormId}>
+                            <SelectTrigger id="current_dorm" className="mt-1">
+                              <SelectValue placeholder="Select your current dorm" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background z-50">
+                              {availableDorms.map((dorm) => (
+                                <SelectItem key={dorm.id} value={dorm.id}>
+                                  {dorm.name} - {dorm.area}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        {currentDormId && (
+                          <div>
+                            <Label htmlFor="current_room" className="text-sm text-foreground/60">Room</Label>
+                            <Select value={currentRoomId} onValueChange={setCurrentRoomId}>
+                              <SelectTrigger id="current_room" className="mt-1">
+                                <SelectValue placeholder="Select your current room" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background z-50">
+                                {availableRooms.map((room) => (
+                                  <SelectItem key={room.id} value={room.id}>
+                                    {room.name} ({room.type}) - {room.capacity_occupied}/{room.capacity} occupied
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </div>
                     </motion.div>
                   )}
                 </div>

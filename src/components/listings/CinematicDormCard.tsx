@@ -302,21 +302,22 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
                   </div>
                   <div className="text-3xl font-black gradient-text">${startingPrice}</div>
                 </div>
-                {hasMultipleRooms && (
-                  <Badge variant="outline" className="text-xs">
-                    Click to explore
-                  </Badge>
-                )}
+                
+                <div className="flex flex-col items-end gap-2">
+                  {dorm.gender_preference && (
+                    <Badge variant="outline" className="text-xs">
+                      {dorm.gender_preference === 'Male' && '♂ Male Only'}
+                      {dorm.gender_preference === 'Female' && '♀ Female Only'}
+                      {dorm.gender_preference === 'Mixed' && '⚥ Co-ed'}
+                    </Badge>
+                  )}
+                  {hasMultipleRooms && (
+                    <Badge variant="outline" className="text-xs">
+                      Click to explore
+                    </Badge>
+                  )}
+                </div>
               </div>
-              
-              {/* Gender Preference Badge */}
-              {dorm.gender_preference && (
-                <Badge variant="outline" className="mt-2 w-fit text-xs">
-                  {dorm.gender_preference === 'Male' && '♂ Male Only'}
-                  {dorm.gender_preference === 'Female' && '♀ Female Only'}
-                  {dorm.gender_preference === 'Mixed' && '⚥ Co-ed'}
-                </Badge>
-              )}
             </div>
           </div>
 
@@ -411,7 +412,7 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
                   setReviewModalOpen(true);
                 }}
                 variant="outline"
-                className="w-full mb-2"
+                className="w-full mt-4"
               >
                 <Star className="w-4 h-4 mr-2" />
                 Rate & Review
@@ -419,7 +420,7 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
 
               <Button
                 onClick={handleLearnMore}
-                className="w-full"
+                className="w-full mt-3"
                 aria-label={
                   hasMultipleRooms
                     ? `View all ${roomTypes.length} room types for ${dorm.dorm_name}`
