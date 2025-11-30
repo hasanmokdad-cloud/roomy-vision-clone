@@ -267,6 +267,11 @@ async function fetchRoommateMatches(
     .select('*, current_dorm:dorms!current_dorm_id(name, area), current_room:rooms!current_room_id(name, type, capacity, capacity_occupied)')
     .neq('id', student.id);
 
+  // CRITICAL: Gender hard rejection - roommates must match gender
+  if (student.gender) {
+    query = query.ilike('gender', student.gender);
+  }
+
   if (seekingRoommateForCurrentPlace) {
     // Prioritize candidates who need a dorm (will join student's current place)
     query = query.or('needs_dorm.eq.true,needs_roommate_new_dorm.eq.true');
@@ -284,7 +289,7 @@ async function fetchRoommateMatches(
         return [];
       }
       
-      // Apply gender compatibility based on dorm policy
+      // Apply additional gender compatibility based on dorm policy
       const { data: currentDorm } = await supabase
         .from('dorms')
         .select('gender_preference')
@@ -295,10 +300,15 @@ async function fetchRoommateMatches(
         const genderLower = student.gender.toLowerCase();
         const dormGenderLower = currentDorm.gender_preference.toLowerCase();
         
+        // Double-check gender alignment with dorm policy
         if (dormGenderLower === 'female_only' || dormGenderLower === 'female') {
-          query = query.ilike('gender', 'female');
+          if (genderLower !== 'female') {
+            return []; // Hard reject - student gender doesn't match dorm policy
+          }
         } else if (dormGenderLower === 'male_only' || dormGenderLower === 'male') {
-          query = query.ilike('gender', 'male');
+          if (genderLower !== 'male') {
+            return []; // Hard reject - student gender doesn't match dorm policy
+          }
         }
       }
     }
