@@ -73,6 +73,12 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   const [availableDistricts, setAvailableDistricts] = useState<string[]>([]);
   const [availableTowns, setAvailableTowns] = useState<string[]>([]);
   
+  // Current dorm/room state (for have_dorm status)
+  const [currentDormId, setCurrentDormId] = useState<string>('');
+  const [currentRoomId, setCurrentRoomId] = useState<string>('');
+  const [availableDorms, setAvailableDorms] = useState<any[]>([]);
+  const [availableRooms, setAvailableRooms] = useState<any[]>([]);
+  
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -104,7 +110,43 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
 
   useEffect(() => {
     loadProfile();
+    loadDorms();
   }, [userId]);
+
+  // Load available dorms for Current Dorm dropdown
+  const loadDorms = async () => {
+    const { data } = await supabase
+      .from('dorms')
+      .select('id, name, area')
+      .eq('verification_status', 'Verified')
+      .order('name');
+    
+    if (data) {
+      setAvailableDorms(data);
+    }
+  };
+
+  // Load rooms when current dorm is selected
+  useEffect(() => {
+    const loadRoomsForDorm = async () => {
+      if (!currentDormId) {
+        setAvailableRooms([]);
+        return;
+      }
+
+      const { data } = await supabase
+        .from('rooms')
+        .select('id, name, type, capacity, capacity_occupied')
+        .eq('dorm_id', currentDormId)
+        .order('name');
+      
+      if (data) {
+        setAvailableRooms(data);
+      }
+    };
+
+    loadRoomsForDorm();
+  }, [currentDormId]);
 
   // Handle governorate selection
   useEffect(() => {
@@ -162,6 +204,14 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
       }
       if (data.personality_test_completed !== undefined) {
         setPersonalityTestCompleted(data.personality_test_completed);
+      }
+      
+      // Set current dorm/room
+      if (data.current_dorm_id) {
+        setCurrentDormId(data.current_dorm_id);
+      }
+      if (data.current_room_id) {
+        setCurrentRoomId(data.current_room_id);
       }
 
       // Set location fields
@@ -242,6 +292,8 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         needs_roommate_current_place: needsRoommateCurrentPlace,
         needs_roommate_new_dorm: needsRoommateNewDorm,
         enable_personality_matching: enablePersonalityMatching,
+        current_dorm_id: currentDormId || null,
+        current_room_id: currentRoomId || null,
         profile_completion_score: calculateProgress(),
         updated_at: new Date().toISOString()
       };

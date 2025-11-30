@@ -1712,6 +1712,7 @@ export type Database = {
           area_m2: number | null
           available: boolean | null
           capacity: number | null
+          capacity_occupied: number | null
           created_at: string
           deposit: number | null
           description: string | null
@@ -1729,6 +1730,7 @@ export type Database = {
           area_m2?: number | null
           available?: boolean | null
           capacity?: number | null
+          capacity_occupied?: number | null
           created_at?: string
           deposit?: number | null
           description?: string | null
@@ -1746,6 +1748,7 @@ export type Database = {
           area_m2?: number | null
           available?: boolean | null
           capacity?: number | null
+          capacity_occupied?: number | null
           created_at?: string
           deposit?: number | null
           description?: string | null
@@ -1905,6 +1908,8 @@ export type Database = {
           budget: number | null
           compatibility_test_completed: boolean | null
           created_at: string | null
+          current_dorm_id: string | null
+          current_room_id: string | null
           dealbreakers: string[] | null
           distance_preference: string | null
           district: string | null
@@ -1954,6 +1959,8 @@ export type Database = {
           budget?: number | null
           compatibility_test_completed?: boolean | null
           created_at?: string | null
+          current_dorm_id?: string | null
+          current_room_id?: string | null
           dealbreakers?: string[] | null
           distance_preference?: string | null
           district?: string | null
@@ -2003,6 +2010,8 @@ export type Database = {
           budget?: number | null
           compatibility_test_completed?: boolean | null
           created_at?: string | null
+          current_dorm_id?: string | null
+          current_room_id?: string | null
           dealbreakers?: string[] | null
           distance_preference?: string | null
           district?: string | null
@@ -2043,7 +2052,36 @@ export type Database = {
           user_id?: string
           year_of_study?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "students_current_dorm_id_fkey"
+            columns: ["current_dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_current_dorm_id_fkey"
+            columns: ["current_dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_current_dorm_id_fkey"
+            columns: ["current_dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "students_current_room_id_fkey"
+            columns: ["current_room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       students_ai_responses: {
         Row: {
