@@ -234,7 +234,7 @@ serve(async (req) => {
     if (userId && userId.startsWith('guest_') === false) {
       const { data: student } = await supabase
         .from("students")
-        .select("id, budget, preferred_university, favorite_areas, preferred_room_types, preferred_amenities, ai_confidence_score")
+        .select("id, budget, gender, preferred_university, favorite_areas, preferred_room_types, preferred_amenities, ai_confidence_score, current_dorm_id, current_room_id")
         .eq("user_id", userId)
         .maybeSingle();
       
@@ -401,8 +401,18 @@ serve(async (req) => {
     // Query dorms database with smart matching priority
     let dbQuery = supabase
       .from("dorms")
-      .select("dorm_name, area, university, monthly_price, room_types, services_amenities, verification_status")
+      .select("id, dorm_name, area, university, monthly_price, room_types, services_amenities, verification_status, gender_preference")
       .eq("verification_status", "Verified");
+
+    // CRITICAL: Gender compatibility filter
+    if (studentProfile?.gender) {
+      const genderLower = studentProfile.gender.toLowerCase();
+      if (genderLower === 'male') {
+        dbQuery = dbQuery.or('gender_preference.is.null,gender_preference.in.(male,mixed,any,Male,Mixed,Any)');
+      } else if (genderLower === 'female') {
+        dbQuery = dbQuery.or('gender_preference.is.null,gender_preference.in.(female,mixed,any,Female,Mixed,Any)');
+      }
+    }
 
     if (filters.budget) dbQuery = dbQuery.lte("monthly_price", filters.budget);
     if (filters.university) dbQuery = dbQuery.ilike("university", `%${filters.university}%`);
@@ -524,27 +534,78 @@ serve(async (req) => {
       }
     }
     
+    // Fetch room capacity info for matched dorms (for capacity awareness)
+    const dormsWithRooms = await Promise.all((rankedDorms || []).map(async (dorm: any) => {
+      const { data: rooms } = await supabase
+        .from('rooms')
+        .select('name, type, capacity, capacity_occupied, available')
+        .eq('dorm_id', dorm.id)
+        .eq('available', true)
+        .filter('capacity_occupied', 'lt', 'capacity');
+      
+      return { ...dorm, rooms: rooms || [] };
+    }));
+
+    // Build gender eligibility context
+    let genderEligibilityContext = "";
+    if (studentProfile?.gender && dormsWithRooms.length > 0) {
+      const genderLower = studentProfile.gender.toLowerCase();
+      
+      // Check first dorm for incompatibility warning
+      const firstDorm = dormsWithRooms[0];
+      const dormGender = firstDorm.gender_preference?.toLowerCase();
+      
+      if (dormGender === 'female_only' || dormGender === 'female') {
+        if (genderLower === 'male') {
+          genderEligibilityContext = `\n\nCRITICAL GENDER WARNING: ${firstDorm.dorm_name} is a FEMALE-ONLY dorm. This student is MALE and CANNOT book here. You MUST:
+1. Politely explain why they can't book
+2. Immediately suggest alternative dorms near the same area that accept male students
+3. Never suggest they try to book anyway\n`;
+        }
+      } else if (dormGender === 'male_only' || dormGender === 'male') {
+        if (genderLower === 'female') {
+          genderEligibilityContext = `\n\nCRITICAL GENDER WARNING: ${firstDorm.dorm_name} is a MALE-ONLY dorm. This student is FEMALE and CANNOT book here. You MUST:
+1. Politely explain why they can't book
+2. Immediately suggest alternative dorms near the same area that accept female students
+3. Never suggest they try to book anyway\n`;
+        }
+      }
+    }
+
     // Build context with dorm data
     let dormsContext = "";
-    if (!isRoommateQuery && rankedDorms && rankedDorms.length > 0) {
+    if (!isRoommateQuery && dormsWithRooms && dormsWithRooms.length > 0) {
       dormsContext = "\n\nHere are the top matching dorms from our database";
       if (studentProfile) {
         dormsContext += " (ranked by your preferences)";
       }
       dormsContext += ":\n\n";
-      rankedDorms.forEach((dorm: any, idx: number) => {
+      dormsWithRooms.forEach((dorm: any, idx: number) => {
         dormsContext += `${idx + 1}. ${dorm.dorm_name}\n`;
         dormsContext += `   📍 Area: ${dorm.area || "Not specified"}\n`;
         dormsContext += `   🎓 University: ${dorm.university || "Not specified"}\n`;
         dormsContext += `   💰 Price: $${dorm.monthly_price}/month\n`;
         dormsContext += `   🛏️ Room Types: ${dorm.room_types || "Not specified"}\n`;
         dormsContext += `   ✨ Amenities: ${dorm.services_amenities || "Not specified"}\n`;
+        if (dorm.gender_preference) {
+          dormsContext += `   🚻 Gender Policy: ${dorm.gender_preference}\n`;
+        }
         if (dorm.matchScore) {
           dormsContext += `   🎯 Match Score: ${Math.round(dorm.matchScore)}/100\n`;
         }
+        
+        // Add room capacity info
+        if (dorm.rooms && dorm.rooms.length > 0) {
+          dormsContext += `   🏠 Available Rooms:\n`;
+          dorm.rooms.slice(0, 3).forEach((room: any) => {
+            const spotsLeft = room.capacity - (room.capacity_occupied || 0);
+            const status = spotsLeft === 1 ? `${spotsLeft} spot left` : `${spotsLeft} spots left`;
+            dormsContext += `      • ${room.name} (${room.type}): ${room.capacity_occupied || 0}/${room.capacity} - ${status}\n`;
+          });
+        }
         dormsContext += "\n";
       });
-      dormsContext += "\nPresent these dorms conversationally with emojis. Highlight why they match the user's preferences.";
+      dormsContext += "\nPresent these dorms conversationally. ALWAYS mention remaining spots. Warn if incompatible with student gender.";
     } else if (!isRoommateQuery && Object.keys(filters).length > 0) {
       dormsContext = "\n\nNo dorms match the criteria. Suggest adjusting budget, location, or room type. Ask what matters most.";
     }
@@ -566,14 +627,31 @@ CORE PERSONALITY:
 - Remember student preferences and learn from every interaction
 - Adapt recommendations based on past conversations
 - Use emojis naturally (🏠 💰 🎓 ✨)
+- THINK 10 STEPS AHEAD: Proactively warn about incompatibilities and suggest better options
 
 KEY CAPABILITIES:
-- Find dorms using live database queries
+- Find dorms using live database queries with gender compatibility checks
 - Find compatible roommates based on university, budget, and preferences
+- Check room capacity and availability in real-time
 - Learn and remember: budget, areas, room types, amenities
 - Provide personalized matches ranked by student preferences
 - Handle follow-up questions using conversation context
 - Explain match scores and why dorms or roommates fit their profile
+
+CRITICAL RULES:
+1. GENDER ELIGIBILITY: Always check dorm gender policies before suggesting bookings
+   - If a male student asks about a female-only dorm, explain they cannot book and suggest alternatives
+   - Vice versa for female students and male-only dorms
+   
+2. CAPACITY AWARENESS: Check room availability before suggesting
+   - If a room shows "3/3" capacity, it's FULL - say so and suggest alternatives
+   - Always mention remaining spots: "This room has 1 spot left"
+   
+3. THINK 10 STEPS AHEAD:
+   - Warn about incompatibilities proactively
+   - Suggest completing personality test for better matches
+   - Recommend upgrading to Advanced/VIP for personality matching
+   - Explain that Roomy charges 10% of the deposit to secure a spot
 
 CONVERSATIONAL INTELLIGENCE:
 - If you know user preferences, acknowledge them: "I know you prefer single rooms near AUB under $700..."
@@ -586,7 +664,7 @@ WHEN USER ASKS:
 - Generic greeting → Offer personalized search based on known preferences
 - New criteria → Update internal understanding and search accordingly
 
-${profileContext}${conversationContext}${conversationHistoryContext}${dormsContext}${roommatesContext}
+${genderEligibilityContext}${profileContext}${conversationContext}${conversationHistoryContext}${dormsContext}${roommatesContext}
 
 Present results engagingly. If match scores exist, mention why dorms are great fits. Keep responses concise but warm.`;
 

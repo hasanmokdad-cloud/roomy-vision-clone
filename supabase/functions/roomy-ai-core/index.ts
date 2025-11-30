@@ -68,17 +68,20 @@ serve(async (req) => {
       );
     }
 
+    // Get effective match plan (check expiry)
+    const effectivePlan = await getEffectiveMatchPlanForStudent(supabase, student.id);
+    console.log('[roomy-ai-core] Effective plan:', effectivePlan);
+
     // Determine tier limits
     const tierLimits: Record<string, number> = {
       basic: 1,
       advanced: 3,
       vip: 10
     };
-    const tierLimit = tierLimits[match_tier] || 1;
+    const tierLimit = tierLimits[effectivePlan.tier] || 1;
     
-    // Determine if personality should be used
-    const usePersonality = (match_tier === 'advanced' || match_tier === 'vip') && 
-                          personality_enabled && 
+    // Determine if personality should be used (based on effective plan, not passed tier)
+    const usePersonality = effectivePlan.isPersonalityEnabled && 
                           student.personality_test_completed;
 
     let matches: any[] = [];
@@ -99,7 +102,7 @@ serve(async (req) => {
       matches = mode === 'combined' ? [...matches, ...roommateMatches] : roommateMatches;
     }
 
-    // Call Gemini for re-ranking and insights
+    // Call Gemini for re-ranking and insights (only if matches found)
     if (matches.length > 0) {
       const aiResult = await enhanceWithGemini(
         matches,
@@ -117,7 +120,7 @@ serve(async (req) => {
     await supabase.from('ai_match_logs').insert({
       student_id: student.id,
       mode,
-      match_tier,
+      match_tier: effectivePlan.tier,
       personality_used: usePersonality,
       result_count: matches.length,
       insights_generated: !!insightsBanner,
@@ -127,7 +130,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         ai_mode: mode,
-        match_tier,
+        match_tier: effectivePlan.tier,
         personality_used: usePersonality,
         insights_banner: insightsBanner,
         matches
@@ -146,12 +149,48 @@ serve(async (req) => {
   }
 });
 
+/**
+ * Get effective match plan for student with expiry check
+ */
+async function getEffectiveMatchPlanForStudent(supabase: any, studentId: string) {
+  const { data: plans } = await supabase
+    .from('student_match_plans')
+    .select('plan_type, expires_at, status')
+    .eq('student_id', studentId)
+    .eq('status', 'active')
+    .gt('expires_at', new Date().toISOString())
+    .order('expires_at', { ascending: false })
+    .limit(1);
+
+  if (!plans || plans.length === 0) {
+    return { tier: 'basic', isPersonalityEnabled: false };
+  }
+
+  const plan = plans[0];
+  const tier = plan.plan_type as 'basic' | 'advanced' | 'vip';
+  const isPersonalityEnabled = tier !== 'basic';
+  
+  return { tier, isPersonalityEnabled };
+}
+
 async function fetchDormMatches(supabase: any, student: any, context: any = {}) {
   let query = supabase
     .from('dorms')
     .select('*')
     .eq('verification_status', 'Verified')
     .eq('available', true);
+
+  // CRITICAL: Gender compatibility filter
+  if (student.gender) {
+    const genderLower = student.gender.toLowerCase();
+    if (genderLower === 'male') {
+      // Exclude female-only dorms
+      query = query.or('gender_preference.is.null,gender_preference.in.(male,mixed,any,Male,Mixed,Any)');
+    } else if (genderLower === 'female') {
+      // Exclude male-only dorms
+      query = query.or('gender_preference.is.null,gender_preference.in.(female,mixed,any,Female,Mixed,Any)');
+    }
+  }
 
   if (context.budget || student.budget) {
     query = query.lte('monthly_price', context.budget || student.budget);
@@ -170,8 +209,28 @@ async function fetchDormMatches(supabase: any, student: any, context: any = {}) 
   
   if (error) throw error;
 
+  // Filter out dorms and fetch rooms with capacity checks
+  const dormsWithRooms = await Promise.all((data || []).map(async (dorm: any) => {
+    // Fetch available rooms for this dorm
+    const { data: rooms } = await supabase
+      .from('rooms')
+      .select('*')
+      .eq('dorm_id', dorm.id)
+      .eq('available', true)
+      .filter('capacity_occupied', 'lt', 'capacity');
+    
+    return {
+      ...dorm,
+      availableRooms: rooms || [],
+      hasAvailableRooms: (rooms || []).length > 0
+    };
+  }));
+
+  // Only include dorms that have available rooms
+  const dormsWithAvailableRooms = dormsWithRooms.filter(d => d.hasAvailableRooms);
+
   // Pre-score dorms with sub-scores
-  return (data || []).map((dorm: any) => {
+  return dormsWithAvailableRooms.map((dorm: any) => {
     const locationScore = calculateLocationScore(dorm, student);
     const budgetScore = calculateBudgetScore(dorm, student);
     const roomTypeScore = calculateRoomTypeScore(dorm, student);
@@ -199,11 +258,54 @@ async function fetchRoommateMatches(
   usePersonality: boolean,
   limit: number
 ) {
+  // Determine matching strategy based on student's needs
+  const hasCurrentPlace = !student.needs_dorm && student.current_dorm_id;
+  const seekingRoommateForCurrentPlace = student.needs_roommate_current_place && hasCurrentPlace;
+  
   let query = supabase
     .from('students')
-    .select('*')
-    .neq('id', student.id)
-    .eq('need_roommate', true);
+    .select('*, current_dorm:dorms!current_dorm_id(name, area), current_room:rooms!current_room_id(name, type, capacity, capacity_occupied)')
+    .neq('id', student.id);
+
+  if (seekingRoommateForCurrentPlace) {
+    // Prioritize candidates who need a dorm (will join student's current place)
+    query = query.or('needs_dorm.eq.true,needs_roommate_new_dorm.eq.true');
+    
+    // Check if current room has available spots
+    if (student.current_room_id) {
+      const { data: currentRoom } = await supabase
+        .from('rooms')
+        .select('capacity, capacity_occupied, dorm_id')
+        .eq('id', student.current_room_id)
+        .single();
+      
+      // If room is full, return empty matches
+      if (currentRoom && currentRoom.capacity_occupied >= currentRoom.capacity) {
+        return [];
+      }
+      
+      // Apply gender compatibility based on dorm policy
+      const { data: currentDorm } = await supabase
+        .from('dorms')
+        .select('gender_preference')
+        .eq('id', currentRoom.dorm_id)
+        .single();
+      
+      if (currentDorm?.gender_preference && student.gender) {
+        const genderLower = student.gender.toLowerCase();
+        const dormGenderLower = currentDorm.gender_preference.toLowerCase();
+        
+        if (dormGenderLower === 'female_only' || dormGenderLower === 'female') {
+          query = query.ilike('gender', 'female');
+        } else if (dormGenderLower === 'male_only' || dormGenderLower === 'male') {
+          query = query.ilike('gender', 'male');
+        }
+      }
+    }
+  } else {
+    // Standard matching: both parties seeking roommates
+    query = query.or('needs_roommate_current_place.eq.true,needs_roommate_new_dorm.eq.true');
+  }
 
   if (student.preferred_university) {
     query = query.eq('university', student.preferred_university);

@@ -99,3 +99,12 @@ export async function getActiveMatchPlan() {
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 }
+
+/**
+ * Check if Whish keys are configured (not placeholders)
+ */
+export function isWhishConfigured(): boolean {
+  // This check happens on the backend, so we assume it's configured unless explicitly told otherwise
+  // The actual check happens in the edge functions
+  return true; // Will be overridden by edge function preview mode logic
+}

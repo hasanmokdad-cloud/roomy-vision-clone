@@ -1,7 +1,9 @@
-import { Crown } from "lucide-react";
+import { Crown, AlertTriangle } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { motion } from "framer-motion";
+import { isWhishConfigured } from "@/lib/payments/whishClient";
 import type { AiMatchPlan } from "@/utils/tierLogic";
 
 interface TierSelectionCardProps {
@@ -10,6 +12,8 @@ interface TierSelectionCardProps {
 }
 
 export const TierSelectionCard = ({ selectedPlan, onPlanChange }: TierSelectionCardProps) => {
+  const isPreviewMode = !isWhishConfigured();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -25,6 +29,15 @@ export const TierSelectionCard = ({ selectedPlan, onPlanChange }: TierSelectionC
           Select a plan to unlock the right roommate matches for you.
         </p>
       </div>
+
+      {isPreviewMode && (
+        <Alert className="border-amber-500/50 bg-amber-500/10">
+          <AlertTriangle className="w-4 h-4 text-amber-500" />
+          <AlertDescription className="text-sm text-amber-700 dark:text-amber-400">
+            <strong>Preview Mode:</strong> Payment processing will activate once Whish API keys are configured. You can still test matching features.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <RadioGroup value={selectedPlan} onValueChange={(value) => onPlanChange(value as AiMatchPlan)}>
         <div className="grid gap-4">

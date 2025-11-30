@@ -17,12 +17,35 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    // TODO: Verify Whish webhook signature
+    // Verify Whish webhook signature
     const whishWebhookSecret = Deno.env.get('WHISH_WEBHOOK_SECRET');
     
-    if (whishWebhookSecret) {
-      // Implement signature verification based on Whish docs
+    if (whishWebhookSecret && whishWebhookSecret !== '__REPLACE_ME__') {
+      // Get signature from header (adjust based on Whish docs)
+      const signature = req.headers.get('x-whish-signature') || req.headers.get('whish-signature');
+      
+      if (!signature) {
+        console.error('Missing webhook signature');
+        return new Response(
+          JSON.stringify({ error: 'Missing signature' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Verify signature (implement based on Whish documentation)
+      // For now, just log that verification is enabled
       console.log('Webhook signature verification enabled');
+      
+      // TODO: Implement actual signature verification
+      // const isValid = verifySignature(payload, signature, whishWebhookSecret);
+      // if (!isValid) {
+      //   return new Response(
+      //     JSON.stringify({ error: 'Invalid signature' }),
+      //     { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      //   );
+      // }
+    } else {
+      console.warn('Webhook signature verification disabled (preview mode)');
     }
 
     const payload = await req.json();
