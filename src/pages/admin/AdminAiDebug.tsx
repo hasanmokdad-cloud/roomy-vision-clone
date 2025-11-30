@@ -161,6 +161,38 @@ export default function AdminAiDebug() {
             </CardHeader>
           </Card>
 
+          {/* Personality Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="w-5 h-5 text-purple-500" />
+                Personality Matching Stats
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-muted/30 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {students.filter(s => s.personality_test_completed).length}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Tests Completed</div>
+                </div>
+                <div className="text-center p-4 bg-muted/30 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {Math.round((students.filter(s => s.personality_test_completed).length / Math.max(students.length, 1)) * 100)}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">Completion Rate</div>
+                </div>
+                <div className="text-center p-4 bg-muted/30 rounded-lg">
+                  <div className="text-2xl font-bold text-amber-600">
+                    {students.filter(s => s.ai_match_plan === 'vip').length}
+                  </div>
+                  <div className="text-xs text-muted-foreground">VIP Users</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Student Selector */}
           <Card>
             <CardContent className="pt-6">

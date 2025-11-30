@@ -15,6 +15,7 @@ import { User, MapPin, GraduationCap, DollarSign, Home, CheckCircle, ArrowRight,
 import { Badge } from '@/components/ui/badge';
 import { Confetti } from '@/components/profile/Confetti';
 import { ProfileProgress } from '@/components/profile/ProfileProgress';
+import { PersonalitySurveyModal } from '@/components/profile/PersonalitySurveyModal';
 import { residentialAreas, type Governorate, type District } from '@/data/residentialAreas';
 import { universities } from '@/data/universities';
 import { housingAreas } from '@/data/housingAreas';
@@ -66,6 +67,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   const [needsRoommateNewDorm, setNeedsRoommateNewDorm] = useState(false);
   const [enablePersonalityMatching, setEnablePersonalityMatching] = useState(false);
   const [personalityTestCompleted, setPersonalityTestCompleted] = useState(false);
+  const [showPersonalitySurvey, setShowPersonalitySurvey] = useState(false);
   
   // Hierarchical location state
   const [selectedGovernorate, setSelectedGovernorate] = useState<Governorate | ''>('');
@@ -812,36 +814,30 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                         onCheckedChange={(checked) => {
                           setEnablePersonalityMatching(checked);
                           setValue('enable_personality_matching', checked);
+                          // Open survey modal when enabled and not completed
+                          if (checked && !personalityTestCompleted) {
+                            setShowPersonalitySurvey(true);
+                          }
                         }}
                       />
                     </div>
                     
-                    {enablePersonalityMatching && !personalityTestCompleted && (
+                    {enablePersonalityMatching && (
                       <Button 
                         type="button"
-                        onClick={() => navigate('/compatibility-test')} 
+                        onClick={() => setShowPersonalitySurvey(true)}
                         variant="outline"
                         className="w-full"
                       >
                         <Brain className="w-4 h-4 mr-2" />
-                        Take Compatibility Test
+                        {personalityTestCompleted ? 'Edit Survey' : 'Take Survey'}
                       </Button>
                     )}
                     
                     {enablePersonalityMatching && personalityTestCompleted && (
-                      <div className="flex items-center justify-between">
-                        <Badge className="bg-green-100 text-green-700 border-green-300">
-                          ✔ Compatibility test completed
-                        </Badge>
-                        <Button 
-                          type="button"
-                          onClick={() => navigate('/compatibility-test')} 
-                          variant="ghost"
-                          size="sm"
-                        >
-                          View / Retake Test
-                        </Button>
-                      </div>
+                      <Badge className="bg-green-100 text-green-700 border-green-300">
+                        ✔ Personality survey completed
+                      </Badge>
                     )}
                   </motion.div>
                 )}
@@ -872,6 +868,19 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
           </AnimatePresence>
         </form>
       </motion.div>
+      
+      <PersonalitySurveyModal
+        open={showPersonalitySurvey}
+        onOpenChange={setShowPersonalitySurvey}
+        userId={userId}
+        onComplete={() => {
+          setPersonalityTestCompleted(true);
+          toast({
+            title: "Survey Complete!",
+            description: "Your personality preferences will help us find better roommate matches"
+          });
+        }}
+      />
     </>
   );
 };

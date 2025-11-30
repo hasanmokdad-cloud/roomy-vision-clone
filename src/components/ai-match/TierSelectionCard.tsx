@@ -51,8 +51,8 @@ export const TierSelectionCard = ({ selectedPlan, onPlanChange }: TierSelectionC
               <p className="text-xs text-muted-foreground italic mb-1">(Preview Mode – no payments yet)</p>
               <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
                 <li>• Up to 3 matches with personality compatibility scores</li>
-                <li>• Smarter roommate suggestions based on lifestyle & study habits</li>
-                <li>• Premium AI insights</li>
+                <li>• Smarter roommate suggestions based on lifestyle & personality</li>
+                <li>• Premium AI insights with compatibility breakdown</li>
               </ul>
             </Label>
           </div>
@@ -68,9 +68,9 @@ export const TierSelectionCard = ({ selectedPlan, onPlanChange }: TierSelectionC
               <p className="text-xs text-muted-foreground italic mb-1">(Preview Mode – no payments yet)</p>
               <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
                 <li>• Unlimited matches with full personality matching</li>
+                <li>• Full compatibility breakdown (sleep, cleanliness, study habits)</li>
                 <li>• Priority roommate suggestions</li>
-                <li>• VIP-exclusive match recommendations</li>
-                <li>• Priority support</li>
+                <li>• VIP-exclusive insights & support</li>
               </ul>
             </Label>
           </div>

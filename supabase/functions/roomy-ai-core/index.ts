@@ -218,8 +218,15 @@ async function fetchRoommateMatches(
     const lifestyleScore = calculateLifestyleScore(student, candidate);
     const cleanlinessScore = calculateCleanlinessScore(student, candidate);
     const studyFocusScore = calculateStudyFocusScore(student, candidate);
+    
+    // Calculate personality if enabled
+    let personalityResult: any = null;
+    if (usePersonality && student.personality_test_completed && candidate.personality_test_completed) {
+      personalityResult = calculatePersonalityCompatibility(student, candidate);
+    }
+    
     const overallScore = usePersonality 
-      ? calculateCompatibilityScore(student, candidate)
+      ? calculateCompatibilityScore(student, candidate, true, student.ai_match_plan || 'basic')
       : Math.random() * 100;
 
     return {
@@ -231,7 +238,8 @@ async function fetchRoommateMatches(
         lifestyle_score: lifestyleScore,
         cleanliness_score: cleanlinessScore,
         study_focus_score: studyFocusScore,
-        personality_score: usePersonality ? null : null // Will be filled by Gemini if available
+        personality_score: personalityResult ? personalityResult.overall * 100 : null,
+        personality_breakdown: personalityResult?.breakdown || null
       }
     };
   });
@@ -323,18 +331,251 @@ function calculateAmenitiesScore(dorm: any, student: any): number {
   return 40 + (matchRatio * 60);
 }
 
-function calculateCompatibilityScore(student: any, candidate: any): number {
+function calculateCompatibilityScore(student: any, candidate: any, usePersonality: boolean = false, matchTier: string = 'basic'): number {
   const lifestyleScore = calculateLifestyleScore(student, candidate);
   const cleanlinessScore = calculateCleanlinessScore(student, candidate);
   const studyFocusScore = calculateStudyFocusScore(student, candidate);
   
-  // For now, return weighted average without personality (will be added in Gemini)
+  // Calculate personality score if enabled
+  let personalityScore = 0;
+  let personalityWeight = 0;
+  
+  if (usePersonality && student.personality_test_completed && candidate.personality_test_completed) {
+    const personalityResult = calculatePersonalityCompatibility(student, candidate);
+    personalityScore = personalityResult.overall * 100;
+    
+    // Set weight based on tier
+    if (matchTier === 'advanced') {
+      personalityWeight = 0.25;
+    } else if (matchTier === 'vip') {
+      personalityWeight = 0.45;
+    }
+  }
+  
+  // Adjust other weights when personality is used
+  const baseWeightMultiplier = 1 - personalityWeight;
+  const lifestyleWeight = 0.30 * baseWeightMultiplier;
+  const cleanlinessWeight = 0.15 * baseWeightMultiplier;
+  const studyWeight = 0.15 * baseWeightMultiplier;
+  const locationWeight = 0.15 * baseWeightMultiplier;
+  const budgetWeight = 0.10 * baseWeightMultiplier;
+  
   const overall = 
-    (lifestyleScore * 0.40) +
-    (cleanlinessScore * 0.30) +
-    (studyFocusScore * 0.30);
+    (lifestyleScore * lifestyleWeight) +
+    (cleanlinessScore * cleanlinessWeight) +
+    (studyFocusScore * studyWeight) +
+    (50 * locationWeight) + // Default location score
+    (50 * budgetWeight) + // Default budget score
+    (personalityScore * personalityWeight);
 
   return Math.min(100, Math.round(overall));
+}
+
+// New: Calculate personality compatibility with question-by-question scoring
+function calculatePersonalityCompatibility(student: any, candidate: any): { overall: number, breakdown: Record<string, number> } {
+  const scores: Record<string, number> = {};
+  
+  // Sleep schedule compatibility
+  scores.sleep_schedule = calculateSleepScheduleScore(
+    student.personality_sleep_schedule,
+    candidate.personality_sleep_schedule
+  );
+  
+  // Cleanliness level compatibility
+  scores.cleanliness = calculatePersonalityCleanlinessScore(
+    student.personality_cleanliness_level,
+    candidate.personality_cleanliness_level,
+    student.personality_shared_space_cleanliness_importance,
+    candidate.personality_shared_space_cleanliness_importance
+  );
+  
+  // Noise tolerance vs study environment
+  scores.noise_compatibility = calculateNoiseCompatibility(
+    student.personality_noise_tolerance,
+    candidate.personality_noise_tolerance,
+    student.personality_study_environment,
+    candidate.personality_study_environment
+  );
+  
+  // Social style (intro/extro)
+  scores.social_style = calculateSocialStyleScore(
+    student.personality_intro_extro,
+    candidate.personality_intro_extro
+  );
+  
+  // Smoking compatibility
+  scores.smoking = calculateSmokingScore(
+    student.personality_smoking,
+    candidate.personality_smoking
+  );
+  
+  // Cooking frequency similarity
+  scores.cooking = calculateCookingScore(
+    student.personality_cooking_frequency,
+    candidate.personality_cooking_frequency
+  );
+  
+  // Sleep sensitivity
+  scores.sleep_sensitivity = calculateSleepSensitivityScore(
+    student.personality_sleep_sensitivity,
+    candidate.personality_sleep_sensitivity
+  );
+  
+  // Study time compatibility
+  scores.study = calculateStudyTimeScore(
+    student.personality_study_time,
+    candidate.personality_study_time
+  );
+  
+  // Calculate overall as average of all scores
+  const validScores = Object.values(scores).filter(s => !isNaN(s));
+  const overall = validScores.length > 0 
+    ? validScores.reduce((a, b) => a + b, 0) / validScores.length 
+    : 0.5;
+  
+  return { overall, breakdown: scores };
+}
+
+// Question-by-question scoring functions
+function calculateSleepScheduleScore(s1: string, s2: string): number {
+  if (!s1 || !s2) return 0.5;
+  if (s1 === s2) return 1.0; // Exact match
+  
+  const order = ['early', 'regular', 'late'];
+  const i1 = order.indexOf(s1);
+  const i2 = order.indexOf(s2);
+  
+  if (i1 === -1 || i2 === -1) return 0.5;
+  
+  const diff = Math.abs(i1 - i2);
+  if (diff === 1) return 0.6; // One step difference
+  if (diff === 2) return 0.2; // Opposites
+  return 0.5;
+}
+
+function calculatePersonalityCleanlinessScore(c1: string, c2: string, imp1: number, imp2: number): number {
+  if (!c1 || !c2) return 0.5;
+  if (c1 === c2) return 1.0; // Same level
+  
+  const order = ['messy', 'average', 'clean', 'very_clean'];
+  const i1 = order.indexOf(c1);
+  const i2 = order.indexOf(c2);
+  
+  if (i1 === -1 || i2 === -1) return 0.5;
+  
+  const diff = Math.abs(i1 - i2);
+  let baseScore = 0.5;
+  
+  if (diff === 1) baseScore = 0.6; // One step difference
+  else if (diff === 2) baseScore = 0.3;
+  else if (diff === 3) baseScore = 0; // Clean with messy = conflict
+  
+  // Adjust by importance
+  const avgImportance = ((imp1 || 3) + (imp2 || 3)) / 2;
+  const importanceMultiplier = avgImportance / 5; // Higher importance = weight differences more
+  
+  return baseScore * (1 + importanceMultiplier * 0.3);
+}
+
+function calculateNoiseCompatibility(n1: string, n2: string, env1: string, env2: string): number {
+  if (!n1 || !n2) return 0.5;
+  
+  const noiseOrder = ['very_quiet', 'quiet', 'normal', 'loud'];
+  const envOrder = ['silent', 'quiet', 'moderate_noise', 'flexible'];
+  
+  const nIdx1 = noiseOrder.indexOf(n1);
+  const nIdx2 = noiseOrder.indexOf(n2);
+  
+  if (nIdx1 === -1 || nIdx2 === -1) return 0.5;
+  
+  const noiseDiff = Math.abs(nIdx1 - nIdx2);
+  
+  // Compatible if similar noise tolerance
+  if (noiseDiff === 0) return 1.0;
+  if (noiseDiff === 1) return 0.7;
+  if (noiseDiff === 2) return 0.4;
+  return 0.2; // Very different
+}
+
+function calculateSocialStyleScore(s1: string, s2: string): number {
+  if (!s1 || !s2) return 0.5;
+  if (s1 === s2) return 1.0; // Same type
+  
+  // Ambivert pairs well with anyone
+  if (s1 === 'ambivert' || s2 === 'ambivert') return 0.7;
+  
+  // Intro + Extro = less compatible
+  if ((s1 === 'introvert' && s2 === 'extrovert') || 
+      (s1 === 'extrovert' && s2 === 'introvert')) {
+    return 0.3;
+  }
+  
+  return 0.5;
+}
+
+function calculateSmokingScore(sm1: string, sm2: string): number {
+  if (!sm1 || !sm2) return 0.5;
+  
+  // Both non-smokers = perfect
+  if (sm1 === 'no' && sm2 === 'no') return 1.0;
+  
+  // One smoker = incompatible
+  return 0;
+}
+
+function calculateCookingScore(c1: string, c2: string): number {
+  if (!c1 || !c2) return 0.5;
+  if (c1 === c2) return 1.0;
+  
+  const order = ['never', 'rarely', 'sometimes', 'often'];
+  const i1 = order.indexOf(c1);
+  const i2 = order.indexOf(c2);
+  
+  if (i1 === -1 || i2 === -1) return 0.5;
+  
+  const diff = Math.abs(i1 - i2);
+  if (diff === 1) return 0.7;
+  if (diff === 2) return 0.5;
+  return 0.3;
+}
+
+function calculateSleepSensitivityScore(s1: string, s2: string): number {
+  if (!s1 || !s2) return 0.5;
+  
+  const order = ['heavy', 'normal', 'light', 'very_light'];
+  const i1 = order.indexOf(s1);
+  const i2 = order.indexOf(s2);
+  
+  if (i1 === -1 || i2 === -1) return 0.5;
+  
+  // If one is very light sleeper and other is not, potential issues
+  if ((s1 === 'very_light' && s2 === 'heavy') || 
+      (s1 === 'heavy' && s2 === 'very_light')) {
+    return 0.3;
+  }
+  
+  const diff = Math.abs(i1 - i2);
+  if (diff === 0) return 1.0;
+  if (diff === 1) return 0.7;
+  if (diff === 2) return 0.5;
+  return 0.3;
+}
+
+function calculateStudyTimeScore(t1: string, t2: string): number {
+  if (!t1 || !t2) return 0.5;
+  if (t1 === t2) return 1.0;
+  
+  // Similar study times are better
+  const order = ['morning', 'afternoon', 'evening', 'late_night'];
+  const i1 = order.indexOf(t1);
+  const i2 = order.indexOf(t2);
+  
+  if (i1 === -1 || i2 === -1) return 0.5;
+  
+  const diff = Math.abs(i1 - i2);
+  if (diff === 1) return 0.7;
+  if (diff === 2) return 0.5;
+  return 0.4; // Morning vs late night
 }
 
 function calculateLifestyleScore(student: any, candidate: any): number {
