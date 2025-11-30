@@ -1905,6 +1905,7 @@ export type Database = {
           age: number | null
           ai_confidence_score: number | null
           ai_match_plan: string | null
+          ai_match_tier_last_paid_at: string | null
           budget: number | null
           compatibility_test_completed: boolean | null
           created_at: string | null
@@ -1929,8 +1930,23 @@ export type Database = {
           need_roommate: boolean | null
           needs_roommate_current_place: boolean | null
           needs_roommate_new_dorm: boolean | null
+          personality_cleanliness_level: string | null
+          personality_conflict_style: string | null
+          personality_cooking_frequency: string | null
           personality_data: Json | null
+          personality_guests_frequency: string | null
+          personality_intro_extro: string | null
+          personality_last_updated_at: string | null
+          personality_noise_tolerance: string | null
+          personality_shared_space_cleanliness_importance: number | null
+          personality_sharing_preferences: string | null
+          personality_sleep_schedule: string | null
+          personality_sleep_sensitivity: string | null
+          personality_smoking: string | null
+          personality_study_environment: string | null
+          personality_study_time: string | null
           personality_test_completed: boolean | null
+          personality_vector: Json | null
           phone_number: string | null
           phone_verified: boolean | null
           preferred_amenities: string[] | null
@@ -1956,6 +1972,7 @@ export type Database = {
           age?: number | null
           ai_confidence_score?: number | null
           ai_match_plan?: string | null
+          ai_match_tier_last_paid_at?: string | null
           budget?: number | null
           compatibility_test_completed?: boolean | null
           created_at?: string | null
@@ -1980,8 +1997,23 @@ export type Database = {
           need_roommate?: boolean | null
           needs_roommate_current_place?: boolean | null
           needs_roommate_new_dorm?: boolean | null
+          personality_cleanliness_level?: string | null
+          personality_conflict_style?: string | null
+          personality_cooking_frequency?: string | null
           personality_data?: Json | null
+          personality_guests_frequency?: string | null
+          personality_intro_extro?: string | null
+          personality_last_updated_at?: string | null
+          personality_noise_tolerance?: string | null
+          personality_shared_space_cleanliness_importance?: number | null
+          personality_sharing_preferences?: string | null
+          personality_sleep_schedule?: string | null
+          personality_sleep_sensitivity?: string | null
+          personality_smoking?: string | null
+          personality_study_environment?: string | null
+          personality_study_time?: string | null
           personality_test_completed?: boolean | null
+          personality_vector?: Json | null
           phone_number?: string | null
           phone_verified?: boolean | null
           preferred_amenities?: string[] | null
@@ -2007,6 +2039,7 @@ export type Database = {
           age?: number | null
           ai_confidence_score?: number | null
           ai_match_plan?: string | null
+          ai_match_tier_last_paid_at?: string | null
           budget?: number | null
           compatibility_test_completed?: boolean | null
           created_at?: string | null
@@ -2031,8 +2064,23 @@ export type Database = {
           need_roommate?: boolean | null
           needs_roommate_current_place?: boolean | null
           needs_roommate_new_dorm?: boolean | null
+          personality_cleanliness_level?: string | null
+          personality_conflict_style?: string | null
+          personality_cooking_frequency?: string | null
           personality_data?: Json | null
+          personality_guests_frequency?: string | null
+          personality_intro_extro?: string | null
+          personality_last_updated_at?: string | null
+          personality_noise_tolerance?: string | null
+          personality_shared_space_cleanliness_importance?: number | null
+          personality_sharing_preferences?: string | null
+          personality_sleep_schedule?: string | null
+          personality_sleep_sensitivity?: string | null
+          personality_smoking?: string | null
+          personality_study_environment?: string | null
+          personality_study_time?: string | null
           personality_test_completed?: boolean | null
+          personality_vector?: Json | null
           phone_number?: string | null
           phone_verified?: boolean | null
           preferred_amenities?: string[] | null

@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign, Brain, BarChart2, Crown, Info } from "lucide-react";
+import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign, Brain, BarChart2, Crown, Info, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MatchBreakdownModal } from "./MatchBreakdownModal";
@@ -161,6 +161,86 @@ export const RoommateMatchCard = ({
                   {reason}
                 </Badge>
               ))}
+            </div>
+          )}
+
+          {/* Personality Compatibility - Tier-Based Display */}
+          {matchTier === 'basic' && (
+            <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg border border-dashed">
+              <Lock className="w-4 h-4 text-muted-foreground" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-xs text-muted-foreground">
+                      Personality matching locked
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Upgrade to Advanced or VIP to unlock personality compatibility
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          )}
+
+          {matchTier === 'advanced' && roommate.subScores?.personality_score !== undefined && roommate.subScores.personality_score !== null && (
+            <div className="space-y-2 p-3 bg-blue-500/5 rounded-lg border border-blue-500/20">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold flex items-center gap-1">
+                  <Brain className="w-4 h-4 text-blue-500" />
+                  Personality Match
+                </span>
+                <span className="text-sm font-bold text-blue-600">
+                  {Math.round(roommate.subScores.personality_score)}%
+                </span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div 
+                  className="bg-blue-500 h-2 rounded-full transition-all"
+                  style={{ width: `${roommate.subScores.personality_score}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {matchTier === 'vip' && roommate.subScores?.personality_breakdown && (
+            <div className="space-y-3 p-4 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-lg border border-amber-500/20">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Crown className="w-4 h-4 text-amber-500" />
+                  VIP Compatibility Breakdown
+                </h4>
+                {roommate.subScores.personality_score && (
+                  <span className="text-sm font-bold text-amber-600">
+                    {Math.round(roommate.subScores.personality_score)}%
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="flex justify-between">
+                  <span>Sleep schedule:</span>
+                  <span className="font-semibold">{Math.round((roommate.subScores.personality_breakdown.sleep_schedule || 0) * 100)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Cleanliness:</span>
+                  <span className="font-semibold">{Math.round((roommate.subScores.personality_breakdown.cleanliness || 0) * 100)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Study habits:</span>
+                  <span className="font-semibold">{Math.round((roommate.subScores.personality_breakdown.study || 0) * 100)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Social style:</span>
+                  <span className="font-semibold">{Math.round((roommate.subScores.personality_breakdown.social_style || 0) * 100)}%</span>
+                </div>
+                <div className="flex justify-between col-span-2">
+                  <span>Noise tolerance:</span>
+                  <span className="font-semibold">{Math.round((roommate.subScores.personality_breakdown.noise_compatibility || 0) * 100)}%</span>
+                </div>
+              </div>
+              <Badge variant="outline" className="text-xs">
+                Powered by Gemini AI Personality Engine
+              </Badge>
             </div>
           )}
 

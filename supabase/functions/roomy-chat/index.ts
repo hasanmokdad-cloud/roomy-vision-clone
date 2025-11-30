@@ -469,9 +469,12 @@ serve(async (req) => {
     // Handle roommate queries
     let roommatesContext = "";
     if (isRoommateQuery) {
+      // Check user tier for personality insights
+      const userTier = studentProfile?.ai_match_plan || 'basic';
+      
       const { data: potentialRoommates, error: roommatesError } = await supabase
         .from("students")
-        .select("full_name, age, gender, university, budget, preferred_room_types, preferred_amenities")
+        .select("full_name, age, gender, university, budget, preferred_room_types, preferred_amenities, personality_test_completed, personality_intro_extro, personality_cleanliness_level, personality_smoking")
         .neq("user_id", userId || "")
         .limit(3);
       
@@ -492,8 +495,29 @@ serve(async (req) => {
           roommatesContext += `   🎓 University: ${roommate.university || "Not specified"}\n`;
           roommatesContext += `   💰 Budget: $${roommate.budget || "Not specified"}/month\n`;
           roommatesContext += `   🛏️ Room Preference: ${roommate.preferred_room_types?.join(", ") || "Not specified"}\n`;
-          roommatesContext += `   ✨ Interests: ${roommate.preferred_amenities?.join(", ") || "Not specified"}\n\n`;
+          roommatesContext += `   ✨ Interests: ${roommate.preferred_amenities?.join(", ") || "Not specified"}\n`;
+          
+          // Add personality info based on tier
+          if (userTier === 'vip' && roommate.personality_test_completed && studentProfile.personality_test_completed) {
+            roommatesContext += `   🧠 Personality: ${roommate.personality_intro_extro || "N/A"}, ${roommate.personality_cleanliness_level || "N/A"} cleanliness, ${roommate.personality_smoking === 'no' ? 'Non-smoker' : 'Smoker'}\n`;
+          } else if (userTier === 'advanced' && roommate.personality_test_completed && studentProfile.personality_test_completed) {
+            roommatesContext += `   🧠 Personality match available (upgrade to VIP for details)\n`;
+          }
+          roommatesContext += "\n";
         });
+        
+        // Add tier-specific instructions
+        if (userTier === 'basic') {
+          roommatesContext += "\nIMPORTANT: This user has Basic tier. Do NOT mention personality matching. Only discuss basic preferences.\n";
+          roommatesContext += "If they ask about personality compatibility, say: 'Personality matching is available with Advanced Match or VIP Match.'\n";
+        } else if (userTier === 'advanced') {
+          roommatesContext += "\nThis user has Advanced tier. You can mention personality factors briefly but not in detail.\n";
+          roommatesContext += "Example: 'Based on personality factors, your match score with Sara is above average.'\n";
+        } else if (userTier === 'vip') {
+          roommatesContext += "\nThis user has VIP tier. Provide detailed personality insights when relevant.\n";
+          roommatesContext += "Example: 'You and Ahmed have high compatibility based on sleep routines, cleanliness preferences, and study habits.'\n";
+        }
+        
         roommatesContext += "\nPresent these roommate matches conversationally. Highlight shared interests and compatibility.";
       } else {
         roommatesContext = "\n\nNo roommate profiles match your criteria yet. New students join daily!";
