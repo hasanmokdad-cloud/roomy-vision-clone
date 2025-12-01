@@ -13,9 +13,12 @@ import { VoiceRecordingOverlay } from '@/components/messages/VoiceRecordingOverl
 import { TourMessageCard } from '@/components/messages/TourMessageCard';
 import { MessageBubble } from '@/components/messages/MessageBubble';
 import { EmojiPickerSheet } from '@/components/messages/EmojiPickerSheet';
+import { SwipeableMessage } from '@/components/messages/SwipeableMessage';
+import { OnlineIndicator } from '@/components/messages/OnlineIndicator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import BottomNav from '@/components/BottomNav';
 import { useBottomNav } from '@/contexts/BottomNavContext';
 import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
@@ -213,6 +216,8 @@ export default function Messages() {
   const touchStartPosRef = useRef({ x: 0, y: 0 });
   const micButtonRef = useRef<HTMLButtonElement>(null);
 
+  // Start heartbeat for online status
+  useOnlineStatus(userId, selectedConversation || undefined);
 
   // Handle auto-open from navigation state
   useEffect(() => {
@@ -620,6 +625,19 @@ export default function Messages() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Scroll to specific message
+  const scrollToMessage = (messageId: string) => {
+    const messageElement = document.getElementById(`message-${messageId}`);
+    if (messageElement) {
+      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Highlight message briefly
+      messageElement.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+      setTimeout(() => {
+        messageElement.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+      }, 2000);
+    }
+  };
 
   useEffect(() => {
     loadConversations();
@@ -1577,12 +1595,15 @@ export default function Messages() {
                       }`}
                     >
                       <div className="flex items-start gap-3">
-                        <Avatar className="w-10 h-10">
-                          <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
-                          <AvatarFallback className="bg-primary/20 text-primary">
-                            {conv.other_user_name?.charAt(0) || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="relative">
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
+                            <AvatarFallback className="bg-primary/20 text-primary">
+                              {conv.other_user_name?.charAt(0) || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          {conv.student_id && <OnlineIndicator userId={conv.student_id} />}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-1">
@@ -1634,21 +1655,27 @@ export default function Messages() {
                       <ArrowLeft className="w-5 h-5" />
                     </Button>
                   )}
-                  <Avatar className="w-10 h-10 shrink-0">
-                    <AvatarImage 
-                      src={conversations.find(c => c.id === selectedConversation)?.other_user_photo || undefined} 
-                      alt="User" 
-                    />
-                    <AvatarFallback className="bg-primary/20 text-primary">
-                      {conversations.find(c => c.id === selectedConversation)?.other_user_name?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative">
+                    <Avatar className="w-10 h-10 shrink-0">
+                      <AvatarImage 
+                        src={conversations.find(c => c.id === selectedConversation)?.other_user_photo || undefined} 
+                        alt="User" 
+                      />
+                      <AvatarFallback className="bg-primary/20 text-primary">
+                        {conversations.find(c => c.id === selectedConversation)?.other_user_name?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    {(() => {
+                      const otherUserId = conversations.find(c => c.id === selectedConversation)?.student_id;
+                      return otherUserId ? <OnlineIndicator userId={otherUserId} /> : null;
+                    })()}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-base truncate">
                       {conversations.find(c => c.id === selectedConversation)?.other_user_name}
                     </h3>
                     <p className="text-xs text-muted-foreground truncate">
-                      {conversations.find(c => c.id === selectedConversation)?.dorm_name}
+                      {typingUsers.size > 0 ? 'Typing...' : conversations.find(c => c.id === selectedConversation)?.dorm_name}
                     </p>
                   </div>
                 </div>
@@ -1662,21 +1689,30 @@ export default function Messages() {
                       const senderAvatar = isSender ? undefined : currentConversation?.other_user_avatar;
 
                       return (
-                        <MessageBubble
+                        <SwipeableMessage
                           key={msg.id}
-                          message={msg}
-                          isSender={isSender}
-                          userId={userId}
-                          senderName={senderName}
-                          senderAvatar={senderAvatar}
-                          onReply={() => setReplyToMessage(msg)}
-                          onEdit={() => {
-                            setEditingMessage(msg);
-                            setMessageInput(msg.body || '');
-                          }}
-                          renderContent={() => renderMessageContent(msg)}
-                          showAvatar={!isSender}
-                        />
+                          onSwipeReply={() => setReplyToMessage(msg)}
+                          disabled={false}
+                        >
+                          <div id={`message-${msg.id}`}>
+                            <MessageBubble
+                              message={msg}
+                              isSender={isSender}
+                              userId={userId}
+                              senderName={senderName}
+                              senderAvatar={senderAvatar}
+                              onReply={() => setReplyToMessage(msg)}
+                              onEdit={() => {
+                                setEditingMessage(msg);
+                                setMessageInput(msg.body || '');
+                              }}
+                              renderContent={() => renderMessageContent(msg)}
+                              showAvatar={!isSender}
+                              allMessages={messages}
+                              onScrollToMessage={scrollToMessage}
+                            />
+                          </div>
+                        </SwipeableMessage>
                       );
                     })}
                     
