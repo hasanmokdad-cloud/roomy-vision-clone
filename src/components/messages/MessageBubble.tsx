@@ -369,7 +369,9 @@ export function MessageBubble({
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6"
+                className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 h-6 w-6 transition-none ${
+                  isSender ? '-left-8' : '-right-8'
+                }`}
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>
