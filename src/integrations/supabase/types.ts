@@ -904,6 +904,38 @@ export type Database = {
           },
         ]
       }
+      message_reactions: {
+        Row: {
+          created_at: string | null
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           attachment_duration: number | null
@@ -913,11 +945,15 @@ export type Database = {
           body: string | null
           conversation_id: string
           created_at: string
+          deleted_for_all: boolean | null
           delivered_at: string | null
+          edited_at: string | null
           id: string
+          is_starred: boolean | null
           read: boolean
           read_at: string | null
           receiver_id: string | null
+          reply_to_message_id: string | null
           seen_at: string | null
           sender_id: string
           sent_at: string | null
@@ -932,11 +968,15 @@ export type Database = {
           body?: string | null
           conversation_id: string
           created_at?: string
+          deleted_for_all?: boolean | null
           delivered_at?: string | null
+          edited_at?: string | null
           id?: string
+          is_starred?: boolean | null
           read?: boolean
           read_at?: string | null
           receiver_id?: string | null
+          reply_to_message_id?: string | null
           seen_at?: string | null
           sender_id: string
           sent_at?: string | null
@@ -951,11 +991,15 @@ export type Database = {
           body?: string | null
           conversation_id?: string
           created_at?: string
+          deleted_for_all?: boolean | null
           delivered_at?: string | null
+          edited_at?: string | null
           id?: string
+          is_starred?: boolean | null
           read?: boolean
           read_at?: string | null
           receiver_id?: string | null
+          reply_to_message_id?: string | null
           seen_at?: string | null
           sender_id?: string
           sent_at?: string | null
@@ -968,6 +1012,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_message_id_fkey"
+            columns: ["reply_to_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
         ]
