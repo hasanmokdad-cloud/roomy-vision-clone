@@ -482,6 +482,36 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_context: {
+        Row: {
+          context: Json | null
+          id: string
+          last_match_session: Json | null
+          last_messages: Json | null
+          unresolved_questions: Json | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          id?: string
+          last_match_session?: Json | null
+          last_messages?: Json | null
+          unresolved_questions?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          id?: string
+          last_match_session?: Json | null
+          last_messages?: Json | null
+          unresolved_questions?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       chat_logs: {
         Row: {
           created_at: string | null

@@ -55,6 +55,9 @@ export default function AdminAiDiagnostics() {
   const [matchTrends, setMatchTrends] = useState<any[]>([]);
   const [feedbackDistribution, setFeedbackDistribution] = useState<any[]>([]);
   const [topDorms, setTopDorms] = useState<any[]>([]);
+  const [conversionFunnel, setConversionFunnel] = useState({ matches: 0, contacts: 0, reservations: 0 });
+  const [mismatchedPairs, setMismatchedPairs] = useState<any[]>([]);
+  const [preferenceTrends, setPreferenceTrends] = useState<any>({ areas: {}, avgBudget: 0 });
 
   useEffect(() => {
     loadDiagnostics();
@@ -151,6 +154,54 @@ export default function AdminAiDiagnostics() {
 
       setTopDorms(dorms || []);
     }
+
+    // CONVERSION FUNNEL: Match → Contact → Reservation tracking
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: contacts } = await supabase
+      .from('room_contact_tracking')
+      .select('dorm_id')
+      .gte('created_at', thirtyDaysAgo.toISOString());
+
+    const { data: reservations } = await supabase
+      .from('reservations')
+      .select('dorm_id')
+      .gte('created_at', thirtyDaysAgo.toISOString());
+
+    setConversionFunnel({
+      matches: matchLogs?.length || 0,
+      contacts: contacts?.length || 0,
+      reservations: reservations?.length || 0
+    });
+
+    // MOST MISMATCHED: Low-rated matches
+    const lowRatedMatches = feedbacks?.filter(f => f.helpful_score <= 2) || [];
+    setMismatchedPairs(lowRatedMatches.slice(0, 5));
+
+    // PREFERENCE TRENDS: Popular areas, budget analysis
+    const { data: students } = await supabase
+      .from('students')
+      .select('favorite_areas, budget, preferred_room_types');
+
+    const areaCounts: Record<string, number> = {};
+    let totalBudget = 0;
+    let budgetCount = 0;
+
+    students?.forEach(s => {
+      s.favorite_areas?.forEach((area: string) => {
+        areaCounts[area] = (areaCounts[area] || 0) + 1;
+      });
+      if (s.budget) {
+        totalBudget += s.budget;
+        budgetCount++;
+      }
+    });
+
+    setPreferenceTrends({ 
+      areas: areaCounts, 
+      avgBudget: budgetCount > 0 ? Math.round(totalBudget / budgetCount) : 0 
+    });
   };
 
   if (loading) {
@@ -294,6 +345,38 @@ export default function AdminAiDiagnostics() {
           </Card>
         </div>
 
+        {/* Conversion Funnel */}
+        <Card className="shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-orange-500" />
+              Conversion Funnel (Last 30 Days)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-violet-500/10 to-purple-500/10">
+                <span className="font-semibold">Matches Generated</span>
+                <span className="text-2xl font-bold text-violet-500">{conversionFunnel.matches}</span>
+              </div>
+              <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-cyan-500/10 to-blue-500/10">
+                <span className="font-semibold">Contacts Made</span>
+                <span className="text-2xl font-bold text-cyan-500">{conversionFunnel.contacts}</span>
+              </div>
+              <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-emerald-500/10 to-green-500/10">
+                <span className="font-semibold">Reservations</span>
+                <span className="text-2xl font-bold text-emerald-500">{conversionFunnel.reservations}</span>
+              </div>
+              <div className="pt-4 border-t border-muted">
+                <p className="text-sm text-muted-foreground">
+                  Conversion Rate: {conversionFunnel.matches > 0 ? 
+                    ((conversionFunnel.reservations / conversionFunnel.matches) * 100).toFixed(1) : 0}%
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Top Matched Dorms */}
         <Card className="shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
           <CardHeader>
@@ -336,6 +419,72 @@ export default function AdminAiDiagnostics() {
             )}
           </CardContent>
         </Card>
+
+        {/* Preference Trends */}
+        <Card className="shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-pink-500" />
+              Student Preference Trends
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <div>
+                <h4 className="font-semibold mb-3">Popular Areas</h4>
+                <div className="space-y-2">
+                  {Object.entries(preferenceTrends.areas)
+                    .sort((a, b) => (b[1] as number) - (a[1] as number))
+                    .slice(0, 5)
+                    .map(([area, count]) => (
+                      <div key={area} className="flex items-center justify-between">
+                        <span className="text-sm capitalize">{area}</span>
+                        <span className="text-sm font-semibold text-violet-500">{count as number} students</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+              <div className="pt-4 border-t border-muted">
+                <h4 className="font-semibold mb-2">Average Budget</h4>
+                <p className="text-3xl font-bold text-emerald-500">${preferenceTrends.avgBudget}/month</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Most Mismatched Pairs */}
+        {mismatchedPairs.length > 0 && (
+          <Card className="shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-red-500" />
+                Most Mismatched (Low Ratings)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {mismatchedPairs.map((feedback, idx) => (
+                  <div 
+                    key={feedback.id}
+                    className="p-4 rounded-lg bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/20"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-sm">{feedback.ai_action}</p>
+                        <p className="text-xs text-muted-foreground">Target: {feedback.target_id?.substring(0, 8)}</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {[...Array(feedback.helpful_score)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </motion.div>
   );

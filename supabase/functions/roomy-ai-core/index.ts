@@ -23,7 +23,87 @@ serve(async (req) => {
   console.log('[roomy-ai-core] Request received');
 
   try {
-    const { mode, match_tier, personality_enabled, limit, context, exclude_ids } = await req.json();
+    const { mode, match_tier, personality_enabled, limit, context, exclude_ids, action } = await req.json();
+
+    // Handle feedback recording endpoint
+    if (action === 'record_feedback') {
+      const { ai_action, target_id, helpful_score, feedback_text } = await req.json();
+      
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: "Authentication required" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+      const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+      
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: "Invalid authentication" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      await supabase.from('ai_feedback').insert({
+        user_id: user.id,
+        ai_action,
+        target_id,
+        helpful_score,
+        feedback_text,
+        context: { mode, tier: match_tier }
+      });
+      
+      await supabase.from('ai_events').insert({
+        user_id: user.id,
+        event_type: 'feedback',
+        payload: { ai_action, target_id, helpful_score }
+      });
+      
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Handle aggregate scores endpoint
+    if (action === 'get_aggregate_scores') {
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+      const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+      
+      const { data: feedbacks } = await supabase
+        .from('ai_feedback')
+        .select('ai_action, helpful_score, target_id');
+      
+      const aggregates: any = {};
+      feedbacks?.forEach((f: any) => {
+        if (!aggregates[f.ai_action]) {
+          aggregates[f.ai_action] = { total: 0, count: 0, targets: {} };
+        }
+        aggregates[f.ai_action].total += f.helpful_score;
+        aggregates[f.ai_action].count += 1;
+        
+        if (f.target_id) {
+          if (!aggregates[f.ai_action].targets[f.target_id]) {
+            aggregates[f.ai_action].targets[f.target_id] = { total: 0, count: 0 };
+          }
+          aggregates[f.ai_action].targets[f.target_id].total += f.helpful_score;
+          aggregates[f.ai_action].targets[f.target_id].count += 1;
+        }
+      });
+      
+      return new Response(
+        JSON.stringify(aggregates),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     // Get authenticated user
     const authHeader = req.headers.get('Authorization');
