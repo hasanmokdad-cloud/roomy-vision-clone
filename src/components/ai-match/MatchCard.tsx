@@ -137,7 +137,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, index }) => {
             </div>
 
             <div className="border-t border-white/10 pt-4">
-              <p className="text-xs text-foreground/60 mb-3">Amenities</p>
+              <p className="text-xs text-foreground/60 mb-3">Services & Amenities</p>
               <div className="flex flex-wrap gap-2 mb-4">
                 {match.amenities.slice(0, 6).map((amenity) => {
                   // Only render valid amenity types

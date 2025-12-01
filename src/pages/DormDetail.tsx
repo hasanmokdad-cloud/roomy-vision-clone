@@ -509,14 +509,18 @@ export default function DormDetail() {
               </Card>
             )}
 
-            {/* Amenities & Services */}
-            {dorm.services_amenities && (
+            {/* Services & Amenities */}
+            {dorm.amenities && dorm.amenities.length > 0 && (
               <Card className="glass-hover">
                 <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold mb-4">Amenities & Services</h2>
-                  <p className="text-foreground/80 whitespace-pre-line">
-                    {dorm.services_amenities}
-                  </p>
+                  <h2 className="text-2xl font-bold mb-4">Services & Amenities</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {dorm.amenities.map((amenity: string, idx: number) => (
+                      <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
+                        <span className="text-foreground">{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             )}

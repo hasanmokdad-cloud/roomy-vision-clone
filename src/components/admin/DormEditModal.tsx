@@ -200,9 +200,9 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin
               )}
             </div>
 
-            {/* Amenities */}
+            {/* Services & Amenities */}
             <div>
-              <Label>Amenities</Label>
+              <Label>Services & Amenities</Label>
               <div className="grid grid-cols-3 gap-2 mt-2">
                 {AMENITIES.map((amenity) => (
                   <div key={amenity} className="flex items-center space-x-2">

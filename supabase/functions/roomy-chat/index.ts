@@ -149,6 +149,11 @@ async function extractFilters(message: string, context: any = {}, studentPrefs: 
     filters.amenity = "laundry";
     learnedPrefs.amenity = "laundry";
   }
+  
+  // Detect general amenity/services queries
+  if (query.includes("services") || query.includes("what services") || query.includes("amenities offered")) {
+    filters.askingAboutAmenities = true;
+  }
 
   return { filters, learnedPrefs };
 }
@@ -629,7 +634,7 @@ serve(async (req) => {
     // Query dorms database with smart matching priority
     let dbQuery = supabase
       .from("dorms")
-      .select("id, dorm_name, area, university, monthly_price, room_types, services_amenities, verification_status, gender_preference")
+      .select("id, dorm_name, area, university, monthly_price, room_types, amenities, verification_status, gender_preference")
       .eq("verification_status", "Verified");
 
     // CRITICAL: Gender compatibility filter
@@ -646,7 +651,7 @@ serve(async (req) => {
     if (filters.university) dbQuery = dbQuery.ilike("university", `%${filters.university}%`);
     if (filters.area) dbQuery = dbQuery.ilike("area", `%${filters.area}%`);
     if (filters.roomType) dbQuery = dbQuery.ilike("room_types", `%${filters.roomType}%`);
-    if (filters.amenity) dbQuery = dbQuery.ilike("services_amenities", `%${filters.amenity}%`);
+    if (filters.amenity) dbQuery = dbQuery.contains("amenities", [filters.amenity]);
     if (filters.dormName) dbQuery = dbQuery.ilike("dorm_name", `%${filters.dormName}%`);
 
     const { data: dorms, error: dbError } = await dbQuery;
@@ -685,9 +690,9 @@ serve(async (req) => {
         }
         
         // Amenity match (1x weight)
-        if (studentProfile.preferred_amenities?.length > 0) {
+        if (studentProfile.preferred_amenities?.length > 0 && dorm.amenities) {
           const amenityMatches = studentProfile.preferred_amenities.filter((amenity: string) =>
-            dorm.services_amenities?.toLowerCase().includes(amenity.toLowerCase())
+            dorm.amenities?.some((a: string) => a.toLowerCase().includes(amenity.toLowerCase()))
           ).length;
           score += amenityMatches * 10;
         }
@@ -842,7 +847,7 @@ serve(async (req) => {
         dormsContext += `   🎓 University: ${dorm.university || "Not specified"}\n`;
         dormsContext += `   💰 Price: $${dorm.monthly_price}/month\n`;
         dormsContext += `   🛏️ Room Types: ${dorm.room_types || "Not specified"}\n`;
-        dormsContext += `   ✨ Amenities: ${dorm.services_amenities || "Not specified"}\n`;
+        dormsContext += `   ✨ Services & Amenities: ${dorm.amenities?.join(", ") || "Not specified"}\n`;
         if (dorm.gender_preference) {
           dormsContext += `   🚻 Gender Policy: ${dorm.gender_preference}\n`;
         }
