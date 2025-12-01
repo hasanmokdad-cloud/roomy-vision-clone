@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { MoreVertical } from "lucide-react";
+import { ChevronDown, Smile } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ReactionBar } from "./ReactionBar";
 import { MessageContextMenu } from "./MessageContextMenu";
@@ -365,46 +365,110 @@ export function MessageBubble({
           />
         )}
 
-        {/* Message Bubble */}
-        <div
-          className={`rounded-lg px-4 py-2 ${
-            isSender
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-foreground"
-          }`}
-        >
-          {!isSender && showAvatar && (
-            <p className="text-xs font-semibold mb-1">{senderName}</p>
+        {/* Main message row with emoji button + bubble */}
+        <div className="flex items-start gap-1">
+          {/* Emoji button - LEFT side for SENT messages */}
+          {!isMobile && isSender && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="opacity-0 group-hover:opacity-100 h-6 w-6 mt-1 transition-opacity flex-shrink-0"
+              onClick={() => setShowReactionBar(!showReactionBar)}
+            >
+              <Smile className="h-4 w-4" />
+            </Button>
           )}
 
-          {/* Reply Quote */}
-          {repliedToMessage && (
-            <ReplyQuote
-              senderName={
-                repliedToMessage.sender_id === userId ? "You" : senderName
-              }
-              messageSnippet={repliedToMessage.body?.substring(0, 50) || "Media"}
-              onClick={() => {
-                if (onScrollToMessage) {
-                  onScrollToMessage(repliedToMessage.id);
+          {/* Message Bubble */}
+          <div
+            className={`relative rounded-lg px-4 py-2 ${
+              isSender
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-foreground"
+            }`}
+          >
+            {/* Dropdown Arrow - INSIDE bubble */}
+            {!isMobile && (
+              <MessageContextMenu
+                open={showContextMenu}
+                onOpenChange={setShowContextMenu}
+                isSender={isSender}
+                messageId={message.id}
+                messageText={message.body}
+                createdAt={message.created_at}
+                deliveredAt={message.delivered_at}
+                seenAt={message.seen_at}
+                onReply={() => {
+                  onReply();
+                  setShowContextMenu(false);
+                }}
+                onCopy={handleCopy}
+                onEdit={onEdit}
+                onStar={handleStar}
+                onInfo={handleInfo}
+                onPin={handlePin}
+                onTranslate={handleTranslate}
+                onForward={handleForward}
+                onDelete={handleDelete}
+                canEdit={canEdit}
+                isPinned={localIsPinned}
+                trigger={
+                  <button
+                    className={`absolute top-1 ${
+                      isSender ? "right-1" : "left-1"
+                    } opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-black/10 transition-opacity`}
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
                 }
-              }}
-              isSender={isSender}
-            />
-          )}
-          
-          {renderContent()}
-
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs opacity-70">
-              {format(new Date(message.created_at), "HH:mm")}
-            </span>
-            {message.edited_at && (
-              <span className="text-xs opacity-70">• edited</span>
+              />
             )}
-            {localIsStarred && <span className="text-xs">⭐</span>}
-            {localIsPinned && <span className="text-xs">📌</span>}
+
+            {!isSender && showAvatar && (
+              <p className="text-xs font-semibold mb-1">{senderName}</p>
+            )}
+
+            {/* Reply Quote */}
+            {repliedToMessage && (
+              <ReplyQuote
+                senderName={
+                  repliedToMessage.sender_id === userId ? "You" : senderName
+                }
+                messageSnippet={repliedToMessage.body?.substring(0, 50) || "Media"}
+                onClick={() => {
+                  if (onScrollToMessage) {
+                    onScrollToMessage(repliedToMessage.id);
+                  }
+                }}
+                isSender={isSender}
+              />
+            )}
+
+            {renderContent()}
+
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs opacity-70">
+                {format(new Date(message.created_at), "HH:mm")}
+              </span>
+              {message.edited_at && (
+                <span className="text-xs opacity-70">• edited</span>
+              )}
+              {localIsStarred && <span className="text-xs">⭐</span>}
+              {localIsPinned && <span className="text-xs">📌</span>}
+            </div>
           </div>
+
+          {/* Emoji button - RIGHT side for RECEIVED messages */}
+          {!isMobile && !isSender && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="opacity-0 group-hover:opacity-100 h-6 w-6 mt-1 transition-opacity flex-shrink-0"
+              onClick={() => setShowReactionBar(!showReactionBar)}
+            >
+              <Smile className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {/* Reactions Display - below message */}
@@ -425,45 +489,6 @@ export function MessageBubble({
               </button>
             ))}
           </div>
-        )}
-
-        {/* Context Menu with three-dots trigger (desktop only) */}
-        {!isMobile && (
-          <MessageContextMenu
-            open={showContextMenu}
-            onOpenChange={setShowContextMenu}
-            isSender={isSender}
-            messageId={message.id}
-            messageText={message.body}
-            createdAt={message.created_at}
-            deliveredAt={message.delivered_at}
-            seenAt={message.seen_at}
-            onReply={() => {
-              onReply();
-              setShowContextMenu(false);
-            }}
-            onCopy={handleCopy}
-            onEdit={onEdit}
-            onStar={handleStar}
-            onInfo={handleInfo}
-            onPin={handlePin}
-            onTranslate={handleTranslate}
-            onForward={handleForward}
-            onDelete={handleDelete}
-            canEdit={canEdit}
-            isPinned={localIsPinned}
-            trigger={
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 h-6 w-6 transition-none ${
-                  isSender ? '-left-8' : '-right-8'
-                }`}
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            }
-          />
         )}
 
         {/* Full Emoji Picker */}
