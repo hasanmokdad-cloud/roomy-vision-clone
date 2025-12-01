@@ -6,18 +6,19 @@ interface ReactionBarProps {
   onReactionSelect: (emoji: string) => void;
   onOpenFullPicker: () => void;
   selectedEmojis?: string[];
+  isSender?: boolean;
 }
 
 const WHATSAPP_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "👏"];
 
-export function ReactionBar({ onReactionSelect, onOpenFullPicker, selectedEmojis = [] }: ReactionBarProps) {
+export function ReactionBar({ onReactionSelect, onOpenFullPicker, selectedEmojis = [], isSender = false }: ReactionBarProps) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.8, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.8, y: 10 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
-      className="absolute -top-14 left-1/2 -translate-x-1/2 z-50"
+      className={`absolute -top-14 z-50 ${isSender ? 'right-0' : 'left-0'}`}
     >
       <div className="bg-popover border border-border rounded-full shadow-lg px-2 py-2 flex items-center gap-1">
         {WHATSAPP_REACTIONS.map((emoji) => (

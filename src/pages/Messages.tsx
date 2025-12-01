@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info } from 'lucide-react';
 import { ConversationContextMenu } from '@/components/messages/ConversationContextMenu';
 import { VoiceRecordingOverlay } from '@/components/messages/VoiceRecordingOverlay';
 import { TourMessageCard } from '@/components/messages/TourMessageCard';
@@ -17,6 +17,7 @@ import { EmojiPickerSheet } from '@/components/messages/EmojiPickerSheet';
 import { SwipeableMessage } from '@/components/messages/SwipeableMessage';
 import { OnlineIndicator } from '@/components/messages/OnlineIndicator';
 import { EditMessageModal } from '@/components/messages/EditMessageModal';
+import { ContactInfoPanel } from '@/components/messages/ContactInfoPanel';
 import { FriendsTab } from '@/components/friends/FriendsTab';
 import { FriendSearchBar } from '@/components/friends/FriendSearchBar';
 import { useToast } from '@/hooks/use-toast';
@@ -218,6 +219,7 @@ export default function Messages() {
   const [studentId, setStudentId] = useState<string | null>(null);
   const [pinnedMessages, setPinnedMessages] = useState<Message[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showContactInfo, setShowContactInfo] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
@@ -1613,6 +1615,14 @@ export default function Messages() {
                       {typingUsers.size > 0 ? 'Typing...' : conversations.find(c => c.id === selectedConversation)?.dorm_name}
                     </p>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowContactInfo(!showContactInfo)}
+                    className="shrink-0"
+                  >
+                    <Info className="w-5 h-5" />
+                  </Button>
                 </div>
 
                 <ScrollArea className={`flex-1 p-4 ${isMobile ? 'pb-32' : ''}`}>
@@ -1876,6 +1886,34 @@ export default function Messages() {
               </div>
             )}
           </Card>
+          
+          {/* Contact Info Panel */}
+          {showContactInfo && selectedConversation && !isMobile && (
+            <ContactInfoPanel
+              onClose={() => setShowContactInfo(false)}
+              contactName={conversations.find(c => c.id === selectedConversation)?.other_user_name || 'User'}
+              contactAvatar={conversations.find(c => c.id === selectedConversation)?.other_user_photo || undefined}
+              conversationId={selectedConversation}
+              isMuted={(() => {
+                const conv = conversations.find(c => c.id === selectedConversation);
+                return conv?.muted_until ? new Date(conv.muted_until) > new Date() : false;
+              })()}
+              onMuteToggle={async (muted) => {
+                try {
+                  const mutedUntil = muted ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : null;
+                  await supabase
+                    .from('conversations')
+                    .update({ muted_until: mutedUntil })
+                    .eq('id', selectedConversation);
+                  
+                  toast({ title: muted ? 'Conversation muted' : 'Conversation unmuted' });
+                  loadConversations();
+                } catch (error) {
+                  toast({ title: 'Failed to update mute status', variant: 'destructive' });
+                }
+              }}
+            />
+          )}
         </div>
       </main>
 
