@@ -10,13 +10,19 @@ export function useOnlineStatus(userId: string | null, conversationId?: string) 
 
     // Set online on mount
     const setOnline = async () => {
-      await supabase.from("user_presence").upsert({
-        user_id: userId,
-        is_online: true,
-        last_seen: new Date().toISOString(),
-        current_conversation_id: conversationId || null,
-        updated_at: new Date().toISOString(),
-      });
+      try {
+        await supabase.from("user_presence").upsert({
+          user_id: userId,
+          is_online: true,
+          last_seen: new Date().toISOString(),
+          current_conversation_id: conversationId || null,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id'
+        });
+      } catch (error) {
+        console.error("Error updating presence:", error);
+      }
     };
 
     // Set offline on unmount
@@ -34,13 +40,20 @@ export function useOnlineStatus(userId: string | null, conversationId?: string) 
     setOnline();
     heartbeatIntervalRef.current = setInterval(async () => {
       if (isActiveRef.current) {
-        await supabase
-          .from("user_presence")
-          .update({
-            last_seen: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("user_id", userId);
+        try {
+          await supabase
+            .from("user_presence")
+            .upsert({
+              user_id: userId,
+              is_online: true,
+              last_seen: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }, {
+              onConflict: 'user_id'
+            });
+        } catch (error) {
+          console.error("Error updating heartbeat:", error);
+        }
       }
     }, 10000); // Update every 10 seconds
 
