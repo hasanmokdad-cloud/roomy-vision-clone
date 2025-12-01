@@ -299,6 +299,7 @@ serve(async (req) => {
     let studentProfile: any = null;
     let studentId: string | null = null;
     let userPreferences: any = null;
+    let chatContext: any = null;
     
     if (userId && userId.startsWith('guest_') === false) {
       // COMPREHENSIVE PROFILE READING: Load ALL relevant student fields for intelligent responses
@@ -330,6 +331,34 @@ serve(async (req) => {
         .maybeSingle();
       
       userPreferences = prefs?.preferences || null;
+
+      // LOAD CHAT CONTEXT: Load conversation memory for personalized responses
+      const { data: existingContext } = await supabase
+        .from('chat_context')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (!existingContext && student) {
+        // Create new context with profile snapshot
+        const newContext = {
+          user_id: userId,
+          context: {
+            gender: student.gender,
+            budget: student.budget,
+            university: student.university,
+            current_dorm_id: student.current_dorm_id,
+            preferences: student.preferred_amenities,
+            match_tier: student.ai_match_plan || 'basic'
+          },
+          last_messages: [],
+          updated_at: new Date().toISOString()
+        };
+        await supabase.from('chat_context').insert(newContext);
+        chatContext = newContext;
+      } else {
+        chatContext = existingContext;
+      }
     }
 
     // Check for reset AI memory command
@@ -821,9 +850,15 @@ serve(async (req) => {
       dormsContext = "\n\nNo dorms match the criteria. Suggest adjusting budget, location, or room type. Ask what matters most.";
     }
     
-    // Build conversation history context
+    // Build conversation history context (from chat_context memory)
     let conversationHistoryContext = "";
-    if (conversationHistory.length > 0) {
+    if (chatContext?.last_messages && chatContext.last_messages.length > 0) {
+      conversationHistoryContext = "\n\n📝 CONVERSATION MEMORY (Last 10 Messages):\n";
+      chatContext.last_messages.slice(-10).forEach((msg: any) => {
+        conversationHistoryContext += `${msg.role === 'user' ? 'Student' : 'Roomy AI'}: ${msg.content}\n`;
+      });
+      conversationHistoryContext += "\nUse this memory to provide contextual, personalized responses.\n";
+    } else if (conversationHistory.length > 0) {
       conversationHistoryContext = "\n\nRECENT CONVERSATION HISTORY:\n";
       conversationHistory.forEach((msg: any) => {
         conversationHistoryContext += `${msg.role === 'user' ? 'Student' : 'Roomy AI'}: ${msg.message}\n`;
@@ -995,6 +1030,30 @@ Present results engagingly. If match scores exist, mention why dorms are great f
         console.log("[roomy-chat] Logged conversation to ai_chat_sessions");
       } catch (logError) {
         console.error("[roomy-chat] Failed to log conversation:", logError);
+      }
+
+      // UPDATE CHAT CONTEXT: Store last 10 messages in memory
+      if (userId && !userId.startsWith('guest_')) {
+        try {
+          const existingMessages = chatContext?.last_messages || [];
+          existingMessages.push({ role: 'user', content: message, timestamp: new Date().toISOString() });
+          existingMessages.push({ role: 'assistant', content: fullResponse, timestamp: new Date().toISOString() });
+          
+          // Keep only last 10 messages
+          const trimmedMessages = existingMessages.slice(-10);
+          
+          await supabase
+            .from('chat_context')
+            .upsert({
+              user_id: userId,
+              last_messages: trimmedMessages,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+          
+          console.log("[roomy-chat] Updated chat context memory");
+        } catch (contextError) {
+          console.error("[roomy-chat] Failed to update chat context:", contextError);
+        }
       }
 
       // Log AI event for chat interaction
