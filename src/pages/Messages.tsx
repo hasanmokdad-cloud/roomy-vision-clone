@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square } from 'lucide-react';
 import { ConversationContextMenu } from '@/components/messages/ConversationContextMenu';
 import { VoiceRecordingOverlay } from '@/components/messages/VoiceRecordingOverlay';
@@ -15,10 +16,13 @@ import { MessageBubble } from '@/components/messages/MessageBubble';
 import { EmojiPickerSheet } from '@/components/messages/EmojiPickerSheet';
 import { SwipeableMessage } from '@/components/messages/SwipeableMessage';
 import { OnlineIndicator } from '@/components/messages/OnlineIndicator';
+import { FriendsTab } from '@/components/friends/FriendsTab';
+import { FriendSearchBar } from '@/components/friends/FriendSearchBar';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useRoleGuard } from '@/hooks/useRoleGuard';
 import BottomNav from '@/components/BottomNav';
 import { useBottomNav } from '@/contexts/BottomNavContext';
 import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
@@ -181,6 +185,7 @@ const RoomPreviewCard = ({ metadata }: { metadata: Message['attachment_metadata'
 
 export default function Messages() {
   const { loading: authLoading, userId } = useAuthGuard();
+  const { role } = useRoleGuard();
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -205,6 +210,9 @@ export default function Messages() {
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [activeTab, setActiveTab] = useState<'chats' | 'friends'>('chats');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [studentId, setStudentId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
@@ -215,6 +223,20 @@ export default function Messages() {
   const touchStartTimeRef = useRef<number>(0);
   const touchStartPosRef = useRef({ x: 0, y: 0 });
   const micButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Get student ID for friends functionality
+  useEffect(() => {
+    if (userId && role === 'student') {
+      supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', userId)
+        .single()
+        .then(({ data }) => {
+          if (data) setStudentId(data.id);
+        });
+    }
+  }, [userId, role]);
 
   // Start heartbeat for online status
   useOnlineStatus(userId, selectedConversation || undefined);
@@ -1432,31 +1454,60 @@ export default function Messages() {
         <div className={`${isMobile ? 'h-screen' : 'h-[calc(100vh-12rem)]'} flex flex-col md:flex-row gap-0 md:gap-4`}>
           {/* Conversations List */}
           <Card className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-80 rounded-none md:rounded-lg border-0 md:border shadow-none md:shadow-sm`}>
-            <div className={`p-4 border-b border-border ${isMobile ? 'pt-6' : ''}`}>
+            <div className={`p-4 border-b border-border ${isMobile ? 'pt-6' : ''} space-y-3`}>
               <div className="flex items-center justify-between w-full">
                 <h2 className={`${isMobile ? 'text-3xl' : 'text-2xl'} font-bold flex items-center gap-2`}>
                   <MessageSquare className="w-6 h-6" />
                   Messages
                 </h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowArchived(!showArchived)}
-                >
-                  <Archive className="w-4 h-4 mr-2" />
-                  {showArchived ? 'Hide' : 'Archived'}
-                </Button>
+                {activeTab === 'chats' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowArchived(!showArchived)}
+                  >
+                    <Archive className="w-4 h-4 mr-2" />
+                    {showArchived ? 'Hide' : 'Archived'}
+                  </Button>
+                )}
               </div>
+
+              {role === 'student' && studentId && (
+                <>
+                  <FriendSearchBar
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder={activeTab === 'chats' ? 'Search messages...' : 'Search students...'}
+                  />
+                  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'chats' | 'friends')}>
+                    <TabsList className="w-full">
+                      <TabsTrigger value="chats" className="flex-1">Chats</TabsTrigger>
+                      <TabsTrigger value="friends" className="flex-1">Friends</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </>
+              )}
             </div>
-            <ScrollArea className="flex-1">
-              {conversations.length === 0 ? (
-                <div className="p-8 text-center text-foreground/60">
-                  <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No conversations yet</p>
-                  <p className="text-sm mt-2">Start chatting about dorms to see conversations here</p>
-                </div>
-              ) : (
-                conversations.map((conv) => (
+            {activeTab === 'friends' && role === 'student' && studentId ? (
+              <FriendsTab studentId={studentId} searchQuery={searchQuery} />
+            ) : (
+              <ScrollArea className="flex-1">
+                {conversations.filter(c => 
+                  !searchQuery || 
+                  c.other_user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  c.last_message?.toLowerCase().includes(searchQuery.toLowerCase())
+                ).length === 0 ? (
+                  <div className="p-8 text-center text-foreground/60">
+                    <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No conversations yet</p>
+                    <p className="text-sm mt-2">Start chatting about dorms to see conversations here</p>
+                  </div>
+                ) : (
+                  conversations.filter(c => 
+                    !searchQuery || 
+                    c.other_user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    c.last_message?.toLowerCase().includes(searchQuery.toLowerCase())
+                  ).map((conv) => (
                   <div key={conv.id} className="relative group">
                     <button
                       onClick={() => {
@@ -1507,9 +1558,10 @@ export default function Messages() {
                 />
               </div>
                   </div>
-                ))
-              )}
-            </ScrollArea>
+                  ))
+                )}
+              </ScrollArea>
+            )}
           </Card>
 
           {/* Chat Window */}
