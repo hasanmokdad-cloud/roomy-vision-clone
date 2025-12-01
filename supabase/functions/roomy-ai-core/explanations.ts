@@ -73,10 +73,41 @@ export function generateMatchExplanations(
   } else if (match.type === 'roommate') {
     // Roommate match explanations
     
-    // University match
-    if (match.university && student.preferred_university && 
-        match.university === student.preferred_university) {
+    // University match (exact match)
+    if (match.university && student.university && 
+        match.university.toLowerCase() === student.university.toLowerCase()) {
       explanations.push(`Both study at ${match.university}`);
+    } else if (match.university && student.preferred_university && 
+        match.university.toLowerCase() === student.preferred_university.toLowerCase()) {
+      explanations.push(`Studies at your preferred university: ${match.university}`);
+    }
+
+    // Major similarity
+    if (match.major && student.major && 
+        match.major.toLowerCase() === student.major.toLowerCase()) {
+      explanations.push(`Same major: ${match.major}`);
+    } else if (match.major && student.major) {
+      // Check if majors are in similar fields
+      const studentMajorLower = student.major.toLowerCase();
+      const matchMajorLower = match.major.toLowerCase();
+      const engineeringFields = ['engineering', 'computer', 'mechanical', 'electrical', 'civil'];
+      const businessFields = ['business', 'economics', 'finance', 'marketing', 'management'];
+      const artsFields = ['art', 'design', 'music', 'literature', 'humanities'];
+      
+      const inSameField = 
+        (engineeringFields.some(f => studentMajorLower.includes(f) && matchMajorLower.includes(f))) ||
+        (businessFields.some(f => studentMajorLower.includes(f) && matchMajorLower.includes(f))) ||
+        (artsFields.some(f => studentMajorLower.includes(f) && matchMajorLower.includes(f)));
+      
+      if (inSameField) {
+        explanations.push('Related fields of study');
+      }
+    }
+
+    // Year of study similarity
+    if (match.year_of_study && student.year_of_study && 
+        match.year_of_study === student.year_of_study) {
+      explanations.push(`Both in ${match.year_of_study}`);
     }
 
     // Budget similarity
@@ -84,6 +115,8 @@ export function generateMatchExplanations(
       const diff = Math.abs(match.budget - student.budget);
       if (diff < 100) {
         explanations.push(`Similar budget ($${match.budget}/month)`);
+      } else if (diff < 200) {
+        explanations.push(`Close budget range ($${match.budget}/month)`);
       }
     }
 
@@ -97,6 +130,13 @@ export function generateMatchExplanations(
       }
     }
 
+    // Housing status context
+    if (match.needs_dorm && student.accommodation_status === 'need_dorm') {
+      explanations.push('Both looking for a dorm together');
+    } else if (match.needs_roommate_current_place && match.current_dorm?.name) {
+      explanations.push(`Has a place at ${match.current_dorm.name}`);
+    }
+
     // Current dorm capacity (if student has current place)
     if (student.current_dorm_id && student.current_room_id && match.current_room) {
       const available = match.current_room.capacity - match.current_room.capacity_occupied;
@@ -107,24 +147,44 @@ export function generateMatchExplanations(
       }
     }
 
-    // Personality traits (only for Advanced/VIP tiers)
+    // Personality traits (only for Advanced/VIP tiers with detailed breakdown)
     if (tier !== 'basic' && usePersonality && match.subScores?.personality_breakdown) {
       const breakdown = match.subScores.personality_breakdown;
       
       if (breakdown.sleep_schedule && breakdown.sleep_schedule > 0.75) {
-        explanations.push('Similar sleep schedules');
+        if (breakdown.sleep_schedule > 0.9) {
+          explanations.push('Nearly identical sleep schedules');
+        } else {
+          explanations.push('Compatible sleep schedules');
+        }
       }
       
       if (breakdown.cleanliness && breakdown.cleanliness > 0.75) {
-        explanations.push('Both prefer clean living spaces');
+        if (breakdown.cleanliness > 0.9) {
+          explanations.push('Both highly value cleanliness');
+        } else {
+          explanations.push('Similar cleanliness standards');
+        }
       }
       
       if (breakdown.noise_compatibility && breakdown.noise_compatibility > 0.75) {
-        explanations.push('Compatible noise tolerance levels');
+        explanations.push('Compatible noise tolerance');
       }
       
       if (breakdown.social_style && breakdown.social_style > 0.75) {
-        explanations.push('Similar social preferences');
+        if (breakdown.social_style > 0.9) {
+          explanations.push('Very similar social energy');
+        } else {
+          explanations.push('Compatible social preferences');
+        }
+      }
+
+      if (breakdown.guest_policy && breakdown.guest_policy > 0.75) {
+        explanations.push('Similar views on guests');
+      }
+
+      if (breakdown.pet_compatibility && breakdown.pet_compatibility > 0.75) {
+        explanations.push('Compatible with pets preferences');
       }
     } else if (tier === 'basic') {
       // Basic tier - only show non-personality reasons
