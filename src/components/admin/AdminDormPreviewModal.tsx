@@ -152,10 +152,10 @@ export function AdminDormPreviewModal({ dorm, isOpen, onClose }: AdminDormPrevie
               </div>
             )}
 
-            {/* Amenities */}
+            {/* Services & Amenities */}
             {dorm.amenities && dorm.amenities.length > 0 && (
               <div>
-                <h4 className="font-semibold mb-2">Amenities</h4>
+                <h4 className="font-semibold mb-2">Services & Amenities</h4>
                 <div className="flex flex-wrap gap-2">
                   {dorm.amenities.map((amenity: string) => (
                     <Badge key={amenity} variant="outline">

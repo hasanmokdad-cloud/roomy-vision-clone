@@ -116,7 +116,7 @@ export const RoomFlipCard: React.FC<RoomFlipCardProps> = ({
               </div>
 
               <div className="mb-4">
-                <p className="text-xs text-foreground/60 mb-2 font-semibold">Amenities:</p>
+                <p className="text-xs text-foreground/60 mb-2 font-semibold">Services & Amenities:</p>
                 <div className="grid grid-cols-3 gap-2">
                   {room.amenities.map((amenity) => (
                     <div

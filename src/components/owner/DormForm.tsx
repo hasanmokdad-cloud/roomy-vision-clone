@@ -475,7 +475,7 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
           </div>
 
           <div>
-            <Label>Amenities</Label>
+            <Label>Services & Amenities</Label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-3">
               {AMENITIES_OPTIONS.map((amenity) => (
                 <div key={amenity} className="flex items-center space-x-2">

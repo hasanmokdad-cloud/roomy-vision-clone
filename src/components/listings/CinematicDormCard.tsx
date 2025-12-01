@@ -393,7 +393,7 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
 
                 {dorm.amenities && dorm.amenities.length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-muted-foreground mb-2">Amenities:</p>
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Services & Amenities:</p>
                     <div className="grid grid-cols-2 gap-2">
                       {dorm.amenities.slice(0, 6).map((amenity, i) => (
                         <div key={i} className="flex items-center gap-2 text-xs text-foreground">
