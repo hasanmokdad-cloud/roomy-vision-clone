@@ -35,13 +35,20 @@ interface MessageContextMenuProps {
   messageId: string;
   messageText: string | null;
   createdAt: string;
+  deliveredAt?: string | null;
+  seenAt?: string | null;
   onReply: () => void;
   onCopy: () => void;
   onEdit?: () => void;
   onStar: () => void;
+  onInfo: () => void;
+  onPin: () => void;
+  onTranslate: () => void;
+  onForward: () => void;
   onDelete: (deleteForEveryone: boolean) => void;
   trigger?: React.ReactNode;
   canEdit?: boolean;
+  isPinned?: boolean;
 }
 
 export function MessageContextMenu({
@@ -51,25 +58,32 @@ export function MessageContextMenu({
   messageId,
   messageText,
   createdAt,
+  deliveredAt,
+  seenAt,
   onReply,
   onCopy,
   onEdit,
   onStar,
+  onInfo,
+  onPin,
+  onTranslate,
+  onForward,
   onDelete,
   trigger,
   canEdit = false,
+  isPinned = false,
 }: MessageContextMenuProps) {
   const isMobile = useIsMobile();
 
   const menuItems = [
     { icon: Reply, label: "Reply", onClick: onReply },
-    { icon: Forward, label: "Forward", onClick: () => {}, disabled: true },
+    { icon: Forward, label: "Forward", onClick: onForward },
     { icon: Copy, label: "Copy", onClick: onCopy, show: !!messageText },
     { icon: Edit3, label: "Edit", onClick: onEdit, show: isSender && canEdit },
-    { icon: Info, label: "Info", onClick: () => {}, disabled: true },
+    { icon: Info, label: "Info", onClick: onInfo },
     { icon: Star, label: "Star", onClick: onStar },
-    { icon: Pin, label: "Pin", onClick: () => {}, disabled: true },
-    { icon: Languages, label: "Translate", onClick: () => {}, disabled: true },
+    { icon: Pin, label: isPinned ? "Unpin" : "Pin", onClick: onPin },
+    { icon: Languages, label: "Translate", onClick: onTranslate },
   ];
 
   if (isMobile) {
@@ -87,13 +101,10 @@ export function MessageContextMenu({
                 <button
                   key={index}
                   onClick={() => {
-                    if (!item.disabled) {
-                      item.onClick?.();
-                      onOpenChange(false);
-                    }
+                    item.onClick?.();
+                    onOpenChange(false);
                   }}
-                  disabled={item.disabled}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent rounded-lg transition-colors"
                 >
                   <Icon className="h-5 w-5" />
                   <span className="font-medium">{item.label}</span>
@@ -152,7 +163,6 @@ export function MessageContextMenu({
             <DropdownMenuItem
               key={index}
               onClick={item.onClick}
-              disabled={item.disabled}
             >
               <Icon className="mr-2 h-4 w-4" />
               {item.label}
