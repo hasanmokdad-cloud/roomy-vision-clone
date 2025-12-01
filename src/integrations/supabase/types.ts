@@ -826,6 +826,71 @@ export type Database = {
           },
         ]
       }
+      friendships: {
+        Row: {
+          acted_by: string | null
+          blocked_at: string | null
+          blocker_id: string | null
+          created_at: string | null
+          id: string
+          receiver_id: string
+          requester_id: string
+          status: Database["public"]["Enums"]["friendship_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          acted_by?: string | null
+          blocked_at?: string | null
+          blocker_id?: string | null
+          created_at?: string | null
+          id?: string
+          receiver_id: string
+          requester_id: string
+          status?: Database["public"]["Enums"]["friendship_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          acted_by?: string | null
+          blocked_at?: string | null
+          blocker_id?: string | null
+          created_at?: string | null
+          id?: string
+          receiver_id?: string
+          requester_id?: string
+          status?: Database["public"]["Enums"]["friendship_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friendships_acted_by_fkey"
+            columns: ["acted_by"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendships_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendships_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendships_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inquiries: {
         Row: {
           created_at: string | null
@@ -2276,6 +2341,7 @@ export type Database = {
           university: string | null
           updated_at: string | null
           user_id: string
+          username: string | null
           year_of_study: number | null
         }
         Insert: {
@@ -2343,6 +2409,7 @@ export type Database = {
           university?: string | null
           updated_at?: string | null
           user_id: string
+          username?: string | null
           year_of_study?: number | null
         }
         Update: {
@@ -2410,6 +2477,7 @@ export type Database = {
           university?: string | null
           updated_at?: string | null
           user_id?: string
+          username?: string | null
           year_of_study?: number | null
         }
         Relationships: [
@@ -2808,6 +2876,10 @@ export type Database = {
           value: number
         }[]
       }
+      are_friends: {
+        Args: { user_a: string; user_b: string }
+        Returns: boolean
+      }
       check_booking_conflicts: {
         Args: {
           p_dorm_id: string
@@ -2851,6 +2923,10 @@ export type Database = {
         }[]
       }
       generate_share_code: { Args: never; Returns: string }
+      get_mutual_friends_count: {
+        Args: { user_a: string; user_b: string }
+        Returns: number
+      }
       get_or_create_conversation: {
         Args: { p_user_a_id: string; p_user_b_id: string }
         Returns: string
@@ -2889,6 +2965,7 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: { check_user_id: string }; Returns: boolean }
+      is_blocked: { Args: { user_a: string; user_b: string }; Returns: boolean }
       owner_can_view_student: {
         Args: { p_student_id: string }
         Returns: boolean
@@ -2909,7 +2986,12 @@ export type Database = {
       user_owns_dorm: { Args: { p_dorm_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      friendship_status:
+        | "pending"
+        | "accepted"
+        | "rejected"
+        | "blocked"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3036,6 +3118,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      friendship_status: [
+        "pending",
+        "accepted",
+        "rejected",
+        "blocked",
+        "cancelled",
+      ],
+    },
   },
 } as const
