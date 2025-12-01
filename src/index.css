@@ -200,6 +200,41 @@
     height: 1px;
   }
 
+  /* === Global mobile app-like behavior === */
+  html, body {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Re-enable selection inside text inputs / textareas */
+  input,
+  textarea,
+  [contenteditable="true"],
+  input::placeholder,
+  textarea::placeholder {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+  }
+
+  /* On mobile, ensure tap gestures are handled by our JS */
+  body, #root {
+    touch-action: manipulation;
+  }
+
+  /* Voice button & message bubbles have full control over gestures */
+  .voice-record-button,
+  .chat-message-bubble {
+    -webkit-touch-callout: none;
+    user-select: none;
+    touch-action: none;
+  }
+
   /* Dark Glass System */
   .glass {
     background: rgba(255, 255, 255, 0.1);

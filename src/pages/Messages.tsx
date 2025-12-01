@@ -1209,15 +1209,20 @@ export default function Messages() {
   const handleMicTouchStart = (e: React.TouchEvent) => {
     if (!isMobile) return;
     
+    e.preventDefault();  // Block Safari long-press menu
+    e.stopPropagation();
+    
     touchStartTimeRef.current = Date.now();
     touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-
-    // Start recording after 200ms hold
+    
+    // Start recording after 220ms hold (WhatsApp-like)
     const pressTimer = setTimeout(() => {
       startRecording();
-    }, 200);
+    }, 220);
 
-    const handleTouchEnd = () => {
+    const handleTouchEnd = (ev: TouchEvent) => {
+      ev.preventDefault();
+      ev.stopPropagation();
       clearTimeout(pressTimer);
       
       // If we were recording, check gestures
@@ -1246,17 +1251,20 @@ export default function Messages() {
       document.removeEventListener('touchmove', handleTouchMove);
     };
 
-    const handleTouchMove = (e: TouchEvent) => {
+    const handleTouchMove = (ev: TouchEvent) => {
+      ev.preventDefault();  // Block default scrolling while recording
+      ev.stopPropagation();
+      
       if (!recording) return;
       
-      const deltaX = e.touches[0].clientX - touchStartPosRef.current.x;
-      const deltaY = e.touches[0].clientY - touchStartPosRef.current.y;
+      const deltaX = ev.touches[0].clientX - touchStartPosRef.current.x;
+      const deltaY = ev.touches[0].clientY - touchStartPosRef.current.y;
       
       setSlideOffset({ x: deltaX, y: deltaY });
     };
 
-    document.addEventListener('touchend', handleTouchEnd, { once: true });
-    document.addEventListener('touchmove', handleTouchMove, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd, { once: true, passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
   };
 
   const cancelRecording = () => {
@@ -1661,7 +1669,10 @@ export default function Messages() {
           </Card>
 
           {/* Chat Window */}
-          <Card className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} flex-col flex-1 rounded-none md:rounded-lg border-0 md:border shadow-none md:shadow-sm`}>
+          <Card 
+            className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} flex-col flex-1 rounded-none md:rounded-lg border-0 md:border shadow-none md:shadow-sm`}
+            onContextMenu={(e) => e.preventDefault()}
+          >
             {selectedConversation ? (
               <>
                 {/* Instagram-style conversation header */}
@@ -1904,7 +1915,7 @@ export default function Messages() {
                         ref={micButtonRef}
                         onClick={handleVoiceButtonClick}
                         onTouchStart={handleMicTouchStart}
-                        className="shrink-0"
+                        className="shrink-0 voice-record-button"
                         aria-label="Record voice message"
                         title={isMobile ? 'Hold to record voice message' : 'Click to record voice message'}
                       >
