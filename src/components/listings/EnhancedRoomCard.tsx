@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
 import { Calendar, MessageSquare, Home, Users, Heart, Share2, Eye, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BookingRequestModal } from '@/components/bookings/BookingRequestModal';
@@ -51,11 +51,23 @@ export function EnhancedRoomCard({
   const [isSaved, setIsSaved] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
+  const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
   const isUnavailable = room.available === false;
   const isFull = room.capacity && room.capacity_occupied ? room.capacity_occupied >= room.capacity : false;
   const capacityDisplay = room.capacity && room.capacity_occupied !== undefined 
     ? `${room.capacity_occupied}/${room.capacity}` 
     : undefined;
+
+  // Track carousel index
+  useEffect(() => {
+    if (!carouselApi) return;
+    
+    carouselApi.on("select", () => {
+      setCurrentCarouselIndex(carouselApi.selectedScrollSnap());
+    });
+  }, [carouselApi]);
 
   // Check if room is saved on mount
   useEffect(() => {
@@ -76,10 +88,8 @@ export function EnhancedRoomCard({
     checkSaved();
   }, [room.id]);
 
-  // Use placeholder images if none provided
-  const displayImages = room.images && room.images.length > 0 
-    ? room.images 
-    : [`https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&h=600&fit=crop&q=80`];
+  // Strict media scoping - ONLY room images, no fallback
+  const displayImages = room.images && room.images.length > 0 ? room.images : [];
 
   const handleContact = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -263,8 +273,12 @@ export function EnhancedRoomCard({
             <div className="relative">
               {/* Image Container */}
               <div className="relative overflow-hidden z-10 group/media">
-                {displayImages.length > 1 || room.video_url ? (
-                  <Carousel className="w-full">
+                {displayImages.length === 0 && !room.video_url ? (
+                  <div className="w-full h-56 bg-muted flex items-center justify-center">
+                    <p className="text-muted-foreground">No media available</p>
+                  </div>
+                ) : displayImages.length > 1 || room.video_url ? (
+                  <Carousel className="w-full" setApi={setCarouselApi}>
                     <CarouselContent>
                       {displayImages.slice(0, 10).map((img, idx) => (
                         <CarouselItem key={idx} className="relative">
@@ -273,7 +287,11 @@ export function EnhancedRoomCard({
                             alt={`${room.name} - Image ${idx + 1}`}
                             className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110 cursor-pointer"
                             loading="lazy"
-                            onClick={() => setGalleryOpen(true)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setGalleryInitialIndex(idx);
+                              setGalleryOpen(true);
+                            }}
                           />
                           <Button
                             size="icon"
@@ -281,6 +299,7 @@ export function EnhancedRoomCard({
                             className="absolute top-3 left-3 bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover/media:opacity-100 transition-opacity"
                             onClick={(e) => {
                               e.stopPropagation();
+                              setGalleryInitialIndex(idx);
                               setGalleryOpen(true);
                             }}
                           >
@@ -300,7 +319,10 @@ export function EnhancedRoomCard({
                               <Button
                                 size="icon"
                                 className="w-16 h-16 rounded-full bg-white hover:bg-white/90"
-                                onClick={() => setVideoModalOpen(true)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setVideoModalOpen(true);
+                                }}
                               >
                                 <Play className="w-8 h-8 text-black" />
                               </Button>
@@ -312,14 +334,18 @@ export function EnhancedRoomCard({
                     <CarouselPrevious className="left-2 z-30 bg-white hover:bg-white" />
                     <CarouselNext className="right-2 z-30 bg-white hover:bg-white" />
                   </Carousel>
-                ) : (
+                ) : displayImages.length === 1 ? (
                   <div className="relative">
                     <img
                       src={displayImages[0]}
                       alt={room.name}
                       className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110 cursor-pointer"
                       loading="lazy"
-                      onClick={() => setGalleryOpen(true)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setGalleryInitialIndex(0);
+                        setGalleryOpen(true);
+                      }}
                     />
                     <Button
                       size="icon"
@@ -327,13 +353,14 @@ export function EnhancedRoomCard({
                       className="absolute top-3 left-3 bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover/media:opacity-100 transition-opacity"
                       onClick={(e) => {
                         e.stopPropagation();
+                        setGalleryInitialIndex(0);
                         setGalleryOpen(true);
                       }}
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
                   </div>
-                )}
+                ) : null}
               </div>
 
               {/* Save Button - OUTSIDE carousel but positioned over it */}
@@ -504,12 +531,14 @@ export function EnhancedRoomCard({
         depositAmount={room.deposit || room.price}
       />
 
-      <ImageGallery
-        isOpen={galleryOpen}
-        onClose={() => setGalleryOpen(false)}
-        images={displayImages}
-        initialIndex={0}
-      />
+      {displayImages.length > 0 && (
+        <ImageGallery
+          isOpen={galleryOpen}
+          onClose={() => setGalleryOpen(false)}
+          images={displayImages}
+          initialIndex={galleryInitialIndex}
+        />
+      )}
 
       {room.video_url && (
         <VideoPlayerModal

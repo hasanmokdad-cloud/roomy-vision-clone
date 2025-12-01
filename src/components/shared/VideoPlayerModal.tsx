@@ -33,7 +33,8 @@ export function VideoPlayerModal({ open, onOpenChange, videoUrl, title }: VideoP
             src={videoUrl}
             controls
             autoPlay
-            className="w-full max-h-[80vh] object-contain"
+            muted
+            className="w-full max-h-[90vh] object-contain"
           />
         </div>
       </DialogContent>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -13,6 +13,13 @@ interface ImageGalleryProps {
 
 export function ImageGallery({ images, initialIndex = 0, isOpen, onClose }: ImageGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  // Reset currentIndex when modal opens or initialIndex changes
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentIndex(initialIndex);
+    }
+  }, [isOpen, initialIndex]);
 
   const goToPrevious = () => {
     setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
@@ -62,7 +69,7 @@ export function ImageGallery({ images, initialIndex = 0, isOpen, onClose }: Imag
             <img
               src={images[currentIndex]}
               alt={`Image ${currentIndex + 1}`}
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-[90vh] object-contain"
             />
           </div>
 
