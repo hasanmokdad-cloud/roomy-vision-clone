@@ -14,10 +14,12 @@ interface RoomData {
   price: number;
   deposit?: number;
   capacity?: number;
+  capacity_occupied?: number;
   area_m2?: number;
   description?: string;
   images?: string[];
   panorama_urls?: string[];
+  video_url?: string;
   available: boolean;
 }
 
@@ -106,10 +108,12 @@ serve(async (req) => {
           price: roomData.price,
           deposit: roomData.deposit || null,
           capacity: roomData.capacity || null,
+          capacity_occupied: roomData.capacity_occupied || 0,
           area_m2: roomData.area_m2 || null,
           description: roomData.description || null,
           images: roomData.images || [],
           panorama_urls: roomData.panorama_urls || [],
+          video_url: roomData.video_url || null,
           available: roomData.available,
         })
         .eq('id', roomData.room_id)
@@ -132,10 +136,12 @@ serve(async (req) => {
           price: roomData.price,
           deposit: roomData.deposit || null,
           capacity: roomData.capacity || null,
+          capacity_occupied: roomData.capacity_occupied || 0,
           area_m2: roomData.area_m2 || null,
           description: roomData.description || null,
           images: roomData.images || [],
           panorama_urls: roomData.panorama_urls || [],
+          video_url: roomData.video_url || null,
           available: roomData.available,
         }])
         .select()
@@ -151,6 +157,27 @@ serve(async (req) => {
     }
 
     console.log(`✅ Room ${isUpdate ? 'updated' : 'created'} successfully:`, resultRoom.id);
+
+    // Update dorm's starting price (lowest room price)
+    const { data: minPriceData } = await supabaseClient
+      .from('rooms')
+      .select('price')
+      .eq('dorm_id', roomData.dorm_id)
+      .order('price', { ascending: true })
+      .limit(1)
+      .single();
+
+    if (minPriceData) {
+      await supabaseClient
+        .from('dorms')
+        .update({ 
+          monthly_price: minPriceData.price,
+          price: minPriceData.price 
+        })
+        .eq('id', roomData.dorm_id);
+      
+      console.log(`✅ Updated dorm starting price to: $${minPriceData.price}`);
+    }
 
     return new Response(
       JSON.stringify({ 

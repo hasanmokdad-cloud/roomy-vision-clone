@@ -99,11 +99,11 @@ export const DormMatchCard = ({ dorm, index, onDismiss }: DormMatchCardProps) =>
               </div>
             </div>
 
-            {/* Price */}
+            {/* Starting Price */}
             <div className="flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-primary" />
               <span className="font-semibold text-primary">
-                ${dorm.monthly_price}/month
+                From ${dorm.monthly_price}/month
               </span>
             </div>
 

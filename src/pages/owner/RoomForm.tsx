@@ -51,12 +51,16 @@ export default function RoomForm() {
     price: "",
     deposit: "",
     capacity: "",
+    capacity_occupied: "0",
     area_m2: "",
     description: "",
     available: true,
   });
   const [images, setImages] = useState<string[]>([]);
   const [panoramaUrls, setPanoramaUrls] = useState<string[]>([]);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string>("");
+  const [videoUploading, setVideoUploading] = useState(false);
 
   useEffect(() => {
     if (roomId) {
@@ -83,12 +87,14 @@ export default function RoomForm() {
         price: data.price.toString(),
         deposit: (data as any).deposit?.toString() || "",
         capacity: (data as any).capacity?.toString() || "",
+        capacity_occupied: (data as any).capacity_occupied?.toString() || "0",
         area_m2: data.area_m2?.toString() || "",
         description: data.description || "",
         available: data.available,
       });
       setImages(data.images || []);
       setPanoramaUrls(data.panorama_urls || []);
+      setVideoUrl((data as any).video_url || "");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -127,10 +133,12 @@ export default function RoomForm() {
         price: parseFloat(formData.price),
         deposit: formData.deposit ? parseFloat(formData.deposit) : null,
         capacity: formData.capacity ? parseInt(formData.capacity) : null,
+        capacity_occupied: formData.capacity_occupied ? parseInt(formData.capacity_occupied) : 0,
         area_m2: formData.area_m2 ? parseFloat(formData.area_m2) : null,
         description: formData.description || null,
         images: images,
         panorama_urls: panoramaUrls,
+        video_url: videoUrl || null,
         available: formData.available,
       };
 
@@ -275,7 +283,17 @@ export default function RoomForm() {
                 step="1"
                 min="1"
                 value={formData.capacity}
-                onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                onChange={(e) => {
+                  const newCapacity = e.target.value;
+                  setFormData({ 
+                    ...formData, 
+                    capacity: newCapacity,
+                    // Reset occupied to 0 if it exceeds new capacity
+                    capacity_occupied: parseInt(formData.capacity_occupied) > parseInt(newCapacity || "0") 
+                      ? "0" 
+                      : formData.capacity_occupied
+                  });
+                }}
                 placeholder="e.g., 1, 2, 3..."
                 required
               />
@@ -285,16 +303,42 @@ export default function RoomForm() {
             </div>
 
             <div>
-              <Label htmlFor="area">Area (m²)</Label>
-              <Input
-                id="area"
-                type="number"
-                step="0.1"
-                value={formData.area_m2}
-                onChange={(e) => setFormData({ ...formData, area_m2: e.target.value })}
-                placeholder="20"
-              />
+              <Label htmlFor="capacity_occupied">Current Capacity (Occupied)</Label>
+              <Select
+                value={formData.capacity_occupied}
+                onValueChange={(value) => setFormData({ ...formData, capacity_occupied: value })}
+                disabled={!formData.capacity}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select occupied spots" />
+                </SelectTrigger>
+                <SelectContent>
+                  {formData.capacity && Array.from(
+                    { length: parseInt(formData.capacity) + 1 }, 
+                    (_, i) => i
+                  ).map((num) => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num} / {formData.capacity}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Number of students currently occupying this room
+              </p>
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="area">Area (m²)</Label>
+            <Input
+              id="area"
+              type="number"
+              step="0.1"
+              value={formData.area_m2}
+              onChange={(e) => setFormData({ ...formData, area_m2: e.target.value })}
+              placeholder="20"
+            />
           </div>
 
           <div>
@@ -334,6 +378,100 @@ export default function RoomForm() {
               folder="rooms"
               allowReorder={true}
             />
+          </div>
+
+          {/* Room Video */}
+          <div>
+            <Label>Room Video</Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Upload 1 video (max 100MB) to showcase the room
+            </p>
+            {videoUrl ? (
+              <div className="space-y-2">
+                <video 
+                  src={videoUrl} 
+                  controls 
+                  className="w-full max-h-64 rounded-lg border"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={async () => {
+                    if (videoUrl.startsWith('http')) {
+                      // Delete from storage
+                      const path = videoUrl.split('/').slice(-2).join('/');
+                      await supabase.storage.from('room-images').remove([path]);
+                    }
+                    setVideoUrl("");
+                    setVideoFile(null);
+                  }}
+                >
+                  Remove Video
+                </Button>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                <Input
+                  type="file"
+                  accept="video/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+
+                    // Check file size (100MB max)
+                    if (file.size > 100 * 1024 * 1024) {
+                      toast({
+                        title: "Error",
+                        description: "Video must be less than 100MB",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+
+                    setVideoUploading(true);
+                    try {
+                      const fileExt = file.name.split('.').pop();
+                      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+                      const filePath = `room-videos/${fileName}`;
+
+                      const { error: uploadError, data } = await supabase.storage
+                        .from('room-images')
+                        .upload(filePath, file);
+
+                      if (uploadError) throw uploadError;
+
+                      const { data: { publicUrl } } = supabase.storage
+                        .from('room-images')
+                        .getPublicUrl(filePath);
+
+                      setVideoUrl(publicUrl);
+                      setVideoFile(file);
+                      
+                      toast({
+                        title: "Success",
+                        description: "Video uploaded successfully",
+                      });
+                    } catch (error: any) {
+                      toast({
+                        title: "Error",
+                        description: error.message,
+                        variant: "destructive",
+                      });
+                    } finally {
+                      setVideoUploading(false);
+                    }
+                  }}
+                  disabled={videoUploading}
+                />
+                {videoUploading && (
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Uploading video...</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Virtual Tour Panoramas */}

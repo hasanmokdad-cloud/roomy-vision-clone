@@ -573,7 +573,7 @@ export default function OwnerHome() {
                       <div className="flex-1">
                         <h4 className="font-semibold">{dorm.dorm_name || dorm.name}</h4>
                         <p className="text-sm text-foreground/60 mt-1">
-                          {dorm.area} • ${dorm.monthly_price || dorm.price}/mo
+                          {dorm.area} • From ${dorm.monthly_price || dorm.price}/mo
                         </p>
                         <p className="text-xs text-foreground/40 mt-1">
                           Verified {new Date(dorm.updated_at).toLocaleDateString()}
