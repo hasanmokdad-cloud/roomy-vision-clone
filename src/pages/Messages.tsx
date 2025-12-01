@@ -8,7 +8,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3 } from 'lucide-react';
+import { VoiceWaveform } from '@/components/messages/VoiceWaveform';
 import { ConversationContextMenu } from '@/components/messages/ConversationContextMenu';
 import { VoiceRecordingOverlay } from '@/components/messages/VoiceRecordingOverlay';
 import { TourMessageCard } from '@/components/messages/TourMessageCard';
@@ -118,31 +119,7 @@ const MessageStatusIcon = ({ status }: { status?: 'sent' | 'delivered' | 'seen' 
   }
 };
 
-const AudioPlayer = ({ url }: { url: string }) => {
-  const [audioError, setAudioError] = useState(false);
-
-  if (audioError) {
-    return (
-      <div className="flex items-center gap-2 text-xs opacity-70">
-        <span>Audio unavailable</span>
-        <a href={url} download className="underline hover:text-primary">
-          Download
-        </a>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2">
-      <audio 
-        controls 
-        src={url} 
-        className="w-48"
-        onError={() => setAudioError(true)}
-      />
-    </div>
-  );
-};
+// AudioPlayer component removed - now using VoiceWaveform component
 
 const RoomPreviewCard = ({ metadata }: { metadata: Message['attachment_metadata'] }) => {
   const navigate = useNavigate();
@@ -1214,12 +1191,72 @@ export default function Messages() {
     }
   };
 
-  const handleVoiceButtonClick = () => {
+  const handleVoiceButtonClick = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (isMobile && e) {
+      // Mobile: Do nothing on click - will be handled by touch events
+      return;
+    }
+    
+    // Desktop: Toggle recording on click
     if (recording) {
       stopRecording();
     } else {
       startRecording();
     }
+  };
+
+  // Mobile long-press recording
+  const handleMicTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    
+    touchStartTimeRef.current = Date.now();
+    touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+
+    // Start recording after 200ms hold
+    const pressTimer = setTimeout(() => {
+      startRecording();
+    }, 200);
+
+    const handleTouchEnd = () => {
+      clearTimeout(pressTimer);
+      
+      // If we were recording, check gestures
+      if (recording) {
+        const deltaX = 0; // Would be calculated from touchmove
+        const deltaY = 0;
+
+        // Slide left to cancel
+        if (slideOffset.x < -100) {
+          cancelRecording();
+        }
+        // Slide up to lock
+        else if (slideOffset.y < -80) {
+          setIsLocked(true);
+          setSlideOffset({ x: 0, y: 0 });
+          toast({ title: 'Recording locked', description: 'Tap send when done' });
+        }
+        // Otherwise send
+        else if (!isLocked) {
+          stopRecording();
+        }
+      }
+      
+      // Clean up listeners
+      document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener('touchmove', handleTouchMove);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!recording) return;
+      
+      const deltaX = e.touches[0].clientX - touchStartPosRef.current.x;
+      const deltaY = e.touches[0].clientY - touchStartPosRef.current.y;
+      
+      setSlideOffset({ x: deltaX, y: deltaY });
+    };
+
+    document.addEventListener('touchend', handleTouchEnd, { once: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: true });
   };
 
   const cancelRecording = () => {
@@ -1470,7 +1507,13 @@ export default function Messages() {
     }
 
     if (msg.attachment_type === 'audio') {
-      return <AudioPlayer url={msg.attachment_url || ''} />;
+      return (
+        <VoiceWaveform 
+          audioUrl={msg.attachment_url || ''} 
+          duration={msg.attachment_duration || 0}
+          isSender={msg.sender_id === userId}
+        />
+      );
     }
 
     return <p className="text-sm whitespace-pre-wrap break-words">{formatMessageBody(msg)}</p>;
@@ -1858,10 +1901,12 @@ export default function Messages() {
                         type="button"
                         variant="ghost"
                         size="icon"
+                        ref={micButtonRef}
                         onClick={handleVoiceButtonClick}
+                        onTouchStart={handleMicTouchStart}
                         className="shrink-0"
                         aria-label="Record voice message"
-                        title="Tap to record voice message"
+                        title={isMobile ? 'Hold to record voice message' : 'Click to record voice message'}
                       >
                         <Mic className="w-5 h-5" />
                       </Button>
@@ -1887,14 +1932,29 @@ export default function Messages() {
                   />
                 )}
 
-                {/* Desktop Recording UI */}
+                {/* Desktop Recording UI with Waveform */}
                 {!isMobile && recording && (
                   <div className="fixed bottom-24 right-8 z-50 bg-card border border-border rounded-lg shadow-lg p-4 flex items-center gap-4">
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
+                      <Mic className="w-4 h-4 text-destructive" />
                       <span className="text-lg font-bold tabular-nums">
                         {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
                       </span>
+                      
+                      {/* Simple waveform */}
+                      <div className="flex items-center gap-0.5 h-6 ml-2">
+                        {Array.from({ length: 15 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="w-0.5 bg-primary rounded-full"
+                            style={{
+                              height: `${30 + Math.sin(i * 0.5 + recordingDuration) * 40}%`,
+                              transition: 'height 0.1s',
+                            }}
+                          />
+                        ))}
+                      </div>
                     </div>
                     
                     <div className="flex items-center gap-2">

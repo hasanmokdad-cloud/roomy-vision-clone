@@ -1,6 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { Mic, Lock, Trash2, Square } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Mic, Lock, Trash2 } from 'lucide-react';
 
 type VoiceRecordingOverlayProps = {
   isRecording: boolean;
@@ -24,64 +23,8 @@ export function VoiceRecordingOverlay({
   onLock,
 }: VoiceRecordingOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
-  const touchStartRef = useRef({ x: 0, y: 0 });
 
-  // CRITICAL: Move useEffect BEFORE the early return to fix React Hooks rule
-  useEffect(() => {
-    // Guard inside effect instead of before it
-    if (!isRecording || !overlayRef.current) return;
-
-    const overlay = overlayRef.current;
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isLocked) return;
-      
-      const touch = e.touches[0];
-      const deltaX = touch.clientX - touchStartRef.current.x;
-      const deltaY = touch.clientY - touchStartRef.current.y;
-
-      onSlideChange({ x: deltaX, y: deltaY });
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      // Check if slid up to lock
-      if (slideOffset.y < -80 && !isLocked) {
-        onLock();
-        return;
-      }
-
-      // Check if slid left to cancel
-      if (slideOffset.x < -100) {
-        onCancel();
-        return;
-      }
-
-      // Otherwise, send the message
-      if (!isLocked) {
-        onStop();
-      }
-    };
-
-    const handleTouchStart = (e: TouchEvent) => {
-      const touch = e.touches[0];
-      touchStartRef.current = { x: touch.clientX, y: touch.clientY };
-    };
-
-    overlay.addEventListener('touchstart', handleTouchStart, { passive: true });
-    overlay.addEventListener('touchmove', handleTouchMove, { passive: true });
-    overlay.addEventListener('touchend', handleTouchEnd, { passive: false });
-
-    return () => {
-      overlay.removeEventListener('touchstart', handleTouchStart);
-      overlay.removeEventListener('touchmove', handleTouchMove);
-      overlay.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [isRecording, isLocked, slideOffset, onSlideChange, onLock, onCancel, onStop]);
-
-  // Return early AFTER useEffect to comply with React Hooks rules
+  // Early return - inline recording bar for mobile (WhatsApp style)
   if (!isRecording) return null;
 
   const minutes = Math.floor(duration / 60);
@@ -89,110 +32,113 @@ export function VoiceRecordingOverlay({
   const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
   const showCancelZone = slideOffset.x < -50;
-  const showLockZone = slideOffset.y < -80;
-  const cancelProgress = Math.min(100, Math.abs(slideOffset.x));
-  const lockProgress = Math.min(100, Math.abs(slideOffset.y) / 0.8);
+  const showLockZone = slideOffset.y < -50;
 
   return (
-    <div 
-      ref={overlayRef}
-      className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center"
-    >
-      {/* Recording status */}
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="w-4 h-4 bg-destructive rounded-full animate-pulse" />
-          <span className="text-2xl font-bold text-foreground">{timeString}</span>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {isLocked ? 'Recording...' : 'Hold to record'}
-        </p>
-      </div>
-
-      {/* Waveform visualization (simple animated bars) */}
-      <div className="flex items-center justify-center gap-1 h-16 mb-12">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="w-1 bg-primary rounded-full transition-all duration-100"
-            style={{
-              height: `${20 + Math.random() * 60}%`,
-              animation: 'pulse 0.5s ease-in-out infinite',
-              animationDelay: `${i * 0.05}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Cancel zone (slide left) */}
-      {!isLocked && (
-        <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-opacity ${showCancelZone ? 'opacity-100' : 'opacity-30'}`}>
-          <div className="flex flex-col items-center gap-2">
+    <>
+      {/* Inline recording bar - replaces message input */}
+      {!isLocked ? (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border p-4 pb-safe">
+          <div className="flex items-center gap-3">
+            {/* Trash icon zone (left) */}
             <div 
-              className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center transition-transform"
-              style={{ transform: `scale(${1 + cancelProgress / 200})` }}
+              className={`flex items-center justify-center w-10 h-10 rounded-full transition-all ${
+                showCancelZone ? 'bg-destructive/20 scale-110' : 'bg-muted/50 scale-100'
+              }`}
             >
-              <Trash2 className="w-6 h-6 text-destructive" />
+              <Trash2 className={`w-5 h-5 transition-colors ${showCancelZone ? 'text-destructive' : 'text-muted-foreground'}`} />
             </div>
-            <div className="text-xs text-destructive font-medium whitespace-nowrap">
-              {showCancelZone ? 'Release to cancel' : '← Slide to cancel'}
+
+            {/* Recording status - mic icon + timer + waveform */}
+            <div className="flex-1 flex items-center gap-3 bg-muted/50 rounded-full px-4 py-2">
+              <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
+              <Mic className="w-4 h-4 text-destructive" />
+              <span className="text-sm font-medium tabular-nums">{timeString}</span>
+              
+              {/* Simple waveform */}
+              <div className="flex-1 flex items-center gap-0.5 h-6">
+                {Array.from({ length: 20 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-0.5 bg-primary rounded-full"
+                    style={{
+                      height: `${30 + Math.sin(i * 0.5 + duration) * 40}%`,
+                      transition: 'height 0.1s',
+                    }}
+                  />
+                ))}
+              </div>
             </div>
+
+            {/* Lock icon zone (right) */}
+            <div 
+              className={`flex flex-col items-center justify-center w-10 transition-all ${
+                showLockZone ? 'scale-110' : 'scale-100'
+              }`}
+            >
+              <Lock className={`w-5 h-5 transition-colors ${showLockZone ? 'text-primary' : 'text-muted-foreground'}`} />
+              {showLockZone && (
+                <span className="text-[10px] text-primary font-medium mt-1">Lock</span>
+              )}
+            </div>
+          </div>
+
+          {/* Slide to cancel hint */}
+          <div className="text-center mt-2">
+            <span className="text-xs text-muted-foreground">
+              {showCancelZone ? '← Release to cancel' : showLockZone ? '↑ Release to lock' : 'Slide left to cancel or up to lock'}
+            </span>
+          </div>
+        </div>
+      ) : (
+        // Locked recording mode - control bar
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border p-4 pb-safe">
+          <div className="flex items-center justify-between gap-4">
+            {/* Trash button */}
+            <button
+              onClick={onCancel}
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-destructive/20 hover:bg-destructive/30 transition-colors"
+            >
+              <Trash2 className="w-5 h-5 text-destructive" />
+            </button>
+
+            {/* Waveform + timer */}
+            <div className="flex-1 flex items-center gap-3 bg-muted/50 rounded-full px-4 py-2">
+              <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
+              <span className="text-sm font-medium tabular-nums">{timeString}</span>
+              
+              {/* Waveform */}
+              <div className="flex-1 flex items-center gap-0.5 h-6">
+                {Array.from({ length: 20 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-0.5 bg-primary rounded-full"
+                    style={{
+                      height: `${30 + Math.sin(i * 0.5 + duration) * 40}%`,
+                      transition: 'height 0.1s',
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Send button */}
+            <button
+              onClick={onStop}
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-primary hover:bg-primary/90 transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-5 h-5 text-primary-foreground"
+              >
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+              </svg>
+            </button>
           </div>
         </div>
       )}
-
-      {/* Lock zone (slide up) */}
-      {!isLocked && (
-        <div className={`absolute top-20 left-1/2 -translate-x-1/2 transition-opacity ${showLockZone ? 'opacity-100' : 'opacity-30'}`}>
-          <div className="flex flex-col items-center gap-2">
-            <div 
-              className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center transition-transform"
-              style={{ transform: `scale(${1 + lockProgress / 200})` }}
-            >
-              <Lock className="w-6 h-6 text-primary" />
-            </div>
-            <div className="text-xs text-primary font-medium whitespace-nowrap">
-              {showLockZone ? 'Release to lock' : 'Slide up to lock'}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Microphone or stop button */}
-      <div className="absolute bottom-32">
-        {isLocked ? (
-          <Button
-            size="lg"
-            variant="destructive"
-            className="rounded-full w-16 h-16"
-            onClick={onStop}
-          >
-            <Square className="w-6 h-6" />
-          </Button>
-        ) : (
-          <div className="flex flex-col items-center gap-2">
-            <div 
-              className="w-20 h-20 rounded-full bg-primary flex items-center justify-center"
-              style={{
-                transform: `translate(${slideOffset.x}px, ${slideOffset.y}px)`,
-                transition: 'none',
-              }}
-            >
-              <Mic className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <p className="text-sm text-muted-foreground">Release to send</p>
-          </div>
-        )}
-      </div>
-
-      {/* Cancel button when locked */}
-      {isLocked && (
-        <div className="absolute bottom-16">
-          <Button variant="ghost" onClick={onCancel} className="text-destructive">
-            Cancel
-          </Button>
-        </div>
-      )}
-    </div>
+    </>
   );
 }
