@@ -642,6 +642,54 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                             </Select>
                           </div>
                         )}
+                        
+                        {/* Leaving Your Room Toggle */}
+                        {currentRoomId && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            className="flex items-center justify-between p-4 border-2 border-destructive/20 rounded-lg bg-destructive/5 mt-4"
+                          >
+                            <div>
+                              <Label className="text-base font-semibold text-destructive">Leaving Your Room?</Label>
+                              <p className="text-sm text-foreground/60">
+                                This will free up your spot for other students and update your accommodation status
+                              </p>
+                            </div>
+                            <Button 
+                              type="button"
+                              variant="destructive" 
+                              onClick={async () => {
+                                try {
+                                  // Decrement room occupancy
+                                  await supabase.rpc('decrement_room_occupancy', { 
+                                    room_id: currentRoomId 
+                                  });
+
+                                  // Clear current dorm/room
+                                  setCurrentDormId('');
+                                  setCurrentRoomId('');
+                                  setAccommodationStatus('need_dorm');
+                                  setValue('accommodation_status', 'need_dorm');
+
+                                  toast({
+                                    title: 'Room Freed',
+                                    description: 'Your spot has been freed up. Your profile has been updated.',
+                                  });
+                                } catch (error) {
+                                  console.error('Error leaving room:', error);
+                                  toast({
+                                    title: 'Error',
+                                    description: 'Failed to leave room. Please try again.',
+                                    variant: 'destructive',
+                                  });
+                                }
+                              }}
+                            >
+                              Leave Room
+                            </Button>
+                          </motion.div>
+                        )}
                       </div>
                     </motion.div>
                   )}

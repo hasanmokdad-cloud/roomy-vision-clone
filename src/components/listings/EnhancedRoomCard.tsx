@@ -293,18 +293,21 @@ export function EnhancedRoomCard({
                               setGalleryOpen(true);
                             }}
                           />
-                          <Button
-                            size="icon"
-                            variant="secondary"
-                            className="absolute top-3 left-3 bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover/media:opacity-100 transition-opacity"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setGalleryInitialIndex(idx);
-                              setGalleryOpen(true);
-                            }}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
+                          {/* Centered Eye Icon with overlay */}
+                          <div className="absolute inset-0 bg-black/0 group-hover/media:bg-black/30 transition-colors flex items-center justify-center pointer-events-none">
+                            <Button
+                              size="icon"
+                              variant="secondary"
+                              className="bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover/media:opacity-100 transition-opacity pointer-events-auto"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setGalleryInitialIndex(idx);
+                                setGalleryOpen(true);
+                              }}
+                            >
+                              <Eye className="w-5 h-5" />
+                            </Button>
+                          </div>
                         </CarouselItem>
                       ))}
                       {room.video_url && (
@@ -347,18 +350,21 @@ export function EnhancedRoomCard({
                         setGalleryOpen(true);
                       }}
                     />
-                    <Button
-                      size="icon"
-                      variant="secondary"
-                      className="absolute top-3 left-3 bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover/media:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setGalleryInitialIndex(0);
-                        setGalleryOpen(true);
-                      }}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
+                    {/* Centered Eye Icon with overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover/media:bg-black/30 transition-colors flex items-center justify-center pointer-events-none">
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover/media:opacity-100 transition-opacity pointer-events-auto"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setGalleryInitialIndex(0);
+                          setGalleryOpen(true);
+                        }}
+                      >
+                        <Eye className="w-5 h-5" />
+                      </Button>
+                    </div>
                   </div>
                 ) : null}
               </div>
@@ -449,15 +455,25 @@ export function EnhancedRoomCard({
 
             {/* Details Grid */}
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="flex items-center gap-1 text-foreground/70">
-                <span>Deposit: ${room.price}</span>
-              </div>
+              {/* Room Type - Full width, bold */}
+              {room.type && (
+                <div className="flex items-center gap-1 text-foreground font-medium col-span-2">
+                  <span>{room.type}</span>
+                </div>
+              )}
+              
+              {/* Capacity - below room type */}
               {room.capacity && (
                 <div className="flex items-center gap-1 text-foreground/70">
                   <Users className="w-4 h-4" />
                   <span>{room.capacity} student{room.capacity > 1 ? 's' : ''}</span>
                 </div>
               )}
+              
+              <div className="flex items-center gap-1 text-foreground/70">
+                <span>Deposit: ${room.price}</span>
+              </div>
+              
               {room.area_m2 && (
                 <div className="text-foreground/70 col-span-2">
                   Area: {room.area_m2}m²
