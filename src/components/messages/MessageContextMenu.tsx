@@ -80,7 +80,7 @@ export function MessageContextMenu({
     { icon: Forward, label: "Forward", onClick: onForward },
     { icon: Copy, label: "Copy", onClick: onCopy, show: !!messageText },
     { icon: Edit3, label: "Edit", onClick: onEdit, show: isSender && canEdit },
-    { icon: Info, label: "Info", onClick: onInfo },
+    { icon: Info, label: "Info", onClick: onInfo, show: isSender },
     { icon: Star, label: "Star", onClick: onStar },
     { icon: Pin, label: isPinned ? "Unpin" : "Pin", onClick: onPin },
     { icon: Languages, label: "Translate", onClick: onTranslate },
@@ -112,40 +112,33 @@ export function MessageContextMenu({
               );
             })}
             
-            <div className="h-px bg-border my-2" />
-            
-            <button
-              onClick={() => {
-                onDelete(false);
-                onOpenChange(false);
-              }}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent rounded-lg transition-colors text-destructive"
-            >
-              <Trash2 className="h-5 w-5" />
-              <span className="font-medium">Delete for me</span>
-            </button>
-            
             {isSender && (
-              <button
-                onClick={() => {
-                  onDelete(true);
-                  onOpenChange(false);
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent rounded-lg transition-colors text-destructive"
-              >
-                <Trash2 className="h-5 w-5" />
-                <span className="font-medium">Delete for everyone</span>
-              </button>
+              <>
+                <div className="h-px bg-border my-2" />
+                
+                <button
+                  onClick={() => {
+                    onDelete(false);
+                    onOpenChange(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent rounded-lg transition-colors text-destructive"
+                >
+                  <Trash2 className="h-5 w-5" />
+                  <span className="font-medium">Delete for me</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    onDelete(true);
+                    onOpenChange(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent rounded-lg transition-colors text-destructive"
+                >
+                  <Trash2 className="h-5 w-5" />
+                  <span className="font-medium">Delete for everyone</span>
+                </button>
+              </>
             )}
-            
-            <button
-              onClick={() => onOpenChange(false)}
-              disabled
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent rounded-lg transition-colors disabled:opacity-50"
-            >
-              <MoreHorizontal className="h-5 w-5" />
-              <span className="font-medium">More</span>
-            </button>
           </div>
         </SheetContent>
       </Sheet>
@@ -170,29 +163,26 @@ export function MessageContextMenu({
           );
         })}
         
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-            <span className="text-destructive">Delete</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuItem onClick={() => onDelete(false)}>
-              Delete for me
-            </DropdownMenuItem>
-            {isSender && (
-              <DropdownMenuItem onClick={() => onDelete(true)}>
-                Delete for everyone
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        
-        <DropdownMenuItem disabled>
-          <MoreHorizontal className="mr-2 h-4 w-4" />
-          More
-        </DropdownMenuItem>
+        {isSender && (
+          <>
+            <DropdownMenuSeparator />
+            
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                <span className="text-destructive">Delete</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => onDelete(false)}>
+                  Delete for me
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDelete(true)}>
+                  Delete for everyone
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

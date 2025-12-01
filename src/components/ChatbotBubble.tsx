@@ -187,6 +187,12 @@ export const ChatbotBubble = () => {
         throw new Error("No response from AI service");
       }
 
+      // Check if data is a Response object or has streaming body (shouldn't happen with invoke)
+      if (data instanceof Response || (data as any)?.body instanceof ReadableStream) {
+        console.error("Received streaming response instead of JSON");
+        throw new Error("AI service returned unexpected format");
+      }
+
       // Check for explicit error in response
       if (data.error) {
         console.error("AI response error:", data.error);

@@ -80,8 +80,16 @@ export function MessageBubble({
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showTranslateModal, setShowTranslateModal] = useState(false);
   const [reactions, setReactions] = useState<MessageReaction[]>([]);
+  const [localIsStarred, setLocalIsStarred] = useState(message.is_starred);
+  const [localIsPinned, setLocalIsPinned] = useState(message.is_pinned);
   const longPressTimerRef = useRef<NodeJS.Timeout>();
   const touchStartPosRef = useRef({ x: 0, y: 0 });
+
+  // Sync local state with prop changes
+  useEffect(() => {
+    setLocalIsStarred(message.is_starred);
+    setLocalIsPinned(message.is_pinned);
+  }, [message.is_starred, message.is_pinned]);
 
   // Load reactions for this message
   useEffect(() => {
@@ -156,15 +164,26 @@ export function MessageBubble({
   };
 
   const handleStar = async () => {
+    const newValue = !localIsStarred;
+    setLocalIsStarred(newValue); // Optimistic update
+    
     try {
-      await supabase
+      const { error } = await supabase
         .from("messages")
-        .update({ is_starred: !message.is_starred })
+        .update({ is_starred: newValue })
         .eq("id", message.id);
 
-      toast({ title: message.is_starred ? "Unstarred" : "Starred message" });
+      if (error) throw error;
+
+      toast({ title: newValue ? "Starred message" : "Unstarred" });
     } catch (error) {
       console.error("Error starring message:", error);
+      setLocalIsStarred(!newValue); // Revert on error
+      toast({
+        title: "Error",
+        description: "Failed to update star status",
+        variant: "destructive",
+      });
     }
   };
 
@@ -238,24 +257,28 @@ export function MessageBubble({
   };
 
   const handlePin = async () => {
+    const newValue = !localIsPinned;
+    setLocalIsPinned(newValue); // Optimistic update
+    
     try {
       const { error } = await supabase
         .from("messages")
         .update({
-          is_pinned: !message.is_pinned,
-          pinned_at: !message.is_pinned ? new Date().toISOString() : null,
-          pinned_by: !message.is_pinned ? userId : null,
+          is_pinned: newValue,
+          pinned_at: newValue ? new Date().toISOString() : null,
+          pinned_by: newValue ? userId : null,
         })
         .eq("id", message.id);
 
       if (error) throw error;
 
       toast({
-        title: message.is_pinned ? "Message unpinned" : "Message pinned",
-        description: message.is_pinned ? "Message removed from pinned" : "Message pinned to top",
+        title: newValue ? "Message pinned" : "Message unpinned",
+        description: newValue ? "Message pinned to top" : "Message removed from pinned",
       });
     } catch (error) {
       console.error("Error toggling pin:", error);
+      setLocalIsPinned(!newValue); // Revert on error
       toast({
         title: "Error",
         description: "Failed to toggle pin status",
@@ -379,7 +402,8 @@ export function MessageBubble({
             {message.edited_at && (
               <span className="text-xs opacity-70">• edited</span>
             )}
-            {message.is_starred && <span className="text-xs">⭐</span>}
+            {localIsStarred && <span className="text-xs">⭐</span>}
+            {localIsPinned && <span className="text-xs">📌</span>}
           </div>
         </div>
 
@@ -427,7 +451,7 @@ export function MessageBubble({
             onForward={handleForward}
             onDelete={handleDelete}
             canEdit={canEdit}
-            isPinned={message.is_pinned}
+            isPinned={localIsPinned}
             trigger={
               <Button
                 variant="ghost"
