@@ -40,6 +40,8 @@ type Conversation = {
   other_user_avatar?: string | null;
   dorm_name?: string;
   last_message?: string;
+  last_message_status?: 'sent' | 'delivered' | 'seen';
+  last_message_sender_id?: string;
   other_user_photo?: string | null;
   unreadCount?: number;
   is_pinned?: boolean;
@@ -213,6 +215,7 @@ export default function Messages() {
   const [activeTab, setActiveTab] = useState<'chats' | 'friends'>('chats');
   const [searchQuery, setSearchQuery] = useState('');
   const [studentId, setStudentId] = useState<string | null>(null);
+  const [pinnedMessages, setPinnedMessages] = useState<Message[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
@@ -619,6 +622,26 @@ export default function Messages() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Load pinned messages for current conversation
+  useEffect(() => {
+    if (!selectedConversation) {
+      setPinnedMessages([]);
+      return;
+    }
+    
+    supabase
+      .from('messages')
+      .select('*')
+      .eq('conversation_id', selectedConversation)
+      .eq('is_pinned', true)
+      .order('pinned_at', { ascending: false })
+      .then(({ data }) => {
+        if (data) {
+          setPinnedMessages(data as Message[]);
+        }
+      });
+  }, [selectedConversation, messages]);
 
   // Scroll to specific message
   const scrollToMessage = (messageId: string) => {
@@ -1543,7 +1566,14 @@ export default function Messages() {
                               </div>
                             )}
                           </div>
-                          <p className="text-xs text-foreground/60 truncate">{conv.last_message}</p>
+                           <div className="flex items-center gap-1">
+                             {conv.last_message_sender_id === userId && (
+                               <MessageStatusIcon status={conv.last_message_status} />
+                             )}
+                             <p className="text-xs text-foreground/60 truncate flex-1">
+                               {conv.last_message}
+                             </p>
+                           </div>
                           <p className="text-xs text-foreground/60 truncate">{conv.dorm_name}</p>
                         </div>
                       </div>
@@ -1607,6 +1637,30 @@ export default function Messages() {
 
                 <ScrollArea className={`flex-1 p-4 ${isMobile ? 'pb-32' : ''}`}>
                   <div className="space-y-4">
+                    {/* Pinned Messages Banner */}
+                    {pinnedMessages.length > 0 && (
+                      <div 
+                        className="sticky top-0 z-10 bg-primary/10 backdrop-blur-sm border border-primary/20 rounded-lg p-3 cursor-pointer flex items-center gap-3 hover:bg-primary/20 transition-colors"
+                        onClick={() => {
+                          const firstPinned = pinnedMessages[0];
+                          if (firstPinned) {
+                            scrollToMessage(firstPinned.id);
+                          }
+                        }}
+                      >
+                        <Pin className="w-4 h-4 text-primary shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-primary">
+                            {pinnedMessages.length === 1 ? 'Pinned message' : `${pinnedMessages.length} pinned messages`}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {pinnedMessages[0].body?.substring(0, 50) || 'Media'}
+                            {pinnedMessages[0].body && pinnedMessages[0].body.length > 50 ? '...' : ''}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {messages.map((msg) => {
                       const currentConversation = conversations.find(c => c.id === selectedConversation);
                       const isSender = msg.sender_id === userId;
