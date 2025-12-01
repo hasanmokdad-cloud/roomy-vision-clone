@@ -33,7 +33,7 @@ const messageSchema = z.object({
 const chatRequestSchema = z.object({
   message: z.string().min(1).max(500),
   userId: z.string().uuid().optional(),
-  sessionId: z.string().uuid().optional()
+  sessionId: z.string().optional()
 });
 
 // Rate limiting (in-memory, resets on cold start)
