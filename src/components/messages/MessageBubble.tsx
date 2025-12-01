@@ -229,6 +229,9 @@ export function MessageBubble({
 
   // Long press detection for mobile
   const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();  // Block Safari text selection
+    e.stopPropagation();
+    
     touchStartPosRef.current = {
       x: e.touches[0].clientX,
       y: e.touches[0].clientY,
@@ -249,7 +252,7 @@ export function MessageBubble({
     const deltaX = Math.abs(touch.clientX - touchStartPosRef.current.x);
     const deltaY = Math.abs(touch.clientY - touchStartPosRef.current.y);
 
-    // Cancel if moved too much
+    // Cancel long-press if user scrolls (>10px movement)
     if (deltaX > 10 || deltaY > 10) {
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
@@ -257,7 +260,9 @@ export function MessageBubble({
     }
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
     }
@@ -383,11 +388,16 @@ export function MessageBubble({
   return (
     <div
       ref={messageRef}
-      className={`flex ${isSender ? "justify-end" : "justify-start"} mb-4 group relative`}
+      className={`flex ${isSender ? "justify-end" : "justify-start"} mb-4 group relative chat-message-bubble`}
       onTouchStart={isMobile ? handleTouchStart : undefined}
       onTouchMove={isMobile ? handleTouchMove : undefined}
       onTouchEnd={isMobile ? handleTouchEnd : undefined}
-      onContextMenu={!isMobile ? handleContextMenu : undefined}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        if (!isMobile) {
+          setShowReactionBar(true);
+        }
+      }}
     >
       {!isSender && showAvatar && (
         <Avatar className="h-8 w-8 mr-2">
