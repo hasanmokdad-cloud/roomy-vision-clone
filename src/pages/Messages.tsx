@@ -16,6 +16,7 @@ import { MessageBubble } from '@/components/messages/MessageBubble';
 import { EmojiPickerSheet } from '@/components/messages/EmojiPickerSheet';
 import { SwipeableMessage } from '@/components/messages/SwipeableMessage';
 import { OnlineIndicator } from '@/components/messages/OnlineIndicator';
+import { EditMessageModal } from '@/components/messages/EditMessageModal';
 import { FriendsTab } from '@/components/friends/FriendsTab';
 import { FriendSearchBar } from '@/components/friends/FriendSearchBar';
 import { useToast } from '@/hooks/use-toast';
@@ -216,6 +217,7 @@ export default function Messages() {
   const [searchQuery, setSearchQuery] = useState('');
   const [studentId, setStudentId] = useState<string | null>(null);
   const [pinnedMessages, setPinnedMessages] = useState<Message[]>([]);
+  const [showEditModal, setShowEditModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
@@ -1293,31 +1295,9 @@ export default function Messages() {
     const tempId = crypto.randomUUID();
     const messageText = messageInput.trim();
     
-    // Check if editing or replying
+    // Check if editing (should not happen since we use modal now)
     if (editingMessage) {
-      // Update existing message
-      try {
-        await supabase
-          .from('messages')
-          .update({
-            body: messageText,
-            edited_at: new Date().toISOString(),
-          })
-          .eq('id', editingMessage.id);
-
-        toast({ title: 'Message updated' });
-        setEditingMessage(null);
-        setMessageInput('');
-        loadMessages(selectedConversation);
-      } catch (error: any) {
-        toast({
-          title: 'Failed to update message',
-          description: error.message,
-          variant: 'destructive',
-        });
-      } finally {
-        setSending(false);
-      }
+      setSending(false);
       return;
     }
     
@@ -1683,7 +1663,7 @@ export default function Messages() {
                               onReply={() => setReplyToMessage(msg)}
                               onEdit={() => {
                                 setEditingMessage(msg);
-                                setMessageInput(msg.body || '');
+                                setShowEditModal(true);
                               }}
                               renderContent={() => renderMessageContent(msg)}
                               showAvatar={!isSender}
@@ -1747,27 +1727,6 @@ export default function Messages() {
                     </div>
                   )}
 
-                  {/* Edit Mode Indicator */}
-                  {editingMessage && (
-                    <div className="mb-2 bg-accent rounded-lg p-3 flex items-start gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-primary">
-                          Editing message
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => {
-                          setEditingMessage(null);
-                          setMessageInput('');
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
                   
                   {/* WhatsApp-style input layout */}
                   <div className="flex items-center gap-2">
@@ -1921,6 +1880,44 @@ export default function Messages() {
       </main>
 
       {isMobile && <BottomNav />}
+
+      {/* Edit Message Modal */}
+      {editingMessage && (
+        <EditMessageModal
+          open={showEditModal}
+          onOpenChange={(open) => {
+            setShowEditModal(open);
+            if (!open) {
+              setEditingMessage(null);
+            }
+          }}
+          message={editingMessage}
+          onSave={async (editedText) => {
+            try {
+              await supabase
+                .from('messages')
+                .update({
+                  body: editedText,
+                  edited_at: new Date().toISOString(),
+                })
+                .eq('id', editingMessage.id);
+
+              toast({ title: 'Message updated' });
+              setEditingMessage(null);
+              if (selectedConversation) {
+                loadMessages(selectedConversation);
+              }
+            } catch (error: any) {
+              toast({
+                title: 'Failed to update message',
+                description: error.message,
+                variant: 'destructive',
+              });
+              throw error;
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
