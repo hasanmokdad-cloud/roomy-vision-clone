@@ -44,6 +44,7 @@ export default function RoomForm() {
   const { isAuthenticated, userId, refreshSession } = useAuthSession();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(!roomId); // true for create, false for edit
 
   const [formData, setFormData] = useState({
     name: "",
@@ -85,16 +86,17 @@ export default function RoomForm() {
         name: data.name,
         type: data.type,
         price: data.price.toString(),
-        deposit: (data as any).deposit?.toString() || "",
-        capacity: (data as any).capacity?.toString() || "",
-        capacity_occupied: (data as any).capacity_occupied?.toString() || "0",
+        deposit: data.deposit?.toString() || "",
+        capacity: data.capacity?.toString() || "",
+        capacity_occupied: data.capacity_occupied?.toString() || "0",
         area_m2: data.area_m2?.toString() || "",
         description: data.description || "",
         available: data.available,
       });
       setImages(data.images || []);
       setPanoramaUrls(data.panorama_urls || []);
-      setVideoUrl((data as any).video_url || "");
+      setVideoUrl(data.video_url || "");
+      setDataLoaded(true);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -195,6 +197,18 @@ export default function RoomForm() {
             Your session has expired. Redirecting to login...
           </AlertDescription>
         </Alert>
+      </div>
+    );
+  }
+
+  // Show loading while data is being fetched for edit mode
+  if (roomId && !dataLoaded) {
+    return (
+      <div className="container mx-auto p-6 max-w-3xl">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin" />
+          <span className="ml-2">Loading room data...</span>
+        </div>
       </div>
     );
   }
