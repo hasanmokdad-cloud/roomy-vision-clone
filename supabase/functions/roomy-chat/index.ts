@@ -84,6 +84,17 @@ function extractFilters(message: string, context: any = {}, studentPrefs: any = 
     filters.university = studentPrefs.preferred_university;
   }
 
+  // Dorm name detection - direct name queries
+  const dormNamePattern = /(?:about|at|in|called|named|for|find)\s+["']?([A-Za-z0-9\s]+?)["']?\s*(?:dorm|residence)?/i;
+  const dormMatch = query.match(dormNamePattern);
+  if (dormMatch) {
+    const potentialName = dormMatch[1].trim();
+    // Only use if it's not a generic word
+    if (potentialName.length > 2 && !["the", "my", "our", "this", "that"].includes(potentialName.toLowerCase())) {
+      filters.dormName = potentialName;
+    }
+  }
+
   // Area detection
   const areas = ["hamra", "jbeil", "byblos", "verdun", "raoucheh", "hazmieh", "badaro", "dekowaneh", "manara", "blat", "fidar"];
   const areaMatch = areas.find(a => query.includes(a));
@@ -438,6 +449,7 @@ serve(async (req) => {
     if (filters.area) dbQuery = dbQuery.ilike("area", `%${filters.area}%`);
     if (filters.roomType) dbQuery = dbQuery.ilike("room_types", `%${filters.roomType}%`);
     if (filters.amenity) dbQuery = dbQuery.ilike("services_amenities", `%${filters.amenity}%`);
+    if (filters.dormName) dbQuery = dbQuery.ilike("dorm_name", `%${filters.dormName}%`);
 
     const { data: dorms, error: dbError } = await dbQuery;
     

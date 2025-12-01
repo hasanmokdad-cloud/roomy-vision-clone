@@ -26,10 +26,10 @@ export function VoiceRecordingOverlay({
   const overlayRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef({ x: 0, y: 0 });
 
-  if (!isRecording) return null;
-
+  // CRITICAL: Move useEffect BEFORE the early return to fix React Hooks rule
   useEffect(() => {
-    if (!overlayRef.current) return;
+    // Guard inside effect instead of before it
+    if (!isRecording || !overlayRef.current) return;
 
     const overlay = overlayRef.current;
 
@@ -79,7 +79,10 @@ export function VoiceRecordingOverlay({
       overlay.removeEventListener('touchmove', handleTouchMove);
       overlay.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isLocked, slideOffset, onSlideChange, onLock, onCancel, onStop]);
+  }, [isRecording, isLocked, slideOffset, onSlideChange, onLock, onCancel, onStop]);
+
+  // Return early AFTER useEffect to comply with React Hooks rules
+  if (!isRecording) return null;
 
   const minutes = Math.floor(duration / 60);
   const seconds = duration % 60;

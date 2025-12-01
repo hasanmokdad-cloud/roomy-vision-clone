@@ -9,6 +9,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useEffect } from "react";
@@ -90,6 +91,7 @@ export function EmojiPickerSheet({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="w-auto p-0 border-0 max-w-fit">
+          <DialogTitle className="sr-only">Choose emoji</DialogTitle>
           <EmojiPicker
             onEmojiClick={handleEmojiClick}
             theme={emojiPickerTheme}
