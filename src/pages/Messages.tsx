@@ -207,7 +207,7 @@ export default function Messages() {
   const [showArchived, setShowArchived] = useState(false);
   const [isRecordingActive, setIsRecordingActive] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
-  const [shouldUploadVoice, setShouldUploadVoice] = useState(true);
+  const shouldUploadVoiceRef = useRef(true);
   const [slideOffset, setSlideOffset] = useState({ x: 0, y: 0 });
   const [isLocked, setIsLocked] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -628,24 +628,27 @@ export default function Messages() {
   }, [messages]);
 
   // Load pinned messages for current conversation
-  useEffect(() => {
+  const loadPinnedMessages = async () => {
     if (!selectedConversation) {
       setPinnedMessages([]);
       return;
     }
     
-    supabase
+    const { data } = await supabase
       .from('messages')
       .select('*')
       .eq('conversation_id', selectedConversation)
       .eq('is_pinned', true)
-      .order('pinned_at', { ascending: false })
-      .then(({ data }) => {
-        if (data) {
-          setPinnedMessages(data as Message[]);
-        }
-      });
-  }, [selectedConversation, messages]);
+      .order('pinned_at', { ascending: false });
+    
+    if (data) {
+      setPinnedMessages(data as Message[]);
+    }
+  };
+
+  useEffect(() => {
+    loadPinnedMessages();
+  }, [selectedConversation]);
 
   // Scroll to specific message
   const scrollToMessage = (messageId: string) => {
@@ -1096,7 +1099,7 @@ export default function Messages() {
 
     try {
       setIsRecordingActive(true);
-      setShouldUploadVoice(true); // Reset flag for new recording
+      shouldUploadVoiceRef.current = true; // Reset flag for new recording
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
       const mimeType = getSupportedMimeType();
@@ -1117,7 +1120,7 @@ export default function Messages() {
         setIsRecordingActive(false);
         
         // Only upload if not cancelled
-        if (shouldUploadVoice && audioChunksRef.current.length > 0) {
+        if (shouldUploadVoiceRef.current && audioChunksRef.current.length > 0) {
           const actualMimeType = mimeType || mediaRecorder.mimeType;
           const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
           
@@ -1182,7 +1185,7 @@ export default function Messages() {
   };
 
   const cancelRecording = () => {
-    setShouldUploadVoice(false);
+    shouldUploadVoiceRef.current = false;
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
@@ -1624,6 +1627,30 @@ export default function Messages() {
                     <Info className="w-5 h-5" />
                   </Button>
                 </div>
+
+                {/* Contact Info Panel */}
+                {showContactInfo && selectedConversation && (() => {
+                  const conv = conversations.find(c => c.id === selectedConversation);
+                  return (
+                    <ContactInfoPanel
+                      onClose={() => setShowContactInfo(false)}
+                      contactName={conv?.other_user_name || 'User'}
+                      contactAvatar={conv?.other_user_photo || undefined}
+                      conversationId={selectedConversation}
+                      isMuted={!!conv?.muted_until && new Date(conv.muted_until) > new Date()}
+                      onMuteToggle={async (muted) => {
+                        const newMutedUntil = muted ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : null;
+                        await supabase
+                          .from('conversations')
+                          .update({ muted_until: newMutedUntil })
+                          .eq('id', selectedConversation);
+                        await loadConversations();
+                      }}
+                      currentStudentId={studentId}
+                      otherStudentId={conv?.student_id || null}
+                    />
+                  );
+                })()}
 
                 <ScrollArea className={`flex-1 p-4 ${isMobile ? 'pb-32' : ''}`}>
                   <div className="space-y-4">

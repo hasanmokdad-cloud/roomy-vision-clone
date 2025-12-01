@@ -74,6 +74,7 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const messageRef = useRef<HTMLDivElement>(null);
   const [showReactionBar, setShowReactionBar] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -84,6 +85,21 @@ export function MessageBubble({
   const [localIsPinned, setLocalIsPinned] = useState(message.is_pinned);
   const longPressTimerRef = useRef<NodeJS.Timeout>();
   const touchStartPosRef = useRef({ x: 0, y: 0 });
+
+  // Close emoji picker/reaction bar when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (messageRef.current && !messageRef.current.contains(event.target as Node)) {
+        setShowReactionBar(false);
+        setShowEmojiPicker(false);
+      }
+    };
+
+    if (showReactionBar || showEmojiPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showReactionBar, showEmojiPicker]);
 
   // Sync local state with prop changes
   useEffect(() => {
@@ -358,6 +374,7 @@ export function MessageBubble({
 
   return (
     <div
+      ref={messageRef}
       className={`flex ${isSender ? "justify-end" : "justify-start"} mb-4 group relative`}
       onTouchStart={isMobile ? handleTouchStart : undefined}
       onTouchMove={isMobile ? handleTouchMove : undefined}
