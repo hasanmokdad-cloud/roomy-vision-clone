@@ -383,6 +383,7 @@ export function MessageBubble({
             selectedEmojis={reactions
               .filter((r) => r.user_id === userId)
               .map((r) => r.emoji)}
+            isSender={isSender}
           />
         )}
 
@@ -433,10 +434,11 @@ export function MessageBubble({
                 onDelete={handleDelete}
                 canEdit={canEdit}
                 isPinned={localIsPinned}
+                isStarred={localIsStarred}
                 trigger={
                   <button
                     className={`absolute top-1 ${
-                      isSender ? "right-1" : "left-1"
+                      isSender ? "right-1" : "right-1"
                     } opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-black/10 transition-opacity`}
                   >
                     <ChevronDown className="h-4 w-4" />

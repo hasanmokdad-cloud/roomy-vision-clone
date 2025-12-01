@@ -6,6 +6,7 @@ import {
   Edit3,
   Info,
   Star,
+  StarOff,
   Pin,
   Languages,
   Trash2,
@@ -49,6 +50,7 @@ interface MessageContextMenuProps {
   trigger?: React.ReactNode;
   canEdit?: boolean;
   isPinned?: boolean;
+  isStarred?: boolean;
 }
 
 export function MessageContextMenu({
@@ -72,6 +74,7 @@ export function MessageContextMenu({
   trigger,
   canEdit = false,
   isPinned = false,
+  isStarred = false,
 }: MessageContextMenuProps) {
   const isMobile = useIsMobile();
 
@@ -81,7 +84,7 @@ export function MessageContextMenu({
     { icon: Copy, label: "Copy", onClick: onCopy, show: !!messageText },
     { icon: Edit3, label: "Edit", onClick: onEdit, show: isSender && canEdit },
     { icon: Info, label: "Info", onClick: onInfo, show: isSender },
-    { icon: Star, label: "Star", onClick: onStar },
+    { icon: isStarred ? StarOff : Star, label: isStarred ? "Unstar" : "Star", onClick: onStar },
     { icon: Pin, label: isPinned ? "Unpin" : "Pin", onClick: onPin },
     { icon: Languages, label: "Translate", onClick: onTranslate },
   ];
