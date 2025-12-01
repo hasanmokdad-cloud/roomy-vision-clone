@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive, X, Smile } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square } from 'lucide-react';
 import { ConversationContextMenu } from '@/components/messages/ConversationContextMenu';
 import { VoiceRecordingOverlay } from '@/components/messages/VoiceRecordingOverlay';
 import { TourMessageCard } from '@/components/messages/TourMessageCard';
@@ -1879,15 +1879,56 @@ export default function Messages() {
                   </div>
                 </div>
 
-                {/* Voice Recording Overlay */}
-                <VoiceRecordingOverlay
-                  isRecording={recording}
-                  duration={recordingDuration}
-                  isLocked={isLocked}
-                  slideOffset={slideOffset}
-                  onCancel={cancelRecording}
-                  onStop={handleStopLockedRecording}
-                />
+                {/* Voice Recording Overlay (Mobile Only) */}
+                {isMobile && (
+                  <VoiceRecordingOverlay
+                    isRecording={recording}
+                    duration={recordingDuration}
+                    isLocked={isLocked}
+                    slideOffset={slideOffset}
+                    onCancel={cancelRecording}
+                    onStop={handleStopLockedRecording}
+                    onSlideChange={setSlideOffset}
+                    onLock={() => {
+                      setIsLocked(true);
+                      setSlideOffset({ x: 0, y: 0 });
+                      toast({ title: 'Recording locked', description: 'Tap stop when done' });
+                    }}
+                  />
+                )}
+
+                {/* Desktop Recording UI */}
+                {!isMobile && recording && (
+                  <div className="fixed bottom-24 right-8 z-50 bg-card border border-border rounded-lg shadow-lg p-4 flex items-center gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
+                      <span className="text-lg font-bold tabular-nums">
+                        {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={cancelRecording}
+                        className="gap-2"
+                      >
+                        <X className="w-4 h-4" />
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={stopRecording}
+                        className="gap-2"
+                      >
+                        <Square className="w-4 h-4" />
+                        Send
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center text-foreground/60">

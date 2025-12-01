@@ -347,36 +347,35 @@ export function MessageBubble({
           </div>
         )}
 
-        {/* Three-dots menu button (desktop only) */}
+        {/* Context Menu with three-dots trigger (desktop only) */}
         {!isMobile && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6"
-            onClick={() => setShowContextMenu(true)}
-          >
-            <MoreVertical className="h-4 w-4" />
-          </Button>
+          <MessageContextMenu
+            open={showContextMenu}
+            onOpenChange={setShowContextMenu}
+            isSender={isSender}
+            messageId={message.id}
+            messageText={message.body}
+            createdAt={message.created_at}
+            onReply={() => {
+              onReply();
+              setShowContextMenu(false);
+            }}
+            onCopy={handleCopy}
+            onEdit={onEdit}
+            onStar={handleStar}
+            onDelete={handleDelete}
+            canEdit={canEdit}
+            trigger={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            }
+          />
         )}
-
-        {/* Context Menu - appears BELOW message */}
-        <MessageContextMenu
-          open={showContextMenu}
-          onOpenChange={setShowContextMenu}
-          isSender={isSender}
-          messageId={message.id}
-          messageText={message.body}
-          createdAt={message.created_at}
-          onReply={() => {
-            onReply();
-            setShowContextMenu(false);
-          }}
-          onCopy={handleCopy}
-          onEdit={onEdit}
-          onStar={handleStar}
-          onDelete={handleDelete}
-          canEdit={canEdit}
-        />
 
         {/* Full Emoji Picker */}
         <EmojiPickerSheet

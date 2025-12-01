@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react';
 import { Mic, Lock, Trash2, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -8,6 +9,8 @@ type VoiceRecordingOverlayProps = {
   slideOffset: { x: number; y: number };
   onCancel: () => void;
   onStop: () => void;
+  onSlideChange: (offset: { x: number; y: number }) => void;
+  onLock: () => void;
 };
 
 export function VoiceRecordingOverlay({
@@ -17,8 +20,66 @@ export function VoiceRecordingOverlay({
   slideOffset,
   onCancel,
   onStop,
+  onSlideChange,
+  onLock,
 }: VoiceRecordingOverlayProps) {
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const touchStartRef = useRef({ x: 0, y: 0 });
+
   if (!isRecording) return null;
+
+  useEffect(() => {
+    if (!overlayRef.current) return;
+
+    const overlay = overlayRef.current;
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isLocked) return;
+      
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - touchStartRef.current.x;
+      const deltaY = touch.clientY - touchStartRef.current.y;
+
+      onSlideChange({ x: deltaX, y: deltaY });
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Check if slid up to lock
+      if (slideOffset.y < -80 && !isLocked) {
+        onLock();
+        return;
+      }
+
+      // Check if slid left to cancel
+      if (slideOffset.x < -100) {
+        onCancel();
+        return;
+      }
+
+      // Otherwise, send the message
+      if (!isLocked) {
+        onStop();
+      }
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    };
+
+    overlay.addEventListener('touchstart', handleTouchStart, { passive: true });
+    overlay.addEventListener('touchmove', handleTouchMove, { passive: true });
+    overlay.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+    return () => {
+      overlay.removeEventListener('touchstart', handleTouchStart);
+      overlay.removeEventListener('touchmove', handleTouchMove);
+      overlay.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isLocked, slideOffset, onSlideChange, onLock, onCancel, onStop]);
 
   const minutes = Math.floor(duration / 60);
   const seconds = duration % 60;
@@ -30,7 +91,10 @@ export function VoiceRecordingOverlay({
   const lockProgress = Math.min(100, Math.abs(slideOffset.y) / 0.8);
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center">
+    <div 
+      ref={overlayRef}
+      className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center"
+    >
       {/* Recording status */}
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-3 mb-4">
