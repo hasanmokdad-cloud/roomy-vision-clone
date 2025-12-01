@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ChevronDown, Smile } from "lucide-react";
+import { ChevronDown, Smile, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ReactionBar } from "./ReactionBar";
 import { MessageContextMenu } from "./MessageContextMenu";
@@ -301,6 +301,27 @@ export function MessageBubble({
     setShowContextMenu(false);
   };
 
+  // Helper to get message status for read receipts
+  const getMessageStatus = (msg: Message): 'sent' | 'delivered' | 'seen' => {
+    if (msg.seen_at) return 'seen';
+    if (msg.delivered_at) return 'delivered';
+    return 'sent';
+  };
+
+  // MessageStatusIcon component
+  const MessageStatusIcon = ({ status }: { status: 'sent' | 'delivered' | 'seen' }) => {
+    switch (status) {
+      case 'sent':
+        return <Check className="w-3 h-3 opacity-70" />;
+      case 'delivered':
+        return <CheckCheck className="w-3 h-3 opacity-70" />;
+      case 'seen':
+        return <CheckCheck className="w-3 h-3 text-blue-500" />;
+      default:
+        return null;
+    }
+  };
+
   // Can edit within 15 minutes
   const canEdit =
     isSender &&
@@ -455,6 +476,11 @@ export function MessageBubble({
               )}
               {localIsStarred && <span className="text-xs">⭐</span>}
               {localIsPinned && <span className="text-xs">📌</span>}
+              
+              {/* Read Receipt - Only for sender */}
+              {isSender && (
+                <MessageStatusIcon status={getMessageStatus(message)} />
+              )}
             </div>
           </div>
 
