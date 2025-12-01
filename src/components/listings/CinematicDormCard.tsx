@@ -298,7 +298,7 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
               <div className="flex items-end justify-between">
                 <div>
                   <div className="text-sm text-muted-foreground mb-1">
-                    {hasMultipleRooms ? "Starting from" : "Monthly Price"}
+                    Starting Price
                   </div>
                   <div className="text-3xl font-black gradient-text">${startingPrice}</div>
                 </div>

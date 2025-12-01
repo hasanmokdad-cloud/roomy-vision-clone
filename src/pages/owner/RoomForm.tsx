@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import { VirtualTourGallery } from "@/components/rooms/VirtualTourGallery";
 import { EnhancedImageUploader } from "@/components/owner/EnhancedImageUploader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { StudentReservationCard } from "@/components/owner/StudentReservationCard";
 
 const ROOM_TYPES = [
   'Single',
@@ -62,10 +64,65 @@ export default function RoomForm() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [videoUploading, setVideoUploading] = useState(false);
+  const [reservedStudents, setReservedStudents] = useState<any[]>([]);
+
+  // Auto-capacity logic
+  const getCapacityFromType = (type: string): number | null => {
+    const lowerType = type.toLowerCase();
+    
+    // Skip auto-capacity for these types (variable capacity)
+    if (lowerType.includes('apartment') || 
+        lowerType.includes('suite') || 
+        lowerType.includes('studio')) {
+      return null;
+    }
+    
+    // Auto-determine capacity from type name
+    if (lowerType.includes('single')) return 1;
+    if (lowerType.includes('double')) return 2;
+    if (lowerType.includes('triple')) return 3;
+    if (lowerType.includes('quadruple')) return 4;
+    
+    return null;
+  };
+
+  // Load reserved students for this room
+  const loadReservedStudents = async () => {
+    if (!roomId) return;
+    
+    try {
+      const { data: reservations } = await supabase
+        .from('reservations')
+        .select(`
+          id,
+          status,
+          paid_at,
+          student_id,
+          students!inner (
+            id,
+            full_name,
+            email,
+            gender,
+            university,
+            major,
+            profile_photo_url
+          )
+        `)
+        .eq('room_id', roomId)
+        .in('status', ['paid', 'confirmed']);
+
+      if (reservations) {
+        setReservedStudents(reservations);
+      }
+    } catch (error) {
+      console.error('Error loading reserved students:', error);
+    }
+  };
 
   useEffect(() => {
     if (roomId) {
       loadRoom();
+      loadReservedStudents();
     }
   }, [roomId]);
 
@@ -246,7 +303,17 @@ export default function RoomForm() {
             <Label htmlFor="type">Room Type *</Label>
             <Select
               value={formData.type}
-              onValueChange={(value) => setFormData({ ...formData, type: value })}
+              onValueChange={(value) => {
+                const autoCapacity = getCapacityFromType(value);
+                setFormData({ 
+                  ...formData, 
+                  type: value,
+                  // Auto-set capacity if determinable, keep existing if not
+                  capacity: autoCapacity !== null ? autoCapacity.toString() : formData.capacity,
+                  // Reset occupied to 0 when type changes
+                  capacity_occupied: "0"
+                });
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select room type" />
@@ -310,9 +377,13 @@ export default function RoomForm() {
                 }}
                 placeholder="e.g., 1, 2, 3..."
                 required
+                readOnly={getCapacityFromType(formData.type) !== null}
+                className={getCapacityFromType(formData.type) !== null ? 'bg-muted cursor-not-allowed' : ''}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Number of students this room can accommodate
+                {getCapacityFromType(formData.type) !== null 
+                  ? 'Auto-set based on room type (Apartment/Suite/Studio can be edited)' 
+                  : 'Number of students this room can accommodate'}
               </p>
             </div>
 
@@ -501,6 +572,39 @@ export default function RoomForm() {
               onUpdate={setPanoramaUrls}
             />
           </div>
+
+          {/* Students Occupying This Room - Only show for edit mode */}
+          {roomId && reservedStudents.length > 0 && (
+            <div className="space-y-4 border rounded-lg p-6 bg-muted/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-lg font-semibold">Students in This Room</Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {reservedStudents.length} student{reservedStudents.length > 1 ? 's' : ''} currently reserved
+                  </p>
+                </div>
+                <Badge variant="secondary" className="text-lg">
+                  {formData.capacity_occupied} / {formData.capacity}
+                </Badge>
+              </div>
+              
+              <div className="space-y-3">
+                {reservedStudents.map((res: any) => (
+                  <StudentReservationCard 
+                    key={res.id}
+                    student={res.students}
+                    reservation={{
+                      id: res.id,
+                      status: res.status,
+                      paid_at: res.paid_at
+                    }}
+                    roomId={roomId}
+                    onRemove={loadReservedStudents}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-4">
             <Button

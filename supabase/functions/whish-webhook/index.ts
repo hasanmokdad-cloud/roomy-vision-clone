@@ -142,30 +142,26 @@ async function handleReservationPayment(supabaseClient: any, payload: any, metad
       raw_payload: payload,
     });
 
-  // Update room capacity
-  const { data: room } = await supabaseClient
-    .from('rooms')
-    .select('capacity, capacity_occupied')
-    .eq('id', reservation.room_id)
-    .single();
+  // Increment room capacity using database function
+  await supabaseClient.rpc('increment_room_occupancy', { 
+    room_id: reservation.room_id 
+  });
 
-  if (room) {
-    const newCapacity = (room.capacity_occupied || 0) + 1;
-    const isAvailable = newCapacity < room.capacity;
-
-    await supabaseClient
-      .from('rooms')
-      .update({
-        capacity_occupied: newCapacity,
-        available: isAvailable,
-      })
-      .eq('id', reservation.room_id);
-  }
+  // Update student's current dorm/room after successful payment
+  await supabaseClient
+    .from('students')
+    .update({
+      current_dorm_id: reservation.dorm_id,
+      current_room_id: reservation.room_id,
+      accommodation_status: 'have_dorm'
+    })
+    .eq('id', reservation.student_id);
 
   console.log('Reservation payment processed:', {
     reservationId,
     roomId: reservation.room_id,
     studentId: reservation.student_id,
+    autoUpdatedStudentProfile: true
   });
 
   // TODO: Send notifications to owner and student

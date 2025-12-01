@@ -2943,6 +2943,10 @@ export type Database = {
         Returns: boolean
       }
       debug_auth_state: { Args: never; Returns: Json }
+      decrement_room_occupancy: {
+        Args: { room_id: string }
+        Returns: undefined
+      }
       find_next_available_slot: {
         Args: {
           p_dorm_id: string
@@ -2972,6 +2976,10 @@ export type Database = {
       }
       increment_collection_views: {
         Args: { p_share_code: string }
+        Returns: undefined
+      }
+      increment_room_occupancy: {
+        Args: { room_id: string }
         Returns: undefined
       }
       insert_owner_dorm: {
