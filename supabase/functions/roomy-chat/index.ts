@@ -84,14 +84,24 @@ function extractFilters(message: string, context: any = {}, studentPrefs: any = 
     filters.university = studentPrefs.preferred_university;
   }
 
-  // Dorm name detection - direct name queries
-  const dormNamePattern = /(?:about|at|in|called|named|for|find)\s+["']?([A-Za-z0-9\s]+?)["']?\s*(?:dorm|residence)?/i;
-  const dormMatch = query.match(dormNamePattern);
-  if (dormMatch) {
-    const potentialName = dormMatch[1].trim();
+  // Dorm name detection - improved patterns
+  // Pattern 1: "about/at/in [dorm name]" - capture until end of string or "dorm" keyword
+  const dormNamePattern1 = /(?:about|at|in|called|named|for|find)\s+["']?(.+?)["']?\s*(?:dorm)?$/i;
+  const dormMatch1 = query.match(dormNamePattern1);
+  if (dormMatch1) {
+    const potentialName = dormMatch1[1].trim();
     // Only use if it's not a generic word
-    if (potentialName.length > 2 && !["the", "my", "our", "this", "that"].includes(potentialName.toLowerCase())) {
+    if (potentialName.length > 2 && !["the", "my", "our", "this", "that", "a", "an"].includes(potentialName.toLowerCase())) {
       filters.dormName = potentialName;
+    }
+  }
+  
+  // Pattern 2: Direct dorm name mention (e.g., "Test Dorm")
+  if (!filters.dormName) {
+    const dormNamePattern2 = /["']?([A-Za-z][\w\s]+?)\s*dorm["']?/i;
+    const dormMatch2 = query.match(dormNamePattern2);
+    if (dormMatch2) {
+      filters.dormName = dormMatch2[1].trim();
     }
   }
 
