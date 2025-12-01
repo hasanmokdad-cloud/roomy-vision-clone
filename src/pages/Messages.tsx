@@ -452,35 +452,7 @@ export default function Messages() {
     return () => setHideBottomNav(false);
   }, [isMobile, selectedConversation, setHideBottomNav]);
 
-  // Fix passive event listener error for mobile voice recording
-  useEffect(() => {
-    if (!isMobile || !micButtonRef.current) return;
-
-    const micButton = micButtonRef.current;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      handleVoiceTouchStart(e);
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      handleVoiceTouchMove(e);
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      handleVoiceTouchEnd(e);
-    };
-
-    // Add native listeners with { passive: false } to allow preventDefault
-    micButton.addEventListener('touchstart', handleTouchStart, { passive: false });
-    micButton.addEventListener('touchmove', handleTouchMove, { passive: false });
-    micButton.addEventListener('touchend', handleTouchEnd, { passive: false });
-
-    return () => {
-      micButton.removeEventListener('touchstart', handleTouchStart);
-      micButton.removeEventListener('touchmove', handleTouchMove);
-      micButton.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [isMobile, selectedConversation, recording]);
+  // Mobile uses tap-to-start now (same as desktop), no need for native touch listeners
 
   useEffect(() => {
     if (!userId) return;
@@ -1160,105 +1132,6 @@ export default function Messages() {
     }
   };
 
-  const handleVoiceTouchStart = (e: React.TouchEvent | TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Prevent multiple starts
-    if (recording || isRecordingActive) {
-      console.log('Already recording, ignoring touch start');
-      return;
-    }
-    
-    const touch = e.touches[0];
-    touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
-    touchStartTimeRef.current = Date.now();
-    setShouldUploadVoice(true);
-    setSlideOffset({ x: 0, y: 0 });
-    setIsLocked(false);
-    startRecording();
-  };
-
-  const handleVoiceTouchMove = (e: React.TouchEvent | TouchEvent) => {
-    if (!recording || isLocked) return;
-
-    const touch = e.touches[0];
-    const deltaX = touch.clientX - touchStartPosRef.current.x;
-    const deltaY = touch.clientY - touchStartPosRef.current.y;
-
-    setSlideOffset({ x: deltaX, y: deltaY });
-  };
-
-  const handleVoiceTouchEnd = (e: React.TouchEvent | TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Ignore if not recording
-    if (!recording && !isRecordingActive) {
-      return;
-    }
-    
-    const touchDuration = Date.now() - touchStartTimeRef.current;
-
-    // Check if slid up to lock
-    if (slideOffset.y < -80 && !isLocked) {
-      setIsLocked(true);
-      setSlideOffset({ x: 0, y: 0 });
-      toast({ title: 'Recording locked', description: 'Tap stop when done' });
-      return;
-    }
-
-    // Check if slid left to cancel
-    if (slideOffset.x < -100) {
-      // Cancel recording
-      setShouldUploadVoice(false);
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
-      setRecording(false);
-      setIsRecordingActive(false);
-      setIsLocked(false);
-      setSlideOffset({ x: 0, y: 0 });
-      
-      if (recordingTimerRef.current) {
-        clearInterval(recordingTimerRef.current);
-      }
-      
-      toast({ 
-        title: 'Recording cancelled', 
-        description: 'Voice message deleted',
-        duration: 2000
-      });
-      return;
-    }
-    
-    if (touchDuration < 500) {
-      // Too short - cancel
-      setShouldUploadVoice(false);
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
-      setRecording(false);
-      setIsRecordingActive(false);
-      setIsLocked(false);
-      setSlideOffset({ x: 0, y: 0 });
-      
-      if (recordingTimerRef.current) {
-        clearInterval(recordingTimerRef.current);
-      }
-      
-      toast({ 
-        title: 'Recording cancelled', 
-        description: 'Hold the button longer to record',
-        duration: 2000
-      });
-    } else if (!isLocked) {
-      // Stop and upload
-      setSlideOffset({ x: 0, y: 0 });
-      stopRecording();
-    }
-  };
-
   const cancelRecording = () => {
     setShouldUploadVoice(false);
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -1864,14 +1737,13 @@ export default function Messages() {
                       </Button>
                     ) : (
                       <Button
-                        ref={micButtonRef}
                         type="button"
                         variant="ghost"
                         size="icon"
-                        onClick={isMobile ? undefined : handleVoiceButtonClick}
+                        onClick={handleVoiceButtonClick}
                         className="shrink-0"
                         aria-label="Record voice message"
-                        title={isMobile ? "Hold to record voice message" : "Click to record voice message"}
+                        title="Tap to record voice message"
                       >
                         <Mic className="w-5 h-5" />
                       </Button>
