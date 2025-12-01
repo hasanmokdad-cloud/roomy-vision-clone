@@ -200,6 +200,7 @@ export default function Messages() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const touchStartTimeRef = useRef<number>(0);
   const touchStartPosRef = useRef({ x: 0, y: 0 });
+  const micButtonRef = useRef<HTMLButtonElement>(null);
 
 
   // Handle auto-open from navigation state
@@ -434,6 +435,36 @@ export default function Messages() {
     // Cleanup when leaving the page
     return () => setHideBottomNav(false);
   }, [isMobile, selectedConversation, setHideBottomNav]);
+
+  // Fix passive event listener error for mobile voice recording
+  useEffect(() => {
+    if (!isMobile || !micButtonRef.current) return;
+
+    const micButton = micButtonRef.current;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      handleVoiceTouchStart(e);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      handleVoiceTouchMove(e);
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      handleVoiceTouchEnd(e);
+    };
+
+    // Add native listeners with { passive: false } to allow preventDefault
+    micButton.addEventListener('touchstart', handleTouchStart, { passive: false });
+    micButton.addEventListener('touchmove', handleTouchMove, { passive: false });
+    micButton.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+    return () => {
+      micButton.removeEventListener('touchstart', handleTouchStart);
+      micButton.removeEventListener('touchmove', handleTouchMove);
+      micButton.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isMobile, selectedConversation, recording]);
 
   useEffect(() => {
     if (!userId) return;
@@ -1100,7 +1131,7 @@ export default function Messages() {
     }
   };
 
-  const handleVoiceTouchStart = (e: React.TouchEvent) => {
+  const handleVoiceTouchStart = (e: React.TouchEvent | TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -1119,7 +1150,7 @@ export default function Messages() {
     startRecording();
   };
 
-  const handleVoiceTouchMove = (e: React.TouchEvent) => {
+  const handleVoiceTouchMove = (e: React.TouchEvent | TouchEvent) => {
     if (!recording || isLocked) return;
 
     const touch = e.touches[0];
@@ -1129,7 +1160,7 @@ export default function Messages() {
     setSlideOffset({ x: deltaX, y: deltaY });
   };
 
-  const handleVoiceTouchEnd = (e: React.TouchEvent) => {
+  const handleVoiceTouchEnd = (e: React.TouchEvent | TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -1528,7 +1559,7 @@ export default function Messages() {
                         </div>
                       </div>
                     </button>
-              <div className="absolute top-2 right-2">
+              <div className="absolute top-2 right-2 opacity-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                 <ConversationContextMenu
                   conversationId={conv.id}
                   isPinned={conv.is_pinned || false}
@@ -1692,13 +1723,11 @@ export default function Messages() {
                       </Button>
                     ) : (
                       <Button
+                        ref={micButtonRef}
                         type="button"
                         variant="ghost"
                         size="icon"
                         onClick={isMobile ? undefined : handleVoiceButtonClick}
-                        onTouchStart={isMobile ? handleVoiceTouchStart : undefined}
-                        onTouchMove={isMobile ? handleVoiceTouchMove : undefined}
-                        onTouchEnd={isMobile ? handleVoiceTouchEnd : undefined}
                         className="shrink-0"
                         aria-label="Record voice message"
                         title={isMobile ? "Hold to record voice message" : "Click to record voice message"}
