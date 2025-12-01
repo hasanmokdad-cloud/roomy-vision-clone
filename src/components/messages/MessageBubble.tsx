@@ -57,6 +57,7 @@ interface MessageBubbleProps {
   showAvatar?: boolean;
   allMessages?: Message[];
   onScrollToMessage?: (messageId: string) => void;
+  onPinChange?: (messageId: string, isPinned: boolean) => void;
 }
 
 export function MessageBubble({
@@ -71,6 +72,7 @@ export function MessageBubble({
   showAvatar = false,
   allMessages = [],
   onScrollToMessage,
+  onPinChange,
 }: MessageBubbleProps) {
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -287,6 +289,11 @@ export function MessageBubble({
         .eq("id", message.id);
 
       if (error) throw error;
+
+      // Call parent callback to update pinned messages immediately
+      if (onPinChange) {
+        onPinChange(message.id, newValue);
+      }
 
       toast({
         title: newValue ? "Message pinned" : "Message unpinned",
