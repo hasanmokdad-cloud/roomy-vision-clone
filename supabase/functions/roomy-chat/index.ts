@@ -58,7 +58,7 @@ function checkRateLimit(identifier: string): boolean {
 }
 
 // Helper function to detect keywords and extract filters
-function extractFilters(message: string, context: any = {}, studentPrefs: any = {}) {
+async function extractFilters(message: string, context: any = {}, studentPrefs: any = {}) {
   const query = message.toLowerCase();
   const filters: any = { ...context };
   const learnedPrefs: any = {};
@@ -84,24 +84,33 @@ function extractFilters(message: string, context: any = {}, studentPrefs: any = 
     filters.university = studentPrefs.preferred_university;
   }
 
-  // Dorm name detection - improved patterns
-  // Pattern 1: "about/at/in [dorm name]" - capture until end of string or "dorm" keyword
-  const dormNamePattern1 = /(?:about|at|in|called|named|for|find)\s+["']?(.+?)["']?\s*(?:dorm)?$/i;
-  const dormMatch1 = query.match(dormNamePattern1);
-  if (dormMatch1) {
-    const potentialName = dormMatch1[1].trim();
-    // Only use if it's not a generic word
-    if (potentialName.length > 2 && !["the", "my", "our", "this", "that", "a", "an"].includes(potentialName.toLowerCase())) {
-      filters.dormName = potentialName;
-    }
+  // SMART DORM NAME DETECTION: Query actual dorm names from database and match against user query
+  // This allows us to detect dorm names even without explicit keywords like "about" or "at"
+  const detectedDormName = await detectDormNameInQuery(query);
+  if (detectedDormName) {
+    filters.dormName = detectedDormName;
   }
   
-  // Pattern 2: Direct dorm name mention (e.g., "Test Dorm")
+  // Fallback patterns if DB detection didn't work
   if (!filters.dormName) {
-    const dormNamePattern2 = /["']?([A-Za-z][\w\s]+?)\s*dorm["']?/i;
-    const dormMatch2 = query.match(dormNamePattern2);
-    if (dormMatch2) {
-      filters.dormName = dormMatch2[1].trim();
+    // Pattern 1: "about/at/in [dorm name]" - capture until end of string or "dorm" keyword
+    const dormNamePattern1 = /(?:about|at|in|called|named|for|find)\s+["']?(.+?)["']?\s*(?:dorm)?$/i;
+    const dormMatch1 = query.match(dormNamePattern1);
+    if (dormMatch1) {
+      const potentialName = dormMatch1[1].trim();
+      // Only use if it's not a generic word
+      if (potentialName.length > 2 && !["the", "my", "our", "this", "that", "a", "an"].includes(potentialName.toLowerCase())) {
+        filters.dormName = potentialName;
+      }
+    }
+    
+    // Pattern 2: Direct dorm name mention (e.g., "Test Dorm")
+    if (!filters.dormName) {
+      const dormNamePattern2 = /["']?([A-Za-z][\w\s]+?)\s*dorm["']?/i;
+      const dormMatch2 = query.match(dormNamePattern2);
+      if (dormMatch2) {
+        filters.dormName = dormMatch2[1].trim();
+      }
     }
   }
 
@@ -140,6 +149,44 @@ function extractFilters(message: string, context: any = {}, studentPrefs: any = 
   }
 
   return { filters, learnedPrefs };
+}
+
+/**
+ * Smart dorm name detection: Query actual dorm names from DB and check if any are mentioned in the query
+ * This allows detection like "tell me about Test Dorm" or "what's the price of Test Dorm?"
+ */
+async function detectDormNameInQuery(query: string): Promise<string | null> {
+  try {
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    
+    // Query all verified dorm names
+    const { data: allDorms } = await supabase
+      .from('dorms')
+      .select('dorm_name, name')
+      .eq('verification_status', 'Verified');
+    
+    if (!allDorms || allDorms.length === 0) return null;
+    
+    const queryLower = query.toLowerCase();
+    
+    // Check if any dorm name (or name fallback) is mentioned in the query
+    for (const dorm of allDorms) {
+      const dormName = (dorm.dorm_name || dorm.name || '').toLowerCase();
+      if (dormName && queryLower.includes(dormName)) {
+        return dorm.dorm_name || dorm.name;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('[detectDormNameInQuery] Error:', error);
+    return null;
+  }
 }
 
 // Input sanitization helper
@@ -254,9 +301,21 @@ serve(async (req) => {
     let userPreferences: any = null;
     
     if (userId && userId.startsWith('guest_') === false) {
+      // COMPREHENSIVE PROFILE READING: Load ALL relevant student fields for intelligent responses
       const { data: student } = await supabase
         .from("students")
-        .select("id, budget, gender, preferred_university, favorite_areas, preferred_room_types, preferred_amenities, ai_confidence_score, current_dorm_id, current_room_id")
+        .select(`
+          id, full_name, gender, age, university, major, year_of_study,
+          budget, accommodation_status, needs_dorm, needs_roommate_new_dorm, needs_roommate_current_place,
+          current_dorm_id, current_room_id,
+          preferred_university, preferred_housing_area, favorite_areas, 
+          preferred_room_types, preferred_amenities,
+          ai_confidence_score, ai_match_plan,
+          personality_test_completed, enable_personality_matching,
+          personality_cleanliness_level, personality_sleep_schedule, personality_intro_extro,
+          personality_smoking, personality_guests_frequency,
+          habit_cleanliness, habit_noise, habit_social
+        `)
         .eq("user_id", userId)
         .maybeSingle();
       
@@ -292,6 +351,59 @@ serve(async (req) => {
       );
     }
 
+    // ROOM CAPACITY QUERY DETECTION: Handle questions about specific room availability
+    const roomCapacityRegex = /(?:space|available|spots?|beds?|capacity|full|room)\s+(?:in|at|for)?\s*(?:room\s*)?([A-Za-z0-9]+)/i;
+    const roomCapacityMatch = message.toLowerCase().match(roomCapacityRegex);
+    
+    if (roomCapacityMatch && (message.toLowerCase().includes('space') || message.toLowerCase().includes('available') || message.toLowerCase().includes('full'))) {
+      const roomIdentifier = roomCapacityMatch[1];
+      
+      // Try to find the room in the database
+      const { data: rooms } = await supabase
+        .from('rooms')
+        .select('*, dorm:dorms(dorm_name, name)')
+        .or(`name.ilike.%${roomIdentifier}%,room_number.ilike.%${roomIdentifier}%`)
+        .limit(1);
+      
+      if (rooms && rooms.length > 0) {
+        const room = rooms[0];
+        const available = (room.capacity || 0) - (room.capacity_occupied || 0);
+        const dormName = room.dorm?.dorm_name || room.dorm?.name || 'the dorm';
+        
+        let capacityResponse = '';
+        if (available <= 0) {
+          capacityResponse = `Room ${room.name} at ${dormName} is currently **FULL** (${room.capacity_occupied}/${room.capacity} beds occupied). 😔\n\n`;
+          
+          // Suggest other rooms in the same dorm
+          const { data: otherRooms } = await supabase
+            .from('rooms')
+            .select('name, capacity, capacity_occupied, available')
+            .eq('dorm_id', room.dorm_id)
+            .eq('available', true)
+            .neq('id', room.id);
+          
+          const availableRooms = (otherRooms || []).filter((r: any) => (r.capacity_occupied || 0) < (r.capacity || 0));
+          
+          if (availableRooms.length > 0) {
+            capacityResponse += `But good news! Other rooms at ${dormName} are available:\n`;
+            availableRooms.slice(0, 3).forEach((r: any) => {
+              const spots = r.capacity - (r.capacity_occupied || 0);
+              capacityResponse += `• Room ${r.name}: ${spots} spot${spots === 1 ? '' : 's'} left (${r.capacity_occupied || 0}/${r.capacity})\n`;
+            });
+          } else {
+            capacityResponse += `Unfortunately, all rooms at ${dormName} are currently full. Would you like me to suggest similar dorms nearby?`;
+          }
+        } else {
+          capacityResponse = `Great news! 🎉 Room ${room.name} at ${dormName} has **${available} spot${available === 1 ? '' : 's'} available** (${room.capacity_occupied || 0}/${room.capacity} beds occupied).\n\nWould you like to know more about this dorm or see other options?`;
+        }
+        
+        return new Response(
+          JSON.stringify({ response: capacityResponse }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    
     // Check for "what do you remember" query
     if (message.toLowerCase().includes("what do you remember") || message.toLowerCase().includes("what do you know about me")) {
       if (!studentProfile) {
@@ -372,7 +484,7 @@ serve(async (req) => {
     const storedContext = session?.context || {};
 
     // Extract filters from message, merging with stored context and student preferences
-    const { filters, learnedPrefs } = extractFilters(message, storedContext, studentProfile);
+    const { filters, learnedPrefs } = await extractFilters(message, storedContext, studentProfile);
     
     // Update student preferences based on learned preferences
     if (studentId && Object.keys(learnedPrefs).length > 0) {
@@ -411,20 +523,48 @@ serve(async (req) => {
       ? "\n\nPrevious conversation:\n" + recentHistory.map((h: any) => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.content}`).join("\n") + "\n"
       : "";
 
-    // Build student profile context
+    // Build comprehensive student profile context
     let profileContext = "";
     if (studentProfile) {
-      const knownPrefs: string[] = [];
-      if (studentProfile.budget) knownPrefs.push(`budget of $${studentProfile.budget}`);
-      if (studentProfile.preferred_university) knownPrefs.push(`prefers ${studentProfile.preferred_university}`);
-      if (studentProfile.favorite_areas?.length > 0) knownPrefs.push(`likes areas: ${studentProfile.favorite_areas.join(", ")}`);
-      if (studentProfile.preferred_room_types?.length > 0) knownPrefs.push(`prefers ${studentProfile.preferred_room_types.join(" or ")} rooms`);
-      if (studentProfile.preferred_amenities?.length > 0) knownPrefs.push(`values: ${studentProfile.preferred_amenities.join(", ")}`);
+      profileContext = `\n\n==== STUDENT PROFILE (Use for intelligent responses) ====\n`;
       
-      if (knownPrefs.length > 0) {
-        profileContext = `\n\nKnown student preferences (confidence: ${studentProfile.ai_confidence_score}%):\n${knownPrefs.join("; ")}\n`;
-        profileContext += "Use these to provide personalized recommendations. Only ask about missing preferences.\n";
+      // Basic info
+      if (studentProfile.full_name) profileContext += `Name: ${studentProfile.full_name}\n`;
+      if (studentProfile.gender) profileContext += `Gender: ${studentProfile.gender}\n`;
+      if (studentProfile.age) profileContext += `Age: ${studentProfile.age}\n`;
+      if (studentProfile.university) profileContext += `University: ${studentProfile.university}\n`;
+      if (studentProfile.major) profileContext += `Major: ${studentProfile.major}\n`;
+      
+      // Accommodation status
+      profileContext += `\nAccommodation Status:\n`;
+      profileContext += `- Needs a dorm: ${studentProfile.needs_dorm ? 'YES' : 'NO'}\n`;
+      profileContext += `- Has current dorm: ${studentProfile.current_dorm_id ? 'YES' : 'NO'}\n`;
+      if (studentProfile.needs_roommate_current_place) profileContext += `- Seeking roommate for current place: YES\n`;
+      if (studentProfile.needs_roommate_new_dorm) profileContext += `- Seeking roommate for new dorm: YES\n`;
+      
+      // Preferences
+      if (studentProfile.budget) profileContext += `\nBudget: $${studentProfile.budget}/month (MONTHLY PRICE ONLY)\n`;
+      if (studentProfile.preferred_university) profileContext += `Preferred University: ${studentProfile.preferred_university}\n`;
+      if (studentProfile.favorite_areas?.length > 0) profileContext += `Favorite Areas: ${studentProfile.favorite_areas.join(", ")}\n`;
+      if (studentProfile.preferred_room_types?.length > 0) profileContext += `Preferred Room Types: ${studentProfile.preferred_room_types.join(", ")}\n`;
+      if (studentProfile.preferred_amenities?.length > 0) profileContext += `Preferred Amenities: ${studentProfile.preferred_amenities.join(", ")}\n`;
+      
+      // Match tier
+      const tier = studentProfile.ai_match_plan || 'basic';
+      profileContext += `\nMatch Tier: ${tier.toUpperCase()}\n`;
+      profileContext += `Personality Test Completed: ${studentProfile.personality_test_completed ? 'YES' : 'NO'}\n`;
+      
+      if (studentProfile.personality_test_completed && tier !== 'basic') {
+        profileContext += `\nPersonality Traits (use for Advanced/VIP tier only):\n`;
+        if (studentProfile.personality_cleanliness_level) profileContext += `- Cleanliness: ${studentProfile.personality_cleanliness_level}\n`;
+        if (studentProfile.personality_sleep_schedule) profileContext += `- Sleep Schedule: ${studentProfile.personality_sleep_schedule}\n`;
+        if (studentProfile.personality_intro_extro) profileContext += `- Social Style: ${studentProfile.personality_intro_extro}\n`;
+        if (studentProfile.personality_smoking) profileContext += `- Smoking: ${studentProfile.personality_smoking}\n`;
+        if (studentProfile.personality_guests_frequency) profileContext += `- Guests: ${studentProfile.personality_guests_frequency}\n`;
       }
+      
+      profileContext += `\nAI Confidence Score: ${studentProfile.ai_confidence_score || 50}%\n`;
+      profileContext += `====================================================\n`;
     }
 
     // Add onboarding preferences context
@@ -579,36 +719,63 @@ serve(async (req) => {
     const dormsWithRooms = await Promise.all((rankedDorms || []).map(async (dorm: any) => {
       const { data: rooms } = await supabase
         .from('rooms')
-        .select('name, type, capacity, capacity_occupied, available')
+        .select('name, type, capacity, capacity_occupied, available, price')
         .eq('dorm_id', dorm.id)
-        .eq('available', true)
-        .filter('capacity_occupied', 'lt', 'capacity');
+        .eq('available', true);
       
-      return { ...dorm, rooms: rooms || [] };
+      // CRITICAL FIX: Filter rooms with available capacity (capacity_occupied < capacity)
+      const availableRooms = (rooms || []).filter((room: any) => 
+        (room.capacity_occupied || 0) < (room.capacity || 0)
+      );
+      
+      return { ...dorm, rooms: availableRooms };
     }));
 
-    // Build gender eligibility context
+    // Build gender eligibility and budget mismatch context
     let genderEligibilityContext = "";
-    if (studentProfile?.gender && dormsWithRooms.length > 0) {
-      const genderLower = studentProfile.gender.toLowerCase();
+    let budgetMismatchContext = "";
+    
+    if (studentProfile && dormsWithRooms.length > 0) {
+      const genderLower = studentProfile.gender?.toLowerCase();
       
-      // Check first dorm for incompatibility warning
+      // Check first dorm for incompatibility warnings
       const firstDorm = dormsWithRooms[0];
       const dormGender = firstDorm.gender_preference?.toLowerCase();
       
-      if (dormGender === 'female_only' || dormGender === 'female') {
-        if (genderLower === 'male') {
-          genderEligibilityContext = `\n\nCRITICAL GENDER WARNING: ${firstDorm.dorm_name} is a FEMALE-ONLY dorm. This student is MALE and CANNOT book here. You MUST:
-1. Politely explain why they can't book
-2. Immediately suggest alternative dorms near the same area that accept male students
-3. Never suggest they try to book anyway\n`;
+      // GENDER MISMATCH ALERT
+      if (genderLower) {
+        if (dormGender === 'female_only' || dormGender === 'female') {
+          if (genderLower === 'male') {
+            genderEligibilityContext = `\n\n🚫 CRITICAL GENDER WARNING: ${firstDorm.dorm_name} is a FEMALE-ONLY dorm. This student is MALE and CANNOT book here. You MUST:
+1. Say: "I see you're interested in ${firstDorm.dorm_name}, but it's a female-only dorm. Since you're male, you cannot reserve a room here."
+2. Immediately suggest 2-3 alternative male/mixed dorms in ${firstDorm.area || 'the same area'}
+3. Explain budget/location fit for each alternative
+4. NEVER say "you might contact them" or "exceptions may apply" - this is a HARD REJECTION\n`;
+          }
+        } else if (dormGender === 'male_only' || dormGender === 'male') {
+          if (genderLower === 'female') {
+            genderEligibilityContext = `\n\n🚫 CRITICAL GENDER WARNING: ${firstDorm.dorm_name} is a MALE-ONLY dorm. This student is FEMALE and CANNOT book here. You MUST:
+1. Say: "I see you're interested in ${firstDorm.dorm_name}, but it's a male-only dorm. Since you're female, you cannot reserve a room here."
+2. Immediately suggest 2-3 alternative female/mixed dorms in ${firstDorm.area || 'the same area'}
+3. Explain budget/location fit for each alternative
+4. NEVER say "you might contact them" or "exceptions may apply" - this is a HARD REJECTION\n`;
+          }
         }
-      } else if (dormGender === 'male_only' || dormGender === 'male') {
-        if (genderLower === 'female') {
-          genderEligibilityContext = `\n\nCRITICAL GENDER WARNING: ${firstDorm.dorm_name} is a MALE-ONLY dorm. This student is FEMALE and CANNOT book here. You MUST:
-1. Politely explain why they can't book
-2. Immediately suggest alternative dorms near the same area that accept female students
-3. Never suggest they try to book anyway\n`;
+      }
+      
+      // BUDGET INTELLIGENCE: Check if any dorm is over student's budget
+      if (studentProfile.budget) {
+        const overBudgetDorms = dormsWithRooms.filter((d: any) => 
+          d.monthly_price > studentProfile.budget
+        );
+        
+        if (overBudgetDorms.length > 0) {
+          budgetMismatchContext = `\n\n💰 BUDGET AWARENESS:\n`;
+          overBudgetDorms.forEach((d: any) => {
+            const overage = d.monthly_price - studentProfile.budget;
+            budgetMismatchContext += `- ${d.dorm_name}: $${d.monthly_price}/month is $${overage} OVER student's $${studentProfile.budget} budget\n`;
+          });
+          budgetMismatchContext += `\nYou MUST mention this proactively and offer alternatives within budget OR ask if they'd consider stretching their budget.\n`;
         }
       }
     }
@@ -635,14 +802,17 @@ serve(async (req) => {
           dormsContext += `   🎯 Match Score: ${Math.round(dorm.matchScore)}/100\n`;
         }
         
-        // Add room capacity info
+        // Add room capacity info with pricing
         if (dorm.rooms && dorm.rooms.length > 0) {
           dormsContext += `   🏠 Available Rooms:\n`;
           dorm.rooms.slice(0, 3).forEach((room: any) => {
             const spotsLeft = room.capacity - (room.capacity_occupied || 0);
-            const status = spotsLeft === 1 ? `${spotsLeft} spot left` : `${spotsLeft} spots left`;
-            dormsContext += `      • ${room.name} (${room.type}): ${room.capacity_occupied || 0}/${room.capacity} - ${status}\n`;
+            const status = spotsLeft === 1 ? `⚠️ ${spotsLeft} spot left!` : `✅ ${spotsLeft} spots left`;
+            const roomPrice = room.price ? ` - $${room.price}/month` : '';
+            dormsContext += `      • ${room.name} (${room.type}): ${room.capacity_occupied || 0}/${room.capacity} - ${status}${roomPrice}\n`;
           });
+        } else {
+          dormsContext += `   ⚠️ No rooms with available capacity\n`;
         }
         dormsContext += "\n";
       });
@@ -756,7 +926,7 @@ WHEN USER ASKS:
 - New criteria → Update internal understanding and search accordingly
 
 ${currentDormContext}
-${genderEligibilityContext}${profileContext}${conversationContext}${conversationHistoryContext}${dormsContext}${roommatesContext}
+${genderEligibilityContext}${budgetMismatchContext}${profileContext}${conversationContext}${conversationHistoryContext}${dormsContext}${roommatesContext}
 
 Present results engagingly. If match scores exist, mention why dorms are great fits. Keep responses concise but warm. Always end with follow-up suggestions.`;
 
