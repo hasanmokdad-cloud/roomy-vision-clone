@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { X, ChevronRight, Image, FileText, Link as LinkIcon, Bell, BellOff, Star, UserPlus, Ban, Flag } from "lucide-react";
+import { X, ChevronRight, Image, FileText, Link as LinkIcon, Bell, BellOff, Star, UserPlus, UserMinus, Check, Ban, Flag } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StarredMessagesPanel } from "./StarredMessagesPanel";
 import { MediaLinksDocsPanel } from "./MediaLinksDocsPanel";
-import { supabase } from "@/integrations/supabase/client";
+import { useFriendshipStatus } from "@/hooks/useFriendshipStatus";
+import { useFriendships } from "@/hooks/useFriendships";
 import { toast } from "sonner";
 
 interface ContactInfoPanelProps {
@@ -16,6 +18,8 @@ interface ContactInfoPanelProps {
   conversationId: string;
   isMuted: boolean;
   onMuteToggle: (muted: boolean) => void;
+  currentStudentId?: string | null;
+  otherStudentId?: string | null;
 }
 
 export function ContactInfoPanel({
@@ -25,23 +29,49 @@ export function ContactInfoPanel({
   conversationId,
   isMuted,
   onMuteToggle,
+  currentStudentId,
+  otherStudentId,
 }: ContactInfoPanelProps) {
   const [showStarredMessages, setShowStarredMessages] = useState(false);
   const [showMediaPanel, setShowMediaPanel] = useState(false);
   const [mediaCount, setMediaCount] = useState(0);
 
+  // Get friendship status if both are students
+  const { status: friendshipStatus, friendshipId, refresh } = useFriendshipStatus(
+    currentStudentId || null,
+    otherStudentId || null
+  );
+  const { sendRequest, acceptRequest, removeFriend, blockUser } = useFriendships(currentStudentId || null);
+
+  const handleAddFriend = async () => {
+    if (!otherStudentId) return;
+    await sendRequest(otherStudentId);
+    refresh();
+  };
+
+  const handleAcceptRequest = async () => {
+    if (!friendshipId) return;
+    await acceptRequest(friendshipId, conversationId);
+    refresh();
+  };
+
+  const handleRemoveFriend = async () => {
+    if (!friendshipId) return;
+    await removeFriend(friendshipId);
+    refresh();
+  };
+
   const handleBlock = async () => {
-    try {
-      // Block functionality would go here
-      toast.success(`${contactName} has been blocked`);
-    } catch (error) {
-      toast.error("Failed to block user");
+    if (!friendshipId || !otherStudentId) {
+      toast.error("Cannot block user - user information not available");
+      return;
     }
+    await blockUser(friendshipId, otherStudentId);
+    onClose();
   };
 
   const handleReport = async () => {
     try {
-      // Report functionality would go here
       toast.success(`${contactName} has been reported`);
     } catch (error) {
       toast.error("Failed to report user");
@@ -50,7 +80,6 @@ export function ContactInfoPanel({
 
   const handleAddToFavorites = async () => {
     try {
-      // Add to favorites functionality would go here
       toast.success("Added to favorites");
     } catch (error) {
       toast.error("Failed to add to favorites");
@@ -100,6 +129,75 @@ export function ContactInfoPanel({
         </div>
 
         <Separator />
+
+        {/* Friend Status - Only show if both are students */}
+        {currentStudentId && otherStudentId && (
+          <>
+            <div className="p-4">
+              <h3 className="font-semibold text-sm mb-3">Friend Status</h3>
+              {friendshipStatus === 'friends' && (
+                <div className="space-y-2">
+                  <Badge variant="secondary" className="w-full justify-center py-2">
+                    <Check className="w-4 h-4 mr-2" />
+                    Friends
+                  </Badge>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full"
+                    onClick={handleRemoveFriend}
+                  >
+                    <UserMinus className="w-4 h-4 mr-2" />
+                    Remove Friend
+                  </Button>
+                </div>
+              )}
+              {friendshipStatus === 'pending_sent' && (
+                <Badge variant="outline" className="w-full justify-center py-2">
+                  Request Sent
+                </Badge>
+              )}
+              {friendshipStatus === 'pending_received' && (
+                <div className="space-y-2">
+                  <Badge variant="outline" className="w-full justify-center py-2 mb-2">
+                    Pending Request
+                  </Badge>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="flex-1"
+                      onClick={handleAcceptRequest}
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      Accept
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={handleRemoveFriend}
+                    >
+                      Decline
+                    </Button>
+                  </div>
+                </div>
+              )}
+              {friendshipStatus === 'none' && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="w-full"
+                  onClick={handleAddFriend}
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Add Friend
+                </Button>
+              )}
+            </div>
+            <Separator />
+          </>
+        )}
 
         {/* Media, links and docs */}
         <button

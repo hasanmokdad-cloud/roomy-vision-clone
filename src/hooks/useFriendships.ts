@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
+import { sendNotification, NotificationTemplates } from '@/lib/sendNotification';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface Friendship {
@@ -115,6 +116,31 @@ export function useFriendships(studentId: string | null) {
 
       if (error) throw error;
 
+      // Get receiver's user_id for notification
+      const { data: receiver } = await supabase
+        .from('students')
+        .select('user_id')
+        .eq('id', receiverId)
+        .single();
+
+      if (receiver) {
+        await sendNotification(
+          receiver.user_id,
+          {
+            en: {
+              title: 'New Friend Request',
+              message: 'You have a new friend request on Roomy',
+            },
+            ar: {
+              title: 'طلب صداقة جديد',
+              message: 'لديك طلب صداقة جديد على روومي',
+            },
+          },
+          'en',
+          { type: 'friend_request' }
+        );
+      }
+
       toast({
         title: 'Friend request sent',
         description: 'Your friend request has been sent',
@@ -133,6 +159,13 @@ export function useFriendships(studentId: string | null) {
     if (!studentId) return;
 
     try {
+      // Get the friendship to find the requester
+      const { data: friendship } = await supabase
+        .from('friendships')
+        .select('requester_id, receiver_id')
+        .eq('id', friendshipId)
+        .single();
+
       const { error } = await supabase
         .from('friendships')
         .update({
@@ -152,6 +185,34 @@ export function useFriendships(studentId: string | null) {
           body: "You're now friends on Roomy 🎉",
           type: 'system',
         });
+      }
+
+      // Notify the requester
+      if (friendship) {
+        const requesterId = friendship.requester_id === studentId ? friendship.receiver_id : friendship.requester_id;
+        const { data: requester } = await supabase
+          .from('students')
+          .select('user_id')
+          .eq('id', requesterId)
+          .single();
+
+        if (requester) {
+          await sendNotification(
+            requester.user_id,
+            {
+              en: {
+                title: 'Friend Request Accepted',
+                message: 'Your friend request was accepted! Start chatting now.',
+              },
+              ar: {
+                title: 'تم قبول طلب الصداقة',
+                message: 'تم قبول طلب الصداقة الخاص بك! ابدأ الدردشة الآن.',
+              },
+            },
+            'en',
+            { type: 'friend_accepted' }
+          );
+        }
       }
 
       toast({
