@@ -176,15 +176,29 @@ export const ChatbotBubble = () => {
         }
       });
 
+      // Check for edge function error
       if (error) {
-        throw error;
+        console.error("Edge function error:", error);
+        throw new Error(error.message || "AI service unavailable");
       }
 
+      // Check if data exists
+      if (!data) {
+        throw new Error("No response from AI service");
+      }
+
+      // Check for explicit error in response
       if (data.error) {
-        throw new Error(data.error || "AI service unavailable.");
+        console.error("AI response error:", data.error);
+        throw new Error(data.error);
       }
 
-      const responseText = data?.response || "Sorry, I could not process that request.";
+      // Safely get response text with validation
+      const responseText = data.response;
+      if (!responseText || typeof responseText !== 'string') {
+        console.error("Invalid response format:", data);
+        throw new Error("Invalid response from AI service");
+      }
 
       // ✅ Update memory session data
       if (data?.sessionId) setSessionId(data.sessionId);

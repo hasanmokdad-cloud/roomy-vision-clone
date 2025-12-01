@@ -949,7 +949,10 @@ export type Database = {
           delivered_at: string | null
           edited_at: string | null
           id: string
+          is_pinned: boolean | null
           is_starred: boolean | null
+          pinned_at: string | null
+          pinned_by: string | null
           read: boolean
           read_at: string | null
           receiver_id: string | null
@@ -972,7 +975,10 @@ export type Database = {
           delivered_at?: string | null
           edited_at?: string | null
           id?: string
+          is_pinned?: boolean | null
           is_starred?: boolean | null
+          pinned_at?: string | null
+          pinned_by?: string | null
           read?: boolean
           read_at?: string | null
           receiver_id?: string | null
@@ -995,7 +1001,10 @@ export type Database = {
           delivered_at?: string | null
           edited_at?: string | null
           id?: string
+          is_pinned?: boolean | null
           is_starred?: boolean | null
+          pinned_at?: string | null
+          pinned_by?: string | null
           read?: boolean
           read_at?: string | null
           receiver_id?: string | null

@@ -6,6 +6,8 @@ import { ReactionBar } from "./ReactionBar";
 import { MessageContextMenu } from "./MessageContextMenu";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
 import { ReplyQuote } from "./ReplyQuote";
+import { MessageInfoModal } from "./MessageInfoModal";
+import { TranslateModal } from "./TranslateModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,8 +26,13 @@ interface Message {
   attachment_metadata?: any;
   status?: string | null;
   read?: boolean;
+  delivered_at?: string | null;
+  seen_at?: string | null;
   reply_to_message_id?: string | null;
   is_starred?: boolean;
+  is_pinned?: boolean;
+  pinned_at?: string | null;
+  pinned_by?: string | null;
   edited_at?: string | null;
   deleted_for_all?: boolean;
 }
@@ -70,6 +77,8 @@ export function MessageBubble({
   const [showReactionBar, setShowReactionBar] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showTranslateModal, setShowTranslateModal] = useState(false);
   const [reactions, setReactions] = useState<MessageReaction[]>([]);
   const longPressTimerRef = useRef<NodeJS.Timeout>();
   const touchStartPosRef = useRef({ x: 0, y: 0 });
@@ -222,6 +231,53 @@ export function MessageBubble({
     setShowReactionBar(true);
   };
 
+  // Handler functions for menu actions
+  const handleInfo = () => {
+    setShowInfoModal(true);
+    setShowContextMenu(false);
+  };
+
+  const handlePin = async () => {
+    try {
+      const { error } = await supabase
+        .from("messages")
+        .update({
+          is_pinned: !message.is_pinned,
+          pinned_at: !message.is_pinned ? new Date().toISOString() : null,
+          pinned_by: !message.is_pinned ? userId : null,
+        })
+        .eq("id", message.id);
+
+      if (error) throw error;
+
+      toast({
+        title: message.is_pinned ? "Message unpinned" : "Message pinned",
+        description: message.is_pinned ? "Message removed from pinned" : "Message pinned to top",
+      });
+    } catch (error) {
+      console.error("Error toggling pin:", error);
+      toast({
+        title: "Error",
+        description: "Failed to toggle pin status",
+        variant: "destructive",
+      });
+    }
+    setShowContextMenu(false);
+  };
+
+  const handleTranslate = () => {
+    setShowTranslateModal(true);
+    setShowContextMenu(false);
+  };
+
+  const handleForward = () => {
+    toast({
+      title: "Coming Soon",
+      description: "Message forwarding will be available soon!",
+    });
+    setShowContextMenu(false);
+  };
+
   // Can edit within 15 minutes
   const canEdit =
     isSender &&
@@ -356,6 +412,8 @@ export function MessageBubble({
             messageId={message.id}
             messageText={message.body}
             createdAt={message.created_at}
+            deliveredAt={message.delivered_at}
+            seenAt={message.seen_at}
             onReply={() => {
               onReply();
               setShowContextMenu(false);
@@ -363,8 +421,13 @@ export function MessageBubble({
             onCopy={handleCopy}
             onEdit={onEdit}
             onStar={handleStar}
+            onInfo={handleInfo}
+            onPin={handlePin}
+            onTranslate={handleTranslate}
+            onForward={handleForward}
             onDelete={handleDelete}
             canEdit={canEdit}
+            isPinned={message.is_pinned}
             trigger={
               <Button
                 variant="ghost"
@@ -385,6 +448,24 @@ export function MessageBubble({
           onOpenChange={setShowEmojiPicker}
           onEmojiSelect={handleReactionSelect}
           mode="reaction"
+        />
+
+        {/* Message Info Modal */}
+        <MessageInfoModal
+          open={showInfoModal}
+          onOpenChange={setShowInfoModal}
+          messageText={message.body}
+          createdAt={message.created_at}
+          deliveredAt={message.delivered_at}
+          seenAt={message.seen_at}
+          isSender={isSender}
+        />
+
+        {/* Translate Modal */}
+        <TranslateModal
+          open={showTranslateModal}
+          onOpenChange={setShowTranslateModal}
+          messageText={message.body}
         />
       </div>
     </div>
