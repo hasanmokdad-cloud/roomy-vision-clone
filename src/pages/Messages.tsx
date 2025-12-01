@@ -7,10 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive, X, Smile } from 'lucide-react';
 import { ConversationContextMenu } from '@/components/messages/ConversationContextMenu';
 import { VoiceRecordingOverlay } from '@/components/messages/VoiceRecordingOverlay';
 import { TourMessageCard } from '@/components/messages/TourMessageCard';
+import { MessageBubble } from '@/components/messages/MessageBubble';
+import { EmojiPickerSheet } from '@/components/messages/EmojiPickerSheet';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -28,6 +30,7 @@ type Conversation = {
   conversation_type?: string;
   updated_at: string;
   other_user_name?: string;
+  other_user_avatar?: string | null;
   dorm_name?: string;
   last_message?: string;
   other_user_photo?: string | null;
@@ -41,7 +44,8 @@ type Message = {
   id: string;
   conversation_id: string;
   sender_id: string;
-  body: string;
+  receiver_id?: string | null;
+  body: string | null;
   created_at: string;
   read?: boolean;
   status?: 'sent' | 'delivered' | 'seen';
@@ -60,6 +64,10 @@ type Message = {
     dormId?: string;
     dormName?: string;
   } | null;
+  reply_to_message_id?: string | null;
+  is_starred?: boolean;
+  edited_at?: string | null;
+  deleted_for_all?: boolean;
 };
 
 type TypingStatus = {
@@ -191,6 +199,9 @@ export default function Messages() {
   const [slideOffset, setSlideOffset] = useState({ x: 0, y: 0 });
   const [isLocked, setIsLocked] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
+  const [editingMessage, setEditingMessage] = useState<Message | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
@@ -1346,6 +1357,34 @@ export default function Messages() {
     const tempId = crypto.randomUUID();
     const messageText = messageInput.trim();
     
+    // Check if editing or replying
+    if (editingMessage) {
+      // Update existing message
+      try {
+        await supabase
+          .from('messages')
+          .update({
+            body: messageText,
+            edited_at: new Date().toISOString(),
+          })
+          .eq('id', editingMessage.id);
+
+        toast({ title: 'Message updated' });
+        setEditingMessage(null);
+        setMessageInput('');
+        loadMessages(selectedConversation);
+      } catch (error: any) {
+        toast({
+          title: 'Failed to update message',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
+    
     // Create optimistic message
     const optimisticMessage: Message = {
       id: tempId,
@@ -1354,12 +1393,15 @@ export default function Messages() {
       body: messageText,
       created_at: new Date().toISOString(),
       status: 'sent',
-      read: false
+      read: false,
+      reply_to_message_id: replyToMessage?.id || null,
     };
     
     // Add optimistically for instant feedback
     setMessages(prev => [...prev, optimisticMessage]);
     setMessageInput('');
+    const currentReplyTo = replyToMessage;
+    setReplyToMessage(null);
     
     try {
       // Stop typing indicator
@@ -1375,6 +1417,7 @@ export default function Messages() {
           sender_id: userId,
           body: messageText,
           status: 'sent',
+          reply_to_message_id: currentReplyTo?.id || null,
         })
         .select()
         .single();
@@ -1391,6 +1434,7 @@ export default function Messages() {
       // Remove optimistic message on error
       setMessages(prev => prev.filter(m => m.id !== tempId));
       setMessageInput(messageText); // Restore input
+      setReplyToMessage(currentReplyTo); // Restore reply
       
       toast({
         title: 'Failed to send message',
@@ -1611,35 +1655,30 @@ export default function Messages() {
 
                 <ScrollArea className={`flex-1 p-4 ${isMobile ? 'pb-32' : ''}`}>
                   <div className="space-y-4">
-                    {messages.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`flex ${msg.sender_id === userId ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-[80%] md:max-w-[70%] rounded-2xl px-4 py-2 ${
-                            msg.sender_id === userId
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted text-foreground'
-                          }`}
-                        >
-                          {renderMessageContent(msg)}
-                          <div className="flex items-center gap-1 text-xs opacity-70 mt-1">
-                            <span>
-                              {new Date(msg.created_at).toLocaleTimeString('en-US', {
-                                hour: 'numeric',
-                                minute: '2-digit',
-                              })}
-                            </span>
-                    {msg.sender_id === userId && (
-                      <span className="ml-1">
-                        <MessageStatusIcon status={msg.status || 'sent'} />
-                      </span>
-                    )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                    {messages.map((msg) => {
+                      const currentConversation = conversations.find(c => c.id === selectedConversation);
+                      const isSender = msg.sender_id === userId;
+                      const senderName = isSender ? 'You' : currentConversation?.other_user_name || 'User';
+                      const senderAvatar = isSender ? undefined : currentConversation?.other_user_avatar;
+
+                      return (
+                        <MessageBubble
+                          key={msg.id}
+                          message={msg}
+                          isSender={isSender}
+                          userId={userId}
+                          senderName={senderName}
+                          senderAvatar={senderAvatar}
+                          onReply={() => setReplyToMessage(msg)}
+                          onEdit={() => {
+                            setEditingMessage(msg);
+                            setMessageInput(msg.body || '');
+                          }}
+                          renderContent={() => renderMessageContent(msg)}
+                          showAvatar={!isSender}
+                        />
+                      );
+                    })}
                     
                     {/* Typing indicator */}
                     {typingUsers.size > 0 && (
@@ -1668,6 +1707,50 @@ export default function Messages() {
                           style={{ width: `${uploadProgress}%` }}
                         />
                       </div>
+                    </div>
+                  )}
+
+                  {/* Reply Preview */}
+                  {replyToMessage && (
+                    <div className="mb-2 bg-muted rounded-lg p-3 flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-primary">
+                          Replying to {replyToMessage.sender_id === userId ? 'yourself' : conversations.find(c => c.id === selectedConversation)?.other_user_name}
+                        </p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {replyToMessage.body || 'Media message'}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => setReplyToMessage(null)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Edit Mode Indicator */}
+                  {editingMessage && (
+                    <div className="mb-2 bg-accent rounded-lg p-3 flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-primary">
+                          Editing message
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => {
+                          setEditingMessage(null);
+                          setMessageInput('');
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                   )}
                   
@@ -1707,6 +1790,28 @@ export default function Messages() {
                       disabled={sending || recording}
                       className="flex-1"
                       aria-label="Message input"
+                    />
+
+                    {/* Emoji Picker Button */}
+                    <EmojiPickerSheet
+                      open={showEmojiPicker}
+                      onOpenChange={setShowEmojiPicker}
+                      onEmojiSelect={(emoji) => {
+                        setMessageInput(prev => prev + emoji);
+                      }}
+                      mode="input"
+                      trigger={
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={recording}
+                          aria-label="Add emoji"
+                          title="Add emoji"
+                        >
+                          <Smile className="w-5 h-5" />
+                        </Button>
+                      }
                     />
 
                     {/* Dynamic button: Mic when empty, Send when typing */}
