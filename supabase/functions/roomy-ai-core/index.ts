@@ -242,13 +242,17 @@ async function fetchDormMatches(supabase: any, student: any, context: any = {}, 
       .from('rooms')
       .select('*')
       .eq('dorm_id', dorm.id)
-      .eq('available', true)
-      .filter('capacity_occupied', 'lt', 'capacity');
+      .eq('available', true);
+    
+    // CRITICAL FIX: Filter rooms where capacity_occupied < capacity (JavaScript filter since Supabase doesn't support column comparison)
+    const availableRooms = (rooms || []).filter((room: any) => 
+      (room.capacity_occupied || 0) < (room.capacity || 0)
+    );
     
     return {
       ...dorm,
-      availableRooms: rooms || [],
-      hasAvailableRooms: (rooms || []).length > 0
+      availableRooms,
+      hasAvailableRooms: availableRooms.length > 0
     };
   }));
 
