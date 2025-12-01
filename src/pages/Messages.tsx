@@ -38,6 +38,8 @@ type Conversation = {
   student_id: string;
   conversation_type?: string;
   updated_at: string;
+  user_a_id?: string | null;
+  user_b_id?: string | null;
   other_user_name?: string;
   other_user_avatar?: string | null;
   dorm_name?: string;
@@ -1936,7 +1938,27 @@ export default function Messages() {
                 }
               }}
               currentStudentId={studentId}
-              otherStudentId={conversations.find(c => c.id === selectedConversation)?.student_id || null}
+              otherStudentId={(() => {
+                const conv = conversations.find(c => c.id === selectedConversation);
+                if (!conv) return null;
+                
+                // For student-to-student conversations (user_a_id and user_b_id are set)
+                if (conv.user_a_id && conv.user_b_id) {
+                  // Find the OTHER user's ID
+                  const otherUserId = conv.user_a_id === userId ? conv.user_b_id : conv.user_a_id;
+                  
+                  // Look up the student record by user_id from conversations list
+                  // We already loaded this data - use it from the conversations object
+                  if (conv.conversation_type === 'universal' || conv.conversation_type === 'friend') {
+                    // For universal/friend conversations, we need to determine which student is "other"
+                    // The conversation object already has student_id set, so use that
+                    return conv.student_id;
+                  }
+                }
+                
+                // Fallback for dorm conversations
+                return conv.student_id || null;
+              })()}
             />
           )}
         </div>

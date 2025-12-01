@@ -73,11 +73,21 @@ export function useFriendSuggestions(studentId: string | null) {
         `)
         .neq('id', studentId);
 
-      // Filter by university, dorm, or major
-      if (currentStudent.current_dorm_id || currentStudent.university || currentStudent.major) {
-        query = query.or(
-          `current_dorm_id.eq.${currentStudent.current_dorm_id},university.eq.${currentStudent.university},major.eq.${currentStudent.major}`
-        );
+      // Build OR conditions dynamically to avoid passing null values
+      const orConditions: string[] = [];
+      if (currentStudent.current_dorm_id) {
+        orConditions.push(`current_dorm_id.eq.${currentStudent.current_dorm_id}`);
+      }
+      if (currentStudent.university) {
+        orConditions.push(`university.eq.${currentStudent.university}`);
+      }
+      if (currentStudent.major) {
+        orConditions.push(`major.eq.${currentStudent.major}`);
+      }
+
+      // Only apply OR filter if we have at least one condition
+      if (orConditions.length > 0) {
+        query = query.or(orConditions.join(','));
       }
 
       const { data: potentialFriends, error: suggestionsError } = await query.limit(20);
