@@ -904,6 +904,10 @@ export default function Messages() {
     if (data) {
       setMessages(data as Message[]);
       
+      // Load pinned messages
+      const pinned = data.filter(m => m.is_pinned);
+      setPinnedMessages(pinned as Message[]);
+      
       // Mark all unseen messages as seen
       const unseenIds = data.filter(m => m.sender_id !== userId && m.status !== 'seen').map(m => m.id);
       if (unseenIds.length > 0) {
@@ -929,6 +933,20 @@ export default function Messages() {
         );
         loadConversations();
       }
+    }
+  };
+
+  // Handler for pin changes from MessageBubble
+  const handlePinChange = (messageId: string, isPinned: boolean) => {
+    if (isPinned) {
+      // Add to pinned messages
+      const message = messages.find(m => m.id === messageId);
+      if (message) {
+        setPinnedMessages(prev => [...prev, { ...message, is_pinned: true }]);
+      }
+    } else {
+      // Remove from pinned messages
+      setPinnedMessages(prev => prev.filter(m => m.id !== messageId));
     }
   };
 
@@ -1628,29 +1646,6 @@ export default function Messages() {
                   </Button>
                 </div>
 
-                {/* Contact Info Panel */}
-                {showContactInfo && selectedConversation && (() => {
-                  const conv = conversations.find(c => c.id === selectedConversation);
-                  return (
-                    <ContactInfoPanel
-                      onClose={() => setShowContactInfo(false)}
-                      contactName={conv?.other_user_name || 'User'}
-                      contactAvatar={conv?.other_user_photo || undefined}
-                      conversationId={selectedConversation}
-                      isMuted={!!conv?.muted_until && new Date(conv.muted_until) > new Date()}
-                      onMuteToggle={async (muted) => {
-                        const newMutedUntil = muted ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : null;
-                        await supabase
-                          .from('conversations')
-                          .update({ muted_until: newMutedUntil })
-                          .eq('id', selectedConversation);
-                        await loadConversations();
-                      }}
-                      currentStudentId={studentId}
-                      otherStudentId={conv?.student_id || null}
-                    />
-                  );
-                })()}
 
                 <ScrollArea className={`flex-1 p-4 ${isMobile ? 'pb-32' : ''}`}>
                   <div className="space-y-4">
@@ -1706,6 +1701,7 @@ export default function Messages() {
                               showAvatar={!isSender}
                               allMessages={messages}
                               onScrollToMessage={scrollToMessage}
+                              onPinChange={handlePinChange}
                             />
                           </div>
                         </SwipeableMessage>
@@ -1745,8 +1741,8 @@ export default function Messages() {
                   {/* Reply Preview */}
                   {replyToMessage && (
                     <div className="mb-2 bg-muted rounded-lg p-3 flex items-start gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-primary">
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <p className="text-xs font-semibold text-primary truncate">
                           Replying to {replyToMessage.sender_id === userId ? 'yourself' : conversations.find(c => c.id === selectedConversation)?.other_user_name}
                         </p>
                         <p className="text-sm text-muted-foreground truncate">
@@ -1756,7 +1752,7 @@ export default function Messages() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6"
+                        className="h-6 w-6 shrink-0"
                         onClick={() => setReplyToMessage(null)}
                       >
                         <X className="h-4 w-4" />
@@ -1915,7 +1911,7 @@ export default function Messages() {
           </Card>
           
           {/* Contact Info Panel */}
-          {showContactInfo && selectedConversation && !isMobile && (
+          {showContactInfo && selectedConversation && (
             <ContactInfoPanel
               onClose={() => setShowContactInfo(false)}
               contactName={conversations.find(c => c.id === selectedConversation)?.other_user_name || 'User'}
@@ -1939,6 +1935,8 @@ export default function Messages() {
                   toast({ title: 'Failed to update mute status', variant: 'destructive' });
                 }
               }}
+              currentStudentId={studentId}
+              otherStudentId={conversations.find(c => c.id === selectedConversation)?.student_id || null}
             />
           )}
         </div>

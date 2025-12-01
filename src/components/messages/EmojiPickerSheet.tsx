@@ -7,11 +7,11 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useEffect } from "react";
 
 interface EmojiPickerSheetProps {
   open: boolean;
@@ -38,6 +38,29 @@ export function EmojiPickerSheet({
 
   const emojiPickerTheme = theme === "dark" ? Theme.DARK : Theme.LIGHT;
 
+  // Close on outside click for desktop
+  useEffect(() => {
+    if (!open || isMobile) return;
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // Check if click is outside emoji picker content
+      if (!target.closest('[role="dialog"]') && !target.closest('.emoji-picker-react')) {
+        onOpenChange(false);
+      }
+    };
+
+    // Add listener with delay to avoid immediate closure
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [open, isMobile, onOpenChange]);
+
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
@@ -62,19 +85,23 @@ export function EmojiPickerSheet({
     );
   }
 
-  return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      {trigger && <PopoverTrigger asChild>{trigger}</PopoverTrigger>}
-      <PopoverContent className="w-auto p-0 border-0" align="start">
-        <EmojiPicker
-          onEmojiClick={handleEmojiClick}
-          theme={emojiPickerTheme}
-          width={350}
-          height={400}
-          searchPlaceHolder="Search emoji..."
-          previewConfig={{ showPreview: false }}
-        />
-      </PopoverContent>
-    </Popover>
-  );
+  // Desktop: use Dialog (modal) instead of Popover when no trigger
+  if (!trigger) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="w-auto p-0 border-0 max-w-fit">
+          <EmojiPicker
+            onEmojiClick={handleEmojiClick}
+            theme={emojiPickerTheme}
+            width={350}
+            height={400}
+            searchPlaceHolder="Search emoji..."
+            previewConfig={{ showPreview: false }}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return null; // No trigger means it shouldn't render in Popover mode
 }

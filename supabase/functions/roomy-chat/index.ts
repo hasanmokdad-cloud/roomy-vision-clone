@@ -750,7 +750,7 @@ Present results engagingly. If match scores exist, mention why dorms are great f
           { role: "system", content: systemPrompt },
           { role: "user", content: message },
         ],
-        stream: true,
+        stream: false, // Changed to JSON response
       }),
     });
 
@@ -777,97 +777,67 @@ Present results engagingly. If match scores exist, mention why dorms are great f
       );
     }
 
-    // Collect the full response for logging
-    let fullResponse = "";
-    const reader = response.body?.getReader();
-    const encoder = new TextEncoder();
+    // Parse JSON response
+    const aiResponse = await response.json();
+    const fullResponse = aiResponse.choices?.[0]?.message?.content || "I'm having trouble responding right now. Please try again.";
     
-    console.log("[roomy-chat] Streaming response to client");
+    console.log("[roomy-chat] Response received from AI gateway");
     
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          while (true) {
-            const { done, value } = await reader!.read();
-            if (done) break;
-            
-            // Decode and collect response
-            const text = new TextDecoder().decode(value);
-            const lines = text.split('\n');
-            
-            for (const line of lines) {
-              if (line.startsWith('data: ') && !line.includes('[DONE]')) {
-                try {
-                  const json = JSON.parse(line.slice(6));
-                  const content = json.choices?.[0]?.delta?.content;
-                  if (content) fullResponse += content;
-                } catch (e) {
-                  // Ignore parse errors for partial data
-                }
-              }
-            }
-            
-            // Forward to client
-            controller.enqueue(value);
+    // Log conversation to ai_chat_sessions
+    if (fullResponse && effectiveSessionId) {
+      try {
+        await supabase.from('ai_chat_sessions').insert([
+          { 
+            user_id: userId || null, 
+            session_id: effectiveSessionId, 
+            role: 'user', 
+            message: message 
+          },
+          { 
+            user_id: userId || null, 
+            session_id: effectiveSessionId, 
+            role: 'assistant', 
+            message: fullResponse 
           }
-          
-          // Log conversation to ai_chat_sessions after streaming completes
-          if (fullResponse && effectiveSessionId) {
-            try {
-              await supabase.from('ai_chat_sessions').insert([
-                { 
-                  user_id: userId || null, 
-                  session_id: effectiveSessionId, 
-                  role: 'user', 
-                  message: message 
-                },
-                { 
-                  user_id: userId || null, 
-                  session_id: effectiveSessionId, 
-                  role: 'assistant', 
-                  message: fullResponse 
-                }
-              ]);
-              console.log("[roomy-chat] Logged conversation to ai_chat_sessions");
-            } catch (logError) {
-              console.error("[roomy-chat] Failed to log conversation:", logError);
-            }
+        ]);
+        console.log("[roomy-chat] Logged conversation to ai_chat_sessions");
+      } catch (logError) {
+        console.error("[roomy-chat] Failed to log conversation:", logError);
+      }
 
-            // Log AI event for chat interaction
-            if (userId && !userId.startsWith('guest_')) {
-              try {
-                await supabase.from('ai_events').insert({
-                  user_id: userId,
-                  event_type: 'chat',
-                  payload: {
-                    query: message.substring(0, 100),
-                    response_length: fullResponse.length,
-                    context_used: Object.keys(filters).length > 0,
-                    processing_time_ms: Date.now() - requestStartTime
-                  }
-                });
-              } catch (eventError) {
-                console.error("[roomy-chat] Failed to log AI event:", eventError);
-              }
+      // Log AI event for chat interaction
+      if (userId && !userId.startsWith('guest_')) {
+        try {
+          await supabase.from('ai_events').insert({
+            user_id: userId,
+            event_type: 'chat',
+            payload: {
+              query: message.substring(0, 100),
+              response_length: fullResponse.length,
+              context_used: Object.keys(filters).length > 0,
+              processing_time_ms: Date.now() - requestStartTime
             }
-          }
-          
-          controller.close();
-        } catch (err) {
-          console.error("[roomy-chat] Stream error:", err);
-          controller.error(err);
+          });
+        } catch (eventError) {
+          console.error("[roomy-chat] Failed to log AI event:", eventError);
         }
       }
-    });
+    }
     
-    return new Response(stream, {
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      },
-    });
+    // Return JSON response
+    return new Response(
+      JSON.stringify({ 
+        response: fullResponse,
+        sessionId: effectiveSessionId,
+        hasContext: true
+      }),
+      {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      }
+    );
   } catch (error) {
     console.error("Chat error:", error);
     

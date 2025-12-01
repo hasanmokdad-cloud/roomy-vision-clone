@@ -318,7 +318,7 @@ export const ChatbotBubble = () => {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed bottom-28 md:bottom-6 right-4 w-[calc(100vw-2rem)] max-w-96 h-[500px] glass rounded-2xl shadow-2xl flex flex-col z-50"
+            className="fixed bottom-28 md:bottom-20 right-4 w-[calc(100vw-2rem)] max-w-96 h-[500px] glass rounded-2xl shadow-2xl flex flex-col z-50"
             style={{
               paddingBottom: 'env(safe-area-inset-bottom)',
             }}
