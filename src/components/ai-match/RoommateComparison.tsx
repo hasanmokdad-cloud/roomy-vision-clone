@@ -199,12 +199,28 @@ export function RoommateComparison({ roommates, matchTier = 'basic' }: RoommateC
                   <div className="flex-1">
                     <h4 className="font-semibold mb-2">AI Recommendation</h4>
                     <p className="text-sm text-muted-foreground">
-                      {selectedRoommatesData.length > 0 && (
-                        <>
-                          Based on your profile, <span className="font-semibold text-foreground">{selectedRoommatesData[0].full_name}</span> appears to be the most compatible match
-                          {matchTier !== 'basic' ? ' according to personality and lifestyle preferences' : ' based on basic preferences'}.
-                        </>
-                      )}
+                      {selectedRoommatesData.length > 0 && (() => {
+                        // Find roommate with highest compatibility score
+                        const bestMatch = selectedRoommatesData.reduce((best, current) => {
+                          const currentScore = (current as any).compatibilityScore || 0;
+                          const bestScore = (best as any).compatibilityScore || 0;
+                          return currentScore > bestScore ? current : best;
+                        }, selectedRoommatesData[0]);
+
+                        const hasScores = selectedRoommatesData.some((r: any) => r.compatibilityScore);
+                        
+                        return (
+                          <>
+                            Based on {hasScores ? 'AI matching analysis' : 'your profile'}, <span className="font-semibold text-foreground">{bestMatch.full_name}</span> appears to be the most compatible match
+                            {matchTier !== 'basic' ? ' according to personality and lifestyle preferences' : ' based on basic preferences like budget, university, and location'}.
+                            {hasScores && matchTier !== 'basic' && (
+                              <span className="block mt-1 text-xs">
+                                Compatibility Score: {Math.round((bestMatch as any).compatibilityScore)}%
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
                     </p>
                     {matchTier === 'basic' && (
                       <p className="text-xs text-muted-foreground mt-2">

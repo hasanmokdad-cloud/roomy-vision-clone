@@ -10,6 +10,7 @@ import { AIInsightsCard } from "@/components/ai-match/AIInsightsCard";
 import { DormMatchCard } from "@/components/ai-match/DormMatchCard";
 import { RoommateMatchCard } from "@/components/ai-match/RoommateMatchCard";
 import { RoommateComparison } from "@/components/ai-match/RoommateComparison";
+import { DormComparison } from "@/components/listings/DormComparison";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Home, Users, Brain, Bug } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -404,6 +405,14 @@ const AiMatch = () => {
             {/* AI Insights */}
             {aiInsights && (
               <AIInsightsCard insights={aiInsights} />
+            )}
+
+            {/* Dorm Comparison (only show for dorm mode) */}
+            {matchMode === 'dorms' && matches.length > 0 && (
+              <DormComparison 
+                dorms={matches}
+                userId={userId}
+              />
             )}
 
             {/* Roommate Comparison (only show for roommate mode) */}

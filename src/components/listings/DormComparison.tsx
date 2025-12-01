@@ -218,6 +218,35 @@ Provide:
                     </table>
                   </div>
 
+                  {/* AI Recommendation (before full analysis) */}
+                  <div className="bg-primary/5 p-4 rounded-lg border border-primary/20 mb-4">
+                    <div className="flex items-start gap-3">
+                      <Sparkles className="w-5 h-5 text-primary mt-1" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold mb-2">AI Quick Recommendation</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {(() => {
+                            const selectedDormsData = dorms.filter(d => selectedDorms.includes(d.id));
+                            if (selectedDormsData.length === 0) return null;
+                            
+                            // Find best dorm based on price and amenities count
+                            const bestDorm = selectedDormsData.reduce((best, current) => {
+                              const currentScore = (current.amenities?.length || 0) - (current.monthly_price / 100);
+                              const bestScore = (best.amenities?.length || 0) - (best.monthly_price / 100);
+                              return currentScore > bestScore ? current : best;
+                            }, selectedDormsData[0]);
+                            
+                            return (
+                              <>
+                                Based on value and amenities, <span className="font-semibold text-foreground">{bestDorm.dorm_name}</span> is the best overall option at ${bestDorm.monthly_price}/month with {bestDorm.amenities?.length || 0} amenities.
+                              </>
+                            );
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* AI Analysis */}
                   <div className="prose prose-sm max-w-none">
                     <div className="bg-primary/5 p-4 rounded-lg border border-primary/20">

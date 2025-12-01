@@ -433,6 +433,23 @@ serve(async (req) => {
       }
     }
     
+    // Check for personality/vibe-based queries from Basic tier users
+    const personalityKeywords = ['vibe', 'personality', 'compatible', 'match my energy', 'similar to me', 'like me', 'good fit'];
+    const isPersonalityQuery = personalityKeywords.some(keyword => message.toLowerCase().includes(keyword));
+    
+    if (isPersonalityQuery && studentProfile && studentProfile.ai_match_plan === 'basic') {
+      return new Response(
+        JSON.stringify({
+          response: "🎯 For deeper personality-based roommate matching, you can unlock **Advanced Match** or **VIP Match**!\n\n✨ Advanced includes compatibility scores and personality insights\n🌟 VIP offers unlimited matches with priority support\n\nWould you like to learn more about upgrading your match experience?",
+          followUpActions: [
+            { label: "Tell me about Advanced", query: "What's included in Advanced Match?" },
+            { label: "Show VIP features", query: "What does VIP Match offer?" }
+          ]
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Check for "what do you remember" query
     if (message.toLowerCase().includes("what do you remember") || message.toLowerCase().includes("what do you know about me")) {
       if (!studentProfile) {

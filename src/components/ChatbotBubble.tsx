@@ -12,6 +12,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 interface Message {
   role: "user" | "assistant";
   content: string;
+  followUpActions?: { label: string; query: string }[];
 }
 
 export const ChatbotBubble = () => {
@@ -210,6 +211,9 @@ export const ChatbotBubble = () => {
       if (data?.sessionId) setSessionId(data.sessionId);
       if (typeof data?.hasContext === "boolean") setHasContext(data.hasContext);
 
+      // Get follow-up actions from response
+      const followUpActions = data?.followUpActions || [];
+
       if (data?.sessionReset) {
         setMessages([
           {
@@ -217,12 +221,12 @@ export const ChatbotBubble = () => {
             content:
               "Hi 👋 I'm Roomy AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
           },
-          { role: "assistant", content: responseText },
+          { role: "assistant", content: responseText, followUpActions },
         ]);
         setSessionId(null);
         setHasContext(false);
       } else {
-        setMessages((prev) => [...prev, { role: "assistant", content: responseText }]);
+        setMessages((prev) => [...prev, { role: "assistant", content: responseText, followUpActions }]);
       }
     } catch (err) {
       console.error("❌ Chat error:", err);
@@ -361,14 +365,34 @@ export const ChatbotBubble = () => {
             <ScrollArea className="flex-1 p-4" ref={scrollRef}>
               <div className="space-y-4">
                 {messages.map((msg, idx) => (
-                  <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`max-w-[80%] rounded-2xl px-4 py-2 ${
-                        msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
-                      }`}
-                    >
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  <div key={idx} className="space-y-2">
+                    <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                      <div
+                        className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                          msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                        }`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      </div>
                     </div>
+                    
+                    {/* Follow-up action buttons */}
+                    {msg.role === "assistant" && msg.followUpActions && msg.followUpActions.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pl-2">
+                        {msg.followUpActions.map((action, actionIdx) => (
+                          <button
+                            key={actionIdx}
+                            onClick={() => {
+                              setInput(action.query);
+                              handleSend();
+                            }}
+                            className="text-xs px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-colors"
+                          >
+                            {action.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
 
