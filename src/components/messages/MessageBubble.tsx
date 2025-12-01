@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ReactionBar } from "./ReactionBar";
 import { MessageContextMenu } from "./MessageContextMenu";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
+import { ReplyQuote } from "./ReplyQuote";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -47,6 +48,8 @@ interface MessageBubbleProps {
   onEdit?: () => void;
   renderContent: () => React.ReactNode;
   showAvatar?: boolean;
+  allMessages?: Message[];
+  onScrollToMessage?: (messageId: string) => void;
 }
 
 export function MessageBubble({
@@ -59,6 +62,8 @@ export function MessageBubble({
   onEdit,
   renderContent,
   showAvatar = false,
+  allMessages = [],
+  onScrollToMessage,
 }: MessageBubbleProps) {
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -235,6 +240,11 @@ export function MessageBubble({
     return acc;
   }, {} as Record<string, { count: number; userReacted: boolean }>);
 
+  // Find replied-to message
+  const repliedToMessage = message.reply_to_message_id
+    ? allMessages.find((m) => m.id === message.reply_to_message_id)
+    : null;
+
   // Show deleted message
   if (message.deleted_for_all) {
     return (
@@ -286,6 +296,22 @@ export function MessageBubble({
         >
           {!isSender && showAvatar && (
             <p className="text-xs font-semibold mb-1">{senderName}</p>
+          )}
+
+          {/* Reply Quote */}
+          {repliedToMessage && (
+            <ReplyQuote
+              senderName={
+                repliedToMessage.sender_id === userId ? "You" : senderName
+              }
+              messageSnippet={repliedToMessage.body?.substring(0, 50) || "Media"}
+              onClick={() => {
+                if (onScrollToMessage) {
+                  onScrollToMessage(repliedToMessage.id);
+                }
+              }}
+              isSender={isSender}
+            />
           )}
           
           {renderContent()}
