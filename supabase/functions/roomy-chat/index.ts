@@ -59,6 +59,8 @@ function checkRateLimit(identifier: string): boolean {
 
 // Helper function to detect keywords and extract filters
 async function extractFilters(message: string, context: any = {}, studentPrefs: any = {}) {
+  // Defensive null check - JavaScript default params don't replace null, only undefined
+  const prefs = studentPrefs || {};
   const query = message.toLowerCase();
   const filters: any = { ...context };
   const learnedPrefs: any = {};
@@ -70,9 +72,9 @@ async function extractFilters(message: string, context: any = {}, studentPrefs: 
   } else if (query.includes("cheaper") || query.includes("lower")) {
     // Reduce budget by 20% if asking for cheaper
     if (context.budget) filters.budget = Math.floor(context.budget * 0.8);
-  } else if (studentPrefs.budget && !filters.budget) {
+  } else if (prefs.budget && !filters.budget) {
     // Use stored budget preference
-    filters.budget = studentPrefs.budget;
+    filters.budget = prefs.budget;
   }
 
   // University detection
@@ -80,8 +82,8 @@ async function extractFilters(message: string, context: any = {}, studentPrefs: 
   const uniMatch = universities.find(u => query.includes(u));
   if (uniMatch) {
     filters.university = uniMatch.toUpperCase();
-  } else if (studentPrefs.preferred_university && !filters.university) {
-    filters.university = studentPrefs.preferred_university;
+  } else if (prefs.preferred_university && !filters.university) {
+    filters.university = prefs.preferred_university;
   }
 
   // SMART DORM NAME DETECTION: Query actual dorm names from database and match against user query
@@ -530,7 +532,7 @@ serve(async (req) => {
     const storedContext = session?.context || {};
 
     // Extract filters from message, merging with stored context and student preferences
-    const { filters, learnedPrefs } = await extractFilters(message, storedContext, studentProfile);
+    const { filters, learnedPrefs } = await extractFilters(message, storedContext, studentProfile || {});
     
     // Update student preferences based on learned preferences
     if (studentId && Object.keys(learnedPrefs).length > 0) {
