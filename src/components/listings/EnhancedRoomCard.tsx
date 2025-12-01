@@ -5,10 +5,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { Calendar, MessageSquare, Home, Users, Heart, Share2 } from 'lucide-react';
+import { Calendar, MessageSquare, Home, Users, Heart, Share2, Eye, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BookingRequestModal } from '@/components/bookings/BookingRequestModal';
 import { ReservationConfirmModal } from '@/components/reservations/ReservationConfirmModal';
+import { ImageGallery } from '@/components/shared/ImageGallery';
+import { VideoPlayerModal } from '@/components/shared/VideoPlayerModal';
 import { motion } from 'framer-motion';
 
 interface EnhancedRoomCardProps {
@@ -22,6 +24,7 @@ interface EnhancedRoomCardProps {
     capacity_occupied?: number;
     available?: boolean;
     images?: string[];
+    video_url?: string;
     description?: string;
     amenities?: string[];
     area_m2?: number;
@@ -46,6 +49,8 @@ export function EnhancedRoomCard({
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [reservationModalOpen, setReservationModalOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
   const isUnavailable = room.available === false;
   const isFull = room.capacity && room.capacity_occupied ? room.capacity_occupied >= room.capacity : false;
   const capacityDisplay = room.capacity && room.capacity_occupied !== undefined 
@@ -257,31 +262,77 @@ export function EnhancedRoomCard({
             {/* Wrapper for entire image section with absolute positioning */}
             <div className="relative">
               {/* Image Container */}
-              <div className="relative overflow-hidden z-10">
-                {displayImages.length > 1 ? (
+              <div className="relative overflow-hidden z-10 group/media">
+                {displayImages.length > 1 || room.video_url ? (
                   <Carousel className="w-full">
                     <CarouselContent>
                       {displayImages.slice(0, 10).map((img, idx) => (
-                        <CarouselItem key={idx}>
+                        <CarouselItem key={idx} className="relative">
                           <img
                             src={img}
                             alt={`${room.name} - Image ${idx + 1}`}
-                            className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110"
+                            className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110 cursor-pointer"
                             loading="lazy"
+                            onClick={() => setGalleryOpen(true)}
                           />
+                          <Button
+                            size="icon"
+                            variant="secondary"
+                            className="absolute top-3 left-3 bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover/media:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setGalleryOpen(true);
+                            }}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
                         </CarouselItem>
                       ))}
+                      {room.video_url && (
+                        <CarouselItem className="relative">
+                          <div className="relative w-full h-56 bg-black">
+                            <video
+                              src={room.video_url}
+                              className="w-full h-56 object-cover"
+                              muted
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                              <Button
+                                size="icon"
+                                className="w-16 h-16 rounded-full bg-white hover:bg-white/90"
+                                onClick={() => setVideoModalOpen(true)}
+                              >
+                                <Play className="w-8 h-8 text-black" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CarouselItem>
+                      )}
                     </CarouselContent>
                     <CarouselPrevious className="left-2 z-30 bg-white hover:bg-white" />
                     <CarouselNext className="right-2 z-30 bg-white hover:bg-white" />
                   </Carousel>
                 ) : (
-                  <img
-                    src={displayImages[0]}
-                    alt={room.name}
-                    className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110"
-                    loading="lazy"
-                  />
+                  <div className="relative">
+                    <img
+                      src={displayImages[0]}
+                      alt={room.name}
+                      className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110 cursor-pointer"
+                      loading="lazy"
+                      onClick={() => setGalleryOpen(true)}
+                    />
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      className="absolute top-3 left-3 bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover/media:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setGalleryOpen(true);
+                      }}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  </div>
                 )}
               </div>
 
@@ -452,6 +503,22 @@ export function EnhancedRoomCard({
         dormName={dormName}
         depositAmount={room.deposit || room.price}
       />
+
+      <ImageGallery
+        isOpen={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        images={displayImages}
+        initialIndex={0}
+      />
+
+      {room.video_url && (
+        <VideoPlayerModal
+          open={videoModalOpen}
+          onOpenChange={setVideoModalOpen}
+          videoUrl={room.video_url}
+          title={`${room.name} - Video Tour`}
+        />
+      )}
     </>
   );
 }

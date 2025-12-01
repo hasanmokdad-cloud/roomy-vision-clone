@@ -2084,6 +2084,7 @@ export type Database = {
           three_d_model_url: string | null
           type: string
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           area_m2?: number | null
@@ -2102,6 +2103,7 @@ export type Database = {
           three_d_model_url?: string | null
           type: string
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           area_m2?: number | null
@@ -2120,6 +2122,7 @@ export type Database = {
           three_d_model_url?: string | null
           type?: string
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: [
           {

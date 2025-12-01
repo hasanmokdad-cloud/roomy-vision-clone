@@ -10,7 +10,8 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, X, Images, Image as ImageIcon } from 'lucide-react';
+import { EnhancedImageUploader } from '@/components/owner/EnhancedImageUploader';
 
 interface DormEditModalProps {
   dorm: any;
@@ -42,6 +43,8 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin
     available: dorm.available ?? true,
     verification_status: dorm.verification_status || 'Pending',
   });
+  const [galleryImages, setGalleryImages] = useState<string[]>(dorm.gallery_images || []);
+  const [exteriorImage, setExteriorImage] = useState<string>(dorm.image_url || dorm.cover_image || '');
 
   const handleSave = async () => {
     setLoading(true);
@@ -57,6 +60,9 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin
         shuttle: formData.shuttle,
         gender_preference: formData.gender_preference,
         available: formData.available,
+        gallery_images: galleryImages,
+        image_url: exteriorImage,
+        cover_image: exteriorImage,
         updated_at: new Date().toISOString(),
       };
 
@@ -246,6 +252,44 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin
                   />
                 </div>
               )}
+            </div>
+
+            {/* Gallery Images */}
+            <div>
+              <Label className="flex items-center gap-2">
+                <Images className="w-4 h-4" />
+                Gallery Images (Common Areas)
+              </Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Upload up to 10 images. Drag to reorder.
+              </p>
+              <EnhancedImageUploader
+                existingImages={galleryImages}
+                onChange={setGalleryImages}
+                maxImages={10}
+                bucketName="dorm-uploads"
+                folder="gallery"
+                allowReorder={true}
+              />
+            </div>
+
+            {/* Exterior Building Image */}
+            <div>
+              <Label className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" />
+                Exterior Building Image
+              </Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Upload the main exterior photo of your building
+              </p>
+              <EnhancedImageUploader
+                existingImages={exteriorImage ? [exteriorImage] : []}
+                onChange={(images) => setExteriorImage(images[0] || '')}
+                maxImages={1}
+                bucketName="dorm-uploads"
+                folder="exterior"
+                allowReorder={false}
+              />
             </div>
           </div>
         </ScrollArea>
