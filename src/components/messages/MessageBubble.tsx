@@ -236,11 +236,12 @@ export function MessageBubble({
 
     longPressTimerRef.current = setTimeout(() => {
       setShowReactionBar(true);
+      setShowContextMenu(true);
       // Haptic feedback if supported
       if (navigator.vibrate) {
         navigator.vibrate(50);
       }
-    }, 1500); // 1.5 seconds
+    }, 350); // 350ms for WhatsApp-style feel
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFriendships } from '@/hooks/useFriendships';
@@ -7,7 +7,7 @@ import { FriendRequestCard } from './FriendRequestCard';
 import { FriendCard } from './FriendCard';
 import { SuggestionCard } from './SuggestionCard';
 import { MutualFriendsModal } from './MutualFriendsModal';
-import { Users, UserPlus, Sparkles } from 'lucide-react';
+import { Users, UserPlus, Sparkles, Search as SearchIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createOrGetConversation } from '@/lib/conversationUtils';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,19 @@ import { supabase } from '@/integrations/supabase/client';
 interface FriendsTabProps {
   studentId: string;
   searchQuery?: string;
+}
+
+interface StudentDirectory {
+  id: string;
+  full_name: string;
+  username: string | null;
+  university: string | null;
+  major: string | null;
+  year_of_study: number | null;
+  profile_photo_url: string | null;
+  current_dorm_id: string | null;
+  mutual_friends_count: number;
+  match_reason: 'same_dorm' | 'same_university' | 'same_major';
 }
 
 export function FriendsTab({ studentId, searchQuery = '' }: FriendsTabProps) {
@@ -43,6 +56,49 @@ export function FriendsTab({ studentId, searchQuery = '' }: FriendsTabProps) {
     studentIdA: '',
     studentIdB: '',
   });
+
+  // Student directory search results
+  const [studentDirectoryResults, setStudentDirectoryResults] = useState<StudentDirectory[]>([]);
+  const [directoryLoading, setDirectoryLoading] = useState(false);
+
+  // Search student directory when query changes
+  useEffect(() => {
+    if (!searchQuery || searchQuery.length < 2) {
+      setStudentDirectoryResults([]);
+      return;
+    }
+
+    const searchStudentDirectory = async () => {
+      setDirectoryLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('students')
+          .select('id, full_name, username, university, major, year_of_study, profile_photo_url, current_dorm_id')
+          .neq('id', studentId) // Exclude self
+          .or(`full_name.ilike.%${searchQuery}%,username.ilike.%${searchQuery}%,university.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`)
+          .limit(20);
+
+        if (error) throw error;
+        
+        // Map to include required fields for SuggestionCard
+        const mappedResults: StudentDirectory[] = (data || []).map(student => ({
+          ...student,
+          current_dorm_id: student.current_dorm_id || null,
+          mutual_friends_count: 0, // Will be calculated if needed
+          match_reason: 'same_university' as const, // Default reason
+        }));
+        
+        setStudentDirectoryResults(mappedResults);
+      } catch (error) {
+        console.error('Error searching student directory:', error);
+      } finally {
+        setDirectoryLoading(false);
+      }
+    };
+
+    const debounce = setTimeout(searchStudentDirectory, 300);
+    return () => clearTimeout(debounce);
+  }, [searchQuery, studentId]);
 
   // Filter based on search query
   const filteredRequests = pendingRequests.filter(fr =>
@@ -118,12 +174,51 @@ export function FriendsTab({ studentId, searchQuery = '' }: FriendsTabProps) {
     );
   }
 
+  // When searching, show directory results
+  const showDirectoryResults = searchQuery && searchQuery.length >= 2;
+
   return (
     <>
       <ScrollArea className="flex-1">
         <div className="space-y-6 p-4">
+          {/* Student Directory Search Results */}
+          {showDirectoryResults && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <SearchIcon className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold text-lg">Search Results</h3>
+                {directoryLoading && <span className="text-sm text-muted-foreground">(searching...)</span>}
+              </div>
+              {directoryLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <Skeleton key={i} className="h-24 w-full" />
+                  ))}
+                </div>
+              ) : studentDirectoryResults.length > 0 ? (
+                <div className="space-y-3">
+                  {studentDirectoryResults.map(student => (
+                    <SuggestionCard
+                      key={student.id}
+                      suggestion={student}
+                      currentStudentId={studentId}
+                      onAddFriend={sendRequest}
+                      onMutualFriendsClick={handleMutualFriendsClick}
+                      isRequestSent={isRequestSent(student.id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-muted-foreground">
+                  <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No students found matching "{searchQuery}"</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Friend Requests Section */}
-          {filteredRequests.length > 0 && (
+          {!showDirectoryResults && filteredRequests.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <UserPlus className="h-5 w-5 text-primary" />
@@ -148,7 +243,7 @@ export function FriendsTab({ studentId, searchQuery = '' }: FriendsTabProps) {
           )}
 
           {/* Your Friends Section */}
-          {filteredFriends.length > 0 && (
+          {!showDirectoryResults && filteredFriends.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Users className="h-5 w-5 text-primary" />
@@ -175,7 +270,7 @@ export function FriendsTab({ studentId, searchQuery = '' }: FriendsTabProps) {
           )}
 
           {/* Suggestions Section */}
-          {filteredSuggestions.length > 0 && (
+          {!showDirectoryResults && filteredSuggestions.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="h-5 w-5 text-primary" />
@@ -205,7 +300,8 @@ export function FriendsTab({ studentId, searchQuery = '' }: FriendsTabProps) {
           )}
 
           {/* Empty State */}
-          {filteredRequests.length === 0 &&
+          {!showDirectoryResults &&
+            filteredRequests.length === 0 &&
             filteredFriends.length === 0 &&
             filteredSuggestions.length === 0 && (
               <div className="text-center py-12">
