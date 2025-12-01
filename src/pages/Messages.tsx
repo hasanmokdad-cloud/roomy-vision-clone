@@ -42,6 +42,7 @@ type Conversation = {
   user_b_id?: string | null;
   other_user_name?: string;
   other_user_avatar?: string | null;
+  other_student_id?: string | null;
   dorm_name?: string;
   last_message?: string;
   last_message_status?: 'sent' | 'delivered' | 'seen';
@@ -779,6 +780,7 @@ export default function Messages() {
 
         let otherUserName = 'User';
         let otherUserPhoto: string | null = null;
+        let otherStudentId: string | null = null;
 
         // Handle support conversations differently
         if (conv.conversation_type === 'support') {
@@ -809,6 +811,21 @@ export default function Messages() {
           } else {
             // User viewing: show "Roomy Support"
             otherUserName = 'Roomy Support';
+          }
+        } else if (conv.user_a_id && conv.user_b_id) {
+          // Student-to-student conversation - look up the OTHER student
+          const otherUserId = conv.user_a_id === userId ? conv.user_b_id : conv.user_a_id;
+          
+          const { data: otherStudentData } = await supabase
+            .from('students')
+            .select('id, full_name, profile_photo_url')
+            .eq('user_id', otherUserId)
+            .maybeSingle();
+          
+          if (otherStudentData) {
+            otherUserName = otherStudentData.full_name || 'Student';
+            otherUserPhoto = otherStudentData.profile_photo_url;
+            otherStudentId = otherStudentData.id;
           }
         } else {
           // Regular dorm conversations
@@ -887,6 +904,7 @@ export default function Messages() {
           ...conv,
           other_user_name: otherUserName,
           other_user_photo: otherUserPhoto,
+          other_student_id: otherStudentId,
           dorm_name: dorm?.dorm_name || dorm?.name || (conv.conversation_type === 'support' ? 'Support' : 'Dorm'),
           last_message: lastMessage,
           unreadCount
@@ -1938,27 +1956,7 @@ export default function Messages() {
                 }
               }}
               currentStudentId={studentId}
-              otherStudentId={(() => {
-                const conv = conversations.find(c => c.id === selectedConversation);
-                if (!conv) return null;
-                
-                // For student-to-student conversations (user_a_id and user_b_id are set)
-                if (conv.user_a_id && conv.user_b_id) {
-                  // Find the OTHER user's ID
-                  const otherUserId = conv.user_a_id === userId ? conv.user_b_id : conv.user_a_id;
-                  
-                  // Look up the student record by user_id from conversations list
-                  // We already loaded this data - use it from the conversations object
-                  if (conv.conversation_type === 'universal' || conv.conversation_type === 'friend') {
-                    // For universal/friend conversations, we need to determine which student is "other"
-                    // The conversation object already has student_id set, so use that
-                    return conv.student_id;
-                  }
-                }
-                
-                // Fallback for dorm conversations
-                return conv.student_id || null;
-              })()}
+              otherStudentId={conversations.find(c => c.id === selectedConversation)?.other_student_id || null}
             />
           )}
         </div>
