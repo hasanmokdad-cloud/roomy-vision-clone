@@ -1611,6 +1611,7 @@ export type Database = {
       reservations: {
         Row: {
           cancelled_at: string | null
+          commission_amount: number | null
           created_at: string | null
           deposit_amount: number
           dorm_id: string
@@ -1621,11 +1622,13 @@ export type Database = {
           room_id: string
           status: string
           student_id: string
+          total_amount: number | null
           whish_checkout_url: string | null
           whish_payment_id: string | null
         }
         Insert: {
           cancelled_at?: string | null
+          commission_amount?: number | null
           created_at?: string | null
           deposit_amount: number
           dorm_id: string
@@ -1636,11 +1639,13 @@ export type Database = {
           room_id: string
           status?: string
           student_id: string
+          total_amount?: number | null
           whish_checkout_url?: string | null
           whish_payment_id?: string | null
         }
         Update: {
           cancelled_at?: string | null
+          commission_amount?: number | null
           created_at?: string | null
           deposit_amount?: number
           dorm_id?: string
@@ -1651,6 +1656,7 @@ export type Database = {
           room_id?: string
           status?: string
           student_id?: string
+          total_amount?: number | null
           whish_checkout_url?: string | null
           whish_payment_id?: string | null
         }

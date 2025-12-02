@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { CheckCircle2, XCircle, Loader2, Home } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
@@ -94,10 +95,24 @@ export default function ReservationConfirmation() {
                       <span className="text-muted-foreground">Room</span>
                       <span className="font-medium">{reservation.rooms.name}</span>
                     </div>
+                    <Separator className="my-2" />
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Reservation Fee Paid</span>
-                      <span className="font-medium text-green-600">
-                        ${reservation.reservation_fee_amount.toFixed(2)}
+                      <span className="text-muted-foreground">Room Deposit</span>
+                      <span className="font-medium">
+                        ${reservation.deposit_amount.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Commission (10%)</span>
+                      <span className="font-medium">
+                        ${(reservation.commission_amount || reservation.deposit_amount * 0.10).toFixed(2)}
+                      </span>
+                    </div>
+                    <Separator className="my-2" />
+                    <div className="flex justify-between font-semibold">
+                      <span className="text-foreground">Total Paid</span>
+                      <span className="text-green-600">
+                        ${(reservation.total_amount || reservation.deposit_amount * 1.10).toFixed(2)}
                       </span>
                     </div>
                   </div>

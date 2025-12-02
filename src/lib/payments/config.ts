@@ -3,8 +3,18 @@
  * Constants for Whish payment integration
  */
 
-// Reservation fee percentage (10% of deposit)
-export const RESERVATION_FEE_PERCENT = 0.10;
+// Commission percentage (10% of deposit)
+export const COMMISSION_PERCENT = 0.10;
+
+// Helper to calculate total due (deposit + commission)
+export const calculateTotalDue = (depositAmount: number) => {
+  const commission = depositAmount * COMMISSION_PERCENT;
+  return {
+    deposit: depositAmount,
+    commission,
+    total: depositAmount + commission, // deposit × 1.10
+  };
+};
 
 // AI Match plan pricing (in USD)
 export const MATCH_PLAN_PRICES = {

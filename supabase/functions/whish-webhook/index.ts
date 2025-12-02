@@ -127,14 +127,14 @@ async function handleReservationPayment(supabaseClient: any, payload: any, metad
     })
     .eq('id', reservationId);
 
-  // Create payment record
+  // Create payment record with total amount
   await supabaseClient
     .from('payments')
     .insert({
       student_id: reservation.student_id,
       payment_type: 'reservation',
       reservation_id: reservationId,
-      amount: reservation.reservation_fee_amount,
+      amount: reservation.total_amount || reservation.reservation_fee_amount, // Use total_amount if available
       currency: payload.currency || 'USD',
       provider: 'whish',
       whish_payment_id: payload.id,
