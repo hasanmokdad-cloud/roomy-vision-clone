@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_income_history: {
+        Row: {
+          commission_amount: number
+          created_at: string | null
+          currency: string | null
+          id: string
+          owner_id: string
+          payment_id: string | null
+          reservation_id: string | null
+          status: string | null
+          student_id: string
+        }
+        Insert: {
+          commission_amount: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          owner_id: string
+          payment_id?: string | null
+          reservation_id?: string | null
+          status?: string | null
+          student_id: string
+        }
+        Update: {
+          commission_amount?: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          owner_id?: string
+          payment_id?: string | null
+          reservation_id?: string | null
+          status?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_income_history_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_income_history_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admins: {
         Row: {
           created_at: string | null
@@ -1414,8 +1465,12 @@ export type Database = {
       }
       owner_payment_methods: {
         Row: {
+          balance: number | null
           brand: string | null
+          country: string | null
           created_at: string | null
+          exp_month: number | null
+          exp_year: number | null
           id: string
           is_default: boolean | null
           last4: string
@@ -1424,8 +1479,12 @@ export type Database = {
           whish_token: string
         }
         Insert: {
+          balance?: number | null
           brand?: string | null
+          country?: string | null
           created_at?: string | null
+          exp_month?: number | null
+          exp_year?: number | null
           id?: string
           is_default?: boolean | null
           last4: string
@@ -1434,8 +1493,12 @@ export type Database = {
           whish_token: string
         }
         Update: {
+          balance?: number | null
           brand?: string | null
+          country?: string | null
           created_at?: string | null
+          exp_month?: number | null
+          exp_year?: number | null
           id?: string
           is_default?: boolean | null
           last4?: string
@@ -3380,6 +3443,10 @@ export type Database = {
       }
       increment_collection_views: {
         Args: { p_share_code: string }
+        Returns: undefined
+      }
+      increment_owner_balance: {
+        Args: { p_amount: number; p_owner_id: string }
         Returns: undefined
       }
       increment_room_occupancy: {
