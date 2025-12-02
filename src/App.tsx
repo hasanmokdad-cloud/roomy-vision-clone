@@ -50,6 +50,8 @@ const RoleSelection = lazy(() => import("./pages/RoleSelection"));
 const StudentProfile = lazy(() => import("./pages/StudentProfile"));
 const StudentMatch = lazy(() => import("./pages/StudentMatch"));
 const ReservationConfirmation = lazy(() => import("./pages/ReservationConfirmation"));
+const ReservationSuccess = lazy(() => import("./pages/ReservationSuccess"));
+const ReservationFailed = lazy(() => import("./pages/ReservationFailed"));
 const BoostProfile = lazy(() => import("./pages/BoostProfile"));
 const BulkRoomOps = lazy(() => import("./pages/owner/BulkRoomOps"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
@@ -198,6 +200,8 @@ const AppRoutes = () => {
           <Route path="/compatibility-test" element={<ProtectedRoute element={<CompatibilityTest />} requiredRole="student" />} />
           <Route path="/ai-chat" element={<ProtectedRoute element={<MobileSwipeLayout><AiChat /></MobileSwipeLayout>} />} />
           <Route path="/reservation/confirmation" element={<ProtectedRoute element={<ReservationConfirmation />} requiredRole="student" />} />
+          <Route path="/reservation/success" element={<ProtectedRoute element={<ReservationSuccess />} requiredRole="student" />} />
+          <Route path="/reservation/failed" element={<ProtectedRoute element={<ReservationFailed />} requiredRole="student" />} />
 
           {/* Owner Routes - Admins can access all owner routes */}
           <Route path="/owner" element={<ProtectedRoute element={<OwnerHome />} allowedRoles={["owner", "admin"]} />} />

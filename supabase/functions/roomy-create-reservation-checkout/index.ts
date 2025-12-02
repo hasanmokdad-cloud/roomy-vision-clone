@@ -50,6 +50,31 @@ Deno.serve(async (req) => {
 
     const { roomId, depositAmount: providedDeposit } = await req.json() as ReservationCheckoutRequest;
 
+    // 1. Check for existing pending reservation for same room
+    const { data: existingPending } = await supabaseClient
+      .from('reservations')
+      .select('id')
+      .eq('student_id', student.id)
+      .eq('room_id', roomId)
+      .eq('status', 'pending_payment')
+      .maybeSingle();
+
+    if (existingPending) {
+      throw new Error('You already have a pending reservation for this room');
+    }
+
+    // 2. Check if student already has ANY pending reservation
+    const { data: anyPending } = await supabaseClient
+      .from('reservations')
+      .select('id, rooms(name)')
+      .eq('student_id', student.id)
+      .eq('status', 'pending_payment')
+      .maybeSingle();
+
+    if (anyPending) {
+      throw new Error('You have a pending reservation. Please complete or cancel it first.');
+    }
+
     // Get room details
     const { data: room, error: roomError } = await supabaseClient
       .from('rooms')
@@ -75,6 +100,19 @@ Deno.serve(async (req) => {
     const commission = baseDeposit * 0.10;
     const totalDue = baseDeposit + commission; // deposit × 1.10
 
+    // Log if client sent different amount (security monitoring)
+    if (providedDeposit && Math.abs(providedDeposit - baseDeposit) > 0.01) {
+      console.warn('Client deposit mismatch - using server value', {
+        provided: providedDeposit,
+        actual: baseDeposit,
+        student_id: student.id,
+      });
+    }
+
+    // Set payment URL expiry (15 minutes)
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+
     // Create reservation record with all amounts
     const { data: reservation, error: reservationError } = await supabaseClient
       .from('reservations')
@@ -87,6 +125,7 @@ Deno.serve(async (req) => {
         reservation_fee_amount: commission, // Keep for backward compatibility
         commission_amount: commission,
         total_amount: totalDue,
+        expires_at: expiresAt.toISOString(),
       })
       .select()
       .single();
