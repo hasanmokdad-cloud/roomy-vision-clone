@@ -113,3 +113,43 @@ export function formatCardNumber(value: string): string {
 export function getCvvLength(brand?: string): number {
   return brand === 'amex' ? 4 : 3;
 }
+
+// Single card brand icon component
+interface CardBrandIconProps {
+  brand?: string;
+  size?: 'sm' | 'md' | 'lg';
+}
+
+export function CardBrandIcon({ brand, size = 'md' }: CardBrandIconProps) {
+  const sizeClasses = {
+    sm: 'text-xs',
+    md: 'text-sm',
+    lg: 'text-base font-bold',
+  };
+
+  const brandColors: Record<string, string> = {
+    visa: 'text-blue-700',
+    mastercard: 'text-orange-500',
+    amex: 'text-blue-500',
+    discover: 'text-orange-600',
+    jcb: 'text-blue-600',
+  };
+
+  const brandLabels: Record<string, string> = {
+    visa: 'VISA',
+    mastercard: 'MC',
+    amex: 'AMEX',
+    discover: 'DISC',
+    jcb: 'JCB',
+  };
+
+  const brandLower = brand?.toLowerCase() || '';
+  const color = brandColors[brandLower] || 'text-muted-foreground';
+  const label = brandLabels[brandLower] || '••••';
+
+  return (
+    <span className={`${sizeClasses[size]} ${color} font-semibold`}>
+      {label}
+    </span>
+  );
+}

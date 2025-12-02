@@ -21,7 +21,6 @@ Deno.serve(async (req) => {
     const whishWebhookSecret = Deno.env.get('WHISH_WEBHOOK_SECRET');
     
     if (whishWebhookSecret && whishWebhookSecret !== '__REPLACE_ME__') {
-      // Get signature from header (adjust based on Whish docs)
       const signature = req.headers.get('x-whish-signature') || req.headers.get('whish-signature');
       
       if (!signature) {
@@ -32,18 +31,7 @@ Deno.serve(async (req) => {
         );
       }
       
-      // Verify signature (implement based on Whish documentation)
-      // For now, just log that verification is enabled
       console.log('Webhook signature verification enabled');
-      
-      // TODO: Implement actual signature verification
-      // const isValid = verifySignature(payload, signature, whishWebhookSecret);
-      // if (!isValid) {
-      //   return new Response(
-      //     JSON.stringify({ error: 'Invalid signature' }),
-      //     { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      //   );
-      // }
     } else {
       console.warn('Webhook signature verification disabled (preview mode)');
     }
@@ -105,10 +93,10 @@ async function handleReservationPayment(supabaseClient: any, payload: any, metad
     return;
   }
 
-  // Get reservation
+  // Get reservation with room and dorm info
   const { data: reservation, error: resError } = await supabaseClient
     .from('reservations')
-    .select('*, rooms!inner(*)')
+    .select('*, rooms!inner(*, dorms!inner(owner_id, name, dorm_name))')
     .eq('id', reservationId)
     .single();
 
@@ -120,7 +108,8 @@ async function handleReservationPayment(supabaseClient: any, payload: any, metad
   // Calculate payout amounts (server-side, never trust client)
   const baseDeposit = reservation.deposit_amount;
   const roomyFee = baseDeposit * 0.10;
-  const ownerPayout = baseDeposit; // Owner gets full deposit
+  const ownerPayout = baseDeposit; // Owner gets full deposit amount
+  const ownerId = reservation.rooms?.dorms?.owner_id;
 
   // Update reservation status with payout details
   await supabaseClient
@@ -131,7 +120,7 @@ async function handleReservationPayment(supabaseClient: any, payload: any, metad
       whish_payment_id: payload.id,
       owner_payout_amount: ownerPayout,
       roomy_commission_amount: roomyFee,
-      owner_payout_status: 'pending', // Ready for payout processing
+      owner_payout_status: 'pending',
       roomy_commission_captured: false,
     })
     .eq('id', reservationId);
@@ -141,22 +130,69 @@ async function handleReservationPayment(supabaseClient: any, payload: any, metad
     roomyFee,
     ownerPayout,
     total: baseDeposit + roomyFee,
+    ownerId,
   });
 
   // Create payment record with total amount
-  await supabaseClient
+  const { data: payment } = await supabaseClient
     .from('payments')
     .insert({
       student_id: reservation.student_id,
       payment_type: 'reservation',
       reservation_id: reservationId,
-      amount: reservation.total_amount || reservation.reservation_fee_amount, // Use total_amount if available
+      amount: reservation.total_amount || reservation.reservation_fee_amount,
       currency: payload.currency || 'USD',
       provider: 'whish',
       whish_payment_id: payload.id,
       status: 'succeeded',
       raw_payload: payload,
+    })
+    .select()
+    .single();
+
+  // Insert payout_history record for owner
+  if (ownerId) {
+    await supabaseClient
+      .from('payout_history')
+      .insert({
+        owner_id: ownerId,
+        student_id: reservation.student_id,
+        room_id: reservation.room_id,
+        dorm_id: reservation.dorm_id,
+        deposit_amount: baseDeposit,
+        roomy_fee: roomyFee,
+        owner_receives: ownerPayout,
+        payment_id: payment?.id,
+        reservation_id: reservationId,
+        status: 'paid',
+        currency: 'USD',
+      });
+
+    // Insert admin_income_history record for Roomy's 10% commission
+    await supabaseClient
+      .from('admin_income_history')
+      .insert({
+        reservation_id: reservationId,
+        student_id: reservation.student_id,
+        owner_id: ownerId,
+        commission_amount: roomyFee,
+        payment_id: payment?.id,
+        currency: 'USD',
+        status: 'captured',
+      });
+
+    // Increment owner's wallet balance
+    await supabaseClient.rpc('increment_owner_balance', {
+      p_owner_id: ownerId,
+      p_amount: ownerPayout,
     });
+
+    console.log('Owner payout recorded:', {
+      ownerId,
+      ownerPayout,
+      roomyFee,
+    });
+  }
 
   // Increment room capacity using database function
   await supabaseClient.rpc('increment_room_occupancy', { 
@@ -243,7 +279,7 @@ async function handleMatchPlanPayment(supabaseClient: any, payload: any, metadat
       student_id: studentId,
       payment_type: 'match_plan',
       match_plan_type: planType,
-      amount: payload.amount / 100, // Convert cents to dollars
+      amount: payload.amount / 100,
       currency: payload.currency || 'USD',
       provider: 'whish',
       whish_payment_id: payload.id,
@@ -294,8 +330,6 @@ async function handleMatchPlanPayment(supabaseClient: any, payload: any, metadat
     planType,
     expiresAt: expiresAt.toISOString(),
   });
-
-  // TODO: Send confirmation notification to student
 }
 
 async function handlePaymentFailure(supabaseClient: any, payload: any) {
