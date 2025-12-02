@@ -187,6 +187,21 @@ async function handleReservationPayment(supabaseClient: any, payload: any, metad
       p_amount: ownerPayout,
     });
 
+    // Increment admin wallet balance with Roomy's 10% commission
+    const { data: adminWallet } = await supabaseClient
+      .from('admin_wallet')
+      .select('admin_id')
+      .limit(1)
+      .single();
+
+    if (adminWallet) {
+      await supabaseClient.rpc('increment_admin_balance', {
+        p_admin_id: adminWallet.admin_id,
+        p_amount: roomyFee,
+      });
+      console.log('Admin commission recorded:', { adminId: adminWallet.admin_id, amount: roomyFee });
+    }
+
     console.log('Owner payout recorded:', {
       ownerId,
       ownerPayout,

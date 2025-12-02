@@ -65,6 +65,48 @@ export type Database = {
           },
         ]
       }
+      admin_wallet: {
+        Row: {
+          admin_id: string
+          balance: number | null
+          card_brand: string | null
+          card_country: string | null
+          card_last4: string | null
+          created_at: string | null
+          exp_month: number | null
+          exp_year: number | null
+          id: string
+          updated_at: string | null
+          whish_token: string | null
+        }
+        Insert: {
+          admin_id: string
+          balance?: number | null
+          card_brand?: string | null
+          card_country?: string | null
+          card_last4?: string | null
+          created_at?: string | null
+          exp_month?: number | null
+          exp_year?: number | null
+          id?: string
+          updated_at?: string | null
+          whish_token?: string | null
+        }
+        Update: {
+          admin_id?: string
+          balance?: number | null
+          card_brand?: string | null
+          card_country?: string | null
+          card_last4?: string | null
+          created_at?: string | null
+          exp_month?: number | null
+          exp_year?: number | null
+          id?: string
+          updated_at?: string | null
+          whish_token?: string | null
+        }
+        Relationships: []
+      }
       admins: {
         Row: {
           created_at: string | null
@@ -3440,6 +3482,10 @@ export type Database = {
       has_role: {
         Args: { _role_name: string; _user_id: string }
         Returns: boolean
+      }
+      increment_admin_balance: {
+        Args: { p_admin_id: string; p_amount: number }
+        Returns: undefined
       }
       increment_collection_views: {
         Args: { p_share_code: string }

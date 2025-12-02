@@ -99,6 +99,9 @@ const BillingHistory = lazy(() => import("./pages/BillingHistory"));
 const MockWhishAddCard = lazy(() => import("./pages/MockWhishAddCard"));
 const OwnerWallet = lazy(() => import("./pages/owner/OwnerWallet"));
 const MockWhishOwnerAddCard = lazy(() => import("./pages/owner/MockWhishOwnerAddCard"));
+const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
+const AdminBilling = lazy(() => import("./pages/admin/AdminBilling"));
+const MockWhishAdminAddCard = lazy(() => import("./pages/admin/MockWhishAdminAddCard"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -275,8 +278,11 @@ const AppRoutes = () => {
           <Route path="/admin/payments" element={<ProtectedRoute element={<AdminPaymentsDashboard />} requiredRole="admin" />} />
           <Route path="/admin/notifications" element={<ProtectedRoute element={<AdminNotifications />} requiredRole="admin" />} />
           <Route path="/admin/settings" element={<ProtectedRoute element={<AdminSettings />} requiredRole="admin" />} />
-            <Route path="/admin/chats" element={<ProtectedRoute element={<AdminChats />} requiredRole="admin" />} />
-            <Route path="/admin/chats/:conversationId" element={<ProtectedRoute element={<AdminChatView />} requiredRole="admin" />} />
+          <Route path="/admin/wallet" element={<ProtectedRoute element={<AdminWallet />} requiredRole="admin" />} />
+          <Route path="/admin/billing" element={<ProtectedRoute element={<AdminBilling />} requiredRole="admin" />} />
+          <Route path="/mock-whish-admin-add-card" element={<ProtectedRoute element={<MockWhishAdminAddCard />} requiredRole="admin" />} />
+          <Route path="/admin/chats" element={<ProtectedRoute element={<AdminChats />} requiredRole="admin" />} />
+          <Route path="/admin/chats/:conversationId" element={<ProtectedRoute element={<AdminChatView />} requiredRole="admin" />} />
             <Route path="/admin/chats/analytics" element={<ProtectedRoute element={<AdminChatAnalytics />} requiredRole="admin" />} />
 
           {/* 404 Fallback */}
