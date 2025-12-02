@@ -18,6 +18,10 @@ import { MicPermissionProvider } from "@/contexts/MicPermissionContext";
 // Lazy load route components
 const Main = lazy(() => import("./pages/Main"));
 const Auth = lazy(() => import("./pages/Auth"));
+const CheckEmail = lazy(() => import("./pages/auth/CheckEmail"));
+const VerifyEmail = lazy(() => import("./pages/auth/VerifyEmail"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
+const PasswordReset = lazy(() => import("./pages/PasswordReset"));
 const Intro = lazy(() => import("./pages/Intro"));
 const Profile = lazy(() => import("./pages/Profile"));
 const DormDetail = lazy(() => import("./pages/DormDetail"));
@@ -182,6 +186,10 @@ const AppRoutes = () => {
           {/* Public Routes */}
           <Route path="/" element={<ProtectedRoute element={<Main />} forbiddenRoles={["owner"]} />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/auth/check-email" element={<CheckEmail />} />
+          <Route path="/auth/verify" element={<VerifyEmail />} />
+          <Route path="/auth/reset" element={<ResetPassword />} />
+          <Route path="/password-reset" element={<PasswordReset />} />
           <Route path="/intro" element={<Intro />} />
           <Route path="/listings" element={<ProtectedRoute element={<MobileSwipeLayout><Listings /></MobileSwipeLayout>} forbiddenRoles={["owner"]} />} />
           <Route path="/dorm/:id" element={<DormDetail />} />
