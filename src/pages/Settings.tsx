@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home, Share2, Copy, CreditCard, Receipt, Save } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import BottomNav from '@/components/BottomNav';
@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 
 export default function Settings() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { loading, userId } = useAuthGuard();
   const { role } = useRoleGuard();
@@ -120,11 +121,12 @@ export default function Settings() {
       }
 
       // Check if we should open payment modal from navigation state
-      if (location.state?.openPaymentModal) {
+      const navState = location.state as { openPaymentModal?: boolean } | null;
+      if (navState?.openPaymentModal) {
         setShowPaymentModal(true);
       }
     }
-  }, [loading, userId, role, location.state]);
+  }, [loading, userId, role, location]);
 
   const handleSave = async () => {
     setSaving(true);
