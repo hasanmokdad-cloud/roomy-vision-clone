@@ -301,6 +301,57 @@ export type Database = {
           },
         ]
       }
+      billing_history: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string | null
+          description: string
+          id: string
+          payment_id: string | null
+          payment_method_last4: string | null
+          student_id: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string | null
+          description: string
+          id?: string
+          payment_id?: string | null
+          payment_method_last4?: string | null
+          student_id: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
+          description?: string
+          id?: string
+          payment_id?: string | null
+          payment_method_last4?: string | null
+          student_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_history_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_history_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_reminders: {
         Row: {
           booking_id: string
@@ -1470,6 +1521,47 @@ export type Database = {
             columns: ["reservation_id"]
             isOneToOne: false
             referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_methods: {
+        Row: {
+          brand: string | null
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          last4: string
+          student_id: string
+          updated_at: string | null
+          whish_token: string
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          last4: string
+          student_id: string
+          updated_at?: string | null
+          whish_token: string
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          last4?: string
+          student_id?: string
+          updated_at?: string | null
+          whish_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_methods_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]

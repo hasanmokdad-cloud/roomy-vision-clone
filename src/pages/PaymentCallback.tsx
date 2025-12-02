@@ -118,6 +118,33 @@ export default function PaymentCallback() {
   const handleSuccessfulPayment = async (paymentData: PaymentData) => {
     const metadata = paymentData.raw_payload?.metadata;
 
+    // Get student info for billing history
+    const { data: { user } } = await supabase.auth.getUser();
+    let studentId: string | null = null;
+    let defaultCard: { last4: string } | null = null;
+
+    if (user) {
+      const { data: student } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (student) {
+        studentId = student.id;
+
+        // Get default payment method
+        const { data: card } = await supabase
+          .from('payment_methods')
+          .select('last4')
+          .eq('student_id', student.id)
+          .eq('is_default', true)
+          .single();
+        
+        defaultCard = card;
+      }
+    }
+
     if (paymentData.payment_type === 'room_deposit' && metadata?.roomId) {
       // Handle room reservation success
       try {
@@ -135,25 +162,38 @@ export default function PaymentCallback() {
         // Increment room occupancy
         await supabase.rpc('increment_room_occupancy', { room_id: metadata.roomId });
 
-        // Update student's current dorm and room
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: student } = await supabase
-            .from('students')
-            .select('id')
-            .eq('user_id', user.id)
+        // Get dorm name for billing history
+        let dormName = 'Room';
+        if (metadata.dormId) {
+          const { data: dorm } = await supabase
+            .from('dorms')
+            .select('name')
+            .eq('id', metadata.dormId)
             .single();
+          if (dorm) dormName = dorm.name;
+        }
 
-          if (student) {
-            await supabase
-              .from('students')
-              .update({
-                current_dorm_id: metadata.dormId,
-                current_room_id: metadata.roomId,
-                accommodation_status: 'have_dorm',
-              })
-              .eq('id', student.id);
-          }
+        // Update student's current dorm and room
+        if (user && studentId) {
+          await supabase
+            .from('students')
+            .update({
+              current_dorm_id: metadata.dormId,
+              current_room_id: metadata.roomId,
+              accommodation_status: 'have_dorm',
+            })
+            .eq('id', studentId);
+
+          // Insert billing history record
+          await supabase.from('billing_history').insert({
+            student_id: studentId,
+            payment_id: paymentData.id,
+            amount: paymentData.amount,
+            currency: 'USD',
+            type: 'room_reservation',
+            description: `Room Reservation at ${dormName}`,
+            payment_method_last4: defaultCard?.last4 || null,
+          });
 
           // Send automatic welcome message to owner
           if (metadata.dormId) {
@@ -171,36 +211,38 @@ export default function PaymentCallback() {
     } else if (paymentData.payment_type === 'match_plan' && metadata?.planType) {
       // Handle AI Match plan upgrade
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: student } = await supabase
+        if (user && studentId) {
+          // Update student's ai_match_plan
+          await supabase
             .from('students')
-            .select('id')
-            .eq('user_id', user.id)
-            .single();
+            .update({ ai_match_plan: metadata.planType })
+            .eq('id', studentId);
 
-          if (student) {
-            // Update student's ai_match_plan
-            await supabase
-              .from('students')
-              .update({ ai_match_plan: metadata.planType })
-              .eq('id', student.id);
+          // Create or update student_match_plans record
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
 
-            // Create or update student_match_plans record
-            const expiresAt = new Date();
-            expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+          await supabase
+            .from('student_match_plans')
+            .upsert({
+              student_id: studentId,
+              plan_type: metadata.planType,
+              status: 'active',
+              expires_at: expiresAt.toISOString(),
+            }, {
+              onConflict: 'student_id',
+            });
 
-            await supabase
-              .from('student_match_plans')
-              .upsert({
-                student_id: student.id,
-                plan_type: metadata.planType,
-                status: 'active',
-                expires_at: expiresAt.toISOString(),
-              }, {
-                onConflict: 'student_id',
-              });
-          }
+          // Insert billing history record
+          await supabase.from('billing_history').insert({
+            student_id: studentId,
+            payment_id: paymentData.id,
+            amount: paymentData.amount,
+            currency: 'USD',
+            type: 'ai_match',
+            description: `AI Match — ${metadata.planType.charAt(0).toUpperCase() + metadata.planType.slice(1)} Plan`,
+            payment_method_last4: defaultCard?.last4 || null,
+          });
         }
 
         toast({

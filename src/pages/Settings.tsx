@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Save, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home, Share2, Copy, CreditCard, Receipt } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home, Share2, Copy, CreditCard, Receipt, Save } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
-import Footer from '@/components/shared/Footer';
 import BottomNav from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -19,13 +18,11 @@ import { settingsManager, type UserSettings } from '@/utils/settings';
 import { supabase } from '@/integrations/supabase/client';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
-import { AddWhishCardModal } from '@/components/payments/AddWhishCardModal';
 
 import { useTranslation } from 'react-i18next';
 
 export default function Settings() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
   const { loading, userId } = useAuthGuard();
   const { role } = useRoleGuard();
@@ -340,42 +337,36 @@ export default function Settings() {
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">Payment Settings</h3>
                   <p className="text-sm text-foreground/60">
-                    {paymentProfile ? 'Manage your payment information' : 'Add payment info to reserve rooms'}
+                    Manage your cards, wallet & billing history
                   </p>
                 </div>
               </div>
 
-              {paymentProfile && (
-                <div className="bg-muted/10 rounded-lg p-4 mb-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Name</span>
-                    <span className="text-sm font-medium">{paymentProfile.full_name}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Email</span>
-                    <span className="text-sm font-medium">{paymentProfile.email}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Phone</span>
-                    <span className="text-sm font-medium">{paymentProfile.phone}</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-2">
+              <div className="grid gap-2">
                 <Button
-                  variant={paymentProfile ? "outline" : "default"}
-                  className="flex-1"
-                  onClick={() => setShowPaymentModal(true)}
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => navigate('/wallet')}
                 >
-                  {paymentProfile ? 'Update Payment Info' : 'Add Payment Info'}
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  My Wallet
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => navigate('/billing-history')}
+                >
+                  <Receipt className="w-4 h-4 mr-2" />
+                  Billing History
                 </Button>
                 {role === 'student' && (
                   <Button
-                    variant="ghost"
+                    variant="outline"
+                    className="w-full justify-start"
                     onClick={() => navigate('/student/payments')}
                   >
-                    <Receipt className="w-4 h-4" />
+                    <Home className="w-4 h-4 mr-2" />
+                    Room Reservations
                   </Button>
                 )}
               </div>
@@ -694,23 +685,7 @@ export default function Settings() {
         </DialogContent>
       </Dialog>
 
-      {/* Payment Modal */}
-      <AddWhishCardModal
-        open={showPaymentModal}
-        onOpenChange={setShowPaymentModal}
-        onSuccess={() => {
-          // Reload payment profile
-          supabase
-            .from('user_payment_profiles')
-            .select('*')
-            .eq('user_id', userId!)
-            .maybeSingle()
-            .then(({ data }) => setPaymentProfile(data));
-        }}
-      />
-
       {isMobile && <BottomNav />}
-      <Footer />
     </div>
   );
 }

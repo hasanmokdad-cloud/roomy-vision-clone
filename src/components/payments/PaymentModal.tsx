@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
-import { CreditCard, Home, Sparkles, AlertTriangle, Loader2, ExternalLink } from 'lucide-react';
+import { CreditCard, Home, Sparkles, AlertTriangle, Loader2, ExternalLink, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,6 +20,13 @@ export interface PaymentMetadata {
   ownerId?: string;
   studentId?: string;
   planType?: 'advanced' | 'vip';
+}
+
+interface PaymentMethod {
+  id: string;
+  last4: string;
+  brand: string;
+  is_default: boolean;
 }
 
 interface PaymentModalProps {
@@ -44,40 +52,62 @@ export function PaymentModal({
   onSuccess,
   onCancel,
 }: PaymentModalProps) {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [hasPaymentProfile, setHasPaymentProfile] = useState<boolean | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [defaultCard, setDefaultCard] = useState<PaymentMethod | null>(null);
   const [isCheckingProfile, setIsCheckingProfile] = useState(true);
+  const [studentId, setStudentId] = useState<string | null>(null);
 
-  // Check if user has payment profile on mount
+  // Check if user has payment methods on mount
   useEffect(() => {
-    const checkPaymentProfile = async () => {
+    const checkPaymentMethods = async () => {
       if (!open) return;
       
       setIsCheckingProfile(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          setHasPaymentProfile(false);
+          setPaymentMethods([]);
           return;
         }
 
-        const { data } = await supabase
-          .from('user_payment_profiles')
+        // Get student ID
+        const { data: student } = await supabase
+          .from('students')
           .select('id')
           .eq('user_id', user.id)
-          .maybeSingle();
+          .single();
 
-        setHasPaymentProfile(!!data);
+        if (!student) {
+          setPaymentMethods([]);
+          return;
+        }
+
+        setStudentId(student.id);
+
+        // Get payment methods
+        const { data: methods } = await supabase
+          .from('payment_methods')
+          .select('id, last4, brand, is_default')
+          .eq('student_id', student.id)
+          .order('is_default', { ascending: false });
+
+        setPaymentMethods(methods || []);
+        
+        // Find default card
+        const defaultMethod = methods?.find(m => m.is_default) || methods?.[0] || null;
+        setDefaultCard(defaultMethod);
       } catch (error) {
-        console.error('Error checking payment profile:', error);
-        setHasPaymentProfile(false);
+        console.error('Error checking payment methods:', error);
+        setPaymentMethods([]);
       } finally {
         setIsCheckingProfile(false);
       }
     };
 
-    checkPaymentProfile();
+    checkPaymentMethods();
   }, [open]);
 
   const handlePayment = async () => {
@@ -91,7 +121,11 @@ export function PaymentModal({
           amount,
           currency,
           description,
-          metadata,
+          metadata: {
+            ...metadata,
+            paymentMethodId: defaultCard?.id,
+            last4: defaultCard?.last4,
+          },
         },
       });
 
@@ -112,6 +146,17 @@ export function PaymentModal({
     }
   };
 
+  const handleAddCard = () => {
+    if (!studentId) return;
+    onOpenChange(false);
+    navigate(`/mock-whish-add-card?studentId=${studentId}`);
+  };
+
+  const handleManageCards = () => {
+    onOpenChange(false);
+    navigate('/wallet');
+  };
+
   const handleCancel = () => {
     onOpenChange(false);
     onCancel();
@@ -120,6 +165,7 @@ export function PaymentModal({
   const isRoomDeposit = mode === 'room_deposit';
   const Icon = isRoomDeposit ? Home : Sparkles;
   const title = isRoomDeposit ? 'Confirm Reservation Payment' : 'Confirm Plan Upgrade';
+  const hasPaymentMethod = paymentMethods.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -216,24 +262,39 @@ export function PaymentModal({
           {isCheckingProfile ? (
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <Loader2 className="w-4 h-4 animate-spin" />
-              Checking payment info...
+              Checking saved cards...
             </div>
-          ) : hasPaymentProfile ? (
+          ) : hasPaymentMethod && defaultCard ? (
             <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
               <div className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-primary" />
-                <span className="text-sm">Whish Payment •••• (saved)</span>
+                <div className="w-8 h-8 rounded bg-gradient-to-br from-primary/20 to-purple-600/20 flex items-center justify-center">
+                  <CreditCard className="w-4 h-4 text-primary" />
+                </div>
+                <span className="text-sm font-medium">
+                  {defaultCard.brand} Visa •••• {defaultCard.last4}
+                </span>
               </div>
-              <Button variant="link" size="sm" className="text-xs h-auto p-0">
-                Manage
+              <Button variant="link" size="sm" className="text-xs h-auto p-0" onClick={handleManageCards}>
+                Change
               </Button>
             </div>
           ) : (
-            <Alert variant="destructive" className="border-destructive/50">
-              <AlertDescription className="text-sm">
-                Please add your payment information in Settings before proceeding.
-              </AlertDescription>
-            </Alert>
+            <div className="space-y-2">
+              <Alert className="border-primary/50 bg-primary/5">
+                <CreditCard className="w-4 h-4 text-primary" />
+                <AlertDescription className="text-sm">
+                  Add a Whish card to proceed with payment.
+                </AlertDescription>
+              </Alert>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleAddCard}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Whish Card
+              </Button>
+            </div>
           )}
         </div>
 
@@ -248,7 +309,7 @@ export function PaymentModal({
           </Button>
           <Button
             onClick={handlePayment}
-            disabled={isProcessing || !hasPaymentProfile || isCheckingProfile}
+            disabled={isProcessing || !hasPaymentMethod || isCheckingProfile}
             className="w-full sm:w-auto bg-gradient-to-r from-primary to-purple-600 hover:opacity-90"
           >
             {isProcessing ? (
