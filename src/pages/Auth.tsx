@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import FluidBackground from "@/components/FluidBackground";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -10,11 +10,20 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Auth() {
+  const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Handle mode param from redirects (e.g., after email verification)
+  useEffect(() => {
+    const mode = searchParams.get('mode');
+    if (mode === 'login') {
+      setTab('login');
+    }
+  }, [searchParams]);
 
   const onLogin = async () => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -53,19 +62,15 @@ export default function Auth() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/intro`,
+        emailRedirectTo: `${window.location.origin}/auth/verify`,
       },
     });
     if (error) {
       toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ 
-      title: "Check your email!", 
-      description: "We've sent you a verification link. Please verify your email before signing in.",
-      duration: 6000
-    });
-    setTab("login");
+    // Redirect to check email page
+    navigate(`/auth/check-email?email=${encodeURIComponent(email)}`);
   };
 
   return (
@@ -96,7 +101,15 @@ export default function Auth() {
                   <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    <Link 
+                      to="/password-reset" 
+                      className="text-sm text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                   <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
                 </div>
                 <Button onClick={onLogin} className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90">

@@ -1,0 +1,152 @@
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Mail, ExternalLink } from "lucide-react";
+import FluidBackground from "@/components/FluidBackground";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+
+const getEmailProvider = (email: string) => {
+  const domain = email.split('@')[1]?.toLowerCase();
+  
+  if (!domain) return { label: "Open Inbox", url: null };
+  
+  if (domain === 'gmail.com') {
+    return { label: "Open Gmail", url: "https://mail.google.com" };
+  }
+  
+  if (['outlook.com', 'hotmail.com', 'live.com'].includes(domain)) {
+    return { label: "Open Outlook", url: "https://outlook.live.com" };
+  }
+  
+  if (domain === 'icloud.com') {
+    return { label: "Open iCloud Mail", url: "https://www.icloud.com/mail" };
+  }
+  
+  // Check for .edu domains (university emails typically use Outlook)
+  if (domain.endsWith('.edu') || domain.endsWith('.edu.lb')) {
+    return { label: "Open Outlook", url: "https://outlook.office.com" };
+  }
+  
+  return { label: "Open Inbox", url: null };
+};
+
+export default function CheckEmail() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isResending, setIsResending] = useState(false);
+  
+  const email = searchParams.get('email') || '';
+  const provider = getEmailProvider(email);
+
+  const handleResendEmail = async () => {
+    if (!email) return;
+    
+    setIsResending(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/verify`,
+        },
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Email sent",
+        description: "We've sent you another verification email.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to resend",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const handleOpenProvider = () => {
+    if (provider.url) {
+      window.open(provider.url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  return (
+    <div className="relative min-h-screen overflow-hidden">
+      <FluidBackground />
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-background/95 backdrop-blur-sm border-border/50 shadow-2xl">
+          <CardContent className="pt-8 pb-8 px-6 text-center space-y-6">
+            {/* Logo */}
+            <div className="text-4xl font-extrabold">
+              <span className="bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] bg-clip-text text-transparent">
+                Roomy
+              </span>
+            </div>
+            
+            {/* Mail Icon */}
+            <div className="flex justify-center">
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mail className="w-10 h-10 text-primary" />
+              </div>
+            </div>
+            
+            {/* Title */}
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold text-foreground">Check your inbox</h1>
+              <p className="text-muted-foreground">
+                Click the link we sent to{' '}
+                <span className="font-medium text-foreground">{email}</span>{' '}
+                to finish your account setup.
+              </p>
+            </div>
+            
+            {/* Open Email Provider Button */}
+            {provider.url ? (
+              <Button
+                onClick={handleOpenProvider}
+                className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90 text-white gap-2"
+                size="lg"
+              >
+                {provider.label}
+                <ExternalLink className="w-4 h-4" />
+              </Button>
+            ) : (
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Open your email app and look for our verification email.
+                </p>
+              </div>
+            )}
+            
+            {/* Resend Link */}
+            <div className="text-sm text-muted-foreground">
+              Didn't receive an email?{' '}
+              <button
+                onClick={handleResendEmail}
+                disabled={isResending}
+                className="text-primary hover:underline font-medium disabled:opacity-50"
+              >
+                {isResending ? 'Sending...' : 'Resend email'}
+              </button>
+            </div>
+            
+            {/* Back to Login */}
+            <button
+              onClick={() => navigate('/auth')}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Back to login
+            </button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

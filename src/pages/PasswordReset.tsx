@@ -1,0 +1,147 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Mail, CheckCircle, ArrowLeft } from "lucide-react";
+import FluidBackground from "@/components/FluidBackground";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+export default function PasswordReset() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSent, setIsSent] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset`,
+      });
+
+      if (error) throw error;
+
+      setIsSent(true);
+      toast({
+        title: "Reset link sent",
+        description: "Check your email for the password reset link.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to send reset link",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="relative min-h-screen overflow-hidden">
+      <FluidBackground />
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-background/95 backdrop-blur-sm border-border/50 shadow-2xl">
+          <CardContent className="pt-8 pb-8 px-6 space-y-6">
+            {/* Logo */}
+            <div className="text-center text-4xl font-extrabold">
+              <span className="bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] bg-clip-text text-transparent">
+                Roomy
+              </span>
+            </div>
+
+            {!isSent ? (
+              <>
+                {/* Icon */}
+                <div className="flex justify-center">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Mail className="w-8 h-8 text-primary" />
+                  </div>
+                </div>
+                
+                {/* Title */}
+                <div className="text-center space-y-2">
+                  <h1 className="text-2xl font-bold text-foreground">Reset your password</h1>
+                  <p className="text-muted-foreground text-sm">
+                    Enter your email address and we'll send you a link to reset your password.
+                  </p>
+                </div>
+
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@email.com"
+                      required
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90"
+                  >
+                    {isLoading ? "Sending..." : "Send reset link"}
+                  </Button>
+                </form>
+              </>
+            ) : (
+              <>
+                {/* Success State */}
+                <div className="flex justify-center">
+                  <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <CheckCircle className="w-8 h-8 text-green-500" />
+                  </div>
+                </div>
+                
+                <div className="text-center space-y-2">
+                  <h1 className="text-2xl font-bold text-foreground">Check your email</h1>
+                  <p className="text-muted-foreground text-sm">
+                    Password reset link sent. Check your inbox for instructions to reset your password.
+                  </p>
+                </div>
+                
+                <Button
+                  onClick={() => setIsSent(false)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Send another link
+                </Button>
+              </>
+            )}
+
+            {/* Back to Login */}
+            <button
+              onClick={() => navigate('/auth')}
+              className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to login
+            </button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
