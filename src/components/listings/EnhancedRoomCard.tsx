@@ -265,20 +265,36 @@ export function EnhancedRoomCard({
       return;
     }
 
-    // Check if user has payment profile
-    const { data: paymentProfile } = await supabase
-      .from('user_payment_profiles')
+    // Check if user has a saved payment method
+    const { data: studentForPayment } = await supabase
+      .from('students')
       .select('id')
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (!paymentProfile) {
+    if (studentForPayment) {
+      const { data: paymentMethod } = await supabase
+        .from('payment_methods')
+        .select('id')
+        .eq('student_id', studentForPayment.id)
+        .maybeSingle();
+
+      if (!paymentMethod) {
+        toast({
+          title: 'Payment method required',
+          description: 'Please add a Whish card to your wallet before reserving a room.',
+          variant: 'destructive',
+        });
+        navigate('/wallet');
+        return;
+      }
+    } else {
       toast({
-        title: 'Payment info required',
-        description: 'Please add your payment information before reserving a room.',
+        title: 'Profile error',
+        description: 'Please complete your student profile first.',
         variant: 'destructive',
       });
-      navigate('/settings', { state: { openPaymentModal: true } });
+      navigate('/profile');
       return;
     }
 
