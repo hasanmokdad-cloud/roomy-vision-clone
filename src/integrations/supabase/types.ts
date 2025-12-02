@@ -1412,6 +1412,47 @@ export type Database = {
           },
         ]
       }
+      owner_payment_methods: {
+        Row: {
+          brand: string | null
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          last4: string
+          owner_id: string
+          updated_at: string | null
+          whish_token: string
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          last4: string
+          owner_id: string
+          updated_at?: string | null
+          whish_token: string
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          last4?: string
+          owner_id?: string
+          updated_at?: string | null
+          whish_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_payment_methods_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owners: {
         Row: {
           created_at: string | null
@@ -1622,6 +1663,111 @@ export type Database = {
           },
           {
             foreignKeyName: "payments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payout_history: {
+        Row: {
+          created_at: string | null
+          currency: string | null
+          deposit_amount: number
+          dorm_id: string
+          id: string
+          owner_id: string
+          owner_receives: number
+          payment_id: string | null
+          reservation_id: string | null
+          room_id: string
+          roomy_fee: number
+          status: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string | null
+          deposit_amount: number
+          dorm_id: string
+          id?: string
+          owner_id: string
+          owner_receives: number
+          payment_id?: string | null
+          reservation_id?: string | null
+          room_id: string
+          roomy_fee: number
+          status?: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string | null
+          deposit_amount?: number
+          dorm_id?: string
+          id?: string
+          owner_id?: string
+          owner_receives?: number
+          payment_id?: string | null
+          reservation_id?: string | null
+          room_id?: string
+          roomy_fee?: number
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_history_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_history_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_history_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "payout_history_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_history_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_history_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_history_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_history_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
