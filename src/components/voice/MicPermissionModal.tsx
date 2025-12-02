@@ -11,24 +11,19 @@ interface MicPermissionModalProps {
 
 export const MicPermissionModal = ({ open, onOpenChange }: MicPermissionModalProps) => {
   const [error, setError] = useState<string | null>(null);
-  const [isRequesting, setIsRequesting] = useState(false);
-  const { requestPermission } = useMicPermission();
+  const { permission, isRequesting, requestPermission } = useMicPermission();
 
   const handleEnableMic = async () => {
-    setIsRequesting(true);
     setError(null);
-
     const granted = await requestPermission();
 
     if (granted) {
       onOpenChange(false);
     } else {
       setError(
-        "Permission denied. Please enable microphone access from Settings → Safari → Microphone."
+        "Permission denied. Please enable microphone access in your browser settings."
       );
     }
-
-    setIsRequesting(false);
   };
 
   return (
@@ -45,8 +40,23 @@ export const MicPermissionModal = ({ open, onOpenChange }: MicPermissionModalPro
         </DialogHeader>
 
         {error && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-sm text-destructive">
-            {error}
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 text-sm">
+            <p className="font-medium text-amber-600 mb-2">Microphone access was denied</p>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              To enable voice messages:<br />
+              • <strong>iOS Safari:</strong> Settings → Safari → Microphone<br />
+              • <strong>Chrome:</strong> Tap the lock icon in address bar → Site settings → Microphone<br />
+              • <strong>Desktop:</strong> Browser settings → Site permissions → Microphone
+            </p>
+          </div>
+        )}
+        
+        {permission === 'denied' && !error && (
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 text-sm">
+            <p className="font-medium text-amber-600 mb-2">Microphone access is currently blocked</p>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              Please enable microphone access from your browser settings to use voice messages.
+            </p>
           </div>
         )}
 

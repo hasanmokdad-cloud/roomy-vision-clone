@@ -4,6 +4,7 @@ type MicPermission = 'granted' | 'prompt' | 'denied';
 
 interface MicPermissionContextType {
   permission: MicPermission;
+  isRequesting: boolean;
   checkPermission: () => Promise<void>;
   requestPermission: () => Promise<boolean>;
 }
@@ -16,6 +17,7 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
     const stored = localStorage.getItem('roomyMicPermission');
     return (stored as MicPermission) || 'prompt';
   });
+  const [isRequesting, setIsRequesting] = useState(false);
 
   const checkPermission = async () => {
     try {
@@ -58,6 +60,9 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const requestPermission = async (): Promise<boolean> => {
+    if (isRequesting) return false; // Prevent duplicate requests
+    
+    setIsRequesting(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
@@ -72,6 +77,8 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
       setPermission('denied');
       localStorage.removeItem('roomyMicPermission');
       return false;
+    } finally {
+      setIsRequesting(false);
     }
   };
 
@@ -80,7 +87,7 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   return (
-    <MicPermissionContext.Provider value={{ permission, checkPermission, requestPermission }}>
+    <MicPermissionContext.Provider value={{ permission, isRequesting, checkPermission, requestPermission }}>
       {children}
     </MicPermissionContext.Provider>
   );

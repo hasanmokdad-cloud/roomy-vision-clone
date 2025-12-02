@@ -21,6 +21,8 @@ import { EditMessageModal } from '@/components/messages/EditMessageModal';
 import { ContactInfoPanel } from '@/components/messages/ContactInfoPanel';
 import { FriendsTab } from '@/components/friends/FriendsTab';
 import { FriendSearchBar } from '@/components/friends/FriendSearchBar';
+import { MicPermissionModal } from '@/components/voice/MicPermissionModal';
+import { useMicPermission } from '@/contexts/MicPermissionContext';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -175,6 +177,7 @@ export default function Messages() {
   const navigate = useNavigate();
   const location = useLocation();
   const { setHideBottomNav } = useBottomNav();
+  const { permission, requestPermission } = useMicPermission();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -200,6 +203,7 @@ export default function Messages() {
   const [pinnedMessages, setPinnedMessages] = useState<Message[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
+  const [showMicPermissionModal, setShowMicPermissionModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
@@ -1112,6 +1116,12 @@ export default function Messages() {
       return;
     }
 
+    // Double-check permission before recording (defensive)
+    if (permission !== 'granted') {
+      setShowMicPermissionModal(true);
+      return;
+    }
+
     try {
       setIsRecordingActive(true);
       shouldUploadVoiceRef.current = true; // Reset flag for new recording
@@ -1170,12 +1180,18 @@ export default function Messages() {
         setRecordingDuration((prev) => prev + 1);
       }, 1000);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Recording error:', error);
       setIsRecordingActive(false);
+      
+      // If getUserMedia fails unexpectedly, permission was likely revoked
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        setShowMicPermissionModal(true);
+      }
+      
       toast({
-        title: 'Microphone access denied',
-        description: 'Please allow microphone access',
+        title: 'Microphone access required',
+        description: 'Please allow microphone access to record voice messages',
         variant: 'destructive',
       });
     }
@@ -1197,7 +1213,13 @@ export default function Messages() {
       return;
     }
     
-    // Desktop: Toggle recording on click
+    // Desktop: Check permission first
+    if (permission !== 'granted') {
+      setShowMicPermissionModal(true);
+      return;
+    }
+    
+    // Toggle recording
     if (recording) {
       stopRecording();
     } else {
@@ -1212,6 +1234,23 @@ export default function Messages() {
     e.preventDefault();  // Block Safari long-press menu
     e.stopPropagation();
     
+    // If permission not granted, show modal on short tap (not long-press)
+    if (permission !== 'granted') {
+      const tapTimer = setTimeout(() => {
+        // Long-press detected, but no permission - do nothing
+      }, 150);
+      
+      const handleShortTap = () => {
+        clearTimeout(tapTimer);
+        // Short tap detected - show permission modal
+        setShowMicPermissionModal(true);
+      };
+      
+      document.addEventListener('touchend', handleShortTap, { once: true, passive: false });
+      return; // Don't proceed with recording logic
+    }
+    
+    // Permission granted - proceed with existing long-press recording logic
     touchStartTimeRef.current = Date.now();
     touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     
@@ -2072,6 +2111,12 @@ export default function Messages() {
           }}
         />
       )}
+      
+      {/* Mic Permission Modal */}
+      <MicPermissionModal
+        open={showMicPermissionModal}
+        onOpenChange={setShowMicPermissionModal}
+      />
     </div>
   );
 }

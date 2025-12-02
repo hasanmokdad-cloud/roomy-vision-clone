@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Mic, Lock, Trash2 } from 'lucide-react';
 
 type VoiceRecordingOverlayProps = {
@@ -40,14 +41,28 @@ export function VoiceRecordingOverlay({
       {!isLocked ? (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border p-4 pb-safe">
           <div className="flex items-center gap-3">
-            {/* Trash icon zone (left) */}
-            <div 
-              className={`flex items-center justify-center w-10 h-10 rounded-full transition-all ${
-                showCancelZone ? 'bg-destructive/20 scale-110' : 'bg-muted/50 scale-100'
-              }`}
+            {/* Trash icon zone (left) with animation */}
+            <motion.div 
+              animate={{
+                scale: showCancelZone ? 1.2 : 1,
+                backgroundColor: showCancelZone ? 'rgba(239, 68, 68, 0.3)' : 'rgba(0, 0, 0, 0.1)'
+              }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className="flex items-center justify-center w-10 h-10 rounded-full"
             >
-              <Trash2 className={`w-5 h-5 transition-colors ${showCancelZone ? 'text-destructive' : 'text-muted-foreground'}`} />
-            </div>
+              <motion.div
+                animate={{ 
+                  scale: showCancelZone ? [1, 1.2, 1] : 1,
+                  rotate: showCancelZone ? [0, -10, 10, -10, 0] : 0
+                }}
+                transition={{ 
+                  repeat: showCancelZone ? Infinity : 0, 
+                  duration: 0.5 
+                }}
+              >
+                <Trash2 className={`w-5 h-5 transition-colors ${showCancelZone ? 'text-destructive' : 'text-muted-foreground'}`} />
+              </motion.div>
+            </motion.div>
 
             {/* Recording status - mic icon + timer + waveform */}
             <div className="flex-1 flex items-center gap-3 bg-muted/50 rounded-full px-4 py-2">
@@ -70,17 +85,26 @@ export function VoiceRecordingOverlay({
               </div>
             </div>
 
-            {/* Lock icon zone (right) */}
-            <div 
-              className={`flex flex-col items-center justify-center w-10 transition-all ${
-                showLockZone ? 'scale-110' : 'scale-100'
-              }`}
+            {/* Lock icon zone (right) with slide-up animation */}
+            <motion.div 
+              animate={{
+                y: showLockZone ? -10 : 0,
+                scale: showLockZone ? 1.2 : 1
+              }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className="flex flex-col items-center justify-center w-10"
             >
               <Lock className={`w-5 h-5 transition-colors ${showLockZone ? 'text-primary' : 'text-muted-foreground'}`} />
               {showLockZone && (
-                <span className="text-[10px] text-primary font-medium mt-1">Lock</span>
+                <motion.span
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-[10px] text-primary font-medium mt-1"
+                >
+                  Lock
+                </motion.span>
               )}
-            </div>
+            </motion.div>
           </div>
 
           {/* Slide to cancel hint */}
