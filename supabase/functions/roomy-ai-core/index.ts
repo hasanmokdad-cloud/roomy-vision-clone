@@ -7,7 +7,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { generateMatchExplanations } from "./explanations.ts";
+import { generateMatchExplanations, generateMatchExplanation } from "./explanations.ts";
+import { fetchWithRelaxedFilters } from "./fallbackFilters.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -228,6 +229,33 @@ serve(async (req) => {
       }
     });
 
+    // PHASE 7B: Implement fallback logic when no matches found
+    let fallbackInfo = null;
+    if (matches.length === 0) {
+      console.log('[roomy-ai-core] No matches found, applying fallback filters');
+      
+      const fallbackMatches = await fetchWithRelaxedFilters(supabase, student, context, mode, exclude_ids);
+      
+      if (fallbackMatches.length > 0) {
+        matches = fallbackMatches;
+        fallbackInfo = {
+          type: mode === 'dorm' ? 'dorm_no_match' : 'roommate_no_match',
+          message: mode === 'dorm' 
+            ? "No perfect matches found. Here are rooms slightly outside your budget or preferred area that may still work."
+            : "No perfectly compatible roommates found. Here are students with similar budgets and preferences.",
+          filters_relaxed: ['budget', 'area', 'room_type']
+        };
+      } else {
+        fallbackInfo = {
+          type: `${mode}_no_match`,
+          message: "No matches found with current criteria. Try adjusting your preferences.",
+          suggestions: mode === 'dorm' 
+            ? ["Increase budget by 10-20%", "Expand area search", "Try different room types"]
+            : ["Expand university search", "Adjust budget range", "Consider different housing areas"]
+        };
+      }
+    }
+
     // Add tier info to response for frontend use
     return new Response(
       JSON.stringify({
@@ -238,10 +266,12 @@ serve(async (req) => {
         matches: matches.map(m => ({
           ...m,
           personality_visible: usePersonality,
+          explanation: generateMatchExplanation(m, student, effectivePlan.tier as 'basic' | 'advanced' | 'vip', usePersonality),
           tier_message: !usePersonality && m.type === 'roommate'
             ? 'Upgrade to Advanced for personality compatibility scores'
             : null
         })),
+        fallback: fallbackInfo,
         tier_info: {
           current_tier: effectivePlan.tier,
           personality_enabled: usePersonality,
