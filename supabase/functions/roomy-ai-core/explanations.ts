@@ -2,6 +2,22 @@
  * Generate human-readable explanations for AI matches (Phase 12)
  */
 
+/**
+ * Generate detailed explanation text (single paragraph)
+ */
+export function generateMatchExplanation(
+  match: any,
+  student: any,
+  tier: 'basic' | 'advanced' | 'vip',
+  usePersonality: boolean
+): string {
+  const reasons = generateMatchExplanations(match, student, tier, usePersonality);
+  return `Matched because: ${reasons.join(', ')}.`;
+}
+
+/**
+ * Generate 4-6 specific reasons for match (PHASE 7B)
+ */
 export function generateMatchExplanations(
   match: any,
   student: any,
@@ -11,6 +27,7 @@ export function generateMatchExplanations(
   const explanations: string[] = [];
 
   if (match.type === 'dorm') {
+    // ========== DORM MATCH EXPLANATIONS (4-6 reasons) ==========
     // Dorm match explanations
     if (match.monthly_price && student.budget) {
       const diff = student.budget - match.monthly_price;
@@ -69,8 +86,19 @@ export function generateMatchExplanations(
         explanations.push(`Includes ${matchedAmenities.slice(0, 2).join(' & ')}`);
       }
     }
+    
+    // Verification status
+    if (match.verification_status === 'Verified') {
+      explanations.push('Verified and quality-checked');
+    }
+    
+    // Budget warning if over budget
+    if (match.budgetWarning) {
+      explanations.push(match.budgetWarning);
+    }
 
   } else if (match.type === 'roommate') {
+    // ========== ROOMMATE MATCH EXPLANATIONS ==========
     // Roommate match explanations
     
     // University match (exact match)
@@ -216,6 +244,6 @@ export function generateMatchExplanations(
     explanations.push('Recommended by Roomy AI');
   }
 
-  // Return top 3-4 explanations
-  return explanations.slice(0, 4);
+  // Return top 4-6 explanations (PHASE 7B requirement)
+  return explanations.slice(0, 6);
 }
