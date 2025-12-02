@@ -390,10 +390,24 @@ const AiMatch = () => {
 
         {/* Tier Selection - Show only on roommate views */}
         {(activeMode === 'roommate' || (activeMode === 'combined' && matchMode === 'roommates')) && (
-          <TierSelectionCard 
-            selectedPlan={selectedPlan}
-            onPlanChange={handlePlanChange}
-          />
+          <>
+            <TierSelectionCard 
+              selectedPlan={selectedPlan}
+              onPlanChange={handlePlanChange}
+            />
+            
+            {/* Basic Tier Messaging */}
+            {userPlan === 'basic' && matchMode === 'roommates' && (
+              <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30">
+                <CardContent className="p-4">
+                  <p className="text-sm">
+                    🎯 <strong>Basic Match</strong>: You're seeing random compatible roommates. 
+                    Upgrade to <strong>Advanced</strong> or <strong>VIP</strong> for personality-based matching!
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
 
         {/* Loading State */}

@@ -228,13 +228,25 @@ serve(async (req) => {
       }
     });
 
+    // Add tier info to response for frontend use
     return new Response(
       JSON.stringify({
         ai_mode: mode,
         match_tier: effectivePlan.tier,
         personality_used: usePersonality,
         insights_banner: insightsBanner,
-        matches
+        matches: matches.map(m => ({
+          ...m,
+          personality_visible: usePersonality,
+          tier_message: !usePersonality && m.type === 'roommate'
+            ? 'Upgrade to Advanced for personality compatibility scores'
+            : null
+        })),
+        tier_info: {
+          current_tier: effectivePlan.tier,
+          personality_enabled: usePersonality,
+          match_limit: tierLimit
+        }
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -286,9 +298,10 @@ async function fetchDormMatches(supabase: any, student: any, context: any = {}, 
     query = query.not('id', 'in', `(${exclude_ids.join(',')})`);
   }
 
-  // CRITICAL: Gender compatibility filter
+  // CRITICAL: Gender compatibility filter with explicit logging
   if (student.gender) {
     const genderLower = student.gender.toLowerCase();
+    console.log(`[roomy-ai-core] Student gender: ${genderLower}, filtering dorms for gender compatibility`);
     if (genderLower === 'male') {
       // Exclude female-only dorms
       query = query.or('gender_preference.is.null,gender_preference.in.(male,mixed,any,Male,Mixed,Any)');
@@ -298,8 +311,11 @@ async function fetchDormMatches(supabase: any, student: any, context: any = {}, 
     }
   }
 
+  // Budget filter with 10% tolerance
   if (context.budget || student.budget) {
-    query = query.lte('monthly_price', context.budget || student.budget);
+    const maxBudget = Math.floor((context.budget || student.budget) * 1.10); // 10% tolerance
+    query = query.lte('monthly_price', maxBudget);
+    console.log(`[roomy-ai-core] Budget filter: $${context.budget || student.budget} with 10% tolerance (max: $${maxBudget})`);
   }
 
   if (context.area || student.favorite_areas?.length > 0) {
@@ -339,13 +355,23 @@ async function fetchDormMatches(supabase: any, student: any, context: any = {}, 
   // Only include dorms that have available rooms
   const dormsWithAvailableRooms = dormsWithRooms.filter(d => d.hasAvailableRooms);
 
-  // Pre-score dorms with sub-scores + feedback boost
+  // Pre-score dorms with sub-scores + feedback boost + budget warning
   const scoredDorms = await Promise.all(dormsWithAvailableRooms.map(async (dorm: any) => {
     const locationScore = calculateLocationScore(dorm, student);
-    const budgetScore = calculateBudgetScore(dorm, student);
+    let budgetScore = calculateBudgetScore(dorm, student);
     const roomTypeScore = calculateRoomTypeScore(dorm, student);
     const amenitiesScore = calculateAmenitiesScore(dorm, student);
     let overallScore = calculateDormScore(dorm, student);
+
+    // Budget warning and penalty for over-budget dorms
+    let budgetWarning = null;
+    if (student.budget && dorm.monthly_price > student.budget) {
+      const overage = dorm.monthly_price - student.budget;
+      budgetWarning = `$${overage} over your budget`;
+      // Penalize over-budget dorms
+      budgetScore = Math.max(40, 70 - ((overage / student.budget) * 50));
+      console.log(`[roomy-ai-core] Dorm ${dorm.dorm_name || dorm.name} is over budget: ${budgetWarning}, penalized score: ${budgetScore}`);
+    }
 
     // Apply feedback boost from historical data
     const { data: feedbacks } = await supabase
@@ -364,6 +390,7 @@ async function fetchDormMatches(supabase: any, student: any, context: any = {}, 
       ...dorm,
       type: 'dorm',
       score: overallScore,
+      budgetWarning,
       subScores: {
         location_score: locationScore,
         budget_score: budgetScore,
@@ -457,8 +484,18 @@ async function fetchRoommateMatches(
   
   if (error) throw error;
 
-  // Calculate compatibility scores with sub-scores
+  // Calculate compatibility scores with sub-scores + dealbreaker enforcement
   const scored = (data || []).map((candidate: any) => {
+    // DEALBREAKER CHECK: Hard reject if dealbreakers mismatch
+    if (student.dealbreakers?.includes('smoking') && candidate.personality_smoking === 'yes') {
+      console.log(`[roomy-ai-core] DEALBREAKER: Candidate ${candidate.full_name} smokes, student has smoking dealbreaker`);
+      return null; // Hard reject
+    }
+    if (student.dealbreakers?.includes('drinking') && candidate.personality_drinking === 'yes') {
+      console.log(`[roomy-ai-core] DEALBREAKER: Candidate ${candidate.full_name} drinks, student has drinking dealbreaker`);
+      return null;
+    }
+    
     const lifestyleScore = calculateLifestyleScore(student, candidate);
     const cleanlinessScore = calculateCleanlinessScore(student, candidate);
     const studyFocusScore = calculateStudyFocusScore(student, candidate);
@@ -486,7 +523,7 @@ async function fetchRoommateMatches(
         personality_breakdown: personalityResult?.breakdown || null
       }
     };
-  });
+  }).filter(Boolean); // Remove null rejections
 
   return scored.sort((a: any, b: any) => b.score - a.score).slice(0, limit);
 }
