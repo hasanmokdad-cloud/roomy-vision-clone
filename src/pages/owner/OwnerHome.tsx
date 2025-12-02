@@ -468,6 +468,26 @@ export default function OwnerHome() {
               </div>
             </CardContent>
           </Card>
+
+          <Card className="glass-hover">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold mb-2">Refund Requests</h3>
+                  <p className="text-foreground/60">
+                    Review and manage student refund requests
+                  </p>
+                </div>
+                <Button
+                  onClick={() => navigate('/owner/refunds')}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  View Requests
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Upcoming Tours Widget */}

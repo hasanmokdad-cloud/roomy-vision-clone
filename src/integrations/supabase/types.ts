@@ -1427,6 +1427,53 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_disputes: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          issue_type: string | null
+          owner_id: string
+          reservation_id: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          status: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          issue_type?: string | null
+          owner_id: string
+          reservation_id: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          status?: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          issue_type?: string | null
+          owner_id?: string
+          reservation_id?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_disputes_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -1620,6 +1667,56 @@ export type Database = {
         }
         Relationships: []
       }
+      refund_requests: {
+        Row: {
+          created_at: string | null
+          id: string
+          owner_decision: string | null
+          owner_decision_note: string | null
+          owner_id: string
+          processed_at: string | null
+          processed_by: string | null
+          reason: string | null
+          reservation_id: string
+          status: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          owner_decision?: string | null
+          owner_decision_note?: string | null
+          owner_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reason?: string | null
+          reservation_id: string
+          status?: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          owner_decision?: string | null
+          owner_decision_note?: string | null
+          owner_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reason?: string | null
+          reservation_id?: string
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_requests_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reservations: {
         Row: {
           cancelled_at: string | null
@@ -1636,6 +1733,7 @@ export type Database = {
           owner_payout_timestamp: string | null
           paid_at: string | null
           payout_batch_id: string | null
+          refundable_until: string | null
           reservation_fee_amount: number
           room_id: string
           roomy_commission_captured: boolean | null
@@ -1660,6 +1758,7 @@ export type Database = {
           owner_payout_timestamp?: string | null
           paid_at?: string | null
           payout_batch_id?: string | null
+          refundable_until?: string | null
           reservation_fee_amount: number
           room_id: string
           roomy_commission_captured?: boolean | null
@@ -1684,6 +1783,7 @@ export type Database = {
           owner_payout_timestamp?: string | null
           paid_at?: string | null
           payout_batch_id?: string | null
+          refundable_until?: string | null
           reservation_fee_amount?: number
           room_id?: string
           roomy_commission_captured?: boolean | null
