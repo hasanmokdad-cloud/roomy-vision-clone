@@ -6,16 +6,43 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Send, Sparkles, RefreshCw } from "lucide-react";
+import { Send, RefreshCw, Home, DollarSign, Users } from "lucide-react";
 import { sanitizeInput } from "@/utils/inputValidation";
 import { logAnalyticsEvent } from "@/utils/analytics";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+// New AI Chat Components
+import { AIAssistantHeader } from "@/components/ai-chat/AIAssistantHeader";
+import { ContextPills } from "@/components/ai-chat/ContextPills";
+import { ChatMessageBubble } from "@/components/ai-chat/ChatMessageBubble";
+import { QuickActionChips, defaultQuickActions } from "@/components/ai-chat/QuickActionChips";
+import { AITypingIndicator } from "@/components/ai-chat/AITypingIndicator";
+import { ErrorRetryBubble } from "@/components/ai-chat/ErrorRetryBubble";
+import { StructuredSuggestionsRenderer } from "@/components/ai-chat/StructuredSuggestionsRenderer";
+
 type Message = {
   role: "user" | "assistant";
   content: string;
-  timestamp?: string;
+  timestamp?: Date;
+  followUpActions?: Array<{ label: string; query: string }>;
+  quickChips?: Array<{ label: string; query: string; icon?: string }>;
+  structuredSuggestions?: {
+    dorms?: any[];
+    rooms?: any[];
+    roommates?: any[];
+  };
+  isError?: boolean;
 };
+
+interface UserContext {
+  budget?: number;
+  university?: string;
+  preferred_area?: string;
+  need_dorm?: boolean;
+  need_roommate?: boolean;
+  gender?: string;
+  personality_enabled?: boolean;
+}
 
 export default function AiChat() {
   const isMobile = useIsMobile();
@@ -26,8 +53,23 @@ export default function AiChat() {
   const [sessionId, setSessionId] = useState<string>("");
   const [userPreferences, setUserPreferences] = useState<Record<string, any>>({});
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [showContextPills, setShowContextPills] = useState(false);
+  const [lastSentMessage, setLastSentMessage] = useState<string>("");
+  const [retryCount, setRetryCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Derive user context from profile
+  const userContext: UserContext = {
+    budget: userProfile?.budget,
+    university: userProfile?.university,
+    preferred_area: userProfile?.preferred_area,
+    need_dorm: userProfile?.accommodation_status === "need_dorm",
+    need_roommate: userProfile?.need_roommate,
+    gender: userProfile?.gender,
+    personality_enabled: userProfile?.personality_completed,
+  };
 
   useEffect(() => {
     const loadSession = async () => {
@@ -47,7 +89,7 @@ export default function AiChat() {
         const parsedHistory = (chatSession.history as any[]).map((msg: any) => ({
           role: msg.role as "user" | "assistant",
           content: String(msg.content || ""),
-          timestamp: msg.timestamp
+          timestamp: msg.timestamp ? new Date(msg.timestamp) : undefined,
         }));
         setMessages(parsedHistory.slice(-10));
       }
@@ -84,8 +126,8 @@ export default function AiChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sendMessage = async (retryCount = 0) => {
-    const trimmed = input.trim();
+  const sendMessage = async (messageText: string, isRetry = false) => {
+    const trimmed = messageText.trim();
     
     if (!trimmed) {
       toast({
@@ -106,19 +148,29 @@ export default function AiChat() {
     }
 
     const sanitized = sanitizeInput(trimmed);
-    const userMsg: Message = { role: "user", content: sanitized, timestamp: new Date().toISOString() };
+    setLastSentMessage(sanitized);
     
-    // Log AI chat start if this is the first message
-    if (messages.length === 0 && userId) {
-      await logAnalyticsEvent({
-        eventType: 'ai_chat_start',
-        userId,
-        metadata: { session_id: sessionId }
-      });
+    if (!isRetry) {
+      const userMsg: Message = { 
+        role: "user", 
+        content: sanitized, 
+        timestamp: new Date() 
+      };
+      
+      // Log AI chat start if this is the first message
+      if (messages.length === 0 && userId) {
+        await logAnalyticsEvent({
+          eventType: 'ai_chat_start',
+          userId,
+          metadata: { session_id: sessionId }
+        });
+      }
+      
+      setMessages(prev => [...prev, userMsg]);
+      setInput("");
+      setRetryCount(0);
     }
     
-    setMessages(prev => [...prev, userMsg]);
-    setInput("");
     setLoading(true);
 
     try {
@@ -139,54 +191,102 @@ export default function AiChat() {
       if (!data || !data.response) {
         // Retry once if response is empty
         if (retryCount < 1) {
-          console.log("Empty response, retrying...");
+          setRetryCount(prev => prev + 1);
           await new Promise(resolve => setTimeout(resolve, 1000));
-          return sendMessage(retryCount + 1);
+          return sendMessage(sanitized, true);
         }
         throw new Error("Empty response from AI");
       }
 
+      // Parse follow-up actions and quick chips from response
+      const followUpActions = data.followUpActions || [];
+      const quickChips = data.quickChips || determineQuickChips(data.response);
+      const structuredSuggestions = data.structured_suggestions;
+
       const aiMsg: Message = {
         role: "assistant",
         content: data.response,
-        timestamp: new Date().toISOString()
+        timestamp: new Date(),
+        followUpActions,
+        quickChips,
+        structuredSuggestions,
       };
 
       setMessages(prev => [...prev, aiMsg]);
+      setRetryCount(0);
 
     } catch (error: any) {
       console.error("Chat error:", error);
       
       let errorMessage = "Failed to get response. Please try again.";
-      let shouldRetry = false;
       
       if (error.message?.includes("429") || error.message?.includes("Too many requests")) {
         errorMessage = "You're sending messages too quickly. Please wait a minute and try again.";
       } else if (error.message?.includes("402") || error.message?.includes("Payment required")) {
         errorMessage = "AI service temporarily unavailable. Please try again later.";
       } else if (error.message?.includes("Failed to fetch") || error.message?.includes("Network")) {
-        errorMessage = "Network error. Retrying...";
-        shouldRetry = true;
+        errorMessage = "Network error. Please check your connection.";
       }
 
-      if (shouldRetry && retryCount < 1) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        return sendMessage(retryCount + 1);
-      }
-
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
+      // Add error message to chat
+      const errorMsg: Message = {
+        role: "assistant",
+        content: errorMessage,
+        timestamp: new Date(),
+        isError: true,
+      };
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setLoading(false);
+      inputRef.current?.focus();
     }
+  };
+
+  // Determine quick chips based on response content
+  const determineQuickChips = (response: string): Array<{ label: string; query: string; icon?: string }> => {
+    const lowerResponse = response.toLowerCase();
+    
+    if (lowerResponse.includes("dorm") || lowerResponse.includes("room")) {
+      return defaultQuickActions.afterDorm;
+    }
+    if (lowerResponse.includes("roommate") || lowerResponse.includes("compatible")) {
+      return defaultQuickActions.afterRoommate;
+    }
+    if (lowerResponse.includes("not available") || lowerResponse.includes("mismatch") || lowerResponse.includes("doesn't match")) {
+      return defaultQuickActions.afterMismatch;
+    }
+    return [];
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    sendMessage();
+    sendMessage(input);
+  };
+
+  const handleChipClick = (query: string) => {
+    sendMessage(query);
+  };
+
+  const handleFollowUpClick = (query: string, displayText: string) => {
+    // Add visible user message
+    const userMsg: Message = {
+      role: "user",
+      content: displayText,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, userMsg]);
+    
+    // Send the actual query
+    setLoading(true);
+    sendMessage(query, true);
+  };
+
+  const handleRetry = () => {
+    if (lastSentMessage) {
+      // Remove the error message
+      setMessages(prev => prev.filter(m => !m.isError));
+      sendMessage(lastSentMessage, true);
+    }
   };
 
   const handleReset = () => {
@@ -198,147 +298,195 @@ export default function AiChat() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#0F1624] via-[#15203B] to-[#1a2847] w-full max-w-screen overflow-x-hidden">
+    <div className="min-h-[100dvh] flex flex-col bg-gradient-to-b from-background via-muted/20 to-background w-full max-w-screen overflow-x-hidden">
       {!isMobile && <Navbar />}
       
-      <main className="flex-1 container max-w-4xl mx-auto px-2 md:px-4 py-8 mt-20 flex flex-col overflow-x-hidden">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-6 text-center"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-4">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-white">AI-Powered Assistant</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black mb-3 gradient-text">
-            Chat with Roomy AI
-          </h1>
-          <p className="text-lg text-gray-300">
-            Ask anything about dorms, roommates, or student living
-          </p>
-        </motion.div>
+      <main className={`flex-1 flex flex-col ${!isMobile ? 'mt-16' : ''}`}>
+        {/* Fixed Container */}
+        <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
+          {/* Header */}
+          <AIAssistantHeader
+            needDorm={userContext.need_dorm}
+            needRoommate={userContext.need_roommate}
+            showContextPills={showContextPills}
+            onToggleContext={() => setShowContextPills(prev => !prev)}
+            isMobile={isMobile}
+          />
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 mb-6 overflow-hidden flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
-        >
-          <div className="flex-1 overflow-y-auto space-y-4 mb-4 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
-            <AnimatePresence>
-              {messages.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-center py-12"
-                >
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                    <Sparkles className="w-8 h-8 text-white" />
-                  </div>
-                  <p className="text-gray-300 mb-2">👋 Hi! I'm Roomy AI</p>
-                  <p className="text-gray-400 text-sm">Ask me anything about finding your perfect dorm!</p>
-                </motion.div>
-              )}
+          {/* Context Pills */}
+          <ContextPills context={userContext} isVisible={showContextPills} />
 
-              {messages.map((msg, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[80%] px-5 py-3 rounded-2xl shadow-lg ${
-                      msg.role === "user"
-                        ? "bg-gradient-to-r from-primary to-secondary text-white"
-                        : "bg-white/20 backdrop-blur-sm border border-white/30 text-gray-100"
-                    }`}
+          {/* Chat Area */}
+          <div className="flex-1 overflow-hidden flex flex-col px-4 py-4">
+            <div className="flex-1 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+              <AnimatePresence mode="popLayout">
+                {/* Welcome State */}
+                {messages.length === 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="py-8 text-center"
                   >
-                    <p className="text-sm md:text-base whitespace-pre-wrap leading-relaxed">
-                      {msg.content}
+                    <motion.div 
+                      className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-[0_0_40px_rgba(139,92,246,0.3)]"
+                      animate={{ 
+                        boxShadow: [
+                          "0 0 40px rgba(139,92,246,0.3)",
+                          "0 0 60px rgba(139,92,246,0.4)",
+                          "0 0 40px rgba(139,92,246,0.3)",
+                        ]
+                      }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <span className="text-3xl">🏠</span>
+                    </motion.div>
+                    <h2 className="text-xl font-semibold text-foreground mb-2">
+                      👋 Hi! I'm Roomy AI
+                    </h2>
+                    <p className="text-muted-foreground mb-6">
+                      Ask me anything about finding your perfect dorm or roommate!
                     </p>
+
+                    {/* Initial Quick Actions */}
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <QuickActionChips
+                        chips={defaultQuickActions.initial}
+                        onChipClick={handleChipClick}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Messages */}
+                {messages.map((msg, i) => (
+                  <div key={i}>
+                    {msg.isError ? (
+                      <ErrorRetryBubble
+                        errorMessage={msg.content}
+                        onRetry={handleRetry}
+                        isRetrying={loading}
+                      />
+                    ) : msg.structuredSuggestions && (msg.structuredSuggestions.dorms?.length || msg.structuredSuggestions.rooms?.length || msg.structuredSuggestions.roommates?.length) ? (
+                      <>
+                        <ChatMessageBubble
+                          role={msg.role}
+                          content={msg.content}
+                          timestamp={msg.timestamp}
+                        />
+                        <div className="mt-3">
+                          <StructuredSuggestionsRenderer
+                            suggestions={msg.structuredSuggestions}
+                          />
+                        </div>
+                        {msg.quickChips && msg.quickChips.length > 0 && (
+                          <div className="mt-2 ml-10">
+                            <QuickActionChips
+                              chips={msg.quickChips}
+                              onChipClick={handleChipClick}
+                            />
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <ChatMessageBubble
+                        role={msg.role}
+                        content={msg.content}
+                        timestamp={msg.timestamp}
+                        followUpActions={msg.followUpActions}
+                        quickChips={msg.quickChips}
+                        onChipClick={handleChipClick}
+                        onFollowUpClick={handleFollowUpClick}
+                      />
+                    )}
                   </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-            
-            {loading && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex justify-start"
-              >
-                <div className="bg-white/20 backdrop-blur-sm border border-white/30 px-5 py-3 rounded-2xl">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                    <span className="text-sm text-gray-300">Thinking...</span>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-            
-            <div ref={messagesEndRef} />
+                ))}
+              </AnimatePresence>
+
+              {/* Typing Indicator */}
+              <AnimatePresence>
+                {loading && <AITypingIndicator />}
+              </AnimatePresence>
+              
+              <div ref={messagesEndRef} />
+            </div>
           </div>
 
-          <div className="flex gap-3">
-            <Input
-              value={input}
-              onChange={(e) => {
-                const sanitized = sanitizeInput(e.target.value);
-                setInput(sanitized.substring(0, 500));
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage(0);
-                }
-              }}
-              placeholder="Ask about dorms, prices, areas, amenities..."
-              disabled={loading}
-              className="flex-1 bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-gray-400 focus:border-primary/50 rounded-xl px-4 py-3"
-            />
-            <Button
-              onClick={() => sendMessage(0)}
-              disabled={loading || !input.trim()}
-              className="bg-gradient-to-r from-primary to-secondary hover:shadow-[0_0_30px_rgba(168,85,247,0.4)] transition-all rounded-xl px-6"
+          {/* Quick Actions Row (Above Input) */}
+          {messages.length > 0 && !loading && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="px-4 py-2 border-t border-border/50 bg-background/50 backdrop-blur-sm"
             >
-              {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Send className="w-5 h-5" />
-              )}
-            </Button>
-          </div>
-
-          {messages.length > 0 && (
-            <Button
-              onClick={handleReset}
-              variant="ghost"
-              size="sm"
-              className="mt-3 text-gray-400 hover:text-white hover:bg-white/10"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Reset Chat
-            </Button>
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">Quick:</span>
+                <button 
+                  onClick={() => handleChipClick("Show me dorms")}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-primary/10 text-primary hover:bg-primary/20 transition-colors whitespace-nowrap"
+                >
+                  <Home className="w-3 h-3" />
+                  Dorms
+                </button>
+                <button 
+                  onClick={() => handleChipClick("Show me dorms under $500")}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-green-500/10 text-green-600 hover:bg-green-500/20 transition-colors whitespace-nowrap"
+                >
+                  <DollarSign className="w-3 h-3" />
+                  Under $500
+                </button>
+                <button 
+                  onClick={() => handleChipClick("Find me compatible roommates")}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-secondary/10 text-secondary hover:bg-secondary/20 transition-colors whitespace-nowrap"
+                >
+                  <Users className="w-3 h-3" />
+                  Roommates
+                </button>
+              </div>
+            </motion.div>
           )}
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="text-center text-sm text-gray-400"
-        >
-          💡 Try: "Show me private rooms near LAU under $600" or "What amenities are available?"
-        </motion.div>
+          {/* Input Area */}
+          <div className="p-4 border-t border-border/50 bg-background/80 backdrop-blur-xl safe-area-bottom">
+            <form onSubmit={handleSubmit} className="flex gap-3">
+              <Input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => {
+                  const sanitized = sanitizeInput(e.target.value);
+                  setInput(sanitized.substring(0, 500));
+                }}
+                placeholder="Ask about dorms, prices, areas..."
+                disabled={loading}
+                className="flex-1 bg-muted/50 border-border/50 focus:border-primary/50 rounded-xl px-4 py-3"
+                aria-label="Chat message input"
+              />
+              <Button
+                type="submit"
+                disabled={loading || !input.trim()}
+                className="bg-gradient-to-r from-primary to-secondary hover:shadow-[0_0_30px_rgba(139,92,246,0.4)] transition-all rounded-xl px-6"
+                aria-label="Send message"
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            </form>
+
+            {messages.length > 0 && (
+              <Button
+                onClick={handleReset}
+                variant="ghost"
+                size="sm"
+                className="mt-2 text-muted-foreground hover:text-foreground"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Reset Chat
+              </Button>
+            )}
+          </div>
+        </div>
       </main>
 
-      <Footer />
+      {!isMobile && <Footer />}
     </div>
   );
 }
