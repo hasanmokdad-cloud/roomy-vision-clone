@@ -70,11 +70,12 @@ Deno.serve(async (req) => {
       throw new Error('Room is fully booked');
     }
 
-    // Calculate reservation fee (10% of deposit)
-    const depositAmount = providedDeposit || room.deposit || room.price;
-    const reservationFee = depositAmount * 0.10;
+    // Calculate deposit, commission, and total (server-side validation)
+    const baseDeposit = providedDeposit || room.deposit || room.price;
+    const commission = baseDeposit * 0.10;
+    const totalDue = baseDeposit + commission; // deposit × 1.10
 
-    // Create reservation record
+    // Create reservation record with all amounts
     const { data: reservation, error: reservationError } = await supabaseClient
       .from('reservations')
       .insert({
@@ -82,8 +83,10 @@ Deno.serve(async (req) => {
         room_id: roomId,
         dorm_id: room.dorm_id,
         status: 'pending_payment',
-        deposit_amount: depositAmount,
-        reservation_fee_amount: reservationFee,
+        deposit_amount: baseDeposit,
+        reservation_fee_amount: commission, // Keep for backward compatibility
+        commission_amount: commission,
+        total_amount: totalDue,
       })
       .select()
       .single();
@@ -117,7 +120,7 @@ Deno.serve(async (req) => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            amount: reservationFee,
+            amount: totalDue, // Charge full amount (deposit + commission)
             currency: 'USD',
             description: `Room reservation for ${room.name} at ${room.dorms.name}`,
             metadata: {
@@ -157,8 +160,9 @@ Deno.serve(async (req) => {
     console.log('Reservation checkout created:', {
       reservationId: reservation.id,
       roomId,
-      depositAmount,
-      reservationFee,
+      baseDeposit,
+      commission,
+      totalDue,
       studentId: student.id,
     });
 
@@ -167,7 +171,7 @@ Deno.serve(async (req) => {
         checkoutUrl,
         paymentId: whishPaymentId,
         reservationId: reservation.id,
-        amount: reservationFee,
+        amount: totalDue,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Home, AlertCircle, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { createReservationCheckout, isWhishConfigured } from '@/lib/payments/whishClient';
-import { RESERVATION_FEE_PERCENT } from '@/lib/payments/config';
+import { calculateTotalDue } from '@/lib/payments/config';
 import { useToast } from '@/hooks/use-toast';
 
 interface ReservationConfirmModalProps {
@@ -30,7 +30,7 @@ export function ReservationConfirmModal({
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   
-  const reservationFee = depositAmount * RESERVATION_FEE_PERCENT;
+  const { deposit, commission, total } = calculateTotalDue(depositAmount);
   const isPreviewMode = !isWhishConfigured();
 
   const handleConfirm = async () => {
@@ -106,24 +106,30 @@ export function ReservationConfirmModal({
 
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Full Deposit (per bed)</span>
-              <span className="font-medium">${depositAmount.toFixed(2)}</span>
+              <span className="text-muted-foreground">Room Deposit</span>
+              <span className="font-medium">${deposit.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="font-semibold">Reservation Fee (10%)</span>
-              <span className="text-lg font-bold text-primary">
-                ${reservationFee.toFixed(2)}
-              </span>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Commission (10%)</span>
+              <span className="font-medium">${commission.toFixed(2)}</span>
             </div>
           </div>
 
-          <div className="rounded-lg bg-muted p-3 space-y-2">
+          <Separator />
+
+          <div className="flex justify-between">
+            <span className="font-bold text-lg">Total Due Today</span>
+            <span className="text-xl font-bold text-primary">
+              ${total.toFixed(2)}
+            </span>
+          </div>
+
+          <div className="rounded-lg bg-muted p-3">
             <div className="flex gap-2">
               <AlertCircle className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
               <div className="text-sm text-muted-foreground">
-                <p className="font-medium text-foreground mb-1">Important Information</p>
-                <p>You are paying only <strong>10% of the deposit</strong> to secure your spot.</p>
-                <p className="mt-1">Each roommate pays their own deposit share.</p>
+                <p className="font-medium text-foreground mb-1">Payment Breakdown</p>
+                <p>This includes the room deposit plus our 10% commission.</p>
               </div>
             </div>
           </div>
@@ -143,7 +149,7 @@ export function ReservationConfirmModal({
             disabled={isProcessing}
             className="w-full sm:w-auto"
           >
-            {isProcessing ? 'Processing...' : isPreviewMode ? 'Continue (Preview)' : `Pay $${reservationFee.toFixed(2)}`}
+            {isProcessing ? 'Processing...' : isPreviewMode ? 'Continue (Preview)' : `Pay $${total.toFixed(2)}`}
           </Button>
         </DialogFooter>
       </DialogContent>
