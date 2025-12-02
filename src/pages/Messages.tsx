@@ -1227,84 +1227,72 @@ export default function Messages() {
     }
   };
 
-  // Mobile long-press recording
-  const handleMicTouchStart = (e: React.TouchEvent) => {
-    if (!isMobile) return;
+  // Mobile long-press recording with native event listeners
+  useEffect(() => {
+    if (!isMobile || !micButtonRef.current) return;
     
-    e.preventDefault();  // Block Safari long-press menu
-    e.stopPropagation();
+    const micButton = micButtonRef.current;
+    let pressTimer: NodeJS.Timeout;
     
-    // If permission not granted, show modal on short tap (not long-press)
-    if (permission !== 'granted') {
-      const tapTimer = setTimeout(() => {
-        // Long-press detected, but no permission - do nothing
-      }, 150);
+    const handleTouchStart = (e: TouchEvent) => {
+      e.preventDefault(); // Now works because { passive: false }
+      e.stopPropagation();
       
-      const handleShortTap = () => {
-        clearTimeout(tapTimer);
-        // Short tap detected - show permission modal
+      // Check permission FIRST - exit early if not granted
+      if (permission !== 'granted') {
         setShowMicPermissionModal(true);
-      };
+        return; // Don't proceed with any recording logic
+      }
       
-      document.addEventListener('touchend', handleShortTap, { once: true, passive: false });
-      return; // Don't proceed with recording logic
-    }
+      touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      
+      // Start recording after 220ms hold
+      pressTimer = setTimeout(() => {
+        startRecording();
+      }, 220);
+    };
     
-    // Permission granted - proceed with existing long-press recording logic
-    touchStartTimeRef.current = Date.now();
-    touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    
-    // Start recording after 220ms hold (WhatsApp-like)
-    const pressTimer = setTimeout(() => {
-      startRecording();
-    }, 220);
-
-    const handleTouchEnd = (ev: TouchEvent) => {
-      ev.preventDefault();
-      ev.stopPropagation();
+    const handleTouchEnd = (e: TouchEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
       clearTimeout(pressTimer);
       
-      // If we were recording, check gestures
-      if (recording) {
-        const deltaX = 0; // Would be calculated from touchmove
-        const deltaY = 0;
-
-        // Slide left to cancel
+      if (recording && !isLocked) {
+        // Check slide gestures
         if (slideOffset.x < -100) {
           cancelRecording();
-        }
-        // Slide up to lock
-        else if (slideOffset.y < -80) {
+        } else if (slideOffset.y < -80) {
           setIsLocked(true);
           setSlideOffset({ x: 0, y: 0 });
           toast({ title: 'Recording locked', description: 'Tap send when done' });
-        }
-        // Otherwise send
-        else if (!isLocked) {
+        } else {
           stopRecording();
         }
       }
-      
-      // Clean up listeners
-      document.removeEventListener('touchend', handleTouchEnd);
-      document.removeEventListener('touchmove', handleTouchMove);
+      setSlideOffset({ x: 0, y: 0 });
     };
-
-    const handleTouchMove = (ev: TouchEvent) => {
-      ev.preventDefault();  // Block default scrolling while recording
-      ev.stopPropagation();
-      
+    
+    const handleTouchMove = (e: TouchEvent) => {
       if (!recording) return;
+      e.preventDefault();
+      e.stopPropagation();
       
-      const deltaX = ev.touches[0].clientX - touchStartPosRef.current.x;
-      const deltaY = ev.touches[0].clientY - touchStartPosRef.current.y;
-      
+      const deltaX = e.touches[0].clientX - touchStartPosRef.current.x;
+      const deltaY = e.touches[0].clientY - touchStartPosRef.current.y;
       setSlideOffset({ x: deltaX, y: deltaY });
     };
-
-    document.addEventListener('touchend', handleTouchEnd, { once: true, passive: false });
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-  };
+    
+    // Attach with { passive: false } to allow preventDefault
+    micButton.addEventListener('touchstart', handleTouchStart, { passive: false });
+    micButton.addEventListener('touchend', handleTouchEnd, { passive: false });
+    micButton.addEventListener('touchmove', handleTouchMove, { passive: false });
+    
+    return () => {
+      micButton.removeEventListener('touchstart', handleTouchStart);
+      micButton.removeEventListener('touchend', handleTouchEnd);
+      micButton.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, [isMobile, permission, recording, isLocked, slideOffset.x, slideOffset.y]);
 
   const cancelRecording = () => {
     shouldUploadVoiceRef.current = false;
@@ -1953,7 +1941,6 @@ export default function Messages() {
                         size="icon"
                         ref={micButtonRef}
                         onClick={handleVoiceButtonClick}
-                        onTouchStart={handleMicTouchStart}
                         className="shrink-0 voice-record-button"
                         aria-label="Record voice message"
                         title={isMobile ? 'Hold to record voice message' : 'Click to record voice message'}

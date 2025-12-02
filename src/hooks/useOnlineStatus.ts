@@ -66,12 +66,26 @@ export function useOnlineStatus(userId: string | null, conversationId?: string) 
     };
 
     // Handle page unload
-    const handleBeforeUnload = () => {
-      // Use sendBeacon for reliable offline status
-      navigator.sendBeacon(
-        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/user_presence?user_id=eq.${userId}`,
-        JSON.stringify({ is_online: false, updated_at: new Date().toISOString() })
-      );
+    const handleBeforeUnload = async () => {
+      // Use fetch with keepalive for reliable offline status with proper headers
+      try {
+        await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/user_presence?user_id=eq.${userId}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({ is_online: false, updated_at: new Date().toISOString() }),
+            keepalive: true
+          }
+        );
+      } catch (e) {
+        // Ignore errors on unload
+      }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);

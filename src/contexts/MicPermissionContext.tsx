@@ -7,6 +7,7 @@ interface MicPermissionContextType {
   isRequesting: boolean;
   checkPermission: () => Promise<void>;
   requestPermission: () => Promise<boolean>;
+  recheckPermission: () => Promise<boolean>;
 }
 
 const MicPermissionContext = createContext<MicPermissionContextType | undefined>(undefined);
@@ -82,12 +83,27 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const recheckPermission = async (): Promise<boolean> => {
+    // Force re-check from browser, not localStorage
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      setPermission('granted');
+      localStorage.setItem('roomyMicPermission', 'granted');
+      return true;
+    } catch {
+      setPermission('denied');
+      localStorage.removeItem('roomyMicPermission');
+      return false;
+    }
+  };
+
   useEffect(() => {
     checkPermission();
   }, []);
 
   return (
-    <MicPermissionContext.Provider value={{ permission, isRequesting, checkPermission, requestPermission }}>
+    <MicPermissionContext.Provider value={{ permission, isRequesting, checkPermission, requestPermission, recheckPermission }}>
       {children}
     </MicPermissionContext.Provider>
   );

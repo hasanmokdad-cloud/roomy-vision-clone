@@ -20,7 +20,13 @@ export function VoiceWaveform({ audioUrl, duration, isSender = false }: VoiceWav
     audioRef.current = audio;
 
     audio.addEventListener('loadedmetadata', () => {
-      setAudioDuration(Math.floor(audio.duration));
+      // Check for valid duration (not Infinity or NaN)
+      if (isFinite(audio.duration) && audio.duration > 0) {
+        setAudioDuration(Math.floor(audio.duration));
+      } else if (duration && isFinite(duration)) {
+        // Fallback to prop duration if provided
+        setAudioDuration(duration);
+      }
     });
 
     audio.addEventListener('timeupdate', () => {
@@ -54,6 +60,7 @@ export function VoiceWaveform({ audioUrl, duration, isSender = false }: VoiceWav
   };
 
   const formatTime = (seconds: number) => {
+    if (!isFinite(seconds) || seconds < 0) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
