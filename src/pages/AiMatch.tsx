@@ -11,12 +11,14 @@ import { DormMatchCard } from "@/components/ai-match/DormMatchCard";
 import { RoommateMatchCard } from "@/components/ai-match/RoommateMatchCard";
 import { RoommateComparison } from "@/components/ai-match/RoommateComparison";
 import { DormComparison } from "@/components/listings/DormComparison";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { TierSelectionCard } from "@/components/ai-match/TierSelectionCard";
+import { Card, CardContent } from "@/components/ui/card";
 import { Home, Users, Brain, Bug } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { shouldShowCompatibilityScore, isVipPlan, type AiMatchPlan } from "@/utils/tierLogic";
-import { TierSelectionCard } from "@/components/ai-match/TierSelectionCard";
-import { Card, CardContent } from "@/components/ui/card";
+import { EmptyMatchState } from "@/components/ai-match/EmptyMatchState";
+import { MatchModeTabs } from "@/components/ai-match/MatchModeTabs";
+import { motion } from "framer-motion";
 
 type ProfileStatus = 'loading' | 'incomplete' | 'complete';
 type MatchMode = 'dorms' | 'roommates';
@@ -347,45 +349,34 @@ const AiMatch = () => {
       {!isMobile && <Navbar />}
       
       <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-3">
-          <h1 className="text-4xl md:text-5xl font-bold gradient-text">
-            {getHeaderTitle()}
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Powered by Gemini AI, personalized just for you
-          </p>
+        {/* Gradient Header */}
+        <div className="text-center space-y-3 relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 rounded-2xl blur-3xl -z-10" />
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
+              {getHeaderTitle()}
+            </h1>
+            <p className="text-muted-foreground text-lg flex items-center justify-center gap-2">
+              <Brain className="w-5 h-5 text-primary" />
+              Powered by Gemini AI
+            </p>
+          </motion.div>
         </div>
 
-        {/* Mode Toggle */}
+        {/* Mode Tabs for Combined */}
         {showToggle && (
-          <div className="flex justify-center">
-            <ToggleGroup 
-              type="single" 
-              value={matchMode} 
-              onValueChange={handleModeChange}
-              className="bg-muted p-1 rounded-lg"
-            >
-              {showDormTab && (
-                <ToggleGroupItem 
-                  value="dorms" 
-                  className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground px-6 py-2"
-                >
-                  <Home className="mr-2 w-4 h-4" />
-                  Find Dorms
-                </ToggleGroupItem>
-              )}
-              {showRoommateTab && (
-                <ToggleGroupItem 
-                  value="roommates"
-                  className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground px-6 py-2"
-                >
-                  <Users className="mr-2 w-4 h-4" />
-                  Find Roommates
-                </ToggleGroupItem>
-              )}
-            </ToggleGroup>
-          </div>
+          <MatchModeTabs
+            activeMode={matchMode as any}
+            onModeChange={(mode) => setMatchMode(mode as MatchMode)}
+            counts={{
+              dorms: matchMode === 'dorms' ? matches.length : undefined,
+              roommates: matchMode === 'roommates' ? matches.length : undefined
+            }}
+          />
         )}
 
         {/* Tier Selection - Show only on roommate views */}
@@ -495,13 +486,12 @@ const AiMatch = () => {
           </>
         )}
 
-        {/* No Matches */}
+        {/* No Matches - Empty State */}
         {!loading && matches.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">
-              No matches found. Try updating your preferences in your profile.
-            </p>
-          </div>
+          <EmptyMatchState 
+            type={matchMode}
+            hasPersonalityTest={studentProfile?.personality_test_completed || false}
+          />
         )}
       </div>
 
