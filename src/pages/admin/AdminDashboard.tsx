@@ -21,6 +21,7 @@ import {
   Key,
   MessageSquare,
   Activity,
+  Wallet,
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -424,6 +425,19 @@ export default function AdminDashboard() {
               <Activity className="w-12 h-12" />
               <h3 className="text-xl font-bold">AI Diagnostics</h3>
               <p className="text-sm opacity-90">Performance & feedback</p>
+            </div>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/admin/wallet")}
+            className="relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br from-purple-500 to-blue-400 text-white shadow-xl hover:shadow-2xl transition-all group"
+          >
+            <div className="flex flex-col items-center gap-4">
+              <Wallet className="w-12 h-12" />
+              <h3 className="text-xl font-bold">Admin Payout Wallet</h3>
+              <p className="text-sm opacity-90">Configure commission payouts & view revenue</p>
             </div>
           </motion.button>
         </div>

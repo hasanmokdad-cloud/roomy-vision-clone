@@ -1,4 +1,4 @@
-import { Home, Building2, Users, BarChart3, FileText, Settings, Star, UserCheck, Shield, Inbox, MessagesSquare, Brain } from 'lucide-react';
+import { Home, Building2, Users, BarChart3, FileText, Settings, Star, UserCheck, Shield, Inbox, MessagesSquare, Brain, Wallet } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
   Sidebar,
@@ -16,6 +16,7 @@ const menuItems = [
   { title: 'Dashboard', url: '/admin', icon: Home },
   { title: 'All Chats', url: '/admin/chats', icon: MessagesSquare },
   { title: 'Messages Inbox', url: '/admin/messages', icon: Inbox },
+  { title: 'Wallet & Payouts', url: '/admin/wallet', icon: Wallet },
   { title: 'RLS Debugger', url: '/admin/rls-debugger', icon: Shield },
   { title: 'Manage Dorms', url: '/owner', icon: Building2 },
   { title: 'Review Moderation', url: '/owner/reviews', icon: Star },
