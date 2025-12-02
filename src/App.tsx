@@ -53,6 +53,7 @@ const ReservationConfirmation = lazy(() => import("./pages/ReservationConfirmati
 const ReservationSuccess = lazy(() => import("./pages/ReservationSuccess"));
 const ReservationFailed = lazy(() => import("./pages/ReservationFailed"));
 const BoostProfile = lazy(() => import("./pages/BoostProfile"));
+const OwnerEarnings = lazy(() => import("./pages/owner/OwnerEarnings"));
 const BulkRoomOps = lazy(() => import("./pages/owner/BulkRoomOps"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 const AdminStudents = lazy(() => import("./pages/admin/AdminStudents"));
@@ -217,6 +218,8 @@ const AppRoutes = () => {
           <Route path="/owner/bulk-operations" element={<ProtectedRoute element={<BulkRoomOps />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/reviews" element={<ProtectedRoute element={<ReviewManagement />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/calendar" element={<ProtectedRoute element={<OwnerCalendar />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/earnings" element={<ProtectedRoute element={<OwnerEarnings />} allowedRoles={["owner", "admin"]} />} />
+
 
           {/* Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />} />

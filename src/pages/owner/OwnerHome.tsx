@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { DormForm } from '@/components/owner/DormForm';
 import DormEditModal from '@/components/admin/DormEditModal';
 import { NotificationBell } from '@/components/owner/NotificationBell';
+import { PayoutSetupBanner } from '@/components/owner/PayoutSetupBanner';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -401,6 +402,9 @@ export default function OwnerHome() {
           ))}
         </div>
 
+        {/* Payout Setup Banner */}
+        {ownerId && <PayoutSetupBanner ownerId={ownerId} />}
+
         {/* Calendar & Availability Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="glass-hover">
@@ -439,6 +443,27 @@ export default function OwnerHome() {
                 >
                   <Clock className="w-4 h-4" />
                   Manage Schedule
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-hover">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold mb-2">Your Earnings</h3>
+                  <p className="text-foreground/60">
+                    Track reservations payouts and revenue
+                  </p>
+                </div>
+                <Button
+                  onClick={() => navigate('/owner/earnings')}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <TrendingUp className="w-4 h-4" />
+                  View Earnings
                 </Button>
               </div>
             </CardContent>

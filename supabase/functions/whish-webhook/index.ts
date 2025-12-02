@@ -117,15 +117,31 @@ async function handleReservationPayment(supabaseClient: any, payload: any, metad
     return;
   }
 
-  // Update reservation status
+  // Calculate payout amounts (server-side, never trust client)
+  const baseDeposit = reservation.deposit_amount;
+  const roomyFee = baseDeposit * 0.10;
+  const ownerPayout = baseDeposit; // Owner gets full deposit
+
+  // Update reservation status with payout details
   await supabaseClient
     .from('reservations')
     .update({
       status: 'paid',
       paid_at: new Date().toISOString(),
       whish_payment_id: payload.id,
+      owner_payout_amount: ownerPayout,
+      roomy_commission_amount: roomyFee,
+      owner_payout_status: 'pending', // Ready for payout processing
+      roomy_commission_captured: false,
     })
     .eq('id', reservationId);
+
+  console.log('Payout calculated:', {
+    baseDeposit,
+    roomyFee,
+    ownerPayout,
+    total: baseDeposit + roomyFee,
+  });
 
   // Create payment record with total amount
   await supabaseClient

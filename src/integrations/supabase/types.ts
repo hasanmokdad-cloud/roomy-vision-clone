@@ -1371,6 +1371,9 @@ export type Database = {
           last_login: string | null
           notify_email: boolean | null
           notify_whatsapp: boolean | null
+          payout_method: string | null
+          payout_notes: string | null
+          payout_status: string | null
           phone_number: string | null
           phone_verified: boolean | null
           profile_photo_url: string | null
@@ -1378,6 +1381,7 @@ export type Database = {
           updated_at: string | null
           user_id: string
           whatsapp_language: string | null
+          whish_account_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -1388,6 +1392,9 @@ export type Database = {
           last_login?: string | null
           notify_email?: boolean | null
           notify_whatsapp?: boolean | null
+          payout_method?: string | null
+          payout_notes?: string | null
+          payout_status?: string | null
           phone_number?: string | null
           phone_verified?: boolean | null
           profile_photo_url?: string | null
@@ -1395,6 +1402,7 @@ export type Database = {
           updated_at?: string | null
           user_id: string
           whatsapp_language?: string | null
+          whish_account_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -1405,6 +1413,9 @@ export type Database = {
           last_login?: string | null
           notify_email?: boolean | null
           notify_whatsapp?: boolean | null
+          payout_method?: string | null
+          payout_notes?: string | null
+          payout_status?: string | null
           phone_number?: string | null
           phone_verified?: boolean | null
           profile_photo_url?: string | null
@@ -1412,6 +1423,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           whatsapp_language?: string | null
+          whish_account_id?: string | null
         }
         Relationships: []
       }
@@ -1618,9 +1630,15 @@ export type Database = {
           expires_at: string | null
           id: string
           meta: Json | null
+          owner_payout_amount: number | null
+          owner_payout_attempts: number | null
+          owner_payout_status: string | null
+          owner_payout_timestamp: string | null
           paid_at: string | null
+          payout_batch_id: string | null
           reservation_fee_amount: number
           room_id: string
+          roomy_commission_captured: boolean | null
           status: string
           student_id: string
           total_amount: number | null
@@ -1636,9 +1654,15 @@ export type Database = {
           expires_at?: string | null
           id?: string
           meta?: Json | null
+          owner_payout_amount?: number | null
+          owner_payout_attempts?: number | null
+          owner_payout_status?: string | null
+          owner_payout_timestamp?: string | null
           paid_at?: string | null
+          payout_batch_id?: string | null
           reservation_fee_amount: number
           room_id: string
+          roomy_commission_captured?: boolean | null
           status?: string
           student_id: string
           total_amount?: number | null
@@ -1654,9 +1678,15 @@ export type Database = {
           expires_at?: string | null
           id?: string
           meta?: Json | null
+          owner_payout_amount?: number | null
+          owner_payout_attempts?: number | null
+          owner_payout_status?: string | null
+          owner_payout_timestamp?: string | null
           paid_at?: string | null
+          payout_batch_id?: string | null
           reservation_fee_amount?: number
           room_id?: string
+          roomy_commission_captured?: boolean | null
           status?: string
           student_id?: string
           total_amount?: number | null
