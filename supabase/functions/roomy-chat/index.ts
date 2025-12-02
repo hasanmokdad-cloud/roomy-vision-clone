@@ -387,17 +387,17 @@ serve(async (req) => {
       );
     }
 
-    // ROOM CAPACITY QUERY DETECTION: Handle questions about specific room availability
+    // ROOM CAPACITY QUERY DETECTION: Handle questions about specific room availability with real-time data
     const roomCapacityRegex = /(?:space|available|spots?|beds?|capacity|full|room)\s+(?:in|at|for)?\s*(?:room\s*)?([A-Za-z0-9]+)/i;
     const roomCapacityMatch = message.toLowerCase().match(roomCapacityRegex);
     
     if (roomCapacityMatch && (message.toLowerCase().includes('space') || message.toLowerCase().includes('available') || message.toLowerCase().includes('full'))) {
       const roomIdentifier = roomCapacityMatch[1];
       
-      // Try to find the room in the database
+      // Enhanced room query with real-time availability
       const { data: rooms } = await supabase
         .from('rooms')
-        .select('*, dorm:dorms(dorm_name, name)')
+        .select('*, dorm:dorms(dorm_name, name, gender_preference, monthly_price)')
         .or(`name.ilike.%${roomIdentifier}%,room_number.ilike.%${roomIdentifier}%`)
         .limit(1);
       
@@ -406,9 +406,26 @@ serve(async (req) => {
         const available = (room.capacity || 0) - (room.capacity_occupied || 0);
         const dormName = room.dorm?.dorm_name || room.dorm?.name || 'the dorm';
         
+        // PROACTIVE GENDER/BUDGET WARNINGS
+        let warningMessage = '';
+        if (studentProfile?.gender && room.dorm?.gender_preference) {
+          const studentGender = studentProfile.gender.toLowerCase();
+          const dormGender = room.dorm.gender_preference.toLowerCase();
+          
+          if ((dormGender === 'female' && studentGender !== 'female') ||
+              (dormGender === 'male' && studentGender !== 'male')) {
+            warningMessage = `\n\n⚠️ **Gender Mismatch**: ${dormName} is ${dormGender}-only, but your profile indicates ${studentGender}. This dorm isn't available to you.`;
+          }
+        }
+
+        if (studentProfile?.budget && room.dorm?.monthly_price && room.dorm.monthly_price > studentProfile.budget) {
+          const overage = room.dorm.monthly_price - studentProfile.budget;
+          warningMessage += `\n\n💰 **Budget Alert**: This dorm is $${overage}/month over your $${studentProfile.budget} budget.`;
+        }
+        
         let capacityResponse = '';
         if (available <= 0) {
-          capacityResponse = `Room ${room.name} at ${dormName} is currently **FULL** (${room.capacity_occupied}/${room.capacity} beds occupied). 😔\n\n`;
+          capacityResponse = `Room ${room.name} at ${dormName} is currently **FULL** (${room.capacity_occupied}/${room.capacity} beds occupied). 😔${warningMessage}\n\n`;
           
           // Suggest other rooms in the same dorm
           const { data: otherRooms } = await supabase
@@ -430,11 +447,29 @@ serve(async (req) => {
             capacityResponse += `Unfortunately, all rooms at ${dormName} are currently full. Would you like me to suggest similar dorms nearby?`;
           }
         } else {
-          capacityResponse = `Great news! 🎉 Room ${room.name} at ${dormName} has **${available} spot${available === 1 ? '' : 's'} available** (${room.capacity_occupied || 0}/${room.capacity} beds occupied).\n\nWould you like to know more about this dorm or see other options?`;
+          capacityResponse = `Great news! 🎉 Room ${room.name} at ${dormName} has **${available} spot${available === 1 ? '' : 's'} available** (${room.capacity_occupied || 0}/${room.capacity} beds occupied).${warningMessage}\n\nWould you like to know more about this dorm or see other options?`;
+        }
+        
+        // Add follow-up action buttons based on warnings
+        const followUpActions = [];
+        if (warningMessage.includes('Gender Mismatch') && studentProfile?.gender) {
+          followUpActions.push({ 
+            label: `Show ${studentProfile.gender} dorms`, 
+            query: `Find ${studentProfile.gender} dorms near my university` 
+          });
+        }
+        if (warningMessage.includes('Budget Alert') && studentProfile?.budget) {
+          followUpActions.push({ 
+            label: 'Show cheaper options', 
+            query: `Find dorms under $${studentProfile.budget}` 
+          });
         }
         
         return new Response(
-          JSON.stringify({ response: capacityResponse }),
+          JSON.stringify({ 
+            response: capacityResponse,
+            followUpActions: followUpActions.length > 0 ? followUpActions : undefined
+          }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -750,10 +785,15 @@ serve(async (req) => {
           roommatesContext += "\n";
         });
         
-        // Add tier-specific instructions
+        // Add tier-specific instructions with STRICT personality data stripping for basic
         if (userTier === 'basic') {
-          roommatesContext += "\nIMPORTANT: This user has Basic tier. Do NOT mention personality matching. Only discuss basic preferences.\n";
-          roommatesContext += "If they ask about personality compatibility, say: 'Personality matching is available with Advanced Match or VIP Match.'\n";
+          roommatesContext += "\n\n⚠️ CRITICAL TIER RESTRICTION: This user has BASIC tier.\n";
+          roommatesContext += "DO NOT under ANY circumstances mention:\n";
+          roommatesContext += "- Personality traits, scores, or compatibility\n";
+          roommatesContext += "- Sleep schedules, cleanliness levels, or social preferences\n";
+          roommatesContext += "- Any personality test results or insights\n";
+          roommatesContext += "ONLY discuss: university, budget, gender, and basic room preferences.\n";
+          roommatesContext += "If they ask about personality: 'Personality matching is available with Advanced Match ($4.99) or VIP Match ($9.99).'\n";
         } else if (userTier === 'advanced') {
           roommatesContext += "\nThis user has Advanced tier. You can mention personality factors briefly but not in detail.\n";
           roommatesContext += "Example: 'Based on personality factors, your match score with Sara is above average.'\n";

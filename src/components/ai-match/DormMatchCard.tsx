@@ -107,6 +107,13 @@ export const DormMatchCard = ({ dorm, index, onDismiss }: DormMatchCardProps) =>
               </span>
             </div>
 
+            {/* Budget Warning Badge */}
+            {dorm.budgetWarning && (
+              <Badge variant="outline" className="text-amber-500 border-amber-500 text-xs">
+                ⚠️ {dorm.budgetWarning}
+              </Badge>
+            )}
+
             {/* Match Reasons */}
             {dorm.reasoning && (
               <p className="text-sm text-muted-foreground italic">
