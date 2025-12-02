@@ -400,6 +400,7 @@ const AiMatch = () => {
               onUpgrade={handleUpgrade}
               onDowngrade={handleDowngrade}
               isLoading={loading}
+              studentId={studentProfile?.id}
             />
             
             {/* Basic Tier Messaging */}

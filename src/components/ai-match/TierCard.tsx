@@ -1,8 +1,11 @@
-import { Check, ArrowUpRight, ArrowDownRight, Crown, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { Check, ArrowUpRight, ArrowDownRight, Crown, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { AiMatchPlan } from '@/utils/tierLogic';
+import { PaymentModal } from '@/components/payments/PaymentModal';
+import { MATCH_PLAN_PRICES } from '@/lib/payments/config';
 
 interface TierCardProps {
   tier: AiMatchPlan;
@@ -10,6 +13,7 @@ interface TierCardProps {
   onUpgrade: (tier: AiMatchPlan) => void;
   onDowngrade: (tier: AiMatchPlan) => void;
   isLoading?: boolean;
+  studentId?: string;
 }
 
 const tierConfig = {
@@ -59,10 +63,12 @@ export const TierCard = ({
   currentTier, 
   onUpgrade, 
   onDowngrade,
-  isLoading 
+  isLoading,
+  studentId 
 }: TierCardProps) => {
   const config = tierConfig[tier];
   const BadgeIcon = config.badge.icon;
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   
   const currentIndex = tierOrder.indexOf(currentTier);
   const tierIndex = tierOrder.indexOf(tier);
@@ -74,10 +80,24 @@ export const TierCard = ({
   const handleClick = () => {
     if (isCurrentPlan) return;
     if (isUpgrade) {
-      onUpgrade(tier);
+      // For paid plans, open payment modal
+      if (tier !== 'basic') {
+        setShowPaymentModal(true);
+      } else {
+        onUpgrade(tier);
+      }
     } else {
       onDowngrade(tier);
     }
+  };
+
+  const handlePaymentSuccess = (paymentId: string) => {
+    setShowPaymentModal(false);
+    onUpgrade(tier);
+  };
+
+  const handlePaymentCancel = () => {
+    setShowPaymentModal(false);
   };
 
   const getButtonContent = () => {
@@ -178,6 +198,23 @@ export const TierCard = ({
           </li>
         ))}
       </ul>
+
+      {/* Payment Modal for Upgrades */}
+      {tier !== 'basic' && (
+        <PaymentModal
+          open={showPaymentModal}
+          onOpenChange={setShowPaymentModal}
+          mode="ai_match_plan"
+          amount={MATCH_PLAN_PRICES[tier]}
+          description={`${config.name} Match plan`}
+          metadata={{
+            planType: tier as 'advanced' | 'vip',
+            studentId,
+          }}
+          onSuccess={handlePaymentSuccess}
+          onCancel={handlePaymentCancel}
+        />
+      )}
     </div>
   );
 };
