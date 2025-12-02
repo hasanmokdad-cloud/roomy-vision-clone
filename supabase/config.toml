@@ -51,5 +51,8 @@ verify_jwt = true
 [functions.roomy-create-match-plan-checkout]
 verify_jwt = true
 
+[functions.process-owner-payouts]
+verify_jwt = false
+
 [functions.whish-webhook]
 verify_jwt = false

@@ -180,6 +180,65 @@ export default function AdminAnalytics() {
         </div>
       )}
 
+      {/* Revenue & Payouts Section */}
+      <Card className="glass-hover">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold gradient-text">Revenue & Payouts</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Global KPIs */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="bg-muted/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Platform Commission
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  ${paymentStats?.totalCommission.toFixed(2) || '0.00'}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Total captured (10%)
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-muted/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Owner Payouts Completed
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">
+                  {paymentStats?.statusCounts.paid || 0}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Successful payouts
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-muted/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Owner Payouts Pending
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-orange-600">
+                  {paymentStats?.statusCounts.pending || 0}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Awaiting payout
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="glass-hover rounded-2xl p-6">
         <h2 className="text-xl font-bold mb-4">Average Price by University</h2>
         <ResponsiveContainer width="100%" height={300}>
