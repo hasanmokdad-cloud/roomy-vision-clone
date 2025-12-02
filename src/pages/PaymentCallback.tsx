@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Loader2, Home, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { sendReservationWelcomeMessage } from '@/lib/reservationNotifications';
 
 interface PaymentData {
   id: string;
@@ -35,6 +36,46 @@ export default function PaymentCallback() {
   const [payment, setPayment] = useState<PaymentData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [processComplete, setProcessComplete] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+
+  const handleContinue = useCallback(() => {
+    if (!payment) {
+      navigate('/');
+      return;
+    }
+
+    if (status === 'success') {
+      if (payment.payment_type === 'room_deposit') {
+        navigate(`/reservation/success?reservationId=${payment.reservation_id}`);
+      } else {
+        navigate('/ai-match');
+      }
+    } else {
+      if (payment.payment_type === 'room_deposit') {
+        navigate('/reservation/failed');
+      } else {
+        navigate('/ai-match');
+      }
+    }
+  }, [payment, status, navigate]);
+
+  // Auto-redirect countdown
+  useEffect(() => {
+    if (!processComplete || isProcessing) return;
+    
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleContinue();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [processComplete, isProcessing, handleContinue]);
 
   useEffect(() => {
     const processPaymentCallback = async () => {
@@ -113,6 +154,11 @@ export default function PaymentCallback() {
               })
               .eq('id', student.id);
           }
+
+          // Send automatic welcome message to owner
+          if (metadata.dormId) {
+            await sendReservationWelcomeMessage(user.id, metadata.dormId, metadata.roomId);
+          }
         }
 
         toast({
@@ -167,27 +213,6 @@ export default function PaymentCallback() {
     }
 
     setProcessComplete(true);
-  };
-
-  const handleContinue = () => {
-    if (!payment) {
-      navigate('/');
-      return;
-    }
-
-    if (status === 'success') {
-      if (payment.payment_type === 'room_deposit') {
-        navigate(`/reservation/success?reservationId=${payment.reservation_id}`);
-      } else {
-        navigate('/ai-match');
-      }
-    } else {
-      if (payment.payment_type === 'room_deposit') {
-        navigate('/reservation/failed');
-      } else {
-        navigate('/ai-match');
-      }
-    }
   };
 
   if (isProcessing) {
@@ -287,6 +312,12 @@ export default function PaymentCallback() {
               : 'Try Again'
             }
           </Button>
+          
+          {/* Countdown indicator */}
+          <p className="text-sm text-muted-foreground text-center">
+            Redirecting in {countdown} second{countdown !== 1 ? 's' : ''}...
+          </p>
+          
           {!isSuccess && (
             <Button variant="outline" onClick={() => navigate('/')} className="w-full">
               Return Home
