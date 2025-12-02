@@ -662,26 +662,6 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                       exit={{ opacity: 0, height: 0 }}
                       className="pt-4 border-t border-border"
                     >
-                      {!isRoomFull && (
-                        <div className="flex items-center justify-between flex-wrap gap-4">
-                          <div className="space-y-1">
-                            <Label className="text-base font-semibold text-foreground flex items-center gap-2">
-                              <Users className="w-4 h-4" />
-                              Need a Roommate for Your Current Place?
-                            </Label>
-                            <p className="text-sm text-foreground/60">
-                              Find compatible people to share your existing accommodation
-                            </p>
-                          </div>
-                          <Switch
-                            checked={needsRoommateCurrentPlace}
-                            onCheckedChange={(checked) => {
-                              setNeedsRoommateCurrentPlace(checked);
-                              setValue('needs_roommate_current_place', checked);
-                            }}
-                          />
-                        </div>
-                      )}
                       
                       {/* Current Dorm Selection */}
                       <div id="current-dorm-section" className="space-y-4 pt-4 border-t border-border mt-4">
@@ -707,7 +687,15 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                         {currentDormId && (
                           <div>
                             <Label htmlFor="current_room" className="text-sm text-foreground/60">Room</Label>
-                            <Select value={currentRoomId} onValueChange={setCurrentRoomId}>
+                            <Select value={currentRoomId} onValueChange={(value) => {
+                              setCurrentRoomId(value);
+                              // Auto-reset roommate toggle if selecting a single room
+                              const selectedRoom = availableRooms.find(r => r.id === value);
+                              if (selectedRoom && (isSingleRoom(selectedRoom.type) || selectedRoom.capacity === 1)) {
+                                setNeedsRoommateCurrentPlace(false);
+                                setValue('needs_roommate_current_place', false);
+                              }
+                            }}>
                               <SelectTrigger id="current_room" className="mt-1">
                                 <SelectValue placeholder="Select your current room" />
                               </SelectTrigger>
@@ -720,6 +708,39 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                               </SelectContent>
                             </Select>
                           </div>
+                        )}
+                        
+                        {/* Need a Roommate Toggle - only for multi-bed rooms */}
+                        {currentRoomId && (() => {
+                          const selectedRoom = availableRooms.find(r => r.id === currentRoomId);
+                          const isRoomSingleOccupancy = selectedRoom 
+                            ? (isSingleRoom(selectedRoom.type) || selectedRoom.capacity === 1) 
+                            : true;
+                          return !isRoomSingleOccupancy && !isRoomFull;
+                        })() && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="flex items-center justify-between flex-wrap gap-4 p-4 bg-secondary/10 rounded-lg"
+                          >
+                            <div className="space-y-1">
+                              <Label className="text-base font-semibold text-foreground flex items-center gap-2">
+                                <Users className="w-4 h-4" />
+                                Need a Roommate for Your Current Place?
+                              </Label>
+                              <p className="text-sm text-foreground/60">
+                                Find compatible people to share your existing accommodation
+                              </p>
+                            </div>
+                            <Switch
+                              checked={needsRoommateCurrentPlace}
+                              onCheckedChange={(checked) => {
+                                setNeedsRoommateCurrentPlace(checked);
+                                setValue('needs_roommate_current_place', checked);
+                              }}
+                            />
+                          </motion.div>
                         )}
                         
                         {/* Leaving Your Room Toggle */}
