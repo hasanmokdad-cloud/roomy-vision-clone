@@ -88,6 +88,8 @@ const StudentPayments = lazy(() => import("./pages/student/StudentPayments"));
 const AdminPaymentsDashboard = lazy(() => import("./pages/admin/AdminPaymentsDashboard"));
 const OwnerRefundRequests = lazy(() => import("./pages/owner/OwnerRefundRequests"));
 const Legal = lazy(() => import("./pages/Legal"));
+const MockWhishCheckout = lazy(() => import("./pages/MockWhishCheckout"));
+const PaymentCallback = lazy(() => import("./pages/PaymentCallback"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -211,6 +213,10 @@ const AppRoutes = () => {
           
           {/* Legal Pages */}
           <Route path="/legal/:page" element={<Legal />} />
+          
+          {/* Payment Flow Pages */}
+          <Route path="/mock-whish-checkout" element={<ProtectedRoute element={<MockWhishCheckout />} requiredRole="student" />} />
+          <Route path="/payment/callback" element={<ProtectedRoute element={<PaymentCallback />} requiredRole="student" />} />
 
           {/* Owner Routes - Admins can access all owner routes */}
           <Route path="/owner" element={<ProtectedRoute element={<OwnerHome />} allowedRoles={["owner", "admin"]} />} />

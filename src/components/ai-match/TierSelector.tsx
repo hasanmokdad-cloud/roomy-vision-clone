@@ -12,13 +12,15 @@ interface TierSelectorProps {
   onUpgrade: (tier: AiMatchPlan) => Promise<void>;
   onDowngrade: (tier: AiMatchPlan) => Promise<void>;
   isLoading?: boolean;
+  studentId?: string;
 }
 
 export const TierSelector = ({ 
   currentTier, 
   onUpgrade, 
   onDowngrade,
-  isLoading 
+  isLoading,
+  studentId 
 }: TierSelectorProps) => {
   const isPreviewMode = !isWhishConfigured();
   const [downgradeTarget, setDowngradeTarget] = useState<AiMatchPlan | null>(null);
@@ -79,6 +81,7 @@ export const TierSelector = ({
             onUpgrade={onUpgrade}
             onDowngrade={handleDowngradeRequest}
             isLoading={isLoading}
+            studentId={studentId}
           />
         ))}
       </div>
