@@ -235,6 +235,16 @@
     touch-action: none;
   }
 
+  /* Mobile stability fixes */
+  .recording-active {
+    overscroll-behavior-y: contain;
+  }
+
+  /* Prevent scroll jump during long-press */
+  .chat-message-bubble {
+    touch-action: none;
+  }
+
   /* Dark Glass System */
   .glass {
     background: rgba(255, 255, 255, 0.1);
