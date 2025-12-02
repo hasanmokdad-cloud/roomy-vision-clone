@@ -12,6 +12,7 @@ import { ReservationConfirmModal } from '@/components/reservations/ReservationCo
 import { ImageGallery } from '@/components/shared/ImageGallery';
 import { VideoPlayerModal } from '@/components/shared/VideoPlayerModal';
 import { motion } from 'framer-motion';
+import { getStudentDisplayDeposit } from '@/lib/payments/config';
 
 interface EnhancedRoomCardProps {
   room: {
@@ -138,18 +139,19 @@ export function EnhancedRoomCard({
       return;
     }
 
-    const deposit = room.price;
+    const baseDeposit = room.deposit || room.price;
+    const displayDeposit = getStudentDisplayDeposit(baseDeposit);
     
     navigate('/messages', {
       state: {
         openThreadWithUserId: ownerData.user_id,
-        initialMessage: `Hello! I am interested in ${room.name} (${room.type}) at ${dormName}.\n\nPrice: $${room.price}/month\nDeposit: $${deposit}\n\nIs it still available?`,
+        initialMessage: `Hello! I am interested in ${room.name} (${room.type}) at ${dormName}.\n\nPrice: $${room.price}/month\nDeposit: $${displayDeposit}\n\nIs it still available?`,
         roomPreview: {
           roomId: room.id,
           roomName: room.name,
           roomType: room.type,
           price: room.price,
-          deposit,
+          deposit: displayDeposit,
           dormId,
           dormName
         },

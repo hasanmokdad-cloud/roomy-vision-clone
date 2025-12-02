@@ -352,6 +352,11 @@ export default function RoomForm() {
                 onChange={(e) => setFormData({ ...formData, deposit: e.target.value })}
                 placeholder="200"
               />
+              {formData.deposit && parseFloat(formData.deposit) > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Students pay: ${(parseFloat(formData.deposit) * 1.1).toFixed(2)} total
+                </p>
+              )}
             </div>
           </div>
 

@@ -34,6 +34,12 @@ export const WHISH_CONFIG = {
   apiBaseUrl: 'https://api.whish.com/v1', // Placeholder - update based on actual Whish API
 } as const;
 
+// Calculate display deposit for students (includes 10% commission)
+// UI shows this amount, database stores base deposit
+export const getStudentDisplayDeposit = (baseDeposit: number): number => {
+  return Math.round(baseDeposit * 1.1 * 100) / 100;
+};
+
 export type AiMatchPlan = keyof typeof MATCH_PLAN_PRICES;
 export type ReservationStatus = 'pending_payment' | 'paid' | 'cancelled' | 'expired';
 export type PaymentStatus = 'pending' | 'succeeded' | 'failed' | 'refunded';

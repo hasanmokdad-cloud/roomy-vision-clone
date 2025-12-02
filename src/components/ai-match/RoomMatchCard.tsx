@@ -5,6 +5,7 @@ import { MapPin, DollarSign, Users, Home, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { WhyThisMatch } from "./WhyThisMatch";
+import { getStudentDisplayDeposit } from "@/lib/payments/config";
 import {
   Carousel,
   CarouselContent,
@@ -87,7 +88,7 @@ export const RoomMatchCard = ({ room, index }: RoomMatchCardProps) => {
                 </span>
                 {room.deposit && (
                   <span className="text-xs text-muted-foreground">
-                    + ${room.deposit} deposit
+                    + ${getStudentDisplayDeposit(room.deposit)} deposit
                   </span>
                 )}
               </div>

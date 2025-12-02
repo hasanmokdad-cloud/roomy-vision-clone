@@ -3,7 +3,6 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { CheckCircle2, Home, MessageSquare, Calendar } from 'lucide-react';
 import { Confetti } from '@/components/profile/Confetti';
 import Navbar from '@/components/shared/Navbar';
@@ -111,28 +110,17 @@ export default function ReservationSuccess() {
               </div>
             </div>
 
-            {/* Payment Breakdown */}
+            {/* Payment Summary */}
             <div className="glass-hover rounded-xl p-4 space-y-3">
-              <h3 className="font-semibold mb-2">Payment Breakdown</h3>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Room Deposit</span>
-                <span className="font-medium">
-                  ${reservation.deposit_amount.toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Roomy Fee (10%)</span>
-                <span className="font-medium">
-                  ${(reservation.commission_amount || reservation.deposit_amount * 0.10).toFixed(2)}
-                </span>
-              </div>
-              <Separator />
               <div className="flex justify-between font-semibold text-lg">
-                <span>Total Paid</span>
+                <span>Deposit Paid</span>
                 <span className="text-green-600">
                   ${(reservation.total_amount || reservation.deposit_amount * 1.10).toFixed(2)}
                 </span>
               </div>
+              <p className="text-xs text-muted-foreground text-center">
+                This deposit secures your room. The remaining balance is due upon move-in.
+              </p>
             </div>
 
             {/* Next Steps */}
