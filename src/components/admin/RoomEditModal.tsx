@@ -130,6 +130,11 @@ export default function RoomEditModal({ room, isOpen, onClose, onUpdate }: RoomE
                   value={formData.deposit}
                   onChange={(e) => setFormData({ ...formData, deposit: Number(e.target.value) })}
                 />
+                {formData.deposit > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Students pay: ${(formData.deposit * 1.1).toFixed(2)} total
+                  </p>
+                )}
               </div>
             </div>
 
