@@ -9,13 +9,62 @@ import { supabase } from '@/integrations/supabase/client';
 export default function AdminAnalytics() {
   const [priceByUniversity, setPriceByUniversity] = useState<any[]>([]);
   const [roomTypes, setRoomTypes] = useState<any[]>([]);
+  const [paymentStats, setPaymentStats] = useState<any>(null);
   const { data: dorms } = useAdminDormsQuery();
 
   useEffect(() => {
     if (dorms) {
       loadAnalytics();
     }
+    loadPaymentStats();
   }, [dorms]);
+
+  const loadPaymentStats = async () => {
+    try {
+      // Fetch successful payments
+      const { data: payments } = await supabase
+        .from('payments')
+        .select('amount, payment_type, status, created_at, reservation_id')
+        .eq('status', 'succeeded');
+
+      if (payments) {
+        // Calculate total revenue
+        const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
+
+        // Get reservation commissions
+        const reservationPayments = payments.filter(p => p.payment_type === 'reservation');
+        const { data: reservations } = await supabase
+          .from('reservations')
+          .select('commission_amount')
+          .in('id', reservationPayments.map(p => p.reservation_id).filter(Boolean));
+
+        const totalCommission = reservations?.reduce(
+          (sum, r) => sum + (r.commission_amount || 0),
+          0
+        ) || 0;
+
+        // Count by status
+        const { data: allReservations } = await supabase
+          .from('reservations')
+          .select('status');
+
+        const statusCounts = {
+          paid: allReservations?.filter(r => r.status === 'paid').length || 0,
+          pending: allReservations?.filter(r => r.status === 'pending_payment').length || 0,
+          failed: allReservations?.filter(r => r.status === 'expired' || r.status === 'cancelled').length || 0,
+        };
+
+        setPaymentStats({
+          totalRevenue,
+          totalCommission,
+          statusCounts,
+          totalPayments: payments.length,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading payment stats:', error);
+    }
+  };
 
   const loadAnalytics = () => {
     
@@ -61,6 +110,75 @@ export default function AdminAnalytics() {
         <h1 className="text-3xl font-bold gradient-text">Analytics & Insights</h1>
         <p className="text-foreground/60 mt-2">Platform performance and trends</p>
       </div>
+
+      {/* Revenue & Commission Cards */}
+      {paymentStats && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="glass-hover">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Revenue
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold gradient-text">
+                ${paymentStats.totalRevenue.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {paymentStats.totalPayments} payments
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-hover">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Roomy Commission
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-600">
+                ${paymentStats.totalCommission.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                10% of deposits
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-hover">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Paid Reservations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-600">
+                {paymentStats.statusCounts.paid}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Completed bookings
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-hover">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Pending / Failed
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-orange-600">
+                {paymentStats.statusCounts.pending} / {paymentStats.statusCounts.failed}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Incomplete bookings
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div className="glass-hover rounded-2xl p-6">
         <h2 className="text-xl font-bold mb-4">Average Price by University</h2>

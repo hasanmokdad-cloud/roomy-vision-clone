@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Home, AlertCircle, AlertTriangle } from 'lucide-react';
+import { Home, AlertCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { createReservationCheckout, isWhishConfigured } from '@/lib/payments/whishClient';
 import { calculateTotalDue } from '@/lib/payments/config';
@@ -109,10 +109,10 @@ export function ReservationConfirmModal({
               <span className="text-muted-foreground">Room Deposit</span>
               <span className="font-medium">${deposit.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Commission (10%)</span>
-              <span className="font-medium">${commission.toFixed(2)}</span>
-            </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Roomy Fee (10%)</span>
+            <span className="font-medium">${commission.toFixed(2)}</span>
+          </div>
           </div>
 
           <Separator />
@@ -147,9 +147,18 @@ export function ReservationConfirmModal({
           <Button
             onClick={handleConfirm}
             disabled={isProcessing}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto bg-gradient-to-r from-primary to-purple-600 hover:opacity-90"
           >
-            {isProcessing ? 'Processing...' : isPreviewMode ? 'Continue (Preview)' : `Pay $${total.toFixed(2)}`}
+            {isProcessing ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Processing Payment...
+              </span>
+            ) : isPreviewMode ? (
+              'Continue (Preview)'
+            ) : (
+              `Pay $${total.toFixed(2)}`
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

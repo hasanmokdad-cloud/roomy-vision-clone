@@ -164,7 +164,51 @@ async function handleReservationPayment(supabaseClient: any, payload: any, metad
     autoUpdatedStudentProfile: true
   });
 
-  // TODO: Send notifications to owner and student
+  // Get room and dorm details for notifications
+  const { data: room } = await supabaseClient
+    .from('rooms')
+    .select('name, price, dorms!inner(dorm_name, name, owner_id)')
+    .eq('id', reservation.room_id)
+    .single();
+
+  if (room) {
+    // Get student details
+    const { data: student } = await supabaseClient
+      .from('students')
+      .select('full_name')
+      .eq('id', reservation.student_id)
+      .single();
+
+    // Send owner notification
+    if (room.dorms.owner_id && student) {
+      await supabaseClient.functions.invoke('send-owner-notification', {
+        body: {
+          owner_id: room.dorms.owner_id,
+          event_type: 'new_reservation',
+          dorm_id: reservation.dorm_id,
+          room_name: room.name,
+          student_name: student.full_name,
+          deposit_amount: reservation.deposit_amount,
+          commission_amount: reservation.commission_amount,
+        }
+      }).catch((err: any) => console.error('Error sending owner notification:', err));
+    }
+
+    // Send student receipt email
+    await supabaseClient.functions.invoke('send-student-receipt', {
+      body: {
+        student_id: reservation.student_id,
+        reservation_id: reservationId,
+        room_name: room.name,
+        dorm_name: room.dorms.dorm_name || room.dorms.name,
+        deposit: reservation.deposit_amount,
+        fee: reservation.commission_amount,
+        total: reservation.total_amount,
+        whish_payment_id: payload.id,
+        timestamp: new Date().toISOString(),
+      }
+    }).catch((err: any) => console.error('Error sending student receipt:', err));
+  }
 }
 
 async function handleMatchPlanPayment(supabaseClient: any, payload: any, metadata: any) {

@@ -1615,6 +1615,7 @@ export type Database = {
           created_at: string | null
           deposit_amount: number
           dorm_id: string
+          expires_at: string | null
           id: string
           meta: Json | null
           paid_at: string | null
@@ -1632,6 +1633,7 @@ export type Database = {
           created_at?: string | null
           deposit_amount: number
           dorm_id: string
+          expires_at?: string | null
           id?: string
           meta?: Json | null
           paid_at?: string | null
@@ -1649,6 +1651,7 @@ export type Database = {
           created_at?: string | null
           deposit_amount?: number
           dorm_id?: string
+          expires_at?: string | null
           id?: string
           meta?: Json | null
           paid_at?: string | null
