@@ -4,15 +4,80 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { motion } from "framer-motion";
 import { isWhishConfigured } from "@/lib/payments/whishClient";
+import { createMatchPlanCheckout } from "@/lib/payments/whishClient";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import type { AiMatchPlan } from "@/utils/tierLogic";
 
 interface TierSelectionCardProps {
   selectedPlan: AiMatchPlan;
   onPlanChange: (plan: AiMatchPlan) => void;
+  onPurchaseRequired?: (plan: AiMatchPlan) => void;
 }
 
-export const TierSelectionCard = ({ selectedPlan, onPlanChange }: TierSelectionCardProps) => {
+export const TierSelectionCard = ({ selectedPlan, onPlanChange, onPurchaseRequired }: TierSelectionCardProps) => {
   const isPreviewMode = !isWhishConfigured();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handlePlanSelection = async (plan: AiMatchPlan) => {
+    onPlanChange(plan);
+
+    // If selecting a paid plan, trigger payment flow
+    if (plan === 'advanced' || plan === 'vip') {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          toast({
+            title: 'Sign in required',
+            description: 'Please sign in to purchase a plan',
+            variant: 'destructive',
+          });
+          navigate('/auth');
+          return;
+        }
+
+        // Check payment profile
+        const { data: paymentProfile } = await supabase
+          .from('user_payment_profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (!paymentProfile) {
+          toast({
+            title: 'Payment info required',
+            description: 'Please add your payment information to purchase a plan.',
+            variant: 'destructive',
+          });
+          navigate('/settings', { state: { openPaymentModal: true } });
+          return;
+        }
+
+        // Trigger payment checkout
+        onPurchaseRequired?.(plan);
+        
+        toast({
+          title: 'Redirecting to payment...',
+          description: `You selected ${plan} plan. Redirecting to secure payment.`,
+        });
+
+        // Create checkout and redirect
+        const { checkoutUrl } = await createMatchPlanCheckout({ planType: plan });
+        
+        if (checkoutUrl) {
+          window.location.href = checkoutUrl;
+        }
+      } catch (error: any) {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to initiate payment',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
 
   return (
     <motion.div
@@ -39,7 +104,7 @@ export const TierSelectionCard = ({ selectedPlan, onPlanChange }: TierSelectionC
         </Alert>
       )}
 
-      <RadioGroup value={selectedPlan} onValueChange={(value) => onPlanChange(value as AiMatchPlan)}>
+      <RadioGroup value={selectedPlan} onValueChange={(value) => handlePlanSelection(value as AiMatchPlan)}>
         <div className="grid gap-4">
           {/* Basic Plan */}
           <div className="flex items-start space-x-3 p-4 border border-muted rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">

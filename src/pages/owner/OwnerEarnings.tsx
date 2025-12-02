@@ -5,14 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
-import { ArrowLeft, DollarSign, Clock, TrendingUp, Loader2 } from 'lucide-react';
+import { ArrowLeft, DollarSign, Clock, TrendingUp, Loader2, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
+import { AddWhishCardModal } from '@/components/payments/AddWhishCardModal';
 
 export default function OwnerEarnings() {
   const navigate = useNavigate();
   const { userId } = useRoleGuard('owner');
   const [ownerId, setOwnerId] = useState<string>();
   const [loading, setLoading] = useState(true);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentProfile, setPaymentProfile] = useState<any>(null);
   const [stats, setStats] = useState({
     totalEarnings: 0,
     upcomingPayouts: 0,
@@ -29,8 +32,21 @@ export default function OwnerEarnings() {
   useEffect(() => {
     if (ownerId) {
       loadEarningsData();
+      loadPaymentProfile();
     }
   }, [ownerId]);
+
+  const loadPaymentProfile = async () => {
+    if (!userId) return;
+    
+    const { data } = await supabase
+      .from('user_payment_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    setPaymentProfile(data);
+  };
 
   const loadOwnerId = async () => {
     const { data: owner } = await supabase
@@ -118,21 +134,41 @@ export default function OwnerEarnings() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-6 py-8 space-y-8">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/owner')}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="text-4xl font-bold gradient-text">Earnings</h1>
-            <p className="text-foreground/60 mt-2">
-              Track your reservation payouts and revenue
-            </p>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/owner')}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h1 className="text-4xl font-bold gradient-text">Earnings</h1>
+              <p className="text-foreground/60 mt-2">
+                Track your reservation payouts and revenue
+              </p>
+            </div>
           </div>
+          <Button
+            variant="outline"
+            onClick={() => setShowPaymentModal(true)}
+            className="hidden md:flex"
+          >
+            <CreditCard className="w-4 h-4 mr-2" />
+            {paymentProfile ? 'Update Payment Info' : 'Add Payment Info'}
+          </Button>
         </div>
+
+        {/* Mobile payment button */}
+        <Button
+          variant="outline"
+          onClick={() => setShowPaymentModal(true)}
+          className="w-full md:hidden"
+        >
+          <CreditCard className="w-4 h-4 mr-2" />
+          {paymentProfile ? 'Update Payment Info' : 'Add Payment Info'}
+        </Button>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -253,6 +289,13 @@ export default function OwnerEarnings() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Payment Modal */}
+      <AddWhishCardModal
+        open={showPaymentModal}
+        onOpenChange={setShowPaymentModal}
+        onSuccess={loadPaymentProfile}
+      />
     </div>
   );
 }

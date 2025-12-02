@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Save, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home, Share2, Copy } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Save, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home, Share2, Copy, CreditCard, Receipt } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import BottomNav from '@/components/BottomNav';
@@ -19,11 +19,13 @@ import { settingsManager, type UserSettings } from '@/utils/settings';
 import { supabase } from '@/integrations/supabase/client';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
+import { AddWhishCardModal } from '@/components/payments/AddWhishCardModal';
 
 import { useTranslation } from 'react-i18next';
 
 export default function Settings() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { loading, userId } = useAuthGuard();
   const { role } = useRoleGuard();
@@ -45,6 +47,8 @@ export default function Settings() {
   const [show2FASetup, setShow2FASetup] = useState(false);
   const [qrCode, setQrCode] = useState('');
   const [factorId, setFactorId] = useState('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentProfile, setPaymentProfile] = useState<any>(null);
   
 
   useEffect(() => {
@@ -80,6 +84,14 @@ export default function Settings() {
         setEmailVerified(!!user?.email_confirmed_at);
       });
 
+      // Load payment profile
+      supabase
+        .from('user_payment_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle()
+        .then(({ data }) => setPaymentProfile(data));
+
       // Load phone verification based on role
       if (role === 'student') {
         supabase
@@ -109,8 +121,13 @@ export default function Settings() {
             setPhoneVerified(data?.phone_verified || false);
           });
       }
+
+      // Check if we should open payment modal from navigation state
+      if (location.state?.openPaymentModal) {
+        setShowPaymentModal(true);
+      }
     }
-  }, [loading, userId, role]);
+  }, [loading, userId, role, location.state]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -313,6 +330,54 @@ export default function Settings() {
                     setSettings((prev) => ({ ...prev, notifications: checked }))
                   }
                 />
+              </div>
+            </Card>
+
+            {/* Payment Settings */}
+            <Card className="glass p-6 border border-border/40">
+              <div className="flex items-center gap-4 mb-4">
+                <CreditCard className="w-6 h-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Payment Settings</h3>
+                  <p className="text-sm text-foreground/60">
+                    {paymentProfile ? 'Manage your payment information' : 'Add payment info to reserve rooms'}
+                  </p>
+                </div>
+              </div>
+
+              {paymentProfile && (
+                <div className="bg-muted/10 rounded-lg p-4 mb-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Name</span>
+                    <span className="text-sm font-medium">{paymentProfile.full_name}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Email</span>
+                    <span className="text-sm font-medium">{paymentProfile.email}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Phone</span>
+                    <span className="text-sm font-medium">{paymentProfile.phone}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Button
+                  variant={paymentProfile ? "outline" : "default"}
+                  className="flex-1"
+                  onClick={() => setShowPaymentModal(true)}
+                >
+                  {paymentProfile ? 'Update Payment Info' : 'Add Payment Info'}
+                </Button>
+                {role === 'student' && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate('/student/payments')}
+                  >
+                    <Receipt className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             </Card>
 
@@ -628,6 +693,21 @@ export default function Settings() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Payment Modal */}
+      <AddWhishCardModal
+        open={showPaymentModal}
+        onOpenChange={setShowPaymentModal}
+        onSuccess={() => {
+          // Reload payment profile
+          supabase
+            .from('user_payment_profiles')
+            .select('*')
+            .eq('user_id', userId!)
+            .maybeSingle()
+            .then(({ data }) => setPaymentProfile(data));
+        }}
+      />
 
       {isMobile && <BottomNav />}
       <Footer />

@@ -265,6 +265,23 @@ export function EnhancedRoomCard({
       return;
     }
 
+    // Check if user has payment profile
+    const { data: paymentProfile } = await supabase
+      .from('user_payment_profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!paymentProfile) {
+      toast({
+        title: 'Payment info required',
+        description: 'Please add your payment information before reserving a room.',
+        variant: 'destructive',
+      });
+      navigate('/settings', { state: { openPaymentModal: true } });
+      return;
+    }
+
     setReservationModalOpen(true);
   };
 
