@@ -162,15 +162,26 @@ export default function PaymentCallback() {
         // Increment room occupancy
         await supabase.rpc('increment_room_occupancy', { room_id: metadata.roomId });
 
-        // Get dorm name for billing history
+        // Get room and dorm details including owner
+        const { data: room } = await supabase
+          .from('rooms')
+          .select('id, name, dorm_id, deposit, price')
+          .eq('id', metadata.roomId)
+          .single();
+
         let dormName = 'Room';
+        let ownerId: string | null = null;
+
         if (metadata.dormId) {
           const { data: dorm } = await supabase
             .from('dorms')
-            .select('name')
+            .select('name, owner_id')
             .eq('id', metadata.dormId)
             .single();
-          if (dorm) dormName = dorm.name;
+          if (dorm) {
+            dormName = dorm.name;
+            ownerId = dorm.owner_id;
+          }
         }
 
         // Update student's current dorm and room
@@ -194,6 +205,30 @@ export default function PaymentCallback() {
             description: `Room Reservation at ${dormName}`,
             payment_method_last4: defaultCard?.last4 || null,
           });
+
+          // Create payout history for owner (deposit splits)
+          if (ownerId && room) {
+            const baseDeposit = room.deposit || room.price || paymentData.amount / 1.10;
+            const roomyFee = baseDeposit * 0.10;
+            const ownerReceives = baseDeposit * 0.90;
+
+            await supabase.from('payout_history').insert({
+              owner_id: ownerId,
+              student_id: studentId,
+              room_id: metadata.roomId,
+              dorm_id: metadata.dormId,
+              deposit_amount: baseDeposit,
+              roomy_fee: roomyFee,
+              owner_receives: ownerReceives,
+              currency: 'USD',
+              payment_id: paymentData.id,
+              reservation_id: paymentData.reservation_id,
+              status: 'paid',
+            });
+
+            // Mock payout trigger (placeholder for real Whish API)
+            console.log('Mock payout triggered:', { ownerReceives, ownerId });
+          }
 
           // Send automatic welcome message to owner
           if (metadata.dormId) {

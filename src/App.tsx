@@ -93,6 +93,8 @@ const PaymentCallback = lazy(() => import("./pages/PaymentCallback"));
 const Wallet = lazy(() => import("./pages/Wallet"));
 const BillingHistory = lazy(() => import("./pages/BillingHistory"));
 const MockWhishAddCard = lazy(() => import("./pages/MockWhishAddCard"));
+const OwnerWallet = lazy(() => import("./pages/owner/OwnerWallet"));
+const MockWhishOwnerAddCard = lazy(() => import("./pages/owner/MockWhishOwnerAddCard"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -240,6 +242,8 @@ const AppRoutes = () => {
           <Route path="/owner/calendar" element={<ProtectedRoute element={<OwnerCalendar />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/earnings" element={<ProtectedRoute element={<OwnerEarnings />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/refunds" element={<ProtectedRoute element={<OwnerRefundRequests />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/wallet" element={<ProtectedRoute element={<OwnerWallet />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/mock-whish-owner-add-card" element={<ProtectedRoute element={<MockWhishOwnerAddCard />} allowedRoles={["owner", "admin"]} />} />
 
 
           {/* Admin Routes */}

@@ -100,6 +100,20 @@ Deno.serve(async (req) => {
         throw new Error('Room is not available');
       }
 
+      // Check if owner has a payout card configured
+      if (room.dorms?.owner_id) {
+        const { data: ownerCard } = await supabaseClient
+          .from('owner_payment_methods')
+          .select('id')
+          .eq('owner_id', room.dorms.owner_id)
+          .eq('is_default', true)
+          .maybeSingle();
+
+        if (!ownerCard) {
+          throw new Error('This dorm is not ready to receive online reservation payments. Please try another listing or contact support.');
+        }
+      }
+
       // Calculate amounts
       const baseDeposit = room.deposit || room.price;
       const commission = baseDeposit * 0.10;
