@@ -259,8 +259,8 @@ export default function Wallet() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">
-                            {card.brand} Visa •••• {card.last4}
+                          <span className="font-medium capitalize">
+                            {card.brand || 'Card'} •••• {card.last4}
                           </span>
                           {card.is_default && (
                             <Badge variant="secondary" className="text-xs">

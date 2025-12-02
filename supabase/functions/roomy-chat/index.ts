@@ -62,8 +62,9 @@ function checkRateLimit(identifier: string): boolean {
 async function extractFilters(message: string, context: any = {}, studentPrefs: any = {}) {
   // Defensive null check - JavaScript default params don't replace null, only undefined
   const prefs = studentPrefs || {};
+  const ctx = context || {}; // Also handle null context
   const query = message.toLowerCase();
-  const filters: any = { ...context };
+  const filters: any = { ...ctx };
   const learnedPrefs: any = {};
 
   // Budget detection
