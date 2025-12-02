@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -11,13 +11,14 @@ import { DormMatchCard } from "@/components/ai-match/DormMatchCard";
 import { RoommateMatchCard } from "@/components/ai-match/RoommateMatchCard";
 import { RoommateComparison } from "@/components/ai-match/RoommateComparison";
 import { DormComparison } from "@/components/listings/DormComparison";
-import { TierSelectionCard } from "@/components/ai-match/TierSelectionCard";
+import { TierSelector } from "@/components/ai-match/TierSelector";
 import { Card, CardContent } from "@/components/ui/card";
-import { Home, Users, Brain, Bug } from "lucide-react";
+import { Brain, Bug } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { shouldShowCompatibilityScore, isVipPlan, type AiMatchPlan } from "@/utils/tierLogic";
 import { EmptyMatchState } from "@/components/ai-match/EmptyMatchState";
 import { MatchModeTabs } from "@/components/ai-match/MatchModeTabs";
+import { useMatchTier } from "@/hooks/useMatchTier";
 import { motion } from "framer-motion";
 
 type ProfileStatus = 'loading' | 'incomplete' | 'complete';
@@ -279,8 +280,17 @@ const AiMatch = () => {
     await fetchMatches(newDismissedIds);
   };
 
-  // Update plan and re-fetch matches
-  const handlePlanChange = async (plan: AiMatchPlan) => {
+  // Ref for scrolling to matches section
+  const matchesSectionRef = useRef<HTMLDivElement>(null);
+
+  // Handle tier upgrade (triggers payment flow)
+  const handleUpgrade = async (plan: AiMatchPlan) => {
+    setSelectedPlan(plan);
+    // Payment flow handled by useMatchTier
+  };
+
+  // Handle tier downgrade
+  const handleDowngrade = async (plan: AiMatchPlan) => {
     setSelectedPlan(plan);
     setUserPlan(plan);
     
@@ -292,7 +302,10 @@ const AiMatch = () => {
     }
     
     // Re-fetch matches with new tier
-    fetchMatches();
+    await fetchMatches();
+    
+    // Auto-scroll to results
+    matchesSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   // Handle mode toggle
@@ -382,9 +395,11 @@ const AiMatch = () => {
         {/* Tier Selection - Show only on roommate views */}
         {(activeMode === 'roommate' || (activeMode === 'combined' && matchMode === 'roommates')) && (
           <>
-            <TierSelectionCard 
-              selectedPlan={selectedPlan}
-              onPlanChange={handlePlanChange}
+            <TierSelector 
+              currentTier={userPlan}
+              onUpgrade={handleUpgrade}
+              onDowngrade={handleDowngrade}
+              isLoading={loading}
             />
             
             {/* Basic Tier Messaging */}
@@ -429,7 +444,7 @@ const AiMatch = () => {
             )}
 
             {/* Matches Grid */}
-            <div>
+            <div ref={matchesSectionRef} id="matches-section">
               {matchMode === 'roommates' && matches.some(m => m.hasPersonalityMatch) && (
                 <>
                   <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">

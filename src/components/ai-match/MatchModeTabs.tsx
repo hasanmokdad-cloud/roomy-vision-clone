@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { Home, Users, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 
 interface MatchModeTabsProps {
   activeMode: 'dorms' | 'roommates' | 'rooms';
@@ -28,70 +27,64 @@ export const MatchModeTabs = ({
 
   const activeIndex = tabs.findIndex(tab => tab.id === activeMode);
 
-  // Swipe gesture for mobile
-  const swipeHandlers = useSwipeGesture({
-    onSwipeLeft: () => {
-      const nextIndex = Math.min(activeIndex + 1, tabs.length - 1);
-      onModeChange(tabs[nextIndex].id);
-    },
-    onSwipeRight: () => {
-      const prevIndex = Math.max(activeIndex - 1, 0);
-      onModeChange(tabs[prevIndex].id);
-    }
-  });
-
   return (
-    <div className={className} {...swipeHandlers}>
-      <div className="flex items-center justify-center bg-muted/50 rounded-lg p-1 relative">
-        {/* Active tab indicator */}
+    <div className={className}>
+      <div className="relative flex items-center justify-center bg-muted/50 rounded-xl p-1.5">
+        {/* Background pill indicator - using grid positioning */}
         <motion.div
-          className="absolute h-[calc(100%-8px)] bg-background rounded-md shadow-sm"
+          className="absolute inset-y-1.5 bg-background rounded-lg shadow-sm"
+          initial={false}
           animate={{
-            x: activeIndex * (100 / tabs.length) + '%',
-            width: `calc(${100 / tabs.length}% - 8px)`
+            left: `calc(${activeIndex * 33.33}% + 6px)`,
+            width: 'calc(33.33% - 8px)'
           }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          style={{ left: '4px' }}
+          transition={{ type: 'spring', stiffness: 400, damping: 35 }}
         />
 
-        {/* Tabs */}
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeMode === tab.id;
-          
-          return (
-            <button
-              key={tab.id}
-              onClick={() => onModeChange(tab.id)}
-              className={`
-                relative z-10 flex items-center justify-center gap-2 px-6 py-2.5
-                flex-1 transition-colors duration-200 rounded-md
-                ${isActive 
-                  ? 'text-primary font-semibold' 
-                  : 'text-muted-foreground hover:text-foreground'
-                }
-              `}
-            >
-              <Icon className="w-4 h-4" />
-              <span className="text-sm">{tab.label}</span>
-              {tab.count !== undefined && tab.count > 0 && (
-                <Badge variant={isActive ? 'default' : 'secondary'} className="ml-1 h-5 px-1.5">
-                  {tab.count}
-                </Badge>
-              )}
-            </button>
-          );
-        })}
-
-        {/* Blue underline */}
+        {/* Bottom purple underline */}
         <motion.div
-          className="absolute bottom-0 h-0.5 bg-primary"
+          className="absolute bottom-0 h-0.5 bg-primary rounded-full"
+          initial={false}
           animate={{
-            x: activeIndex * (100 / tabs.length) + '%',
-            width: `${100 / tabs.length}%`
+            left: `calc(${activeIndex * 33.33}% + 8px)`,
+            width: 'calc(33.33% - 16px)'
           }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 35 }}
         />
+
+        {/* Tabs Container - CSS Grid for perfect alignment */}
+        <div className="relative z-10 grid grid-cols-3 w-full">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeMode === tab.id;
+            
+            return (
+              <button
+                key={tab.id}
+                onClick={() => onModeChange(tab.id)}
+                className={`
+                  flex items-center justify-center gap-2 px-4 py-2.5
+                  transition-colors duration-200 rounded-lg
+                  ${isActive 
+                    ? 'text-primary font-semibold' 
+                    : 'text-muted-foreground hover:text-foreground'
+                  }
+                `}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="text-sm whitespace-nowrap">{tab.label}</span>
+                {tab.count !== undefined && tab.count > 0 && (
+                  <Badge 
+                    variant={isActive ? 'default' : 'secondary'} 
+                    className="ml-1 h-5 px-1.5 text-xs"
+                  >
+                    {tab.count}
+                  </Badge>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
