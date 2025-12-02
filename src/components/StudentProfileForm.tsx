@@ -80,6 +80,8 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   const [currentRoomId, setCurrentRoomId] = useState<string>('');
   const [availableDorms, setAvailableDorms] = useState<any[]>([]);
   const [availableRooms, setAvailableRooms] = useState<any[]>([]);
+  const [currentRoomData, setCurrentRoomData] = useState<any>(null);
+  const [isRoomFull, setIsRoomFull] = useState(false);
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -113,6 +115,17 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   useEffect(() => {
     loadProfile();
     loadDorms();
+
+    // Handle scroll-to from navigation state
+    const scrollTo = (window.history.state?.usr as any)?.scrollTo;
+    if (scrollTo === 'current-dorm-section') {
+      setTimeout(() => {
+        const element = document.getElementById('current-dorm-section');
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+    }
   }, [userId]);
 
   // Load available dorms for Current Dorm dropdown
@@ -133,6 +146,8 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
     const loadRoomsForDorm = async () => {
       if (!currentDormId) {
         setAvailableRooms([]);
+        setCurrentRoomData(null);
+        setIsRoomFull(false);
         return;
       }
 
@@ -152,10 +167,24 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
       if (data) {
         setAvailableRooms(data);
       }
+
+      // Fetch current room data if room is selected
+      if (currentRoomId) {
+        const { data: roomData } = await supabase
+          .from('rooms')
+          .select('capacity, capacity_occupied')
+          .eq('id', currentRoomId)
+          .single();
+
+        if (roomData) {
+          setCurrentRoomData(roomData);
+          setIsRoomFull(roomData.capacity_occupied >= roomData.capacity);
+        }
+      }
     };
 
     loadRoomsForDorm();
-  }, [currentDormId, needsRoommateCurrentPlace, accommodationStatus]);
+  }, [currentDormId, currentRoomId, needsRoommateCurrentPlace, accommodationStatus]);
 
   // Handle governorate selection
   useEffect(() => {
@@ -340,7 +369,55 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
       });
     } finally {
       setLoading(false);
-      setTimeout(() => setIsSaving(false), 800);
+      setIsSaving(false);
+    }
+  };
+
+  const handleLeaveRoom = async () => {
+    if (!currentRoomId) return;
+
+    try {
+      setLoading(true);
+
+      // Decrement room occupancy
+      const { error: rpcError } = await supabase.rpc('decrement_room_occupancy', {
+        room_id: currentRoomId
+      });
+
+      if (rpcError) throw rpcError;
+
+      // Clear student's current room
+      const { error: updateError } = await supabase
+        .from('students')
+        .update({
+          current_dorm_id: null,
+          current_room_id: null,
+          accommodation_status: 'need_dorm'
+        })
+        .eq('user_id', userId);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setCurrentDormId('');
+      setCurrentRoomId('');
+      setCurrentRoomData(null);
+      setIsRoomFull(false);
+      setAccommodationStatus('need_dorm');
+
+      toast({
+        title: 'Room vacated',
+        description: 'Your room has been freed up for other students.',
+      });
+    } catch (error) {
+      console.error('Leave room error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to leave room. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -585,27 +662,29 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                       exit={{ opacity: 0, height: 0 }}
                       className="pt-4 border-t border-border"
                     >
-                      <div className="flex items-center justify-between flex-wrap gap-4">
-                        <div className="space-y-1">
-                          <Label className="text-base font-semibold text-foreground flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            Need a Roommate for Your Current Place?
-                          </Label>
-                          <p className="text-sm text-foreground/60">
-                            Find compatible people to share your existing accommodation
-                          </p>
+                      {!isRoomFull && (
+                        <div className="flex items-center justify-between flex-wrap gap-4">
+                          <div className="space-y-1">
+                            <Label className="text-base font-semibold text-foreground flex items-center gap-2">
+                              <Users className="w-4 h-4" />
+                              Need a Roommate for Your Current Place?
+                            </Label>
+                            <p className="text-sm text-foreground/60">
+                              Find compatible people to share your existing accommodation
+                            </p>
+                          </div>
+                          <Switch
+                            checked={needsRoommateCurrentPlace}
+                            onCheckedChange={(checked) => {
+                              setNeedsRoommateCurrentPlace(checked);
+                              setValue('needs_roommate_current_place', checked);
+                            }}
+                          />
                         </div>
-                        <Switch
-                          checked={needsRoommateCurrentPlace}
-                          onCheckedChange={(checked) => {
-                            setNeedsRoommateCurrentPlace(checked);
-                            setValue('needs_roommate_current_place', checked);
-                          }}
-                        />
-                      </div>
+                      )}
                       
                       {/* Current Dorm Selection */}
-                      <div className="space-y-4 pt-4 border-t border-border mt-4">
+                      <div id="current-dorm-section" className="space-y-4 pt-4 border-t border-border mt-4">
                         <Label className="text-base font-semibold">Your Current Dorm</Label>
                         <p className="text-sm text-foreground/60">Select your current accommodation</p>
                         
@@ -659,34 +738,10 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                             <Button 
                               type="button"
                               variant="destructive" 
-                              onClick={async () => {
-                                try {
-                                  // Decrement room occupancy
-                                  await supabase.rpc('decrement_room_occupancy', { 
-                                    room_id: currentRoomId 
-                                  });
-
-                                  // Clear current dorm/room
-                                  setCurrentDormId('');
-                                  setCurrentRoomId('');
-                                  setAccommodationStatus('need_dorm');
-                                  setValue('accommodation_status', 'need_dorm');
-
-                                  toast({
-                                    title: 'Room Freed',
-                                    description: 'Your spot has been freed up. Your profile has been updated.',
-                                  });
-                                } catch (error) {
-                                  console.error('Error leaving room:', error);
-                                  toast({
-                                    title: 'Error',
-                                    description: 'Failed to leave room. Please try again.',
-                                    variant: 'destructive',
-                                  });
-                                }
-                              }}
+                              onClick={handleLeaveRoom}
+                              disabled={loading}
                             >
-                              Leave Room
+                              {loading ? 'Processing...' : 'Leave Room'}
                             </Button>
                           </motion.div>
                         )}
@@ -745,7 +800,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
 
                 {/* Step 1 Action Buttons */}
                 <div className="flex gap-3 pt-4">
-                  {accommodationStatus === 'have_dorm' && !needsRoommateCurrentPlace ? (
+                  {accommodationStatus === 'have_dorm' && (!needsRoommateCurrentPlace || isRoomFull) ? (
                     <Button
                       type="submit"
                       disabled={loading}
@@ -758,7 +813,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                         </>
                       )}
                     </Button>
-                  ) : accommodationStatus === 'have_dorm' && needsRoommateCurrentPlace ? (
+                  ) : accommodationStatus === 'have_dorm' && needsRoommateCurrentPlace && !isRoomFull ? (
                     <Button
                       type="submit"
                       disabled={loading}

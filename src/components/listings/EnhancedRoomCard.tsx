@@ -248,6 +248,23 @@ export function EnhancedRoomCard({
       return;
     }
 
+    // Check if student already has a reserved room
+    const { data: student } = await supabase
+      .from('students')
+      .select('current_room_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (student?.current_room_id) {
+      toast({
+        title: 'Already have a room',
+        description: 'Please cancel your current reservation from your profile first.',
+        variant: 'destructive',
+      });
+      navigate('/profile', { state: { scrollTo: 'current-dorm-section' } });
+      return;
+    }
+
     setReservationModalOpen(true);
   };
 

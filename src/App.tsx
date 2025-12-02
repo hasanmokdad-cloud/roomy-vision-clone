@@ -13,6 +13,7 @@ import MobileNavbar from "./components/MobileNavbar";
 import { MobileSwipeLayout } from "./layouts/MobileSwipeLayout";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { BottomNavProvider } from "@/contexts/BottomNavContext";
+import { MicPermissionProvider } from "@/contexts/MicPermissionContext";
 
 // Lazy load route components
 const Main = lazy(() => import("./pages/Main"));
@@ -257,15 +258,17 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
-          <BottomNavProvider>
-            <div className="w-full max-w-screen overflow-x-hidden">
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <AppRoutes />
-              </BrowserRouter>
-            </div>
-          </BottomNavProvider>
+          <MicPermissionProvider>
+            <BottomNavProvider>
+              <div className="w-full max-w-screen overflow-x-hidden">
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <AppRoutes />
+                </BrowserRouter>
+              </div>
+            </BottomNavProvider>
+          </MicPermissionProvider>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
