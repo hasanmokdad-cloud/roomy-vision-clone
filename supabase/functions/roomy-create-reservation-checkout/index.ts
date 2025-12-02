@@ -113,6 +113,10 @@ Deno.serve(async (req) => {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 15);
 
+    // Set refund window (72 hours from booking)
+    const refundableUntil = new Date();
+    refundableUntil.setHours(refundableUntil.getHours() + 72);
+
     // Create reservation record with all amounts
     const { data: reservation, error: reservationError } = await supabaseClient
       .from('reservations')
@@ -126,6 +130,7 @@ Deno.serve(async (req) => {
         commission_amount: commission,
         total_amount: totalDue,
         expires_at: expiresAt.toISOString(),
+        refundable_until: refundableUntil.toISOString(),
       })
       .select()
       .single();

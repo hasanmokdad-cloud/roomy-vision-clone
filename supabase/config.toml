@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.whish-webhook]
 verify_jwt = false
+
+[functions.whish-refund-handler]
+verify_jwt = true
