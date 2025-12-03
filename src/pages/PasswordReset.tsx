@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { getEmailProviderInfo } from "@/utils/emailProvider";
+import RoomyLogo from "@/assets/roomy-logo.png";
 
 export default function PasswordReset() {
   const navigate = useNavigate();
@@ -75,9 +76,9 @@ export default function PasswordReset() {
                 transition={{ delay: 0.2 }}
               >
                 <img 
-                  src="/roomy-logo.png" 
+                  src={RoomyLogo} 
                   alt="Roomy Logo" 
-                  className="h-36 w-36 mx-auto mb-4"
+                  className="h-36 w-36 mx-auto mb-4 drop-shadow-lg"
                 />
               </motion.div>
 

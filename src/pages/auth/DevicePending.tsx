@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import RoomyLogo from "@/assets/roomy-logo.png";
 import { motion } from "framer-motion";
 import { Mail, RefreshCw, ArrowLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,9 +27,9 @@ export default function DevicePending() {
             {/* Logo */}
             <div className="mb-6">
               <img 
-                src="/roomy-logo.png" 
+                src={RoomyLogo} 
                 alt="Roomy Logo" 
-                className="h-36 w-36 mx-auto mb-4"
+                className="h-36 w-36 mx-auto mb-4 drop-shadow-lg"
               />
             </div>
 

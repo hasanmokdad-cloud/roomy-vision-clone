@@ -1,4 +1,5 @@
 import { useSearchParams, useNavigate } from "react-router-dom";
+import RoomyLogo from "@/assets/roomy-logo.png";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Mail, ExternalLink } from "lucide-react";
@@ -61,9 +62,9 @@ export default function CheckEmail() {
           <CardContent className="pt-8 pb-8 px-6 text-center space-y-6">
             {/* Logo */}
             <img 
-              src="/roomy-logo.png" 
+              src={RoomyLogo} 
               alt="Roomy Logo" 
-              className="h-36 w-36 mx-auto mb-4"
+              className="h-36 w-36 mx-auto mb-4 drop-shadow-lg"
             />
             
             {/* Mail Icon */}
