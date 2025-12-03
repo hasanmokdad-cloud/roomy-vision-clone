@@ -69,14 +69,16 @@ export default function PasswordReset() {
             <CardContent className="pt-8 pb-8 px-6 space-y-6">
               {/* Logo */}
               <motion.div 
-                className="text-center text-4xl font-extrabold"
+                className="text-center"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <span className="bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] bg-clip-text text-transparent">
-                  Roomy
-                </span>
+                <img 
+                  src="/roomy-logo.png" 
+                  alt="Roomy Logo" 
+                  className="h-14 w-14 mx-auto rounded-xl" 
+                />
               </motion.div>
 
               <AnimatePresence mode="wait">
@@ -126,7 +128,7 @@ export default function PasswordReset() {
                       <Button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90"
+                        className="w-full bg-gradient-to-r from-[#00E0FF] to-[#BD00FF] hover:opacity-90"
                         size="lg"
                       >
                         {isLoading ? (
@@ -172,7 +174,7 @@ export default function PasswordReset() {
                     {providerInfo && (
                       <Button
                         onClick={() => window.open(providerInfo.url, '_blank', 'noopener,noreferrer')}
-                        className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90 text-white gap-2"
+                        className="w-full bg-gradient-to-r from-[#00E0FF] to-[#BD00FF] hover:opacity-90 text-white gap-2"
                         size="lg"
                       >
                         {providerInfo.label}
