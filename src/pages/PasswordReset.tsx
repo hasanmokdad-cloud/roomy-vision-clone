@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, CheckCircle, ArrowLeft } from "lucide-react";
+import { Mail, CheckCircle, ArrowLeft, ExternalLink } from "lucide-react";
 import FluidBackground from "@/components/FluidBackground";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -31,7 +31,7 @@ export default function PasswordReset() {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset`,
+        redirectTo: `https://roomylb.com/auth/reset`,
       });
 
       if (error) throw error;
@@ -117,8 +117,29 @@ export default function PasswordReset() {
                 <div className="text-center space-y-2">
                   <h1 className="text-2xl font-bold text-foreground">Check your email</h1>
                   <p className="text-muted-foreground text-sm">
-                    Password reset link sent. Check your inbox for instructions to reset your password.
+                    Password reset link sent to <span className="font-medium text-foreground">{email}</span>. Check your inbox for instructions to reset your password.
                   </p>
+                </div>
+
+                {/* Email Provider Buttons */}
+                <div className="flex flex-col gap-3">
+                  <Button
+                    onClick={() => window.open('https://mail.google.com', '_blank', 'noopener,noreferrer')}
+                    className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90 text-white gap-2"
+                    size="lg"
+                  >
+                    Open Gmail
+                    <ExternalLink className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    onClick={() => window.open('https://outlook.live.com', '_blank', 'noopener,noreferrer')}
+                    variant="outline"
+                    className="w-full gap-2"
+                    size="lg"
+                  >
+                    Open Outlook
+                    <ExternalLink className="w-4 h-4" />
+                  </Button>
                 </div>
                 
                 <Button
