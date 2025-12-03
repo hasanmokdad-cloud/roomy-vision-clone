@@ -9,45 +9,7 @@ import FluidBackground from "@/components/FluidBackground";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
-
-// Smart email provider detection
-const getEmailProvider = (email: string): { label: string; url: string; type: string } => {
-  const domain = email.split('@')[1]?.toLowerCase();
-  if (!domain) {
-    return { label: "Open your inbox", url: "https://mail.google.com", type: "unknown" };
-  }
-
-  // Rule A: Gmail (personal @gmail.com)
-  if (domain === 'gmail.com') {
-    return { label: "Open Gmail", url: "https://mail.google.com", type: "gmail" };
-  }
-
-  // Rule B: Microsoft Corporate/Education domains
-  const microsoftDomains = [
-    'lau.edu', 'lau.edu.lb',
-    'mail.aub.edu', 'aub.edu', 'aub.edu.lb',
-    'outlook.com', 'hotmail.com', 'live.com', 'msn.com'
-  ];
-  if (microsoftDomains.some(d => domain === d || domain.endsWith('.' + d))) {
-    return { label: "Open Outlook", url: "https://outlook.office.com/mail/", type: "microsoft" };
-  }
-
-  // Rule C: Google Workspace (known Google-hosted custom domains)
-  const googleWorkspaceDomains = [
-    'aiesec.net', 'aiesec.org'
-  ];
-  if (googleWorkspaceDomains.some(d => domain === d)) {
-    return { label: "Open Gmail", url: "https://mail.google.com", type: "gmail" };
-  }
-
-  // General .edu domains → likely Microsoft
-  if (domain.endsWith('.edu') || domain.endsWith('.edu.lb')) {
-    return { label: "Open Outlook", url: "https://outlook.office.com/mail/", type: "microsoft" };
-  }
-
-  // Rule D: Unknown domain → generic button
-  return { label: "Open your inbox", url: `https://mail.${domain}`, type: "unknown" };
-};
+import { getEmailProviderInfo } from "@/utils/emailProvider";
 
 export default function PasswordReset() {
   const navigate = useNavigate();
@@ -71,7 +33,7 @@ export default function PasswordReset() {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `https://roomylb.com/auth/reset`,
+        redirectTo: `${window.location.origin}/auth/reset`,
       });
 
       if (error) throw error;
@@ -92,7 +54,7 @@ export default function PasswordReset() {
     }
   };
 
-  const provider = getEmailProvider(email);
+  const providerInfo = getEmailProviderInfo(email);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -207,16 +169,16 @@ export default function PasswordReset() {
                     </div>
 
                     {/* Smart Email Provider Button */}
-                    <div className="flex flex-col gap-3">
+                    {providerInfo && (
                       <Button
-                        onClick={() => window.open(provider.url, '_blank', 'noopener,noreferrer')}
+                        onClick={() => window.open(providerInfo.url, '_blank', 'noopener,noreferrer')}
                         className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90 text-white gap-2"
                         size="lg"
                       >
-                        {provider.label}
+                        {providerInfo.label}
                         <ExternalLink className="w-4 h-4" />
                       </Button>
-                    </div>
+                    )}
                     
                     <Button
                       onClick={() => setIsSent(false)}
