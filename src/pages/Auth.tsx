@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { generateDeviceFingerprint, getApproximateRegion } from "@/utils/deviceFingerprint";
+import RoomyLogo from "@/assets/roomy-logo.png";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -127,9 +128,9 @@ export default function Auth() {
         <Card className="w-full max-w-md bg-background/95 backdrop-blur-sm border-white/20 shadow-2xl">
           <CardHeader className="text-center space-y-2">
             <img 
-              src="/roomy-logo.png" 
+              src={RoomyLogo} 
               alt="Roomy Logo" 
-              className="h-36 w-36 mx-auto mb-4"
+              className="h-36 w-36 mx-auto mb-4 drop-shadow-lg"
             />
             <CardTitle className="text-2xl">Welcome to Roomy</CardTitle>
             <CardDescription>Sign in or create an account to find your perfect student housing</CardDescription>
