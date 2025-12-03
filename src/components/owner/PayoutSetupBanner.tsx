@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface PayoutSetupBannerProps {
   ownerId: string;
 }
 
 export function PayoutSetupBanner({ ownerId }: PayoutSetupBannerProps) {
-  const { toast } = useToast();
+  const navigate = useNavigate();
   const [payoutStatus, setPayoutStatus] = useState<string | null>(null);
+  const [hasPayoutCard, setHasPayoutCard] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,26 +21,45 @@ export function PayoutSetupBanner({ ownerId }: PayoutSetupBannerProps) {
   }, [ownerId]);
 
   const loadPayoutStatus = async () => {
-    const { data: owner } = await supabase
-      .from('owners')
-      .select('payout_status, whish_account_id')
-      .eq('id', ownerId)
-      .single();
+    // Check for actual payout card in owner_payment_methods
+    const { data: cards } = await supabase
+      .from('owner_payment_methods')
+      .select('id')
+      .eq('owner_id', ownerId)
+      .eq('is_default', true)
+      .limit(1);
 
-    setPayoutStatus(owner?.payout_status || 'not_connected');
+    if (cards && cards.length > 0) {
+      // Has a card - consider "active"
+      setHasPayoutCard(true);
+      setPayoutStatus('active');
+    } else {
+      // No card - check owner's payout_status field
+      const { data: owner } = await supabase
+        .from('owners')
+        .select('payout_status')
+        .eq('id', ownerId)
+        .single();
+
+      setHasPayoutCard(false);
+      setPayoutStatus(owner?.payout_status || 'not_connected');
+    }
     setLoading(false);
   };
 
   const handleSetupPayouts = () => {
-    // In production, this would redirect to Whish onboarding flow
-    toast({
-      title: 'Whish Setup',
-      description: 'Whish integration is in preview mode. Real integration coming soon.',
-    });
+    if (!hasPayoutCard) {
+      // No card - go directly to add card flow
+      navigate('/mock-whish-owner-add-card');
+    } else {
+      // Has card - go to wallet
+      navigate('/owner/wallet');
+    }
   };
 
+  // Hide banner if loading or if owner has active payout setup
   if (loading || payoutStatus === 'active') {
-    return null; // Don't show banner if active or loading
+    return null;
   }
 
   const statusConfig = {
