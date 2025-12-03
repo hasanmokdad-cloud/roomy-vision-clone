@@ -21,7 +21,7 @@ interface AuthEmailPayload {
   };
 }
 
-// Roomy branded email base styles with dark mode support
+// Roomy branded email base styles with new color palette
 function getRoomyEmailStyles(): string {
   return `
     /* Reset */
@@ -33,14 +33,14 @@ function getRoomyEmailStyles(): string {
     body { 
       margin: 0 !important; 
       padding: 0 !important; 
-      background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
+      background: #F9FAFB;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       min-height: 100vh;
     }
     
     .email-wrapper {
       width: 100%;
-      background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
+      background: #F9FAFB;
       padding: 40px 0;
     }
     
@@ -58,26 +58,12 @@ function getRoomyEmailStyles(): string {
     
     .logo-container {
       display: inline-block;
-      background: linear-gradient(135deg, rgba(142, 45, 226, 0.2) 0%, rgba(74, 0, 224, 0.2) 100%);
-      padding: 16px 32px;
-      border-radius: 16px;
       margin-bottom: 12px;
-    }
-    
-    .logo-text {
-      font-size: 36px;
-      font-weight: 800;
-      background: linear-gradient(135deg, #A855F7 0%, #8B5CF6 50%, #6366F1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin: 0;
-      letter-spacing: -0.5px;
     }
     
     .tagline {
       font-size: 14px;
-      color: #94A3B8;
+      color: #64748B;
       margin: 8px 0 0 0;
       letter-spacing: 0.5px;
     }
@@ -85,9 +71,10 @@ function getRoomyEmailStyles(): string {
     /* Card */
     .email-card {
       background: #ffffff;
-      border-radius: 24px;
+      border-radius: 12px;
       padding: 48px 40px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      border: 1px solid #E5E7EB;
     }
     
     .email-heading {
@@ -109,7 +96,7 @@ function getRoomyEmailStyles(): string {
     
     .email-text {
       font-size: 16px;
-      color: #334155;
+      color: #0F172A;
       line-height: 26px;
       text-align: center;
       margin: 0 0 32px 0;
@@ -123,33 +110,27 @@ function getRoomyEmailStyles(): string {
     
     .email-button {
       display: inline-block;
-      background: linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%);
+      background: linear-gradient(135deg, #00D2FF 0%, #BD00FF 100%);
       color: #ffffff !important;
       font-size: 16px;
       font-weight: 600;
       padding: 16px 40px;
       border-radius: 12px;
       text-decoration: none;
-      box-shadow: 0 10px 25px -5px rgba(142, 45, 226, 0.4);
-      transition: all 0.2s ease;
-    }
-    
-    .email-button:hover {
-      box-shadow: 0 15px 35px -5px rgba(142, 45, 226, 0.5);
-      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(189, 0, 255, 0.3);
     }
     
     /* Backup URL */
     .backup-url {
       font-size: 12px;
-      color: #94A3B8;
+      color: #64748B;
       text-align: center;
       margin: 24px 0 0 0;
       word-break: break-all;
     }
     
     .backup-url a {
-      color: #8B5CF6;
+      color: #BD00FF;
       text-decoration: none;
     }
     
@@ -160,7 +141,7 @@ function getRoomyEmailStyles(): string {
       text-align: center;
       margin: 32px 0 0 0;
       padding-top: 24px;
-      border-top: 1px solid #E2E8F0;
+      border-top: 1px solid #E5E7EB;
     }
     
     /* Footer */
@@ -174,54 +155,24 @@ function getRoomyEmailStyles(): string {
     }
     
     .footer-link {
-      color: #94A3B8;
+      color: #64748B;
       text-decoration: none;
       font-size: 13px;
       margin: 0 12px;
     }
     
     .footer-link:hover {
-      color: #A855F7;
+      color: #BD00FF;
     }
     
     .footer-divider {
-      color: #475569;
+      color: #64748B;
     }
     
     .copyright {
       font-size: 12px;
       color: #64748B;
       margin: 16px 0 0 0;
-    }
-    
-    .social-links {
-      margin: 16px 0 0 0;
-    }
-    
-    .social-link {
-      display: inline-block;
-      margin: 0 8px;
-      color: #94A3B8;
-      text-decoration: none;
-      font-size: 12px;
-    }
-    
-    /* Dark mode support */
-    @media (prefers-color-scheme: dark) {
-      .email-card {
-        background: #1E293B !important;
-      }
-      .email-heading {
-        color: #F8FAFC !important;
-      }
-      .email-subheading,
-      .email-text {
-        color: #CBD5E1 !important;
-      }
-      .disclaimer {
-        color: #94A3B8 !important;
-        border-top-color: #334155 !important;
-      }
     }
     
     /* Mobile responsiveness */
@@ -231,13 +182,10 @@ function getRoomyEmailStyles(): string {
       }
       .email-card {
         padding: 32px 24px !important;
-        border-radius: 20px !important;
+        border-radius: 12px !important;
       }
       .email-heading {
         font-size: 24px !important;
-      }
-      .logo-text {
-        font-size: 28px !important;
       }
       .email-button {
         display: block !important;
@@ -337,8 +285,8 @@ function generateEmailHtml(type: string, actionUrl: string): { html: string; sub
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="color-scheme" content="light dark">
-  <meta name="supported-color-schemes" content="light dark">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
   <title>${template.subject}</title>
   <!--[if mso]>
   <noscript>
@@ -362,7 +310,7 @@ function generateEmailHtml(type: string, actionUrl: string): { html: string; sub
       <!-- Header -->
       <div class="email-header">
         <div class="logo-container">
-          <p class="logo-text">🏠 Roomy</p>
+          <img src="https://roomylb.com/roomy-logo.png" alt="Roomy" width="80" height="80" style="border-radius: 16px;" />
         </div>
         <p class="tagline">AI-Powered Student Housing</p>
       </div>
@@ -397,12 +345,7 @@ function generateEmailHtml(type: string, actionUrl: string): { html: string; sub
           <span class="footer-divider">•</span>
           <a href="https://roomylb.com/legal#terms" class="footer-link">Terms of Service</a>
         </div>
-        <p class="copyright">© ${year} Roomy — Student Housing Reinvented</p>
-        <div class="social-links">
-          <a href="https://instagram.com/roomy" class="social-link">Instagram</a>
-          <span class="footer-divider">•</span>
-          <a href="https://roomylb.com" class="social-link">roomylb.com</a>
-        </div>
+        <p class="copyright">Roomy Security • <a href="https://roomylb.com" style="color: #BD00FF; text-decoration: none;">roomylb.com</a></p>
       </div>
     </div>
   </div>
@@ -452,9 +395,9 @@ serve(async (req) => {
   try {
     const { html, subject } = generateEmailHtml(email_action_type, actionUrl);
 
-    // Send email via Resend
+    // Send email via Resend with verified domain
     const { error } = await resend.emails.send({
-      from: "Roomy <onboarding@resend.dev>",
+      from: "Roomy <security@roomylb.com>",
       to: [user.email],
       subject,
       html,

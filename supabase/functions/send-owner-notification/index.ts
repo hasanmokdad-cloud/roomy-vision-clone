@@ -83,7 +83,7 @@ function getRoomyOwnerEmailStyles(): string {
     .wrapper { width: 100%; padding: 40px 0; }
     .container { max-width: 600px; margin: 0 auto; padding: 0 20px; }
     .header { text-align: center; padding: 32px 0 24px 0; }
-    .logo { font-size: 36px; font-weight: 800; color: #A855F7; margin: 0; }
+    .logo { margin: 0 auto 12px auto; }
     .tagline { font-size: 14px; color: #94A3B8; margin: 8px 0 0 0; }
     .card { background: #ffffff; border-radius: 24px; padding: 48px 40px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
     .icon { text-align: center; font-size: 56px; margin-bottom: 16px; }
@@ -254,7 +254,7 @@ serve(async (req) => {
   <div class="wrapper">
     <div class="container">
       <div class="header">
-        <p class="logo">🏠 Roomy</p>
+        <img src="https://roomylb.com/roomy-logo.png" alt="Roomy" width="80" height="80" style="border-radius: 16px; margin-bottom: 12px;" />
         <p class="tagline">AI-Powered Student Housing</p>
       </div>
       <div class="card">
@@ -429,7 +429,7 @@ serve(async (req) => {
     // Send email via Resend if needed
     if (shouldSendEmail && subject && html) {
       const { data: emailData, error: emailError } = await resend.emails.send({
-        from: "Roomy Support <onboarding@resend.dev>",
+        from: "Roomy <notifications@roomylb.com>",
         to: [notification.sent_to],
         subject,
         html,
