@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Eye, MessageCircle, TrendingUp, Home, LogOut, Plus, Clock, CheckCircle, Loader2, Pencil, Video } from 'lucide-react';
+import { Building2, Eye, MessageCircle, TrendingUp, Home, LogOut, Plus, Clock, CheckCircle, Loader2, Pencil, Video, Wallet } from 'lucide-react';
 import { useOwnerDormsQuery } from '@/hooks/useOwnerDormsQuery';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
@@ -484,6 +484,26 @@ export default function OwnerHome() {
                   className="gap-2"
                 >
                   View Requests
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-hover">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold mb-2">Wallet & Payouts</h3>
+                  <p className="text-foreground/60">
+                    Manage your payout card and view transactions
+                  </p>
+                </div>
+                <Button
+                  onClick={() => navigate('/owner/wallet')}
+                  className="gap-2 bg-gradient-to-r from-primary to-purple-500"
+                >
+                  <Wallet className="w-4 h-4" />
+                  Open Wallet
                 </Button>
               </div>
             </CardContent>
