@@ -23,6 +23,15 @@ export default function DevicePending() {
           className="w-full max-w-md"
         >
           <div className="bg-background/95 backdrop-blur-sm border border-border/40 rounded-2xl p-8 shadow-2xl text-center">
+            {/* Logo */}
+            <div className="mb-6">
+              <img 
+                src="/roomy-logo.png" 
+                alt="Roomy Logo" 
+                className="h-14 w-14 mx-auto rounded-xl" 
+              />
+            </div>
+
             {/* Animated Mail Icon */}
             <motion.div
               initial={{ scale: 0 }}
@@ -58,7 +67,7 @@ export default function DevicePending() {
             <div className="space-y-3">
               {providerInfo && (
                 <Button
-                  className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90 text-white gap-2"
+                  className="w-full bg-gradient-to-r from-[#00E0FF] to-[#BD00FF] hover:opacity-90 text-white gap-2"
                   onClick={() => window.open(providerInfo.url, '_blank', 'noopener,noreferrer')}
                 >
                   {providerInfo.label}

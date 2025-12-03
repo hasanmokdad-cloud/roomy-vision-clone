@@ -126,11 +126,11 @@ export default function Auth() {
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md bg-background/95 backdrop-blur-sm border-white/20 shadow-2xl">
           <CardHeader className="text-center space-y-2">
-            <div className="text-5xl font-extrabold">
-              <span className="bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] bg-clip-text text-transparent">
-                Roomy
-              </span>
-            </div>
+            <img 
+              src="/roomy-logo.png" 
+              alt="Roomy Logo" 
+              className="h-14 w-14 mx-auto mb-3 rounded-xl" 
+            />
             <CardTitle className="text-2xl">Welcome to Roomy</CardTitle>
             <CardDescription>Sign in or create an account to find your perfect student housing</CardDescription>
           </CardHeader>
@@ -159,7 +159,7 @@ export default function Auth() {
                   </div>
                   <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
                 </div>
-                <Button onClick={onLogin} disabled={isLoading} className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90">
+                <Button onClick={onLogin} disabled={isLoading} className="w-full bg-gradient-to-r from-[#00E0FF] to-[#BD00FF] hover:opacity-90">
                   {isLoading ? "Signing in..." : "Sign in"}
                 </Button>
               </TabsContent>
@@ -173,7 +173,7 @@ export default function Auth() {
                   <Label htmlFor="password2">Password</Label>
                   <Input id="password2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
                 </div>
-                <Button onClick={onSignup} className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90">
+                <Button onClick={onSignup} className="w-full bg-gradient-to-r from-[#00E0FF] to-[#BD00FF] hover:opacity-90">
                   Create account
                 </Button>
               </TabsContent>
