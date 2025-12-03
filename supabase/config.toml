@@ -62,3 +62,24 @@ verify_jwt = true
 
 [functions.create-mock-payment-session]
 verify_jwt = true
+
+[functions.send-auth-email]
+verify_jwt = false
+
+[functions.send-student-receipt]
+verify_jwt = false
+
+[functions.send-booking-notification]
+verify_jwt = false
+
+[functions.verify-device]
+verify_jwt = false
+
+[functions.send-device-email]
+verify_jwt = false
+
+[functions.confirm-device]
+verify_jwt = false
+
+[functions.secure-account]
+verify_jwt = false

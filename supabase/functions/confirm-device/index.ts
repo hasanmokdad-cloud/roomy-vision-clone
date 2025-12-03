@@ -1,0 +1,108 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { token } = await req.json();
+
+    if (!token) {
+      return new Response(
+        JSON.stringify({ error: "Missing verification token" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Find device by token
+    const { data: device, error: findError } = await supabase
+      .from("user_devices")
+      .select("*")
+      .eq("verification_token", token)
+      .single();
+
+    if (findError || !device) {
+      console.error("Device not found:", findError);
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired verification token", code: "INVALID_TOKEN" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if token expired
+    const now = new Date();
+    const expiresAt = new Date(device.verification_expires_at);
+    
+    if (expiresAt < now) {
+      return new Response(
+        JSON.stringify({ error: "Verification link has expired. Please log in again to receive a new link.", code: "EXPIRED_TOKEN" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Mark device as verified
+    const { error: updateError } = await supabase
+      .from("user_devices")
+      .update({
+        is_verified: true,
+        is_current: true,
+        verification_token: null,
+        verification_expires_at: null,
+        last_used_at: new Date().toISOString()
+      })
+      .eq("id", device.id);
+
+    if (updateError) {
+      console.error("Error updating device:", updateError);
+      return new Response(
+        JSON.stringify({ error: "Failed to verify device" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Set other devices as not current
+    await supabase
+      .from("user_devices")
+      .update({ is_current: false })
+      .eq("user_id", device.user_id)
+      .neq("id", device.id);
+
+    // Log security event
+    await supabase.from("device_security_logs").insert({
+      user_id: device.user_id,
+      event_type: "device_verified",
+      device_fingerprint: device.fingerprint_hash,
+      ip_region: device.ip_region,
+      metadata: { device_name: device.device_name }
+    });
+
+    console.log(`Device verified for user ${device.user_id}: ${device.device_name}`);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        deviceName: device.device_name,
+        userId: device.user_id 
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+
+  } catch (error) {
+    console.error("Error in confirm-device:", error);
+    return new Response(
+      JSON.stringify({ error: "Internal server error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});

@@ -8,12 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { generateDeviceFingerprint, getApproximateRegion } from "@/utils/deviceFingerprint";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -26,35 +28,80 @@ export default function Auth() {
   }, [searchParams]);
 
   const onLogin = async () => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    
-    if (error) {
-      // Check if error is due to unconfirmed email
-      if (error.message.includes("Email not confirmed")) {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        if (error.message.includes("Email not confirmed")) {
+          toast({ 
+            title: "Email not verified", 
+            description: "Please check your email and click the verification link before signing in.",
+            variant: "destructive" 
+          });
+          return;
+        }
+        toast({ title: "Login failed", description: error.message, variant: "destructive" });
+        return;
+      }
+
+      if (data.user && !data.user.email_confirmed_at) {
+        await supabase.auth.signOut();
         toast({ 
           title: "Email not verified", 
-          description: "Please check your email and click the verification link before signing in.",
+          description: "Please verify your email before signing in.",
           variant: "destructive" 
         });
         return;
       }
-      toast({ title: "Login failed", description: error.message, variant: "destructive" });
-      return;
-    }
 
-    // Additional check for email confirmation
-    if (data.user && !data.user.email_confirmed_at) {
-      await supabase.auth.signOut();
-      toast({ 
-        title: "Email not verified", 
-        description: "Please verify your email before signing in. Check your inbox for the verification link.",
-        variant: "destructive" 
+      // Device verification check
+      const deviceInfo = await generateDeviceFingerprint();
+      const ipRegion = getApproximateRegion();
+
+      const { data: verifyResult, error: verifyError } = await supabase.functions.invoke("verify-device", {
+        body: {
+          userId: data.user.id,
+          fingerprintHash: deviceInfo.fingerprintHash,
+          deviceName: deviceInfo.deviceName,
+          browserName: deviceInfo.browserName,
+          browserVersion: deviceInfo.browserVersion,
+          osName: deviceInfo.osName,
+          osVersion: deviceInfo.osVersion,
+          deviceType: deviceInfo.deviceType,
+          ipRegion
+        }
       });
-      return;
-    }
 
-    toast({ title: "Welcome back!", description: "Signed in successfully." });
-    navigate("/intro", { replace: true });
+      if (verifyError) {
+        console.error("Device verify error:", verifyError);
+        // Continue with login on error (fail open for UX)
+        toast({ title: "Welcome back!", description: "Signed in successfully." });
+        navigate("/intro", { replace: true });
+        return;
+      }
+
+      if (verifyResult?.rateLimited) {
+        await supabase.auth.signOut();
+        toast({ 
+          title: "Too many attempts", 
+          description: "Please try again later.",
+          variant: "destructive" 
+        });
+        return;
+      }
+
+      if (verifyResult?.needsVerification) {
+        await supabase.auth.signOut();
+        navigate("/auth/device-pending", { state: { email } });
+        return;
+      }
+
+      toast({ title: "Welcome back!", description: "Signed in successfully." });
+      navigate("/intro", { replace: true });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const onSignup = async () => {
@@ -112,8 +159,8 @@ export default function Auth() {
                   </div>
                   <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
                 </div>
-                <Button onClick={onLogin} className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90">
-                  Sign in
+                <Button onClick={onLogin} disabled={isLoading} className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90">
+                  {isLoading ? "Signing in..." : "Sign in"}
                 </Button>
               </TabsContent>
 

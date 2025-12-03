@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home, Share2, Copy, CreditCard, Receipt, Save } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home, Share2, Copy, CreditCard, Receipt, Save, Smartphone } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import BottomNav from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
@@ -515,6 +515,15 @@ export default function Settings() {
                 >
                   <Shield className="w-4 h-4 mr-2" />
                   Enable 2FA
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => navigate('/settings/devices')}
+                >
+                  <Smartphone className="w-4 h-4 mr-2" />
+                  Manage Trusted Devices
                 </Button>
               </div>
             </Card>
