@@ -54,34 +54,32 @@ Deno.serve(async (req) => {
   <![endif]-->
   <style>
     @media (prefers-color-scheme: dark) {
-      .email-body { background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%) !important; }
-      .email-card { background-color: #1E293B !important; border-color: #334155 !important; }
-      .email-text { color: #E2E8F0 !important; }
-      .email-muted { color: #94A3B8 !important; }
+      .email-body { background: #F9FAFB !important; }
+      .email-card { background-color: #ffffff !important; border-color: #E5E7EB !important; }
+      .email-text { color: #0F172A !important; }
+      .email-muted { color: #64748B !important; }
     }
     @media only screen and (max-width: 480px) {
       .container { padding: 16px !important; }
       .card { padding: 24px 16px !important; margin: 0 8px !important; }
       .button { width: 100% !important; display: block !important; text-align: center !important; }
-      .logo { width: 100px !important; }
+      .logo { width: 60px !important; height: 60px !important; }
       .device-info { padding: 12px !important; }
     }
   </style>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <div class="email-body" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); min-height: 100vh; padding: 40px 20px;">
+  <div class="email-body" style="background: #F9FAFB; min-height: 100vh; padding: 40px 20px;">
     <div class="container" style="max-width: 520px; margin: 0 auto;">
       
-      <!-- Header -->
+      <!-- Header with Logo -->
       <div style="text-align: center; margin-bottom: 32px;">
-        <div style="font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #8E2DE2, #4A00E0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-          Roomy
-        </div>
-        <p style="color: #94A3B8; font-size: 14px; margin: 8px 0 0 0;">AI-Powered Student Housing</p>
+        <img src="https://roomylb.com/roomy-logo.png" alt="Roomy" width="80" height="80" style="border-radius: 16px; margin-bottom: 12px;" />
+        <p style="color: #64748B; font-size: 14px; margin: 8px 0 0 0;">AI-Powered Student Housing</p>
       </div>
 
       <!-- Card -->
-      <div class="card email-card" style="background-color: #ffffff; border-radius: 16px; padding: 32px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);">
+      <div class="card email-card" style="background-color: #ffffff; border-radius: 12px; padding: 32px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); border: 1px solid #E5E7EB;">
         
         <!-- Alert Icon -->
         <div style="text-align: center; margin-bottom: 24px;">
@@ -90,7 +88,7 @@ Deno.serve(async (req) => {
           </div>
         </div>
 
-        <h1 class="email-text" style="color: #1a1a2e; font-size: 22px; font-weight: 700; text-align: center; margin: 0 0 16px 0;">
+        <h1 class="email-text" style="color: #0F172A; font-size: 22px; font-weight: 700; text-align: center; margin: 0 0 16px 0;">
           New Login Attempt Detected
         </h1>
         
@@ -99,19 +97,19 @@ Deno.serve(async (req) => {
         </p>
 
         <!-- Device Info Box -->
-        <div class="device-info" style="background-color: #F8FAFC; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+        <div class="device-info" style="background-color: #F9FAFB; border-radius: 12px; padding: 16px; margin-bottom: 24px; border: 1px solid #E5E7EB;">
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; color: #64748B; font-size: 14px;">Device</td>
-              <td style="padding: 8px 0; color: #1E293B; font-size: 14px; text-align: right; font-weight: 600;">${deviceName}</td>
+              <td style="padding: 8px 0; color: #0F172A; font-size: 14px; text-align: right; font-weight: 600;">${deviceName}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #64748B; font-size: 14px;">Location</td>
-              <td style="padding: 8px 0; color: #1E293B; font-size: 14px; text-align: right; font-weight: 600;">${ipRegion}</td>
+              <td style="padding: 8px 0; color: #0F172A; font-size: 14px; text-align: right; font-weight: 600;">${ipRegion}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #64748B; font-size: 14px;">Date & Time</td>
-              <td style="padding: 8px 0; color: #1E293B; font-size: 14px; text-align: right; font-weight: 600;">${now}</td>
+              <td style="padding: 8px 0; color: #0F172A; font-size: 14px; text-align: right; font-weight: 600;">${now}</td>
             </tr>
           </table>
         </div>
@@ -130,7 +128,7 @@ Deno.serve(async (req) => {
         </div>
 
         <!-- Disclaimer -->
-        <p style="color: #94A3B8; font-size: 13px; text-align: center; margin: 0; line-height: 1.5;">
+        <p style="color: #64748B; font-size: 13px; text-align: center; margin: 0; line-height: 1.5;">
           If you recognize this activity, click "Yes, This Was Me" to approve the device.
           <br>If you don't recognize this, click "Secure My Account" to protect your account immediately.
         </p>
@@ -139,14 +137,14 @@ Deno.serve(async (req) => {
       <!-- Footer -->
       <div style="text-align: center; margin-top: 32px; padding: 0 16px;">
         <p style="color: #64748B; font-size: 13px; margin: 0 0 8px 0;">
-          <a href="https://roomylb.com/contact" style="color: #8E2DE2; text-decoration: none;">Support</a>
+          <a href="https://roomylb.com/contact" style="color: #BD00FF; text-decoration: none;">Support</a>
           &nbsp;•&nbsp;
-          <a href="https://roomylb.com/legal#privacy" style="color: #8E2DE2; text-decoration: none;">Privacy</a>
+          <a href="https://roomylb.com/legal#privacy" style="color: #BD00FF; text-decoration: none;">Privacy</a>
           &nbsp;•&nbsp;
-          <a href="https://roomylb.com/legal#terms" style="color: #8E2DE2; text-decoration: none;">Terms</a>
+          <a href="https://roomylb.com/legal#terms" style="color: #BD00FF; text-decoration: none;">Terms</a>
         </p>
-        <p style="color: #475569; font-size: 12px; margin: 0;">
-          © 2025 Roomy — Student Housing Reinvented
+        <p style="color: #64748B; font-size: 12px; margin: 0;">
+          Roomy Security • <a href="https://roomylb.com" style="color: #BD00FF; text-decoration: none;">roomylb.com</a>
         </p>
       </div>
 
@@ -164,7 +162,7 @@ Deno.serve(async (req) => {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Roomy Security <onboarding@resend.dev>",
+        from: "Roomy Security <security@roomylb.com>",
         to: [email],
         subject: "🔔 New Login Attempt on Your Roomy Account",
         html: emailHtml,
