@@ -50,7 +50,7 @@ export function PayoutSetupBanner({ ownerId }: PayoutSetupBannerProps) {
   const handleSetupPayouts = () => {
     if (!hasPayoutCard) {
       // No card - go directly to add card flow
-      navigate('/mock-whish-owner-add-card');
+      navigate(`/mock-whish-owner-add-card?ownerId=${ownerId}`);
     } else {
       // Has card - go to wallet
       navigate('/owner/wallet');
