@@ -137,6 +137,44 @@ Deno.serve(async (req) => {
 
     // 5. On success: Update database
     if (refundSuccess) {
+      // Get refund request details for amounts
+      const baseDeposit = refundRequest.base_deposit || reservation.deposit_amount || 0;
+      const commissionAmount = refundRequest.refund_admin_amount || (baseDeposit * 0.1);
+
+      // Debit owner wallet (base deposit amount)
+      const { data: ownerWallet } = await supabaseClient
+        .from('owner_payment_methods')
+        .select('id, balance')
+        .eq('owner_id', reservation.rooms?.dorm_id ? refundRequest.owner_id : refundRequest.owner_id)
+        .eq('is_default', true)
+        .maybeSingle();
+
+      if (ownerWallet && ownerWallet.balance >= baseDeposit) {
+        await supabaseClient.rpc('decrement_owner_balance', {
+          p_owner_id: refundRequest.owner_id,
+          p_amount: baseDeposit,
+        });
+        console.log(`💰 Debited owner wallet: $${baseDeposit}`);
+      } else {
+        console.log('⚠️ Owner wallet insufficient balance or not found, skipping debit');
+      }
+
+      // Debit admin wallet (commission amount)
+      const { data: adminWallets } = await supabaseClient
+        .from('admin_wallet')
+        .select('admin_id, balance')
+        .limit(1);
+
+      if (adminWallets && adminWallets.length > 0 && adminWallets[0].balance >= commissionAmount) {
+        await supabaseClient.rpc('decrement_admin_balance', {
+          p_admin_id: adminWallets[0].admin_id,
+          p_amount: commissionAmount,
+        });
+        console.log(`💰 Debited admin wallet: $${commissionAmount}`);
+      } else {
+        console.log('⚠️ Admin wallet insufficient balance or not found, skipping debit');
+      }
+
       // Update reservation status
       await supabaseClient
         .from('reservations')
@@ -145,13 +183,19 @@ Deno.serve(async (req) => {
         })
         .eq('id', reservation_id);
 
-      // Update refund request status
+      // Update refund request status with full financial details
       await supabaseClient
         .from('refund_requests')
         .update({
           status: 'processed',
           processed_at: new Date().toISOString(),
           processed_by: initiated_by,
+          admin_id: initiated_by,
+          admin_decision: 'approved',
+          base_deposit: baseDeposit,
+          total_paid: reservation.total_amount,
+          refund_owner_amount: baseDeposit,
+          refund_admin_amount: commissionAmount,
         })
         .eq('id', refund_request_id);
 
@@ -181,6 +225,8 @@ Deno.serve(async (req) => {
         reservation_id,
         refund_request_id,
         whish_refund_id: whishRefundId,
+        owner_debited: baseDeposit,
+        admin_debited: commissionAmount,
       });
 
       return new Response(

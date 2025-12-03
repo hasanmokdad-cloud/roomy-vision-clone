@@ -61,7 +61,13 @@ export default function RequestRefundModal({
 
       if (!dorm) throw new Error('Dorm not found');
 
-      // Create refund request
+      // Calculate amounts
+      const baseDeposit = reservation.deposit_amount || 0;
+      const totalPaid = reservation.total_amount || 0;
+      const refundOwnerAmount = baseDeposit;
+      const refundAdminAmount = reservation.commission_amount || (baseDeposit * 0.1);
+
+      // Create refund request with financial details
       const { error } = await supabase
         .from('refund_requests')
         .insert({
@@ -70,6 +76,10 @@ export default function RequestRefundModal({
           owner_id: dorm.owner_id,
           reason: reason.trim(),
           status: 'pending',
+          base_deposit: baseDeposit,
+          total_paid: totalPaid,
+          refund_owner_amount: refundOwnerAmount,
+          refund_admin_amount: refundAdminAmount,
         });
 
       if (error) throw error;
@@ -137,16 +147,8 @@ export default function RequestRefundModal({
           )}
         </div>
 
-        <div className="border-t pt-3 space-y-1">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Deposit Amount</span>
-            <span className="font-medium">${reservation.deposit_amount}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Service Fee</span>
-            <span className="font-medium">${reservation.commission_amount}</span>
-          </div>
-          <div className="flex justify-between font-bold border-t pt-2">
+        <div className="border-t pt-3">
+          <div className="flex justify-between font-bold">
             <span>Total to Refund</span>
             <span className="text-primary">${reservation.total_amount}</span>
           </div>
