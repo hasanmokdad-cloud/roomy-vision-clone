@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const approveUrl = `https://roomylb.com/devices/verify?token=${verificationToken}`;
+    const approveUrl = `https://roomylb.com/auth/approve-device?token=${verificationToken}`;
     const secureUrl = `https://roomylb.com/devices/secure?token=${verificationToken}`;
     const now = new Date().toLocaleString("en-US", { 
       dateStyle: "medium", 
