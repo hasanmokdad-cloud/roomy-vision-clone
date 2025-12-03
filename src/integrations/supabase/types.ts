@@ -2012,6 +2012,10 @@ export type Database = {
       }
       refund_requests: {
         Row: {
+          admin_decision: string | null
+          admin_decision_note: string | null
+          admin_id: string | null
+          base_deposit: number | null
           created_at: string | null
           id: string
           owner_decision: string | null
@@ -2020,11 +2024,18 @@ export type Database = {
           processed_at: string | null
           processed_by: string | null
           reason: string | null
+          refund_admin_amount: number | null
+          refund_owner_amount: number | null
           reservation_id: string
           status: string
           student_id: string
+          total_paid: number | null
         }
         Insert: {
+          admin_decision?: string | null
+          admin_decision_note?: string | null
+          admin_id?: string | null
+          base_deposit?: number | null
           created_at?: string | null
           id?: string
           owner_decision?: string | null
@@ -2033,11 +2044,18 @@ export type Database = {
           processed_at?: string | null
           processed_by?: string | null
           reason?: string | null
+          refund_admin_amount?: number | null
+          refund_owner_amount?: number | null
           reservation_id: string
           status?: string
           student_id: string
+          total_paid?: number | null
         }
         Update: {
+          admin_decision?: string | null
+          admin_decision_note?: string | null
+          admin_id?: string | null
+          base_deposit?: number | null
           created_at?: string | null
           id?: string
           owner_decision?: string | null
@@ -2046,9 +2064,12 @@ export type Database = {
           processed_at?: string | null
           processed_by?: string | null
           reason?: string | null
+          refund_admin_amount?: number | null
+          refund_owner_amount?: number | null
           reservation_id?: string
           status?: string
           student_id?: string
+          total_paid?: number | null
         }
         Relationships: [
           {
@@ -3452,6 +3473,14 @@ export type Database = {
         Returns: boolean
       }
       debug_auth_state: { Args: never; Returns: Json }
+      decrement_admin_balance: {
+        Args: { p_admin_id: string; p_amount: number }
+        Returns: undefined
+      }
+      decrement_owner_balance: {
+        Args: { p_amount: number; p_owner_id: string }
+        Returns: undefined
+      }
       decrement_room_occupancy: {
         Args: { room_id: string }
         Returns: undefined
