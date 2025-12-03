@@ -1,28 +1,16 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, RefreshCw, ArrowLeft } from "lucide-react";
+import { Mail, RefreshCw, ArrowLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FluidBackground from "@/components/FluidBackground";
+import { getEmailProviderInfo } from "@/utils/emailProvider";
 
 export default function DevicePending() {
   const location = useLocation();
   const navigate = useNavigate();
-  const email = location.state?.email || "your email";
+  const email = location.state?.email || "";
 
-  // Extract domain for email provider button
-  const emailDomain = email.includes("@") ? email.split("@")[1].toLowerCase() : "";
-  
-  const getEmailProviderLink = () => {
-    if (emailDomain.includes("gmail")) return "https://mail.google.com";
-    if (emailDomain.includes("outlook") || emailDomain.includes("hotmail") || emailDomain.includes("live")) 
-      return "https://outlook.live.com";
-    if (emailDomain.includes("icloud") || emailDomain.includes("me.com") || emailDomain.includes("mac.com")) 
-      return "https://www.icloud.com/mail";
-    if (emailDomain.includes("yahoo")) return "https://mail.yahoo.com";
-    return null;
-  };
-
-  const emailProviderLink = getEmailProviderLink();
+  const providerInfo = getEmailProviderInfo(email);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -57,7 +45,7 @@ export default function DevicePending() {
             <h1 className="text-2xl font-bold mb-2">New Device Detected</h1>
             <p className="text-foreground/70 mb-6">
               For your security, we sent a verification link to{" "}
-              <span className="font-medium text-foreground">{email}</span>
+              <span className="font-medium text-foreground">{email || "your email"}</span>
             </p>
 
             {/* Info Box */}
@@ -68,15 +56,13 @@ export default function DevicePending() {
             </div>
 
             <div className="space-y-3">
-              {emailProviderLink && (
+              {providerInfo && (
                 <Button
-                  asChild
-                  className="w-full bg-gradient-to-r from-primary to-purple-600 hover:opacity-90"
+                  className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90 text-white gap-2"
+                  onClick={() => window.open(providerInfo.url, '_blank', 'noopener,noreferrer')}
                 >
-                  <a href={emailProviderLink} target="_blank" rel="noopener noreferrer">
-                    <Mail className="w-4 h-4 mr-2" />
-                    Open Email
-                  </a>
+                  {providerInfo.label}
+                  <ExternalLink className="w-4 h-4" />
                 </Button>
               )}
 

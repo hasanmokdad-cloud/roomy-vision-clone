@@ -6,31 +6,7 @@ import FluidBackground from "@/components/FluidBackground";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-
-const getEmailProvider = (email: string) => {
-  const domain = email.split('@')[1]?.toLowerCase();
-  
-  if (!domain) return { label: "Open Inbox", url: null };
-  
-  if (domain === 'gmail.com') {
-    return { label: "Open Gmail", url: "https://mail.google.com" };
-  }
-  
-  if (['outlook.com', 'hotmail.com', 'live.com'].includes(domain)) {
-    return { label: "Open Outlook", url: "https://outlook.live.com" };
-  }
-  
-  if (domain === 'icloud.com') {
-    return { label: "Open iCloud Mail", url: "https://www.icloud.com/mail" };
-  }
-  
-  // Check for .edu domains (university emails typically use Outlook)
-  if (domain.endsWith('.edu') || domain.endsWith('.edu.lb')) {
-    return { label: "Open Outlook", url: "https://outlook.office.com" };
-  }
-  
-  return { label: "Open Inbox", url: null };
-};
+import { getEmailProviderInfo } from "@/utils/emailProvider";
 
 export default function CheckEmail() {
   const [searchParams] = useSearchParams();
@@ -39,7 +15,7 @@ export default function CheckEmail() {
   const [isResending, setIsResending] = useState(false);
   
   const email = searchParams.get('email') || '';
-  const provider = getEmailProvider(email);
+  const providerInfo = getEmailProviderInfo(email);
 
   const handleResendEmail = async () => {
     if (!email) return;
@@ -50,7 +26,7 @@ export default function CheckEmail() {
         type: 'signup',
         email,
         options: {
-          emailRedirectTo: `https://roomylb.com/auth/verify`,
+          emailRedirectTo: `${window.location.origin}/auth/verify`,
         },
       });
       
@@ -72,8 +48,8 @@ export default function CheckEmail() {
   };
 
   const handleOpenProvider = () => {
-    if (provider.url) {
-      window.open(provider.url, '_blank', 'noopener,noreferrer');
+    if (providerInfo?.url) {
+      window.open(providerInfo.url, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -107,22 +83,16 @@ export default function CheckEmail() {
               </p>
             </div>
             
-            {/* Open Email Provider Button */}
-            {provider.url ? (
+            {/* Smart Email Provider Button */}
+            {providerInfo && (
               <Button
                 onClick={handleOpenProvider}
                 className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90 text-white gap-2"
                 size="lg"
               >
-                {provider.label}
+                {providerInfo.label}
                 <ExternalLink className="w-4 h-4" />
               </Button>
-            ) : (
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  Open your email app and look for our verification email.
-                </p>
-              </div>
             )}
             
             {/* Resend Link */}
