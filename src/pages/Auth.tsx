@@ -129,7 +129,7 @@ export default function Auth() {
             <img 
               src="/roomy-logo.png" 
               alt="Roomy Logo" 
-              className="h-14 w-14 mx-auto mb-3"
+              className="h-20 w-20 mx-auto mb-4"
             />
             <CardTitle className="text-2xl">Welcome to Roomy</CardTitle>
             <CardDescription>Sign in or create an account to find your perfect student housing</CardDescription>
