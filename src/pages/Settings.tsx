@@ -332,36 +332,36 @@ export default function Settings() {
               </div>
             </Card>
 
-            {/* Payment Settings */}
-            <Card className="glass p-6 border border-border/40">
-              <div className="flex items-center gap-4 mb-4">
-                <CreditCard className="w-6 h-6 text-primary" />
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground">Payment Settings</h3>
-                  <p className="text-sm text-foreground/60">
-                    Manage your cards, wallet & billing history
-                  </p>
+            {/* Payment Settings - Only for students (owners/admins manage payouts from their control panels) */}
+            {role === 'student' && (
+              <Card className="glass p-6 border border-border/40">
+                <div className="flex items-center gap-4 mb-4">
+                  <CreditCard className="w-6 h-6 text-primary" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Payment Settings</h3>
+                    <p className="text-sm text-foreground/60">
+                      Manage your cards, wallet & billing history
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid gap-2">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/wallet')}
-                >
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  My Wallet
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/billing-history')}
-                >
-                  <Receipt className="w-4 h-4 mr-2" />
-                  Billing History
-                </Button>
-                {role === 'student' && (
+                <div className="grid gap-2">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => navigate('/wallet')}
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    My Wallet
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => navigate('/billing-history')}
+                  >
+                    <Receipt className="w-4 h-4 mr-2" />
+                    Billing History
+                  </Button>
                   <Button
                     variant="outline"
                     className="w-full justify-start"
@@ -370,9 +370,9 @@ export default function Settings() {
                     <Home className="w-4 h-4 mr-2" />
                     Room Reservations
                   </Button>
-                )}
-              </div>
-            </Card>
+                </div>
+              </Card>
+            )}
 
             {/* Saved Items - For students and admins */}
             {(role === 'student' || role === 'admin') && (
