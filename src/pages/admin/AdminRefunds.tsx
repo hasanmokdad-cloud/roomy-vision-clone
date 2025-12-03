@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,6 +21,7 @@ import {
   User,
   Building2,
   AlertTriangle,
+  Zap,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -34,6 +35,10 @@ interface RefundRequest {
   created_at: string;
   processed_at?: string;
   rejection_note?: string;
+  owner_decision?: string;
+  owner_decision_note?: string;
+  admin_decision?: string;
+  admin_decision_note?: string;
   base_deposit?: number;
   total_paid?: number;
   refund_owner_amount?: number;
@@ -55,11 +60,11 @@ export default function AdminRefunds() {
   const { loading: authLoading } = useRoleGuard('admin');
   const [loading, setLoading] = useState(true);
   const [refundRequests, setRefundRequests] = useState<RefundRequest[]>([]);
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useState<string>('pending');
   const [stats, setStats] = useState({
-    pending: 0,
-    approved: 0,
-    processed: 0,
+    pendingOwner: 0,
+    pendingAdmin: 0,
+    refunded: 0,
     rejected: 0,
     totalRefunded: 0,
   });
@@ -89,7 +94,10 @@ export default function AdminRefunds() {
         `)
         .order('created_at', { ascending: false });
 
-      if (filter !== 'all') {
+      // Apply filter
+      if (filter === 'pending') {
+        query = query.in('status', ['pending', 'pending_owner', 'pending_admin', 'approved']);
+      } else if (filter !== 'all') {
         query = query.eq('status', filter);
       }
 
@@ -111,17 +119,21 @@ export default function AdminRefunds() {
 
       setRefundRequests(enrichedData as RefundRequest[]);
 
-      // Calculate stats
-      const allRequests = enrichedData || [];
-      const pending = allRequests.filter(r => r.status === 'pending' || r.status === 'approved').length;
-      const approved = allRequests.filter(r => r.status === 'approved').length;
-      const processed = allRequests.filter(r => r.status === 'processed').length;
-      const rejected = allRequests.filter(r => r.status === 'rejected').length;
-      const totalRefunded = allRequests
-        .filter(r => r.status === 'processed')
-        .reduce((sum, r) => sum + (r.total_paid || r.reservations?.total_amount || 0), 0);
+      // Calculate stats from ALL requests
+      const { data: allRequests } = await supabase
+        .from('refund_requests')
+        .select('status, total_paid, reservations(total_amount)');
 
-      setStats({ pending, approved, processed, rejected, totalRefunded });
+      const requests = allRequests || [];
+      const pendingOwner = requests.filter(r => r.status === 'pending' || r.status === 'pending_owner').length;
+      const pendingAdmin = requests.filter(r => r.status === 'pending_admin' || r.status === 'approved').length;
+      const refunded = requests.filter(r => r.status === 'refunded' || r.status === 'processed').length;
+      const rejected = requests.filter(r => r.status === 'rejected').length;
+      const totalRefunded = requests
+        .filter(r => r.status === 'refunded' || r.status === 'processed')
+        .reduce((sum, r: any) => sum + (r.total_paid || r.reservations?.total_amount || 0), 0);
+
+      setStats({ pendingOwner, pendingAdmin, refunded, rejected, totalRefunded });
     } catch (error) {
       console.error('Error loading refund requests:', error);
       toast({
@@ -139,6 +151,23 @@ export default function AdminRefunds() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+
+      // First update to approved status
+      await supabase
+        .from('refund_requests')
+        .update({
+          status: 'approved',
+          admin_decision: 'approved',
+        })
+        .eq('id', request.id);
+
+      // Update reservation's latest_refund_status
+      await supabase
+        .from('reservations')
+        .update({
+          latest_refund_status: 'approved',
+        })
+        .eq('id', request.reservation_id);
 
       // Call the whish-refund-handler edge function
       const { data, error } = await supabase.functions.invoke('whish-refund-handler', {
@@ -159,11 +188,25 @@ export default function AdminRefunds() {
       loadRefundRequests();
     } catch (error: any) {
       console.error('Error processing refund:', error);
+      
+      // Update status to failed
+      await supabase
+        .from('refund_requests')
+        .update({ status: 'failed' })
+        .eq('id', request.id);
+
+      await supabase
+        .from('reservations')
+        .update({ latest_refund_status: 'failed' })
+        .eq('id', request.reservation_id);
+
       toast({
         title: 'Error',
         description: error.message || 'Failed to process refund',
         variant: 'destructive',
       });
+      
+      loadRefundRequests();
     } finally {
       setProcessing(false);
     }
@@ -191,6 +234,14 @@ export default function AdminRefunds() {
 
       if (error) throw error;
 
+      // Update reservation's latest_refund_status
+      await supabase
+        .from('reservations')
+        .update({
+          latest_refund_status: 'rejected',
+        })
+        .eq('id', selectedRequest.reservation_id);
+
       toast({
         title: 'Refund Rejected',
         description: 'The refund request has been rejected.',
@@ -215,16 +266,30 @@ export default function AdminRefunds() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
+      case 'pending_owner':
         return <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300">Pending Owner</Badge>;
+      case 'pending_admin':
+        return <Badge className="bg-blue-500/20 text-blue-700 dark:text-blue-300">Pending Admin</Badge>;
       case 'approved':
-        return <Badge className="bg-blue-500/20 text-blue-700 dark:text-blue-300">Awaiting Admin</Badge>;
+        return <Badge className="bg-blue-500/20 text-blue-700 dark:text-blue-300">Approved (Processing)</Badge>;
+      case 'refunded':
       case 'processed':
-        return <Badge className="bg-green-500/20 text-green-700 dark:text-green-300">Processed</Badge>;
+        return <Badge className="bg-green-500/20 text-green-700 dark:text-green-300">Refunded</Badge>;
       case 'rejected':
         return <Badge className="bg-red-500/20 text-red-700 dark:text-red-300">Rejected</Badge>;
+      case 'failed':
+        return <Badge className="bg-red-500/20 text-red-700 dark:text-red-300">Failed</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
+  };
+
+  const canProcess = (status: string) => {
+    return ['pending', 'pending_owner', 'pending_admin', 'approved'].includes(status);
+  };
+
+  const isOverride = (status: string) => {
+    return status === 'pending' || status === 'pending_owner';
   };
 
   if (authLoading) {
@@ -263,22 +328,22 @@ export default function AdminRefunds() {
           <Card className="bg-amber-500/10 border-amber-500/20">
             <CardContent className="p-4 text-center">
               <Clock className="w-8 h-8 mx-auto mb-2 text-amber-600" />
-              <p className="text-2xl font-bold">{stats.pending}</p>
-              <p className="text-sm text-muted-foreground">Pending</p>
+              <p className="text-2xl font-bold">{stats.pendingOwner}</p>
+              <p className="text-sm text-muted-foreground">Pending Owner</p>
             </CardContent>
           </Card>
           <Card className="bg-blue-500/10 border-blue-500/20">
             <CardContent className="p-4 text-center">
               <CheckCircle className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-              <p className="text-2xl font-bold">{stats.approved}</p>
-              <p className="text-sm text-muted-foreground">Awaiting Admin</p>
+              <p className="text-2xl font-bold">{stats.pendingAdmin}</p>
+              <p className="text-sm text-muted-foreground">Pending Admin</p>
             </CardContent>
           </Card>
           <Card className="bg-green-500/10 border-green-500/20">
             <CardContent className="p-4 text-center">
               <DollarSign className="w-8 h-8 mx-auto mb-2 text-green-600" />
-              <p className="text-2xl font-bold">{stats.processed}</p>
-              <p className="text-sm text-muted-foreground">Processed</p>
+              <p className="text-2xl font-bold">{stats.refunded}</p>
+              <p className="text-sm text-muted-foreground">Refunded</p>
             </CardContent>
           </Card>
           <Card className="bg-red-500/10 border-red-500/20">
@@ -299,15 +364,20 @@ export default function AdminRefunds() {
 
         {/* Filter Tabs */}
         <div className="flex gap-2 flex-wrap">
-          {['all', 'pending', 'approved', 'processed', 'rejected'].map((f) => (
+          {[
+            { key: 'pending', label: 'Pending' },
+            { key: 'all', label: 'All Requests' },
+            { key: 'refunded', label: 'Refunded' },
+            { key: 'rejected', label: 'Rejected' },
+            { key: 'failed', label: 'Failed' },
+          ].map((f) => (
             <Button
-              key={f}
-              variant={filter === f ? 'default' : 'outline'}
+              key={f.key}
+              variant={filter === f.key ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setFilter(f)}
-              className="capitalize"
+              onClick={() => setFilter(f.key)}
             >
-              {f === 'all' ? 'All Requests' : f}
+              {f.label}
             </Button>
           ))}
         </div>
@@ -335,7 +405,7 @@ export default function AdminRefunds() {
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                     {/* Left: Details */}
                     <div className="space-y-3 flex-1">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-wrap">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                           <User className="w-5 h-5 text-primary" />
                         </div>
@@ -356,15 +426,32 @@ export default function AdminRefunds() {
                         </span>
                       </div>
 
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <User className="w-4 h-4" />
+                        <span>Owner: {request.owners?.full_name || 'Unknown'}</span>
+                        {request.owner_decision && (
+                          <Badge variant="outline" className="text-xs">
+                            Owner: {request.owner_decision}
+                          </Badge>
+                        )}
+                      </div>
+
                       <div className="p-3 bg-muted/30 rounded-lg">
                         <p className="text-sm font-medium mb-1">Reason:</p>
                         <p className="text-sm text-muted-foreground">{request.reason}</p>
                       </div>
 
-                      {request.rejection_note && (
+                      {request.owner_decision_note && (
+                        <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                          <p className="text-sm font-medium mb-1 text-amber-700 dark:text-amber-300">Owner Note:</p>
+                          <p className="text-sm text-amber-600 dark:text-amber-400">{request.owner_decision_note}</p>
+                        </div>
+                      )}
+
+                      {(request.rejection_note || request.admin_decision_note) && (
                         <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/20">
-                          <p className="text-sm font-medium mb-1 text-red-700 dark:text-red-300">Rejection Note:</p>
-                          <p className="text-sm text-red-600 dark:text-red-400">{request.rejection_note}</p>
+                          <p className="text-sm font-medium mb-1 text-red-700 dark:text-red-300">Admin Rejection Note:</p>
+                          <p className="text-sm text-red-600 dark:text-red-400">{request.rejection_note || request.admin_decision_note}</p>
                         </div>
                       )}
                     </div>
@@ -378,15 +465,16 @@ export default function AdminRefunds() {
                         </p>
                       </div>
 
-                      {(request.status === 'pending' || request.status === 'approved') && (
+                      {canProcess(request.status) && (
                         <div className="flex gap-2">
                           <Button
                             onClick={() => handleApproveAndProcess(request)}
                             disabled={processing}
                             className="bg-gradient-to-r from-green-500 to-emerald-500 text-white gap-2"
                           >
+                            {isOverride(request.status) && <Zap className="w-4 h-4" />}
                             <CheckCircle className="w-4 h-4" />
-                            {processing ? 'Processing...' : 'Approve & Process'}
+                            {processing ? 'Processing...' : isOverride(request.status) ? 'Override & Process' : 'Process Refund'}
                           </Button>
                           <Button
                             variant="outline"

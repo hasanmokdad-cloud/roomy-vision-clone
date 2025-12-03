@@ -2090,6 +2090,7 @@ export type Database = {
           dorm_id: string
           expires_at: string | null
           id: string
+          latest_refund_status: string | null
           meta: Json | null
           owner_payout_amount: number | null
           owner_payout_attempts: number | null
@@ -2115,6 +2116,7 @@ export type Database = {
           dorm_id: string
           expires_at?: string | null
           id?: string
+          latest_refund_status?: string | null
           meta?: Json | null
           owner_payout_amount?: number | null
           owner_payout_attempts?: number | null
@@ -2140,6 +2142,7 @@ export type Database = {
           dorm_id?: string
           expires_at?: string | null
           id?: string
+          latest_refund_status?: string | null
           meta?: Json | null
           owner_payout_amount?: number | null
           owner_payout_attempts?: number | null
