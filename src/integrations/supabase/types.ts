@@ -822,6 +822,36 @@ export type Database = {
           },
         ]
       }
+      device_security_logs: {
+        Row: {
+          created_at: string | null
+          device_fingerprint: string | null
+          event_type: string
+          id: string
+          ip_region: string | null
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_fingerprint?: string | null
+          event_type: string
+          id?: string
+          ip_region?: string | null
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_fingerprint?: string | null
+          event_type?: string
+          id?: string
+          ip_region?: string | null
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       dorm_claims: {
         Row: {
           admin_notes: string | null
@@ -3164,6 +3194,63 @@ export type Database = {
             referencedColumns: ["dorm_id"]
           },
         ]
+      }
+      user_devices: {
+        Row: {
+          browser_name: string | null
+          browser_version: string | null
+          created_at: string | null
+          device_name: string
+          device_type: string | null
+          fingerprint_hash: string
+          id: string
+          ip_region: string | null
+          is_current: boolean | null
+          is_verified: boolean | null
+          last_used_at: string | null
+          os_name: string | null
+          os_version: string | null
+          user_id: string
+          verification_expires_at: string | null
+          verification_token: string | null
+        }
+        Insert: {
+          browser_name?: string | null
+          browser_version?: string | null
+          created_at?: string | null
+          device_name: string
+          device_type?: string | null
+          fingerprint_hash: string
+          id?: string
+          ip_region?: string | null
+          is_current?: boolean | null
+          is_verified?: boolean | null
+          last_used_at?: string | null
+          os_name?: string | null
+          os_version?: string | null
+          user_id: string
+          verification_expires_at?: string | null
+          verification_token?: string | null
+        }
+        Update: {
+          browser_name?: string | null
+          browser_version?: string | null
+          created_at?: string | null
+          device_name?: string
+          device_type?: string | null
+          fingerprint_hash?: string
+          id?: string
+          ip_region?: string | null
+          is_current?: boolean | null
+          is_verified?: boolean | null
+          last_used_at?: string | null
+          os_name?: string | null
+          os_version?: string | null
+          user_id?: string
+          verification_expires_at?: string | null
+          verification_token?: string | null
+        }
+        Relationships: []
       }
       user_payment_profiles: {
         Row: {

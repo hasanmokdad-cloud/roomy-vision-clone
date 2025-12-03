@@ -105,6 +105,10 @@ const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
 const AdminBilling = lazy(() => import("./pages/admin/AdminBilling"));
 const MockWhishAdminAddCard = lazy(() => import("./pages/admin/MockWhishAdminAddCard"));
 const AdminRefunds = lazy(() => import("./pages/admin/AdminRefunds"));
+const VerifyDevice = lazy(() => import("./pages/devices/VerifyDevice"));
+const SecureAccount = lazy(() => import("./pages/devices/SecureAccount"));
+const DevicesPage = lazy(() => import("./pages/settings/DevicesPage"));
+const DevicePending = lazy(() => import("./pages/auth/DevicePending"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -198,6 +202,9 @@ const AppRoutes = () => {
           <Route path="/password-reset" element={<PasswordReset />} />
           <Route path="/password-reset/success" element={<ResetPasswordSuccess />} />
           <Route path="/password-reset/error" element={<ResetPasswordError />} />
+          <Route path="/auth/device-pending" element={<DevicePending />} />
+          <Route path="/devices/verify" element={<VerifyDevice />} />
+          <Route path="/devices/secure" element={<SecureAccount />} />
           <Route path="/intro" element={<Intro />} />
           <Route path="/listings" element={<ProtectedRoute element={<MobileSwipeLayout><Listings /></MobileSwipeLayout>} forbiddenRoles={["owner"]} />} />
           <Route path="/dorm/:id" element={<DormDetail />} />
@@ -216,6 +223,7 @@ const AppRoutes = () => {
           <Route path="/onboarding" element={<ProtectedRoute element={<Onboarding />} />} />
           <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
           <Route path="/settings" element={<ProtectedRoute element={<Settings />} />} />
+          <Route path="/settings/devices" element={<ProtectedRoute element={<DevicesPage />} />} />
           <Route path="/saved-dorms" element={<ProtectedRoute element={<SavedDorms />} />} />
           <Route path="/saved-rooms" element={<ProtectedRoute element={<SavedRooms />} />} />
           <Route path="/messages" element={<ProtectedRoute element={<Messages />} />} />
