@@ -21,6 +21,8 @@ const Auth = lazy(() => import("./pages/Auth"));
 const CheckEmail = lazy(() => import("./pages/auth/CheckEmail"));
 const VerifyEmail = lazy(() => import("./pages/auth/VerifyEmail"));
 const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
+const ResetPasswordSuccess = lazy(() => import("./pages/auth/ResetPasswordSuccess"));
+const ResetPasswordError = lazy(() => import("./pages/auth/ResetPasswordError"));
 const PasswordReset = lazy(() => import("./pages/PasswordReset"));
 const Intro = lazy(() => import("./pages/Intro"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -194,6 +196,8 @@ const AppRoutes = () => {
           <Route path="/auth/verify" element={<VerifyEmail />} />
           <Route path="/auth/reset" element={<ResetPassword />} />
           <Route path="/password-reset" element={<PasswordReset />} />
+          <Route path="/password-reset/success" element={<ResetPasswordSuccess />} />
+          <Route path="/password-reset/error" element={<ResetPasswordError />} />
           <Route path="/intro" element={<Intro />} />
           <Route path="/listings" element={<ProtectedRoute element={<MobileSwipeLayout><Listings /></MobileSwipeLayout>} forbiddenRoles={["owner"]} />} />
           <Route path="/dorm/:id" element={<DormDetail />} />

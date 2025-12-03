@@ -4,12 +4,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, Loader2, Lock, Eye, EyeOff } from "lucide-react";
+import { Loader2, Lock, Eye, EyeOff } from "lucide-react";
 import FluidBackground from "@/components/FluidBackground";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
+import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
+import { EmailProviderButtons } from "@/components/auth/EmailProviderButtons";
 
-type ResetStep = 'checking' | 'loading' | 'form' | 'success' | 'error';
+type ResetStep = 'checking' | 'loading' | 'form' | 'error';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -21,51 +24,57 @@ export default function ResetPassword() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showMismatchError, setShowMismatchError] = useState(false);
+
+  // Password validation
+  const isMinLength = password.length >= 8;
+  const hasNumber = /\d/.test(password);
+  const hasUppercase = /[A-Z]/.test(password);
+  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
+  const isFormValid = isMinLength && hasNumber && hasUppercase && passwordsMatch;
 
   useEffect(() => {
+    // Log password reset attempt
+    console.log("[password_reset_attempt]", new Date().toISOString());
+
     const checkSession = async () => {
-      // Step 1: Checking
       setStep('checking');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Step 2: Loading
       setStep('loading');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Check if we have a valid recovery session
+      // Check for valid recovery session
       const { data: { session }, error } = await supabase.auth.getSession();
       
-      if (error) {
-        setErrorMessage(error.message);
+      if (error || !session) {
+        console.log("[password_reset_error] No valid session");
+        setErrorMessage("This reset link is invalid or has expired.");
+        toast({
+          title: "Invalid reset link",
+          description: "Please request a new password reset link.",
+          variant: "destructive",
+        });
         setStep('error');
         return;
       }
       
-      // Show the form
       setStep('form');
     };
 
     checkSession();
-  }, []);
+  }, [toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password.length < 6) {
-      toast({
-        title: "Password too short",
-        description: "Password must be at least 6 characters.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Clear previous errors
+    setShowMismatchError(false);
 
-    if (password !== confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please make sure both passwords are the same.",
-        variant: "destructive",
-      });
+    if (!isFormValid) {
+      if (!passwordsMatch && confirmPassword.length > 0) {
+        setShowMismatchError(true);
+      }
       return;
     }
 
@@ -75,64 +84,82 @@ export default function ResetPassword() {
 
       if (error) throw error;
 
-      setStep('success');
+      // Log success
+      console.log("[password_reset_success]", new Date().toISOString());
+
+      // Clear form
+      setPassword("");
+      setConfirmPassword("");
+
       toast({
         title: "Password updated",
         description: "Your password has been reset successfully.",
       });
 
-      // Redirect after 2 seconds
-      setTimeout(() => {
-        navigate('/auth?mode=login', { replace: true });
-      }, 2000);
+      // Navigate to success page
+      navigate('/password-reset/success', { replace: true });
     } catch (error: any) {
       toast({
         title: "Failed to update password",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
+      // Clear fields on error for security
+      setPassword("");
+      setConfirmPassword("");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Handle confirm password blur to show mismatch error
+  const handleConfirmBlur = () => {
+    if (confirmPassword.length > 0 && !passwordsMatch) {
+      setShowMismatchError(true);
     }
   };
 
   const getStepContent = () => {
     switch (step) {
       case 'checking':
-        return (
-          <div className="text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                <Loader2 className="w-12 h-12 text-primary animate-spin" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-foreground">Checking your code...</h1>
-              <p className="text-muted-foreground">Please wait</p>
-            </div>
-          </div>
-        );
       case 'loading':
         return (
-          <div className="text-center space-y-6">
+          <motion.div 
+            className="text-center space-y-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
             <div className="flex justify-center">
               <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
                 <Loader2 className="w-12 h-12 text-primary animate-spin" />
               </div>
             </div>
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-foreground">Loading...</h1>
-              <p className="text-muted-foreground">Almost there</p>
+              <h1 className="text-2xl font-bold text-foreground">
+                {step === 'checking' ? 'Verifying link...' : 'Almost there...'}
+              </h1>
+              <p className="text-muted-foreground">Please wait</p>
             </div>
-          </div>
+          </motion.div>
         );
+
       case 'form':
         return (
-          <div className="space-y-6">
+          <motion.div 
+            className="space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
             <div className="flex justify-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <motion.div 
+                className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200 }}
+              >
                 <Lock className="w-8 h-8 text-primary" />
-              </div>
+              </motion.div>
             </div>
             
             <div className="text-center space-y-2">
@@ -142,7 +169,7 @@ export default function ResetPassword() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="password">New password</Label>
                 <div className="relative">
@@ -153,81 +180,139 @@ export default function ResetPassword() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     required
+                    className="pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
+              {/* Password Strength Meter */}
+              <PasswordStrengthMeter password={password} />
+
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm password</Label>
                 <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                  />
+                  <motion.div
+                    animate={showMismatchError ? { x: [0, -10, 10, -10, 10, 0] } : {}}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        setShowMismatchError(false);
+                      }}
+                      onBlur={handleConfirmBlur}
+                      placeholder="••••••••"
+                      required
+                      className={`pr-10 ${showMismatchError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                    />
+                  </motion.div>
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {showMismatchError && (
+                  <motion.p 
+                    className="text-xs text-red-500"
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    Passwords don't match
+                  </motion.p>
+                )}
+                {passwordsMatch && (
+                  <motion.p 
+                    className="text-xs text-green-500"
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    Passwords match ✓
+                  </motion.p>
+                )}
               </div>
 
               <Button
                 type="submit"
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90"
+                disabled={isLoading || !isFormValid}
+                className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90 disabled:opacity-50"
+                size="lg"
               >
-                {isLoading ? "Updating..." : "Update password"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  "Update password"
+                )}
               </Button>
             </form>
-          </div>
+          </motion.div>
         );
-      case 'success':
-        return (
-          <div className="text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center">
-                <CheckCircle className="w-12 h-12 text-green-500" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-foreground">Password Updated</h1>
-              <p className="text-muted-foreground">Redirecting...</p>
-            </div>
-          </div>
-        );
+
       case 'error':
         return (
-          <div className="text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center text-destructive text-3xl font-bold">
+          <motion.div 
+            className="text-center space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <motion.div 
+              className="flex justify-center"
+              animate={{ x: [0, -10, 10, -10, 10, 0] }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+            >
+              <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center text-destructive text-4xl font-bold">
                 !
               </div>
-            </div>
+            </motion.div>
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-foreground">Something went wrong</h1>
-              <p className="text-muted-foreground">{errorMessage || "Please try again"}</p>
+              <h1 className="text-2xl font-bold text-foreground">Link Expired</h1>
+              <p className="text-muted-foreground">{errorMessage || "Please request a new reset link"}</p>
             </div>
-            <button
+            
+            <Button
               onClick={() => navigate('/password-reset')}
-              className="text-primary hover:underline font-medium"
+              className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90"
+              size="lg"
             >
-              Request a new reset link
+              Request New Reset Link
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or check your email
+                </span>
+              </div>
+            </div>
+
+            <EmailProviderButtons variant="outline" />
+
+            <button
+              onClick={() => navigate('/auth')}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Back to login
             </button>
-          </div>
+          </motion.div>
         );
     }
   };
@@ -236,18 +321,29 @@ export default function ResetPassword() {
     <div className="relative min-h-screen overflow-hidden">
       <FluidBackground />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-background/95 backdrop-blur-sm border-border/50 shadow-2xl">
-          <CardContent className="pt-8 pb-8 px-6 space-y-6">
-            {/* Logo */}
-            <div className="text-center text-4xl font-extrabold">
-              <span className="bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] bg-clip-text text-transparent">
-                Roomy
-              </span>
-            </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card className="w-full max-w-[380px] sm:max-w-md bg-background/95 backdrop-blur-sm border-border/50 shadow-2xl">
+            <CardContent className="pt-8 pb-8 px-6 space-y-6">
+              {/* Logo */}
+              <motion.div 
+                className="text-center text-4xl font-extrabold"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <span className="bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] bg-clip-text text-transparent">
+                  Roomy
+                </span>
+              </motion.div>
 
-            {getStepContent()}
-          </CardContent>
-        </Card>
+              {getStepContent()}
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </div>
   );

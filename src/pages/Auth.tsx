@@ -62,7 +62,7 @@ export default function Auth() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/verify`,
+        emailRedirectTo: `https://roomylb.com/auth/verify`,
       },
     });
     if (error) {

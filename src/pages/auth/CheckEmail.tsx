@@ -50,7 +50,7 @@ export default function CheckEmail() {
         type: 'signup',
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/verify`,
+          emailRedirectTo: `https://roomylb.com/auth/verify`,
         },
       });
       
