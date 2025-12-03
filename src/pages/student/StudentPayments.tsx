@@ -99,6 +99,48 @@ export default function StudentPayments() {
     }
   };
 
+  const getRefundStatusText = (status: string) => {
+    switch (status) {
+      case 'pending':
+      case 'pending_owner':
+        return 'Pending Owner Review';
+      case 'pending_admin':
+        return 'Pending Admin Review';
+      case 'approved':
+        return 'Refund Approved (Processing)';
+      case 'refunded':
+      case 'processed':
+        return 'Refund Completed';
+      case 'rejected':
+        return 'Refund Rejected';
+      case 'failed':
+        return 'Refund Failed';
+      default:
+        return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+  };
+
+  const getRefundStatusDescription = (status: string) => {
+    switch (status) {
+      case 'pending':
+      case 'pending_owner':
+        return 'Your refund request is being reviewed by the property owner.';
+      case 'pending_admin':
+        return 'Your refund has been approved by the owner and is awaiting admin processing.';
+      case 'approved':
+        return 'Your refund has been approved and is being processed.';
+      case 'refunded':
+      case 'processed':
+        return 'Your refund has been processed. Funds will appear in 5-7 business days.';
+      case 'rejected':
+        return 'Your refund request was rejected.';
+      case 'failed':
+        return 'Refund processing failed. Please contact support.';
+      default:
+        return '';
+    }
+  };
+
   const canRequestRefund = (reservation: any) => {
     if (reservation.status !== 'paid') return false;
     if (!reservation.refundable_until) return false;
@@ -106,10 +148,10 @@ export default function StudentPayments() {
     const refundDeadline = new Date(reservation.refundable_until);
     if (refundDeadline < new Date()) return false;
 
-    // Check if there's already a pending or approved refund request
+    // Check if there's already a pending, approved, or processing refund request
     const existingRequest = refundRequests.find(
       r => r.reservation_id === reservation.id && 
-      ['pending', 'approved'].includes(r.status)
+      ['pending', 'pending_owner', 'pending_admin', 'approved'].includes(r.status)
     );
     
     return !existingRequest;
@@ -256,17 +298,19 @@ export default function StudentPayments() {
                       {existingRefund && (
                         <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900">
                           <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-                            Refund Request Status: {existingRefund.status.charAt(0).toUpperCase() + existingRefund.status.slice(1)}
+                            Refund Request Status: {getRefundStatusText(existingRefund.status)}
                           </p>
                           <p className="text-xs text-blue-800 dark:text-blue-200">
-                            {existingRefund.status === 'pending' && 'Your refund request is being reviewed by the property owner.'}
-                            {existingRefund.status === 'approved' && 'Your refund has been approved and is being processed by admin.'}
-                            {existingRefund.status === 'rejected' && 'Your refund request was rejected.'}
-                            {existingRefund.status === 'processed' && 'Your refund has been processed. Funds will appear in 5-7 business days.'}
+                            {getRefundStatusDescription(existingRefund.status)}
                           </p>
                           {existingRefund.owner_decision_note && (
                             <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                              Note: {existingRefund.owner_decision_note}
+                              Owner Note: {existingRefund.owner_decision_note}
+                            </p>
+                          )}
+                          {existingRefund.admin_decision_note && (
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                              Admin Note: {existingRefund.admin_decision_note}
                             </p>
                           )}
                         </div>

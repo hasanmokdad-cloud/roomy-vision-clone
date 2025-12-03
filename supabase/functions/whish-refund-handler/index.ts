@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       throw new Error(`Cannot refund reservation with status: ${reservation.status}`);
     }
 
-    // 2. Lookup refund_request - verify status is 'approved'
+    // 2. Lookup refund_request - verify status allows processing
     const { data: refundRequest, error: refundError } = await supabaseClient
       .from('refund_requests')
       .select('*')
@@ -81,12 +81,14 @@ Deno.serve(async (req) => {
       throw new Error('Refund request not found');
     }
 
-    if (refundRequest.status !== 'approved') {
+    // Allow processing if status is pending_admin, approved, pending, or pending_owner (admin override)
+    const allowedStatuses = ['pending_admin', 'approved', 'pending', 'pending_owner'];
+    if (!allowedStatuses.includes(refundRequest.status)) {
       throw new Error(`Cannot process refund with status: ${refundRequest.status}`);
     }
 
     // 3. Check if already processed
-    if (refundRequest.status === 'processed') {
+    if (refundRequest.status === 'refunded' || refundRequest.status === 'processed') {
       throw new Error('Refund already processed');
     }
 
@@ -139,13 +141,13 @@ Deno.serve(async (req) => {
     if (refundSuccess) {
       // Get refund request details for amounts
       const baseDeposit = refundRequest.base_deposit || reservation.deposit_amount || 0;
-      const commissionAmount = refundRequest.refund_admin_amount || (baseDeposit * 0.1);
+      const commissionAmount = refundRequest.refund_admin_amount || reservation.commission_amount || (baseDeposit * 0.1);
 
       // Debit owner wallet (base deposit amount)
       const { data: ownerWallet } = await supabaseClient
         .from('owner_payment_methods')
         .select('id, balance')
-        .eq('owner_id', reservation.rooms?.dorm_id ? refundRequest.owner_id : refundRequest.owner_id)
+        .eq('owner_id', refundRequest.owner_id)
         .eq('is_default', true)
         .maybeSingle();
 
@@ -155,6 +157,23 @@ Deno.serve(async (req) => {
           p_amount: baseDeposit,
         });
         console.log(`💰 Debited owner wallet: $${baseDeposit}`);
+
+        // Insert negative payout history entry for owner
+        await supabaseClient
+          .from('payout_history')
+          .insert({
+            owner_id: refundRequest.owner_id,
+            student_id: refundRequest.student_id,
+            room_id: reservation.room_id,
+            dorm_id: reservation.dorm_id,
+            deposit_amount: -baseDeposit,
+            roomy_fee: 0,
+            owner_receives: -baseDeposit,
+            reservation_id: reservation_id,
+            status: 'refund',
+            currency: 'USD',
+          });
+        console.log(`📝 Inserted negative payout history for owner refund`);
       } else {
         console.log('⚠️ Owner wallet insufficient balance or not found, skipping debit');
       }
@@ -171,6 +190,19 @@ Deno.serve(async (req) => {
           p_amount: commissionAmount,
         });
         console.log(`💰 Debited admin wallet: $${commissionAmount}`);
+
+        // Insert negative commission history entry for admin
+        await supabaseClient
+          .from('admin_income_history')
+          .insert({
+            reservation_id: reservation_id,
+            student_id: refundRequest.student_id,
+            owner_id: refundRequest.owner_id,
+            commission_amount: -commissionAmount,
+            status: 'refund',
+            currency: 'USD',
+          });
+        console.log(`📝 Inserted negative admin income history for refund`);
       } else {
         console.log('⚠️ Admin wallet insufficient balance or not found, skipping debit');
       }
@@ -180,6 +212,7 @@ Deno.serve(async (req) => {
         .from('reservations')
         .update({
           status: 'refunded',
+          latest_refund_status: 'refunded',
         })
         .eq('id', reservation_id);
 
@@ -187,7 +220,7 @@ Deno.serve(async (req) => {
       await supabaseClient
         .from('refund_requests')
         .update({
-          status: 'processed',
+          status: 'refunded', // Changed from 'processed' to 'refunded'
           processed_at: new Date().toISOString(),
           processed_by: initiated_by,
           admin_id: initiated_by,
@@ -200,10 +233,11 @@ Deno.serve(async (req) => {
         .eq('id', refund_request_id);
 
       // Decrement room occupancy using RPC function
-      if (reservation.rooms) {
+      if (reservation.room_id) {
         await supabaseClient.rpc('decrement_room_occupancy', {
           room_id: reservation.room_id,
         });
+        console.log(`🏠 Decremented room occupancy for room: ${reservation.room_id}`);
       }
 
       // Clear student's current_dorm_id and current_room_id if they match
@@ -218,6 +252,7 @@ Deno.serve(async (req) => {
               accommodation_status: 'need_dorm',
             })
             .eq('user_id', student.user_id);
+          console.log(`👤 Cleared student room assignment`);
         }
       }
 

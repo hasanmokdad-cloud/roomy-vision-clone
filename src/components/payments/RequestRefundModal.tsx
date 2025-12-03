@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertCircle, Calendar, DollarSign } from 'lucide-react';
+import { AlertCircle, Calendar } from 'lucide-react';
 
 interface RequestRefundModalProps {
   isOpen: boolean;
@@ -67,26 +67,36 @@ export default function RequestRefundModal({
       const refundOwnerAmount = baseDeposit;
       const refundAdminAmount = reservation.commission_amount || (baseDeposit * 0.1);
 
-      // Create refund request with financial details
-      const { error } = await supabase
+      // Create refund request with status = 'pending_owner' (new status)
+      const { error: refundError } = await supabase
         .from('refund_requests')
         .insert({
           reservation_id: reservation.id,
           student_id: student.id,
           owner_id: dorm.owner_id,
           reason: reason.trim(),
-          status: 'pending',
+          status: 'pending_owner', // Changed from 'pending' to 'pending_owner'
           base_deposit: baseDeposit,
           total_paid: totalPaid,
           refund_owner_amount: refundOwnerAmount,
           refund_admin_amount: refundAdminAmount,
         });
 
-      if (error) throw error;
+      if (refundError) throw refundError;
+
+      // Update reservation's latest_refund_status
+      const { error: reservationError } = await supabase
+        .from('reservations')
+        .update({
+          latest_refund_status: 'pending_owner',
+        })
+        .eq('id', reservation.id);
+
+      if (reservationError) throw reservationError;
 
       toast({
         title: 'Refund Request Submitted',
-        description: "Your refund request has been submitted. We'll notify you once it's reviewed.",
+        description: "Your refund request has been submitted. The property owner will review it soon.",
       });
 
       setReason('');
@@ -118,7 +128,7 @@ export default function RequestRefundModal({
             Refund Request Policy
           </p>
           <p className="text-amber-800 dark:text-amber-200">
-            Refund requests are reviewed by the property owner. Approved refunds are typically processed within 5-7 business days.
+            Refund requests are reviewed by the property owner first, then processed by admin. Approved refunds are typically processed within 5-7 business days.
           </p>
         </div>
       </div>

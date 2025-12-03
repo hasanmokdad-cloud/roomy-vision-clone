@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, Check, X, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Clock, Check, X, AlertCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -80,19 +80,30 @@ export default function OwnerRefundRequests() {
   const handleApprove = async (request: any) => {
     setProcessing(true);
     try {
-      const { error } = await supabase
+      // Update refund request to pending_admin
+      const { error: refundError } = await supabase
         .from('refund_requests')
         .update({
-          status: 'approved',
+          status: 'pending_admin',
           owner_decision: 'approved',
         })
         .eq('id', request.id);
 
-      if (error) throw error;
+      if (refundError) throw refundError;
+
+      // Update reservation's latest_refund_status
+      const { error: reservationError } = await supabase
+        .from('reservations')
+        .update({
+          latest_refund_status: 'pending_admin',
+        })
+        .eq('id', request.reservation_id);
+
+      if (reservationError) throw reservationError;
 
       toast({
-        title: 'Refund Approved',
-        description: 'The refund request has been approved. Admin will process the payment.',
+        title: 'Forwarded to Admin',
+        description: 'The refund request has been approved and forwarded to admin for processing.',
       });
 
       loadOwnerData();
@@ -120,7 +131,8 @@ export default function OwnerRefundRequests() {
 
     setProcessing(true);
     try {
-      const { error } = await supabase
+      // Update refund request to rejected
+      const { error: refundError } = await supabase
         .from('refund_requests')
         .update({
           status: 'rejected',
@@ -129,7 +141,17 @@ export default function OwnerRefundRequests() {
         })
         .eq('id', selectedRequest.id);
 
-      if (error) throw error;
+      if (refundError) throw refundError;
+
+      // Update reservation's latest_refund_status
+      const { error: reservationError } = await supabase
+        .from('reservations')
+        .update({
+          latest_refund_status: 'rejected',
+        })
+        .eq('id', selectedRequest.reservation_id);
+
+      if (reservationError) throw reservationError;
 
       toast({
         title: 'Refund Rejected',
@@ -152,19 +174,29 @@ export default function OwnerRefundRequests() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+      case 'pending_owner':
+        return <Badge className="bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30">Pending Owner</Badge>;
+      case 'pending_admin':
+        return <Badge className="bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30">Pending Admin</Badge>;
       case 'approved':
-        return 'bg-green-500/10 text-green-600 border-green-500/20';
-      case 'rejected':
-        return 'bg-red-500/10 text-red-600 border-red-500/20';
+        return <Badge className="bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30">Approved (Processing)</Badge>;
+      case 'refunded':
       case 'processed':
-        return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+        return <Badge className="bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30">Refunded</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/30">Rejected</Badge>;
+      case 'failed':
+        return <Badge className="bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/30">Failed</Badge>;
       default:
-        return 'bg-muted text-muted-foreground';
+        return <Badge variant="secondary">{status}</Badge>;
     }
+  };
+
+  const canTakeAction = (status: string) => {
+    return status === 'pending' || status === 'pending_owner';
   };
 
   if (authLoading || loading) {
@@ -231,11 +263,7 @@ export default function OwnerRefundRequests() {
                         Student: <span className="font-medium">{request.reservations?.students?.full_name}</span>
                       </p>
                     </div>
-                    <Badge className={getStatusColor(request.status)}>
-                      {request.status === 'pending' ? 'Pending' : 
-                       request.status === 'approved' ? 'Approved' :
-                       request.status === 'rejected' ? 'Rejected' : 'Processed'}
-                    </Badge>
+                    {getStatusBadge(request.status)}
                   </div>
 
                   {/* Amounts */}
@@ -274,7 +302,7 @@ export default function OwnerRefundRequests() {
                   </div>
 
                   {/* Actions */}
-                  {request.status === 'pending' && (
+                  {canTakeAction(request.status) && (
                     <div className="flex gap-3">
                       <Button
                         onClick={() => handleApprove(request)}
@@ -282,7 +310,8 @@ export default function OwnerRefundRequests() {
                         className="flex-1 gap-2 bg-green-600 hover:bg-green-700"
                       >
                         <Check className="w-4 h-4" />
-                        Approve Refund
+                        Approve & Forward to Admin
+                        <ArrowRight className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="outline"
