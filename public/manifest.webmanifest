@@ -3,8 +3,8 @@
   "short_name": "Roomy",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#090E1A",
-  "theme_color": "#6D4CFF",
+  "background_color": "#ffffff",
+  "theme_color": "#0B0E1A",
   "description": "AI-Powered Dorm Finder in Jbeil",
   "icons": [
     {

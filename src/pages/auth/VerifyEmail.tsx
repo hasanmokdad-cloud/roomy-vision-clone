@@ -127,11 +127,11 @@ export default function VerifyEmail() {
         <Card className="w-full max-w-md bg-background/95 backdrop-blur-sm border-border/50 shadow-2xl">
           <CardContent className="pt-8 pb-8 px-6 text-center space-y-6">
             {/* Logo */}
-            <div className="text-4xl font-extrabold">
-              <span className="bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] bg-clip-text text-transparent">
-                Roomy
-              </span>
-            </div>
+            <img 
+              src="/roomy-logo.png" 
+              alt="Roomy Logo" 
+              className="h-14 w-14 mx-auto"
+            />
             
             {/* Icon */}
             <div className="flex justify-center">

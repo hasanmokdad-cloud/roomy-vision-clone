@@ -127,10 +127,9 @@ export default function Auth() {
         <Card className="w-full max-w-md bg-background/95 backdrop-blur-sm border-white/20 shadow-2xl">
           <CardHeader className="text-center space-y-2">
             <img 
-              src="/roomy-logo-transparent.png" 
+              src="/roomy-logo.png" 
               alt="Roomy Logo" 
-              className="h-16 w-16 mx-auto mb-3"
-              style={{ background: "transparent" }}
+              className="h-14 w-14 mx-auto mb-3"
             />
             <CardTitle className="text-2xl">Welcome to Roomy</CardTitle>
             <CardDescription>Sign in or create an account to find your perfect student housing</CardDescription>
