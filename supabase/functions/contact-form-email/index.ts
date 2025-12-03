@@ -16,6 +16,141 @@ interface ContactPayload {
   message: string;
 }
 
+// Roomy branded contact form notification email
+function generateContactNotificationHtml(
+  firstName: string,
+  lastName: string | undefined,
+  email: string,
+  university: string | undefined,
+  message: string
+): string {
+  const year = new Date().getFullYear();
+  const fullName = `${firstName} ${lastName || ''}`.trim();
+  const timestamp = new Date().toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>New Contact Form Submission - Roomy</title>
+  <style>
+    body { 
+      margin: 0; 
+      padding: 0; 
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    .wrapper { width: 100%; padding: 40px 0; }
+    .container { max-width: 600px; margin: 0 auto; padding: 0 20px; }
+    .header { text-align: center; padding: 32px 0 24px 0; }
+    .logo { font-size: 36px; font-weight: 800; color: #A855F7; margin: 0; }
+    .tagline { font-size: 14px; color: #94A3B8; margin: 8px 0 0 0; }
+    .card { background: #ffffff; border-radius: 24px; padding: 48px 40px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+    .icon { text-align: center; font-size: 56px; margin-bottom: 16px; }
+    .heading { font-size: 28px; font-weight: 700; color: #0F172A; text-align: center; margin: 0 0 8px 0; }
+    .subheading { font-size: 16px; color: #64748B; text-align: center; margin: 0 0 32px 0; }
+    .info-box { background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%); border-radius: 16px; padding: 24px; margin: 24px 0; border: 1px solid #E2E8F0; }
+    .info-title { font-size: 14px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 16px 0; }
+    .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #E2E8F0; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-size: 14px; color: #64748B; }
+    .info-value { font-size: 14px; font-weight: 600; color: #0F172A; }
+    .info-value a { color: #8B5CF6; text-decoration: none; }
+    .message-box { background: #F0F9FF; border-radius: 16px; padding: 24px; margin: 24px 0; border-left: 4px solid #0EA5E9; }
+    .message-label { font-size: 12px; font-weight: 600; color: #0369A1; text-transform: uppercase; margin: 0 0 12px 0; }
+    .message-text { font-size: 15px; color: #0C4A6E; margin: 0; line-height: 1.7; white-space: pre-wrap; }
+    .timestamp { font-size: 12px; color: #94A3B8; text-align: center; margin: 24px 0 0 0; }
+    .button-container { text-align: center; margin: 32px 0; }
+    .button { display: inline-block; background: linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%); color: #ffffff !important; font-size: 16px; font-weight: 600; padding: 16px 40px; border-radius: 12px; text-decoration: none; }
+    .footer { text-align: center; padding: 32px 0; }
+    .footer-text { font-size: 12px; color: #64748B; margin: 0; }
+    
+    @media (prefers-color-scheme: dark) {
+      .card { background: #1E293B; }
+      .heading { color: #F8FAFC; }
+      .subheading { color: #CBD5E1; }
+      .info-box { background: #334155; border-color: #475569; }
+      .info-row { border-color: #475569; }
+      .info-value { color: #F8FAFC; }
+      .message-box { background: #1E3A5F; border-color: #0EA5E9; }
+      .message-text { color: #BAE6FD; }
+    }
+    
+    @media only screen and (max-width: 480px) {
+      .container { padding: 0 16px; }
+      .card { padding: 32px 24px; border-radius: 20px; }
+      .heading { font-size: 24px; }
+      .button { display: block; width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <div style="display: none; max-height: 0px; overflow: hidden;">
+    New message from ${fullName} via Roomy contact form &nbsp;‌&nbsp;‌&nbsp;‌
+  </div>
+  
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <p class="logo">🏠 Roomy</p>
+        <p class="tagline">Admin Notification</p>
+      </div>
+
+      <div class="card">
+        <div class="icon">📬</div>
+        <h1 class="heading">New Contact Form Submission</h1>
+        <p class="subheading">Someone reached out via the Roomy website</p>
+        
+        <div class="info-box">
+          <p class="info-title">Contact Details</p>
+          <div class="info-row">
+            <span class="info-label">Name</span>
+            <span class="info-value">${fullName}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Email</span>
+            <span class="info-value"><a href="mailto:${email}">${email}</a></span>
+          </div>
+          ${university ? `
+          <div class="info-row">
+            <span class="info-label">University</span>
+            <span class="info-value">${university}</span>
+          </div>
+          ` : ''}
+        </div>
+
+        <div class="message-box">
+          <p class="message-label">Message</p>
+          <p class="message-text">${message}</p>
+        </div>
+
+        <p class="timestamp">Received on ${timestamp}</p>
+
+        <div class="button-container">
+          <a href="mailto:${email}?subject=Re: Your Roomy Inquiry" class="button">Reply to ${firstName}</a>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p class="footer-text">This is an automated notification from Roomy Admin System</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -24,15 +159,24 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const payload: ContactPayload = await req.json();
 
-    console.log("[ContactEmail] Processing notification for:", payload.email);
+    console.log("[contact-form-email] Processing notification for:", payload.email);
 
     if (!RESEND_API_KEY) {
-      console.warn("[ContactEmail] RESEND_API_KEY not configured, skipping email");
+      console.warn("[contact-form-email] RESEND_API_KEY not configured, skipping email");
       return new Response(
         JSON.stringify({ success: true, message: "Email skipped (no API key)" }),
         { headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
+
+    // Generate Roomy branded email
+    const emailHtml = generateContactNotificationHtml(
+      payload.first_name,
+      payload.last_name,
+      payload.email,
+      payload.university,
+      payload.message
+    );
 
     // Send email using Resend
     const emailResponse = await fetch("https://api.resend.com/emails", {
@@ -42,19 +186,11 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Roomy Support <onboarding@resend.dev>",
+        from: "Roomy <onboarding@resend.dev>",
         to: [ADMIN_EMAIL],
-        subject: `New Contact Form: ${payload.first_name} ${payload.last_name || ""}`,
-        html: `
-          <h2>New Contact Form Submission</h2>
-          <p><strong>From:</strong> ${payload.first_name} ${payload.last_name || ""}</p>
-          <p><strong>Email:</strong> ${payload.email}</p>
-          ${payload.university ? `<p><strong>University:</strong> ${payload.university}</p>` : ""}
-          <p><strong>Message:</strong></p>
-          <p>${payload.message}</p>
-          <hr />
-          <p><small>Reply directly to this email or check the Admin Support Inbox.</small></p>
-        `,
+        subject: `📬 New Contact Form: ${payload.first_name} ${payload.last_name || ""}`,
+        html: emailHtml,
+        reply_to: payload.email,
       }),
     });
 
@@ -63,13 +199,13 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Resend API error: ${emailResponse.statusText} - ${errorText}`);
     }
 
-    console.log("[ContactEmail] ✅ Email sent successfully");
+    console.log("[contact-form-email] ✅ Email sent successfully");
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
-    console.error("[ContactEmail] Error:", error);
+    console.error("[contact-form-email] Error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
