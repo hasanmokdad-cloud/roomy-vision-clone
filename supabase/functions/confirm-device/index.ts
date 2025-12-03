@@ -89,11 +89,35 @@ Deno.serve(async (req) => {
 
     console.log(`Device verified for user ${device.user_id}: ${device.device_name}`);
 
+    // Get the user's email to generate magic link for auto-login
+    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(device.user_id);
+    
+    let autoLoginUrl = null;
+    
+    if (!userError && userData?.user?.email) {
+      // Generate a magic link for auto-login
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: "magiclink",
+        email: userData.user.email,
+        options: {
+          redirectTo: "https://roomylb.com/auth/callback"
+        }
+      });
+
+      if (!linkError && linkData?.properties?.action_link) {
+        autoLoginUrl = linkData.properties.action_link;
+        console.log(`Generated auto-login URL for user ${device.user_id}`);
+      } else {
+        console.error("Failed to generate magic link:", linkError);
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         deviceName: device.device_name,
-        userId: device.user_id 
+        userId: device.user_id,
+        autoLoginUrl
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
