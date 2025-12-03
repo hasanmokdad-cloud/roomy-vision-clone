@@ -269,4 +269,4 @@ Required secrets:
 For issues or questions:
 - Contact: +961 81 858 026
 - Email: support@roomy.ai
-- Dashboard: https://main-roomy.lovable.app/admin
+- Dashboard: https://roomylb.com/admin

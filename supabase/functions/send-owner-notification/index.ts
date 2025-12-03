@@ -353,14 +353,14 @@ serve(async (req) => {
               <div class="warning">
                 <strong>⚠️ Important:</strong> If you didn't make these changes, please contact support immediately at +961 81 858 026
               </div>
-              <a href="${supabaseUrl.replace('https://vtdtmhgzisigtqryojwl.supabase.co', 'https://main-roomy.lovable.app')}/owner/listings" class="button">
+              <a href="${supabaseUrl.replace('https://vtdtmhgzisigtqryojwl.supabase.co', 'https://roomylb.com')}/owner/listings" class="button">
                 View Your Listing
               </a>
             </div>
             <div class="footer">
               <p>— The Roomy Team</p>
               <p style="font-size: 12px; margin-top: 10px;">
-                Don't want these emails? <a href="${supabaseUrl.replace('https://vtdtmhgzisigtqryojwl.supabase.co', 'https://main-roomy.lovable.app')}/owner/account">Update your preferences</a>
+                Don't want these emails? <a href="${supabaseUrl.replace('https://vtdtmhgzisigtqryojwl.supabase.co', 'https://roomylb.com')}/owner/account">Update your preferences</a>
               </p>
             </div>
           </div>
@@ -409,7 +409,7 @@ serve(async (req) => {
                 ${message}
               </div>
               <p>Reply quickly to increase your chances of booking!</p>
-              <a href="${supabaseUrl.replace('https://vtdtmhgzisigtqryojwl.supabase.co', 'https://main-roomy.lovable.app')}/owner" class="button">
+              <a href="${supabaseUrl.replace('https://vtdtmhgzisigtqryojwl.supabase.co', 'https://roomylb.com')}/owner" class="button">
                 View Inquiry & Reply
               </a>
             </div>
