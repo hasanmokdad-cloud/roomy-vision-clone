@@ -71,6 +71,67 @@ Open your dashboard to read and reply:
   }
 };
 
+// Roomy branded email base styles
+function getRoomyOwnerEmailStyles(): string {
+  return `
+    body { 
+      margin: 0; 
+      padding: 0; 
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    .wrapper { width: 100%; padding: 40px 0; }
+    .container { max-width: 600px; margin: 0 auto; padding: 0 20px; }
+    .header { text-align: center; padding: 32px 0 24px 0; }
+    .logo { font-size: 36px; font-weight: 800; color: #A855F7; margin: 0; }
+    .tagline { font-size: 14px; color: #94A3B8; margin: 8px 0 0 0; }
+    .card { background: #ffffff; border-radius: 24px; padding: 48px 40px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+    .icon { text-align: center; font-size: 56px; margin-bottom: 16px; }
+    .heading { font-size: 28px; font-weight: 700; color: #0F172A; text-align: center; margin: 0 0 8px 0; }
+    .subheading { font-size: 16px; color: #64748B; text-align: center; margin: 0 0 32px 0; }
+    .greeting { font-size: 16px; color: #334155; margin: 0 0 16px 0; }
+    .text { font-size: 16px; color: #334155; line-height: 1.6; margin: 0 0 24px 0; }
+    .highlight { background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%); border-radius: 16px; padding: 24px; margin: 24px 0; border: 1px solid #E2E8F0; }
+    .highlight-title { font-size: 14px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 16px 0; }
+    .list { list-style: none; padding: 0; margin: 0; }
+    .list li { padding: 8px 0; color: #334155; font-size: 14px; }
+    .list li::before { content: '✓'; color: #10B981; margin-right: 8px; font-weight: bold; }
+    .changes-list { list-style: none; padding: 0; margin: 0; }
+    .changes-list li { margin: 12px 0; padding: 12px; background: #F9FAFB; border-radius: 8px; font-size: 14px; }
+    .changes-list .field { font-weight: 600; color: #0F172A; }
+    .changes-list .old { color: #EF4444; text-decoration: line-through; }
+    .changes-list .new { color: #10B981; font-weight: 600; }
+    .warning { background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0; }
+    .warning-text { font-size: 14px; color: #92400E; margin: 0; }
+    .inquiry-box { background: #F9FAFB; padding: 20px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #8B5CF6; }
+    .inquiry-text { font-size: 15px; color: #334155; margin: 0; font-style: italic; line-height: 1.6; }
+    .button-container { text-align: center; margin: 32px 0; }
+    .button { display: inline-block; background: linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%); color: #ffffff !important; font-size: 16px; font-weight: 600; padding: 16px 40px; border-radius: 12px; text-decoration: none; }
+    .footer { text-align: center; padding: 32px 0; }
+    .footer-links { margin: 0 0 16px 0; }
+    .footer-link { color: #94A3B8; text-decoration: none; font-size: 13px; margin: 0 12px; }
+    .copyright { font-size: 12px; color: #64748B; margin: 16px 0 0 0; }
+    .unsubscribe { font-size: 11px; color: #94A3B8; margin: 12px 0 0 0; }
+    .unsubscribe a { color: #8B5CF6; text-decoration: none; }
+    
+    @media (prefers-color-scheme: dark) {
+      .card { background: #1E293B; }
+      .heading { color: #F8FAFC; }
+      .subheading, .greeting, .text { color: #CBD5E1; }
+      .highlight { background: #334155; border-color: #475569; }
+      .changes-list li { background: #475569; }
+      .changes-list .field { color: #F8FAFC; }
+    }
+    
+    @media only screen and (max-width: 480px) {
+      .container { padding: 0 16px; }
+      .card { padding: 32px 24px; border-radius: 20px; }
+      .heading { font-size: 24px; }
+      .button { display: block; width: 100%; text-align: center; }
+    }
+  `;
+}
+
 // Helper function to generate WhatsApp message from template
 function generateWhatsAppMessage(
   eventType: string,
@@ -166,57 +227,70 @@ serve(async (req) => {
     let html = "";
     let whatsappMessage = "";
 
+    const year = new Date().getFullYear();
+    const styles = getRoomyOwnerEmailStyles();
+
     if (notification.event_type === "verified") {
       subject = "🎉 Your Roomy listing is now Verified!";
       whatsappMessage = generateWhatsAppMessage('verified', language, {
         owner_name: ownerName,
         dorm_name: dormName,
-        owner_dashboard_url: 'https://main-roomy.lovable.app/owner/listings'
+        owner_dashboard_url: 'https://roomylb.com/owner/listings'
       });
       html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center; }
-            .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; }
-            .button { display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; margin-top: 20px; font-weight: 600; }
-            .footer { text-align: center; margin-top: 30px; font-size: 14px; color: #6b7280; }
-            h1 { margin: 0; font-size: 28px; }
-            .emoji { font-size: 48px; margin-bottom: 10px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <div class="emoji">🎉</div>
-              <h1>Listing Verified!</h1>
-            </div>
-            <div class="content">
-              <p>Hi ${ownerName},</p>
-              <p>Great news! Your listing <strong>"${dormName}"</strong> has been verified on Roomy and is now visible to students searching for housing.</p>
-              <p><strong>Next steps:</strong></p>
-              <ul>
-                <li>Keep your price and amenities up to date</li>
-                <li>Respond quickly to student inquiries via WhatsApp</li>
-                <li>Upload quality photos if you haven't already</li>
-              </ul>
-              <p>Students can now see and contact you about this listing!</p>
-              <a href="${supabaseUrl.replace('https://vtdtmhgzisigtqryojwl.supabase.co', 'https://main-roomy.lovable.app')}/owner/listings" class="button">
-                Manage Your Listing
-              </a>
-            </div>
-            <div class="footer">
-              <p>— The Roomy Team</p>
-              <p style="font-size: 12px; margin-top: 10px;">
-                Don't want these emails? <a href="${supabaseUrl.replace('https://vtdtmhgzisigtqryojwl.supabase.co', 'https://main-roomy.lovable.app')}/owner/account">Update your preferences</a>
-              </p>
-            </div>
-          </div>
-        </body>
-        </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Listing Verified - Roomy</title>
+  <style>${styles}</style>
+</head>
+<body>
+  <div style="display: none; max-height: 0px; overflow: hidden;">
+    Your listing "${dormName}" is now live on Roomy! &nbsp;‌&nbsp;‌&nbsp;‌
+  </div>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <p class="logo">🏠 Roomy</p>
+        <p class="tagline">AI-Powered Student Housing</p>
+      </div>
+      <div class="card">
+        <div class="icon">🎉</div>
+        <h1 class="heading">Listing Verified!</h1>
+        <p class="subheading">Students can now find your dorm</p>
+        <p class="greeting">Hi ${ownerName},</p>
+        <p class="text">Great news! Your listing <strong>"${dormName}"</strong> has been verified on Roomy and is now visible to students searching for housing.</p>
+        <div class="highlight">
+          <p class="highlight-title">Next Steps</p>
+          <ul class="list">
+            <li>Keep your price and amenities up to date</li>
+            <li>Respond quickly to student inquiries</li>
+            <li>Upload quality photos if you haven't already</li>
+            <li>Add room details for better matching</li>
+          </ul>
+        </div>
+        <div class="button-container">
+          <a href="https://roomylb.com/owner/listings" class="button">Manage Your Listing</a>
+        </div>
+      </div>
+      <div class="footer">
+        <div class="footer-links">
+          <a href="https://roomylb.com/contact" class="footer-link">Support</a>
+          <span style="color: #475569;">•</span>
+          <a href="https://roomylb.com/legal#privacy" class="footer-link">Privacy</a>
+          <span style="color: #475569;">•</span>
+          <a href="https://roomylb.com/legal#terms" class="footer-link">Terms</a>
+        </div>
+        <p class="copyright">© ${year} Roomy — Student Housing Reinvented</p>
+        <p class="unsubscribe">Don't want these emails? <a href="https://roomylb.com/owner/account">Update preferences</a></p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
       `;
     } else if (notification.event_type === "edited") {
       subject = "📝 Your Roomy listing was updated";
@@ -231,7 +305,7 @@ serve(async (req) => {
         owner_name: ownerName,
         dorm_name: dormName,
         fields_changed_summary: changedFields,
-        owner_dashboard_url: 'https://main-roomy.lovable.app/owner/listings'
+        owner_dashboard_url: 'https://roomylb.com/owner/listings'
       });
       
       // Build changes table
@@ -302,7 +376,7 @@ serve(async (req) => {
       whatsappMessage = generateWhatsAppMessage('inquiry', language, {
         owner_name: ownerName,
         dorm_name: dormName,
-        owner_dashboard_url: 'https://main-roomy.lovable.app/owner'
+        owner_dashboard_url: 'https://roomylb.com/owner'
       });
       
       html = `
