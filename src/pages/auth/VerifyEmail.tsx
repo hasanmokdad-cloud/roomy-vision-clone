@@ -130,7 +130,7 @@ export default function VerifyEmail() {
             <img 
               src="/roomy-logo.png" 
               alt="Roomy Logo" 
-              className="h-20 w-20 mx-auto mb-4"
+              className="h-28 w-28 mx-auto mb-4"
             />
             
             {/* Icon */}
