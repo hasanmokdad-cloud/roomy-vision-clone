@@ -61,9 +61,10 @@ export default function CheckEmail() {
           <CardContent className="pt-8 pb-8 px-6 text-center space-y-6">
             {/* Logo */}
             <img 
-              src="/roomy-logo.png" 
+              src="/roomy-logo-transparent.png" 
               alt="Roomy Logo" 
-              className="h-14 w-14 mx-auto rounded-xl" 
+              className="h-16 w-16 mx-auto"
+              style={{ background: "transparent" }}
             />
             
             {/* Mail Icon */}

@@ -75,9 +75,10 @@ export default function PasswordReset() {
                 transition={{ delay: 0.2 }}
               >
                 <img 
-                  src="/roomy-logo.png" 
+                  src="/roomy-logo-transparent.png" 
                   alt="Roomy Logo" 
-                  className="h-14 w-14 mx-auto rounded-xl" 
+                  className="h-16 w-16 mx-auto"
+                  style={{ background: "transparent" }}
                 />
               </motion.div>
 
