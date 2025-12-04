@@ -1,5 +1,5 @@
 import { Home, Building2, BarChart3, Settings, DoorOpen, Calendar, Upload, LayoutDashboard, TrendingUp, PlusCircle, Star, Wallet } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const menuItems = [
@@ -24,6 +24,8 @@ interface OwnerSidebarFixedProps {
 }
 
 export function OwnerSidebarFixed({ isOpen, onClose, isMobile }: OwnerSidebarFixedProps) {
+  const location = useLocation();
+
   return (
     <aside
       className={cn(
@@ -33,34 +35,49 @@ export function OwnerSidebarFixed({ isOpen, onClose, isMobile }: OwnerSidebarFix
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}
     >
+      {/* Roomy Gradient Logo Badge */}
+      <div className="p-4 border-b border-border/20">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#6D5BFF] to-[#9A6AFF] flex items-center justify-center shadow-md">
+            <Building2 className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-sm font-semibold bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] bg-clip-text text-transparent">
+            Owner Portal
+          </span>
+        </div>
+      </div>
+
       {/* Management Label */}
       <div className="px-4 py-3 border-b border-border/20">
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
           Management
         </span>
       </div>
 
       {/* Menu Items */}
       <nav className="p-2 space-y-1">
-        {menuItems.map((item) => (
-          <NavLink
-            key={item.title}
-            to={item.url}
-            end={item.url === '/owner'}
-            onClick={() => isMobile && onClose()}
-            className={({ isActive }) =>
-              cn(
+        {menuItems.map((item) => {
+          const isActive = location.pathname === item.url || 
+            (item.url === '/owner' && location.pathname === '/owner');
+          
+          return (
+            <NavLink
+              key={item.title}
+              to={item.url}
+              end={item.url === '/owner'}
+              onClick={() => isMobile && onClose()}
+              className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-foreground/70 hover:bg-white/5 hover:text-foreground"
-              )
-            }
-          >
-            <item.icon className="w-4 h-4 flex-shrink-0" />
-            <span>{item.title}</span>
-          </NavLink>
-        ))}
+                  ? "border-l-4 border-[#6D5BFF] bg-[#f7f4ff] text-[#6D5BFF] ml-0 pl-2.5"
+                  : "text-gray-600 hover:bg-[#f6f4ff] hover:text-gray-900"
+              )}
+            >
+              <item.icon className="w-4 h-4 flex-shrink-0" />
+              <span>{item.title}</span>
+            </NavLink>
+          );
+        })}
       </nav>
     </aside>
   );
