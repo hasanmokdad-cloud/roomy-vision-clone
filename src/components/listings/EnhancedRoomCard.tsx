@@ -523,7 +523,7 @@ export function EnhancedRoomCard({
               )}
               
               <div className="flex items-center gap-1 text-foreground/70">
-                <span>Deposit: ${room.price}</span>
+                <span>Deposit: ${getStudentDisplayDeposit(room.deposit || room.price)}</span>
               </div>
               
               {room.area_m2 && (
