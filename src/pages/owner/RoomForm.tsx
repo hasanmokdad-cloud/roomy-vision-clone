@@ -571,7 +571,7 @@ export default function RoomForm() {
                     <Label>360° Virtual Tour Images</Label>
                     <VirtualTourGallery
                       panoramaUrls={panoramaUrls}
-                      onChange={setPanoramaUrls}
+                      onUpdate={setPanoramaUrls}
                       editable={true}
                     />
                   </div>
@@ -583,7 +583,13 @@ export default function RoomForm() {
                         {reservedStudents.map((reservation) => (
                           <StudentReservationCard
                             key={reservation.id}
-                            reservation={reservation}
+                            student={reservation.students}
+                            reservation={{
+                              id: reservation.id,
+                              status: reservation.status,
+                              paid_at: reservation.paid_at
+                            }}
+                            roomId={roomId}
                             onRemove={loadReservedStudents}
                           />
                         ))}
