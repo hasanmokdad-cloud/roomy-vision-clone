@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
+import { OwnerBreadcrumb } from '@/components/owner/OwnerBreadcrumb';
 import { DormForm } from '@/components/owner/DormForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
@@ -46,6 +47,11 @@ export default function OwnerAddDorm() {
     <OwnerLayout>
       <div className="p-4 md:p-8">
         <div className="max-w-4xl mx-auto">
+          <OwnerBreadcrumb items={[
+            { label: 'My Listings', href: '/owner/listings' },
+            { label: 'Add New Dorm' }
+          ]} />
+          
           <div className="flex items-center gap-4 mb-2">
             <Button variant="ghost" onClick={() => navigate('/owner')} className="gap-2">
               <ArrowLeft className="w-4 h-4" />

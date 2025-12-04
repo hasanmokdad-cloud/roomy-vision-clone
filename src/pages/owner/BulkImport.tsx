@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, Upload, Loader2, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import { OwnerLayout } from "@/components/owner/OwnerLayout";
+import { OwnerBreadcrumb } from "@/components/owner/OwnerBreadcrumb";
 
 interface ImportRow {
   dorm_name: string;
@@ -185,6 +186,11 @@ export default function BulkImport() {
     <OwnerLayout>
       <div className="p-4 md:p-8">
         <div className="max-w-6xl mx-auto">
+          <OwnerBreadcrumb items={[
+            { label: 'My Listings', href: '/owner/listings' },
+            { label: 'Bulk Import' }
+          ]} />
+          
           <div className="flex items-center gap-4 mb-2">
             <Button variant="ghost" onClick={() => navigate("/owner")} className="gap-2">
               <ArrowLeft className="w-4 h-4" />

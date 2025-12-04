@@ -13,6 +13,7 @@ import { OwnerWalletSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
+import { OwnerBreadcrumb } from '@/components/owner/OwnerBreadcrumb';
 import { format } from 'date-fns';
 import { detectCardBrand } from '@/components/payments/CardBrandIcons';
 
@@ -218,6 +219,8 @@ export default function OwnerWallet() {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-5xl mx-auto space-y-6"
         >
+          <OwnerBreadcrumb items={[{ label: 'Wallet & Payouts' }]} />
+          
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

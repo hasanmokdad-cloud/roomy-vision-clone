@@ -10,6 +10,7 @@ import { OwnerTableSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { format } from 'date-fns';
 import { AddWhishCardModal } from '@/components/payments/AddWhishCardModal';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
+import { OwnerBreadcrumb } from '@/components/owner/OwnerBreadcrumb';
 
 export default function OwnerEarnings() {
   const navigate = useNavigate();
@@ -129,6 +130,8 @@ export default function OwnerEarnings() {
   return (
     <OwnerLayout>
       <div className="p-4 md:p-8 space-y-8">
+        <OwnerBreadcrumb items={[{ label: 'Earnings' }]} />
+        
         {/* Header */}
         <div className="flex items-center gap-4 mb-2">
           <Button variant="ghost" onClick={() => navigate('/owner')} className="gap-2">

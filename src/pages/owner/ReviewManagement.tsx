@@ -11,6 +11,7 @@ import { Star, ArrowLeft } from 'lucide-react';
 import { OwnerCardListSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { useToast } from '@/hooks/use-toast';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
+import { OwnerBreadcrumb } from '@/components/owner/OwnerBreadcrumb';
 import { motion } from 'framer-motion';
 
 export default function ReviewManagement() {
@@ -123,6 +124,8 @@ export default function ReviewManagement() {
     <OwnerLayout>
       <div className="p-4 md:p-8">
         <div className="max-w-6xl mx-auto space-y-6">
+          <OwnerBreadcrumb items={[{ label: 'Reviews' }]} />
+          
           <div className="flex items-center gap-4 mb-2">
             <Button variant="ghost" onClick={() => navigate('/owner')} className="gap-2">
               <ArrowLeft className="w-4 h-4" />
