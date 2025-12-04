@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Building2, Home, Sparkles, Info, Phone } from 'lucide-react';
+import { Home, Sparkles, Info, Phone, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import RoomyLogo from '@/assets/roomy-logo.png';
 
 export const Navbar = () => {
   const navItems = [
@@ -26,9 +26,11 @@ export const Navbar = () => {
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center glow-purple">
-              <Building2 className="w-6 h-6 text-white" />
-            </div>
+            <img 
+              src={RoomyLogo} 
+              alt="Roomy" 
+              className="w-10 h-10 rounded-xl"
+            />
             <span className="text-2xl font-bold gradient-text">Roomy</span>
           </motion.div>
         </Link>

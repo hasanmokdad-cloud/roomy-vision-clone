@@ -64,7 +64,7 @@ export default function CheckEmail() {
             <img 
               src={RoomyLogo} 
               alt="Roomy Logo" 
-              className="h-36 w-36 mx-auto mb-4 drop-shadow-lg"
+              className="h-20 w-20 mx-auto mb-4 drop-shadow-lg"
             />
             
             {/* Mail Icon */}
