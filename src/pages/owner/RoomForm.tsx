@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,6 +16,8 @@ import { VirtualTourGallery } from "@/components/rooms/VirtualTourGallery";
 import { EnhancedImageUploader } from "@/components/owner/EnhancedImageUploader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { StudentReservationCard } from "@/components/owner/StudentReservationCard";
+import { OwnerLayout } from "@/components/owner/OwnerLayout";
+import { motion } from "framer-motion";
 
 const ROOM_TYPES = [
   'Single',
@@ -46,7 +48,7 @@ export default function RoomForm() {
   const { isAuthenticated, userId, refreshSession } = useAuthSession();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(!roomId); // true for create, false for edit
+  const [dataLoaded, setDataLoaded] = useState(!roomId);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -66,18 +68,15 @@ export default function RoomForm() {
   const [videoUploading, setVideoUploading] = useState(false);
   const [reservedStudents, setReservedStudents] = useState<any[]>([]);
 
-  // Auto-capacity logic
   const getCapacityFromType = (type: string): number | null => {
     const lowerType = type.toLowerCase();
     
-    // Skip auto-capacity for these types (variable capacity)
     if (lowerType.includes('apartment') || 
         lowerType.includes('suite') || 
         lowerType.includes('studio')) {
       return null;
     }
     
-    // Auto-determine capacity from type name
     if (lowerType.includes('single')) return 1;
     if (lowerType.includes('double')) return 2;
     if (lowerType.includes('triple')) return 3;
@@ -86,7 +85,6 @@ export default function RoomForm() {
     return null;
   };
 
-  // Load reserved students for this room
   const loadReservedStudents = async () => {
     if (!roomId) return;
     
@@ -165,8 +163,6 @@ export default function RoomForm() {
     }
   };
 
-  // Image upload is now handled by EnhancedImageUploader component
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -181,11 +177,10 @@ export default function RoomForm() {
 
     setLoading(true);
     try {
-      // Refresh session for better security
       await refreshSession();
 
       const roomData = {
-        room_id: roomId, // Include room_id for updates
+        room_id: roomId,
         dorm_id: dormId,
         name: formData.name,
         type: formData.type,
@@ -201,13 +196,11 @@ export default function RoomForm() {
         available: formData.available,
       };
 
-      // Use Edge Function for both create and update (bypasses RLS issues)
       const { data, error } = await supabase.functions.invoke('create-room', {
         body: roomData
       });
 
       if (error) {
-        console.error('Edge function error:', error);
         throw new Error(error.message || `Failed to ${roomId ? 'update' : 'create'} room`);
       }
 
@@ -222,7 +215,6 @@ export default function RoomForm() {
 
       navigate(`/owner/dorms/${dormId}/rooms`);
     } catch (error: any) {
-      console.error("Error saving room:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to save room",
@@ -233,408 +225,402 @@ export default function RoomForm() {
     }
   };
 
-  // Show loading state while checking authentication
   if (isAuthenticated === null) {
     return (
-      <div className="container mx-auto p-6 max-w-3xl">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin" />
+      <OwnerLayout>
+        <div className="p-4 md:p-8">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
         </div>
-      </div>
+      </OwnerLayout>
     );
   }
 
-  // Show error if not authenticated
   if (isAuthenticated === false) {
     return (
-      <div className="container mx-auto p-6 max-w-3xl">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Your session has expired. Redirecting to login...
-          </AlertDescription>
-        </Alert>
-      </div>
+      <OwnerLayout>
+        <div className="p-4 md:p-8">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Your session has expired. Redirecting to login...
+            </AlertDescription>
+          </Alert>
+        </div>
+      </OwnerLayout>
     );
   }
 
-  // Show loading while data is being fetched for edit mode
   if (roomId && !dataLoaded) {
     return (
-      <div className="container mx-auto p-6 max-w-3xl">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin" />
-          <span className="ml-2">Loading room data...</span>
+      <OwnerLayout>
+        <div className="p-4 md:p-8">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <span className="ml-2 text-gray-500">Loading room data...</span>
+          </div>
         </div>
-      </div>
+      </OwnerLayout>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-3xl">
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(`/owner/dorms/${dormId}/rooms`)}
-          className="gap-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </Button>
-        <h1 className="text-3xl font-bold">
-          {roomId ? "Edit Room" : "Add New Room"}
-        </h1>
-      </div>
-
-      <Card className="p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <Label htmlFor="name">Room Name *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g., B1 or 14"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="type">Room Type *</Label>
-            <Select
-              value={formData.type}
-              onValueChange={(value) => {
-                const autoCapacity = getCapacityFromType(value);
-                setFormData({ 
-                  ...formData, 
-                  type: value,
-                  // Auto-set capacity if determinable, keep existing if not
-                  capacity: autoCapacity !== null ? autoCapacity.toString() : formData.capacity,
-                  // Reset occupied to 0 when type changes
-                  capacity_occupied: "0"
-                });
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select room type" />
-              </SelectTrigger>
-              <SelectContent>
-                {ROOM_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="price">Monthly Price ($) *</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                placeholder="500"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="deposit">Deposit ($)</Label>
-              <Input
-                id="deposit"
-                type="number"
-                step="0.01"
-                value={formData.deposit}
-                onChange={(e) => setFormData({ ...formData, deposit: e.target.value })}
-                placeholder="200"
-              />
-              {formData.deposit && parseFloat(formData.deposit) > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Students pay: ${(parseFloat(formData.deposit) * 1.1).toFixed(2)} total
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="capacity">Room Capacity (students) *</Label>
-              <Input
-                id="capacity"
-                type="number"
-                step="1"
-                min="1"
-                value={formData.capacity}
-                onChange={(e) => {
-                  const newCapacity = e.target.value;
-                  setFormData({ 
-                    ...formData, 
-                    capacity: newCapacity,
-                    // Reset occupied to 0 if it exceeds new capacity
-                    capacity_occupied: parseInt(formData.capacity_occupied) > parseInt(newCapacity || "0") 
-                      ? "0" 
-                      : formData.capacity_occupied
-                  });
-                }}
-                placeholder="e.g., 1, 2, 3..."
-                required
-                readOnly={getCapacityFromType(formData.type) !== null}
-                className={getCapacityFromType(formData.type) !== null ? 'bg-muted cursor-not-allowed' : ''}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                {getCapacityFromType(formData.type) !== null 
-                  ? 'Auto-set based on room type (Apartment/Suite/Studio can be edited)' 
-                  : 'Number of students this room can accommodate'}
-              </p>
-            </div>
-
-            <div>
-              <Label htmlFor="capacity_occupied">Current Capacity (Occupied)</Label>
-              <Select
-                value={formData.capacity_occupied}
-                onValueChange={(value) => setFormData({ ...formData, capacity_occupied: value })}
-                disabled={!formData.capacity}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select occupied spots" />
-                </SelectTrigger>
-                <SelectContent>
-                  {formData.capacity && Array.from(
-                    { length: parseInt(formData.capacity) + 1 }, 
-                    (_, i) => i
-                  ).map((num) => (
-                    <SelectItem key={num} value={num.toString()}>
-                      {num} / {formData.capacity}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground mt-1">
-                Number of students currently occupying this room
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="area">Area (m²)</Label>
-            <Input
-              id="area"
-              type="number"
-              step="0.1"
-              value={formData.area_m2}
-              onChange={(e) => setFormData({ ...formData, area_m2: e.target.value })}
-              placeholder="20"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Describe the room features..."
-              rows={4}
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="available"
-              checked={formData.available}
-              onCheckedChange={(checked) =>
-                setFormData({ ...formData, available: checked as boolean })
-              }
-            />
-            <Label htmlFor="available" className="cursor-pointer">
-              Room is available for booking
-            </Label>
-          </div>
-
-          <div>
-            <Label>Room Images</Label>
-            <p className="text-xs text-muted-foreground mb-2">
-              Upload up to 10 images. Drag to reorder, first image is the cover.
-            </p>
-            <EnhancedImageUploader
-              existingImages={images}
-              onChange={setImages}
-              maxImages={10}
-              bucketName="room-images"
-              folder="rooms"
-              allowReorder={true}
-            />
-          </div>
-
-          {/* Room Video */}
-          <div>
-            <Label>Room Video</Label>
-            <p className="text-xs text-muted-foreground mb-2">
-              Upload 1 video (max 100MB) to showcase the room
-            </p>
-            {videoUrl ? (
-              <div className="space-y-2">
-                <video 
-                  src={videoUrl} 
-                  controls 
-                  className="w-full max-h-64 rounded-lg border"
-                />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  onClick={async () => {
-                    if (videoUrl.startsWith('http')) {
-                      // Delete from storage
-                      const path = videoUrl.split('/').slice(-2).join('/');
-                      await supabase.storage.from('room-images').remove([path]);
-                    }
-                    setVideoUrl("");
-                    setVideoFile(null);
-                  }}
-                >
-                  Remove Video
-                </Button>
-              </div>
-            ) : (
-              <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                <Input
-                  type="file"
-                  accept="video/*"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-
-                    // Check file size (100MB max)
-                    if (file.size > 100 * 1024 * 1024) {
-                      toast({
-                        title: "Error",
-                        description: "Video must be less than 100MB",
-                        variant: "destructive",
-                      });
-                      return;
-                    }
-
-                    setVideoUploading(true);
-                    try {
-                      const fileExt = file.name.split('.').pop();
-                      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-                      const filePath = `room-videos/${fileName}`;
-
-                      const { error: uploadError, data } = await supabase.storage
-                        .from('room-images')
-                        .upload(filePath, file);
-
-                      if (uploadError) throw uploadError;
-
-                      const { data: { publicUrl } } = supabase.storage
-                        .from('room-images')
-                        .getPublicUrl(filePath);
-
-                      setVideoUrl(publicUrl);
-                      setVideoFile(file);
-                      
-                      toast({
-                        title: "Success",
-                        description: "Video uploaded successfully",
-                      });
-                    } catch (error: any) {
-                      toast({
-                        title: "Error",
-                        description: error.message,
-                        variant: "destructive",
-                      });
-                    } finally {
-                      setVideoUploading(false);
-                    }
-                  }}
-                  disabled={videoUploading}
-                />
-                {videoUploading && (
-                  <div className="flex items-center justify-center gap-2 mt-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-sm">Uploading video...</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Virtual Tour Panoramas */}
-          <div>
-            <Label>360° Virtual Tour Images</Label>
-            <p className="text-xs text-foreground/60 mb-2">
-              Upload panoramic 360° images for immersive virtual tours
-            </p>
-            <VirtualTourGallery
-              roomId={roomId}
-              panoramaUrls={panoramaUrls}
-              editable={true}
-              onUpdate={setPanoramaUrls}
-            />
-          </div>
-
-          {/* Students Occupying This Room - Only show for edit mode */}
-          {roomId && reservedStudents.length > 0 && (
-            <div className="space-y-4 border rounded-lg p-6 bg-muted/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-lg font-semibold">Students in This Room</Label>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {reservedStudents.length} student{reservedStudents.length > 1 ? 's' : ''} currently reserved
-                  </p>
-                </div>
-                <Badge variant="secondary" className="text-lg">
-                  {formData.capacity_occupied} / {formData.capacity}
-                </Badge>
-              </div>
-              
-              <div className="space-y-3">
-                {reservedStudents.map((res: any) => (
-                  <StudentReservationCard 
-                    key={res.id}
-                    student={res.students}
-                    reservation={{
-                      id: res.id,
-                      status: res.status,
-                      paid_at: res.paid_at
-                    }}
-                    roomId={roomId}
-                    onRemove={loadReservedStudents}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex gap-4">
+    <OwnerLayout>
+      <div className="p-4 md:p-8">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex items-center gap-4"
+          >
             <Button
-              type="button"
-              variant="outline"
+              variant="ghost"
               onClick={() => navigate(`/owner/dorms/${dormId}/rooms`)}
-              className="flex-1"
+              className="gap-2"
             >
-              Cancel
+              <ArrowLeft className="w-4 h-4" />
+              Back
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : roomId ? (
-                "Update Room"
-              ) : (
-                "Create Room"
-              )}
-            </Button>
-          </div>
-        </form>
-      </Card>
-    </div>
+            <div>
+              <h1 className="text-3xl font-semibold text-gray-800">
+                {roomId ? "Edit Room" : "Add New Room"}
+              </h1>
+              <p className="text-gray-500 text-sm mt-1">
+                {roomId ? "Update room details" : "Create a new room listing"}
+              </p>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className="rounded-2xl shadow-md">
+              <CardContent className="p-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <Label htmlFor="name">Room Name *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="e.g., B1 or 14"
+                      required
+                      className="rounded-xl"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="type">Room Type *</Label>
+                    <Select
+                      value={formData.type}
+                      onValueChange={(value) => {
+                        const autoCapacity = getCapacityFromType(value);
+                        setFormData({ 
+                          ...formData, 
+                          type: value,
+                          capacity: autoCapacity !== null ? autoCapacity.toString() : formData.capacity,
+                          capacity_occupied: "0"
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="rounded-xl">
+                        <SelectValue placeholder="Select room type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROOM_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="price">Monthly Price ($) *</Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        value={formData.price}
+                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        placeholder="500"
+                        required
+                        className="rounded-xl"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="deposit">Deposit ($)</Label>
+                      <Input
+                        id="deposit"
+                        type="number"
+                        step="0.01"
+                        value={formData.deposit}
+                        onChange={(e) => setFormData({ ...formData, deposit: e.target.value })}
+                        placeholder="200"
+                        className="rounded-xl"
+                      />
+                      {formData.deposit && parseFloat(formData.deposit) > 0 && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Students pay: ${(parseFloat(formData.deposit) * 1.1).toFixed(2)} total
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="capacity">Room Capacity (students) *</Label>
+                      <Input
+                        id="capacity"
+                        type="number"
+                        step="1"
+                        min="1"
+                        value={formData.capacity}
+                        onChange={(e) => {
+                          const newCapacity = e.target.value;
+                          setFormData({ 
+                            ...formData, 
+                            capacity: newCapacity,
+                            capacity_occupied: parseInt(formData.capacity_occupied) > parseInt(newCapacity || "0") 
+                              ? "0" 
+                              : formData.capacity_occupied
+                          });
+                        }}
+                        placeholder="e.g., 1, 2, 3..."
+                        required
+                        readOnly={getCapacityFromType(formData.type) !== null}
+                        className={`rounded-xl ${getCapacityFromType(formData.type) !== null ? 'bg-muted cursor-not-allowed' : ''}`}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {getCapacityFromType(formData.type) !== null 
+                          ? 'Auto-set based on room type' 
+                          : 'Number of students this room can accommodate'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="capacity_occupied">Current Capacity (Occupied)</Label>
+                      <Select
+                        value={formData.capacity_occupied}
+                        onValueChange={(value) => setFormData({ ...formData, capacity_occupied: value })}
+                        disabled={!formData.capacity}
+                      >
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="Select occupied spots" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {formData.capacity && Array.from(
+                            { length: parseInt(formData.capacity) + 1 }, 
+                            (_, i) => i
+                          ).map((num) => (
+                            <SelectItem key={num} value={num.toString()}>
+                              {num} / {formData.capacity}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Students currently occupying this room
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="area">Area (m²)</Label>
+                    <Input
+                      id="area"
+                      type="number"
+                      step="0.1"
+                      value={formData.area_m2}
+                      onChange={(e) => setFormData({ ...formData, area_m2: e.target.value })}
+                      placeholder="20"
+                      className="rounded-xl"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Describe the room features..."
+                      rows={4}
+                      className="rounded-xl"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="available"
+                      checked={formData.available}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, available: checked as boolean })
+                      }
+                    />
+                    <Label htmlFor="available" className="cursor-pointer">
+                      Room is available for booking
+                    </Label>
+                  </div>
+
+                  <div>
+                    <Label>Room Images</Label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Upload up to 10 images. Drag to reorder, first image is the cover.
+                    </p>
+                    <EnhancedImageUploader
+                      existingImages={images}
+                      onChange={setImages}
+                      maxImages={10}
+                      bucketName="room-images"
+                      folder="rooms"
+                      allowReorder={true}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Room Video</Label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Upload 1 video (max 100MB) to showcase the room
+                    </p>
+                    {videoUrl ? (
+                      <div className="space-y-2">
+                        <video 
+                          src={videoUrl} 
+                          controls 
+                          className="w-full max-h-64 rounded-xl border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={async () => {
+                            if (videoUrl.startsWith('http')) {
+                              const path = videoUrl.split('/').slice(-2).join('/');
+                              await supabase.storage.from('room-images').remove([path]);
+                            }
+                            setVideoUrl("");
+                            setVideoFile(null);
+                          }}
+                          className="rounded-xl"
+                        >
+                          Remove Video
+                        </Button>
+                      </div>
+                    ) : (
+                      <Input
+                        type="file"
+                        accept="video/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          if (file.size > 100 * 1024 * 1024) {
+                            toast({
+                              title: "File too large",
+                              description: "Video must be under 100MB",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+
+                          setVideoUploading(true);
+                          try {
+                            const fileName = `${Date.now()}-${file.name}`;
+                            const { data, error } = await supabase.storage
+                              .from('room-images')
+                              .upload(`videos/${fileName}`, file);
+
+                            if (error) throw error;
+
+                            const { data: { publicUrl } } = supabase.storage
+                              .from('room-images')
+                              .getPublicUrl(data.path);
+
+                            setVideoUrl(publicUrl);
+                          } catch (error: any) {
+                            toast({
+                              title: "Upload failed",
+                              description: error.message,
+                              variant: "destructive",
+                            });
+                          } finally {
+                            setVideoUploading(false);
+                          }
+                        }}
+                        className="rounded-xl"
+                        disabled={videoUploading}
+                      />
+                    )}
+                    {videoUploading && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm text-gray-500">Uploading video...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label>360° Virtual Tour Images</Label>
+                    <VirtualTourGallery
+                      panoramaUrls={panoramaUrls}
+                      onChange={setPanoramaUrls}
+                      editable={true}
+                    />
+                  </div>
+
+                  {roomId && reservedStudents.length > 0 && (
+                    <div>
+                      <Label className="mb-4 block">Students in This Room</Label>
+                      <div className="space-y-3">
+                        {reservedStudents.map((reservation) => (
+                          <StudentReservationCard
+                            key={reservation.id}
+                            reservation={reservation}
+                            onRemove={loadReservedStudents}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-4 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate(`/owner/dorms/${dormId}/rooms`)}
+                      className="flex-1 rounded-xl"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="flex-1 bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white rounded-xl"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        'Save Room'
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </div>
+    </OwnerLayout>
   );
 }

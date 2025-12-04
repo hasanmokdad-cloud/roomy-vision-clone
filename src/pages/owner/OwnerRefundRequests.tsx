@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, Check, X, AlertCircle, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Clock, Check, X, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
@@ -14,11 +13,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import Navbar from '@/components/shared/Navbar';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
+import { OwnerLayout } from '@/components/owner/OwnerLayout';
 
 export default function OwnerRefundRequests() {
   const navigate = useNavigate();
@@ -43,7 +42,6 @@ export default function OwnerRefundRequests() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get owner ID
       const { data: owner } = await supabase
         .from('owners')
         .select('id')
@@ -54,7 +52,6 @@ export default function OwnerRefundRequests() {
 
       setOwnerId(owner.id);
 
-      // Load refund requests
       const { data: requests } = await supabase
         .from('refund_requests')
         .select(`
@@ -80,7 +77,6 @@ export default function OwnerRefundRequests() {
   const handleApprove = async (request: any) => {
     setProcessing(true);
     try {
-      // Update refund request to pending_admin
       const { error: refundError } = await supabase
         .from('refund_requests')
         .update({
@@ -91,7 +87,6 @@ export default function OwnerRefundRequests() {
 
       if (refundError) throw refundError;
 
-      // Update reservation's latest_refund_status
       const { error: reservationError } = await supabase
         .from('reservations')
         .update({
@@ -131,7 +126,6 @@ export default function OwnerRefundRequests() {
 
     setProcessing(true);
     try {
-      // Update refund request to rejected
       const { error: refundError } = await supabase
         .from('refund_requests')
         .update({
@@ -143,7 +137,6 @@ export default function OwnerRefundRequests() {
 
       if (refundError) throw refundError;
 
-      // Update reservation's latest_refund_status
       const { error: reservationError } = await supabase
         .from('reservations')
         .update({
@@ -201,154 +194,152 @@ export default function OwnerRefundRequests() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="container mx-auto px-6 py-32 max-w-4xl">
-          <Skeleton className="h-12 w-64 mb-8" />
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-48 w-full" />
-            ))}
+      <OwnerLayout>
+        <div className="p-4 md:p-8">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         </div>
-      </div>
+      </OwnerLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <Navbar />
-
-      <div className="container mx-auto px-6 py-32 max-w-4xl">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/owner')}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="text-4xl font-bold mb-2 gradient-text">Refund Requests</h1>
-          <p className="text-muted-foreground mb-8">
-            Manage refund requests from students for your properties
-          </p>
+    <OwnerLayout>
+      <div className="p-4 md:p-8">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h1 className="text-3xl font-semibold text-gray-800">Refund Requests</h1>
+            <p className="text-gray-500 text-sm mt-1">
+              Manage refund requests from students for your properties
+            </p>
+          </motion.div>
 
           {refundRequests.length === 0 ? (
-            <Card className="p-12 text-center">
-              <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-xl font-medium mb-2">No Refund Requests</p>
-              <p className="text-muted-foreground">
-                You haven't received any refund requests yet
-              </p>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Card className="rounded-2xl shadow-md">
+                <CardContent className="p-12 text-center">
+                  <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-xl font-medium text-gray-700 mb-2">No Refund Requests</p>
+                  <p className="text-gray-500">
+                    You haven't received any refund requests yet
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
           ) : (
             <div className="space-y-4">
-              {refundRequests.map((request) => (
-                <Card key={request.id} className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg mb-1">
-                        {request.reservations?.rooms?.name} ({request.reservations?.rooms?.type})
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {request.reservations?.dorms?.name}
-                      </p>
-                      <p className="text-sm">
-                        Student: <span className="font-medium">{request.reservations?.students?.full_name}</span>
-                      </p>
-                    </div>
-                    {getStatusBadge(request.status)}
-                  </div>
+              {refundRequests.map((request, index) => (
+                <motion.div
+                  key={request.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <Card className="rounded-2xl shadow-sm hover:scale-[1.01] transition-transform">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-lg text-gray-700 mb-1">
+                            {request.reservations?.rooms?.name} ({request.reservations?.rooms?.type})
+                          </h3>
+                          <p className="text-sm text-gray-500 mb-2">
+                            {request.reservations?.dorms?.name}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Student: <span className="font-medium">{request.reservations?.students?.full_name}</span>
+                          </p>
+                        </div>
+                        {getStatusBadge(request.status)}
+                      </div>
 
-                  {/* Amounts */}
-                  <div className="border-t pt-4 mb-4 grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground block">Deposit</span>
-                      <span className="font-medium">${request.reservations?.deposit_amount}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground block">Service Fee</span>
-                      <span className="font-medium">${request.reservations?.commission_amount}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground block">Total</span>
-                      <span className="font-bold">${request.reservations?.total_amount}</span>
-                    </div>
-                  </div>
+                      <div className="border-t pt-4 mb-4 grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-500 block">Deposit</span>
+                          <span className="font-medium text-gray-700">${request.reservations?.deposit_amount}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 block">Service Fee</span>
+                          <span className="font-medium text-gray-700">${request.reservations?.commission_amount}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 block">Total</span>
+                          <span className="font-bold text-gray-800">${request.reservations?.total_amount}</span>
+                        </div>
+                      </div>
 
-                  {/* Reason */}
-                  <div className="mb-4 p-3 bg-muted/30 rounded-lg">
-                    <p className="text-sm font-medium mb-1">Reason for Refund:</p>
-                    <p className="text-sm text-muted-foreground">{request.reason}</p>
-                  </div>
+                      <div className="mb-4 p-3 bg-muted/30 rounded-xl">
+                        <p className="text-sm font-medium text-gray-700 mb-1">Reason for Refund:</p>
+                        <p className="text-sm text-gray-600">{request.reason}</p>
+                      </div>
 
-                  {/* Dates */}
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      Requested: {new Date(request.created_at).toLocaleDateString()}
-                    </div>
-                    {request.processed_at && (
-                      <span>
-                        Processed: {new Date(request.processed_at).toLocaleDateString()}
-                      </span>
-                    )}
-                  </div>
+                      <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          Requested: {new Date(request.created_at).toLocaleDateString()}
+                        </div>
+                        {request.processed_at && (
+                          <span>
+                            Processed: {new Date(request.processed_at).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
 
-                  {/* Actions */}
-                  {canTakeAction(request.status) && (
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => handleApprove(request)}
-                        disabled={processing}
-                        className="flex-1 gap-2 bg-green-600 hover:bg-green-700"
-                      >
-                        <Check className="w-4 h-4" />
-                        Approve & Forward to Admin
-                        <ArrowRight className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedRequest(request);
-                          setShowRejectModal(true);
-                        }}
-                        disabled={processing}
-                        className="flex-1 gap-2 border-red-500 text-red-600 hover:bg-red-50"
-                      >
-                        <X className="w-4 h-4" />
-                        Reject
-                      </Button>
-                    </div>
-                  )}
+                      {canTakeAction(request.status) && (
+                        <div className="flex gap-3">
+                          <Button
+                            onClick={() => handleApprove(request)}
+                            disabled={processing}
+                            className="flex-1 gap-2 bg-green-600 hover:bg-green-700 rounded-xl"
+                          >
+                            <Check className="w-4 h-4" />
+                            Approve & Forward to Admin
+                            <ArrowRight className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setShowRejectModal(true);
+                            }}
+                            disabled={processing}
+                            className="flex-1 gap-2 border-red-500 text-red-600 hover:bg-red-50 rounded-xl"
+                          >
+                            <X className="w-4 h-4" />
+                            Reject
+                          </Button>
+                        </div>
+                      )}
 
-                  {/* Owner Decision Note */}
-                  {request.owner_decision_note && (
-                    <div className="mt-4 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900">
-                      <p className="text-sm font-medium text-red-900 dark:text-red-100 mb-1">
-                        Rejection Reason:
-                      </p>
-                      <p className="text-sm text-red-800 dark:text-red-200">
-                        {request.owner_decision_note}
-                      </p>
-                    </div>
-                  )}
-                </Card>
+                      {request.owner_decision_note && (
+                        <div className="mt-4 p-3 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-900">
+                          <p className="text-sm font-medium text-red-900 dark:text-red-100 mb-1">
+                            Rejection Reason:
+                          </p>
+                          <p className="text-sm text-red-800 dark:text-red-200">
+                            {request.owner_decision_note}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
             </div>
           )}
-        </motion.div>
+        </div>
       </div>
 
-      {/* Rejection Modal */}
       <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
             <DialogTitle>Reject Refund Request</DialogTitle>
             <DialogDescription>
@@ -366,6 +357,7 @@ export default function OwnerRefundRequests() {
                 value={rejectionNote}
                 onChange={(e) => setRejectionNote(e.target.value)}
                 rows={4}
+                className="rounded-xl"
               />
             </div>
             <div className="flex gap-3">
@@ -377,7 +369,7 @@ export default function OwnerRefundRequests() {
                   setRejectionNote('');
                 }}
                 disabled={processing}
-                className="flex-1"
+                className="flex-1 rounded-xl"
               >
                 Cancel
               </Button>
@@ -385,7 +377,7 @@ export default function OwnerRefundRequests() {
                 onClick={handleReject}
                 disabled={processing || !rejectionNote.trim()}
                 variant="destructive"
-                className="flex-1"
+                className="flex-1 rounded-xl"
               >
                 {processing ? 'Rejecting...' : 'Reject Request'}
               </Button>
@@ -393,6 +385,6 @@ export default function OwnerRefundRequests() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </OwnerLayout>
   );
 }

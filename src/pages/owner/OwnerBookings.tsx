@@ -2,24 +2,21 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
-import Navbar from '@/components/shared/Navbar';
-import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Clock, MapPin, User, CheckCircle, XCircle, MessageSquare } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, CheckCircle, XCircle, MessageSquare, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { useIsMobile } from '@/hooks/use-mobile';
-import BottomNav from '@/components/BottomNav';
 import { sendOwnerNotification } from '@/utils/analytics';
 import { AcceptBookingModal } from '@/components/bookings/AcceptBookingModal';
 import { MeetingLinkButton } from '@/components/bookings/MeetingLinkButton';
 import { AddToCalendarDropdown } from '@/components/bookings/AddToCalendarDropdown';
 import { sendTourSystemMessage } from '@/lib/tourMessaging';
 import { type MeetingPlatform } from '@/lib/meetingUtils';
+import { OwnerLayout } from '@/components/owner/OwnerLayout';
+import { motion } from 'framer-motion';
 
 type Booking = {
   id: string;
@@ -40,7 +37,6 @@ type Booking = {
 export default function OwnerBookings() {
   const { loading: authLoading } = useAuthGuard();
   const { loading: roleLoading } = useRoleGuard('owner');
-  const isMobile = useIsMobile();
   const { toast } = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +93,6 @@ export default function OwnerBookings() {
 
       if (error) throw error;
 
-      // Enrich with dorm and student names
       const enriched = await Promise.all((data || []).map(async (booking) => {
         const { data: dorm } = await supabase
           .from('dorms')
@@ -105,21 +100,16 @@ export default function OwnerBookings() {
           .eq('id', booking.dorm_id)
           .single();
 
-        const { data: student, error: studentError } = await supabase
+        const { data: student } = await supabase
           .from('students')
           .select('full_name, email')
           .eq('id', booking.student_id)
           .single();
 
-        if (studentError) {
-          console.error('Error fetching student:', studentError);
-        }
-
         return {
           ...booking,
           dorm_name: dorm?.dorm_name || dorm?.name || 'Unknown Dorm',
           student_name: student?.full_name || 'Unknown Student',
-          student_email: student?.email || ''
         };
       }));
 
@@ -152,7 +142,6 @@ export default function OwnerBookings() {
 
       if (error) throw error;
 
-      // Get student user_id for messaging
       const { data: student } = await supabase
         .from('students')
         .select('user_id')
@@ -160,7 +149,6 @@ export default function OwnerBookings() {
         .single();
 
       if (student && userId) {
-        // Send system message
         await sendTourSystemMessage(
           student.user_id,
           userId,
@@ -175,7 +163,6 @@ export default function OwnerBookings() {
         );
       }
 
-      // Send notification to owner
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: owner } = await supabase
@@ -230,7 +217,6 @@ export default function OwnerBookings() {
 
       if (error) throw error;
 
-      // Get student user_id for messaging
       const { data: student } = await supabase
         .from('students')
         .select('user_id')
@@ -249,25 +235,6 @@ export default function OwnerBookings() {
             reason: ownerNotes.trim() || undefined
           }
         );
-      }
-
-      // Send notification to owner
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: owner } = await supabase
-          .from('owners')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (owner && booking.dorm_id) {
-          await sendOwnerNotification({
-            ownerId: owner.id,
-            dormId: booking.dorm_id,
-            event: 'booking_declined',
-            message: `Viewing request declined for ${booking.student_name}`
-          });
-        }
       }
 
       toast({
@@ -308,9 +275,13 @@ export default function OwnerBookings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
+      <OwnerLayout>
+        <div className="p-4 md:p-8">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        </div>
+      </OwnerLayout>
     );
   }
 
@@ -319,59 +290,65 @@ export default function OwnerBookings() {
   const pastBookings = bookings.filter(b => ['declined', 'cancelled', 'completed'].includes(b.status));
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col bg-background w-full">
-        <Navbar />
-        <div className="flex-1 flex pt-20">
-          {!isMobile && <OwnerSidebar />}
-          <main className="flex-1 p-4 md:p-8">
-            <div className="max-w-6xl mx-auto space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">Viewing Requests</h1>
-                <p className="text-muted-foreground">Manage student viewing requests</p>
-              </div>
+    <OwnerLayout>
+      <div className="p-4 md:p-8">
+        <div className="max-w-6xl mx-auto space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h1 className="text-3xl font-semibold text-gray-800">Viewing Requests</h1>
+            <p className="text-gray-500 text-sm mt-1">Manage student viewing requests</p>
+          </motion.div>
 
-            {/* Pending Requests */}
-            <section>
-              <h2 className="text-xl font-semibold mb-4">
-                Pending Requests ({pendingBookings.length})
-              </h2>
-              <div className="grid gap-4">
-                {pendingBookings.length === 0 ? (
-                  <Card>
-                    <CardContent className="p-8 text-center text-muted-foreground">
-                      No pending requests
-                    </CardContent>
-                  </Card>
-                ) : (
-                  pendingBookings.map((booking) => (
-                    <Card key={booking.id} className="hover:shadow-lg transition-shadow">
+          {/* Pending Requests */}
+          <section>
+            <h2 className="text-xl font-semibold text-gray-700 mb-4">
+              Pending Requests ({pendingBookings.length})
+            </h2>
+            <div className="space-y-4">
+              {pendingBookings.length === 0 ? (
+                <Card className="rounded-2xl shadow-sm">
+                  <CardContent className="p-8 text-center text-gray-500">
+                    No pending requests
+                  </CardContent>
+                </Card>
+              ) : (
+                pendingBookings.map((booking, index) => (
+                  <motion.div
+                    key={booking.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <Card className="rounded-2xl shadow-sm hover:scale-[1.01] transition-transform">
                       <CardContent className="p-6">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div className="space-y-3 flex-1">
                             <div className="flex items-center gap-2">
                               <User className="h-4 w-4 text-primary" />
-                              <span className="font-semibold">{booking.student_name}</span>
+                              <span className="font-semibold text-gray-700">{booking.student_name}</span>
                               {getStatusBadge(booking.status)}
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
                               <MapPin className="h-4 w-4" />
                               {booking.dorm_name}
                             </div>
                             <div className="flex items-center gap-4 text-sm">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 text-gray-600">
                                 <Calendar className="h-4 w-4 text-primary" />
                                 {format(new Date(booking.requested_date), 'PPP')}
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 text-gray-600">
                                 <Clock className="h-4 w-4 text-primary" />
                                 {booking.requested_time}
                               </div>
                             </div>
                             {booking.message && (
-                              <div className="flex items-start gap-2 text-sm bg-muted p-3 rounded-lg">
+                              <div className="flex items-start gap-2 text-sm bg-muted/30 p-3 rounded-xl">
                                 <MessageSquare className="h-4 w-4 text-primary mt-0.5" />
-                                <p>{booking.message}</p>
+                                <p className="text-gray-600">{booking.message}</p>
                               </div>
                             )}
                             {selectedBooking === booking.id && (
@@ -382,6 +359,7 @@ export default function OwnerBookings() {
                                   placeholder="Add notes (optional)..."
                                   rows={2}
                                   maxLength={500}
+                                  className="rounded-xl"
                                 />
                               </div>
                             )}
@@ -394,7 +372,7 @@ export default function OwnerBookings() {
                                     setBookingToAccept(booking);
                                     setAcceptModalOpen(true);
                                   }}
-                                  className="flex-1 md:flex-none"
+                                  className="flex-1 md:flex-none bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white rounded-xl"
                                 >
                                   <CheckCircle className="h-4 w-4 mr-2" />
                                   Confirm Approve
@@ -402,7 +380,7 @@ export default function OwnerBookings() {
                                 <Button
                                   onClick={() => handleDecline(booking.id)}
                                   variant="destructive"
-                                  className="flex-1 md:flex-none"
+                                  className="flex-1 md:flex-none rounded-xl"
                                 >
                                   <XCircle className="h-4 w-4 mr-2" />
                                   Confirm Decline
@@ -413,7 +391,7 @@ export default function OwnerBookings() {
                                     setOwnerNotes('');
                                   }}
                                   variant="outline"
-                                  className="flex-1 md:flex-none"
+                                  className="flex-1 md:flex-none rounded-xl"
                                 >
                                   Cancel
                                 </Button>
@@ -422,7 +400,7 @@ export default function OwnerBookings() {
                               <>
                                 <Button
                                   onClick={() => setSelectedBooking(booking.id)}
-                                  className="flex-1 md:flex-none"
+                                  className="flex-1 md:flex-none bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white rounded-xl"
                                 >
                                   <CheckCircle className="h-4 w-4 mr-2" />
                                   Approve
@@ -430,7 +408,7 @@ export default function OwnerBookings() {
                                 <Button
                                   onClick={() => setSelectedBooking(booking.id)}
                                   variant="outline"
-                                  className="flex-1 md:flex-none"
+                                  className="flex-1 md:flex-none rounded-xl"
                                 >
                                   <XCircle className="h-4 w-4 mr-2" />
                                   Decline
@@ -441,111 +419,107 @@ export default function OwnerBookings() {
                         </div>
                       </CardContent>
                     </Card>
-                  ))
-                )}
-              </div>
-            </section>
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </section>
 
-            {/* Upcoming Viewings */}
-            <section>
-              <h2 className="text-xl font-semibold mb-4">
-                Upcoming Viewings ({upcomingBookings.length})
-              </h2>
-              <div className="grid gap-4">
-                {upcomingBookings.map((booking) => (
-                  <Card key={booking.id}>
+          {/* Upcoming Viewings */}
+          <section>
+            <h2 className="text-xl font-semibold text-gray-700 mb-4">
+              Upcoming Viewings ({upcomingBookings.length})
+            </h2>
+            <div className="space-y-4">
+              {upcomingBookings.map((booking, index) => (
+                <motion.div
+                  key={booking.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <Card className="rounded-2xl shadow-sm">
                     <CardContent className="p-6">
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-primary" />
-                          <span className="font-semibold">{booking.student_name}</span>
+                          <span className="font-semibold text-gray-700">{booking.student_name}</span>
                           {getStatusBadge(booking.status)}
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
                           <MapPin className="h-4 w-4" />
                           {booking.dorm_name}
                         </div>
                         <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 text-gray-600">
                             <Calendar className="h-4 w-4 text-primary" />
                             {format(new Date(booking.requested_date), 'PPP')}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 text-gray-600">
                             <Clock className="h-4 w-4 text-primary" />
                             {booking.requested_time}
                           </div>
                         </div>
-                        {booking.owner_notes && (
-                          <div className="text-sm bg-muted p-3 rounded-lg">
-                            <p className="font-medium mb-1">Your notes:</p>
-                            <p>{booking.owner_notes}</p>
-                          </div>
-                        )}
-                        {(booking as any).meeting_link && (
-                          <div className="flex flex-wrap gap-2">
+                        {booking.meeting_link && (
+                          <div className="flex flex-wrap gap-2 pt-2">
                             <MeetingLinkButton
-                              meetingLink={(booking as any).meeting_link}
-                              platform={(booking as any).meeting_platform as MeetingPlatform}
-                              className="flex-1 bg-gradient-to-r from-green-600 to-emerald-500"
+                              meetingLink={booking.meeting_link}
+                              platform={booking.meeting_platform as MeetingPlatform}
+                              size="sm"
+                              className="bg-gradient-to-r from-green-600 to-emerald-500"
                             />
                             <AddToCalendarDropdown
                               booking={{
                                 ...booking,
-                                meeting_link: (booking as any).meeting_link
+                                dorm_name: booking.dorm_name,
+                                student_name: booking.student_name
                               }}
+                              size="sm"
                             />
                           </div>
                         )}
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-            </section>
+                </motion.div>
+              ))}
+            </div>
+          </section>
 
-            {/* Past Bookings */}
-            {pastBookings.length > 0 && (
-              <section>
-                <h2 className="text-xl font-semibold mb-4">
-                  Past Requests ({pastBookings.length})
-                </h2>
-                <div className="grid gap-4">
-                  {pastBookings.map((booking) => (
-                    <Card key={booking.id} className="opacity-75">
-                      <CardContent className="p-6">
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-primary" />
-                            <span className="font-semibold">{booking.student_name}</span>
-                            {getStatusBadge(booking.status)}
+          {/* Past Bookings */}
+          {pastBookings.length > 0 && (
+            <section>
+              <h2 className="text-xl font-semibold text-gray-700 mb-4">
+                Past Bookings ({pastBookings.length})
+              </h2>
+              <div className="space-y-4 opacity-60">
+                {pastBookings.slice(0, 5).map((booking, index) => (
+                  <motion.div
+                    key={booking.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <Card className="rounded-2xl shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="font-medium text-gray-700">{booking.student_name}</span>
+                            <span className="text-gray-500">•</span>
+                            <span className="text-sm text-gray-500">{booking.dorm_name}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
-                            {booking.dorm_name}
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4" />
-                              {format(new Date(booking.requested_date), 'PPP')}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4" />
-                              {booking.requested_time}
-                            </div>
-                          </div>
+                          {getStatusBadge(booking.status)}
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
-        </main>
+                  </motion.div>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
       </div>
-      {isMobile && <BottomNav />}
-      
-      {/* Accept Booking Modal */}
+
       {bookingToAccept && (
         <AcceptBookingModal
           open={acceptModalOpen}
@@ -555,7 +529,6 @@ export default function OwnerBookings() {
           loading={acceptLoading}
         />
       )}
-    </div>
-  </SidebarProvider>
+    </OwnerLayout>
   );
 }

@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
-import Navbar from '@/components/shared/Navbar';
-import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { OwnerLayout } from '@/components/owner/OwnerLayout';
+import { Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function OwnerAccount() {
   const [loading, setLoading] = useState(true);
@@ -85,37 +86,39 @@ export default function OwnerAccount() {
 
   if (loading) {
     return (
-      <SidebarProvider>
-        <div className="min-h-screen flex flex-col bg-background w-full">
-          <Navbar />
-          <div className="flex-1 flex pt-20">
-            <OwnerSidebar />
-            <main className="flex-1 p-4 md:p-8">
-              <div className="text-center py-12">Loading account settings...</div>
-            </main>
+      <OwnerLayout>
+        <div className="p-4 md:p-8">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         </div>
-      </SidebarProvider>
+      </OwnerLayout>
     );
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col bg-background w-full">
-        <Navbar />
-        <div className="flex-1 flex pt-20">
-          <OwnerSidebar />
-          <main className="flex-1 p-4 md:p-8">
-            <div className="max-w-3xl mx-auto space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold gradient-text">Account Settings</h1>
-                <p className="text-foreground/60 mt-2">Manage your profile and notification preferences</p>
-              </div>
+    <OwnerLayout>
+      <div className="p-4 md:p-8">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h1 className="text-3xl font-semibold text-gray-800">Account Settings</h1>
+            <p className="text-gray-500 text-sm mt-1">Manage your profile and notification preferences</p>
+          </motion.div>
 
-              <div className="glass-hover rounded-2xl p-6 space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className="rounded-2xl shadow-md">
+              <CardContent className="p-6 space-y-6">
                 {/* Profile Photo Section */}
-                <div className="flex flex-col items-center pb-6 border-b border-white/10">
-                  <h2 className="text-xl font-bold mb-6">Profile Photo</h2>
+                <div className="flex flex-col items-center pb-6 border-b">
+                  <h2 className="text-xl font-semibold text-gray-700 mb-6">Profile Photo</h2>
                   <ProfilePhotoUpload
                     userId={owner?.user_id}
                     currentUrl={formData.profile_photo_url}
@@ -125,7 +128,7 @@ export default function OwnerAccount() {
                 </div>
 
                 <div>
-                  <h2 className="text-xl font-bold mb-4">Profile Information</h2>
+                  <h2 className="text-xl font-semibold text-gray-700 mb-4">Profile Information</h2>
                   
                   <div className="space-y-4">
                     <div>
@@ -133,7 +136,7 @@ export default function OwnerAccount() {
                       <Input
                         value={formData.full_name}
                         onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                        className="bg-black/20 border-white/10"
+                        className="rounded-xl"
                       />
                     </div>
 
@@ -142,9 +145,9 @@ export default function OwnerAccount() {
                       <Input
                         value={owner?.email}
                         disabled
-                        className="bg-black/20 border-white/10 opacity-60"
+                        className="rounded-xl opacity-60"
                       />
-                      <p className="text-xs text-foreground/60 mt-1">Email cannot be changed</p>
+                      <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
                     </div>
 
                     <div>
@@ -153,22 +156,22 @@ export default function OwnerAccount() {
                         value={formData.phone_number}
                         onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
                         placeholder="+961 XX XXX XXX"
-                        className="bg-black/20 border-white/10"
+                        className="rounded-xl"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="border-t border-white/10 pt-6">
-                  <h2 className="text-xl font-bold mb-4">Email Notifications</h2>
+                <div className="border-t pt-6">
+                  <h2 className="text-xl font-semibold text-gray-700 mb-4">Email Notifications</h2>
                   
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 glass rounded-xl">
+                    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
                       <div className="flex-1">
-                        <Label htmlFor="notify-email" className="font-semibold">
+                        <Label htmlFor="notify-email" className="font-semibold text-gray-700">
                           Email me about listing updates
                         </Label>
-                        <p className="text-sm text-foreground/60 mt-1">
+                        <p className="text-sm text-gray-500 mt-1">
                           Receive emails when your listings are verified or edited by admins
                         </p>
                       </div>
@@ -181,8 +184,8 @@ export default function OwnerAccount() {
                       />
                     </div>
 
-                    <div className="text-sm text-foreground/60 p-4 glass rounded-xl">
-                      <p className="font-semibold mb-2">What you'll receive:</p>
+                    <div className="text-sm text-gray-500 p-4 bg-muted/30 rounded-xl">
+                      <p className="font-semibold text-gray-700 mb-2">What you'll receive:</p>
                       <ul className="list-disc list-inside space-y-1">
                         <li>🎉 Verification confirmation when your listing goes live</li>
                         <li>📝 Update notifications when listing details are changed</li>
@@ -192,16 +195,16 @@ export default function OwnerAccount() {
                   </div>
                 </div>
 
-                <div className="border-t border-white/10 pt-6">
-                  <h2 className="text-xl font-bold mb-4">WhatsApp Notifications</h2>
+                <div className="border-t pt-6">
+                  <h2 className="text-xl font-semibold text-gray-700 mb-4">WhatsApp Notifications</h2>
                   
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 glass rounded-xl">
+                    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
                       <div className="flex-1">
-                        <Label htmlFor="notify-whatsapp" className="font-semibold">
+                        <Label htmlFor="notify-whatsapp" className="font-semibold text-gray-700">
                           Receive WhatsApp alerts
                         </Label>
-                        <p className="text-sm text-foreground/60 mt-1">
+                        <p className="text-sm text-gray-500 mt-1">
                           Get instant notifications via WhatsApp for verifications, updates, and inquiries
                         </p>
                       </div>
@@ -215,11 +218,11 @@ export default function OwnerAccount() {
                     </div>
 
                     {formData.notify_whatsapp && (
-                      <div className="p-4 glass rounded-xl">
-                        <Label htmlFor="whatsapp-language" className="font-semibold mb-2 block">
+                      <div className="p-4 bg-muted/30 rounded-xl">
+                        <Label htmlFor="whatsapp-language" className="font-semibold text-gray-700 mb-2 block">
                           Preferred Language / اللغة المفضلة
                         </Label>
-                        <p className="text-xs text-foreground/60 mb-3">
+                        <p className="text-xs text-gray-500 mb-3">
                           Choose the language for your WhatsApp notifications
                         </p>
                         <Select
@@ -228,7 +231,7 @@ export default function OwnerAccount() {
                             setFormData({ ...formData, whatsapp_language: value })
                           }
                         >
-                          <SelectTrigger className="bg-black/20 border-white/10">
+                          <SelectTrigger className="rounded-xl">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -236,7 +239,7 @@ export default function OwnerAccount() {
                             <SelectItem value="AR">🇱🇧 العربية (Arabic)</SelectItem>
                           </SelectContent>
                         </Select>
-                        <p className="text-xs text-foreground/60 mt-2">
+                        <p className="text-xs text-gray-500 mt-2">
                           {formData.whatsapp_language === 'AR' 
                             ? 'ستتلقى الرسائل باللغة العربية' 
                             : 'You will receive messages in English'}
@@ -244,8 +247,8 @@ export default function OwnerAccount() {
                       </div>
                     )}
 
-                    <div className="text-sm text-foreground/60 p-4 glass rounded-xl">
-                      <p className="font-semibold mb-2">WhatsApp benefits:</p>
+                    <div className="text-sm text-gray-500 p-4 bg-muted/30 rounded-xl">
+                      <p className="font-semibold text-gray-700 mb-2">WhatsApp benefits:</p>
                       <ul className="list-disc list-inside space-y-1">
                         <li>📱 Instant alerts on your phone</li>
                         <li>🔔 Get notified about new student inquiries immediately</li>
@@ -258,15 +261,22 @@ export default function OwnerAccount() {
                 <Button
                   onClick={handleSave}
                   disabled={saving}
-                  className="w-full bg-gradient-to-r from-primary to-secondary"
+                  className="w-full bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white rounded-xl"
                 >
-                  {saving ? 'Saving...' : 'Save Changes'}
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </Button>
-              </div>
-            </div>
-          </main>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </div>
-    </SidebarProvider>
+    </OwnerLayout>
   );
 }

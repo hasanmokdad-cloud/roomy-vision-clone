@@ -7,12 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { OwnerSidebar } from "@/components/owner/OwnerSidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import Navbar from "@/components/shared/Navbar";
-import { ArrowLeft, Download, Upload, Save, DollarSign, ToggleLeft } from "lucide-react";
+import { OwnerLayout } from "@/components/owner/OwnerLayout";
+import { ArrowLeft, Download, Upload, DollarSign, ToggleLeft, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { motion } from "framer-motion";
 
 export default function BulkRoomOps() {
   const navigate = useNavigate();
@@ -21,7 +20,6 @@ export default function BulkRoomOps() {
   const [selectedRooms, setSelectedRooms] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [bulkPrice, setBulkPrice] = useState("");
-  const [bulkAvailability, setBulkAvailability] = useState<boolean | null>(null);
 
   useEffect(() => {
     loadRooms();
@@ -40,7 +38,6 @@ export default function BulkRoomOps() {
 
       if (!owner) return;
 
-      // Get all dorms
       const { data: dorms } = await supabase
         .from("dorms")
         .select("id")
@@ -50,7 +47,6 @@ export default function BulkRoomOps() {
 
       const dormIds = dorms.map(d => d.id);
 
-      // Get all rooms for these dorms
       const { data, error } = await supabase
         .from("rooms")
         .select("*, dorms!inner(dorm_name, name)")
@@ -196,7 +192,7 @@ export default function BulkRoomOps() {
     reader.onload = async (event) => {
       try {
         const csv = event.target?.result as string;
-        const lines = csv.split("\n").slice(1); // Skip header
+        const lines = csv.split("\n").slice(1);
         const updates: any[] = [];
 
         for (const line of lines) {
@@ -236,195 +232,211 @@ export default function BulkRoomOps() {
 
   if (loading) {
     return (
-      <SidebarProvider>
-        <div className="min-h-screen flex flex-col bg-background w-full">
-          <Navbar />
-          <div className="flex-1 flex pt-20">
-            <OwnerSidebar />
-            <main className="flex-1 p-8">
-              <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              </div>
-            </main>
+      <OwnerLayout>
+        <div className="p-4 md:p-8">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         </div>
-      </SidebarProvider>
+      </OwnerLayout>
     );
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col bg-background w-full">
-        <Navbar />
-        <div className="flex-1 flex pt-20">
-          <OwnerSidebar />
-          <main className="flex-1 p-4 md:p-8 overflow-auto pb-20 md:pb-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-4 mb-6">
+    <OwnerLayout>
+      <div className="p-4 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex items-center gap-4"
+          >
             <Button
               variant="ghost"
-              onClick={() => navigate("/owner/dashboard")}
+              onClick={() => navigate("/owner")}
               className="gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
               Back
             </Button>
             <div>
-              <h1 className="text-3xl font-bold gradient-text">Bulk Room Operations</h1>
-              <p className="text-foreground/60">Update multiple rooms at once</p>
+              <h1 className="text-3xl font-semibold text-gray-800">Bulk Room Operations</h1>
+              <p className="text-gray-500 text-sm mt-1">Update multiple rooms at once</p>
             </div>
-          </div>
+          </motion.div>
 
           {/* CSV Import/Export */}
-          <Card className="mb-6 glass-hover">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                CSV Import/Export
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-4">
-                <Button onClick={exportToCSV} variant="outline" className="gap-2">
-                  <Download className="w-4 h-4" />
-                  Export to CSV
-                </Button>
-                <div>
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={handleCSVImport}
-                    className="hidden"
-                    id="csv-import"
-                  />
-                  <Button
-                    onClick={() => document.getElementById("csv-import")?.click()}
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <Upload className="w-4 h-4" />
-                    Import from CSV
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className="rounded-2xl shadow-md">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold text-gray-700">CSV Import/Export</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-4 flex-wrap">
+                  <Button onClick={exportToCSV} variant="outline" className="gap-2 rounded-xl">
+                    <Download className="w-4 h-4" />
+                    Export to CSV
                   </Button>
+                  <div>
+                    <input
+                      type="file"
+                      accept=".csv"
+                      onChange={handleCSVImport}
+                      className="hidden"
+                      id="csv-import"
+                    />
+                    <Button
+                      onClick={() => document.getElementById("csv-import")?.click()}
+                      variant="outline"
+                      className="gap-2 rounded-xl"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Import from CSV
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <p className="text-sm text-foreground/60">
-                Export current rooms to CSV, edit in spreadsheet software, then re-import
-              </p>
-            </CardContent>
-          </Card>
+                <p className="text-sm text-gray-500">
+                  Export current rooms to CSV, edit in spreadsheet software, then re-import
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Bulk Operations */}
-          <Card className="mb-6 glass-hover">
-            <CardHeader>
-              <CardTitle>Bulk Updates</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">
-                  Selected: {selectedRooms.size} of {rooms.length} rooms
-                </span>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={selectAll}>
-                    Select All
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={deselectAll}>
-                    Deselect All
-                  </Button>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Bulk Price Update */}
-                <div className="space-y-3">
-                  <Label>Update Price</Label>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            <Card className="rounded-2xl shadow-md">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold text-gray-700">Bulk Updates</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-600">
+                    Selected: {selectedRooms.size} of {rooms.length} rooms
+                  </span>
                   <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={bulkPrice}
-                      onChange={(e) => setBulkPrice(e.target.value)}
-                      placeholder="New price"
-                    />
-                    <Button onClick={handleBulkPriceUpdate} className="gap-2">
-                      <DollarSign className="w-4 h-4" />
-                      Apply
+                    <Button size="sm" variant="outline" onClick={selectAll} className="rounded-xl">
+                      Select All
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={deselectAll} className="rounded-xl">
+                      Deselect All
                     </Button>
                   </div>
                 </div>
 
-                {/* Bulk Availability Update */}
-                <div className="space-y-3">
-                  <Label>Update Availability</Label>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleBulkAvailabilityUpdate(true)}
-                      variant="outline"
-                      className="flex-1 gap-2"
-                    >
-                      <ToggleLeft className="w-4 h-4" />
-                      Mark Available
-                    </Button>
-                    <Button
-                      onClick={() => handleBulkAvailabilityUpdate(false)}
-                      variant="outline"
-                      className="flex-1 gap-2"
-                    >
-                      <ToggleLeft className="w-4 h-4" />
-                      Mark Unavailable
-                    </Button>
+                <Separator />
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Bulk Price Update */}
+                  <div className="space-y-3">
+                    <Label className="text-gray-700">Update Price</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={bulkPrice}
+                        onChange={(e) => setBulkPrice(e.target.value)}
+                        placeholder="New price"
+                        className="rounded-xl"
+                      />
+                      <Button 
+                        onClick={handleBulkPriceUpdate} 
+                        className="gap-2 bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white rounded-xl"
+                      >
+                        <DollarSign className="w-4 h-4" />
+                        Apply
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Bulk Availability Update */}
+                  <div className="space-y-3">
+                    <Label className="text-gray-700">Update Availability</Label>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleBulkAvailabilityUpdate(true)}
+                        variant="outline"
+                        className="flex-1 gap-2 rounded-xl"
+                      >
+                        <ToggleLeft className="w-4 h-4" />
+                        Mark Available
+                      </Button>
+                      <Button
+                        onClick={() => handleBulkAvailabilityUpdate(false)}
+                        variant="outline"
+                        className="flex-1 gap-2 rounded-xl"
+                      >
+                        <ToggleLeft className="w-4 h-4" />
+                        Mark Unavailable
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Room List */}
-          <Card className="glass-hover">
-            <CardHeader>
-              <CardTitle>All Rooms</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {rooms.map((room) => (
-                  <div
-                    key={room.id}
-                    className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
-                      selectedRooms.has(room.id)
-                        ? "border-primary bg-primary/5"
-                        : "border-border"
-                    }`}
-                  >
-                    <div className="flex items-center gap-4 flex-1">
-                      <Checkbox
-                        checked={selectedRooms.has(room.id)}
-                        onCheckedChange={() => toggleRoomSelection(room.id)}
-                      />
-                      <div className="flex-1">
-                        <h4 className="font-semibold">{room.name}</h4>
-                        <p className="text-sm text-foreground/60">
-                          {room.dorms?.dorm_name || room.dorms?.name} • {room.type}
-                        </p>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className="rounded-2xl shadow-md">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold text-gray-700">All Rooms</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {rooms.map((room, index) => (
+                    <motion.div
+                      key={room.id}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.02 }}
+                      className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
+                        selectedRooms.has(room.id)
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/30"
+                      }`}
+                    >
+                      <div className="flex items-center gap-4 flex-1">
+                        <Checkbox
+                          checked={selectedRooms.has(room.id)}
+                          onCheckedChange={() => toggleRoomSelection(room.id)}
+                        />
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-700">{room.name}</h4>
+                          <p className="text-sm text-gray-500">
+                            {room.dorms?.dorm_name || room.dorms?.name} • {room.type}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="font-bold">${room.price}</div>
-                        <div className="text-xs text-foreground/60">per month</div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <div className="font-bold text-gray-800">${room.price}</div>
+                          <div className="text-xs text-gray-500">per month</div>
+                        </div>
+                        <Badge variant={room.available ? "default" : "secondary"}>
+                          {room.available ? "Available" : "Reserved"}
+                        </Badge>
                       </div>
-                      <Badge variant={room.available ? "default" : "secondary"}>
-                        {room.available ? "Available" : "Reserved"}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          </div>
-        </main>
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </div>
-    </SidebarProvider>
+    </OwnerLayout>
   );
 }
