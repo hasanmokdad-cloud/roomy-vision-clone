@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Eye, MessageCircle, TrendingUp, Home, LogOut, Plus, Clock, CheckCircle, Loader2, Pencil, Video, Wallet } from 'lucide-react';
+import { Building2, Eye, MessageCircle, TrendingUp, Plus, Clock, CheckCircle, Loader2, Pencil, Video, Wallet } from 'lucide-react';
 import { useOwnerDormsQuery } from '@/hooks/useOwnerDormsQuery';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
@@ -15,6 +15,9 @@ import { NotificationBell } from '@/components/owner/NotificationBell';
 import { PayoutSetupBanner } from '@/components/owner/PayoutSetupBanner';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import Navbar from '@/components/shared/Navbar';
+import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 function UpcomingToursWidget({ ownerId }: { ownerId: string }) {
   const navigate = useNavigate();
@@ -335,118 +338,68 @@ export default function OwnerHome() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header Navigation */}
-      <div className="border-b border-border/40 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <h2 className="text-lg font-semibold">Owner Panel</h2>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/contact')}
-                  className="gap-2"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Reach Us
-                </Button>
+    <SidebarProvider>
+      <div className="min-h-screen flex flex-col bg-background w-full">
+        <Navbar />
+        <div className="flex-1 flex pt-20">
+          <OwnerSidebar />
+          <main className="flex-1 p-4 md:p-8 overflow-auto pb-20 md:pb-8">
+            <div className="max-w-7xl mx-auto space-y-8">
+              {/* Page Header */}
+              <div className="text-center space-y-2">
+                <h1 className="text-4xl font-bold gradient-text">Owner Control Panel</h1>
+                <p className="text-foreground/60">
+                  Manage your listed dorms, chat with students, and view performance.
+                </p>
               </div>
-            </div>
-            <div className="flex items-center gap-4">
-              {ownerId && <NotificationBell ownerId={ownerId} />}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSignOut}
-                className="gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="container mx-auto px-6 py-8 space-y-8">
-        {/* Page Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold gradient-text">Owner Control Panel</h1>
-          <p className="text-foreground/60">
-            Manage your listed dorms, chat with students, and view performance.
-          </p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statCards.map((card, index) => (
-            <motion.div
-              key={card.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="glass-hover rounded-2xl p-6"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-foreground/60 mb-1">{card.title}</p>
-                  <p className="text-3xl font-bold">{card.value}</p>
-                </div>
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center`}>
-                  <card.icon className="w-6 h-6 text-white" />
-                </div>
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {statCards.map((card, index) => (
+                  <motion.div
+                    key={card.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="glass-hover rounded-2xl p-6"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-foreground/60 mb-1">{card.title}</p>
+                        <p className="text-3xl font-bold">{card.value}</p>
+                      </div>
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center`}>
+                        <card.icon className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
-            </motion.div>
-          ))}
-        </div>
 
-        {/* Payout Setup Banner */}
-        {ownerId && <PayoutSetupBanner ownerId={ownerId} />}
+              {/* Payout Setup Banner */}
+              {ownerId && <PayoutSetupBanner ownerId={ownerId} />}
 
-        {/* Calendar & Availability Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="glass-hover">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-bold mb-2">Tour Calendar</h3>
-                  <p className="text-foreground/60">
-                    View upcoming tour bookings and manage your schedule
-                  </p>
-                </div>
-                <Button
-                  onClick={() => navigate('/owner/calendar')}
-                  className="gap-2"
-                >
-                  <Clock className="w-4 h-4" />
-                  View Calendar
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-hover">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-bold mb-2">Set Availability</h3>
-                  <p className="text-foreground/60">
-                    Block dates and times when you're not available
-                  </p>
-                </div>
-                <Button
-                  onClick={() => navigate('/owner/calendar?tab=availability')}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Clock className="w-4 h-4" />
-                  Manage Schedule
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              {/* Action Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="glass-hover">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold mb-2">Tour Calendar</h3>
+                        <p className="text-foreground/60">
+                          View tour bookings and manage your availability
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => navigate('/owner/calendar')}
+                        className="gap-2"
+                      >
+                        <Clock className="w-4 h-4" />
+                        Open Calendar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
 
           <Card className="glass-hover">
             <CardContent className="p-6">
@@ -697,23 +650,26 @@ export default function OwnerHome() {
                 Add Your First Dorm
               </Button>
             </CardContent>
-          </Card>
+            </Card>
+          )}
+            </div>
+          </main>
+        </div>
+
+        {/* Edit Dorm Modal */}
+        {editingDorm && (
+          <DormEditModal
+            dorm={editingDorm}
+            isOpen={!!editingDorm}
+            onClose={() => setEditingDorm(null)}
+            onUpdate={() => {
+              setEditingDorm(null);
+              refetchDorms();
+            }}
+            isAdmin={false}
+          />
         )}
       </div>
-
-      {/* Edit Dorm Modal */}
-      {editingDorm && (
-        <DormEditModal
-          dorm={editingDorm}
-          isOpen={!!editingDorm}
-          onClose={() => setEditingDorm(null)}
-          onUpdate={() => {
-            setEditingDorm(null);
-            refetchDorms();
-          }}
-          isAdmin={false}
-        />
-      )}
-    </div>
+    </SidebarProvider>
   );
 }

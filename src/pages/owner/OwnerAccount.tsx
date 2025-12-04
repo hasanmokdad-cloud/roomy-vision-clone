@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
+import Navbar from '@/components/shared/Navbar';
+import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 export default function OwnerAccount() {
   const [loading, setLoading] = useState(true);
@@ -81,167 +84,189 @@ export default function OwnerAccount() {
   };
 
   if (loading) {
-    return <div className="text-center py-12">Loading account settings...</div>;
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex flex-col bg-background w-full">
+          <Navbar />
+          <div className="flex-1 flex pt-20">
+            <OwnerSidebar />
+            <main className="flex-1 p-4 md:p-8">
+              <div className="text-center py-12">Loading account settings...</div>
+            </main>
+          </div>
+        </div>
+      </SidebarProvider>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold gradient-text">Account Settings</h1>
-        <p className="text-foreground/60 mt-2">Manage your profile and notification preferences</p>
-      </div>
-
-      <div className="glass-hover rounded-2xl p-6 space-y-6">
-        {/* Profile Photo Section */}
-        <div className="flex flex-col items-center pb-6 border-b border-white/10">
-          <h2 className="text-xl font-bold mb-6">Profile Photo</h2>
-          <ProfilePhotoUpload
-            userId={owner?.user_id}
-            currentUrl={formData.profile_photo_url}
-            onUploaded={handlePhotoUploaded}
-            tableName="owners"
-          />
-        </div>
-
-        <div>
-          <h2 className="text-xl font-bold mb-4">Profile Information</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <Label>Full Name</Label>
-              <Input
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                className="bg-black/20 border-white/10"
-              />
-            </div>
-
-            <div>
-              <Label>Email</Label>
-              <Input
-                value={owner?.email}
-                disabled
-                className="bg-black/20 border-white/10 opacity-60"
-              />
-              <p className="text-xs text-foreground/60 mt-1">Email cannot be changed</p>
-            </div>
-
-            <div>
-              <Label>Phone Number</Label>
-              <Input
-                value={formData.phone_number}
-                onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                placeholder="+961 XX XXX XXX"
-                className="bg-black/20 border-white/10"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-white/10 pt-6">
-          <h2 className="text-xl font-bold mb-4">Email Notifications</h2>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 glass rounded-xl">
-              <div className="flex-1">
-                <Label htmlFor="notify-email" className="font-semibold">
-                  Email me about listing updates
-                </Label>
-                <p className="text-sm text-foreground/60 mt-1">
-                  Receive emails when your listings are verified or edited by admins
-                </p>
+    <SidebarProvider>
+      <div className="min-h-screen flex flex-col bg-background w-full">
+        <Navbar />
+        <div className="flex-1 flex pt-20">
+          <OwnerSidebar />
+          <main className="flex-1 p-4 md:p-8">
+            <div className="max-w-3xl mx-auto space-y-6">
+              <div>
+                <h1 className="text-3xl font-bold gradient-text">Account Settings</h1>
+                <p className="text-foreground/60 mt-2">Manage your profile and notification preferences</p>
               </div>
-              <Switch
-                id="notify-email"
-                checked={formData.notify_email}
-                onCheckedChange={(checked) => 
-                  setFormData({ ...formData, notify_email: checked })
-                }
-              />
-            </div>
 
-            <div className="text-sm text-foreground/60 p-4 glass rounded-xl">
-              <p className="font-semibold mb-2">What you'll receive:</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>🎉 Verification confirmation when your listing goes live</li>
-                <li>📝 Update notifications when listing details are changed</li>
-                <li>⚡ Limited to 5 emails per hour (we respect your inbox!)</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+              <div className="glass-hover rounded-2xl p-6 space-y-6">
+                {/* Profile Photo Section */}
+                <div className="flex flex-col items-center pb-6 border-b border-white/10">
+                  <h2 className="text-xl font-bold mb-6">Profile Photo</h2>
+                  <ProfilePhotoUpload
+                    userId={owner?.user_id}
+                    currentUrl={formData.profile_photo_url}
+                    onUploaded={handlePhotoUploaded}
+                    tableName="owners"
+                  />
+                </div>
 
-        <div className="border-t border-white/10 pt-6">
-          <h2 className="text-xl font-bold mb-4">WhatsApp Notifications</h2>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 glass rounded-xl">
-              <div className="flex-1">
-                <Label htmlFor="notify-whatsapp" className="font-semibold">
-                  Receive WhatsApp alerts
-                </Label>
-                <p className="text-sm text-foreground/60 mt-1">
-                  Get instant notifications via WhatsApp for verifications, updates, and inquiries
-                </p>
-              </div>
-              <Switch
-                id="notify-whatsapp"
-                checked={formData.notify_whatsapp}
-                onCheckedChange={(checked) => 
-                  setFormData({ ...formData, notify_whatsapp: checked })
-                }
-              />
-            </div>
+                <div>
+                  <h2 className="text-xl font-bold mb-4">Profile Information</h2>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Full Name</Label>
+                      <Input
+                        value={formData.full_name}
+                        onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                        className="bg-black/20 border-white/10"
+                      />
+                    </div>
 
-            {formData.notify_whatsapp && (
-              <div className="p-4 glass rounded-xl">
-                <Label htmlFor="whatsapp-language" className="font-semibold mb-2 block">
-                  Preferred Language / اللغة المفضلة
-                </Label>
-                <p className="text-xs text-foreground/60 mb-3">
-                  Choose the language for your WhatsApp notifications
-                </p>
-                <Select
-                  value={formData.whatsapp_language}
-                  onValueChange={(value) => 
-                    setFormData({ ...formData, whatsapp_language: value })
-                  }
+                    <div>
+                      <Label>Email</Label>
+                      <Input
+                        value={owner?.email}
+                        disabled
+                        className="bg-black/20 border-white/10 opacity-60"
+                      />
+                      <p className="text-xs text-foreground/60 mt-1">Email cannot be changed</p>
+                    </div>
+
+                    <div>
+                      <Label>Phone Number</Label>
+                      <Input
+                        value={formData.phone_number}
+                        onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                        placeholder="+961 XX XXX XXX"
+                        className="bg-black/20 border-white/10"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/10 pt-6">
+                  <h2 className="text-xl font-bold mb-4">Email Notifications</h2>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 glass rounded-xl">
+                      <div className="flex-1">
+                        <Label htmlFor="notify-email" className="font-semibold">
+                          Email me about listing updates
+                        </Label>
+                        <p className="text-sm text-foreground/60 mt-1">
+                          Receive emails when your listings are verified or edited by admins
+                        </p>
+                      </div>
+                      <Switch
+                        id="notify-email"
+                        checked={formData.notify_email}
+                        onCheckedChange={(checked) => 
+                          setFormData({ ...formData, notify_email: checked })
+                        }
+                      />
+                    </div>
+
+                    <div className="text-sm text-foreground/60 p-4 glass rounded-xl">
+                      <p className="font-semibold mb-2">What you'll receive:</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>🎉 Verification confirmation when your listing goes live</li>
+                        <li>📝 Update notifications when listing details are changed</li>
+                        <li>⚡ Limited to 5 emails per hour (we respect your inbox!)</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/10 pt-6">
+                  <h2 className="text-xl font-bold mb-4">WhatsApp Notifications</h2>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 glass rounded-xl">
+                      <div className="flex-1">
+                        <Label htmlFor="notify-whatsapp" className="font-semibold">
+                          Receive WhatsApp alerts
+                        </Label>
+                        <p className="text-sm text-foreground/60 mt-1">
+                          Get instant notifications via WhatsApp for verifications, updates, and inquiries
+                        </p>
+                      </div>
+                      <Switch
+                        id="notify-whatsapp"
+                        checked={formData.notify_whatsapp}
+                        onCheckedChange={(checked) => 
+                          setFormData({ ...formData, notify_whatsapp: checked })
+                        }
+                      />
+                    </div>
+
+                    {formData.notify_whatsapp && (
+                      <div className="p-4 glass rounded-xl">
+                        <Label htmlFor="whatsapp-language" className="font-semibold mb-2 block">
+                          Preferred Language / اللغة المفضلة
+                        </Label>
+                        <p className="text-xs text-foreground/60 mb-3">
+                          Choose the language for your WhatsApp notifications
+                        </p>
+                        <Select
+                          value={formData.whatsapp_language}
+                          onValueChange={(value) => 
+                            setFormData({ ...formData, whatsapp_language: value })
+                          }
+                        >
+                          <SelectTrigger className="bg-black/20 border-white/10">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="EN">🇬🇧 English</SelectItem>
+                            <SelectItem value="AR">🇱🇧 العربية (Arabic)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-foreground/60 mt-2">
+                          {formData.whatsapp_language === 'AR' 
+                            ? 'ستتلقى الرسائل باللغة العربية' 
+                            : 'You will receive messages in English'}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="text-sm text-foreground/60 p-4 glass rounded-xl">
+                      <p className="font-semibold mb-2">WhatsApp benefits:</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>📱 Instant alerts on your phone</li>
+                        <li>🔔 Get notified about new student inquiries immediately</li>
+                        <li>⚡ Limited to 3 WhatsApp messages per hour</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="w-full bg-gradient-to-r from-primary to-secondary"
                 >
-                  <SelectTrigger className="bg-black/20 border-white/10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="EN">🇬🇧 English</SelectItem>
-                    <SelectItem value="AR">🇱🇧 العربية (Arabic)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-foreground/60 mt-2">
-                  {formData.whatsapp_language === 'AR' 
-                    ? 'ستتلقى الرسائل باللغة العربية' 
-                    : 'You will receive messages in English'}
-                </p>
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
               </div>
-            )}
-
-            <div className="text-sm text-foreground/60 p-4 glass rounded-xl">
-              <p className="font-semibold mb-2">WhatsApp benefits:</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>📱 Instant alerts on your phone</li>
-                <li>🔔 Get notified about new student inquiries immediately</li>
-                <li>⚡ Limited to 3 WhatsApp messages per hour</li>
-              </ul>
             </div>
-          </div>
+          </main>
         </div>
-
-        <Button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full bg-gradient-to-r from-primary to-secondary"
-        >
-          {saving ? 'Saving...' : 'Save Changes'}
-        </Button>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

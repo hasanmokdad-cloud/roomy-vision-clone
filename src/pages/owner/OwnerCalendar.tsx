@@ -253,8 +253,8 @@ export default function OwnerCalendar() {
     <SidebarProvider>
       <div className="min-h-screen flex flex-col bg-background w-full">
         <Navbar />
-        <div className="flex-1 flex mt-16">
-          <OwnerSidebar hiddenItems={['Bookings', 'Tour Calendar', 'Reviews', 'Add New Dorm', 'Bulk Import', 'Statistics', 'Account']} />
+        <div className="flex-1 flex pt-20">
+          <OwnerSidebar />
           <main className="flex-1 p-8">
           <div className="max-w-6xl mx-auto">
             <h1 className="text-3xl font-bold mb-8">Calendar & Availability</h1>

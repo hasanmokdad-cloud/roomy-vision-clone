@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { OwnerSidebar } from "@/components/owner/OwnerSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import Navbar from "@/components/shared/Navbar";
 import { ArrowLeft, Download, Upload, Save, DollarSign, ToggleLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -236,13 +237,16 @@ export default function BulkRoomOps() {
   if (loading) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <OwnerSidebar />
-          <main className="flex-1 p-8">
-            <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-          </main>
+        <div className="min-h-screen flex flex-col bg-background w-full">
+          <Navbar />
+          <div className="flex-1 flex pt-20">
+            <OwnerSidebar />
+            <main className="flex-1 p-8">
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              </div>
+            </main>
+          </div>
         </div>
       </SidebarProvider>
     );
@@ -250,10 +254,11 @@ export default function BulkRoomOps() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex bg-background w-full">
-        <OwnerSidebar />
-      
-      <main className="flex-1 p-4 md:p-8 overflow-auto pb-20 md:pb-8">
+      <div className="min-h-screen flex flex-col bg-background w-full">
+        <Navbar />
+        <div className="flex-1 flex pt-20">
+          <OwnerSidebar />
+          <main className="flex-1 p-4 md:p-8 overflow-auto pb-20 md:pb-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4 mb-6">
             <Button
@@ -416,8 +421,9 @@ export default function BulkRoomOps() {
               </div>
             </CardContent>
           </Card>
+          </div>
+        </main>
         </div>
-      </main>
       </div>
     </SidebarProvider>
   );

@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
+import Navbar from '@/components/shared/Navbar';
 import { format } from 'date-fns';
 import { detectCardBrand } from '@/components/payments/CardBrandIcons';
 
@@ -224,14 +225,16 @@ export default function OwnerWallet() {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background">
-        <OwnerSidebar />
-        <main className="flex-1 p-4 md:p-6 overflow-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-5xl mx-auto space-y-6"
-          >
+      <div className="min-h-screen flex flex-col bg-background w-full">
+        <Navbar />
+        <div className="flex-1 flex pt-20">
+          <OwnerSidebar />
+          <main className="flex-1 p-4 md:p-6 overflow-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="max-w-5xl mx-auto space-y-6"
+            >
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import Navbar from '@/components/shared/Navbar';
 import { ArrowLeft, Upload, Loader2 } from 'lucide-react';
 import { compressImage } from '@/utils/imageCompression';
 
@@ -210,10 +212,12 @@ export default function AddNewDorm() {
   }
 
   return (
-    <div className="min-h-screen flex bg-background">
-      <OwnerSidebar />
-      
-      <main className="flex-1 p-4 md:p-8 overflow-auto pb-20 md:pb-8">
+    <SidebarProvider>
+      <div className="min-h-screen flex flex-col bg-background w-full">
+        <Navbar />
+        <div className="flex-1 flex pt-20">
+          <OwnerSidebar />
+          <main className="flex-1 p-4 md:p-8 overflow-auto pb-20 md:pb-8">
         <div className="max-w-4xl mx-auto">
           <Button
             variant="ghost"
@@ -503,6 +507,8 @@ export default function AddNewDorm() {
           </form>
         </div>
       </main>
-    </div>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }

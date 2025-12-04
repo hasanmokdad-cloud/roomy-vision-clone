@@ -4,6 +4,7 @@ import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
 import Navbar from '@/components/shared/Navbar';
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -318,16 +319,17 @@ export default function OwnerBookings() {
   const pastBookings = bookings.filter(b => ['declined', 'cancelled', 'completed'].includes(b.status));
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <div className="flex pt-16">
-        {!isMobile && <OwnerSidebar />}
-        <main className="flex-1 p-4 md:p-8 md:ml-64">
-          <div className="max-w-6xl mx-auto space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Viewing Requests</h1>
-              <p className="text-muted-foreground">Manage student viewing requests</p>
-            </div>
+    <SidebarProvider>
+      <div className="min-h-screen flex flex-col bg-background w-full">
+        <Navbar />
+        <div className="flex-1 flex pt-20">
+          {!isMobile && <OwnerSidebar />}
+          <main className="flex-1 p-4 md:p-8">
+            <div className="max-w-6xl mx-auto space-y-6">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">Viewing Requests</h1>
+                <p className="text-muted-foreground">Manage student viewing requests</p>
+              </div>
 
             {/* Pending Requests */}
             <section>
@@ -545,14 +547,18 @@ export default function OwnerBookings() {
       
       {/* Accept Booking Modal */}
       {bookingToAccept && (
-        <AcceptBookingModal
-          open={acceptModalOpen}
-          onOpenChange={setAcceptModalOpen}
-          booking={bookingToAccept}
-          onConfirm={handleApprove}
-          loading={acceptLoading}
-        />
-      )}
-    </div>
+            {bookingToAccept && (
+              <AcceptBookingModal
+                open={acceptModalOpen}
+                onOpenChange={setAcceptModalOpen}
+                booking={bookingToAccept}
+                onConfirm={handleApprove}
+                loading={acceptLoading}
+              />
+            )}
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }

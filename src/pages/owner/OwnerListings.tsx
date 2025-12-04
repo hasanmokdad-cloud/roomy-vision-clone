@@ -8,6 +8,7 @@ import { Edit, Trash2, Plus, DoorOpen, ArrowLeft } from 'lucide-react';
 import { useOwnerDormsQuery } from '@/hooks/useOwnerDormsQuery';
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import Navbar from '@/components/shared/Navbar';
 import {
   Table,
   TableBody,
@@ -70,11 +71,14 @@ export default function OwnerListings() {
   if (loading) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <OwnerSidebar />
-          <main className="flex-1 p-8">
-            <div className="text-center py-12">Loading your listings...</div>
-          </main>
+        <div className="min-h-screen flex flex-col bg-background w-full">
+          <Navbar />
+          <div className="flex-1 flex pt-20">
+            <OwnerSidebar />
+            <main className="flex-1 p-8">
+              <div className="text-center py-12">Loading your listings...</div>
+            </main>
+          </div>
         </div>
       </SidebarProvider>
     );
@@ -82,9 +86,11 @@ export default function OwnerListings() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex bg-background w-full">
-        <OwnerSidebar />
-        <main className="flex-1 p-8">
+      <div className="min-h-screen flex flex-col bg-background w-full">
+        <Navbar />
+        <div className="flex-1 flex pt-20">
+          <OwnerSidebar />
+          <main className="flex-1 p-8">
           <div className="space-y-6">
             <div className="flex items-center gap-4 mb-6">
               <Button
@@ -176,7 +182,8 @@ export default function OwnerListings() {
         </div>
       )}
           </div>
-        </main>
+          </main>
+        </div>
       </div>
     </SidebarProvider>
   );
