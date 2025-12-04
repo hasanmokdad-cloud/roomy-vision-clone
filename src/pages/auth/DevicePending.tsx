@@ -29,7 +29,7 @@ export default function DevicePending() {
               <img 
                 src={RoomyLogo} 
                 alt="Roomy Logo" 
-                className="h-20 w-20 mx-auto mb-4 drop-shadow-lg"
+                className="h-24 w-24 mx-auto mb-4 drop-shadow-lg"
               />
             </div>
 

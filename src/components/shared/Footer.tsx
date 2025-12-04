@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Building2, Mail, MapPin, Phone } from 'lucide-react';
+import { Mail, MapPin, Phone } from 'lucide-react';
+import RoomyLogo from '@/assets/roomy-logo.png';
 
 export default function Footer() {
   const universities = [
@@ -17,9 +18,11 @@ export default function Footer() {
           {/* Left Block */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-white" />
-              </div>
+              <img 
+                src={RoomyLogo} 
+                alt="Roomy" 
+                className="w-10 h-10 rounded-xl"
+              />
               <span className="text-2xl font-bold gradient-text">Roomy</span>
             </div>
             <p className="text-sm text-foreground/70 leading-relaxed">

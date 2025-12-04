@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import RoomyLogo from '@/assets/roomy-logo.png';
 
 type Stage = "logo" | "text" | "wave" | "complete";
 
@@ -52,6 +53,14 @@ export default function EntryAnimation({ onComplete }: EntryAnimationProps) {
                   transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
                   className="text-center"
                 >
+                  <motion.img
+                    src={RoomyLogo}
+                    alt="Roomy"
+                    className="w-24 h-24 mx-auto mb-6 drop-shadow-2xl"
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                  />
                   <h1 className="text-6xl md:text-8xl font-bold text-gradient-hero relative">
                     Roomy
                     <div className="absolute inset-0 blur-3xl opacity-50 text-gradient-hero pointer-events-none select-none">
