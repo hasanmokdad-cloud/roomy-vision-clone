@@ -221,20 +221,16 @@ export default function OwnerWallet() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/owner')}
-                className="md:hidden"
-              >
-                <ArrowLeft className="h-5 w-5" />
+              <Button variant="ghost" onClick={() => navigate('/owner')} className="gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back
               </Button>
               <div>
-                <h1 className="text-2xl font-bold flex items-center gap-2">
+                <h1 className="text-3xl font-semibold text-foreground flex items-center gap-2">
                   <Wallet className="h-6 w-6 text-primary" />
                   Owner Wallet
                 </h1>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground text-sm mt-1">
                   Manage payouts and view your earnings
                 </p>
               </div>

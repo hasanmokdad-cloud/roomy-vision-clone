@@ -130,22 +130,19 @@ export default function OwnerEarnings() {
     <OwnerLayout>
       <div className="p-4 md:p-8 space-y-8">
         {/* Header */}
+        <div className="flex items-center gap-4 mb-2">
+          <Button variant="ghost" onClick={() => navigate('/owner')} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+        </div>
+        
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/owner')}
-              className="md:hidden"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div>
-              <h1 className="text-4xl font-bold gradient-text">Earnings</h1>
-              <p className="text-foreground/60 mt-2">
-                Track your reservation payouts and revenue
-              </p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-semibold text-foreground">Earnings</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Track your reservation payouts and revenue
+            </p>
           </div>
           <Button
             variant="outline"

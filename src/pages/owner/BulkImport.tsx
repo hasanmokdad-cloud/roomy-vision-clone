@@ -185,16 +185,16 @@ export default function BulkImport() {
     <OwnerLayout>
       <div className="p-4 md:p-8">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center gap-4 mb-6">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/owner/dorms")}
-              className="gap-2"
-            >
+          <div className="flex items-center gap-4 mb-2">
+            <Button variant="ghost" onClick={() => navigate("/owner")} className="gap-2">
               <ArrowLeft className="w-4 h-4" />
               Back
             </Button>
-            <h1 className="text-3xl font-bold">Bulk Import Dorms & Rooms</h1>
+          </div>
+          
+          <div className="mb-6">
+            <h1 className="text-3xl font-semibold text-foreground">Bulk Import Dorms & Rooms</h1>
+            <p className="text-muted-foreground text-sm mt-1">Import multiple dorms and rooms from an Excel file</p>
           </div>
 
           <div className="space-y-6">

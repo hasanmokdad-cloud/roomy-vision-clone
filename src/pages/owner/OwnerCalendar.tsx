@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, User, CalendarClock } from 'lucide-react';
+import { Clock, User, CalendarClock, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { OwnerCalendarSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
 import { OwnerAvailabilityManager } from '@/components/owner/OwnerAvailabilityManager';
@@ -22,6 +23,7 @@ import { type MeetingPlatform } from '@/lib/meetingUtils';
 import { motion } from 'framer-motion';
 
 export default function OwnerCalendar() {
+  const navigate = useNavigate();
   const { userId } = useAuthGuard();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -232,13 +234,19 @@ export default function OwnerCalendar() {
     <OwnerLayout>
       <div className="p-4 md:p-8">
         <div className="max-w-6xl mx-auto space-y-6">
+          <div className="flex items-center gap-4 mb-2">
+            <Button variant="ghost" onClick={() => navigate('/owner')} className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </Button>
+          </div>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h1 className="text-3xl font-semibold text-gray-800">Calendar & Availability</h1>
-            <p className="text-gray-500 text-sm mt-1">Manage your tour schedule and availability</p>
+            <h1 className="text-3xl font-semibold text-foreground">Calendar & Availability</h1>
+            <p className="text-muted-foreground text-sm mt-1">Manage your tour schedule and availability</p>
           </motion.div>
 
           <Tabs defaultValue={defaultTab} className="space-y-6">
