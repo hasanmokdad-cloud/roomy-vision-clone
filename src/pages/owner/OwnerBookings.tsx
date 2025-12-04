@@ -278,9 +278,13 @@ export default function OwnerBookings() {
     return <OwnerCardListSkeleton />;
   }
 
+  const today = new Date().toISOString().split('T')[0];
   const pendingBookings = bookings.filter(b => b.status === 'pending');
-  const upcomingBookings = bookings.filter(b => b.status === 'approved');
-  const pastBookings = bookings.filter(b => ['declined', 'cancelled', 'completed'].includes(b.status));
+  const upcomingBookings = bookings.filter(b => b.status === 'approved' && b.requested_date >= today);
+  const pastBookings = bookings.filter(b => 
+    ['declined', 'cancelled', 'completed'].includes(b.status) || 
+    (b.status === 'approved' && b.requested_date < today)
+  );
 
   return (
     <OwnerLayout>
