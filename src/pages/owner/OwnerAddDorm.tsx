@@ -4,7 +4,8 @@ import { OwnerLayout } from '@/components/owner/OwnerLayout';
 import { DormForm } from '@/components/owner/DormForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function OwnerAddDorm() {
   const navigate = useNavigate();
@@ -44,11 +45,25 @@ export default function OwnerAddDorm() {
   return (
     <OwnerLayout>
       <div className="p-4 md:p-8">
-        <DormForm 
-          ownerId={ownerId} 
-          onSaved={() => navigate('/owner/listings')}
-          onCancel={() => navigate('/owner/listings')}
-        />
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center gap-4 mb-2">
+            <Button variant="ghost" onClick={() => navigate('/owner')} className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </Button>
+          </div>
+          
+          <div className="mb-6">
+            <h1 className="text-3xl font-semibold text-foreground">Add New Dorm</h1>
+            <p className="text-muted-foreground text-sm mt-1">Add your dorm information</p>
+          </div>
+          
+          <DormForm 
+            ownerId={ownerId} 
+            onSaved={() => navigate('/owner/listings')}
+            onCancel={() => navigate('/owner/listings')}
+          />
+        </div>
       </div>
     </OwnerLayout>
   );

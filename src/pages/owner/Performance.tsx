@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OwnerLayout } from "@/components/owner/OwnerLayout";
-import { Eye, Heart, MessageSquare } from "lucide-react";
+import { Eye, Heart, MessageSquare, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { OwnerMetricsSkeleton } from "@/components/skeletons/OwnerSkeletons";
 import { motion } from "framer-motion";
 
 export default function Performance() {
+  const navigate = useNavigate();
   const [ownerId, setOwnerId] = useState<string | null>(null);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,13 +36,19 @@ export default function Performance() {
     <OwnerLayout>
       <div className="p-4 md:p-8">
         <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex items-center gap-4 mb-2">
+            <Button variant="ghost" onClick={() => navigate('/owner')} className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </Button>
+          </div>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h1 className="text-3xl font-semibold text-gray-800">Your Performance</h1>
-            <p className="text-gray-500 text-sm mt-1">Track how your listings are performing</p>
+            <h1 className="text-3xl font-semibold text-foreground">Your Performance</h1>
+            <p className="text-muted-foreground text-sm mt-1">Track how your listings are performing</p>
           </motion.div>
 
           {rows.length === 0 ? (

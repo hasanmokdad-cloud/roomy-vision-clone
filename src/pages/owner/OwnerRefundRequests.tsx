@@ -201,13 +201,19 @@ export default function OwnerRefundRequests() {
     <OwnerLayout>
       <div className="p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center gap-4 mb-2">
+            <Button variant="ghost" onClick={() => navigate('/owner')} className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </Button>
+          </div>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h1 className="text-3xl font-semibold text-gray-800">Refund Requests</h1>
-            <p className="text-gray-500 text-sm mt-1">
+            <h1 className="text-3xl font-semibold text-foreground">Refund Requests</h1>
+            <p className="text-muted-foreground text-sm mt-1">
               Manage refund requests from students for your properties
             </p>
           </motion.div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
 import { Card } from '@/components/ui/card';
@@ -6,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Star } from 'lucide-react';
+import { Star, ArrowLeft } from 'lucide-react';
 import { OwnerCardListSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { useToast } from '@/hooks/use-toast';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
 import { motion } from 'framer-motion';
 
 export default function ReviewManagement() {
+  const navigate = useNavigate();
   const { loading, userId } = useRoleGuard('owner');
   const { toast } = useToast();
   const [reviews, setReviews] = useState<any[]>([]);
@@ -121,13 +123,19 @@ export default function ReviewManagement() {
     <OwnerLayout>
       <div className="p-4 md:p-8">
         <div className="max-w-6xl mx-auto space-y-6">
+          <div className="flex items-center gap-4 mb-2">
+            <Button variant="ghost" onClick={() => navigate('/owner')} className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </Button>
+          </div>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h1 className="text-3xl font-semibold text-gray-800">Review Management</h1>
-            <p className="text-gray-500 text-sm mt-1">Respond to reviews from your guests</p>
+            <h1 className="text-3xl font-semibold text-foreground">Review Management</h1>
+            <p className="text-muted-foreground text-sm mt-1">Respond to reviews from your guests</p>
           </motion.div>
 
           <Tabs defaultValue="approved" className="w-full">
