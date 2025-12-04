@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
-import { ArrowLeft, DollarSign, Clock, TrendingUp, Loader2, CreditCard } from 'lucide-react';
+import { ArrowLeft, DollarSign, Clock, TrendingUp, CreditCard } from 'lucide-react';
+import { OwnerTableSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { format } from 'date-fns';
 import { AddWhishCardModal } from '@/components/payments/AddWhishCardModal';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
@@ -122,13 +123,7 @@ export default function OwnerEarnings() {
   };
 
   if (loading) {
-    return (
-      <OwnerLayout>
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      </OwnerLayout>
-    );
+    return <OwnerTableSkeleton />;
   }
 
   return (

@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Star, Loader2 } from 'lucide-react';
+import { Star } from 'lucide-react';
+import { OwnerCardListSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { useToast } from '@/hooks/use-toast';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
 import { motion } from 'framer-motion';
@@ -113,15 +114,7 @@ export default function ReviewManagement() {
   };
 
   if (loading || dataLoading) {
-    return (
-      <OwnerLayout>
-        <div className="p-4 md:p-8">
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        </div>
-      </OwnerLayout>
-    );
+    return <OwnerCardListSkeleton />;
   }
 
   return (

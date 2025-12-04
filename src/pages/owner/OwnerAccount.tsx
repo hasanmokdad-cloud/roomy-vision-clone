@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
 import { Loader2 } from 'lucide-react';
+import { OwnerFormSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { motion } from 'framer-motion';
 
 export default function OwnerAccount() {
@@ -85,15 +86,7 @@ export default function OwnerAccount() {
   };
 
   if (loading) {
-    return (
-      <OwnerLayout>
-        <div className="p-4 md:p-8">
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        </div>
-      </OwnerLayout>
-    );
+    return <OwnerFormSkeleton />;
   }
 
   return (

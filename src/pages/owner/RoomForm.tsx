@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
+import { OwnerFormSkeleton } from "@/components/skeletons/OwnerSkeletons";
 import { VirtualTourGallery } from "@/components/rooms/VirtualTourGallery";
 import { EnhancedImageUploader } from "@/components/owner/EnhancedImageUploader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -226,15 +227,7 @@ export default function RoomForm() {
   };
 
   if (isAuthenticated === null) {
-    return (
-      <OwnerLayout>
-        <div className="p-4 md:p-8">
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        </div>
-      </OwnerLayout>
-    );
+    return <OwnerFormSkeleton />;
   }
 
   if (isAuthenticated === false) {
@@ -253,16 +246,7 @@ export default function RoomForm() {
   }
 
   if (roomId && !dataLoaded) {
-    return (
-      <OwnerLayout>
-        <div className="p-4 md:p-8">
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <span className="ml-2 text-gray-500">Loading room data...</span>
-          </div>
-        </div>
-      </OwnerLayout>
-    );
+    return <OwnerFormSkeleton />;
   }
 
   return (

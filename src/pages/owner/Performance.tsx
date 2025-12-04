@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OwnerLayout } from "@/components/owner/OwnerLayout";
-import { Eye, Heart, MessageSquare, Loader2 } from "lucide-react";
+import { Eye, Heart, MessageSquare } from "lucide-react";
+import { OwnerMetricsSkeleton } from "@/components/skeletons/OwnerSkeletons";
 import { motion } from "framer-motion";
 
 export default function Performance() {
@@ -25,15 +26,7 @@ export default function Performance() {
   }, []);
 
   if (loading) {
-    return (
-      <OwnerLayout>
-        <div className="p-4 md:p-8">
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        </div>
-      </OwnerLayout>
-    );
+    return <OwnerMetricsSkeleton />;
   }
 
   return (

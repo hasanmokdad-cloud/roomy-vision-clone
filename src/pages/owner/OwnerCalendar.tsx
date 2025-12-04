@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, User, CalendarClock, Loader2 } from 'lucide-react';
+import { Clock, User, CalendarClock } from 'lucide-react';
+import { OwnerCalendarSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
 import { OwnerAvailabilityManager } from '@/components/owner/OwnerAvailabilityManager';
 import { AcceptBookingModal } from '@/components/bookings/AcceptBookingModal';
@@ -224,15 +225,7 @@ export default function OwnerCalendar() {
   const datesWithBookings = bookings.map(b => new Date(b.requested_date));
 
   if (loading) {
-    return (
-      <OwnerLayout>
-        <div className="p-4 md:p-8">
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        </div>
-      </OwnerLayout>
-    );
+    return <OwnerCalendarSkeleton />;
   }
 
   return (

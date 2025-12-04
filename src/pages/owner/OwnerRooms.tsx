@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Home, DollarSign, Users, Edit, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Home, DollarSign, Users, Edit, CheckCircle, XCircle } from 'lucide-react';
+import { OwnerTableSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { useNavigate } from 'react-router-dom';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
 import type { RoomType } from '@/types/RoomType';
@@ -85,15 +86,7 @@ export default function OwnerRooms() {
   };
 
   if (loading) {
-    return (
-      <OwnerLayout>
-        <div className="p-4 md:p-8">
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        </div>
-      </OwnerLayout>
-    );
+    return <OwnerTableSkeleton />;
   }
 
   return (
