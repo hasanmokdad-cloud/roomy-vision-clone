@@ -547,18 +547,15 @@ export default function OwnerBookings() {
       
       {/* Accept Booking Modal */}
       {bookingToAccept && (
-            {bookingToAccept && (
-              <AcceptBookingModal
-                open={acceptModalOpen}
-                onOpenChange={setAcceptModalOpen}
-                booking={bookingToAccept}
-                onConfirm={handleApprove}
-                loading={acceptLoading}
-              />
-            )}
-          </main>
-        </div>
-      </div>
-    </SidebarProvider>
+        <AcceptBookingModal
+          open={acceptModalOpen}
+          onOpenChange={setAcceptModalOpen}
+          booking={bookingToAccept}
+          onConfirm={handleApprove}
+          loading={acceptLoading}
+        />
+      )}
+    </div>
+  </SidebarProvider>
   );
 }
