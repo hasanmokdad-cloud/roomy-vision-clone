@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
+import { OwnerLayout } from '@/components/owner/OwnerLayout';
 import { ArrowLeft, Search, CheckCircle, Clock, XCircle, Loader2 } from 'lucide-react';
 
 export default function ClaimDormNew() {
@@ -173,10 +173,8 @@ export default function ClaimDormNew() {
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
-      <OwnerSidebar />
-      
-      <main className="flex-1 p-4 md:p-8 overflow-auto pb-20 md:pb-8">
+    <OwnerLayout>
+      <div className="p-4 md:p-8 overflow-auto pb-20 md:pb-8">
         <div className="max-w-4xl mx-auto">
           <Button
             variant="ghost"
@@ -344,7 +342,7 @@ export default function ClaimDormNew() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </OwnerLayout>
   );
 }

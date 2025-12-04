@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Upload, Loader2, Download } from "lucide-react";
 import * as XLSX from "xlsx";
+import { OwnerLayout } from "@/components/owner/OwnerLayout";
 
 interface ImportRow {
   dorm_name: string;
@@ -26,9 +27,9 @@ export default function BulkImport() {
   const [previewData, setPreviewData] = useState<ImportRow[]>([]);
   const [ownerId, setOwnerId] = useState<string | null>(null);
 
-  useState(() => {
+  useEffect(() => {
     loadOwnerId();
-  });
+  }, []);
 
   const loadOwnerId = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -103,7 +104,6 @@ export default function BulkImport() {
 
     setLoading(true);
     try {
-      // Group rows by dorm
       const dormMap = new Map<string, ImportRow[]>();
       previewData.forEach((row) => {
         const key = row.dorm_name;
@@ -115,11 +115,9 @@ export default function BulkImport() {
 
       let successCount = 0;
 
-      // Process each dorm
       for (const [dormName, rows] of dormMap.entries()) {
         const firstRow = rows[0];
 
-        // Insert dorm
         const { data: dormData, error: dormError } = await supabase
           .from("dorms")
           .insert([
@@ -145,7 +143,6 @@ export default function BulkImport() {
           continue;
         }
 
-        // Insert rooms for this dorm
         const roomsToInsert = rows.map((row) => ({
           dorm_id: dormData.id,
           name: row.room_name,
@@ -185,91 +182,95 @@ export default function BulkImport() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/owner/dorms")}
-          className="gap-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </Button>
-        <h1 className="text-3xl font-bold">Bulk Import Dorms & Rooms</h1>
-      </div>
-
-      <div className="space-y-6">
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Step 1: Download Template</h2>
-          <p className="text-muted-foreground mb-4">
-            Download the Excel template, fill in your dorm and room information, then upload it back.
-          </p>
-          <Button onClick={downloadTemplate} variant="outline" className="gap-2">
-            <Download className="w-4 h-4" />
-            Download Template
-          </Button>
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Step 2: Upload Filled Template</h2>
-          <input
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            onChange={handleFileUpload}
-            className="hidden"
-            id="file-upload"
-          />
-          <label htmlFor="file-upload">
-            <Button variant="outline" className="gap-2" onClick={() => document.getElementById("file-upload")?.click()}>
-              <Upload className="w-4 h-4" />
-              Upload File
+    <OwnerLayout>
+      <div className="p-4 md:p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center gap-4 mb-6">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/owner/dorms")}
+              className="gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
             </Button>
-          </label>
-        </Card>
+            <h1 className="text-3xl font-bold">Bulk Import Dorms & Rooms</h1>
+          </div>
 
-        {previewData.length > 0 && (
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Step 3: Preview & Confirm</h2>
-            <div className="overflow-x-auto mb-4">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">Dorm Name</th>
-                    <th className="text-left p-2">Room Name</th>
-                    <th className="text-left p-2">Type</th>
-                    <th className="text-left p-2">Price</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {previewData.slice(0, 10).map((row, idx) => (
-                    <tr key={idx} className="border-b">
-                      <td className="p-2">{row.dorm_name}</td>
-                      <td className="p-2">{row.room_name}</td>
-                      <td className="p-2">{row.room_type}</td>
-                      <td className="p-2">${row.price}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {previewData.length > 10 && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  ... and {previewData.length - 10} more rows
-                </p>
-              )}
-            </div>
-            <Button onClick={handleImport} disabled={loading} className="gap-2">
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Importing...
-                </>
-              ) : (
-                <>Import {previewData.length} Rows</>
-              )}
-            </Button>
-          </Card>
-        )}
+          <div className="space-y-6">
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Step 1: Download Template</h2>
+              <p className="text-muted-foreground mb-4">
+                Download the Excel template, fill in your dorm and room information, then upload it back.
+              </p>
+              <Button onClick={downloadTemplate} variant="outline" className="gap-2">
+                <Download className="w-4 h-4" />
+                Download Template
+              </Button>
+            </Card>
+
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Step 2: Upload Filled Template</h2>
+              <input
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="file-upload"
+              />
+              <label htmlFor="file-upload">
+                <Button variant="outline" className="gap-2" onClick={() => document.getElementById("file-upload")?.click()}>
+                  <Upload className="w-4 h-4" />
+                  Upload File
+                </Button>
+              </label>
+            </Card>
+
+            {previewData.length > 0 && (
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Step 3: Preview & Confirm</h2>
+                <div className="overflow-x-auto mb-4">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-2">Dorm Name</th>
+                        <th className="text-left p-2">Room Name</th>
+                        <th className="text-left p-2">Type</th>
+                        <th className="text-left p-2">Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previewData.slice(0, 10).map((row, idx) => (
+                        <tr key={idx} className="border-b">
+                          <td className="p-2">{row.dorm_name}</td>
+                          <td className="p-2">{row.room_name}</td>
+                          <td className="p-2">{row.room_type}</td>
+                          <td className="p-2">${row.price}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {previewData.length > 10 && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      ... and {previewData.length - 10} more rows
+                    </p>
+                  )}
+                </div>
+                <Button onClick={handleImport} disabled={loading} className="gap-2">
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Importing...
+                    </>
+                  ) : (
+                    <>Import {previewData.length} Rows</>
+                  )}
+                </Button>
+              </Card>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </OwnerLayout>
   );
 }

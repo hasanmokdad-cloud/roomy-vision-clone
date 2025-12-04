@@ -15,9 +15,7 @@ import { NotificationBell } from '@/components/owner/NotificationBell';
 import { PayoutSetupBanner } from '@/components/owner/PayoutSetupBanner';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import Navbar from '@/components/shared/Navbar';
-import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { OwnerLayout } from '@/components/owner/OwnerLayout';
 
 function UpcomingToursWidget({ ownerId }: { ownerId: string }) {
   const navigate = useNavigate();
@@ -31,7 +29,6 @@ function UpcomingToursWidget({ ownerId }: { ownerId: string }) {
   }, [ownerId]);
 
   const loadTours = async () => {
-    // Fetch bookings without embedded relations
     const { data } = await supabase
       .from('bookings')
       .select('*')
@@ -42,7 +39,6 @@ function UpcomingToursWidget({ ownerId }: { ownerId: string }) {
       .order('requested_time', { ascending: true })
       .limit(5);
 
-    // Enrich with dorm and student data separately
     const enriched = await Promise.all((data || []).map(async (booking) => {
       const [dormResult, studentResult] = await Promise.all([
         supabase.from('dorms').select('dorm_name, name').eq('id', booking.dorm_id).maybeSingle(),
@@ -159,11 +155,8 @@ export default function OwnerHome() {
     }
   }, [userId]);
 
-  // Subscribe to real-time verification status changes
   useEffect(() => {
     if (!ownerId) return;
-
-    console.log('🔄 Setting up real-time subscription for ownerId:', ownerId);
 
     const channel = supabase
       .channel('dorm-verification-changes')
@@ -176,15 +169,12 @@ export default function OwnerHome() {
           filter: `owner_id=eq.${ownerId}`
         },
         (payload) => {
-          console.log('🔔 Dorm updated:', payload);
-          // Refetch dorms when verification status changes
           refetchDorms();
         }
       )
       .subscribe();
 
     return () => {
-      console.log('🔌 Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
   }, [ownerId, refetchDorms]);
@@ -194,7 +184,6 @@ export default function OwnerHome() {
       const verified = dorms.filter(d => d.verification_status === 'Verified').length;
       const pending = dorms.filter(d => d.verification_status === 'Pending').length;
       
-      // Fetch analytics for verified dorms
       const dormIds = dorms.filter(d => d.verification_status === 'Verified').map(d => d.id);
       if (dormIds.length > 0) {
         supabase
@@ -216,7 +205,6 @@ export default function OwnerHome() {
     }
   }, [dorms]);
 
-  // Subscribe to real-time analytics events for views
   useEffect(() => {
     if (!dorms) return;
 
@@ -226,7 +214,6 @@ export default function OwnerHome() {
 
     if (dormIds.length === 0) return;
 
-    // Real-time subscription for new views
     const viewsChannel = supabase
       .channel('owner-views-realtime')
       .on(
@@ -238,7 +225,6 @@ export default function OwnerHome() {
           filter: `type=eq.view`
         },
         (payload) => {
-          // Check if the new view is for one of this owner's dorms
           if (dormIds.includes(payload.new.dorm_id)) {
             setStats(prev => ({ ...prev, totalViews: prev.totalViews + 1 }));
           }
@@ -252,21 +238,9 @@ export default function OwnerHome() {
   }, [dorms]);
 
   const loadOwnerId = async () => {
-    if (!userId) {
-      console.log('❌ No userId, cannot load ownerId');
-      return;
-    }
-
-    console.log('🔍 Loading ownerId for userId:', userId);
+    if (!userId) return;
     
-    // First verify the session
     const { data: { session } } = await supabase.auth.getSession();
-    console.log('🔐 Current Session:', {
-      authenticated: !!session,
-      user_id: session?.user?.id,
-      matches_userId: session?.user?.id === userId,
-      expires_at: session?.expires_at
-    });
     
     const { data: owner, error } = await supabase
       .from('owners')
@@ -274,10 +248,7 @@ export default function OwnerHome() {
       .eq('user_id', userId)
       .maybeSingle();
 
-    console.log('👤 Owner Query Result:', { owner, error });
-
     if (error) {
-      console.error('❌ Error loading ownerId:', error);
       toast({
         title: "Error",
         description: "Failed to load owner information. Please refresh the page.",
@@ -287,11 +258,8 @@ export default function OwnerHome() {
     }
 
     if (owner) {
-      console.log('✅ Loaded owner record:', owner);
-      console.log('🆔 Setting ownerId to:', owner.id);
       setOwnerId(owner.id);
     } else {
-      console.log('⚠️ No owner record found for userId:', userId);
       toast({
         title: "Account Setup Required",
         description: "Your owner account needs to be set up. Please contact support.",
@@ -320,15 +288,6 @@ export default function OwnerHome() {
     { title: 'Verified', value: stats.verifiedDorms, icon: CheckCircle, color: 'from-orange-500 to-red-500' },
   ];
 
-  // Debug logging
-  console.log('=== Owner Home Debug ===');
-  console.log('showAddDorm:', showAddDorm);
-  console.log('ownerId:', ownerId);
-  console.log('dorms:', dorms);
-  console.log('dorms?.length:', dorms?.length);
-  console.log('!showAddDorm:', !showAddDorm);
-  console.log('Should show button:', !showAddDorm);
-
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -338,136 +297,131 @@ export default function OwnerHome() {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col bg-background w-full">
-        <Navbar />
-        <div className="flex-1 flex pt-20">
-          <OwnerSidebar />
-          <main className="flex-1 p-4 md:p-8 overflow-auto pb-20 md:pb-8">
-            <div className="max-w-7xl mx-auto space-y-8">
-              {/* Page Header */}
-              <div className="text-center space-y-2">
-                <h1 className="text-4xl font-bold gradient-text">Owner Control Panel</h1>
-                <p className="text-foreground/60">
-                  Manage your listed dorms, chat with students, and view performance.
-                </p>
-              </div>
+    <OwnerLayout>
+      <div className="p-4 md:p-8 overflow-auto pb-20 md:pb-8">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* Page Header */}
+          <div className="text-center space-y-2">
+            <h1 className="text-4xl font-bold gradient-text">Owner Control Panel</h1>
+            <p className="text-foreground/60">
+              Manage your listed dorms, chat with students, and view performance.
+            </p>
+          </div>
 
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {statCards.map((card, index) => (
-                  <motion.div
-                    key={card.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="glass-hover rounded-2xl p-6"
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {statCards.map((card, index) => (
+              <motion.div
+                key={card.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="glass-hover rounded-2xl p-6"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-foreground/60 mb-1">{card.title}</p>
+                    <p className="text-3xl font-bold">{card.value}</p>
+                  </div>
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center`}>
+                    <card.icon className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Payout Setup Banner */}
+          {ownerId && <PayoutSetupBanner ownerId={ownerId} />}
+
+          {/* Action Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="glass-hover">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Tour Calendar</h3>
+                    <p className="text-foreground/60">
+                      View tour bookings and manage your availability
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => navigate('/owner/calendar')}
+                    className="gap-2"
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-foreground/60 mb-1">{card.title}</p>
-                        <p className="text-3xl font-bold">{card.value}</p>
-                      </div>
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center`}>
-                        <card.icon className="w-6 h-6 text-white" />
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Payout Setup Banner */}
-              {ownerId && <PayoutSetupBanner ownerId={ownerId} />}
-
-              {/* Action Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="glass-hover">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold mb-2">Tour Calendar</h3>
-                        <p className="text-foreground/60">
-                          View tour bookings and manage your availability
-                        </p>
-                      </div>
-                      <Button
-                        onClick={() => navigate('/owner/calendar')}
-                        className="gap-2"
-                      >
-                        <Clock className="w-4 h-4" />
-                        Open Calendar
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-          <Card className="glass-hover">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-bold mb-2">Your Earnings</h3>
-                  <p className="text-foreground/60">
-                    Track reservations payouts and revenue
-                  </p>
+                    <Clock className="w-4 h-4" />
+                    Open Calendar
+                  </Button>
                 </div>
-                <Button
-                  onClick={() => navigate('/owner/earnings')}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <TrendingUp className="w-4 h-4" />
-                  View Earnings
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="glass-hover">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-bold mb-2">Refund Requests</h3>
-                  <p className="text-foreground/60">
-                    Review and manage student refund requests
-                  </p>
+            <Card className="glass-hover">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Your Earnings</h3>
+                    <p className="text-foreground/60">
+                      Track reservations payouts and revenue
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => navigate('/owner/earnings')}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <TrendingUp className="w-4 h-4" />
+                    View Earnings
+                  </Button>
                 </div>
-                <Button
-                  onClick={() => navigate('/owner/refunds')}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  View Requests
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="glass-hover">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-bold mb-2">Wallet & Payouts</h3>
-                  <p className="text-foreground/60">
-                    Manage your payout card and view transactions
-                  </p>
+            <Card className="glass-hover">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Refund Requests</h3>
+                    <p className="text-foreground/60">
+                      Review and manage student refund requests
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => navigate('/owner/refunds')}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    View Requests
+                  </Button>
                 </div>
-                <Button
-                  onClick={() => navigate('/owner/wallet')}
-                  className="gap-2 bg-gradient-to-r from-primary to-purple-500"
-                >
-                  <Wallet className="w-4 h-4" />
-                  Open Wallet
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
 
-        {/* Upcoming Tours Widget */}
-        {ownerId && <UpcomingToursWidget ownerId={ownerId} />}
+            <Card className="glass-hover">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Wallet & Payouts</h3>
+                    <p className="text-foreground/60">
+                      Manage your payout card and view transactions
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => navigate('/owner/wallet')}
+                    className="gap-2 bg-gradient-to-r from-primary to-purple-500"
+                  >
+                    <Wallet className="w-4 h-4" />
+                    Open Wallet
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Add New Dorm Button */}
-        {true && (
+          {/* Upcoming Tours Widget */}
+          {ownerId && <UpcomingToursWidget ownerId={ownerId} />}
+
+          {/* Add New Dorm Button */}
           <Card className="glass-hover">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -480,196 +434,127 @@ export default function OwnerHome() {
                 {showAddDorm ? (
                   <Button
                     variant="outline"
-                    onClick={() => {
-                      console.log('🔽 Hide Form clicked');
-                      setShowAddDorm(false);
-                    }}
+                    onClick={() => setShowAddDorm(false)}
                     className="gap-2"
                   >
                     Hide Form
                   </Button>
                 ) : (
                   <Button
-                    onClick={() => {
-                      console.log('🔼 Add New Dorm clicked, ownerId:', ownerId);
-                      setShowAddDorm(true);
-                    }}
+                    onClick={() => setShowAddDorm(true)}
                     disabled={!ownerId}
                     className="gap-2 bg-gradient-to-r from-primary to-secondary"
                   >
                     <Plus className="w-4 h-4" />
-                    {ownerId ? 'Add New Dorm' : 'Loading...'}
+                    Add New Dorm
                   </Button>
                 )}
               </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* Dorm Form */}
-        {showAddDorm && (
-          <Card className="glass-hover">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Create New Dorm</h2>
-                <Button variant="ghost" onClick={() => setShowAddDorm(false)}>
-                  Cancel
-                </Button>
-              </div>
-              {ownerId ? (
-                <DormForm
-                  ownerId={ownerId}
-                  onSaved={handleDormSaved}
-                  onCancel={() => setShowAddDorm(false)}
-                />
-              ) : (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                  <p className="ml-3 text-foreground/60">Loading owner information...</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+          {/* Add Dorm Form */}
+          {showAddDorm && ownerId && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+            >
+              <DormForm ownerId={ownerId} onSaved={handleDormSaved} />
+            </motion.div>
+          )}
 
-        {/* Dorms Pending Verification */}
-        {pendingDorms.length > 0 && (
-          <Card className="glass-hover">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Clock className="w-5 h-5 text-orange-500" />
-                <h2 className="text-xl font-bold">Dorms Pending Verification</h2>
-                <Badge variant="secondary">{pendingDorms.length}</Badge>
-              </div>
-              <p className="text-sm text-foreground/60 mb-4">
-                These dorms are awaiting admin approval. You'll be notified once they're verified.
-              </p>
-              <div className="space-y-3">
+          {/* Pending Dorms */}
+          {pendingDorms.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Pending Verification</h2>
+              <div className="grid gap-4">
                 {pendingDorms.map((dorm) => (
-                  <div
-                    key={dorm.id}
-                    className="p-4 bg-muted/20 rounded-lg border border-border/40"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h4 className="font-semibold">{dorm.dorm_name || dorm.name}</h4>
-                        <p className="text-sm text-foreground/60 mt-1">
-                          {dorm.area} • ${dorm.monthly_price || dorm.price}/mo
-                        </p>
-                        <p className="text-xs text-foreground/40 mt-1">
-                          Submitted {new Date(dorm.created_at).toLocaleDateString()}
-                        </p>
+                  <Card key={dorm.id} className="glass-hover">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-xl font-bold">{dorm.dorm_name || dorm.name}</h3>
+                            <Badge variant="secondary">Pending Review</Badge>
+                          </div>
+                          <p className="text-foreground/60">
+                            {dorm.area || dorm.location} • From ${dorm.monthly_price || dorm.price}/month
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingDorm(dorm)}
+                          className="gap-2"
+                        >
+                          <Pencil className="w-4 h-4" />
+                          Edit
+                        </Button>
                       </div>
-                      <Badge variant="outline" className="text-orange-500 border-orange-500">
-                        Pending
-                      </Badge>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          )}
 
-        {/* My Properties */}
-        {verifiedDorms.length > 0 && (
-          <Card className="glass-hover">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <h2 className="text-xl font-bold">My Properties</h2>
-                <Badge variant="secondary">{verifiedDorms.length}</Badge>
-              </div>
-              <div className="space-y-3">
+          {/* Verified Dorms */}
+          {verifiedDorms.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Your Verified Dorms</h2>
+              <div className="grid gap-4">
                 {verifiedDorms.map((dorm) => (
-                  <div
-                    key={dorm.id}
-                    className="p-4 bg-muted/20 rounded-lg border border-border/40 hover:border-primary/40 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/owner/dorms/${dorm.id}/rooms`)}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h4 className="font-semibold">{dorm.dorm_name || dorm.name}</h4>
-                        <p className="text-sm text-foreground/60 mt-1">
-                          {dorm.area} • From ${dorm.monthly_price || dorm.price}/mo
-                        </p>
-                        <p className="text-xs text-foreground/40 mt-1">
-                          Verified {new Date(dorm.updated_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <Badge variant="outline" className="text-green-500 border-green-500">
-                          Verified
-                        </Badge>
+                  <Card key={dorm.id} className="glass-hover">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-xl font-bold">{dorm.dorm_name || dorm.name}</h3>
+                            <Badge className="bg-green-500/20 text-green-700 border-green-500/30">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Verified
+                            </Badge>
+                          </div>
+                          <p className="text-foreground/60">
+                            {dorm.area || dorm.location} • From ${dorm.monthly_price || dorm.price}/month
+                          </p>
+                        </div>
                         <div className="flex gap-2">
                           <Button
-                            size="sm"
                             variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingDorm(dorm);
-                            }}
-                          >
-                            <Pencil className="w-4 h-4 mr-1" />
-                            Edit Dorm
-                          </Button>
-                          <Button
                             size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/owner/dorms/${dorm.id}/rooms`);
-                            }}
+                            onClick={() => navigate(`/owner/dorms/${dorm.id}/rooms`)}
                           >
                             Manage Rooms
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingDorm(dorm)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Empty State */}
-        {!showAddDorm && dorms?.length === 0 && (
-          <Card className="glass-hover">
-            <CardContent className="p-12 text-center">
-              <Building2 className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-bold mb-2">No Dorms Yet</h3>
-              <p className="text-foreground/60 mb-6">
-                Get started by adding your first dorm listing
-              </p>
-              <Button
-                onClick={() => setShowAddDorm(true)}
-                className="gap-2 bg-gradient-to-r from-primary to-secondary"
-              >
-                <Plus className="w-4 h-4" />
-                Add Your First Dorm
-              </Button>
-            </CardContent>
-            </Card>
-          )}
             </div>
-          </main>
+          )}
         </div>
-
-        {/* Edit Dorm Modal */}
-        {editingDorm && (
-          <DormEditModal
-            dorm={editingDorm}
-            isOpen={!!editingDorm}
-            onClose={() => setEditingDorm(null)}
-            onUpdate={() => {
-              setEditingDorm(null);
-              refetchDorms();
-            }}
-            isAdmin={false}
-          />
-        )}
       </div>
-    </SidebarProvider>
+
+      {/* Edit Dorm Modal */}
+      <DormEditModal
+        dorm={editingDorm}
+        onClose={() => setEditingDorm(null)}
+        onSaved={() => {
+          setEditingDorm(null);
+          refetchDorms();
+        }}
+      />
+    </OwnerLayout>
   );
 }

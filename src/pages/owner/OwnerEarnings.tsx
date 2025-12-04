@@ -8,6 +8,7 @@ import { useRoleGuard } from '@/hooks/useRoleGuard';
 import { ArrowLeft, DollarSign, Clock, TrendingUp, Loader2, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { AddWhishCardModal } from '@/components/payments/AddWhishCardModal';
+import { OwnerLayout } from '@/components/owner/OwnerLayout';
 
 export default function OwnerEarnings() {
   const navigate = useNavigate();
@@ -63,7 +64,6 @@ export default function OwnerEarnings() {
   const loadEarningsData = async () => {
     if (!ownerId) return;
 
-    // Get all reservations for owner's dorms
     const { data: reservationsData } = await supabase
       .from('reservations')
       .select(`
@@ -84,7 +84,6 @@ export default function OwnerEarnings() {
     if (reservationsData) {
       setReservations(reservationsData);
 
-      // Calculate stats
       const paid = reservationsData.filter(r => r.owner_payout_status === 'paid');
       const pending = reservationsData.filter(r => 
         r.owner_payout_status === 'pending' || r.owner_payout_status === 'failed'
@@ -124,15 +123,17 @@ export default function OwnerEarnings() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <OwnerLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </OwnerLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-6 py-8 space-y-8">
+    <OwnerLayout>
+      <div className="p-4 md:p-8 space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -140,6 +141,7 @@ export default function OwnerEarnings() {
               variant="ghost"
               size="icon"
               onClick={() => navigate('/owner')}
+              className="md:hidden"
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
@@ -296,6 +298,6 @@ export default function OwnerEarnings() {
         onOpenChange={setShowPaymentModal}
         onSuccess={loadPaymentProfile}
       />
-    </div>
+    </OwnerLayout>
   );
 }
