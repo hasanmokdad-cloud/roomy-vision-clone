@@ -11,6 +11,7 @@ import { Home, DollarSign, Users, Edit, CheckCircle, XCircle } from 'lucide-reac
 import { useNavigate } from 'react-router-dom';
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import Navbar from '@/components/shared/Navbar';
 import type { RoomType } from '@/types/RoomType';
 
 export default function OwnerRooms() {
@@ -87,13 +88,16 @@ export default function OwnerRooms() {
   if (loading) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <OwnerSidebar />
-          <main className="flex-1 p-8">
-            <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-          </main>
+        <div className="min-h-screen flex flex-col bg-background w-full">
+          <Navbar />
+          <div className="flex-1 flex pt-20">
+            <OwnerSidebar />
+            <main className="flex-1 p-8">
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              </div>
+            </main>
+          </div>
         </div>
       </SidebarProvider>
     );
@@ -101,10 +105,11 @@ export default function OwnerRooms() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex bg-background w-full">
-        <OwnerSidebar />
-      
-      <main className="flex-1 p-4 md:p-8 overflow-auto pb-20 md:pb-8">
+      <div className="min-h-screen flex flex-col bg-background w-full">
+        <Navbar />
+        <div className="flex-1 flex pt-20">
+          <OwnerSidebar />
+          <main className="flex-1 p-4 md:p-8 overflow-auto pb-20 md:pb-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -244,8 +249,9 @@ export default function OwnerRooms() {
               })}
             </div>
           )}
+          </div>
+        </main>
         </div>
-      </main>
       </div>
     </SidebarProvider>
   );

@@ -42,12 +42,6 @@ export function OwnerSidebar({ hiddenItems = [] }: OwnerSidebarProps) {
   return (
     <Sidebar className={state === 'collapsed' ? 'w-14' : 'w-60'} collapsible="icon">
       <SidebarContent>
-        <div className="p-4">
-          <h2 className={`font-bold gradient-text ${state === 'collapsed' ? 'text-sm' : 'text-xl'}`}>
-            {state === 'collapsed' ? 'O' : 'Owner Portal'}
-          </h2>
-        </div>
-
         <SidebarGroup>
           <SidebarGroupLabel>Management</SidebarGroupLabel>
           <SidebarGroupContent>
