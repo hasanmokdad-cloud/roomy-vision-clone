@@ -110,6 +110,7 @@ const SecureAccount = lazy(() => import("./pages/devices/SecureAccount"));
 const DevicesPage = lazy(() => import("./pages/settings/DevicesPage"));
 const DevicePending = lazy(() => import("./pages/auth/DevicePending"));
 const ApproveDevice = lazy(() => import("./pages/auth/ApproveDevice"));
+const AuthCallback = lazy(() => import("./pages/auth/AuthCallback"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -205,6 +206,7 @@ const AppRoutes = () => {
           <Route path="/password-reset/error" element={<ResetPasswordError />} />
           <Route path="/auth/device-pending" element={<DevicePending />} />
           <Route path="/auth/approve-device" element={<ApproveDevice />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/devices/verify" element={<VerifyDevice />} />
           <Route path="/devices/secure" element={<SecureAccount />} />
           <Route path="/intro" element={<Intro />} />
