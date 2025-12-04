@@ -102,7 +102,7 @@ const MockWhishAddCard = lazy(() => import("./pages/MockWhishAddCard"));
 const OwnerWallet = lazy(() => import("./pages/owner/OwnerWallet"));
 const MockWhishOwnerAddCard = lazy(() => import("./pages/owner/MockWhishOwnerAddCard"));
 const OwnerStats = lazy(() => import("./pages/owner/OwnerStats"));
-const OwnerAccount = lazy(() => import("./pages/owner/OwnerAccount"));
+
 const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
 const AdminBilling = lazy(() => import("./pages/admin/AdminBilling"));
 const MockWhishAdminAddCard = lazy(() => import("./pages/admin/MockWhishAdminAddCard"));
@@ -259,7 +259,8 @@ const AppRoutes = () => {
           {/* Owner Routes - Admins can access all owner routes */}
           <Route path="/owner" element={<ProtectedRoute element={<OwnerHome />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/listings" element={<ProtectedRoute element={<OwnerListings />} allowedRoles={["owner", "admin"]} />} />
-          <Route path="/owner/dorms/new" element={<ProtectedRoute element={<AddNewDorm />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/add-dorm" element={<ProtectedRoute element={<OwnerAddDorm />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/dorms/new" element={<Navigate to="/owner/add-dorm" replace />} />
           <Route path="/owner/dorms/:dormId/rooms" element={<ProtectedRoute element={<DormRooms />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/dorms/:dormId/rooms/new" element={<ProtectedRoute element={<RoomForm />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/dorms/:dormId/rooms/:roomId/edit" element={<ProtectedRoute element={<RoomForm />} allowedRoles={["owner", "admin"]} />} />
@@ -274,7 +275,6 @@ const AppRoutes = () => {
           <Route path="/owner/refunds" element={<ProtectedRoute element={<OwnerRefundRequests />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/wallet" element={<ProtectedRoute element={<OwnerWallet />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/stats" element={<ProtectedRoute element={<OwnerStats />} allowedRoles={["owner", "admin"]} />} />
-          <Route path="/owner/account" element={<ProtectedRoute element={<OwnerAccount />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/mock-whish-owner-add-card" element={<ProtectedRoute element={<MockWhishOwnerAddCard />} allowedRoles={["owner", "admin"]} />} />
 
 

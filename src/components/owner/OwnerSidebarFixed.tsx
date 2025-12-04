@@ -5,16 +5,15 @@ import { cn } from '@/lib/utils';
 const menuItems = [
   { title: 'Dashboard', url: '/owner', icon: LayoutDashboard },
   { title: 'My Listings', url: '/owner/listings', icon: Building2 },
+  { title: 'Add New Dorm', url: '/owner/add-dorm', icon: PlusCircle },
   { title: 'Room Management', url: '/owner/rooms', icon: DoorOpen },
   { title: 'Bulk Operations', url: '/owner/bulk-operations', icon: Settings },
   { title: 'Bookings', url: '/owner/bookings', icon: Calendar },
   { title: 'Tour Calendar', url: '/owner/calendar', icon: Calendar },
   { title: 'Reviews', url: '/owner/reviews', icon: Star },
   { title: 'Wallet & Payouts', url: '/owner/wallet', icon: Wallet },
-  { title: 'Add New Dorm', url: '/owner/dorms/new', icon: PlusCircle },
   { title: 'Bulk Import', url: '/owner/bulk-import', icon: Upload },
   { title: 'Statistics', url: '/owner/stats', icon: TrendingUp },
-  { title: 'Account', url: '/owner/account', icon: Settings },
 ];
 
 interface OwnerSidebarFixedProps {
