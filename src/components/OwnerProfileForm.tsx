@@ -8,6 +8,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User, Phone, Mail, Loader2 } from 'lucide-react';
 import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
 
@@ -22,9 +25,24 @@ type OwnerProfile = z.infer<typeof ownerProfileSchema>;
 interface OwnerProfileFormProps {
   userId: string;
   onComplete?: () => void;
+  notifyEmail?: boolean;
+  setNotifyEmail?: (value: boolean) => void;
+  notifyWhatsapp?: boolean;
+  setNotifyWhatsapp?: (value: boolean) => void;
+  whatsappLanguage?: string;
+  setWhatsappLanguage?: (value: string) => void;
 }
 
-export const OwnerProfileForm = ({ userId, onComplete }: OwnerProfileFormProps) => {
+export const OwnerProfileForm = ({ 
+  userId, 
+  onComplete,
+  notifyEmail = true,
+  setNotifyEmail,
+  notifyWhatsapp = true,
+  setNotifyWhatsapp,
+  whatsappLanguage = 'EN',
+  setWhatsappLanguage,
+}: OwnerProfileFormProps) => {
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [ownerId, setOwnerId] = useState<string | null>(null);
@@ -98,6 +116,9 @@ export const OwnerProfileForm = ({ userId, onComplete }: OwnerProfileFormProps) 
           full_name: data.full_name,
           phone_number: data.phone_number,
           email: data.email,
+          notify_email: notifyEmail,
+          notify_whatsapp: notifyWhatsapp,
+          whatsapp_language: whatsappLanguage,
         })
         .eq('id', ownerId);
 
@@ -215,23 +236,124 @@ export const OwnerProfileForm = ({ userId, onComplete }: OwnerProfileFormProps) 
               )}
             </div>
           </div>
-
-          <Button 
-            type="submit" 
-            disabled={isSaving}
-            className="w-full py-6 text-lg font-bold"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Saving Profile...
-              </>
-            ) : (
-              'Update Profile'
-            )}
-          </Button>
         </form>
       </div>
+
+      {/* Email Notifications Section */}
+      {setNotifyEmail && (
+        <Card className="rounded-2xl shadow-md">
+          <CardContent className="p-6 space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold text-foreground mb-4">Email Notifications</h2>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
+                  <div className="flex-1">
+                    <Label htmlFor="notify-email" className="font-semibold text-foreground">
+                      Email me about listing updates
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Receive emails when your listings are verified or edited by admins
+                    </p>
+                  </div>
+                  <Switch
+                    id="notify-email"
+                    checked={notifyEmail}
+                    onCheckedChange={setNotifyEmail}
+                  />
+                </div>
+
+                <div className="text-sm text-muted-foreground p-4 bg-muted/30 rounded-xl">
+                  <p className="font-semibold text-foreground mb-2">What you'll receive:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>🎉 Verification confirmation when your listing goes live</li>
+                    <li>📝 Update notifications when listing details are changed</li>
+                    <li>⚡ Limited to 5 emails per hour (we respect your inbox!)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {setNotifyWhatsapp && (
+              <div className="border-t pt-6">
+                <h2 className="text-xl font-semibold text-foreground mb-4">WhatsApp Notifications</h2>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
+                    <div className="flex-1">
+                      <Label htmlFor="notify-whatsapp" className="font-semibold text-foreground">
+                        Receive WhatsApp alerts
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Get instant notifications via WhatsApp for verifications, updates, and inquiries
+                      </p>
+                    </div>
+                    <Switch
+                      id="notify-whatsapp"
+                      checked={notifyWhatsapp}
+                      onCheckedChange={setNotifyWhatsapp}
+                    />
+                  </div>
+
+                  {notifyWhatsapp && setWhatsappLanguage && (
+                    <div className="p-4 bg-muted/30 rounded-xl">
+                      <Label htmlFor="whatsapp-language" className="font-semibold text-foreground mb-2 block">
+                        Preferred Language / اللغة المفضلة
+                      </Label>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Choose the language for your WhatsApp notifications
+                      </p>
+                      <Select
+                        value={whatsappLanguage}
+                        onValueChange={setWhatsappLanguage}
+                      >
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="EN">🇬🇧 English</SelectItem>
+                          <SelectItem value="AR">🇱🇧 العربية (Arabic)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {whatsappLanguage === 'AR' 
+                          ? 'ستتلقى الرسائل باللغة العربية' 
+                          : 'You will receive messages in English'}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="text-sm text-muted-foreground p-4 bg-muted/30 rounded-xl">
+                    <p className="font-semibold text-foreground mb-2">WhatsApp benefits:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>📱 Instant alerts on your phone</li>
+                      <li>🔔 Get notified about new student inquiries immediately</li>
+                      <li>⚡ Limited to 3 WhatsApp messages per hour</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Update Profile Button at the bottom */}
+      <Button 
+        type="button"
+        onClick={handleSubmit(onSubmit)} 
+        disabled={isSaving}
+        className="w-full py-6 text-lg font-bold bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white rounded-xl"
+      >
+        {isSaving ? (
+          <>
+            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            Saving Profile...
+          </>
+        ) : (
+          'Update Profile'
+        )}
+      </Button>
     </motion.div>
   );
 };
