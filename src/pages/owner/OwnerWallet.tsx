@@ -692,6 +692,7 @@ export default function OwnerWallet() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </SidebarProvider>
   );
 }
