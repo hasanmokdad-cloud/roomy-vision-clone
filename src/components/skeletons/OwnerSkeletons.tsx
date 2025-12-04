@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
+import { BreadcrumbSkeleton } from '@/components/owner/OwnerBreadcrumb';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -15,6 +16,22 @@ const itemVariants = {
   hidden: { opacity: 0, y: 10 },
   visible: { opacity: 1, y: 0 }
 };
+
+// Reusable header skeleton with breadcrumb, back button, title, description
+function HeaderSkeleton({ showBackButton = true }: { showBackButton?: boolean }) {
+  return (
+    <motion.div variants={itemVariants} className="space-y-3">
+      <BreadcrumbSkeleton />
+      {showBackButton && (
+        <Skeleton className="h-9 w-20" />
+      )}
+      <div className="space-y-1">
+        <Skeleton className="h-9 w-48" />
+        <Skeleton className="h-4 w-64" />
+      </div>
+    </motion.div>
+  );
+}
 
 export function OwnerDashboardSkeleton() {
   return (
@@ -84,7 +101,6 @@ export function OwnerDashboardSkeleton() {
     </OwnerLayout>
   );
 }
-
 export function OwnerTableSkeleton() {
   return (
     <OwnerLayout>
@@ -95,14 +111,7 @@ export function OwnerTableSkeleton() {
           animate="visible"
           className="space-y-6"
         >
-          {/* Header */}
-          <motion.div variants={itemVariants} className="flex items-center justify-between">
-            <div className="space-y-2">
-              <Skeleton className="h-9 w-48" />
-              <Skeleton className="h-4 w-64" />
-            </div>
-            <Skeleton className="h-10 w-36 rounded-xl" />
-          </motion.div>
+          <HeaderSkeleton />
 
           {/* Table */}
           <motion.div variants={itemVariants}>
@@ -141,11 +150,7 @@ export function OwnerCardListSkeleton() {
           animate="visible"
           className="max-w-7xl mx-auto space-y-6"
         >
-          {/* Header */}
-          <motion.div variants={itemVariants} className="space-y-2">
-            <Skeleton className="h-9 w-48" />
-            <Skeleton className="h-4 w-64" />
-          </motion.div>
+          <HeaderSkeleton />
 
           {/* Cards Grid */}
           <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -187,11 +192,7 @@ export function OwnerCalendarSkeleton() {
           animate="visible"
           className="max-w-7xl mx-auto space-y-6"
         >
-          {/* Header */}
-          <motion.div variants={itemVariants} className="space-y-2">
-            <Skeleton className="h-9 w-48" />
-            <Skeleton className="h-4 w-64" />
-          </motion.div>
+          <HeaderSkeleton />
 
           {/* Tabs */}
           <motion.div variants={itemVariants}>
@@ -245,14 +246,7 @@ export function OwnerFormSkeleton() {
           animate="visible"
           className="max-w-4xl mx-auto space-y-6"
         >
-          {/* Header */}
-          <motion.div variants={itemVariants} className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10 rounded-lg" />
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-4 w-64" />
-            </div>
-          </motion.div>
+          <HeaderSkeleton />
 
           {/* Form Card */}
           <motion.div variants={itemVariants}>
@@ -294,11 +288,7 @@ export function OwnerMetricsSkeleton() {
           animate="visible"
           className="max-w-7xl mx-auto space-y-6"
         >
-          {/* Header */}
-          <motion.div variants={itemVariants} className="space-y-2">
-            <Skeleton className="h-9 w-48" />
-            <Skeleton className="h-4 w-64" />
-          </motion.div>
+          <HeaderSkeleton />
 
           {/* Metrics Grid */}
           <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -341,11 +331,7 @@ export function OwnerWalletSkeleton() {
           animate="visible"
           className="max-w-7xl mx-auto space-y-6"
         >
-          {/* Header */}
-          <motion.div variants={itemVariants} className="space-y-2">
-            <Skeleton className="h-9 w-48" />
-            <Skeleton className="h-4 w-64" />
-          </motion.div>
+          <HeaderSkeleton />
 
           {/* Summary Cards */}
           <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6">

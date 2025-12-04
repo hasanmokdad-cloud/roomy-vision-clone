@@ -12,6 +12,7 @@ import { Clock, User, CalendarClock, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { OwnerCalendarSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
+import { OwnerBreadcrumb } from '@/components/owner/OwnerBreadcrumb';
 import { OwnerAvailabilityManager } from '@/components/owner/OwnerAvailabilityManager';
 import { AcceptBookingModal } from '@/components/bookings/AcceptBookingModal';
 import { MeetingLinkButton } from '@/components/bookings/MeetingLinkButton';
@@ -234,6 +235,8 @@ export default function OwnerCalendar() {
     <OwnerLayout>
       <div className="p-4 md:p-8">
         <div className="max-w-6xl mx-auto space-y-6">
+          <OwnerBreadcrumb items={[{ label: 'Calendar & Availability' }]} />
+          
           <div className="flex items-center gap-4 mb-2">
             <Button variant="ghost" onClick={() => navigate('/owner')} className="gap-2">
               <ArrowLeft className="w-4 h-4" />

@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus, ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { OwnerCardListSkeleton } from "@/components/skeletons/OwnerSkeletons";
 import { OwnerLayout } from "@/components/owner/OwnerLayout";
+import { OwnerBreadcrumb } from "@/components/owner/OwnerBreadcrumb";
 import { motion } from "framer-motion";
 
 interface Room {
@@ -98,6 +99,12 @@ export default function DormRooms() {
     <OwnerLayout>
       <div className="p-4 md:p-8">
         <div className="max-w-6xl mx-auto space-y-6">
+          <OwnerBreadcrumb items={[
+            { label: 'My Listings', href: '/owner/listings' },
+            { label: dormName || 'Dorm', href: `/owner/dorms/${dormId}/rooms` },
+            { label: 'Rooms' }
+          ]} />
+          
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -114,10 +121,10 @@ export default function DormRooms() {
                 Back
               </Button>
               <div>
-                <h1 className="text-3xl font-semibold text-gray-800">
+                <h1 className="text-3xl font-semibold text-foreground">
                   Rooms - {dormName}
                 </h1>
-                <p className="text-gray-500 text-sm mt-1">Manage rooms in this property</p>
+                <p className="text-muted-foreground text-sm mt-1">Manage rooms in this property</p>
               </div>
             </div>
             <Button

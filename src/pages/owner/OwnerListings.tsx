@@ -8,6 +8,7 @@ import { Edit, Trash2, Plus, DoorOpen, ArrowLeft } from 'lucide-react';
 import { OwnerTableSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { useOwnerDormsQuery } from '@/hooks/useOwnerDormsQuery';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
+import { OwnerBreadcrumb } from '@/components/owner/OwnerBreadcrumb';
 import {
   Table,
   TableBody,
@@ -75,6 +76,8 @@ export default function OwnerListings() {
     <OwnerLayout>
       <div className="p-4 md:p-8">
         <div className="space-y-6">
+          <OwnerBreadcrumb items={[{ label: 'My Listings' }]} />
+          
           <div className="flex items-center gap-4 mb-2">
             <Button variant="ghost" onClick={() => navigate('/owner')} className="gap-2">
               <ArrowLeft className="w-4 h-4" />

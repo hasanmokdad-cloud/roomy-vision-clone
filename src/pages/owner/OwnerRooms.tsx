@@ -11,6 +11,7 @@ import { Home, DollarSign, Users, Edit, CheckCircle, XCircle, Plus, Trash2, Chev
 import { OwnerTableSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { useNavigate } from 'react-router-dom';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
+import { OwnerBreadcrumb } from '@/components/owner/OwnerBreadcrumb';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Room {
@@ -185,6 +186,11 @@ export default function OwnerRooms() {
     <OwnerLayout>
       <div className="p-4 md:p-8">
         <div className="max-w-7xl mx-auto space-y-6">
+          <OwnerBreadcrumb items={[
+            { label: 'My Listings', href: '/owner/listings' },
+            { label: 'Room Management' }
+          ]} />
+          
           {/* Back Button */}
           <div className="flex items-center gap-4 mb-2">
             <Button variant="ghost" onClick={() => navigate('/owner')} className="gap-2">

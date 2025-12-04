@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
+import { OwnerBreadcrumb } from '@/components/owner/OwnerBreadcrumb';
 
 export default function OwnerRefundRequests() {
   const navigate = useNavigate();
@@ -201,6 +202,8 @@ export default function OwnerRefundRequests() {
     <OwnerLayout>
       <div className="p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
+          <OwnerBreadcrumb items={[{ label: 'Refund Requests' }]} />
+          
           <div className="flex items-center gap-4 mb-2">
             <Button variant="ghost" onClick={() => navigate('/owner')} className="gap-2">
               <ArrowLeft className="w-4 h-4" />
