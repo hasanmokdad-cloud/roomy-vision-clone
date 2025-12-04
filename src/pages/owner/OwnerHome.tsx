@@ -549,8 +549,9 @@ export default function OwnerHome() {
       {/* Edit Dorm Modal */}
       <DormEditModal
         dorm={editingDorm}
+        isOpen={!!editingDorm}
         onClose={() => setEditingDorm(null)}
-        onSaved={() => {
+        onUpdate={() => {
           setEditingDorm(null);
           refetchDorms();
         }}
