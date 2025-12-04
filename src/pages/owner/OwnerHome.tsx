@@ -16,6 +16,7 @@ import { PayoutSetupBanner } from '@/components/owner/PayoutSetupBanner';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
+import { OwnerDashboardSkeleton } from '@/components/skeletons/OwnerSkeletons';
 
 function UpcomingToursWidget({ ownerId }: { ownerId: string }) {
   const navigate = useNavigate();
@@ -308,11 +309,7 @@ export default function OwnerHome() {
   ];
 
   if (authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6D5BFF]"></div>
-      </div>
-    );
+    return <OwnerDashboardSkeleton />;
   }
 
   return (

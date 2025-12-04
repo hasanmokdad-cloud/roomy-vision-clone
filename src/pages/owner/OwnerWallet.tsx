@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { OwnerWalletSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
@@ -206,15 +207,7 @@ export default function OwnerWallet() {
   };
 
   if (loading) {
-    return (
-      <OwnerLayout>
-        <div className="p-6">
-          <Skeleton className="h-8 w-48 mb-6" />
-          <Skeleton className="h-48 w-full mb-6" />
-          <Skeleton className="h-64 w-full" />
-        </div>
-      </OwnerLayout>
-    );
+    return <OwnerWalletSkeleton />;
   }
 
   return (

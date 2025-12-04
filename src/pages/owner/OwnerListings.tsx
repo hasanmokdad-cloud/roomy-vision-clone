@@ -4,7 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Plus, DoorOpen, ArrowLeft, Loader2 } from 'lucide-react';
+import { Edit, Trash2, Plus, DoorOpen, ArrowLeft } from 'lucide-react';
+import { OwnerTableSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { useOwnerDormsQuery } from '@/hooks/useOwnerDormsQuery';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
 import {
@@ -67,13 +68,7 @@ export default function OwnerListings() {
   };
 
   if (loading) {
-    return (
-      <OwnerLayout>
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      </OwnerLayout>
-    );
+    return <OwnerTableSkeleton />;
   }
 
   return (

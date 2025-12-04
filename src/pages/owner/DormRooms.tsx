@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, ArrowLeft, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { OwnerCardListSkeleton } from "@/components/skeletons/OwnerSkeletons";
 import { OwnerLayout } from "@/components/owner/OwnerLayout";
 import { motion } from "framer-motion";
 
@@ -90,15 +91,7 @@ export default function DormRooms() {
   };
 
   if (loading) {
-    return (
-      <OwnerLayout>
-        <div className="p-4 md:p-8">
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        </div>
-      </OwnerLayout>
-    );
+    return <OwnerCardListSkeleton />;
   }
 
   return (

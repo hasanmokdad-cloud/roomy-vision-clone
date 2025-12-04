@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
 import { ArrowLeft, Upload, Loader2 } from 'lucide-react';
+import { OwnerFormSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { compressImage } from '@/utils/imageCompression';
 import { motion } from 'framer-motion';
 
@@ -202,15 +203,7 @@ export default function AddNewDorm() {
   };
 
   if (authLoading || !ownerId) {
-    return (
-      <OwnerLayout>
-        <div className="p-4 md:p-8">
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        </div>
-      </OwnerLayout>
-    );
+    return <OwnerFormSkeleton />;
   }
 
   return (

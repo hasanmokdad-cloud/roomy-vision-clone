@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { OwnerLayout } from "@/components/owner/OwnerLayout";
-import { ArrowLeft, Download, Upload, DollarSign, ToggleLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Upload, DollarSign, ToggleLeft } from "lucide-react";
+import { OwnerTableSkeleton } from "@/components/skeletons/OwnerSkeletons";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion } from "framer-motion";
@@ -231,15 +232,7 @@ export default function BulkRoomOps() {
   };
 
   if (loading) {
-    return (
-      <OwnerLayout>
-        <div className="p-4 md:p-8">
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        </div>
-      </OwnerLayout>
-    );
+    return <OwnerTableSkeleton />;
   }
 
   return (
