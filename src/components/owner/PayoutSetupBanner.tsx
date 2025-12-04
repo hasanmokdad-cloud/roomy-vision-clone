@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -66,19 +65,19 @@ export function PayoutSetupBanner({ ownerId }: PayoutSetupBannerProps) {
     not_connected: {
       icon: AlertCircle,
       color: 'bg-orange-500/10 border-orange-500/20',
-      badgeColor: 'bg-orange-500',
+      badgeClass: 'bg-gradient-to-r from-orange-400 to-orange-500 text-white',
       text: 'Not Connected',
     },
     pending_verification: {
       icon: Clock,
       color: 'bg-blue-500/10 border-blue-500/20',
-      badgeColor: 'bg-blue-500',
+      badgeClass: 'bg-gradient-to-r from-blue-400 to-blue-500 text-white',
       text: 'Pending Verification',
     },
     suspended: {
       icon: AlertCircle,
       color: 'bg-red-500/10 border-red-500/20',
-      badgeColor: 'bg-red-500',
+      badgeClass: 'bg-gradient-to-r from-red-400 to-red-500 text-white',
       text: 'Suspended',
     },
   };
@@ -87,28 +86,28 @@ export function PayoutSetupBanner({ ownerId }: PayoutSetupBannerProps) {
   const Icon = config.icon;
 
   return (
-    <Card className={`${config.color} border-2`}>
+    <Card className={`${config.color} border-2 col-span-full rounded-2xl shadow-md`}>
       <CardContent className="p-6">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#6D5BFF] to-[#9A6AFF] flex items-center justify-center">
               <Icon className="w-6 h-6 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-lg font-bold">Set up your Whish account</h3>
-                <Badge className={config.badgeColor}>
+                <h3 className="text-lg font-semibold text-gray-700">Set up your Whish account</h3>
+                <span className={`${config.badgeClass} rounded-full px-3 py-1 text-xs font-medium`}>
                   {config.text}
-                </Badge>
+                </span>
               </div>
-              <p className="text-foreground/60">
+              <p className="text-gray-500 text-sm">
                 Receive reservation payouts directly to your Whish wallet
               </p>
             </div>
           </div>
           <Button
             onClick={handleSetupPayouts}
-            className="gap-2 bg-gradient-to-r from-primary to-secondary whitespace-nowrap"
+            className="w-full md:w-auto gap-2 bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white rounded-xl hover:opacity-90 transition-opacity whitespace-nowrap"
           >
             Set up payouts
           </Button>

@@ -1,7 +1,18 @@
-import { Menu, X, Bell } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Menu, X, Bell, MessageSquare, Info, Phone, LogOut, User } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
+import { useRoleGuard } from '@/hooks/useRoleGuard';
 
 interface OwnerNavbarProps {
   sidebarOpen: boolean;
@@ -9,19 +20,32 @@ interface OwnerNavbarProps {
 }
 
 export function OwnerNavbar({ sidebarOpen, onToggleSidebar }: OwnerNavbarProps) {
+  const navigate = useNavigate();
+  const { userId, role } = useRoleGuard('owner');
+  const { count: unreadMessages } = useUnreadMessagesCount(userId, role);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
+  };
+
+  const navItems = [
+    { icon: MessageSquare, label: 'Messages', href: '/messages', badge: unreadMessages },
+    { icon: Info, label: 'About', href: '/about' },
+    { icon: Phone, label: 'Contact', href: '/contact' },
+  ];
+
   return (
-    <nav className="fixed top-0 left-0 right-0 h-[70px] bg-background/95 backdrop-blur-md border-b border-border/40 z-50">
-      <div className="h-full flex items-center px-4 gap-4">
-        {/* Toggle Button - Airbnb style on desktop, iOS style on mobile */}
+    <nav className="fixed top-0 left-0 right-0 h-[70px] bg-background/95 backdrop-blur-md border-b border-border/40 z-50 px-6">
+      <div className="h-full flex items-center gap-4">
+        {/* Toggle Button */}
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggleSidebar}
           className={cn(
             "transition-all duration-200 active:scale-95",
-            // Desktop/Tablet - Airbnb style
             "md:rounded-xl md:hover:bg-white/10 md:shadow-md md:w-10 md:h-10",
-            // Mobile - iOS style
             "rounded-full w-12 h-12 bg-white/5 backdrop-blur-md shadow-lg md:bg-transparent md:backdrop-blur-none md:shadow-md"
           )}
         >
@@ -39,23 +63,81 @@ export function OwnerNavbar({ sidebarOpen, onToggleSidebar }: OwnerNavbarProps) 
             alt="Roomy" 
             className="h-8 w-auto"
           />
-          <span className="text-xl font-bold gradient-text hidden sm:inline">
-            Owner Portal
-          </span>
         </Link>
 
         {/* Spacer */}
         <div className="flex-1" />
 
+        {/* Navigation Links - Desktop */}
+        <div className="hidden md:flex items-center gap-1">
+          {navItems.map((item) => (
+            <Link
+              key={item.label}
+              to={item.href}
+              className="relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-foreground/70 hover:bg-[#f6f4ff] hover:text-foreground transition-all"
+            >
+              <item.icon className="w-4 h-4" />
+              <span>{item.label}</span>
+              {item.badge && item.badge > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white text-xs rounded-full flex items-center justify-center">
+                  {item.badge > 9 ? '9+' : item.badge}
+                </span>
+              )}
+            </Link>
+          ))}
+        </div>
+
         {/* Right side actions */}
         <div className="flex items-center gap-2">
+          {/* Notification Bell */}
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full"
+            className="rounded-full relative"
           >
             <Bell className="w-5 h-5" />
           </Button>
+
+          {/* Profile Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-gradient-to-br from-[#6D5BFF] to-[#9A6AFF] text-white text-sm">
+                    <User className="w-4 h-4" />
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => navigate('/owner/account')}>
+                <User className="w-4 h-4 mr-2" />
+                Account
+              </DropdownMenuItem>
+              
+              {/* Mobile-only nav items */}
+              <div className="md:hidden">
+                <DropdownMenuSeparator />
+                {navItems.map((item) => (
+                  <DropdownMenuItem key={item.label} onClick={() => navigate(item.href)}>
+                    <item.icon className="w-4 h-4 mr-2" />
+                    {item.label}
+                    {item.badge && item.badge > 0 && (
+                      <span className="ml-auto w-5 h-5 bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white text-xs rounded-full flex items-center justify-center">
+                        {item.badge}
+                      </span>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </div>
+              
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="text-red-500">
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </nav>
