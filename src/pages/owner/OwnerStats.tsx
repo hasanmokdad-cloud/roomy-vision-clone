@@ -1,28 +1,39 @@
-import Navbar from '@/components/shared/Navbar';
-import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { OwnerLayout } from '@/components/owner/OwnerLayout';
+import { Card, CardContent } from '@/components/ui/card';
+import { BarChart3 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function OwnerStats() {
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col bg-background w-full">
-        <Navbar />
-        <div className="flex-1 flex pt-20">
-          <OwnerSidebar />
-          <main className="flex-1 p-4 md:p-8">
-            <div className="max-w-7xl mx-auto space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold gradient-text">Statistics</h1>
-                <p className="text-foreground/60 mt-2">View your performance metrics</p>
-              </div>
+    <OwnerLayout>
+      <div className="p-4 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h1 className="text-3xl font-semibold text-gray-800">Statistics</h1>
+            <p className="text-gray-500 text-sm mt-1">View your performance metrics</p>
+          </motion.div>
 
-              <div className="glass-hover rounded-2xl p-6">
-                <p className="text-foreground/60">Statistics dashboard coming soon...</p>
-              </div>
-            </div>
-          </main>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className="rounded-2xl shadow-md">
+              <CardContent className="p-12 text-center">
+                <BarChart3 className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">Statistics Dashboard</h3>
+                <p className="text-gray-500">
+                  Detailed analytics and performance metrics coming soon...
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </div>
-    </SidebarProvider>
+    </OwnerLayout>
   );
 }
