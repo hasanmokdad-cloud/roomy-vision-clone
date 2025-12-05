@@ -29,6 +29,41 @@ export default function ReviewManagement() {
     }
   }, [userId]);
 
+  // Real-time subscription for reviews
+  useEffect(() => {
+    if (!ownerId) return;
+
+    const channel = supabase
+      .channel('reviews-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'reviews'
+        },
+        () => {
+          loadReviews(ownerId);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'review_responses'
+        },
+        () => {
+          loadReviews(ownerId);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [ownerId]);
+
   const loadOwnerData = async () => {
     const { data: owner } = await supabase
       .from('owners')
@@ -117,7 +152,11 @@ export default function ReviewManagement() {
   };
 
   if (loading || dataLoading) {
-    return <OwnerCardListSkeleton />;
+    return (
+      <OwnerLayout>
+        <OwnerCardListSkeleton />
+      </OwnerLayout>
+    );
   }
 
   return (
@@ -141,55 +180,69 @@ export default function ReviewManagement() {
             <p className="text-muted-foreground text-sm mt-1">Respond to reviews from your guests</p>
           </motion.div>
 
-          <Tabs defaultValue="approved" className="w-full">
-            <TabsList>
-              <TabsTrigger value="approved">Approved ({filterReviews('approved').length})</TabsTrigger>
-              <TabsTrigger value="pending">Pending ({filterReviews('pending').length})</TabsTrigger>
-              <TabsTrigger value="all">All ({reviews.length})</TabsTrigger>
-            </TabsList>
+          {reviews.length === 0 ? (
+            <Card className="p-8 text-center rounded-2xl">
+              <p className="text-muted-foreground">No reviews yet. Reviews will appear here when students leave feedback.</p>
+            </Card>
+          ) : (
+            <Tabs defaultValue="approved" className="w-full">
+              <TabsList>
+                <TabsTrigger value="approved">Approved ({filterReviews('approved').length})</TabsTrigger>
+                <TabsTrigger value="pending">Pending ({filterReviews('pending').length})</TabsTrigger>
+                <TabsTrigger value="all">All ({reviews.length})</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="approved" className="space-y-4 mt-6">
-              {filterReviews('approved').map((review, index) => (
-                <ReviewManagementCard
-                  key={review.id}
-                  review={review}
-                  responseText={responseTexts[review.id] || ''}
-                  onResponseChange={(text) => setResponseTexts({ ...responseTexts, [review.id]: text })}
-                  onSubmitResponse={() => handleRespond(review.id)}
-                  renderStars={renderStars}
-                  index={index}
-                />
-              ))}
-            </TabsContent>
+              <TabsContent value="approved" className="space-y-4 mt-6">
+                {filterReviews('approved').length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No approved reviews yet.</p>
+                ) : (
+                  filterReviews('approved').map((review, index) => (
+                    <ReviewManagementCard
+                      key={review.id}
+                      review={review}
+                      responseText={responseTexts[review.id] || ''}
+                      onResponseChange={(text) => setResponseTexts({ ...responseTexts, [review.id]: text })}
+                      onSubmitResponse={() => handleRespond(review.id)}
+                      renderStars={renderStars}
+                      index={index}
+                    />
+                  ))
+                )}
+              </TabsContent>
 
-            <TabsContent value="pending" className="space-y-4 mt-6">
-              {filterReviews('pending').map((review, index) => (
-                <ReviewManagementCard
-                  key={review.id}
-                  review={review}
-                  responseText={responseTexts[review.id] || ''}
-                  onResponseChange={(text) => setResponseTexts({ ...responseTexts, [review.id]: text })}
-                  onSubmitResponse={() => handleRespond(review.id)}
-                  renderStars={renderStars}
-                  index={index}
-                />
-              ))}
-            </TabsContent>
+              <TabsContent value="pending" className="space-y-4 mt-6">
+                {filterReviews('pending').length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No pending reviews.</p>
+                ) : (
+                  filterReviews('pending').map((review, index) => (
+                    <ReviewManagementCard
+                      key={review.id}
+                      review={review}
+                      responseText={responseTexts[review.id] || ''}
+                      onResponseChange={(text) => setResponseTexts({ ...responseTexts, [review.id]: text })}
+                      onSubmitResponse={() => handleRespond(review.id)}
+                      renderStars={renderStars}
+                      index={index}
+                    />
+                  ))
+                )}
+              </TabsContent>
 
-            <TabsContent value="all" className="space-y-4 mt-6">
-              {reviews.map((review, index) => (
-                <ReviewManagementCard
-                  key={review.id}
-                  review={review}
-                  responseText={responseTexts[review.id] || ''}
-                  onResponseChange={(text) => setResponseTexts({ ...responseTexts, [review.id]: text })}
-                  onSubmitResponse={() => handleRespond(review.id)}
-                  renderStars={renderStars}
-                  index={index}
-                />
-              ))}
-            </TabsContent>
-          </Tabs>
+              <TabsContent value="all" className="space-y-4 mt-6">
+                {reviews.map((review, index) => (
+                  <ReviewManagementCard
+                    key={review.id}
+                    review={review}
+                    responseText={responseTexts[review.id] || ''}
+                    onResponseChange={(text) => setResponseTexts({ ...responseTexts, [review.id]: text })}
+                    onSubmitResponse={() => handleRespond(review.id)}
+                    renderStars={renderStars}
+                    index={index}
+                  />
+                ))}
+              </TabsContent>
+            </Tabs>
+          )}
         </div>
       </div>
     </OwnerLayout>
@@ -210,15 +263,15 @@ function ReviewManagementCard({ review, responseText, onResponseChange, onSubmit
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-gray-700">{review.students?.full_name || 'Anonymous'}</h3>
+                <h3 className="font-semibold text-foreground">{review.students?.full_name || 'Anonymous'}</h3>
                 <Badge variant={review.status === 'approved' ? 'default' : 'secondary'}>
                   {review.status}
                 </Badge>
               </div>
-              <p className="text-sm text-gray-500">{review.dorms?.dorm_name || review.dorms?.name}</p>
+              <p className="text-sm text-muted-foreground">{review.dorms?.dorm_name || review.dorms?.name}</p>
               <div className="flex items-center gap-2 mt-2">
                 {renderStars(review.rating)}
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-muted-foreground">
                   {new Date(review.created_at).toLocaleDateString()}
                 </span>
               </div>
@@ -226,14 +279,14 @@ function ReviewManagementCard({ review, responseText, onResponseChange, onSubmit
           </div>
 
           <div>
-            <h4 className="font-medium text-gray-700 mb-1">{review.title}</h4>
-            {review.comment && <p className="text-sm text-gray-600">{review.comment}</p>}
+            <h4 className="font-medium text-foreground mb-1">{review.title}</h4>
+            {review.comment && <p className="text-sm text-muted-foreground">{review.comment}</p>}
           </div>
 
           {hasResponse ? (
             <div className="bg-muted/30 p-4 rounded-xl">
-              <p className="text-sm font-medium text-gray-700 mb-1">Your Response</p>
-              <p className="text-sm text-gray-600">{review.review_responses[0].response_text}</p>
+              <p className="text-sm font-medium text-foreground mb-1">Your Response</p>
+              <p className="text-sm text-muted-foreground">{review.review_responses[0].response_text}</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -247,7 +300,7 @@ function ReviewManagementCard({ review, responseText, onResponseChange, onSubmit
               <Button 
                 onClick={onSubmitResponse} 
                 disabled={!responseText.trim()}
-                className="bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white rounded-xl"
+                className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl"
               >
                 Post Response
               </Button>

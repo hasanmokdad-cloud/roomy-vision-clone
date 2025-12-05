@@ -1,133 +1,185 @@
 // src/hooks/useRoleGuard.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 type AppRole = "admin" | "owner" | "student";
 
+const SESSION_CACHE_KEY = 'roomy_session_last_refresh';
+const REFRESH_THROTTLE_MS = 30000; // 30 seconds minimum between refreshes
+const TOKEN_EXPIRY_BUFFER_MS = 5 * 60 * 1000; // Only refresh if expiring within 5 minutes
+
 /**
  * useRoleGuard - Custom hook to restrict access based on user roles
- *
- * @param requiredRole - "admin" | "owner" | "student" (optional)
- * Redirects to "/auth" if not authenticated and "/unauthorized" if wrong role.
- * Returns { loading, role, userId } for in-component logic.
- *
- * Special case: if there is no user_roles row yet BUT the email matches one of
- * the founder/admin emails, treat that user as "admin" so they can always
- * reach the admin dashboard.
  */
 export function useRoleGuard(requiredRole?: AppRole) {
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<AppRole | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const validationInProgress = useRef(false);
 
   useEffect(() => {
+    // Prevent concurrent validations
+    if (validationInProgress.current) return;
+    
     const validateSession = async () => {
-      // First try getSession (faster, works for fresh logins)
-      console.log("🔄 useRoleGuard: Getting session...");
-      const { data: sessionData } = await supabase.auth.getSession();
-      let session = sessionData?.session;
-
-      // Only refresh if we have a session (avoids errors on fresh login)
-      if (session) {
-        console.log("🔄 useRoleGuard: Session found, attempting refresh...");
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        
-        if (!refreshError && refreshData?.session) {
-          session = refreshData.session;
-        } else if (refreshError) {
-          console.warn("⚠️ useRoleGuard: Session refresh failed, using existing session:", refreshError.message);
-        }
-      }
-
-      if (!session) {
-        console.log("❌ useRoleGuard: No session found, redirecting to auth");
-        setRole(null);
-        setUserId(null);
-        setLoading(false);
-        navigate("/auth", { replace: true });
-        return;
-      }
-
-      console.log("✅ useRoleGuard: Session active, email_confirmed_at:", session.user.email_confirmed_at);
+      validationInProgress.current = true;
       
-      const user = session.user;
-      setUserId(user.id);
-
-      const defaultAdminEmails = [
-        "hassan.mokdad01@lau.edu",
-      ];
-
-      // Try to read role with retry logic - keep retrying even if no role found
-      let resolvedRole: AppRole | null = null;
-      let attempts = 0;
-      const maxAttempts = 5; // Increased attempts for database replication lag
-
-      while (!resolvedRole && attempts < maxAttempts) {
-        attempts++;
-        console.log(`🔄 useRoleGuard: Attempt ${attempts}/${maxAttempts} to fetch role for user ${user.id}`);
+      try {
+        // First try getSession (faster, works for fresh logins)
+        console.log("🔄 useRoleGuard: Getting session...");
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         
-        // Use security definer function to bypass RLS policies
-        const { data, error } = await supabase.rpc('get_user_role', { 
-          p_user_id: user.id 
-        });
+        if (sessionError) {
+          console.warn("⚠️ useRoleGuard: getSession error:", sessionError.message);
+        }
+        
+        let session = sessionData?.session;
 
-        if (error) {
-          console.error(`❌ useRoleGuard: get_user_role RPC failed:`, error);
-        } else {
-          resolvedRole = data as AppRole | null;
-          console.log(`✅ useRoleGuard: Role found on attempt ${attempts}:`, resolvedRole);
+        // Only refresh if we have a session AND it's appropriate to refresh
+        if (session) {
+          const shouldRefresh = shouldRefreshSession();
+          const tokenExpiringSoon = isTokenExpiringSoon(session);
+          
+          if (shouldRefresh && tokenExpiringSoon) {
+            console.log("🔄 useRoleGuard: Token expiring soon, attempting refresh...");
+            try {
+              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+              
+              if (refreshError) {
+                // Handle rate limiting gracefully - don't redirect, just use existing session
+                if (refreshError.message?.includes('429') || refreshError.status === 429) {
+                  console.warn("⚠️ useRoleGuard: Rate limited, using existing session");
+                } else {
+                  console.warn("⚠️ useRoleGuard: Session refresh failed:", refreshError.message);
+                }
+              } else if (refreshData?.session) {
+                session = refreshData.session;
+                markSessionRefreshed();
+              }
+            } catch (refreshErr: any) {
+              // Catch any refresh errors and continue with existing session
+              console.warn("⚠️ useRoleGuard: Refresh exception:", refreshErr?.message);
+            }
+          }
         }
 
-        // Wait before retrying if no role found
-        if (!resolvedRole && attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 300 * attempts));
-        }
-      }
-
-      // Fallback: if no stored role yet but email is a known founder/admin,
-      // temporarily treat them as admin so they NEVER get stuck on /select-role.
-      if (!resolvedRole && defaultAdminEmails.includes(user.email ?? "")) {
-        resolvedRole = "admin";
-      }
-
-      // Admin must NEVER be redirected to /select-role or /unauthorized
-      // Admins have unrestricted access to ALL routes
-      if (resolvedRole === "admin") {
-        setRole("admin");
-        setLoading(false);
-        return; // Skip ALL role checks - admins bypass everything
-      }
-
-      if (!resolvedRole) {
-        // User has no role at all
-        setRole(null);
-
-        if (requiredRole) {
-          // Protected route requires a role, send user to role selection
-          navigate("/select-role", { replace: true });
+        if (!session) {
+          console.log("❌ useRoleGuard: No session found, redirecting to auth");
+          setRole(null);
+          setUserId(null);
+          setLoading(false);
+          navigate("/auth", { replace: true });
+          return;
         }
 
+        console.log("✅ useRoleGuard: Session active, email_confirmed_at:", session.user.email_confirmed_at);
+        
+        const user = session.user;
+        setUserId(user.id);
+
+        const defaultAdminEmails = [
+          "hassan.mokdad01@lau.edu",
+        ];
+
+        // Try to read role with retry logic
+        let resolvedRole: AppRole | null = null;
+        let attempts = 0;
+        const maxAttempts = 3;
+
+        while (!resolvedRole && attempts < maxAttempts) {
+          attempts++;
+          console.log(`🔄 useRoleGuard: Attempt ${attempts}/${maxAttempts} to fetch role for user ${user.id}`);
+          
+          const { data, error } = await supabase.rpc('get_user_role', { 
+            p_user_id: user.id 
+          });
+
+          if (error) {
+            console.error(`❌ useRoleGuard: get_user_role RPC failed:`, error);
+          } else {
+            resolvedRole = data as AppRole | null;
+            console.log(`✅ useRoleGuard: Role found on attempt ${attempts}:`, resolvedRole);
+          }
+
+          if (!resolvedRole && attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 200 * attempts));
+          }
+        }
+
+        // Fallback for admin emails
+        if (!resolvedRole && defaultAdminEmails.includes(user.email ?? "")) {
+          resolvedRole = "admin";
+        }
+
+        // Admin bypass
+        if (resolvedRole === "admin") {
+          setRole("admin");
+          setLoading(false);
+          return;
+        }
+
+        if (!resolvedRole) {
+          setRole(null);
+          if (requiredRole) {
+            navigate("/select-role", { replace: true });
+          }
+          setLoading(false);
+          return;
+        }
+
+        setRole(resolvedRole);
+
+        if (requiredRole && resolvedRole !== requiredRole) {
+          navigate("/unauthorized", { replace: true });
+          setLoading(false);
+          return;
+        }
+
         setLoading(false);
-        return;
+      } finally {
+        validationInProgress.current = false;
       }
-
-      // We have a role (either from DB or fallback)
-      setRole(resolvedRole);
-
-      // Only check requiredRole if user is NOT admin (admins already returned above)
-      if (requiredRole && resolvedRole !== requiredRole) {
-        navigate("/unauthorized", { replace: true });
-        setLoading(false);
-        return;
-      }
-
-      setLoading(false);
     };
 
     void validateSession();
   }, [navigate, requiredRole]);
 
   return { loading, role, userId };
+}
+
+// Helper: Check if we should attempt a refresh (throttling)
+function shouldRefreshSession(): boolean {
+  try {
+    const lastRefresh = localStorage.getItem(SESSION_CACHE_KEY);
+    if (!lastRefresh) return true;
+    
+    const now = Date.now();
+    const lastRefreshTime = parseInt(lastRefresh, 10);
+    return (now - lastRefreshTime) > REFRESH_THROTTLE_MS;
+  } catch {
+    return true;
+  }
+}
+
+// Helper: Check if token is expiring soon
+function isTokenExpiringSoon(session: any): boolean {
+  try {
+    if (!session?.expires_at) return false;
+    const expiresAt = session.expires_at * 1000; // Convert to ms
+    const now = Date.now();
+    return (expiresAt - now) < TOKEN_EXPIRY_BUFFER_MS;
+  } catch {
+    return false;
+  }
+}
+
+// Helper: Mark that we just refreshed
+function markSessionRefreshed(): void {
+  try {
+    localStorage.setItem(SESSION_CACHE_KEY, Date.now().toString());
+  } catch {
+    // Ignore localStorage errors
+  }
 }

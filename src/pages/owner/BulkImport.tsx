@@ -170,7 +170,7 @@ export default function BulkImport() {
         title: "Import complete",
         description: `Successfully imported ${successCount} dorm(s) with rooms`,
       });
-      navigate("/owner/dorms");
+      navigate("/owner/listings");
     } catch (error: any) {
       toast({
         title: "Error",
