@@ -9,6 +9,7 @@ import { OwnerTableSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { useOwnerDormsQuery } from '@/hooks/useOwnerDormsQuery';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
 import { OwnerBreadcrumb } from '@/components/owner/OwnerBreadcrumb';
+import DormEditModal from '@/components/admin/DormEditModal';
 import {
   Table,
   TableBody,
@@ -23,6 +24,7 @@ export default function OwnerListings() {
   const [ownerId, setOwnerId] = useState<string>();
   const { data: dorms, isLoading: loading, refetch } = useOwnerDormsQuery(ownerId);
   const { toast } = useToast();
+  const [editingDorm, setEditingDorm] = useState<any | null>(null);
 
   useEffect(() => {
     loadOwnerId();
@@ -145,7 +147,7 @@ export default function OwnerListings() {
                           >
                             <DoorOpen className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="ghost">
+                          <Button size="sm" variant="ghost" onClick={() => setEditingDorm(dorm)}>
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button
@@ -162,6 +164,19 @@ export default function OwnerListings() {
                 </TableBody>
               </Table>
             </div>
+          )}
+
+          {/* Dorm Edit Modal */}
+          {editingDorm && (
+            <DormEditModal
+              dorm={editingDorm}
+              isOpen={true}
+              onClose={() => setEditingDorm(null)}
+              onUpdate={() => {
+                setEditingDorm(null);
+                refetch();
+              }}
+            />
           )}
         </div>
       </div>

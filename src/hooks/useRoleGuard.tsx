@@ -24,21 +24,21 @@ export function useRoleGuard(requiredRole?: AppRole) {
 
   useEffect(() => {
     const validateSession = async () => {
-      // ALWAYS refresh session to get the latest data and avoid stale cache
-      console.log("🔄 useRoleGuard: Refreshing session...");
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      // First try getSession (faster, works for fresh logins)
+      console.log("🔄 useRoleGuard: Getting session...");
+      const { data: sessionData } = await supabase.auth.getSession();
+      let session = sessionData?.session;
 
-      if (refreshError) {
-        console.error("❌ useRoleGuard: Session refresh failed:", refreshError);
-      }
-
-      let session = refreshData?.session;
-      
-      // Fallback to getSession if refresh fails
-      if (!session) {
-        console.log("⚠️ useRoleGuard: Refresh returned no session, falling back to getSession...");
-        const { data: sessionData } = await supabase.auth.getSession();
-        session = sessionData?.session;
+      // Only refresh if we have a session (avoids errors on fresh login)
+      if (session) {
+        console.log("🔄 useRoleGuard: Session found, attempting refresh...");
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (!refreshError && refreshData?.session) {
+          session = refreshData.session;
+        } else if (refreshError) {
+          console.warn("⚠️ useRoleGuard: Session refresh failed, using existing session:", refreshError.message);
+        }
       }
 
       if (!session) {

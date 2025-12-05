@@ -69,7 +69,7 @@ const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications")
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const ReviewManagement = lazy(() => import("./pages/owner/ReviewManagement"));
 const AdminDormOwnership = lazy(() => import("./pages/admin/AdminDormOwnership"));
-const AdminDormClaims = lazy(() => import("./pages/admin/AdminDormClaims"));
+
 const AdminOwners = lazy(() => import("./pages/admin/AdminOwners"));
 const AdminSystemMonitor = lazy(() => import("./pages/admin/AdminSystemMonitor"));
 const OwnerCalendar = lazy(() => import("./pages/owner/OwnerCalendar"));
@@ -291,7 +291,7 @@ const AppRoutes = () => {
           <Route path="/admin/ownership" element={<ProtectedRoute element={<AdminDormOwnership />} requiredRole="admin" />} />
           <Route path="/admin/owners" element={<ProtectedRoute element={<AdminOwners />} requiredRole="admin" />} />
           <Route path="/admin/personality-insights" element={<ProtectedRoute element={<AdminPersonalityInsights />} requiredRole="admin" />} />
-          <Route path="/admin/claims" element={<ProtectedRoute element={<AdminDormClaims />} requiredRole="admin" />} />
+          
           <Route path="/admin/logs" element={<ProtectedRoute element={<AdminLogs />} requiredRole="admin" />} />
           <Route path="/admin/ai-match-logs" element={<ProtectedRoute element={<AdminAiMatchLogs />} requiredRole="admin" />} />
           <Route path="/admin/ai-debug" element={<ProtectedRoute element={<AdminAiDebug />} requiredRole="admin" />} />
