@@ -9,7 +9,7 @@ import { useRoleGuard } from '@/hooks/useRoleGuard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DormForm } from '@/components/owner/DormForm';
+
 import DormEditModal from '@/components/admin/DormEditModal';
 import { NotificationBell } from '@/components/owner/NotificationBell';
 import { PayoutSetupBanner } from '@/components/owner/PayoutSetupBanner';
@@ -160,7 +160,6 @@ export default function OwnerHome() {
   const [ownerId, setOwnerId] = useState<string>();
   const { data: dorms, refetch: refetchDorms } = useOwnerDormsQuery(ownerId);
   const { count: unreadMessages } = useUnreadMessagesCount(userId, role);
-  const [showAddDorm, setShowAddDorm] = useState(false);
   const [editingDorm, setEditingDorm] = useState<any | null>(null);
   const [stats, setStats] = useState({
     totalDorms: 0,
@@ -293,10 +292,6 @@ export default function OwnerHome() {
     navigate('/auth');
   };
 
-  const handleDormSaved = () => {
-    setShowAddDorm(false);
-    refetchDorms();
-  };
 
   const pendingDorms = dorms?.filter(d => d.verification_status === 'Pending') || [];
   const verifiedDorms = dorms?.filter(d => d.verification_status === 'Verified') || [];
@@ -423,55 +418,6 @@ export default function OwnerHome() {
           {/* Upcoming Tours Widget */}
           {ownerId && <UpcomingToursWidget ownerId={ownerId} />}
 
-          {/* Add New Dorm Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            whileHover={{ scale: 1.02 }}
-          >
-            <Card className="rounded-xl shadow-sm hover:shadow-md transition-all">
-              <CardContent className="p-5">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-700 mb-2">Add New Dorm</h3>
-                    <p className="text-gray-500 text-sm">
-                      Create a new dorm listing and add rooms to start receiving inquiries
-                    </p>
-                  </div>
-                  {showAddDorm ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowAddDorm(false)}
-                      className="w-full md:w-auto gap-2 rounded-xl"
-                    >
-                      Hide Form
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={() => setShowAddDorm(true)}
-                      disabled={!ownerId}
-                      className="w-full md:w-auto gap-2 bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white rounded-xl hover:opacity-90"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add New Dorm
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Add Dorm Form */}
-          {showAddDorm && ownerId && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-            >
-              <DormForm ownerId={ownerId} onSaved={handleDormSaved} />
-            </motion.div>
-          )}
 
           {/* Pending Dorms */}
           {pendingDorms.length > 0 && (

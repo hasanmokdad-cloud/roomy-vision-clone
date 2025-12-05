@@ -101,7 +101,7 @@ export default function DormRooms() {
         <div className="max-w-6xl mx-auto space-y-6">
           <OwnerBreadcrumb items={[
             { label: 'My Listings', href: '/owner/listings' },
-            { label: dormName || 'Dorm', href: `/owner/dorms/${dormId}/rooms` },
+            { label: dormName || 'Dorm' },
             { label: 'Rooms' }
           ]} />
           

@@ -50,6 +50,13 @@ export default function OwnerRooms() {
     }
   }, [userId]);
 
+  // Auto-redirect to DormRooms if owner has only one dorm
+  useEffect(() => {
+    if (!loading && dorms.length === 1) {
+      navigate(`/owner/dorms/${dorms[0].id}/rooms`, { replace: true });
+    }
+  }, [loading, dorms, navigate]);
+
   const loadDormsWithRooms = async () => {
     try {
       const { data: ownerData } = await supabase

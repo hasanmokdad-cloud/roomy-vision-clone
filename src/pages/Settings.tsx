@@ -496,9 +496,6 @@ export default function Settings() {
                   </Badge>
                 </div>
 
-                  <p className="text-sm text-foreground/60">
-                    Owners should contact Roomy support for dorm assignment
-                  </p>
 
                 <Button
                   variant="outline"
@@ -571,39 +568,41 @@ export default function Settings() {
               </div>
             </Card>
 
-            {/* AI Memory */}
-            <Card className="glass p-6 border border-border/40">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Brain className="w-6 h-6 text-primary" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">AI Memory</h3>
-                    <p className="text-sm text-foreground/60">
-                      Allow AI to remember your preferences
-                    </p>
+            {/* AI Memory - Only for students and admins */}
+            {role !== 'owner' && (
+              <Card className="glass p-6 border border-border/40">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Brain className="w-6 h-6 text-primary" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">AI Memory</h3>
+                      <p className="text-sm text-foreground/60">
+                        Allow AI to remember your preferences
+                      </p>
+                    </div>
                   </div>
+                  <Switch
+                    checked={settings.aiMemory}
+                    onCheckedChange={(checked) =>
+                      setSettings((prev) => ({ ...prev, aiMemory: checked }))
+                    }
+                  />
                 </div>
-                <Switch
-                  checked={settings.aiMemory}
-                  onCheckedChange={(checked) =>
-                    setSettings((prev) => ({ ...prev, aiMemory: checked }))
-                  }
-                />
-              </div>
-              {settings.aiMemory && (
-                <div className="mt-4 pt-4 border-t border-border/10">
-                  <Button
-                    onClick={handleClearAIMemory}
-                    variant="outline"
-                    size="sm"
-                    className="border-destructive/50 text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Clear AI Memory
-                  </Button>
-                </div>
-              )}
-            </Card>
+                {settings.aiMemory && (
+                  <div className="mt-4 pt-4 border-t border-border/10">
+                    <Button
+                      onClick={handleClearAIMemory}
+                      variant="outline"
+                      size="sm"
+                      className="border-destructive/50 text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Clear AI Memory
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            )}
 
             {/* Save Button */}
             <div className="flex justify-end gap-3 pt-4">

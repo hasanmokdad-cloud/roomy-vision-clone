@@ -16,7 +16,6 @@ import {
   LogOut,
   LayoutDashboard,
   ShieldCheck,
-  ClipboardCheck,
   FileText,
   Key,
   MessageSquare,
@@ -351,18 +350,6 @@ export default function AdminDashboard() {
             </div>
           </motion.button>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate("/admin/claims")}
-            className="relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br from-orange-500 to-yellow-400 text-white shadow-xl hover:shadow-2xl transition-all group"
-          >
-            <div className="flex flex-col items-center gap-4">
-              <ClipboardCheck className="w-12 h-12" />
-              <h3 className="text-xl font-bold">Ownership Claims</h3>
-              <p className="text-sm opacity-90">Review claims</p>
-            </div>
-          </motion.button>
 
           <motion.button
             whileHover={{ scale: 1.05 }}
