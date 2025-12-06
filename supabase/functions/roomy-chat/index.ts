@@ -252,6 +252,21 @@ serve(async (req) => {
     // Rate limiting check
     const rateLimitKey = userId || req.headers.get('x-real-ip') || req.headers.get('cf-connecting-ip') || 'anonymous';
     if (!checkRateLimit(rateLimitKey)) {
+      // Log rate limit event to security_events
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+      const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+        const supabaseForLog = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        await supabaseForLog.from("security_events").insert({
+          event_type: "rate_limit_exceeded",
+          user_id: userId || null,
+          ip_region: req.headers.get('cf-ipcountry') || null,
+          user_agent: req.headers.get('user-agent')?.slice(0, 200) || null,
+          details: { endpoint: "roomy-chat", rate_limit_key: rateLimitKey.slice(0, 20) },
+          severity: "warning"
+        });
+      }
+      
       return new Response(
         JSON.stringify({ error: "Too many requests. Please slow down and try again in a minute." }),
         { 

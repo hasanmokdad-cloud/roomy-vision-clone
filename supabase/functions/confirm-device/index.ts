@@ -45,6 +45,15 @@ Deno.serve(async (req) => {
     const expiresAt = new Date(device.verification_expires_at);
     
     if (expiresAt < now) {
+      // Log failed verification attempt
+      await supabase.from("security_events").insert({
+        event_type: "device_verification_failed",
+        user_id: device.user_id,
+        ip_region: device.ip_region,
+        details: { reason: "expired_token", device_name: device.device_name },
+        severity: "warning"
+      });
+      
       return new Response(
         JSON.stringify({ error: "Verification link has expired. Please log in again to receive a new link.", code: "EXPIRED_TOKEN" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -78,13 +87,22 @@ Deno.serve(async (req) => {
       .eq("user_id", device.user_id)
       .neq("id", device.id);
 
-    // Log security event
+    // Log security event to device_security_logs
     await supabase.from("device_security_logs").insert({
       user_id: device.user_id,
       event_type: "device_verified",
       device_fingerprint: device.fingerprint_hash,
       ip_region: device.ip_region,
       metadata: { device_name: device.device_name }
+    });
+
+    // Log to centralized security_events table for monitoring
+    await supabase.from("security_events").insert({
+      event_type: "device_verified",
+      user_id: device.user_id,
+      ip_region: device.ip_region,
+      details: { device_name: device.device_name, device_id: device.id },
+      severity: "info"
     });
 
     console.log(`Device verified for user ${device.user_id}: ${device.device_name}`);
