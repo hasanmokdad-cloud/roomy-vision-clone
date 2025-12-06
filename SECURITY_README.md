@@ -176,6 +176,61 @@ Or use the SQL query in Supabase SQL Editor:
 - Verify ownership column values
 - Check if user has correct role (student/owner/admin)
 
+---
+
+## Known Security Linter Exceptions
+
+The following security linter warnings are intentional and safe by design:
+
+### 1. Extension in Public Schema (`pg_net`)
+
+**Status**: ✅ Safe - Supabase Requirement
+
+The `pg_net` extension is installed in the `public` schema because Supabase requires it there for HTTP requests from database functions. This extension is:
+- Managed by Supabase infrastructure
+- Cannot be moved to `extensions` schema without breaking Supabase internals
+- Does not expose any security vulnerabilities
+
+### 2. Public Edge Functions (No JWT Required)
+
+The following edge functions are intentionally public (no JWT authentication) but are hardened with alternative security measures:
+
+| Function | Security Measures |
+|----------|-------------------|
+| `confirm-device` | Cryptographically random tokens (UUID v4), single-use enforcement, 30-minute expiry, no PII on invalid tokens |
+| `secure-account` | Token-based auth, single-use tokens, logs security events, revokes all sessions on use |
+| `verify-device` | Same as confirm-device |
+| `send-device-email` | Internal use only, called by auth triggers |
+| `generate-tour-questions` | Rate limiting (5/min/IP), input validation, sanitized responses |
+| `send-owner-notification` | Internal use only, called by process-pending-notifications, input validation |
+| `process-pending-notifications` | Cron job, no user input |
+| `process-booking-reminders` | Cron job, no user input |
+| `roomy-chat` | Rate limiting (10/min), input sanitization, tier-gated responses |
+| `contact-form-email` | Rate limiting, input validation, no sensitive data returned |
+
+**Why public?** These functions support email verification, device trust, and notification flows that occur before or without user authentication.
+
+### 3. Security Invoker Views
+
+All security monitoring views now use `WITH (security_invoker = on)` to ensure they respect RLS policies of the calling user:
+
+- `security_rls_overview` - Shows RLS status for all tables (authenticated users only)
+
+## Storage Bucket Security
+
+All storage buckets have MIME type restrictions and file size limits:
+
+| Bucket | Allowed Types | Max Size |
+|--------|--------------|----------|
+| `profile-photos` | PNG, JPEG, WebP, GIF | 10 MB |
+| `room-images` | PNG, JPEG, WebP, GIF | 10 MB |
+| `dorm-uploads` | PNG, JPEG, WebP, GIF, MP4, WebM, MOV | 100 MB |
+| `message-media` | PNG, JPEG, WebP, GIF, MP4, WebM, MOV | 100 MB |
+
+**Blocked file types**: Executables, scripts, HTML, archives (.zip, .rar), PDFs (unless specifically allowed).
+
+---
+
 ## Related Files
 
 - `tests/security_rls_checks.sql` - Comprehensive RLS test suite
