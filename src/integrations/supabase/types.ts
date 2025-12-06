@@ -2820,6 +2820,51 @@ export type Database = {
           },
         ]
       }
+      security_schema_audit: {
+        Row: {
+          action: string
+          details: Json | null
+          event_time: string
+          id: string
+          object_name: string | null
+          object_type: string | null
+          policy_count: number | null
+          reviewed: boolean | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          rls_enabled: boolean | null
+          schema_name: string | null
+        }
+        Insert: {
+          action: string
+          details?: Json | null
+          event_time?: string
+          id?: string
+          object_name?: string | null
+          object_type?: string | null
+          policy_count?: number | null
+          reviewed?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rls_enabled?: boolean | null
+          schema_name?: string | null
+        }
+        Update: {
+          action?: string
+          details?: Json | null
+          event_time?: string
+          id?: string
+          object_name?: string | null
+          object_type?: string | null
+          policy_count?: number | null
+          reviewed?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rls_enabled?: boolean | null
+          schema_name?: string | null
+        }
+        Relationships: []
+      }
       shared_collections: {
         Row: {
           created_at: string | null
@@ -3574,6 +3619,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      security_rls_overview: {
+        Row: {
+          delete_policies: number | null
+          insert_policies: number | null
+          is_sensitive: boolean | null
+          policy_count: number | null
+          rls_enabled: boolean | null
+          security_status: string | null
+          select_policies: number | null
+          table_name: unknown
+          update_policies: number | null
+        }
+        Relationships: []
       }
       user_activity_summary: {
         Row: {
