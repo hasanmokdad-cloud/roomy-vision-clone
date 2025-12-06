@@ -5,487 +5,78 @@ import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { 
-  Brain, 
-  TrendingUp, 
-  Activity, 
-  AlertCircle,
-  ArrowLeft,
-  Star,
-  MessageSquare,
-  Users,
-  Home
-} from "lucide-react";
-import { 
-  LineChart, 
-  Line, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend,
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer
-} from "recharts";
-
-interface HealthMetrics {
-  roommate_accuracy: number;
-  dorm_accuracy: number;
-  chatbot_precision: number;
-  total_matches: number;
-  total_chats: number;
-  avg_feedback_score: number;
-}
+import { Brain, TrendingUp, Activity, ArrowLeft, Star, MessageSquare, Users, Home } from "lucide-react";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 
 export default function AdminAiDiagnostics() {
   const { loading } = useRoleGuard("admin");
   const navigate = useNavigate();
-  const [healthMetrics, setHealthMetrics] = useState<HealthMetrics>({
-    roommate_accuracy: 0,
-    dorm_accuracy: 0,
-    chatbot_precision: 0,
-    total_matches: 0,
-    total_chats: 0,
-    avg_feedback_score: 0,
-  });
+  const [healthMetrics, setHealthMetrics] = useState({ roommate_accuracy: 0, dorm_accuracy: 0, chatbot_precision: 0, total_matches: 0, total_chats: 0, avg_feedback_score: 0 });
   const [matchTrends, setMatchTrends] = useState<any[]>([]);
   const [feedbackDistribution, setFeedbackDistribution] = useState<any[]>([]);
-  const [topDorms, setTopDorms] = useState<any[]>([]);
-  const [conversionFunnel, setConversionFunnel] = useState({ matches: 0, contacts: 0, reservations: 0 });
-  const [mismatchedPairs, setMismatchedPairs] = useState<any[]>([]);
-  const [preferenceTrends, setPreferenceTrends] = useState<any>({ areas: {}, avgBudget: 0 });
 
-  useEffect(() => {
-    loadDiagnostics();
-  }, []);
+  useEffect(() => { loadDiagnostics(); }, []);
 
   const loadDiagnostics = async () => {
-    // Load AI match logs
-    const { data: matchLogs } = await supabase
-      .from('ai_match_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100);
+    const { data: matchLogs } = await supabase.from('ai_match_logs').select('*').order('created_at', { ascending: false }).limit(100);
+    const { data: feedbacks } = await supabase.from('ai_feedback').select('*').order('created_at', { ascending: false }).limit(100);
+    const { data: events } = await supabase.from('ai_events').select('*').order('created_at', { ascending: false }).limit(100);
 
-    // Load feedback data
-    const { data: feedbacks } = await supabase
-      .from('ai_feedback')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100);
-
-    // Load AI events
-    const { data: events } = await supabase
-      .from('ai_events')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100);
-
-    // Calculate health metrics
     const roommateMatches = matchLogs?.filter(l => l.mode === 'roommate') || [];
     const dormMatches = matchLogs?.filter(l => l.mode === 'dorm') || [];
     const chatEvents = events?.filter(e => e.event_type === 'chat') || [];
-
-    const avgFeedback = feedbacks && feedbacks.length > 0
-      ? feedbacks.reduce((sum, f) => sum + f.helpful_score, 0) / feedbacks.length
-      : 0;
+    const avgFeedback = feedbacks && feedbacks.length > 0 ? feedbacks.reduce((sum, f) => sum + f.helpful_score, 0) / feedbacks.length : 0;
 
     setHealthMetrics({
-      roommate_accuracy: roommateMatches.length > 0 ? 
-        (roommateMatches.filter(m => m.result_count > 0).length / roommateMatches.length) * 100 : 0,
-      dorm_accuracy: dormMatches.length > 0 ?
-        (dormMatches.filter(m => m.result_count > 0).length / dormMatches.length) * 100 : 0,
+      roommate_accuracy: roommateMatches.length > 0 ? (roommateMatches.filter(m => m.result_count > 0).length / roommateMatches.length) * 100 : 0,
+      dorm_accuracy: dormMatches.length > 0 ? (dormMatches.filter(m => m.result_count > 0).length / dormMatches.length) * 100 : 0,
       chatbot_precision: avgFeedback > 0 ? (avgFeedback / 5) * 100 : 0,
       total_matches: matchLogs?.length || 0,
       total_chats: chatEvents.length,
       avg_feedback_score: avgFeedback,
     });
 
-    // Calculate match trends (last 7 days)
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - (6 - i));
-      return date.toISOString().split('T')[0];
-    });
-
+    const last7Days = Array.from({ length: 7 }, (_, i) => { const date = new Date(); date.setDate(date.getDate() - (6 - i)); return date.toISOString().split('T')[0]; });
     const trends = last7Days.map(date => {
-      const dayLogs = matchLogs?.filter(l => 
-        l.created_at?.startsWith(date)
-      ) || [];
-      return {
-        date: date.split('-')[2] + '/' + date.split('-')[1],
-        dorm: dayLogs.filter(l => l.mode === 'dorm').length,
-        roommate: dayLogs.filter(l => l.mode === 'roommate').length,
-        combined: dayLogs.filter(l => l.mode === 'combined').length,
-      };
+      const dayLogs = matchLogs?.filter(l => l.created_at?.startsWith(date)) || [];
+      return { date: date.split('-')[2] + '/' + date.split('-')[1], dorm: dayLogs.filter(l => l.mode === 'dorm').length, roommate: dayLogs.filter(l => l.mode === 'roommate').length };
     });
     setMatchTrends(trends);
 
-    // Feedback distribution
-    const distribution = [1, 2, 3, 4, 5].map(score => ({
-      score: `${score} ⭐`,
-      count: feedbacks?.filter(f => f.helpful_score === score).length || 0,
-    }));
+    const distribution = [1, 2, 3, 4, 5].map(score => ({ score: `${score} ⭐`, count: feedbacks?.filter(f => f.helpful_score === score).length || 0 }));
     setFeedbackDistribution(distribution);
-
-    // Top matched dorms (from feedback)
-    const dormFeedbacks = feedbacks?.filter(f => f.ai_action === 'match_dorm') || [];
-    const dormCounts: Record<string, number> = {};
-    dormFeedbacks.forEach(f => {
-      if (f.target_id) {
-        dormCounts[f.target_id] = (dormCounts[f.target_id] || 0) + 1;
-      }
-    });
-    
-    const topDormIds = Object.entries(dormCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([id]) => id);
-
-    if (topDormIds.length > 0) {
-      const { data: dorms } = await supabase
-        .from('dorms')
-        .select('id, dorm_name, area')
-        .in('id', topDormIds);
-
-      setTopDorms(dorms || []);
-    }
-
-    // CONVERSION FUNNEL: Match → Contact → Reservation tracking
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const { data: contacts } = await supabase
-      .from('room_contact_tracking')
-      .select('dorm_id')
-      .gte('created_at', thirtyDaysAgo.toISOString());
-
-    const { data: reservations } = await supabase
-      .from('reservations')
-      .select('dorm_id')
-      .gte('created_at', thirtyDaysAgo.toISOString());
-
-    setConversionFunnel({
-      matches: matchLogs?.length || 0,
-      contacts: contacts?.length || 0,
-      reservations: reservations?.length || 0
-    });
-
-    // MOST MISMATCHED: Low-rated matches
-    const lowRatedMatches = feedbacks?.filter(f => f.helpful_score <= 2) || [];
-    setMismatchedPairs(lowRatedMatches.slice(0, 5));
-
-    // PREFERENCE TRENDS: Popular areas, budget analysis
-    const { data: students } = await supabase
-      .from('students')
-      .select('favorite_areas, budget, preferred_room_types');
-
-    const areaCounts: Record<string, number> = {};
-    let totalBudget = 0;
-    let budgetCount = 0;
-
-    students?.forEach(s => {
-      s.favorite_areas?.forEach((area: string) => {
-        areaCounts[area] = (areaCounts[area] || 0) + 1;
-      });
-      if (s.budget) {
-        totalBudget += s.budget;
-        budgetCount++;
-      }
-    });
-
-    setPreferenceTrends({ 
-      areas: areaCounts, 
-      avgBudget: budgetCount > 0 ? Math.round(totalBudget / budgetCount) : 0 
-    });
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-foreground/60">Loading diagnostics...</p>
-      </div>
-    );
-  }
-
-  const COLORS = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
+  if (loading) return <AdminLayout><div className="min-h-screen flex items-center justify-center"><p className="text-foreground/60">Loading diagnostics...</p></div></AdminLayout>;
 
   return (
-    <motion.div
-      className="min-h-screen bg-gradient-to-b from-background to-muted/20"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-    >
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/admin/dashboard")}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Button>
-          <h1 className="text-xl font-bold gradient-text">AI Diagnostics</h1>
-          <div className="w-32" />
-        </div>
-      </div>
+    <AdminLayout>
+      <div className="p-6 space-y-8">
+        <Button variant="ghost" onClick={() => navigate("/admin")} className="gap-2"><ArrowLeft className="w-4 h-4" />Back to Dashboard</Button>
+        <h1 className="text-xl font-bold gradient-text">AI Diagnostics</h1>
 
-      <div className="max-w-7xl mx-auto px-4 py-12 space-y-8">
-        {/* Health Report Card */}
         <Card className="shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="w-5 h-5 text-emerald-500" />
-              AI Health Report
-            </CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="flex items-center gap-2"><Activity className="w-5 h-5 text-emerald-500" />AI Health Report</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-6 rounded-lg bg-gradient-to-br from-violet-500/10 to-purple-500/10">
-                <Brain className="w-8 h-8 mx-auto mb-2 text-violet-500" />
-                <p className="text-3xl font-bold">{healthMetrics.roommate_accuracy.toFixed(1)}%</p>
-                <p className="text-sm text-muted-foreground">Roommate Match Accuracy</p>
-              </div>
-              
-              <div className="text-center p-6 rounded-lg bg-gradient-to-br from-cyan-500/10 to-blue-500/10">
-                <Home className="w-8 h-8 mx-auto mb-2 text-cyan-500" />
-                <p className="text-3xl font-bold">{healthMetrics.dorm_accuracy.toFixed(1)}%</p>
-                <p className="text-sm text-muted-foreground">Dorm Match Accuracy</p>
-              </div>
-              
-              <div className="text-center p-6 rounded-lg bg-gradient-to-br from-emerald-500/10 to-green-500/10">
-                <MessageSquare className="w-8 h-8 mx-auto mb-2 text-emerald-500" />
-                <p className="text-3xl font-bold">{healthMetrics.chatbot_precision.toFixed(1)}%</p>
-                <p className="text-sm text-muted-foreground">Chatbot Precision</p>
-              </div>
+              <div className="text-center p-6 rounded-lg bg-gradient-to-br from-violet-500/10 to-purple-500/10"><Brain className="w-8 h-8 mx-auto mb-2 text-violet-500" /><p className="text-3xl font-bold">{healthMetrics.roommate_accuracy.toFixed(1)}%</p><p className="text-sm text-muted-foreground">Roommate Match Accuracy</p></div>
+              <div className="text-center p-6 rounded-lg bg-gradient-to-br from-cyan-500/10 to-blue-500/10"><Home className="w-8 h-8 mx-auto mb-2 text-cyan-500" /><p className="text-3xl font-bold">{healthMetrics.dorm_accuracy.toFixed(1)}%</p><p className="text-sm text-muted-foreground">Dorm Match Accuracy</p></div>
+              <div className="text-center p-6 rounded-lg bg-gradient-to-br from-emerald-500/10 to-green-500/10"><MessageSquare className="w-8 h-8 mx-auto mb-2 text-emerald-500" /><p className="text-3xl font-bold">{healthMetrics.chatbot_precision.toFixed(1)}%</p><p className="text-sm text-muted-foreground">Chatbot Precision</p></div>
             </div>
-
             <div className="mt-6 grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-2xl font-bold text-foreground">{healthMetrics.total_matches}</p>
-                <p className="text-xs text-muted-foreground">Total Matches</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{healthMetrics.total_chats}</p>
-                <p className="text-xs text-muted-foreground">Chat Sessions</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground flex items-center justify-center gap-1">
-                  {healthMetrics.avg_feedback_score.toFixed(1)} <Star className="w-4 h-4 text-yellow-500" />
-                </p>
-                <p className="text-xs text-muted-foreground">Avg Feedback</p>
-              </div>
+              <div><p className="text-2xl font-bold text-foreground">{healthMetrics.total_matches}</p><p className="text-xs text-muted-foreground">Total Matches</p></div>
+              <div><p className="text-2xl font-bold text-foreground">{healthMetrics.total_chats}</p><p className="text-xs text-muted-foreground">Chat Sessions</p></div>
+              <div><p className="text-2xl font-bold text-foreground flex items-center justify-center gap-1">{healthMetrics.avg_feedback_score.toFixed(1)} <Star className="w-4 h-4 text-yellow-500" /></p><p className="text-xs text-muted-foreground">Avg Feedback</p></div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Match Trends */}
-          <Card className="shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-blue-500" />
-                Match Trends (Last 7 Days)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={matchTrends}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" stroke="hsl(var(--foreground))" />
-                  <YAxis stroke="hsl(var(--foreground))" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Legend />
-                  <Line type="monotone" dataKey="dorm" stroke="#8b5cf6" strokeWidth={2} />
-                  <Line type="monotone" dataKey="roommate" stroke="#06b6d4" strokeWidth={2} />
-                  <Line type="monotone" dataKey="combined" stroke="#10b981" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Feedback Distribution */}
-          <Card className="shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-500" />
-                Feedback Distribution
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={feedbackDistribution}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="score" stroke="hsl(var(--foreground))" />
-                  <YAxis stroke="hsl(var(--foreground))" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Bar dataKey="count" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          <Card className="shadow-lg"><CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5 text-blue-500" />Match Trends (Last 7 Days)</CardTitle></CardHeader><CardContent><ResponsiveContainer width="100%" height={300}><LineChart data={matchTrends}><CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="date" stroke="hsl(var(--foreground))" /><YAxis stroke="hsl(var(--foreground))" /><Tooltip /><Legend /><Line type="monotone" dataKey="dorm" stroke="#8b5cf6" strokeWidth={2} /><Line type="monotone" dataKey="roommate" stroke="#06b6d4" strokeWidth={2} /></LineChart></ResponsiveContainer></CardContent></Card>
+          <Card className="shadow-lg"><CardHeader><CardTitle className="flex items-center gap-2"><Star className="w-5 h-5 text-yellow-500" />Feedback Distribution</CardTitle></CardHeader><CardContent><ResponsiveContainer width="100%" height={300}><BarChart data={feedbackDistribution}><CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="score" stroke="hsl(var(--foreground))" /><YAxis stroke="hsl(var(--foreground))" /><Tooltip /><Bar dataKey="count" fill="#8b5cf6" radius={[8, 8, 0, 0]} /></BarChart></ResponsiveContainer></CardContent></Card>
         </div>
-
-        {/* Conversion Funnel */}
-        <Card className="shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-orange-500" />
-              Conversion Funnel (Last 30 Days)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-violet-500/10 to-purple-500/10">
-                <span className="font-semibold">Matches Generated</span>
-                <span className="text-2xl font-bold text-violet-500">{conversionFunnel.matches}</span>
-              </div>
-              <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-cyan-500/10 to-blue-500/10">
-                <span className="font-semibold">Contacts Made</span>
-                <span className="text-2xl font-bold text-cyan-500">{conversionFunnel.contacts}</span>
-              </div>
-              <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-emerald-500/10 to-green-500/10">
-                <span className="font-semibold">Reservations</span>
-                <span className="text-2xl font-bold text-emerald-500">{conversionFunnel.reservations}</span>
-              </div>
-              <div className="pt-4 border-t border-muted">
-                <p className="text-sm text-muted-foreground">
-                  Conversion Rate: {conversionFunnel.matches > 0 ? 
-                    ((conversionFunnel.reservations / conversionFunnel.matches) * 100).toFixed(1) : 0}%
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Top Matched Dorms */}
-        <Card className="shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-purple-500" />
-              Top Matched Dorms
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {topDorms.length > 0 ? (
-              <div className="space-y-4">
-                {topDorms.map((dorm, idx) => (
-                  <div 
-                    key={dorm.id}
-                    className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-muted/40 to-muted/20"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-white font-bold">
-                        {idx + 1}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-foreground">{dorm.dorm_name}</p>
-                        <p className="text-sm text-muted-foreground">{dorm.area}</p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(`/dorm/${dorm.id}`)}
-                    >
-                      View Details
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-muted-foreground py-6">
-                No match data available yet
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Preference Trends */}
-        <Card className="shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-pink-500" />
-              Student Preference Trends
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div>
-                <h4 className="font-semibold mb-3">Popular Areas</h4>
-                <div className="space-y-2">
-                  {Object.entries(preferenceTrends.areas)
-                    .sort((a, b) => (b[1] as number) - (a[1] as number))
-                    .slice(0, 5)
-                    .map(([area, count]) => (
-                      <div key={area} className="flex items-center justify-between">
-                        <span className="text-sm capitalize">{area}</span>
-                        <span className="text-sm font-semibold text-violet-500">{count as number} students</span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-              <div className="pt-4 border-t border-muted">
-                <h4 className="font-semibold mb-2">Average Budget</h4>
-                <p className="text-3xl font-bold text-emerald-500">${preferenceTrends.avgBudget}/month</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Most Mismatched Pairs */}
-        {mismatchedPairs.length > 0 && (
-          <Card className="shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-red-500" />
-                Most Mismatched (Low Ratings)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {mismatchedPairs.map((feedback, idx) => (
-                  <div 
-                    key={feedback.id}
-                    className="p-4 rounded-lg bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/20"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-sm">{feedback.ai_action}</p>
-                        <p className="text-xs text-muted-foreground">Target: {feedback.target_id?.substring(0, 8)}</p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {[...Array(feedback.helpful_score)].map((_, i) => (
-                          <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
-    </motion.div>
+    </AdminLayout>
   );
 }

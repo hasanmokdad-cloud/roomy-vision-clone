@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 type ConversationWithDetails = {
   id: string;
@@ -91,7 +92,6 @@ export default function AdminChats() {
   const applyFilters = () => {
     let filtered = [...conversations];
 
-    // Search filter
     if (filters.search.trim()) {
       const query = filters.search.toLowerCase();
       filtered = filtered.filter((conv) => {
@@ -105,19 +105,16 @@ export default function AdminChats() {
       });
     }
 
-    // User type filter
     if (filters.userType === 'student') {
       filtered = filtered.filter(conv => conv.owner_id === null);
     } else if (filters.userType === 'owner') {
       filtered = filtered.filter(conv => conv.owner_id !== null);
     }
 
-    // Dorm filter
     if (filters.dormId) {
       filtered = filtered.filter(conv => conv.dorm_id === filters.dormId);
     }
 
-    // Status filter
     if (filters.status === 'unread') {
       filtered = filtered.filter(conv => conv.unread_count > 0);
     } else if (filters.status === 'pending_tour') {
@@ -130,7 +127,6 @@ export default function AdminChats() {
       filtered = filtered.filter(conv => conv.tour_status === 'none');
     }
 
-    // Time range filter
     if (filters.timeRange !== 'all') {
       const now = new Date();
       let cutoffDate: Date | null = null;
@@ -156,7 +152,6 @@ export default function AdminChats() {
       }
     }
 
-    // Sorting
     filtered.sort((a, b) => {
       switch (filters.sortBy) {
         case 'newest':
@@ -205,7 +200,6 @@ export default function AdminChats() {
   const loadAllConversations = async () => {
     setLoadingData(true);
     try {
-      // Fetch all conversations with related data
       const { data: convData, error: convError } = await supabase
         .from('conversations')
         .select(`
@@ -226,30 +220,25 @@ export default function AdminChats() {
         return;
       }
 
-      // Get all student IDs
       const studentIds = [...new Set(convData.map(c => c.student_id).filter(Boolean))];
       const ownerIds = [...new Set(convData.map(c => c.owner_id).filter(Boolean))];
       const dormIds = [...new Set(convData.map(c => c.dorm_id).filter(Boolean))];
 
-      // Fetch students
       const { data: students } = await supabase
         .from('students')
         .select('id, full_name, profile_photo_url')
         .in('id', studentIds);
 
-      // Fetch owners
       const { data: owners } = await supabase
         .from('owners')
         .select('id, full_name, profile_photo_url')
         .in('id', ownerIds);
 
-      // Fetch dorms
-      const { data: dorms } = await supabase
+      const { data: dormsData } = await supabase
         .from('dorms')
         .select('id, name, dorm_name')
         .in('id', dormIds);
 
-      // Fetch all messages for each conversation
       const conversationIds = convData.map(c => c.id);
       const { data: messagesData } = await supabase
         .from('messages')
@@ -257,25 +246,21 @@ export default function AdminChats() {
         .in('conversation_id', conversationIds)
         .order('created_at', { ascending: false });
 
-      // Fetch bookings for tour status
       const { data: bookingsData } = await supabase
         .from('bookings')
         .select('student_id, owner_id, dorm_id, status')
         .in('dorm_id', dormIds.length > 0 ? dormIds : ['00000000-0000-0000-0000-000000000000']);
 
-      // Count unread messages per conversation
       const { data: unreadData } = await supabase
         .from('messages')
         .select('conversation_id, read')
         .in('conversation_id', conversationIds)
         .eq('read', false);
 
-      // Build lookup maps
       const studentMap = new Map(students?.map(s => [s.id, s]) || []);
       const ownerMap = new Map(owners?.map(o => [o.id, o]) || []);
-      const dormMap = new Map(dorms?.map(d => [d.id, d]) || []);
+      const dormMap = new Map(dormsData?.map(d => [d.id, d]) || []);
       
-      // Group messages by conversation
       const messagesByConv = new Map<string, any[]>();
       messagesData?.forEach(msg => {
         if (!messagesByConv.has(msg.conversation_id)) {
@@ -284,7 +269,6 @@ export default function AdminChats() {
         messagesByConv.get(msg.conversation_id)!.push(msg);
       });
 
-      // Count unread and total messages by conversation
       const unreadByConv = new Map<string, number>();
       const messageCountByConv = new Map<string, number>();
       unreadData?.forEach(msg => {
@@ -296,7 +280,6 @@ export default function AdminChats() {
         messageCountByConv.set(msg.conversation_id, count + 1);
       });
 
-      // Determine tour status per conversation
       const getTourStatus = (studentId: string, ownerId: string | null, dormId: string | null) => {
         if (!ownerId || !dormId) return 'none';
         const booking = bookingsData?.find(
@@ -309,7 +292,6 @@ export default function AdminChats() {
         return 'none';
       };
 
-      // Map conversations with enriched data
       const enriched: ConversationWithDetails[] = convData.map(conv => {
         const student = studentMap.get(conv.student_id);
         const owner = conv.owner_id ? ownerMap.get(conv.owner_id) : null;
@@ -349,22 +331,19 @@ export default function AdminChats() {
 
   if (loading || loadingData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20">
-        <p className="text-foreground/60">Loading chats...</p>
-      </div>
+      <AdminLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-foreground/60">Loading chats...</p>
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <motion.div
-      className="min-h-screen bg-gradient-to-b from-background to-muted/20"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
-    >
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 md:px-12 py-4 flex items-center gap-4">
+    <AdminLayout>
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -373,9 +352,7 @@ export default function AdminChats() {
             <h2 className="text-xl font-bold gradient-text">All Chats</h2>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-12 py-8 space-y-6">
         {/* Tabs */}
         <Tabs defaultValue="conversations" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2">
@@ -433,7 +410,6 @@ export default function AdminChats() {
                   <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
                     <CardContent className="pt-6 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* User Type */}
                         <div className="space-y-2">
                           <label className="text-sm font-medium">User Type</label>
                           <Select
@@ -451,7 +427,6 @@ export default function AdminChats() {
                           </Select>
                         </div>
 
-                        {/* Dorm Filter */}
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Dorm</label>
                           <Select
@@ -470,7 +445,6 @@ export default function AdminChats() {
                           </Select>
                         </div>
 
-                        {/* Status Filter */}
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Status</label>
                           <Select
@@ -486,100 +460,11 @@ export default function AdminChats() {
                               <SelectItem value="pending_tour">Pending Tour</SelectItem>
                               <SelectItem value="accepted_tour">Accepted Tour</SelectItem>
                               <SelectItem value="declined_tour">Declined Tour</SelectItem>
-                              <SelectItem value="no_tour">No Tour Activity</SelectItem>
+                              <SelectItem value="no_tour">No Tour</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                       </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Time Range */}
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Time Range</label>
-                          <Select
-                            value={filters.timeRange}
-                            onValueChange={(value: any) => setFilters({ ...filters, timeRange: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Time</SelectItem>
-                              <SelectItem value="today">Today</SelectItem>
-                              <SelectItem value="7days">Last 7 Days</SelectItem>
-                              <SelectItem value="30days">Last 30 Days</SelectItem>
-                              <SelectItem value="custom">Custom Range</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* Sort By */}
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Sort By</label>
-                          <Select
-                            value={filters.sortBy}
-                            onValueChange={(value: any) => setFilters({ ...filters, sortBy: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="newest">Newest Activity</SelectItem>
-                              <SelectItem value="oldest">Oldest Activity</SelectItem>
-                              <SelectItem value="student_name">Student Name (A-Z)</SelectItem>
-                              <SelectItem value="owner_name">Owner Name (A-Z)</SelectItem>
-                              <SelectItem value="dorm_name">Dorm Name (A-Z)</SelectItem>
-                              <SelectItem value="message_count">Message Count</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {/* Custom Date Range */}
-                      {filters.timeRange === 'custom' && (
-                        <div className="flex gap-4">
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button variant="outline" className="flex-1">
-                                {filters.customDateRange.from ? 
-                                  filters.customDateRange.from.toLocaleDateString() : 
-                                  'From Date'}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                              <Calendar
-                                mode="single"
-                                selected={filters.customDateRange.from || undefined}
-                                onSelect={(date) => setFilters({
-                                  ...filters,
-                                  customDateRange: { ...filters.customDateRange, from: date || null }
-                                })}
-                                className="pointer-events-auto"
-                              />
-                            </PopoverContent>
-                          </Popover>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button variant="outline" className="flex-1">
-                                {filters.customDateRange.to ? 
-                                  filters.customDateRange.to.toLocaleDateString() : 
-                                  'To Date'}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                              <Calendar
-                                mode="single"
-                                selected={filters.customDateRange.to || undefined}
-                                onSelect={(date) => setFilters({
-                                  ...filters,
-                                  customDateRange: { ...filters.customDateRange, to: date || null }
-                                })}
-                                className="pointer-events-auto"
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -587,91 +472,79 @@ export default function AdminChats() {
             </AnimatePresence>
 
             {/* Conversations List */}
-            {filteredConversations.length === 0 ? (
-              <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <MessageSquare className="w-16 h-16 text-muted-foreground/50 mb-4" />
-                  <p className="text-center text-muted-foreground">
-                    {filters.search ? 'No conversations match your filters' : 'No conversations found'}
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-          <div className="space-y-3">
-            {filteredConversations.map((conv) => (
-              <motion.div
-                key={conv.id}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-              >
-                <Card
-                  className="cursor-pointer hover:shadow-lg transition-all bg-card/80 backdrop-blur-sm border-primary/20"
-                  onClick={() => navigate(`/admin/chats/${conv.id}`)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      {/* Avatars */}
-                      <div className="flex -space-x-3">
-                        <Avatar className="w-12 h-12 border-2 border-background">
-                          <AvatarImage src={conv.student_photo || undefined} />
-                          <AvatarFallback className="bg-primary/10">
-                            {conv.student_name?.charAt(0) || 'S'}
-                          </AvatarFallback>
-                        </Avatar>
-                        {conv.owner_photo && (
-                          <Avatar className="w-12 h-12 border-2 border-background">
-                            <AvatarImage src={conv.owner_photo} />
-                            <AvatarFallback className="bg-secondary/10">
-                              {conv.owner_name?.charAt(0) || 'O'}
-                            </AvatarFallback>
+            <div className="space-y-3">
+              {filteredConversations.length === 0 ? (
+                <Card className="p-8 text-center">
+                  <MessageSquare className="w-12 h-12 mx-auto text-foreground/20 mb-4" />
+                  <p className="text-foreground/60">No conversations found</p>
+                </Card>
+              ) : (
+                filteredConversations.map((conv) => (
+                  <motion.div
+                    key={conv.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <Card
+                      className="p-4 cursor-pointer hover:shadow-lg transition-all border-primary/10 hover:border-primary/30"
+                      onClick={() => navigate(`/admin/chats/${conv.id}`)}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <Avatar className="w-12 h-12">
+                            <AvatarImage src={conv.student_photo || undefined} />
+                            <AvatarFallback>{conv.student_name.charAt(0)}</AvatarFallback>
                           </Avatar>
-                        )}
-                      </div>
+                          {conv.unread_count > 0 && (
+                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
+                              {conv.unread_count}
+                            </span>
+                          )}
+                        </div>
 
-                      {/* Conversation Details */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-foreground truncate">
-                              {conv.student_name} {conv.owner_name && `↔ ${conv.owner_name}`}
-                            </h3>
-                            {conv.dorm_name && (
-                              <p className="text-sm text-muted-foreground truncate">
-                                {conv.dorm_name}
-                              </p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold truncate">{conv.student_name}</span>
+                            {conv.owner_name && (
+                              <>
+                                <span className="text-foreground/40">↔</span>
+                                <span className="text-sm text-foreground/70 truncate">{conv.owner_name}</span>
+                              </>
                             )}
                           </div>
-                          <div className="flex flex-col items-end gap-1 shrink-0">
-                            {conv.last_message_time && (
-                              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                {formatDistanceToNow(new Date(conv.last_message_time), {
-                                  addSuffix: true,
-                                })}
-                              </span>
+                          <p className="text-sm text-foreground/60 truncate">{conv.last_message || 'No messages'}</p>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <p className="text-xs text-foreground/40 mb-1">
+                            {conv.last_message_time 
+                              ? formatDistanceToNow(new Date(conv.last_message_time), { addSuffix: true })
+                              : 'N/A'
+                            }
+                          </p>
+                          <div className="flex gap-1 justify-end">
+                            {conv.dorm_name && (
+                              <Badge variant="outline" className="text-xs">{conv.dorm_name}</Badge>
                             )}
-                            {conv.unread_count > 0 && (
-                              <Badge variant="destructive" className="px-2 py-0.5 text-xs">
-                                {conv.unread_count}
+                            {conv.tour_status !== 'none' && (
+                              <Badge 
+                                variant={conv.tour_status === 'accepted' ? 'default' : conv.tour_status === 'pending' ? 'secondary' : 'destructive'}
+                                className="text-xs"
+                              >
+                                {conv.tour_status}
                               </Badge>
                             )}
                           </div>
                         </div>
-                        {conv.last_message && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {conv.last_message}
-                          </p>
-                        )}
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-              </div>
-            )}
+                    </Card>
+                  </motion.div>
+                ))
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>
-    </motion.div>
+    </AdminLayout>
   );
 }

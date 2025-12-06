@@ -19,6 +19,7 @@ import {
   Building2,
   MessageSquare,
   Filter,
+  ArrowLeft,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
@@ -37,6 +38,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface ContactMessage {
   id: string;
@@ -245,15 +247,27 @@ export default function AdminMessagesInbox() {
 
   if (loading || loadingData) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <AdminLayout>
+      <div className="p-6 space-y-6">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/admin')}
+          className="gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Dashboard
+        </Button>
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -487,49 +501,43 @@ export default function AdminMessagesInbox() {
                     className="w-full"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Delete Message
-                  </Button>
-                  <Button
-                    onClick={() => window.open(`mailto:${selectedMessage.email}`, '_blank')}
-                    className="w-full bg-primary"
-                  >
-                    <Mail className="w-4 h-4 mr-2" />
-                    Reply via Email
+                    Delete
                   </Button>
                 </div>
               </Card>
             ) : (
-              <Card className="p-12 text-center">
-                <Mail className="w-16 h-16 mx-auto text-foreground/20 mb-4" />
+              <Card className="p-8 text-center">
+                <MessageSquare className="w-12 h-12 mx-auto text-foreground/20 mb-4" />
                 <p className="text-foreground/60">Select a message to view details</p>
               </Card>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Admin Notes Dialog */}
-      <Dialog open={showNotesDialog} onOpenChange={setShowNotesDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Admin Notes</DialogTitle>
-            <DialogDescription>Add internal notes for this message (not visible to sender)</DialogDescription>
-          </DialogHeader>
-          <Textarea
-            value={adminNotes}
-            onChange={(e) => setAdminNotes(e.target.value)}
-            placeholder="Add notes here..."
-            rows={6}
-            className="resize-none"
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNotesDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={saveAdminNotes}>Save Notes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+        {/* Notes Dialog */}
+        <Dialog open={showNotesDialog} onOpenChange={setShowNotesDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Admin Notes</DialogTitle>
+              <DialogDescription>
+                Add internal notes about this message
+              </DialogDescription>
+            </DialogHeader>
+            <Textarea
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              placeholder="Enter notes..."
+              rows={5}
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowNotesDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={saveAdminNotes}>Save Notes</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </AdminLayout>
   );
 }

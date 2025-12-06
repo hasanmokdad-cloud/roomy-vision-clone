@@ -7,11 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Brain, ChevronDown, ChevronRight, Users, Home, TrendingUp } from "lucide-react";
-import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import { DashboardHeader } from "@/components/admin/DashboardHeader";
+import { Brain, ChevronDown, ChevronRight, Users, Home, ArrowLeft } from "lucide-react";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 
 export default function AdminAiDebug() {
   const navigate = useNavigate();
@@ -139,205 +137,209 @@ export default function AdminAiDebug() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <AdminSidebar />
-      
-      <div className="flex-1 overflow-auto">
-        <DashboardHeader />
-        
-        <div className="container mx-auto p-6 space-y-6">
-          {/* Header */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Brain className="w-6 h-6 text-purple-500" />
-                <div>
-                  <CardTitle>AI Match Debug Console</CardTitle>
-                  <CardDescription>
-                    View detailed AI match scores, sub-scores, and insights for debugging
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
+    <AdminLayout>
+      <div className="p-6 space-y-6">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/admin')}
+          className="gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Dashboard
+        </Button>
 
-          {/* Personality Stats */}
+        {/* Header */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Brain className="w-6 h-6 text-purple-500" />
+              <div>
+                <CardTitle>AI Match Debug Console</CardTitle>
+                <CardDescription>
+                  View detailed AI match scores, sub-scores, and insights for debugging
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Personality Stats */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="w-5 h-5 text-purple-500" />
+              Personality Matching Stats
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-muted/30 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">
+                  {students.filter(s => s.personality_test_completed).length}
+                </div>
+                <div className="text-xs text-muted-foreground">Tests Completed</div>
+              </div>
+              <div className="text-center p-4 bg-muted/30 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">
+                  {Math.round((students.filter(s => s.personality_test_completed).length / Math.max(students.length, 1)) * 100)}%
+                </div>
+                <div className="text-xs text-muted-foreground">Completion Rate</div>
+              </div>
+              <div className="text-center p-4 bg-muted/30 rounded-lg">
+                <div className="text-2xl font-bold text-amber-600">
+                  {students.filter(s => s.ai_match_plan === 'vip').length}
+                </div>
+                <div className="text-xs text-muted-foreground">VIP Users</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Student Selector */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-end gap-4">
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Select Student</label>
+                <Select value={selectedStudent || ''} onValueChange={setSelectedStudent}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a student..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {students.map(student => (
+                      <SelectItem key={student.id} value={student.id}>
+                        {student.full_name} ({student.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button 
+                onClick={simulateMatch} 
+                disabled={!selectedStudent || loading}
+              >
+                Simulate Match
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Logs Table */}
+        {selectedStudent && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="w-5 h-5 text-purple-500" />
-                Personality Matching Stats
-              </CardTitle>
+              <CardTitle>Recent AI Match Logs</CardTitle>
+              <CardDescription>
+                {logs.length} log entries
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-muted/30 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {students.filter(s => s.personality_test_completed).length}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Tests Completed</div>
+              {loading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Loading logs...
                 </div>
-                <div className="text-center p-4 bg-muted/30 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {Math.round((students.filter(s => s.personality_test_completed).length / Math.max(students.length, 1)) * 100)}%
-                  </div>
-                  <div className="text-xs text-muted-foreground">Completion Rate</div>
+              ) : logs.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No logs found. Try simulating a match.
                 </div>
-                <div className="text-center p-4 bg-muted/30 rounded-lg">
-                  <div className="text-2xl font-bold text-amber-600">
-                    {students.filter(s => s.ai_match_plan === 'vip').length}
-                  </div>
-                  <div className="text-xs text-muted-foreground">VIP Users</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              ) : (
+                <div className="space-y-2">
+                  {logs.map(log => (
+                    <Collapsible key={log.id}>
+                      <Card className="overflow-hidden">
+                        <CollapsibleTrigger
+                          onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
+                          className="w-full"
+                        >
+                          <div className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center gap-4">
+                              {expandedLog === log.id ? (
+                                <ChevronDown className="w-4 h-4" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4" />
+                              )}
+                              
+                              <div className="flex items-center gap-2">
+                                {log.mode === 'dorm' && <Home className="w-4 h-4" />}
+                                {log.mode === 'roommate' && <Users className="w-4 h-4" />}
+                                <Badge variant="outline">{log.mode}</Badge>
+                              </div>
 
-          {/* Student Selector */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-end gap-4">
-                <div className="flex-1">
-                  <label className="text-sm font-medium mb-2 block">Select Student</label>
-                  <Select value={selectedStudent || ''} onValueChange={setSelectedStudent}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a student..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {students.map(student => (
-                        <SelectItem key={student.id} value={student.id}>
-                          {student.full_name} ({student.email})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Button 
-                  onClick={simulateMatch} 
-                  disabled={!selectedStudent || loading}
-                >
-                  Simulate Match
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                              <Badge 
+                                className={
+                                  log.match_tier === 'vip' ? 'bg-amber-500' :
+                                  log.match_tier === 'advanced' ? 'bg-blue-500' :
+                                  'bg-muted'
+                                }
+                              >
+                                {log.match_tier}
+                              </Badge>
 
-          {/* Logs Table */}
-          {selectedStudent && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent AI Match Logs</CardTitle>
-                <CardDescription>
-                  {logs.length} log entries
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Loading logs...
-                  </div>
-                ) : logs.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No logs found. Try simulating a match.
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {logs.map(log => (
-                      <Collapsible key={log.id}>
-                        <Card className="overflow-hidden">
-                          <CollapsibleTrigger
-                            onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
-                            className="w-full"
-                          >
-                            <div className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
-                              <div className="flex items-center gap-4">
-                                {expandedLog === log.id ? (
-                                  <ChevronDown className="w-4 h-4" />
-                                ) : (
-                                  <ChevronRight className="w-4 h-4" />
-                                )}
-                                
-                                <div className="flex items-center gap-2">
-                                  {log.mode === 'dorm' && <Home className="w-4 h-4" />}
-                                  {log.mode === 'roommate' && <Users className="w-4 h-4" />}
-                                  <Badge variant="outline">{log.mode}</Badge>
-                                </div>
+                              <span className="text-sm text-muted-foreground">
+                                {log.result_count} matches
+                              </span>
 
-                                <Badge 
-                                  className={
-                                    log.match_tier === 'vip' ? 'bg-amber-500' :
-                                    log.match_tier === 'advanced' ? 'bg-blue-500' :
-                                    'bg-muted'
-                                  }
-                                >
-                                  {log.match_tier}
+                              {log.personality_used && (
+                                <Badge variant="secondary">
+                                  <Brain className="w-3 h-3 mr-1" />
+                                  Personality
                                 </Badge>
-
-                                <span className="text-sm text-muted-foreground">
-                                  {log.result_count} matches
-                                </span>
-
-                                {log.personality_used && (
-                                  <Badge variant="secondary">
-                                    <Brain className="w-3 h-3 mr-1" />
-                                    Personality
-                                  </Badge>
-                                )}
-                              </div>
-
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                <span>{log.processing_time_ms}ms</span>
-                                <span>
-                                  {new Date(log.created_at).toLocaleString()}
-                                </span>
-                              </div>
+                              )}
                             </div>
-                          </CollapsibleTrigger>
 
-                          <CollapsibleContent>
-                            <Separator />
-                            <div className="p-4 space-y-4 bg-muted/20">
-                              <div>
-                                <h4 className="text-sm font-semibold mb-2">Match Details</h4>
-                                <div className="grid grid-cols-2 gap-2 text-sm">
-                                  <div>
-                                    <span className="text-muted-foreground">Mode:</span> {log.mode}
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Tier:</span> {log.match_tier}
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Results:</span> {log.result_count}
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Personality Used:</span> {log.personality_used ? 'Yes' : 'No'}
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Insights Generated:</span> {log.insights_generated ? 'Yes' : 'No'}
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Processing Time:</span> {log.processing_time_ms}ms
-                                  </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span>{log.processing_time_ms}ms</span>
+                              <span>
+                                {new Date(log.created_at).toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        </CollapsibleTrigger>
+
+                        <CollapsibleContent>
+                          <Separator />
+                          <div className="p-4 space-y-4 bg-muted/20">
+                            <div>
+                              <h4 className="text-sm font-semibold mb-2">Match Details</h4>
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">Mode:</span> {log.mode}
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Tier:</span> {log.match_tier}
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Results:</span> {log.result_count}
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Personality Used:</span> {log.personality_used ? 'Yes' : 'No'}
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Insights Generated:</span> {log.insights_generated ? 'Yes' : 'No'}
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Processing Time:</span> {log.processing_time_ms}ms
                                 </div>
                               </div>
-
-                              <div className="text-xs text-muted-foreground italic">
-                                Note: Sub-scores for individual matches are shown in the AI Match page when matches are loaded.
-                                Future enhancement: Store match details in logs for full debugging.
-                              </div>
                             </div>
-                          </CollapsibleContent>
-                        </Card>
-                      </Collapsible>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
+
+                            <div className="text-xs text-muted-foreground italic">
+                              Note: Sub-scores for individual matches are shown in the AI Match page when matches are loaded.
+                              Future enhancement: Store match details in logs for full debugging.
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      </Card>
+                    </Collapsible>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
-    </div>
+    </AdminLayout>
   );
 }
