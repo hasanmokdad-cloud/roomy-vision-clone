@@ -108,6 +108,7 @@ const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
 const AdminBilling = lazy(() => import("./pages/admin/AdminBilling"));
 const MockWhishAdminAddCard = lazy(() => import("./pages/admin/MockWhishAdminAddCard"));
 const AdminRefunds = lazy(() => import("./pages/admin/AdminRefunds"));
+const AdminEarnings = lazy(() => import("./pages/admin/AdminEarnings"));
 const VerifyDevice = lazy(() => import("./pages/devices/VerifyDevice"));
 const SecureAccount = lazy(() => import("./pages/devices/SecureAccount"));
 const DevicesPage = lazy(() => import("./pages/settings/DevicesPage"));
@@ -304,6 +305,7 @@ const AppRoutes = () => {
           <Route path="/admin/billing" element={<ProtectedRoute element={<AdminBilling />} requiredRole="admin" />} />
           <Route path="/mock-whish-admin-add-card" element={<ProtectedRoute element={<MockWhishAdminAddCard />} requiredRole="admin" />} />
           <Route path="/admin/refunds" element={<ProtectedRoute element={<AdminRefunds />} requiredRole="admin" />} />
+          <Route path="/admin/earnings" element={<ProtectedRoute element={<AdminEarnings />} requiredRole="admin" />} />
           <Route path="/admin/chats" element={<ProtectedRoute element={<AdminChats />} requiredRole="admin" />} />
           <Route path="/admin/chats/:conversationId" element={<ProtectedRoute element={<AdminChatView />} requiredRole="admin" />} />
             <Route path="/admin/chats/analytics" element={<ProtectedRoute element={<AdminChatAnalytics />} requiredRole="admin" />} />

@@ -307,7 +307,7 @@ export default function AdminDashboard() {
                   <p className="text-xs text-muted-foreground">Pending Owner Payouts</p>
                 </div>
                 <Button
-                  onClick={() => navigate("/admin/analytics")}
+                  onClick={() => navigate("/admin/earnings")}
                   className="w-full mt-2"
                   variant="outline"
                 >
