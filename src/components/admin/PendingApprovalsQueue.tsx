@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,9 +19,10 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { AdminDormPreviewModal } from './AdminDormPreviewModal';
-import { Clock, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Eye, ArrowRight } from 'lucide-react';
 
 export function PendingApprovalsQueue() {
+  const navigate = useNavigate();
   const [pendingDorms, setPendingDorms] = useState<any[]>([]);
   const [pendingClaims, setPendingClaims] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -217,11 +219,20 @@ export function PendingApprovalsQueue() {
 
   return (
     <Card className="glass-hover">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Clock className="w-5 h-5" />
           Pending Approvals
         </CardTitle>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => navigate('/admin/pending-review')}
+          className="gap-1"
+        >
+          View All
+          <ArrowRight className="w-4 h-4" />
+        </Button>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="dorms">
