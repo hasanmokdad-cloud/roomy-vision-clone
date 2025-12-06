@@ -1,5 +1,18 @@
 # Roomy Security Guidelines
 
+## Current Security Status
+
+✅ **All security errors resolved**  
+⚠️ **Only 1 intentional warning remaining**: `pg_net` extension in public schema (Supabase requirement)
+
+### Summary
+- RLS enforced on: `owners`, `user_devices`, `inquiries`, `students`, `messages`, `payments`, and all other sensitive tables
+- Public endpoints hardened with rate limiting, token-based auth, and input validation
+- Storage buckets secured with MIME type and file size restrictions
+- All views use `security_invoker=on` to respect RLS
+
+---
+
 ## Overview
 
 This document outlines security requirements and conventions for database schema changes in the Roomy platform. Following these guidelines ensures user data remains protected and prevents security regressions.
@@ -82,6 +95,70 @@ COMMENT ON POLICY "Public read access" ON public.table_name IS
   'This table contains only public reference data with no user PII';
 ```
 
+---
+
+## Sensitive Data Access Rules
+
+### Owner Data Exposure Rules
+
+**Table**: `owners`
+
+**Access Controls**:
+- ✅ Owners can view and update their own profile (`auth.uid() = user_id`)
+- ✅ Students can view owners they have relationships with (bookings, conversations, inquiries)
+- ✅ Admins can view all owner records
+- ❌ Anonymous users have NO access
+- ❌ No policy allows enumeration of all owners
+
+**Exposed Fields** (via legitimate relationships):
+- `full_name` - For communication purposes
+- `profile_photo_url` - For profile display
+- `email` - Only for direct messaging context
+
+**Protected Fields** (not exposed publicly):
+- `phone_number` - Private contact info
+- `whatsapp_language` - Preferences
+- `payout_*` fields - Financial data
+- `whish_account_id` - Payment identifiers
+
+### Device & Session Tracking Data
+
+**Table**: `user_devices`
+
+**Access Controls**:
+- ✅ Users can view their own devices (`auth.uid() = user_id`)
+- ✅ Users can insert their own devices (`auth.uid() = user_id`)
+- ✅ Users can update their own devices (`auth.uid() = user_id`)
+- ✅ Users can delete their own devices (`auth.uid() = user_id`)
+- ❌ No user can see another user's devices
+- ❌ Anonymous users have NO access
+
+**Sensitive Fields Protected**:
+- `fingerprint_hash` - Device fingerprint
+- `ip_region` - Geographic data
+- `browser`, `os` - Technical details
+- `verification_token` - Auth tokens
+
+### Student Inquiries & Contact Data
+
+**Table**: `inquiries`
+
+**Access Controls**:
+- ✅ Students can view their own inquiries (`student_id` matches student's record)
+- ✅ Students can update/delete their own inquiries
+- ✅ Owners can view inquiries for their dorms only (`owner_id` matches owner's record)
+- ✅ Owners can update inquiries (mark as read/responded)
+- ✅ Admins can view all inquiries
+- ✅ Anyone can INSERT (for contact forms)
+- ❌ Owners cannot see inquiries for other owners' properties
+- ❌ Students cannot see other students' inquiries
+
+**Inquiry Data Protected**:
+- `student_name`, `student_email`, `student_phone` - PII isolated to owner/admin view
+- `message` - Private communication
+
+---
+
 ## Sensitive Data Classification
 
 ### High Sensitivity (Strict RLS Required)
@@ -98,12 +175,15 @@ COMMENT ON POLICY "Public read access" ON public.table_name IS
 - `bookings` - Tour scheduling
 - `friendships` - Social connections
 - `notifications` - User alerts
+- `inquiries` - Contact submissions
 
 ### Low Sensitivity (RLS Recommended)
 - `dorms` - Verified listings (public read OK)
 - `rooms` - Available rooms (public read OK)
 - `personality_questions` - Survey questions (public read OK)
 - `reviews` - Approved reviews (public read OK)
+
+---
 
 ## Security Monitoring
 
@@ -143,6 +223,8 @@ Or use the SQL query in Supabase SQL Editor:
 -- Run: tests/security_new_tables_check.sql
 ```
 
+---
+
 ## Best Practices
 
 ### DO ✅
@@ -158,6 +240,8 @@ Or use the SQL query in Supabase SQL Editor:
 - Grant direct table access bypassing RLS
 - Store sensitive data in public-readable columns
 - Forget to add policies after enabling RLS
+
+---
 
 ## Troubleshooting
 
@@ -215,6 +299,8 @@ The following edge functions are intentionally public (no JWT authentication) bu
 All security monitoring views now use `WITH (security_invoker = on)` to ensure they respect RLS policies of the calling user:
 
 - `security_rls_overview` - Shows RLS status for all tables (authenticated users only)
+
+---
 
 ## Storage Bucket Security
 
