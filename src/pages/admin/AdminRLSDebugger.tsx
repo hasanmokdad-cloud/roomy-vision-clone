@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   Shield, 
   AlertCircle, 
@@ -16,11 +17,24 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  ArrowLeft
+  ArrowLeft,
+  TableIcon
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+
+interface RLSOverviewRow {
+  table_name: string;
+  rls_enabled: boolean;
+  policy_count: number;
+  select_policies: number;
+  insert_policies: number;
+  update_policies: number;
+  delete_policies: number;
+  is_sensitive: boolean;
+  security_status: string;
+}
 
 export default function AdminRLSDebugger() {
   const navigate = useNavigate();
@@ -29,6 +43,7 @@ export default function AdminRLSDebugger() {
   const [rlsErrors, setRlsErrors] = useState<any[]>([]);
   const [authState, setAuthState] = useState<any>(null);
   const [realtimeErrors, setRealtimeErrors] = useState<any[]>([]);
+  const [rlsOverview, setRlsOverview] = useState<RLSOverviewRow[]>([]);
 
   const fetchRlsErrors = async () => {
     setLoading(true);
@@ -53,10 +68,23 @@ export default function AdminRLSDebugger() {
     }
   };
 
+  const fetchRLSOverview = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('security_rls_overview')
+        .select('*')
+        .order('table_name');
+
+      if (error) throw error;
+      setRlsOverview((data as RLSOverviewRow[]) || []);
+    } catch (error: any) {
+      console.error('Error fetching RLS overview:', error);
+    }
+  };
+
   const checkAuthState = async () => {
     try {
       const { data, error } = await supabase.rpc('debug_auth_state');
-      
       if (error) throw error;
       setAuthState(data);
     } catch (error: any) {
@@ -66,6 +94,7 @@ export default function AdminRLSDebugger() {
 
   useEffect(() => {
     fetchRlsErrors();
+    fetchRLSOverview();
     checkAuthState();
 
     const channel = supabase
@@ -93,6 +122,28 @@ export default function AdminRLSDebugger() {
     };
   }, []);
 
+  const handleRefresh = async () => {
+    await Promise.all([fetchRlsErrors(), fetchRLSOverview(), checkAuthState()]);
+  };
+
+  // Compute stats from overview
+  const rlsStats = {
+    totalTables: rlsOverview.length,
+    rlsEnabled: rlsOverview.filter(t => t.rls_enabled).length,
+    withWarnings: rlsOverview.filter(t => 
+      (t.rls_enabled && t.policy_count === 0) || 
+      (t.is_sensitive && !t.rls_enabled) ||
+      (t.rls_enabled && t.select_policies === 0)
+    ).length,
+    sensitiveWithoutRLS: rlsOverview.filter(t => t.is_sensitive && !t.rls_enabled).length,
+  };
+
+  const warningTables = rlsOverview.filter(t => 
+    (t.rls_enabled && t.policy_count === 0) || 
+    (t.is_sensitive && !t.rls_enabled) ||
+    (t.rls_enabled && t.select_policies === 0)
+  );
+
   const ErrorCard = ({ error }: { error: any }) => (
     <Card className="p-4 mb-2 border-destructive/50">
       <div className="flex items-start gap-3">
@@ -110,13 +161,13 @@ export default function AdminRLSDebugger() {
             <div>
               <span className="text-muted-foreground">User ID:</span>{' '}
               <code className="bg-muted px-1 py-0.5 rounded">
-                {error.user_id || 'NULL'}
+                {error.user_id?.slice(0, 8) || 'NULL'}...
               </code>
             </div>
             <div>
               <span className="text-muted-foreground">Auth UID:</span>{' '}
               <code className="bg-muted px-1 py-0.5 rounded">
-                {error.auth_uid || 'NULL'}
+                {error.auth_uid?.slice(0, 8) || 'NULL'}...
               </code>
             </div>
           </div>
@@ -157,14 +208,14 @@ export default function AdminRLSDebugger() {
               Monitor and debug Row Level Security policies and authentication issues
             </p>
           </div>
-          <Button onClick={fetchRlsErrors} disabled={loading}>
+          <Button onClick={handleRefresh} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
 
         <Tabs defaultValue="errors" className="space-y-4">
-          <TabsList className="grid grid-cols-2 lg:grid-cols-6">
+          <TabsList className="grid grid-cols-2 lg:grid-cols-7">
             <TabsTrigger value="errors">
               <AlertCircle className="w-4 h-4 mr-2" />
               Errors
@@ -172,6 +223,10 @@ export default function AdminRLSDebugger() {
             <TabsTrigger value="realtime">
               <Activity className="w-4 h-4 mr-2" />
               Live
+            </TabsTrigger>
+            <TabsTrigger value="tables">
+              <TableIcon className="w-4 h-4 mr-2" />
+              Tables
             </TabsTrigger>
             <TabsTrigger value="auth">
               <Users className="w-4 h-4 mr-2" />
@@ -183,7 +238,7 @@ export default function AdminRLSDebugger() {
             </TabsTrigger>
             <TabsTrigger value="failing">
               <XCircle className="w-4 h-4 mr-2" />
-              Failing
+              Warnings
             </TabsTrigger>
             <TabsTrigger value="restricted">
               <Shield className="w-4 h-4 mr-2" />
@@ -232,6 +287,60 @@ export default function AdminRLSDebugger() {
                   ))}
                 </ScrollArea>
               )}
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="tables">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">All Tables RLS Status</h3>
+              <ScrollArea className="h-[600px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Table</TableHead>
+                      <TableHead>RLS</TableHead>
+                      <TableHead>Policies</TableHead>
+                      <TableHead>SELECT</TableHead>
+                      <TableHead>INSERT</TableHead>
+                      <TableHead>UPDATE</TableHead>
+                      <TableHead>DELETE</TableHead>
+                      <TableHead>Sensitive</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rlsOverview.map((table) => {
+                      const hasWarning = (table.rls_enabled && table.policy_count === 0) || 
+                        (table.is_sensitive && !table.rls_enabled) ||
+                        (table.rls_enabled && table.select_policies === 0);
+                      
+                      return (
+                        <TableRow key={table.table_name} className={hasWarning ? 'bg-destructive/10' : ''}>
+                          <TableCell className="font-mono text-sm">{table.table_name}</TableCell>
+                          <TableCell>
+                            <Badge variant={table.rls_enabled ? 'default' : 'destructive'}>
+                              {table.rls_enabled ? 'ON' : 'OFF'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{table.policy_count}</TableCell>
+                          <TableCell>
+                            <Badge variant={table.select_policies > 0 ? 'outline' : 'secondary'}>
+                              {table.select_policies}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{table.insert_policies}</TableCell>
+                          <TableCell>{table.update_policies}</TableCell>
+                          <TableCell>{table.delete_policies}</TableCell>
+                          <TableCell>
+                            {table.is_sensitive && (
+                              <Badge variant="secondary">Yes</Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
             </Card>
           </TabsContent>
 
@@ -295,127 +404,117 @@ export default function AdminRLSDebugger() {
           </TabsContent>
 
           <TabsContent value="stats">
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-4">
               <Card className="p-6">
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                  Total Errors
+                  Total Tables
                 </h4>
-                <p className="text-3xl font-bold">{rlsErrors.length}</p>
+                <p className="text-3xl font-bold">{rlsStats.totalTables}</p>
               </Card>
               <Card className="p-6">
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                  Most Common Table
+                  RLS Enabled
                 </h4>
-                <p className="text-3xl font-bold">
-                  {rlsErrors.length > 0
-                    ? rlsErrors
-                        .reduce((acc: any, e) => {
-                          acc[e.table_name] = (acc[e.table_name] || 0) + 1;
-                          return acc;
-                        }, {})
-                        ? Object.entries(
-                            rlsErrors.reduce((acc: any, e) => {
-                              acc[e.table_name] = (acc[e.table_name] || 0) + 1;
-                              return acc;
-                            }, {})
-                          ).sort((a: any, b: any) => b[1] - a[1])[0][0]
-                        : 'N/A'
-                    : 'N/A'}
-                </p>
+                <p className="text-3xl font-bold text-green-500">{rlsStats.rlsEnabled}</p>
               </Card>
               <Card className="p-6">
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                  Errors Today
+                  Tables with Warnings
                 </h4>
-                <p className="text-3xl font-bold">
-                  {
-                    rlsErrors.filter(
-                      (e) =>
-                        new Date(e.created_at).toDateString() ===
-                        new Date().toDateString()
-                    ).length
-                  }
-                </p>
+                <p className="text-3xl font-bold text-yellow-500">{rlsStats.withWarnings}</p>
+              </Card>
+              <Card className="p-6">
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                  RLS Errors (Total)
+                </h4>
+                <p className="text-3xl font-bold text-destructive">{rlsErrors.length}</p>
               </Card>
             </div>
 
             <Card className="p-6 mt-4">
               <h3 className="text-lg font-semibold mb-4">Errors by Table</h3>
-              <div className="space-y-2">
-                {Object.entries(
-                  rlsErrors.reduce((acc: any, e) => {
-                    acc[e.table_name] = (acc[e.table_name] || 0) + 1;
-                    return acc;
-                  }, {})
-                )
-                  .sort((a: any, b: any) => b[1] - a[1])
-                  .map(([table, count]: any) => (
-                    <div key={table} className="flex items-center justify-between">
-                      <span className="text-sm">{table}</span>
-                      <Badge variant="secondary">{count}</Badge>
-                    </div>
-                  ))}
-              </div>
+              {rlsErrors.length > 0 ? (
+                <div className="space-y-2">
+                  {Object.entries(
+                    rlsErrors.reduce((acc: any, e) => {
+                      acc[e.table_name] = (acc[e.table_name] || 0) + 1;
+                      return acc;
+                    }, {})
+                  )
+                    .sort((a: any, b: any) => b[1] - a[1])
+                    .map(([table, count]: any) => (
+                      <div key={table} className="flex items-center justify-between">
+                        <span className="text-sm">{table}</span>
+                        <Badge variant="secondary">{count}</Badge>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">No RLS errors recorded</p>
+              )}
             </Card>
           </TabsContent>
 
           <TabsContent value="failing">
             <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Tables Failing RLS</h3>
-              <div className="space-y-2">
-                {Object.entries(
-                  rlsErrors.reduce((acc: any, e) => {
-                    acc[e.table_name] = (acc[e.table_name] || 0) + 1;
-                    return acc;
-                  }, {})
-                )
-                  .sort((a: any, b: any) => b[1] - a[1])
-                  .map(([table, count]: any) => (
-                    <div key={table} className="flex items-center justify-between p-3 rounded-lg bg-destructive/10">
+              <h3 className="text-lg font-semibold mb-4">Tables with Security Warnings</h3>
+              {warningTables.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <CheckCircle className="w-12 h-12 mx-auto mb-2 text-green-500" />
+                  <p>All tables have proper RLS configuration!</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {warningTables.map((table) => (
+                    <div key={table.table_name} className="flex items-center justify-between p-3 rounded-lg bg-destructive/10">
                       <div>
-                        <p className="font-semibold">{table}</p>
+                        <p className="font-semibold font-mono">{table.table_name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {count} error{count > 1 ? 's' : ''} detected
+                          {!table.rls_enabled && table.is_sensitive && 'Sensitive table without RLS'}
+                          {table.rls_enabled && table.policy_count === 0 && 'RLS enabled but no policies'}
+                          {table.rls_enabled && table.policy_count > 0 && table.select_policies === 0 && 'No SELECT policy'}
                         </p>
                       </div>
-                      <Badge variant="destructive">{count}</Badge>
+                      <Badge variant="destructive">Warning</Badge>
                     </div>
                   ))}
-                {Object.keys(rlsErrors).length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">
-                    No tables with RLS errors
-                  </p>
-                )}
-              </div>
+                </div>
+              )}
             </Card>
           </TabsContent>
 
           <TabsContent value="restricted">
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Last 20 Restricted Queries</h3>
-              <ScrollArea className="h-[600px]">
-                {rlsErrors.slice(0, 20).map((error) => (
-                  <Card key={error.id} className="p-3 mb-2 border-l-4 border-l-destructive">
-                    <div className="flex items-start gap-2">
-                      <Shield className="w-4 h-4 text-destructive mt-1" />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="outline">{error.operation}</Badge>
-                          <Badge variant="outline">{error.table_name}</Badge>
-                          <span className="text-xs text-muted-foreground ml-auto">
-                            {new Date(error.created_at).toLocaleString()}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{error.error_message}</p>
-                        <div className="mt-2 p-2 bg-muted rounded text-xs">
-                          <span className="text-muted-foreground">User:</span>{' '}
-                          <code>{error.user_id || 'NULL'}</code>
+              {rlsErrors.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  No restricted queries recorded
+                </p>
+              ) : (
+                <ScrollArea className="h-[600px]">
+                  {rlsErrors.slice(0, 20).map((error) => (
+                    <Card key={error.id} className="p-3 mb-2 border-l-4 border-l-destructive">
+                      <div className="flex items-start gap-2">
+                        <Shield className="w-4 h-4 text-destructive mt-1" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline">{error.operation}</Badge>
+                            <Badge variant="outline">{error.table_name}</Badge>
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              {new Date(error.created_at).toLocaleString()}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{error.error_message}</p>
+                          <div className="mt-2 p-2 bg-muted rounded text-xs">
+                            <span className="text-muted-foreground">User:</span>{' '}
+                            <code>{error.user_id?.slice(0, 8) || 'NULL'}...</code>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Card>
-                ))}
-              </ScrollArea>
+                    </Card>
+                  ))}
+                </ScrollArea>
+              )}
             </Card>
           </TabsContent>
         </Tabs>
