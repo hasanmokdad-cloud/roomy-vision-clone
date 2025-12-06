@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Sparkles, User } from "lucide-react";
 import { format } from "date-fns";
+import DOMPurify from "dompurify";
 import { QuickActionChips } from "./QuickActionChips";
 import { FollowUpButtons } from "./FollowUpButtons";
 
@@ -25,6 +26,14 @@ export function ChatMessageBubble({
 }: ChatMessageBubbleProps) {
   const isUser = role === "user";
 
+  // Sanitize HTML to prevent XSS attacks - only allow safe tags
+  const sanitizeHtml = (html: string): string => {
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['strong', 'em', 'p', 'ul', 'li', 'b', 'i'],
+      ALLOWED_ATTR: ['class'],
+    });
+  };
+
   // Simple markdown-like rendering for assistant messages
   const renderContent = (text: string) => {
     if (isUser) return text;
@@ -33,15 +42,18 @@ export function ChatMessageBubble({
     return text.split("\n").map((line, i) => {
       // Bold text
       let processed = line.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>');
+      // Sanitize to prevent XSS
+      const sanitized = sanitizeHtml(processed);
+      
       // Bullet points
       if (line.trim().startsWith("•") || line.trim().startsWith("-")) {
         return (
-          <li key={i} className="ml-4 list-disc" dangerouslySetInnerHTML={{ __html: processed.replace(/^[•-]\s*/, '') }} />
+          <li key={i} className="ml-4 list-disc" dangerouslySetInnerHTML={{ __html: sanitizeHtml(sanitized.replace(/^[•-]\s*/, '')) }} />
         );
       }
       // Regular line
       return (
-        <p key={i} className={i > 0 ? "mt-2" : ""} dangerouslySetInnerHTML={{ __html: processed }} />
+        <p key={i} className={i > 0 ? "mt-2" : ""} dangerouslySetInnerHTML={{ __html: sanitized }} />
       );
     });
   };
