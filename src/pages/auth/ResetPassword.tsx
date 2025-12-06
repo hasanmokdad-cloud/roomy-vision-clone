@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { EmailProviderButtons } from "@/components/auth/EmailProviderButtons";
+import { checkPasswordBreach } from "@/utils/passwordBreachCheck";
 
 type ResetStep = 'checking' | 'loading' | 'form' | 'error';
 
@@ -80,6 +81,28 @@ export default function ResetPassword() {
 
     setIsLoading(true);
     try {
+      // Check password against breach database (HIBP k-anonymous API)
+      const breachResult = await checkPasswordBreach(password);
+      
+      if (breachResult.isBreached) {
+        // Log breach detection
+        try {
+          await supabase.from('password_breach_logs').insert({
+            action_type: 'reset_blocked',
+            breach_count: breachResult.breachCount
+          });
+        } catch {} // Silent fail for logging
+        
+        toast({
+          title: "Password Not Secure",
+          description: "This password has appeared in known data breaches. Please choose a more secure password.",
+          variant: "destructive",
+        });
+        setPassword("");
+        setConfirmPassword("");
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) throw error;

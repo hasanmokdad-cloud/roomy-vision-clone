@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const ADMIN_EMAIL = "hassan.mokdad01@lau.edu";
@@ -7,6 +8,28 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Rate limiting - 5 requests per minute per IP
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 5;
+const RATE_WINDOW = 60000; // 1 minute
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  
+  if (!record || now > record.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
+    return false;
+  }
+  
+  if (record.count >= RATE_LIMIT) {
+    return true;
+  }
+  
+  record.count++;
+  return false;
+}
 
 interface ContactPayload {
   first_name: string;
@@ -142,6 +165,43 @@ function generateContactNotificationHtml(
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limiting check
+  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
+                   req.headers.get("x-real-ip") || 
+                   "unknown";
+  
+  if (isRateLimited(clientIp)) {
+    console.log("[contact-form-email] Rate limit exceeded for IP:", clientIp);
+    
+    // Log rate limit event
+    try {
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+      await supabase.from("security_events").insert({
+        event_type: "rate_limit_exceeded",
+        severity: "warning",
+        ip_region: clientIp,
+        details: { function: "contact-form-email", limit: RATE_LIMIT, window: "1min" }
+      });
+    } catch (e) {
+      console.error("Failed to log rate limit event:", e);
+    }
+    
+    return new Response(
+      JSON.stringify({ error: "Too many requests. Please try again later." }),
+      { 
+        status: 429, 
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json",
+          "Retry-After": "60"
+        } 
+      }
+    );
   }
 
   try {
