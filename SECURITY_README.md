@@ -317,9 +317,68 @@ All storage buckets have MIME type restrictions and file size limits:
 
 ---
 
+## Security Events Monitoring
+
+### Overview
+
+The platform includes a centralized security events monitoring system accessible only to admins at `/admin/security`.
+
+### Monitored Event Types
+
+| Event Type | Severity | Description |
+|------------|----------|-------------|
+| `login_failed` | warning | Failed login attempt |
+| `device_verification_failed` | warning | Device verification token expired or invalid |
+| `device_verified` | info | Device successfully verified |
+| `device_denied` | warning | User denied a suspicious device |
+| `all_sessions_revoked` | critical | All user sessions revoked (security response) |
+| `rate_limit_exceeded` | warning | API rate limit hit |
+| `suspicious_activity` | critical | Detected suspicious behavior patterns |
+| `otp_failed` | warning | Failed OTP verification |
+| `high_frequency_signup` | warning | Abnormal account creation rate |
+
+### Database Table
+
+```sql
+CREATE TABLE public.security_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_type TEXT NOT NULL,
+  user_id UUID,
+  ip_region TEXT,
+  user_agent TEXT,
+  details JSONB DEFAULT '{}',
+  severity TEXT NOT NULL DEFAULT 'info',  -- 'info', 'warning', 'critical'
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+### RLS Policies
+
+- **SELECT**: Admin-only (`user_roles.role = 'admin'`)
+- **INSERT**: Open for edge functions (use service_role key)
+- **UPDATE/DELETE**: Not permitted
+
+### Real-time Monitoring
+
+The admin dashboard subscribes to real-time events via Supabase Realtime. Critical events trigger toast notifications.
+
+### Edge Function Integration
+
+The following edge functions log security events:
+
+| Function | Events Logged |
+|----------|--------------|
+| `confirm-device` | `device_verified`, `device_verification_failed` |
+| `secure-account` | `all_sessions_revoked`, `device_denied` |
+| `roomy-chat` | `rate_limit_exceeded` |
+| `generate-tour-questions` | `rate_limit_exceeded` |
+
+---
+
 ## Related Files
 
 - `tests/security_rls_checks.sql` - Comprehensive RLS test suite
 - `tests/security_new_tables_check.sql` - Quick diagnostic query
 - `scripts/check_security_baseline.ts` - CI-ready security check
 - `tests/README.md` - Test execution guide
+- `src/pages/admin/AdminSecurityMonitor.tsx` - Security monitoring dashboard

@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
       console.error("Error deleting devices:", deleteError);
     }
 
-    // 3. Log security event
+    // 3. Log security event to device_security_logs
     await supabase.from("device_security_logs").insert({
       user_id: userId,
       event_type: "all_sessions_revoked",
@@ -78,6 +78,27 @@ Deno.serve(async (req) => {
       device_fingerprint: device.fingerprint_hash,
       ip_region: device.ip_region,
       metadata: { device_name: device.device_name }
+    });
+
+    // 5. Log to centralized security_events table for monitoring
+    await supabase.from("security_events").insert({
+      event_type: "all_sessions_revoked",
+      user_id: userId,
+      ip_region: device.ip_region,
+      details: { 
+        reason: "User denied suspicious device",
+        suspicious_device: device.device_name,
+        device_fingerprint: device.fingerprint_hash
+      },
+      severity: "critical"
+    });
+
+    await supabase.from("security_events").insert({
+      event_type: "device_denied",
+      user_id: userId,
+      ip_region: device.ip_region,
+      details: { device_name: device.device_name },
+      severity: "warning"
     });
 
     console.log(`Account secured for user ${userId} - all sessions revoked`);

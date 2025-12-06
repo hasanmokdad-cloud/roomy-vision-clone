@@ -72,6 +72,7 @@ const ReviewManagement = lazy(() => import("./pages/owner/ReviewManagement"));
 
 const AdminOwners = lazy(() => import("./pages/admin/AdminOwners"));
 const AdminSystemMonitor = lazy(() => import("./pages/admin/AdminSystemMonitor"));
+const AdminSecurityMonitor = lazy(() => import("./pages/admin/AdminSecurityMonitor"));
 const OwnerCalendar = lazy(() => import("./pages/owner/OwnerCalendar"));
 const RoommateProfile = lazy(() => import("./pages/RoommateProfile"));
 const AdminHome = lazy(() => import("./pages/admin/AdminHome"));
@@ -298,6 +299,7 @@ const AppRoutes = () => {
           <Route path="/admin/payments" element={<ProtectedRoute element={<AdminPaymentsDashboard />} requiredRole="admin" />} />
           <Route path="/admin/notifications" element={<ProtectedRoute element={<AdminNotifications />} requiredRole="admin" />} />
           <Route path="/admin/system-monitor" element={<ProtectedRoute element={<AdminSystemMonitor />} requiredRole="admin" />} />
+          <Route path="/admin/security" element={<ProtectedRoute element={<AdminSecurityMonitor />} requiredRole="admin" />} />
           <Route path="/admin/wallet" element={<ProtectedRoute element={<AdminWallet />} requiredRole="admin" />} />
           <Route path="/admin/billing" element={<ProtectedRoute element={<AdminBilling />} requiredRole="admin" />} />
           <Route path="/mock-whish-admin-add-card" element={<ProtectedRoute element={<MockWhishAdminAddCard />} requiredRole="admin" />} />

@@ -54,6 +54,21 @@ serve(async (req) => {
     
     if (isRateLimited(clientIP)) {
       console.warn(`[generate-tour-questions] Rate limit exceeded for IP: ${clientIP.slice(0, 10)}...`);
+      
+      // Log rate limit event to security_events
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (supabaseUrl && supabaseKey) {
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        await supabase.from("security_events").insert({
+          event_type: "rate_limit_exceeded",
+          ip_region: req.headers.get('cf-ipcountry') || null,
+          user_agent: req.headers.get('user-agent')?.slice(0, 200) || null,
+          details: { endpoint: "generate-tour-questions", ip_partial: clientIP.slice(0, 10) },
+          severity: "warning"
+        });
+      }
+      
       return new Response(
         JSON.stringify({ error: "Too many requests. Please try again later." }),
         { 
