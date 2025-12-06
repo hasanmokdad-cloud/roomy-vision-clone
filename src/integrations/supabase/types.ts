@@ -3898,6 +3898,7 @@ export type Database = {
       }
       generate_share_code: { Args: never; Returns: string }
       get_current_owner_id: { Args: never; Returns: string }
+      get_current_student_id: { Args: never; Returns: string }
       get_mutual_friends_count: {
         Args: { user_a: string; user_b: string }
         Returns: number
@@ -3953,6 +3954,7 @@ export type Database = {
       }
       is_admin: { Args: { check_user_id: string }; Returns: boolean }
       is_blocked: { Args: { user_a: string; user_b: string }; Returns: boolean }
+      is_current_user_owner: { Args: { p_owner_id: string }; Returns: boolean }
       is_verified_dorm_owner: { Args: { p_owner_id: string }; Returns: boolean }
       owner_can_view_student: {
         Args: { p_student_id: string }
@@ -3970,6 +3972,10 @@ export type Database = {
           p_value: string
         }
         Returns: undefined
+      }
+      user_is_conversation_participant: {
+        Args: { p_conversation_id: string }
+        Returns: boolean
       }
       user_owns_dorm: { Args: { p_dorm_id: string }; Returns: boolean }
       user_owns_dorm_direct: { Args: { p_dorm_id: string }; Returns: boolean }
