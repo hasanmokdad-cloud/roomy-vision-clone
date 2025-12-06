@@ -11,6 +11,33 @@ const twilioWhatsAppNumber = Deno.env.get("TWILIO_WHATSAPP_NUMBER")!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Rate limiting configuration
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 10; // max requests per window (accommodate legitimate bursts)
+const RATE_WINDOW_MS = 60 * 1000; // 1 minute window
+
+function getClientIP(req: Request): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+         req.headers.get("x-real-ip") ||
+         "unknown";
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW_MS });
+    return false;
+  }
+  
+  record.count++;
+  if (record.count > RATE_LIMIT) {
+    return true;
+  }
+  return false;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -193,6 +220,34 @@ function isValidUUID(str: unknown): boolean {
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limiting check
+  const clientIP = getClientIP(req);
+  if (isRateLimited(clientIP)) {
+    console.warn(`[send-owner-notification] Rate limit exceeded for IP: ${clientIP.substring(0, 10)}...`);
+    
+    // Log rate limit event (fire and forget)
+    supabase.from("security_events").insert({
+      event_type: "rate_limit_exceeded",
+      details: { 
+        function: "send-owner-notification", 
+        ip_partial: clientIP.substring(0, 10) + "..." 
+      },
+      severity: "warning"
+    });
+    
+    return new Response(
+      JSON.stringify({ error: "Too many requests. Please try again later." }),
+      { 
+        status: 429, 
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json",
+          "Retry-After": "60"
+        } 
+      }
+    );
   }
 
   try {
