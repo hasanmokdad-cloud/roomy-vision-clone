@@ -912,6 +912,13 @@ export type Database = {
             foreignKeyName: "dorm_claims_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
+            referencedRelation: "owner_messaging_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dorm_claims_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
             referencedRelation: "owners"
             referencedColumns: ["id"]
           },
@@ -1021,6 +1028,13 @@ export type Database = {
           website?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "dorms_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owner_messaging_info"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "dorms_owner_id_fkey"
             columns: ["owner_id"]
@@ -1156,6 +1170,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "inquiries_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owner_messaging_info"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "inquiries_owner_id_fkey"
@@ -1403,6 +1424,13 @@ export type Database = {
             foreignKeyName: "notifications_log_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
+            referencedRelation: "owner_messaging_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_log_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
             referencedRelation: "owners"
             referencedColumns: ["id"]
           },
@@ -1471,6 +1499,13 @@ export type Database = {
             foreignKeyName: "owner_availability_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
+            referencedRelation: "owner_messaging_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_availability_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
             referencedRelation: "owners"
             referencedColumns: ["id"]
           },
@@ -1530,6 +1565,13 @@ export type Database = {
             foreignKeyName: "owner_notifications_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
+            referencedRelation: "owner_messaging_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_notifications_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
             referencedRelation: "owners"
             referencedColumns: ["id"]
           },
@@ -1579,6 +1621,13 @@ export type Database = {
           whish_token?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "owner_payment_methods_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owner_messaging_info"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "owner_payment_methods_owner_id_fkey"
             columns: ["owner_id"]
@@ -1872,6 +1921,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "payout_history_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owner_messaging_info"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "payout_history_owner_id_fkey"
@@ -2312,6 +2368,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "review_responses_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owner_messaging_info"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "review_responses_owner_id_fkey"
             columns: ["owner_id"]
@@ -3468,6 +3531,24 @@ export type Database = {
         }
         Relationships: []
       }
+      owner_messaging_info: {
+        Row: {
+          full_name: string | null
+          id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          full_name?: string | null
+          id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          full_name?: string | null
+          id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       owner_performance_view: {
         Row: {
           dorm_id: string | null
@@ -3478,6 +3559,13 @@ export type Database = {
           views: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "dorms_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owner_messaging_info"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "dorms_owner_id_fkey"
             columns: ["owner_id"]
