@@ -25,6 +25,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+
+export default function AdminStudents() {
   const navigate = useNavigate();
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -253,3 +255,4 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
       </div>
     </AdminLayout>
   );
+}

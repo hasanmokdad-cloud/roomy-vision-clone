@@ -19,6 +19,8 @@ import DormEditModal from '@/components/admin/DormEditModal';
 import { AdminDormPreviewModal } from '@/components/admin/AdminDormPreviewModal';
 import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+
+export default function AdminDorms() {
   const navigate = useNavigate();
   const [dorms, setDorms] = useState<any[]>([]);
   const [filteredDorms, setFilteredDorms] = useState<any[]>([]);
@@ -295,33 +297,33 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
             ))}
           </TableBody>
         </Table>
-      </div>
+          </div>
 
-      {/* Edit Modal */}
-      {selectedDorm && (
-        <DormEditModal
-          dorm={selectedDorm}
-          isOpen={editModalOpen}
-          onClose={() => {
-            setEditModalOpen(false);
-            setSelectedDorm(null);
-          }}
-          onUpdate={loadDorms}
-          isAdmin={true}
-        />
-      )}
+          {/* Edit Modal */}
+          {selectedDorm && (
+            <DormEditModal
+              dorm={selectedDorm}
+              isOpen={editModalOpen}
+              onClose={() => {
+                setEditModalOpen(false);
+                setSelectedDorm(null);
+              }}
+              onUpdate={loadDorms}
+              isAdmin={true}
+            />
+          )}
 
-      {/* Preview Modal */}
-      {selectedDorm && (
-        <AdminDormPreviewModal
-          dorm={selectedDorm}
-          isOpen={previewModalOpen}
-          onClose={() => {
-            setPreviewModalOpen(false);
-            setSelectedDorm(null);
-          }}
-        />
-      )}
+          {/* Preview Modal */}
+          {selectedDorm && (
+            <AdminDormPreviewModal
+              dorm={selectedDorm}
+              isOpen={previewModalOpen}
+              onClose={() => {
+                setPreviewModalOpen(false);
+                setSelectedDorm(null);
+              }}
+            />
+          )}
         </div>
       </div>
     </AdminLayout>

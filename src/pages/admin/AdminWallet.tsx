@@ -198,8 +198,7 @@ export default function AdminWallet() {
             </Button>
           </div>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-8">
-        {/* Balance Summary Card */}
+          {/* Balance Summary Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -428,7 +427,7 @@ export default function AdminWallet() {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+          </motion.div>
         </div>
       </div>
     </AdminLayout>
