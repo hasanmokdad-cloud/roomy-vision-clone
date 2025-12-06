@@ -183,13 +183,33 @@ async function sendWhatsAppMessage(to: string, message: string): Promise<{ succe
   }
 }
 
+// Validate UUID format
+function isValidUUID(str: unknown): boolean {
+  if (!str || typeof str !== 'string') return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { notificationId }: NotificationPayload = await req.json();
+    const body = await req.json();
+    const notificationId = body?.notificationId;
+
+    // Input validation - require valid UUID
+    if (!notificationId || !isValidUUID(notificationId)) {
+      console.warn("[send-owner-notification] Invalid notificationId provided");
+      return new Response(
+        JSON.stringify({ error: "Invalid notification ID" }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
 
     // Fetch notification details
     const { data: notification, error: notifError } = await supabase
@@ -203,7 +223,14 @@ serve(async (req) => {
       .single();
 
     if (notifError || !notification) {
-      throw new Error("Notification not found");
+      console.warn(`[send-owner-notification] Notification not found: ${notificationId.slice(0, 8)}...`);
+      return new Response(
+        JSON.stringify({ error: "Notification not found" }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
 
     // Skip if already sent or if owner has disabled notifications
