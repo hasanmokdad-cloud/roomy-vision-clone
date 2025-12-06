@@ -187,6 +187,47 @@ COMMENT ON POLICY "Public read access" ON public.table_name IS
 
 ## Security Monitoring
 
+### Private Schema Security Views
+
+The `private` schema contains security monitoring views and functions not exposed via PostgREST/Data API. Access only via Supabase SQL Editor.
+
+#### Suspicious Activity Detection
+
+```sql
+-- Multi-region access in <5 minutes (possible credential theft)
+SELECT * FROM private.suspicious_multi_region_access;
+
+-- Excessive requests from same IP (DDoS/brute force)
+SELECT * FROM private.excessive_ip_requests;
+
+-- Failed security events (device denials, rate limits, invalid tokens)
+SELECT * FROM private.failed_security_events;
+```
+
+#### Hourly Security Summary
+
+```sql
+-- Get security event summary for last 7 days
+SELECT * FROM private.get_security_hourly_summary(168);
+```
+
+### Automated RLS Regression Testing
+
+Database functions automatically detect RLS issues:
+
+```sql
+-- Check for RLS regressions (returns table of issues)
+SELECT * FROM private.check_rls_regression();
+
+-- Assert security baseline (raises exception if critical issues found)
+SELECT private.assert_security_baseline();
+```
+
+**Automated checks include:**
+- Sensitive tables without RLS enabled
+- RLS-enabled tables with zero policies
+- Overly permissive `USING (true)` policies on sensitive tables
+
 ### Quick Security Check
 
 Run this query to check for issues:
@@ -279,18 +320,23 @@ The `pg_net` extension is installed in the `public` schema because Supabase requ
 
 The following edge functions are intentionally public (no JWT authentication) but are hardened with alternative security measures:
 
-| Function | Security Measures |
-|----------|-------------------|
-| `confirm-device` | Cryptographically random tokens (UUID v4), single-use enforcement, 30-minute expiry, no PII on invalid tokens |
-| `secure-account` | Token-based auth, single-use tokens, logs security events, revokes all sessions on use |
-| `verify-device` | Same as confirm-device |
-| `send-device-email` | Internal use only, called by auth triggers |
-| `generate-tour-questions` | Rate limiting (5/min/IP), input validation, sanitized responses |
-| `send-owner-notification` | Internal use only, called by process-pending-notifications, input validation |
-| `process-pending-notifications` | Cron job, no user input |
-| `process-booking-reminders` | Cron job, no user input |
-| `roomy-chat` | Rate limiting (10/min), input sanitization, tier-gated responses |
-| `contact-form-email` | Rate limiting, input validation, no sensitive data returned |
+| Function | Rate Limit | Security Measures |
+|----------|------------|-------------------|
+| `confirm-device` | 5/min/IP | Cryptographically random tokens (UUID v4), single-use enforcement, 30-minute expiry, no PII on invalid tokens |
+| `secure-account` | 3/min/IP | Token-based auth, single-use tokens, logs security events, revokes all sessions on use |
+| `verify-device` | 5/min/IP | Same as confirm-device |
+| `send-device-email` | N/A | Internal use only, called by auth triggers |
+| `generate-tour-questions` | 5/min/IP | Input validation (UUID format), sanitized AI responses |
+| `send-owner-notification` | 10/min/IP | Internal use, UUID validation, called by cron jobs |
+| `process-pending-notifications` | N/A | Cron job, no user input |
+| `process-booking-reminders` | N/A | Cron job, no user input |
+| `roomy-chat` | 10/min/IP | Input sanitization, tier-gated responses, no PII leakage |
+| `contact-form-email` | 5/min/IP | Input validation, no sensitive data returned |
+
+**Rate Limiting Implementation:**
+- In-memory rate limiting per IP address (extracted from `x-forwarded-for` or `x-real-ip` headers)
+- Returns `429 Too Many Requests` with `Retry-After: 60` header on violations
+- Rate limit events logged to `security_events` table for monitoring
 
 **Why public?** These functions support email verification, device trust, and notification flows that occur before or without user authentication.
 
@@ -368,8 +414,9 @@ The following edge functions log security events:
 
 | Function | Events Logged |
 |----------|--------------|
-| `confirm-device` | `device_verified`, `device_verification_failed` |
-| `secure-account` | `all_sessions_revoked`, `device_denied` |
+| `confirm-device` | `device_verified`, `device_verification_failed`, `rate_limit_exceeded` |
+| `secure-account` | `all_sessions_revoked`, `device_denied`, `rate_limit_exceeded` |
+| `send-owner-notification` | `rate_limit_exceeded` |
 | `roomy-chat` | `rate_limit_exceeded` |
 | `generate-tour-questions` | `rate_limit_exceeded` |
 
