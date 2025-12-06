@@ -12,7 +12,8 @@ import {
   RefreshCcw,
   Brain,
   Bell,
-  FileStack
+  FileStack,
+  DollarSign
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -29,6 +30,7 @@ const menuItems = [
   { title: 'Chat Analytics', url: '/admin/chats/analytics', icon: BarChart3 },
   { title: 'AI Diagnostics', url: '/admin/ai-diagnostics', icon: Activity },
   { title: 'Personality Insights', url: '/admin/personality-insights', icon: Brain },
+  { title: 'Earnings', url: '/admin/earnings', icon: DollarSign },
   { title: 'Admin Payout Wallet', url: '/admin/wallet', icon: Wallet },
   { title: 'Refund Center', url: '/admin/refunds', icon: RefreshCcw },
   { title: 'Notifications', url: '/admin/notifications', icon: Bell },
