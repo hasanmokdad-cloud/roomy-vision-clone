@@ -12,41 +12,34 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow, subDays, startOfDay } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 
 type ConversationWithDetails = {
   id: string;
-  student_id: string;
+  user_a_id: string | null;
+  user_b_id: string | null;
+  student_id: string | null;
   owner_id: string | null;
   dorm_id: string | null;
   updated_at: string;
-  student_name: string;
-  student_photo: string | null;
-  owner_name: string | null;
-  owner_photo: string | null;
+  participant_a_name: string;
+  participant_a_photo: string | null;
+  participant_a_role: string;
+  participant_b_name: string;
+  participant_b_photo: string | null;
+  participant_b_role: string;
   dorm_name: string | null;
   last_message: string | null;
   last_message_time: string | null;
   unread_count: number;
   message_count: number;
-  tour_status: 'pending' | 'accepted' | 'declined' | 'none';
 };
 
 type ChatFilters = {
   search: string;
-  userType: 'all' | 'student' | 'owner';
-  dormId: string | null;
-  status: 'all' | 'unread' | 'pending_tour' | 'accepted_tour' | 'declined_tour' | 'no_tour';
-  timeRange: 'all' | 'today' | '7days' | '30days' | 'custom';
-  customDateRange: { from: Date | null; to: Date | null };
-  sortBy: 'newest' | 'oldest' | 'student_name' | 'owner_name' | 'dorm_name' | 'message_count';
-};
-
-type DormOption = {
-  id: string;
-  name: string;
+  chatType: 'all' | 'student-student' | 'student-owner';
+  timeRange: 'all' | 'today' | '7days' | '30days';
+  sortBy: 'newest' | 'oldest' | 'message_count';
 };
 
 export default function AdminChats() {
@@ -55,37 +48,34 @@ export default function AdminChats() {
   const [conversations, setConversations] = useState<ConversationWithDetails[]>([]);
   const [filteredConversations, setFilteredConversations] = useState<ConversationWithDetails[]>([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [dorms, setDorms] = useState<DormOption[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [adminUserId, setAdminUserId] = useState<string | null>(null);
   
   const [filters, setFilters] = useState<ChatFilters>({
     search: '',
-    userType: 'all',
-    dormId: null,
-    status: 'all',
+    chatType: 'all',
     timeRange: 'all',
-    customDateRange: { from: null, to: null },
     sortBy: 'newest',
   });
 
   useEffect(() => {
-    loadAllConversations();
-    loadDorms();
+    loadAdminUserId();
   }, []);
+
+  useEffect(() => {
+    if (adminUserId) {
+      loadAllConversations();
+    }
+  }, [adminUserId]);
 
   useEffect(() => {
     applyFilters();
   }, [filters, conversations]);
 
-  const loadDorms = async () => {
-    const { data } = await supabase
-      .from('dorms')
-      .select('id, name, dorm_name')
-      .eq('verification_status', 'Verified')
-      .order('name');
-    
-    if (data) {
-      setDorms(data.map(d => ({ id: d.id, name: d.name || d.dorm_name || 'Unnamed Dorm' })));
+  const loadAdminUserId = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setAdminUserId(user.id);
     }
   };
 
@@ -96,35 +86,23 @@ export default function AdminChats() {
       const query = filters.search.toLowerCase();
       filtered = filtered.filter((conv) => {
         return (
-          conv.student_name?.toLowerCase().includes(query) ||
-          conv.owner_name?.toLowerCase().includes(query) ||
+          conv.participant_a_name?.toLowerCase().includes(query) ||
+          conv.participant_b_name?.toLowerCase().includes(query) ||
           conv.dorm_name?.toLowerCase().includes(query) ||
-          conv.last_message?.toLowerCase().includes(query) ||
-          conv.id.toLowerCase().includes(query)
+          conv.last_message?.toLowerCase().includes(query)
         );
       });
     }
 
-    if (filters.userType === 'student') {
-      filtered = filtered.filter(conv => conv.owner_id === null);
-    } else if (filters.userType === 'owner') {
-      filtered = filtered.filter(conv => conv.owner_id !== null);
-    }
-
-    if (filters.dormId) {
-      filtered = filtered.filter(conv => conv.dorm_id === filters.dormId);
-    }
-
-    if (filters.status === 'unread') {
-      filtered = filtered.filter(conv => conv.unread_count > 0);
-    } else if (filters.status === 'pending_tour') {
-      filtered = filtered.filter(conv => conv.tour_status === 'pending');
-    } else if (filters.status === 'accepted_tour') {
-      filtered = filtered.filter(conv => conv.tour_status === 'accepted');
-    } else if (filters.status === 'declined_tour') {
-      filtered = filtered.filter(conv => conv.tour_status === 'declined');
-    } else if (filters.status === 'no_tour') {
-      filtered = filtered.filter(conv => conv.tour_status === 'none');
+    if (filters.chatType === 'student-student') {
+      filtered = filtered.filter(conv => 
+        conv.participant_a_role === 'student' && conv.participant_b_role === 'student'
+      );
+    } else if (filters.chatType === 'student-owner') {
+      filtered = filtered.filter(conv => 
+        (conv.participant_a_role === 'student' && conv.participant_b_role === 'owner') ||
+        (conv.participant_a_role === 'owner' && conv.participant_b_role === 'student')
+      );
     }
 
     if (filters.timeRange !== 'all') {
@@ -137,18 +115,10 @@ export default function AdminChats() {
         cutoffDate = subDays(now, 7);
       } else if (filters.timeRange === '30days') {
         cutoffDate = subDays(now, 30);
-      } else if (filters.timeRange === 'custom' && filters.customDateRange.from) {
-        cutoffDate = filters.customDateRange.from;
       }
 
       if (cutoffDate) {
-        filtered = filtered.filter(conv => {
-          const convDate = new Date(conv.updated_at);
-          const endDate = filters.timeRange === 'custom' && filters.customDateRange.to 
-            ? filters.customDateRange.to 
-            : now;
-          return convDate >= cutoffDate! && convDate <= endDate;
-        });
+        filtered = filtered.filter(conv => new Date(conv.updated_at) >= cutoffDate!);
       }
     }
 
@@ -158,12 +128,6 @@ export default function AdminChats() {
           return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
         case 'oldest':
           return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
-        case 'student_name':
-          return a.student_name.localeCompare(b.student_name);
-        case 'owner_name':
-          return (a.owner_name || '').localeCompare(b.owner_name || '');
-        case 'dorm_name':
-          return (a.dorm_name || '').localeCompare(b.dorm_name || '');
         case 'message_count':
           return b.message_count - a.message_count;
         default:
@@ -177,11 +141,8 @@ export default function AdminChats() {
   const clearFilters = () => {
     setFilters({
       search: '',
-      userType: 'all',
-      dormId: null,
-      status: 'all',
+      chatType: 'all',
       timeRange: 'all',
-      customDateRange: { from: null, to: null },
       sortBy: 'newest',
     });
   };
@@ -189,26 +150,21 @@ export default function AdminChats() {
   const getActiveFilterCount = () => {
     let count = 0;
     if (filters.search) count++;
-    if (filters.userType !== 'all') count++;
-    if (filters.dormId) count++;
-    if (filters.status !== 'all') count++;
+    if (filters.chatType !== 'all') count++;
     if (filters.timeRange !== 'all') count++;
     if (filters.sortBy !== 'newest') count++;
     return count;
   };
 
   const loadAllConversations = async () => {
+    if (!adminUserId) return;
+    
     setLoadingData(true);
     try {
+      // Get all conversations EXCLUDING admin conversations
       const { data: convData, error: convError } = await supabase
         .from('conversations')
-        .select(`
-          id,
-          student_id,
-          owner_id,
-          dorm_id,
-          updated_at
-        `)
+        .select('id, user_a_id, user_b_id, student_id, owner_id, dorm_id, updated_at')
         .order('updated_at', { ascending: false });
 
       if (convError) throw convError;
@@ -220,103 +176,112 @@ export default function AdminChats() {
         return;
       }
 
-      const studentIds = [...new Set(convData.map(c => c.student_id).filter(Boolean))];
-      const ownerIds = [...new Set(convData.map(c => c.owner_id).filter(Boolean))];
-      const dormIds = [...new Set(convData.map(c => c.dorm_id).filter(Boolean))];
+      // Filter out admin conversations (where admin is user_a or user_b)
+      const nonAdminConversations = convData.filter(c => 
+        c.user_a_id !== adminUserId && c.user_b_id !== adminUserId
+      );
 
+      if (nonAdminConversations.length === 0) {
+        setConversations([]);
+        setFilteredConversations([]);
+        setLoadingData(false);
+        return;
+      }
+
+      // Get all unique user IDs
+      const userIds = [...new Set([
+        ...nonAdminConversations.map(c => c.user_a_id).filter(Boolean),
+        ...nonAdminConversations.map(c => c.user_b_id).filter(Boolean),
+      ])] as string[];
+
+      const dormIds = [...new Set(nonAdminConversations.map(c => c.dorm_id).filter(Boolean))] as string[];
+
+      // Fetch students
       const { data: students } = await supabase
         .from('students')
-        .select('id, full_name, profile_photo_url')
-        .in('id', studentIds);
+        .select('id, user_id, full_name, profile_photo_url');
 
+      // Fetch owners
       const { data: owners } = await supabase
         .from('owners')
-        .select('id, full_name, profile_photo_url')
-        .in('id', ownerIds);
+        .select('id, user_id, full_name, profile_photo_url');
 
+      // Fetch dorms
       const { data: dormsData } = await supabase
         .from('dorms')
         .select('id, name, dorm_name')
-        .in('id', dormIds);
+        .in('id', dormIds.length > 0 ? dormIds : ['00000000-0000-0000-0000-000000000000']);
 
-      const conversationIds = convData.map(c => c.id);
+      // Create user lookup maps
+      const studentByUserId = new Map(students?.map(s => [s.user_id, s]) || []);
+      const ownerByUserId = new Map(owners?.map(o => [o.user_id, o]) || []);
+      const dormMap = new Map(dormsData?.map(d => [d.id, d]) || []);
+
+      // Fetch messages for all conversations
+      const conversationIds = nonAdminConversations.map(c => c.id);
       const { data: messagesData } = await supabase
         .from('messages')
         .select('conversation_id, body, created_at, read')
         .in('conversation_id', conversationIds)
         .order('created_at', { ascending: false });
 
-      const { data: bookingsData } = await supabase
-        .from('bookings')
-        .select('student_id, owner_id, dorm_id, status')
-        .in('dorm_id', dormIds.length > 0 ? dormIds : ['00000000-0000-0000-0000-000000000000']);
-
-      const { data: unreadData } = await supabase
-        .from('messages')
-        .select('conversation_id, read')
-        .in('conversation_id', conversationIds)
-        .eq('read', false);
-
-      const studentMap = new Map(students?.map(s => [s.id, s]) || []);
-      const ownerMap = new Map(owners?.map(o => [o.id, o]) || []);
-      const dormMap = new Map(dormsData?.map(d => [d.id, d]) || []);
-      
       const messagesByConv = new Map<string, any[]>();
+      const messageCountByConv = new Map<string, number>();
+      const unreadByConv = new Map<string, number>();
+      
       messagesData?.forEach(msg => {
         if (!messagesByConv.has(msg.conversation_id)) {
           messagesByConv.set(msg.conversation_id, []);
         }
         messagesByConv.get(msg.conversation_id)!.push(msg);
-      });
-
-      const unreadByConv = new Map<string, number>();
-      const messageCountByConv = new Map<string, number>();
-      unreadData?.forEach(msg => {
-        const count = unreadByConv.get(msg.conversation_id) || 0;
-        unreadByConv.set(msg.conversation_id, count + 1);
-      });
-      messagesData?.forEach(msg => {
+        
         const count = messageCountByConv.get(msg.conversation_id) || 0;
         messageCountByConv.set(msg.conversation_id, count + 1);
+        
+        if (!msg.read) {
+          const unread = unreadByConv.get(msg.conversation_id) || 0;
+          unreadByConv.set(msg.conversation_id, unread + 1);
+        }
       });
 
-      const getTourStatus = (studentId: string, ownerId: string | null, dormId: string | null) => {
-        if (!ownerId || !dormId) return 'none';
-        const booking = bookingsData?.find(
-          b => b.student_id === studentId && b.owner_id === ownerId && b.dorm_id === dormId
-        );
-        if (!booking) return 'none';
-        if (booking.status === 'pending') return 'pending';
-        if (booking.status === 'approved') return 'accepted';
-        if (booking.status === 'declined') return 'declined';
-        return 'none';
+      // Helper to get user info
+      const getUserInfo = (userId: string | null) => {
+        if (!userId) return { name: 'Unknown', photo: null, role: 'unknown' };
+        
+        const student = studentByUserId.get(userId);
+        if (student) return { name: student.full_name || 'Student', photo: student.profile_photo_url, role: 'student' };
+        
+        const owner = ownerByUserId.get(userId);
+        if (owner) return { name: owner.full_name || 'Owner', photo: owner.profile_photo_url, role: 'owner' };
+        
+        return { name: 'Unknown User', photo: null, role: 'unknown' };
       };
 
-      const enriched: ConversationWithDetails[] = convData.map(conv => {
-        const student = studentMap.get(conv.student_id);
-        const owner = conv.owner_id ? ownerMap.get(conv.owner_id) : null;
+      const enriched: ConversationWithDetails[] = nonAdminConversations.map(conv => {
+        const participantA = getUserInfo(conv.user_a_id);
+        const participantB = getUserInfo(conv.user_b_id);
         const dorm = conv.dorm_id ? dormMap.get(conv.dorm_id) : null;
         const lastMsg = messagesByConv.get(conv.id)?.[0];
-        const unreadCount = unreadByConv.get(conv.id) || 0;
-        const messageCount = messageCountByConv.get(conv.id) || 0;
-        const tourStatus = getTourStatus(conv.student_id, conv.owner_id, conv.dorm_id);
 
         return {
           id: conv.id,
+          user_a_id: conv.user_a_id,
+          user_b_id: conv.user_b_id,
           student_id: conv.student_id,
           owner_id: conv.owner_id,
           dorm_id: conv.dorm_id,
           updated_at: conv.updated_at,
-          student_name: student?.full_name || 'Unknown Student',
-          student_photo: student?.profile_photo_url || null,
-          owner_name: owner?.full_name || null,
-          owner_photo: owner?.profile_photo_url || null,
+          participant_a_name: participantA.name,
+          participant_a_photo: participantA.photo,
+          participant_a_role: participantA.role,
+          participant_b_name: participantB.name,
+          participant_b_photo: participantB.photo,
+          participant_b_role: participantB.role,
           dorm_name: dorm?.name || dorm?.dorm_name || null,
           last_message: lastMsg?.body || null,
           last_message_time: lastMsg?.created_at || null,
-          unread_count: unreadCount,
-          message_count: messageCount,
-          tour_status: tourStatus as any,
+          unread_count: unreadByConv.get(conv.id) || 0,
+          message_count: messageCountByConv.get(conv.id) || 0,
         };
       });
 
@@ -349,8 +314,11 @@ export default function AdminChats() {
           </Button>
           <div className="flex items-center gap-2">
             <MessageSquare className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-bold gradient-text">All Chats</h2>
+            <h2 className="text-xl font-bold gradient-text">All User Chats</h2>
           </div>
+          <p className="text-foreground/60 text-sm ml-4">
+            (Excludes admin/support conversations)
+          </p>
         </div>
 
         {/* Tabs */}
@@ -370,7 +338,7 @@ export default function AdminChats() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="Search by student, owner, dorm, or message..."
+                  placeholder="Search by name, dorm, or message..."
                   value={filters.search}
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                   className="pl-10 bg-card/50 backdrop-blur-sm border-primary/20"
@@ -411,56 +379,53 @@ export default function AdminChats() {
                     <CardContent className="pt-6 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">User Type</label>
+                          <label className="text-sm font-medium">Chat Type</label>
                           <Select
-                            value={filters.userType}
-                            onValueChange={(value: any) => setFilters({ ...filters, userType: value })}
+                            value={filters.chatType}
+                            onValueChange={(value: any) => setFilters({ ...filters, chatType: value })}
                           >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">All</SelectItem>
-                              <SelectItem value="student">Students Only</SelectItem>
-                              <SelectItem value="owner">Owners Only</SelectItem>
+                              <SelectItem value="all">All Chats</SelectItem>
+                              <SelectItem value="student-student">Student ↔ Student</SelectItem>
+                              <SelectItem value="student-owner">Student ↔ Owner</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
 
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Dorm</label>
+                          <label className="text-sm font-medium">Time Range</label>
                           <Select
-                            value={filters.dormId || 'all'}
-                            onValueChange={(value) => setFilters({ ...filters, dormId: value === 'all' ? null : value })}
+                            value={filters.timeRange}
+                            onValueChange={(value: any) => setFilters({ ...filters, timeRange: value })}
                           >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">All Dorms</SelectItem>
-                              {dorms.map(dorm => (
-                                <SelectItem key={dorm.id} value={dorm.id}>{dorm.name}</SelectItem>
-                              ))}
+                              <SelectItem value="all">All Time</SelectItem>
+                              <SelectItem value="today">Today</SelectItem>
+                              <SelectItem value="7days">Last 7 Days</SelectItem>
+                              <SelectItem value="30days">Last 30 Days</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
 
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Status</label>
+                          <label className="text-sm font-medium">Sort By</label>
                           <Select
-                            value={filters.status}
-                            onValueChange={(value: any) => setFilters({ ...filters, status: value })}
+                            value={filters.sortBy}
+                            onValueChange={(value: any) => setFilters({ ...filters, sortBy: value })}
                           >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">All</SelectItem>
-                              <SelectItem value="unread">Unread</SelectItem>
-                              <SelectItem value="pending_tour">Pending Tour</SelectItem>
-                              <SelectItem value="accepted_tour">Accepted Tour</SelectItem>
-                              <SelectItem value="declined_tour">Declined Tour</SelectItem>
-                              <SelectItem value="no_tour">No Tour</SelectItem>
+                              <SelectItem value="newest">Newest First</SelectItem>
+                              <SelectItem value="oldest">Oldest First</SelectItem>
+                              <SelectItem value="message_count">Most Messages</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -470,6 +435,35 @@ export default function AdminChats() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="p-4">
+                <p className="text-sm text-foreground/60">Total Chats</p>
+                <p className="text-2xl font-bold">{conversations.length}</p>
+              </Card>
+              <Card className="p-4">
+                <p className="text-sm text-foreground/60">Student ↔ Student</p>
+                <p className="text-2xl font-bold">
+                  {conversations.filter(c => c.participant_a_role === 'student' && c.participant_b_role === 'student').length}
+                </p>
+              </Card>
+              <Card className="p-4">
+                <p className="text-sm text-foreground/60">Student ↔ Owner</p>
+                <p className="text-2xl font-bold">
+                  {conversations.filter(c => 
+                    (c.participant_a_role === 'student' && c.participant_b_role === 'owner') ||
+                    (c.participant_a_role === 'owner' && c.participant_b_role === 'student')
+                  ).length}
+                </p>
+              </Card>
+              <Card className="p-4">
+                <p className="text-sm text-foreground/60">Total Messages</p>
+                <p className="text-2xl font-bold">
+                  {conversations.reduce((sum, c) => sum + c.message_count, 0)}
+                </p>
+              </Card>
+            </div>
 
             {/* Conversations List */}
             <div className="space-y-3">
@@ -485,56 +479,44 @@ export default function AdminChats() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    <Card
-                      className="p-4 cursor-pointer hover:shadow-lg transition-all border-primary/10 hover:border-primary/30"
-                      onClick={() => navigate(`/admin/chats/${conv.id}`)}
+                    <Card 
+                      className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => navigate('/admin/chats/view', { state: { conversationId: conv.id } })}
                     >
                       <div className="flex items-center gap-4">
-                        <div className="relative">
-                          <Avatar className="w-12 h-12">
-                            <AvatarImage src={conv.student_photo || undefined} />
-                            <AvatarFallback>{conv.student_name.charAt(0)}</AvatarFallback>
+                        <div className="flex -space-x-3">
+                          <Avatar className="w-10 h-10 border-2 border-background">
+                            <AvatarImage src={conv.participant_a_photo || undefined} />
+                            <AvatarFallback>{conv.participant_a_name[0]}</AvatarFallback>
                           </Avatar>
-                          {conv.unread_count > 0 && (
-                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
-                              {conv.unread_count}
-                            </span>
+                          <Avatar className="w-10 h-10 border-2 border-background">
+                            <AvatarImage src={conv.participant_b_photo || undefined} />
+                            <AvatarFallback>{conv.participant_b_name[0]}</AvatarFallback>
+                          </Avatar>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium truncate">{conv.participant_a_name}</span>
+                            <span className="text-foreground/40">↔</span>
+                            <span className="font-medium truncate">{conv.participant_b_name}</span>
+                          </div>
+                          {conv.last_message && (
+                            <p className="text-sm text-foreground/60 truncate">{conv.last_message}</p>
                           )}
                         </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold truncate">{conv.student_name}</span>
-                            {conv.owner_name && (
-                              <>
-                                <span className="text-foreground/40">↔</span>
-                                <span className="text-sm text-foreground/70 truncate">{conv.owner_name}</span>
-                              </>
-                            )}
-                          </div>
-                          <p className="text-sm text-foreground/60 truncate">{conv.last_message || 'No messages'}</p>
-                        </div>
-
                         <div className="text-right shrink-0">
-                          <p className="text-xs text-foreground/40 mb-1">
-                            {conv.last_message_time 
-                              ? formatDistanceToNow(new Date(conv.last_message_time), { addSuffix: true })
-                              : 'N/A'
-                            }
-                          </p>
-                          <div className="flex gap-1 justify-end">
-                            {conv.dorm_name && (
-                              <Badge variant="outline" className="text-xs">{conv.dorm_name}</Badge>
-                            )}
-                            {conv.tour_status !== 'none' && (
-                              <Badge 
-                                variant={conv.tour_status === 'accepted' ? 'default' : conv.tour_status === 'pending' ? 'secondary' : 'destructive'}
-                                className="text-xs"
-                              >
-                                {conv.tour_status}
-                              </Badge>
-                            )}
+                          <div className="flex gap-1 mb-1">
+                            <Badge variant="outline" className="text-xs">
+                              {conv.participant_a_role}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {conv.participant_b_role}
+                            </Badge>
                           </div>
+                          <p className="text-xs text-foreground/40">
+                            {formatDistanceToNow(new Date(conv.updated_at), { addSuffix: true })}
+                          </p>
+                          <p className="text-xs text-foreground/40">{conv.message_count} messages</p>
                         </div>
                       </div>
                     </Card>
