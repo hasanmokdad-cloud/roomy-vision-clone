@@ -56,8 +56,13 @@ export function OwnerSidebarFixed({ isOpen, onClose, isMobile }: OwnerSidebarFix
       {/* Menu Items */}
       <nav className="p-2 space-y-1">
         {menuItems.map((item) => {
+          // Special handling for Room Management to match /owner/rooms AND /owner/dorms/*/rooms
+          const isRoomManagementActive = item.url === '/owner/rooms' && 
+            (location.pathname === '/owner/rooms' || /^\/owner\/dorms\/[^/]+\/rooms/.test(location.pathname));
+          
           const isActive = location.pathname === item.url || 
-            (item.url === '/owner' && location.pathname === '/owner');
+            (item.url === '/owner' && location.pathname === '/owner') ||
+            isRoomManagementActive;
           
           return (
             <NavLink

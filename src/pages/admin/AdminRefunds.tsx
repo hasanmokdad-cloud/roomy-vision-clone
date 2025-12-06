@@ -24,6 +24,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface RefundRequest {
   id: string;
@@ -294,33 +295,31 @@ export default function AdminRefunds() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
+      <AdminLayout>
+        <div className="p-4 md:p-8 flex items-center justify-center min-h-[50vh]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <motion.div
-      className="min-h-screen bg-gradient-to-b from-background to-muted/20"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-    >
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 md:px-12 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
-              <ArrowLeft className="w-5 h-5" />
+    <AdminLayout>
+      <div className="p-4 md:p-8">
+        <div className="max-w-6xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h2 className="text-3xl font-semibold text-foreground">Refund Center</h2>
+            </div>
+            <Button variant="outline" onClick={loadRefundRequests} className="gap-2">
+              <RefreshCcw className="w-4 h-4" />
+              Refresh
             </Button>
-            <h2 className="text-xl font-bold gradient-text">Refund Center</h2>
           </div>
-          <Button variant="outline" onClick={loadRefundRequests} className="gap-2">
-            <RefreshCcw className="w-4 h-4" />
-            Refresh
-          </Button>
-        </div>
-      </div>
 
       <div className="max-w-6xl mx-auto px-4 md:px-12 py-8 space-y-8">
         {/* Stats Cards */}
@@ -535,6 +534,8 @@ export default function AdminRefunds() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </motion.div>
+        </div>
+      </div>
+    </AdminLayout>
   );
 }

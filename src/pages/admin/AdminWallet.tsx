@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { CardBrandIcon } from "@/components/payments/CardBrandIcons";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 
 interface AdminCard {
   id: string;
@@ -167,37 +168,35 @@ export default function AdminWallet() {
 
   if (roleLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <Skeleton className="h-12 w-48" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-64 w-full" />
+      <AdminLayout>
+        <div className="p-4 md:p-8">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <Skeleton className="h-12 w-48" />
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <motion.div
-      className="min-h-screen bg-gradient-to-b from-background to-muted/20"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-    >
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
-              <ArrowLeft className="w-5 h-5" />
+    <AdminLayout>
+      <div className="p-4 md:p-8">
+        <div className="max-w-6xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h1 className="text-3xl font-semibold text-foreground">Admin Wallet & Payouts</h1>
+            </div>
+            <Button variant="outline" size="sm" onClick={loadAdminWalletData}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
             </Button>
-            <h1 className="text-xl font-bold gradient-text">Admin Wallet & Payouts</h1>
           </div>
-          <Button variant="outline" size="sm" onClick={loadAdminWalletData}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
-      </div>
 
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-8">
         {/* Balance Summary Card */}
@@ -430,7 +429,8 @@ export default function AdminWallet() {
             </CardContent>
           </Card>
         </motion.div>
+        </div>
       </div>
-    </motion.div>
+    </AdminLayout>
   );
 }
