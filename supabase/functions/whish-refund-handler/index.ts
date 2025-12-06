@@ -143,6 +143,24 @@ Deno.serve(async (req) => {
       const baseDeposit = refundRequest.base_deposit || reservation.deposit_amount || 0;
       const commissionAmount = refundRequest.refund_admin_amount || reservation.commission_amount || (baseDeposit * 0.1);
 
+      // Log to admin_audit_log for comprehensive audit trail
+      await supabaseClient.from('admin_audit_log').insert({
+        admin_user_id: initiated_by,
+        action_type: 'refund_approval',
+        affected_user_id: refundRequest.student_id,
+        affected_record_id: reservation_id,
+        table_affected: 'reservations',
+        old_values: { status: reservation.status, refund_status: refundRequest.status },
+        new_values: { status: 'refunded', refund_status: 'refunded' },
+        metadata: { 
+          refund_request_id,
+          base_deposit: baseDeposit,
+          commission_amount: commissionAmount,
+          total_refunded: reservation.total_amount,
+          whish_refund_id: whishRefundId
+        }
+      });
+
       // Debit owner wallet (base deposit amount)
       const { data: ownerWallet } = await supabaseClient
         .from('owner_payment_methods')

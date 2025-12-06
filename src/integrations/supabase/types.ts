@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action_type: string
+          admin_user_id: string
+          affected_record_id: string | null
+          affected_user_id: string | null
+          created_at: string | null
+          id: string
+          ip_region: string | null
+          metadata: Json | null
+          new_values: Json | null
+          old_values: Json | null
+          table_affected: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_user_id: string
+          affected_record_id?: string | null
+          affected_user_id?: string | null
+          created_at?: string | null
+          id?: string
+          ip_region?: string | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          table_affected?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_user_id?: string
+          affected_record_id?: string | null
+          affected_user_id?: string | null
+          created_at?: string | null
+          id?: string
+          ip_region?: string | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          table_affected?: string | null
+        }
+        Relationships: []
+      }
       admin_income_history: {
         Row: {
           commission_amount: number
@@ -1703,6 +1745,33 @@ export type Database = {
         }
         Relationships: []
       }
+      password_breach_logs: {
+        Row: {
+          action_type: string
+          breach_count: number | null
+          created_at: string | null
+          email_hash: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          breach_count?: number | null
+          created_at?: string | null
+          email_hash?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          breach_count?: number | null
+          created_at?: string | null
+          email_hash?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       payment_disputes: {
         Row: {
           created_at: string | null
@@ -2536,6 +2605,33 @@ export type Database = {
         }
         Relationships: []
       }
+      rls_regression_results: {
+        Row: {
+          id: string
+          issues_detail: Json | null
+          issues_found: number | null
+          passed: boolean
+          run_at: string | null
+          triggered_by: string | null
+        }
+        Insert: {
+          id?: string
+          issues_detail?: Json | null
+          issues_found?: number | null
+          passed: boolean
+          run_at?: string | null
+          triggered_by?: string | null
+        }
+        Update: {
+          id?: string
+          issues_detail?: Json | null
+          issues_found?: number | null
+          passed?: boolean
+          run_at?: string | null
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       roles: {
         Row: {
           created_at: string | null
@@ -2934,6 +3030,39 @@ export type Database = {
           title?: string | null
           updated_at?: string | null
           view_count?: number | null
+        }
+        Relationships: []
+      }
+      storage_rejection_logs: {
+        Row: {
+          bucket_name: string
+          created_at: string | null
+          file_name: string | null
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          rejection_reason: string
+          user_id: string | null
+        }
+        Insert: {
+          bucket_name: string
+          created_at?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          rejection_reason: string
+          user_id?: string | null
+        }
+        Update: {
+          bucket_name?: string
+          created_at?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          rejection_reason?: string
+          user_id?: string | null
         }
         Relationships: []
       }

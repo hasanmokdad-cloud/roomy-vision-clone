@@ -6,16 +6,24 @@
 ⚠️ **Only 1 intentional warning remaining**: `pg_net` extension in public schema (Supabase requirement)
 
 ### Summary
-- RLS enforced on: `owners`, `user_devices`, `inquiries`, `students`, `messages`, `payments`, and all other sensitive tables
-- Public endpoints hardened with rate limiting, token-based auth, and input validation
+- RLS enforced on all sensitive tables (76+ tables)
+- Public endpoints hardened with IP-based rate limiting
+- Password breach detection via Have I Been Pwned API (k-anonymous)
+- Admin audit logging for all administrative actions
+- Automated RLS regression testing after schema changes
 - Storage buckets secured with MIME type and file size restrictions
 - All views use `security_invoker=on` to respect RLS
+
+### Security Features Implemented
+1. **Password Breach Detection** - HIBP k-anonymous API check on signup/reset
+2. **Admin Audit Trail** - Append-only `admin_audit_log` table
+3. **RLS Regression Testing** - Automated checks on schema changes
+4. **IP-Based Rate Limiting** - All sensitive endpoints protected
+5. **Security Event Monitoring** - Real-time admin dashboard
 
 ---
 
 ## Overview
-
-This document outlines security requirements and conventions for database schema changes in the Roomy platform. Following these guidelines ensures user data remains protected and prevents security regressions.
 
 ## Row Level Security (RLS) Requirements
 

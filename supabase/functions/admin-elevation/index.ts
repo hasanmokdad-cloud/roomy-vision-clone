@@ -59,13 +59,24 @@ serve(async (req) => {
 
       if (upsertError) throw upsertError;
 
-      // Log the action
+      // Log to system_logs (existing)
       await supabase.from('system_logs').insert({
         user_id: user.id,
         action: 'ELEVATE_TO_ADMIN',
         table_affected: 'user_roles',
         record_id: target_user_id,
         details: { target_user_id, elevated_by: user.id }
+      });
+
+      // Log to admin_audit_log (new comprehensive audit trail)
+      await supabase.from('admin_audit_log').insert({
+        admin_user_id: user.id,
+        action_type: 'role_change',
+        affected_user_id: target_user_id,
+        table_affected: 'user_roles',
+        old_values: null,
+        new_values: { role: 'admin' },
+        metadata: { action: 'elevate_to_admin' }
       });
 
       return new Response(
@@ -82,13 +93,24 @@ serve(async (req) => {
 
       if (deleteError) throw deleteError;
 
-      // Log the action
+      // Log to system_logs (existing)
       await supabase.from('system_logs').insert({
         user_id: user.id,
         action: 'REMOVE_ADMIN',
         table_affected: 'user_roles',
         record_id: target_user_id,
         details: { target_user_id, removed_by: user.id }
+      });
+
+      // Log to admin_audit_log (new comprehensive audit trail)
+      await supabase.from('admin_audit_log').insert({
+        admin_user_id: user.id,
+        action_type: 'role_change',
+        affected_user_id: target_user_id,
+        table_affected: 'user_roles',
+        old_values: { role: 'admin' },
+        new_values: null,
+        metadata: { action: 'remove_admin' }
       });
 
       return new Response(

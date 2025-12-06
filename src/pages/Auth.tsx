@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { generateDeviceFingerprint, getApproximateRegion } from "@/utils/deviceFingerprint";
+import { checkPasswordBreach, hashEmail } from "@/utils/passwordBreachCheck";
 import RoomyLogo from "@/assets/roomy-logo.png";
 
 export default function Auth() {
@@ -106,19 +107,46 @@ export default function Auth() {
   };
 
   const onSignup = async () => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `https://roomylb.com/auth/verify`,
-      },
-    });
-    if (error) {
-      toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
-      return;
+    setIsLoading(true);
+    try {
+      // Check password against breach database (HIBP k-anonymous API)
+      const breachResult = await checkPasswordBreach(password);
+      
+      if (breachResult.isBreached) {
+        // Log breach detection (privacy-preserving)
+        const emailHash = await hashEmail(email);
+        try {
+          await supabase.from('password_breach_logs').insert({
+            email_hash: emailHash,
+            action_type: 'signup_blocked',
+            breach_count: breachResult.breachCount
+          });
+        } catch {} // Silent fail for logging
+        
+        toast({ 
+          title: "Password Not Secure", 
+          description: "This password has appeared in known data breaches. Please choose a more secure password.",
+          variant: "destructive" 
+        });
+        return;
+      }
+
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `https://roomylb.com/auth/verify`,
+        },
+      });
+      if (error) {
+        toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      // Redirect to check email page
+      navigate(`/auth/check-email?email=${encodeURIComponent(email)}`);
+    } finally {
+      setIsLoading(false);
     }
-    // Redirect to check email page
-    navigate(`/auth/check-email?email=${encodeURIComponent(email)}`);
   };
 
   return (
@@ -174,8 +202,8 @@ export default function Auth() {
                   <Label htmlFor="password2">Password</Label>
                   <Input id="password2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
                 </div>
-                <Button onClick={onSignup} className="w-full bg-gradient-to-r from-[#00E0FF] to-[#BD00FF] hover:opacity-90">
-                  Create account
+                <Button onClick={onSignup} disabled={isLoading} className="w-full bg-gradient-to-r from-[#00E0FF] to-[#BD00FF] hover:opacity-90">
+                  {isLoading ? "Checking..." : "Create account"}
                 </Button>
               </TabsContent>
             </Tabs>

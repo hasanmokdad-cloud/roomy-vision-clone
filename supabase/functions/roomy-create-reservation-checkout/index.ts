@@ -5,6 +5,28 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Rate limiting - 3 requests per minute per IP (payment initiation)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 3;
+const RATE_WINDOW = 60000; // 1 minute
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  
+  if (!record || now > record.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
+    return false;
+  }
+  
+  if (record.count >= RATE_LIMIT) {
+    return true;
+  }
+  
+  record.count++;
+  return false;
+}
+
 interface ReservationCheckoutRequest {
   roomId: string;
   depositAmount?: number;
@@ -14,6 +36,43 @@ Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limiting check
+  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
+                   req.headers.get("x-real-ip") || 
+                   "unknown";
+  
+  if (isRateLimited(clientIp)) {
+    console.log("[reservation-checkout] Rate limit exceeded for IP:", clientIp);
+    
+    // Log rate limit event
+    try {
+      const logClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+      await logClient.from("security_events").insert({
+        event_type: "rate_limit_exceeded",
+        severity: "warning",
+        ip_region: clientIp,
+        details: { function: "roomy-create-reservation-checkout", limit: RATE_LIMIT, window: "1min" }
+      });
+    } catch (e) {
+      console.error("Failed to log rate limit event:", e);
+    }
+    
+    return new Response(
+      JSON.stringify({ error: "Too many payment attempts. Please try again later." }),
+      { 
+        status: 429, 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Retry-After': '60'
+        } 
+      }
+    );
   }
 
   try {
