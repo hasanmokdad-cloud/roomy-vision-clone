@@ -18,8 +18,7 @@ import {
 import DormEditModal from '@/components/admin/DormEditModal';
 import { AdminDormPreviewModal } from '@/components/admin/AdminDormPreviewModal';
 import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
-
-export default function AdminDorms() {
+import { AdminLayout } from '@/components/admin/AdminLayout';
   const navigate = useNavigate();
   const [dorms, setDorms] = useState<any[]>([]);
   const [filteredDorms, setFilteredDorms] = useState<any[]>([]);
@@ -146,20 +145,26 @@ export default function AdminDorms() {
   };
 
   if (loading) {
-    return <div className="text-center py-12">Loading dorms...</div>;
+    return (
+      <AdminLayout>
+        <div className="p-4 md:p-8 text-center">Loading dorms...</div>
+      </AdminLayout>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate('/admin')} className="gap-2">
-          <ArrowLeft className="w-4 h-4" /> Back
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold gradient-text">Manage Properties</h1>
-          <p className="text-foreground/60 mt-2">View and manage all dorm listings in real-time</p>
-        </div>
-      </div>
+    <AdminLayout>
+      <div className="p-4 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={() => navigate('/admin')} className="gap-2">
+              <ArrowLeft className="w-4 h-4" /> Back
+            </Button>
+            <div>
+              <h1 className="text-3xl font-semibold text-foreground">Manage Properties</h1>
+              <p className="text-muted-foreground mt-1">View and manage all dorm listings in real-time</p>
+            </div>
+          </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -317,6 +322,8 @@ export default function AdminDorms() {
           }}
         />
       )}
-    </div>
+        </div>
+      </div>
+    </AdminLayout>
   );
 }
