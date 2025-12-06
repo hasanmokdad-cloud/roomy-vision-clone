@@ -10,10 +10,8 @@ import {
   Activity, 
   Wallet, 
   RefreshCcw,
-  UserCheck,
   Brain,
   Bell,
-  Settings,
   FileStack
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -25,7 +23,6 @@ const menuItems = [
   { title: 'Manage Students', url: '/admin/students', icon: Users },
   { title: 'Manage Owners', url: '/admin/owners', icon: Building2 },
   { title: 'Manage Properties', url: '/admin/dorms', icon: Key },
-  { title: 'Dorm Ownership', url: '/admin/ownership', icon: UserCheck },
   { title: 'RLS Debugger', url: '/admin/rls-debugger', icon: ShieldCheck },
   { title: 'Support Inbox', url: '/admin/messages', icon: MessageSquare },
   { title: 'All Chats', url: '/admin/chats', icon: MessageSquare },
@@ -38,7 +35,6 @@ const menuItems = [
   { title: 'Analytics', url: '/admin/analytics', icon: BarChart3 },
   { title: 'System Monitor', url: '/admin/system-monitor', icon: Activity },
   { title: 'System Logs', url: '/admin/logs', icon: FileStack },
-  { title: 'Settings', url: '/admin/settings', icon: Settings },
 ];
 
 interface AdminSidebarFixedProps {
