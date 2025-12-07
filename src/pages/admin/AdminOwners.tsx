@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Download, Eye, Building2, CheckCircle, XCircle, Ban, Trash2, ArrowLeft, MessageCircle } from 'lucide-react';
+import { Search, Download, Eye, Building2, CheckCircle, XCircle, Ban, Trash2, ArrowLeft, MessageCircle, Check } from 'lucide-react';
 import { OwnerProfileModal } from '@/components/admin/OwnerProfileModal';
 import { createOrGetConversation } from '@/lib/conversationUtils';
 import {
@@ -359,7 +359,11 @@ export default function AdminOwners() {
                         onClick={() => updateOwnerStatus(owner.id, owner.status)}
                         title={owner.status === 'active' ? 'Suspend' : 'Activate'}
                       >
-                        <Ban className={`w-4 h-4 ${owner.status === 'active' ? 'text-orange-500' : 'text-green-500'}`} />
+                        {owner.status === 'active' ? (
+                          <Ban className="w-4 h-4 text-orange-500" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                        )}
                       </Button>
                       <Button
                         size="sm"

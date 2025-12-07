@@ -12,7 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Eye, Edit, Ban, Trash2 } from 'lucide-react';
+import { ArrowLeft, Eye, Ban, Trash2, CheckCircle } from 'lucide-react';
 import { StudentProfileModal } from '@/components/admin/StudentProfileModal';
 import {
   AlertDialog,
@@ -38,6 +38,20 @@ export default function AdminStudents() {
 
   useEffect(() => {
     loadStudents();
+    
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('admin-students-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'students' },
+        () => loadStudents()
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadStudents = async () => {
@@ -200,7 +214,11 @@ export default function AdminStudents() {
                       onClick={() => handleSuspendStudent(student.id, student.status)}
                       title={student.status === 'active' ? 'Suspend' : 'Activate'}
                     >
-                      <Ban className={`w-4 h-4 ${student.status === 'active' ? 'text-orange-500' : 'text-green-500'}`} />
+                      {student.status === 'active' ? (
+                        <Ban className="w-4 h-4 text-orange-500" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                      )}
                     </Button>
                     <Button
                       size="sm"
