@@ -481,7 +481,7 @@ export default function AdminChats() {
                   >
                     <Card 
                       className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => navigate('/admin/chats/view', { state: { conversationId: conv.id } })}
+                      onClick={() => navigate(`/admin/chats/${conv.id}`)}
                     >
                       <div className="flex items-center gap-4">
                         <div className="flex -space-x-3">

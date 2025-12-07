@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -49,19 +49,41 @@ export function OwnerProfileModal({ ownerId, isOpen, onClose }: OwnerProfileModa
     
     setDorms(dormsData || []);
 
-    // Load messages from conversations
+    // Load conversations for this owner first
     const { data: conversationsData } = await supabase
       .from('conversations')
-      .select('id, messages(*), students(full_name)')
+      .select('id, student_id')
       .eq('owner_id', ownerId);
     
-    const allMessages = conversationsData?.flatMap(c => 
-      c.messages.map((m: any) => ({
+    // Then fetch messages separately
+    const conversationIds = conversationsData?.map(c => c.id) || [];
+    if (conversationIds.length > 0) {
+      // Get student details for these conversations
+      const studentIds = conversationsData?.map(c => c.student_id).filter(Boolean) || [];
+      const { data: studentsData } = await supabase
+        .from('students')
+        .select('id, full_name')
+        .in('id', studentIds.length > 0 ? studentIds : ['00000000-0000-0000-0000-000000000000']);
+      
+      const studentMap = new Map(studentsData?.map(s => [s.id, s.full_name]) || []);
+      const convStudentMap = new Map(conversationsData?.map(c => [c.id, c.student_id]) || []);
+
+      const { data: messagesData } = await supabase
+        .from('messages')
+        .select('*')
+        .in('conversation_id', conversationIds)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      const messagesWithStudent = messagesData?.map(m => ({
         ...m,
-        student_name: (c as any).students?.full_name
-      }))
-    ) || [];
-    setMessages(allMessages);
+        student_name: studentMap.get(convStudentMap.get(m.conversation_id) || '') || 'Student'
+      })) || [];
+      
+      setMessages(messagesWithStudent);
+    } else {
+      setMessages([]);
+    }
 
     setLoading(false);
   };
@@ -76,6 +98,9 @@ export function OwnerProfileModal({ ownerId, isOpen, onClose }: OwnerProfileModa
             <User className="w-5 h-5" />
             {owner.full_name}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            View detailed owner profile information
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="profile" className="w-full">
