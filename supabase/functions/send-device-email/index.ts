@@ -15,9 +15,65 @@ interface DeviceEmailRequest {
   userId: string;
 }
 
+// Rate limiting: 5 requests per minute per IP (sensitive endpoint)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 5;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+
+function getClientIP(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+         req.headers.get('x-real-ip') ||
+         'unknown';
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  
+  if (entry.count >= RATE_LIMIT) {
+    return true;
+  }
+  
+  entry.count++;
+  return false;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  const clientIP = getClientIP(req);
+
+  // Check rate limit
+  if (isRateLimited(clientIP)) {
+    console.log(`[send-device-email] Rate limit exceeded for IP: ${clientIP}`);
+    
+    // Log rate limit event
+    try {
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL") ?? '',
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ''
+      );
+      await supabaseAdmin.from('security_events').insert({
+        event_type: 'rate_limit_exceeded',
+        ip_address: clientIP,
+        endpoint: 'send-device-email',
+        metadata: { limit: RATE_LIMIT, window_ms: RATE_LIMIT_WINDOW_MS }
+      });
+    } catch (e) {
+      console.error('Failed to log rate limit event:', e);
+    }
+    
+    return new Response(
+      JSON.stringify({ error: 'Too many requests. Please try again later.' }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   try {

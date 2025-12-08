@@ -3842,6 +3842,7 @@ export type Database = {
         Args: { user_a: string; user_b: string }
         Returns: boolean
       }
+      assert_security_baseline: { Args: never; Returns: boolean }
       check_booking_conflicts: {
         Args: {
           p_dorm_id: string
@@ -3862,6 +3863,16 @@ export type Database = {
       check_notification_rate_limit: {
         Args: { p_owner_id: string }
         Returns: boolean
+      }
+      check_rls_regression: {
+        Args: never
+        Returns: {
+          issue_type: string
+          message: string
+          policy_count: number
+          rls_enabled: boolean
+          tablename: string
+        }[]
       }
       check_whatsapp_debounce: {
         Args: { p_dorm_id: string; p_event_type: string; p_owner_id: string }
@@ -3908,6 +3919,14 @@ export type Database = {
         Returns: string
       }
       get_support_admin_id: { Args: never; Returns: string }
+      get_table_security_status: {
+        Args: never
+        Returns: {
+          policy_count: number
+          rls_enabled: boolean
+          tablename: string
+        }[]
+      }
       get_user_role: { Args: { p_user_id: string }; Returns: string }
       has_role: {
         Args: { _role_name: string; _user_id: string }
