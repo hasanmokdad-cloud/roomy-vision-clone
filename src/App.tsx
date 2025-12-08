@@ -115,6 +115,7 @@ const DevicesPage = lazy(() => import("./pages/settings/DevicesPage"));
 const DevicePending = lazy(() => import("./pages/auth/DevicePending"));
 const ApproveDevice = lazy(() => import("./pages/auth/ApproveDevice"));
 const AuthCallback = lazy(() => import("./pages/auth/AuthCallback"));
+const AccountSuspended = lazy(() => import("./pages/AccountSuspended"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -213,6 +214,7 @@ const AppRoutes = () => {
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/devices/verify" element={<VerifyDevice />} />
           <Route path="/devices/secure" element={<SecureAccount />} />
+          <Route path="/account-suspended" element={<AccountSuspended />} />
           <Route path="/intro" element={<Intro />} />
           <Route path="/listings" element={<ProtectedRoute element={<MobileSwipeLayout><Listings /></MobileSwipeLayout>} forbiddenRoles={["owner"]} />} />
           <Route path="/dorm/:id" element={<DormDetail />} />

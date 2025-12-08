@@ -113,11 +113,30 @@ export function useRoleGuard(requiredRole?: AppRole) {
           resolvedRole = "admin";
         }
 
-        // Admin bypass
+        // Admin bypass - admins can never be suspended
         if (resolvedRole === "admin") {
           setRole("admin");
           setLoading(false);
           return;
+        }
+
+        // Check suspension status for owners and students
+        if (resolvedRole === "owner" || resolvedRole === "student") {
+          const table = resolvedRole === "owner" ? "owners" : "students";
+          const { data: profileData, error: profileError } = await supabase
+            .from(table)
+            .select("status")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (!profileError && profileData?.status === "suspended") {
+            console.log(`⛔ useRoleGuard: ${resolvedRole} account is suspended`);
+            setRole(null);
+            setUserId(null);
+            setLoading(false);
+            navigate("/account-suspended", { replace: true });
+            return;
+          }
         }
 
         if (!resolvedRole) {
