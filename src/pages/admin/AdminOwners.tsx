@@ -105,12 +105,37 @@ export default function AdminOwners() {
     const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
     
     try {
+      // Update owner status
       const { error } = await supabase
         .from('owners')
         .update({ status: newStatus })
         .eq('id', ownerId);
 
       if (error) throw error;
+
+      // When suspending, also deactivate all their dorms
+      if (newStatus === 'suspended') {
+        const { error: dormsError } = await supabase
+          .from('dorms')
+          .update({ available: false })
+          .eq('owner_id', ownerId);
+
+        if (dormsError) {
+          console.error('Error deactivating owner dorms:', dormsError);
+        }
+      }
+
+      // When activating, reactivate their dorms
+      if (newStatus === 'active') {
+        const { error: dormsError } = await supabase
+          .from('dorms')
+          .update({ available: true })
+          .eq('owner_id', ownerId);
+
+        if (dormsError) {
+          console.error('Error reactivating owner dorms:', dormsError);
+        }
+      }
 
       toast({
         title: 'Success',

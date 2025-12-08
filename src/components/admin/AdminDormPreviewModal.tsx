@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Building2, MapPin, DollarSign, Users, Phone, Mail, Globe, Calendar, Image as ImageIcon } from "lucide-react";
@@ -17,6 +17,9 @@ export function AdminDormPreviewModal({ dorm, isOpen, onClose }: AdminDormPrevie
       <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="text-2xl gradient-text">Dorm Preview</DialogTitle>
+          <DialogDescription className="sr-only">
+            Preview dorm details and information
+          </DialogDescription>
         </DialogHeader>
         
         <ScrollArea className="h-[calc(90vh-8rem)] pr-4">
