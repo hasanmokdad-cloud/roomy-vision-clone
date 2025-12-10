@@ -49,7 +49,7 @@ const AddNewDorm = lazy(() => import("./pages/owner/AddNewDorm"));
 const OwnerRooms = lazy(() => import("./pages/owner/OwnerRooms"));
 const OwnerBookings = lazy(() => import("./pages/owner/OwnerBookings"));
 const OwnerListings = lazy(() => import("./pages/owner/OwnerListings"));
-const DormRooms = lazy(() => import("./pages/owner/DormRooms"));
+
 const RoomForm = lazy(() => import("./pages/owner/RoomForm"));
 const BulkImport = lazy(() => import("./pages/owner/BulkImport"));
 const RoleSelection = lazy(() => import("./pages/RoleSelection"));
@@ -265,7 +265,7 @@ const AppRoutes = () => {
           <Route path="/owner/listings" element={<ProtectedRoute element={<OwnerListings />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/add-dorm" element={<ProtectedRoute element={<OwnerAddDorm />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/dorms/new" element={<Navigate to="/owner/add-dorm" replace />} />
-          <Route path="/owner/dorms/:dormId/rooms" element={<ProtectedRoute element={<DormRooms />} allowedRoles={["owner", "admin"]} />} />
+          
           <Route path="/owner/dorms/:dormId/rooms/new" element={<ProtectedRoute element={<RoomForm />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/dorms/:dormId/rooms/:roomId/edit" element={<ProtectedRoute element={<RoomForm />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/bulk-import" element={<ProtectedRoute element={<BulkImport />} allowedRoles={["owner", "admin"]} />} />

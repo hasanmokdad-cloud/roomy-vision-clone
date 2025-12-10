@@ -140,7 +140,7 @@ export default function OwnerListings() {
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => navigate(`/owner/dorms/${dorm.id}/rooms`)}
+                            onClick={() => navigate('/owner/rooms')}
                             title="Manage Rooms"
                           >
                             <DoorOpen className="w-4 h-4" />
