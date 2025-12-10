@@ -5,6 +5,55 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// HMAC-SHA256 signature verification for production webhook security
+async function verifyHmacSignature(
+  payload: string,
+  signature: string,
+  secret: string
+): Promise<boolean> {
+  try {
+    // Import the secret key for HMAC-SHA256
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    // Compute the HMAC signature
+    const payloadData = encoder.encode(payload);
+    const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, payloadData);
+    
+    // Convert to hex string
+    const computedSignature = Array.from(new Uint8Array(signatureBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    // Handle different signature formats (with or without prefix)
+    const normalizedSignature = signature.replace(/^sha256=/, '').toLowerCase();
+    const normalizedComputed = computedSignature.toLowerCase();
+    
+    // Constant-time comparison to prevent timing attacks
+    if (normalizedSignature.length !== normalizedComputed.length) {
+      return false;
+    }
+    
+    let result = 0;
+    for (let i = 0; i < normalizedSignature.length; i++) {
+      result |= normalizedSignature.charCodeAt(i) ^ normalizedComputed.charCodeAt(i);
+    }
+    
+    return result === 0;
+  } catch (error) {
+    console.error('Signature verification error:', error);
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -17,6 +66,9 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
+    // Read raw body FIRST (before parsing) for signature verification
+    const rawBody = await req.text();
+    
     // Verify Whish webhook signature
     const whishWebhookSecret = Deno.env.get('WHISH_WEBHOOK_SECRET');
     
@@ -31,12 +83,24 @@ Deno.serve(async (req) => {
         );
       }
       
-      console.log('Webhook signature verification enabled');
+      // Cryptographically verify the signature
+      const isValid = await verifyHmacSignature(rawBody, signature, whishWebhookSecret);
+      
+      if (!isValid) {
+        console.error('Invalid webhook signature - possible tampering detected');
+        return new Response(
+          JSON.stringify({ error: 'Invalid signature' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      console.log('Webhook signature verified successfully');
     } else {
       console.warn('Webhook signature verification disabled (preview mode)');
     }
 
-    const payload = await req.json();
+    // Parse the payload after signature verification
+    const payload = JSON.parse(rawBody);
     console.log('Whish webhook received:', { type: payload.type, id: payload.id });
 
     // Handle different webhook event types
