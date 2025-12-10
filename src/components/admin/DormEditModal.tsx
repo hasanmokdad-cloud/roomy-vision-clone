@@ -49,34 +49,52 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin
   const handleSave = async () => {
     setLoading(true);
     try {
-      const updateData: any = {
-        name: formData.name,
-        dorm_name: formData.dorm_name,
-        address: formData.address,
-        area: formData.area,
-        description: formData.description,
-        capacity: formData.capacity,
-        amenities: formData.amenities,
-        shuttle: formData.shuttle,
-        gender_preference: formData.gender_preference,
-        available: formData.available,
-        gallery_images: galleryImages,
-        image_url: exteriorImage,
-        cover_image: exteriorImage,
-        updated_at: new Date().toISOString(),
-      };
-
-      // Only include verification_status if user is admin
       if (isAdmin) {
-        updateData.verification_status = formData.verification_status;
+        // Use RPC function for admin updates (bypasses RLS)
+        const { error } = await supabase.rpc('admin_update_dorm', {
+          p_dorm_id: dorm.id,
+          p_name: formData.name,
+          p_dorm_name: formData.dorm_name,
+          p_address: formData.address,
+          p_area: formData.area,
+          p_description: formData.description,
+          p_capacity: formData.capacity,
+          p_amenities: formData.amenities,
+          p_shuttle: formData.shuttle,
+          p_gender_preference: formData.gender_preference,
+          p_available: formData.available,
+          p_verification_status: formData.verification_status,
+          p_gallery_images: galleryImages,
+          p_image_url: exteriorImage,
+          p_cover_image: exteriorImage,
+        });
+        if (error) throw error;
+      } else {
+        // Owner updates use direct RLS-protected query
+        const updateData: any = {
+          name: formData.name,
+          dorm_name: formData.dorm_name,
+          address: formData.address,
+          area: formData.area,
+          description: formData.description,
+          capacity: formData.capacity,
+          amenities: formData.amenities,
+          shuttle: formData.shuttle,
+          gender_preference: formData.gender_preference,
+          available: formData.available,
+          gallery_images: galleryImages,
+          image_url: exteriorImage,
+          cover_image: exteriorImage,
+          updated_at: new Date().toISOString(),
+        };
+
+        const { error } = await supabase
+          .from('dorms')
+          .update(updateData)
+          .eq('id', dorm.id);
+
+        if (error) throw error;
       }
-
-      const { error } = await supabase
-        .from('dorms')
-        .update(updateData)
-        .eq('id', dorm.id);
-
-      if (error) throw error;
 
       toast({
         title: 'Success',
