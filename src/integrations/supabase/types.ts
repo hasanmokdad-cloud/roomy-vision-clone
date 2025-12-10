@@ -4040,6 +4040,26 @@ export type Database = {
       }
     }
     Functions: {
+      admin_update_dorm: {
+        Args: {
+          p_address?: string
+          p_amenities?: string[]
+          p_area?: string
+          p_available?: boolean
+          p_capacity?: number
+          p_cover_image?: string
+          p_description?: string
+          p_dorm_id: string
+          p_dorm_name?: string
+          p_gallery_images?: string[]
+          p_gender_preference?: string
+          p_image_url?: string
+          p_name?: string
+          p_shuttle?: boolean
+          p_verification_status?: string
+        }
+        Returns: Json
+      }
       admin_update_verification_status: {
         Args: {
           p_dorm_id: string
