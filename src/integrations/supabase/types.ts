@@ -4199,6 +4199,7 @@ export type Database = {
         }
         Returns: string
       }
+      is_active_owner: { Args: { owner_uuid: string }; Returns: boolean }
       is_admin: { Args: { check_user_id: string }; Returns: boolean }
       is_blocked: { Args: { user_a: string; user_b: string }; Returns: boolean }
       is_current_user_owner: { Args: { p_owner_id: string }; Returns: boolean }
