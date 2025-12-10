@@ -124,20 +124,20 @@ export default function AdminDashboard() {
     const { count: pendingPayoutsCount } = await supabase
       .from("reservations")
       .select("id", { count: "exact", head: true })
-      .match({ payment_status: "paid", owner_payout_status: "pending" });
+      .match({ status: "paid", owner_payout_status: "pending" });
 
     // Get pending refund requests count
     const { count: pendingRefundsCount } = await supabase
       .from("reservations")
       .select("id", { count: "exact", head: true })
-      .match({ refund_status: "pending_admin" });
+      .match({ latest_refund_status: "pending_admin" });
 
     // Get admin wallet balance
     const { data: walletData } = await supabase
       .from("admin_wallet")
       .select("balance")
       .limit(1)
-      .single();
+      .maybeSingle();
 
     setEarningsStats({
       totalCommission,
