@@ -494,7 +494,7 @@ export default function OwnerHome() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => navigate(`/owner/dorms/${dorm.id}/rooms`)}
+                              onClick={() => navigate('/owner/rooms')}
                               className="rounded-xl"
                             >
                               Manage Rooms

@@ -50,12 +50,6 @@ export default function OwnerRooms() {
     }
   }, [userId]);
 
-  // Auto-redirect to DormRooms if owner has only one dorm
-  useEffect(() => {
-    if (!loading && dorms.length === 1) {
-      navigate(`/owner/dorms/${dorms[0].id}/rooms`, { replace: true });
-    }
-  }, [loading, dorms, navigate]);
 
   const loadDormsWithRooms = async () => {
     try {
@@ -312,12 +306,21 @@ export default function OwnerRooms() {
                                       return (
                                         <div
                                           key={room.id}
-                                          className={`relative p-4 rounded-xl border-2 transition-all ${
+                                          className={`relative rounded-xl border-2 transition-all overflow-hidden ${
                                             isAvailable
                                               ? 'border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5'
                                               : 'border-muted bg-muted/50 opacity-75'
                                           }`}
                                         >
+                                          {/* Room Image */}
+                                          {room.images && room.images.length > 0 && (
+                                            <img
+                                              src={room.images[0]}
+                                              alt={room.name}
+                                              className="w-full h-32 object-cover"
+                                            />
+                                          )}
+                                          <div className="p-4">
                                           <div className="flex items-start justify-between mb-3">
                                             <div>
                                               <h4 className="font-bold text-lg text-foreground mb-1">{room.name}</h4>
@@ -374,7 +377,7 @@ export default function OwnerRooms() {
                                               <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={() => navigate(`/owner/dorms/${dorm.id}/rooms/${room.id}`)}
+                                                onClick={() => navigate(`/owner/dorms/${dorm.id}/rooms/${room.id}/edit`)}
                                               >
                                                 <Edit className="w-4 h-4" />
                                               </Button>
@@ -387,6 +390,7 @@ export default function OwnerRooms() {
                                                 <Trash2 className="w-4 h-4" />
                                               </Button>
                                             </div>
+                                          </div>
                                           </div>
                                         </div>
                                       );

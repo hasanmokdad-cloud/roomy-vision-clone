@@ -214,7 +214,7 @@ export default function RoomForm() {
         description: `Room ${roomId ? 'updated' : 'created'} successfully` 
       });
 
-      navigate(`/owner/dorms/${dormId}/rooms`);
+      navigate('/owner/rooms');
     } catch (error: any) {
       toast({
         title: "Error",
@@ -261,7 +261,7 @@ export default function RoomForm() {
           >
             <Button
               variant="ghost"
-              onClick={() => navigate(`/owner/dorms/${dormId}/rooms`)}
+              onClick={() => navigate('/owner/rooms')}
               className="gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
