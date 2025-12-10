@@ -488,7 +488,7 @@ export default function RoomForm() {
                           onClick={async () => {
                             if (videoUrl.startsWith('http')) {
                               const path = videoUrl.split('/').slice(-2).join('/');
-                              await supabase.storage.from('room-images').remove([path]);
+                              await supabase.storage.from('dorm-uploads').remove([path]);
                             }
                             setVideoUrl("");
                             setVideoFile(null);
@@ -519,13 +519,13 @@ export default function RoomForm() {
                           try {
                             const fileName = `${Date.now()}-${file.name}`;
                             const { data, error } = await supabase.storage
-                              .from('room-images')
-                              .upload(`videos/${fileName}`, file);
+                              .from('dorm-uploads')
+                              .upload(`room-videos/${fileName}`, file);
 
                             if (error) throw error;
 
                             const { data: { publicUrl } } = supabase.storage
-                              .from('room-images')
+                              .from('dorm-uploads')
                               .getPublicUrl(data.path);
 
                             setVideoUrl(publicUrl);
