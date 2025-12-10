@@ -153,7 +153,8 @@ export default function AdminDashboard() {
       
       const { data, error } = await supabase.rpc('admin_update_verification_status', {
         p_dorm_id: id,
-        p_new_status: 'Verified'
+        p_new_status: 'Verified',
+        p_rejection_reason: null
       });
 
       if (error) {
