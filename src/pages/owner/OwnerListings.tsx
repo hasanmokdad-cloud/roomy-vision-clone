@@ -119,7 +119,6 @@ export default function OwnerListings() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Area</TableHead>
-                    <TableHead>University</TableHead>
                     <TableHead>Starting Price</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
@@ -130,7 +129,6 @@ export default function OwnerListings() {
                     <TableRow key={dorm.id}>
                       <TableCell className="font-medium">{dorm.dorm_name || dorm.name}</TableCell>
                       <TableCell>{dorm.area || dorm.location}</TableCell>
-                      <TableCell>{dorm.university}</TableCell>
                       <TableCell>From ${dorm.monthly_price || dorm.price}</TableCell>
                       <TableCell>
                         <Badge variant={dorm.verification_status === 'Verified' ? 'default' : 'secondary'}>
