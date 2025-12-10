@@ -169,7 +169,13 @@ function generateReceiptHtml(
           <span style="color: #64748B;">•</span>
           <a href="https://roomylb.com/legal#terms" class="footer-link">Terms</a>
         </div>
-        <p class="copyright">Roomy Security • <a href="https://roomylb.com" style="color: #BD00FF; text-decoration: none;">roomylb.com</a></p>
+        <!-- Signature -->
+        <div style="border-top: 1px solid #E5E7EB; margin-top: 16px; padding-top: 16px;">
+          <p style="font-weight: 600; color: #0F172A; margin: 0; font-size: 14px;">Roomy Support Team</p>
+          <p style="color: #64748B; margin: 4px 0; font-size: 13px;"><a href="mailto:support@roomylb.com" style="color: #BD00FF; text-decoration: none;">support@roomylb.com</a></p>
+          <p style="color: #64748B; margin: 4px 0; font-size: 13px;"><a href="https://roomylb.com" style="color: #BD00FF; text-decoration: none;">roomylb.com</a> • Lebanon</p>
+          <p style="color: #8B5CF6; margin: 8px 0 0 0; font-size: 12px;">Roomy — AI-Powered Student Housing Platform</p>
+        </div>
       </div>
     </div>
   </div>
@@ -232,7 +238,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Roomy <receipts@roomylb.com>',
+        from: 'Roomy Support Team <support@roomylb.com>',
         to: [student.email],
         subject: `✅ Payment Confirmed - ${room_name} at ${dorm_name}`,
         html: emailHtml,

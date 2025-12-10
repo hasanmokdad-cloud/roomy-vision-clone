@@ -170,10 +170,13 @@ Deno.serve(async (req) => {
         </p>
       </div>
 
-      <!-- Footer -->
-      <p style="text-align: center; margin-top: 32px; color: #6B7280; font-size: 13px;">
-        Roomy Security • <a href="https://roomylb.com" style="color: #BD00FF; text-decoration: none;">roomylb.com</a>
-      </p>
+      <!-- Signature -->
+      <div style="border-top: 1px solid #E5E7EB; margin-top: 32px; padding-top: 24px; text-align: center;">
+        <p style="font-weight: 600; color: #FFFFFF; margin: 0;">Roomy Security Team</p>
+        <p style="color: #9CA3AF; margin: 4px 0;"><a href="mailto:security@roomylb.com" style="color: #BD00FF; text-decoration: none;">security@roomylb.com</a></p>
+        <p style="color: #9CA3AF; margin: 4px 0;"><a href="https://roomylb.com" style="color: #BD00FF; text-decoration: none;">roomylb.com</a> • Lebanon</p>
+        <p style="color: #A78BFA; margin: 8px 0 0 0; font-size: 13px;">Roomy — AI-Powered Student Housing Platform</p>
+      </div>
 
     </div>
   </div>

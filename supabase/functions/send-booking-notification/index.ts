@@ -189,8 +189,14 @@ function generateBookingNotificationHtml(
           <span style="color: #475569;">•</span>
           <a href="https://roomylb.com/legal#terms" class="footer-link">Terms</a>
         </div>
-        <p class="copyright">© ${year} Roomy — Student Housing Reinvented</p>
-        <p class="unsubscribe">
+        <!-- Signature -->
+        <div style="border-top: 1px solid #475569; margin-top: 16px; padding-top: 16px;">
+          <p style="font-weight: 600; color: #F8FAFC; margin: 0; font-size: 14px;">Roomy Support Team</p>
+          <p style="color: #94A3B8; margin: 4px 0; font-size: 13px;"><a href="mailto:support@roomylb.com" style="color: #A78BFA; text-decoration: none;">support@roomylb.com</a></p>
+          <p style="color: #94A3B8; margin: 4px 0; font-size: 13px;"><a href="https://roomylb.com" style="color: #A78BFA; text-decoration: none;">roomylb.com</a> • Lebanon</p>
+          <p style="color: #A78BFA; margin: 8px 0 0 0; font-size: 12px;">Roomy — AI-Powered Student Housing Platform</p>
+        </div>
+        <p class="unsubscribe" style="margin-top: 16px;">
           Don't want booking emails? <a href="https://roomylb.com/owner/account">Update preferences</a>
         </p>
       </div>
@@ -298,7 +304,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Roomy <onboarding@resend.dev>",
+        from: "Roomy Support Team <support@roomylb.com>",
         to: [owner.email],
         subject: `📅 New Viewing Request for ${dormName}`,
         html: emailHtml,

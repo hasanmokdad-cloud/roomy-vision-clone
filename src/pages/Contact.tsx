@@ -303,7 +303,7 @@ export default function Contact() {
                     </div>
                     <div>
                       <p className="font-semibold">Email</p>
-                      <p className="text-sm text-foreground/70">roomy.lb@gmail.com</p>
+                      <p className="text-sm text-foreground/70">info@roomylb.com</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
