@@ -322,7 +322,7 @@ export default function Contact() {
                     </div>
                     <div>
                       <p className="font-semibold">Location</p>
-                      <p className="text-sm text-foreground/70">Jbeil, Lebanon</p>
+                      <p className="text-sm text-foreground/70">Beirut, Lebanon</p>
                     </div>
                   </div>
                 </div>
