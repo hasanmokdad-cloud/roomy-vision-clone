@@ -42,15 +42,15 @@ export const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center gap-2 text-sm text-foreground/60">
                 <Mail className="w-4 h-4 text-secondary" />
-                <span>hello@roomy.app</span>
+                <span>info@roomylb.com</span>
               </li>
               <li className="flex items-center gap-2 text-sm text-foreground/60">
                 <Phone className="w-4 h-4 text-secondary" />
-                <span>+961 XX XXX XXX</span>
+                <span>+961 81 858 026</span>
               </li>
               <li className="flex items-center gap-2 text-sm text-foreground/60">
                 <MapPin className="w-4 h-4 text-secondary" />
-                <span>Jbeil, Lebanon</span>
+                <span>Beirut, Lebanon</span>
               </li>
             </ul>
           </div>
