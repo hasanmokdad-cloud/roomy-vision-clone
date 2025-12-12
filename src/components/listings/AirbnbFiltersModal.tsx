@@ -174,9 +174,9 @@ export function AirbnbFiltersModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0 gap-0 bg-background border-border">
-        {/* Header */}
-        <DialogHeader className="sticky top-0 z-10 bg-background border-b border-border px-6 py-4">
+      <DialogContent className="max-w-2xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden bg-background border-border">
+        {/* Fixed Header */}
+        <DialogHeader className="flex-shrink-0 border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"
@@ -192,8 +192,8 @@ export function AirbnbFiltersModal({
         </DialogHeader>
 
         {/* Scrollable Content */}
-        <ScrollArea className="flex-1 max-h-[calc(90vh-140px)]">
-          <div className="px-6 py-6 space-y-8">
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="space-y-8">
             
             {/* Budget Section */}
             <section className="space-y-4">
@@ -503,10 +503,10 @@ export function AirbnbFiltersModal({
             </section>
 
           </div>
-        </ScrollArea>
+        </div>
 
-        {/* Sticky Footer */}
-        <div className="sticky bottom-0 bg-background border-t border-border px-6 py-4 flex items-center justify-between">
+        {/* Fixed Footer */}
+        <div className="flex-shrink-0 border-t border-border px-6 py-4 flex items-center justify-between bg-background">
           <Button
             variant="ghost"
             onClick={handleClearAll}
