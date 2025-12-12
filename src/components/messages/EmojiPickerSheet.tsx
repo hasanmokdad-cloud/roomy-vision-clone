@@ -106,7 +106,27 @@ export function EmojiPickerSheet({
   if (!trigger) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-auto p-0 border-0 max-w-fit">
+        <DialogContent 
+          className="w-auto p-0 border-0 max-w-fit"
+          onPointerDownOutside={(e) => {
+            // Prevent closing when clicking inside emoji picker internal elements
+            const target = e.target as HTMLElement;
+            if (target.closest('.EmojiPickerReact') || 
+                target.closest('[class*="epr-"]') ||
+                target.closest('[data-name]') ||
+                target.closest('[data-unified]')) {
+              e.preventDefault();
+            }
+          }}
+          onInteractOutside={(e) => {
+            // Also prevent on interact outside for better coverage
+            const target = e.target as HTMLElement;
+            if (target.closest('.EmojiPickerReact') || 
+                target.closest('[class*="epr-"]')) {
+              e.preventDefault();
+            }
+          }}
+        >
           <DialogTitle className="sr-only">Choose emoji</DialogTitle>
           <EmojiPicker
             onEmojiClick={handleEmojiClick}

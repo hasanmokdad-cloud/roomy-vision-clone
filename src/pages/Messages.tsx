@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3, Circle } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3 } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { VoiceWaveform } from '@/components/messages/VoiceWaveform';
 import { ConversationContextMenu } from '@/components/messages/ConversationContextMenu';
@@ -1662,14 +1662,13 @@ let otherUserName = 'User';
       {!isMobile && <Navbar />}
       
       <main 
-        className={`flex-1 container mx-auto px-0 md:px-4 py-0 md:py-8 ${isMobile ? 'pt-0 pb-20' : 'mt-20 mb-0'}`}
+        className={`flex-1 flex ${isMobile ? 'pt-0' : 'mt-20'}`}
         style={isMobile ? { 
           paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))'
         } : undefined}
       >
-        <div className={`${isMobile ? 'h-screen' : 'h-[calc(100vh-12rem)]'} flex flex-col md:flex-row gap-0 md:gap-4`}>
-          {/* Conversations List */}
-          <Card className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-80 rounded-none md:rounded-lg border-0 md:border shadow-none md:shadow-sm`}>
+        {/* Conversations List - Edge-to-edge, no Card wrapper */}
+        <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-[350px] border-r border-border bg-background ${isMobile ? 'h-screen' : 'h-[calc(100vh-80px)]'}`}>
             <div className={`p-4 border-b border-border ${isMobile ? 'pt-6' : ''} space-y-3`}>
               <div className="flex items-center justify-between w-full">
                 <h2 className={`${isMobile ? 'text-3xl' : 'text-2xl'} font-bold flex items-center gap-2`}>
@@ -1744,59 +1743,65 @@ let otherUserName = 'User';
                       : '';
                     
                     return (
-                    <div key={conv.id} className="relative group">
-                      <button
-                        onClick={() => {
-                          setSelectedConversation(conv.id);
-                          loadMessages(conv.id);
-                        }}
-                        className={`w-full px-4 py-3 border-b border-border hover:bg-muted/50 transition-colors text-left ${
-                          selectedConversation === conv.id ? 'bg-muted' : ''
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="relative shrink-0">
-                            <Avatar className="w-12 h-12">
-                              <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
-                              <AvatarFallback className="bg-primary/20 text-primary text-base">
-                                {conv.other_user_name?.charAt(0) || 'U'}
-                              </AvatarFallback>
-                            </Avatar>
-                            {conv.student_id && <OnlineIndicator userId={conv.student_id} />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
-                                {conv.muted_until && new Date(conv.muted_until) > new Date() && (
-                                  <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />
-                                )}
-                                <span className={`text-[14px] truncate ${hasUnread ? 'font-bold text-foreground' : 'font-normal text-foreground'}`}>
-                                  {conv.other_user_name}
+                    <div 
+                      key={conv.id} 
+                      className={`relative group cursor-pointer hover:bg-muted/50 transition-colors ${
+                        selectedConversation === conv.id ? 'bg-muted' : ''
+                      } ${hasUnread ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
+                      onClick={() => {
+                        setSelectedConversation(conv.id);
+                        loadMessages(conv.id);
+                      }}
+                    >
+                      <div className="flex items-center gap-3 px-4 py-2">
+                        {/* Avatar */}
+                        <div className="relative shrink-0">
+                          <Avatar className="w-14 h-14">
+                            <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
+                            <AvatarFallback className="bg-primary/20 text-primary text-lg">
+                              {conv.other_user_name?.charAt(0) || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          {conv.student_id && <OnlineIndicator userId={conv.student_id} />}
+                        </div>
+                        
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 py-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                              {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
+                              {conv.muted_until && new Date(conv.muted_until) > new Date() && (
+                                <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />
+                              )}
+                              <span className={`text-[14px] truncate ${hasUnread ? 'font-semibold text-foreground' : 'font-normal text-foreground'}`}>
+                                {conv.other_user_name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {timeAgo && (
+                                <span className={`text-xs ${hasUnread ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                                  {timeAgo}
                                 </span>
-                                {timeAgo && (
-                                  <span className="text-xs text-muted-foreground shrink-0">
-                                    · {timeAgo}
-                                  </span>
-                                )}
-                              </div>
-                              {hasUnread && (
-                                <div className="w-2 h-2 rounded-full bg-primary shrink-0 ml-2" />
                               )}
                             </div>
-                            <div className="flex items-center gap-1 mt-0.5">
-                              {conv.last_message_sender_id === userId && (
-                                <MessageStatusIcon status={conv.last_message_status} />
-                              )}
-                              <p className={`text-[13px] truncate flex-1 ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground font-normal'}`}>
-                                {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message}
-                              </p>
-                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            {conv.last_message_sender_id === userId && (
+                              <MessageStatusIcon status={conv.last_message_status} />
+                            )}
+                            <p className={`text-sm truncate flex-1 ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                              {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
+                            </p>
+                            {/* Blue dot for unread - larger and more visible */}
+                            {hasUnread && (
+                              <div className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
+                            )}
                           </div>
                         </div>
-                      </button>
-                      {/* Three-dots context menu - visible on hover for all roles */}
-                      <div className="absolute top-1/2 -translate-y-1/2 right-3 z-30 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
+                      </div>
+                      
+                      {/* Three-dots context menu - visible on hover, positioned outside content flow */}
+                      <div className="absolute top-1/2 -translate-y-1/2 right-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 rounded-md">
                         <ConversationContextMenu
                           conversationId={conv.id}
                           isPinned={conv.is_pinned || false}
@@ -1811,13 +1816,13 @@ let otherUserName = 'User';
                 )}
               </ScrollArea>
             )}
-          </Card>
+        </div>
 
-          {/* Chat Window */}
-          <Card 
-            className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} flex-col flex-1 rounded-none md:rounded-lg border-0 md:border shadow-none md:shadow-sm`}
-            onContextMenu={(e) => e.preventDefault()}
-          >
+        {/* Chat Window - Edge-to-edge, no Card wrapper */}
+        <div 
+          className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} flex-col flex-1 bg-background ${isMobile ? 'h-screen' : 'h-[calc(100vh-80px)]'}`}
+          onContextMenu={(e) => e.preventDefault()}
+        >
             {selectedConversation ? (
               <>
                 {/* Instagram-style conversation header */}
@@ -2151,38 +2156,37 @@ let otherUserName = 'User';
                 </div>
               </div>
             )}
-          </Card>
-          
-          {/* Contact Info Panel */}
-          {showContactInfo && selectedConversation && (
-            <ContactInfoPanel
-              onClose={() => setShowContactInfo(false)}
-              contactName={conversations.find(c => c.id === selectedConversation)?.other_user_name || 'User'}
-              contactAvatar={conversations.find(c => c.id === selectedConversation)?.other_user_photo || undefined}
-              conversationId={selectedConversation}
-              isMuted={(() => {
-                const conv = conversations.find(c => c.id === selectedConversation);
-                return conv?.muted_until ? new Date(conv.muted_until) > new Date() : false;
-              })()}
-              onMuteToggle={async (muted) => {
-                try {
-                  const mutedUntil = muted ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : null;
-                  await supabase
-                    .from('conversations')
-                    .update({ muted_until: mutedUntil })
-                    .eq('id', selectedConversation);
-                  
-                  toast({ title: muted ? 'Conversation muted' : 'Conversation unmuted' });
-                  loadConversations();
-                } catch (error) {
-                  toast({ title: 'Failed to update mute status', variant: 'destructive' });
-                }
-              }}
-              currentStudentId={studentId}
-              otherStudentId={conversations.find(c => c.id === selectedConversation)?.other_student_id || null}
-            />
-          )}
         </div>
+          
+        {/* Contact Info Panel */}
+        {showContactInfo && selectedConversation && (
+          <ContactInfoPanel
+            onClose={() => setShowContactInfo(false)}
+            contactName={conversations.find(c => c.id === selectedConversation)?.other_user_name || 'User'}
+            contactAvatar={conversations.find(c => c.id === selectedConversation)?.other_user_photo || undefined}
+            conversationId={selectedConversation}
+            isMuted={(() => {
+              const conv = conversations.find(c => c.id === selectedConversation);
+              return conv?.muted_until ? new Date(conv.muted_until) > new Date() : false;
+            })()}
+            onMuteToggle={async (muted) => {
+              try {
+                const mutedUntil = muted ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : null;
+                await supabase
+                  .from('conversations')
+                  .update({ muted_until: mutedUntil })
+                  .eq('id', selectedConversation);
+                
+                toast({ title: muted ? 'Conversation muted' : 'Conversation unmuted' });
+                loadConversations();
+              } catch (error) {
+                toast({ title: 'Failed to update mute status', variant: 'destructive' });
+              }
+            }}
+            currentStudentId={studentId}
+            otherStudentId={conversations.find(c => c.id === selectedConversation)?.other_student_id || null}
+          />
+        )}
       </main>
 
       {isMobile && <BottomNav />}
