@@ -52,7 +52,7 @@ const OwnerListings = lazy(() => import("./pages/owner/OwnerListings"));
 
 const RoomForm = lazy(() => import("./pages/owner/RoomForm"));
 const BulkImport = lazy(() => import("./pages/owner/BulkImport"));
-const RoleSelection = lazy(() => import("./pages/RoleSelection"));
+// RoleSelection removed - students are auto-assigned on signup
 const StudentProfile = lazy(() => import("./pages/StudentProfile"));
 const StudentMatch = lazy(() => import("./pages/StudentMatch"));
 const ReservationConfirmation = lazy(() => import("./pages/ReservationConfirmation"));
@@ -158,16 +158,11 @@ function ProtectedRoute({
     return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
-  // Admin must NEVER see /select-role
-  if (role === "admin" && location.pathname === "/select-role") {
-    return <Navigate to="/admin" replace />;
-  }
-
-  // Prevent users with existing roles from re-accessing /select-role
-  if (location.pathname === "/select-role" && role) {
+  // Redirect any /select-role access to listings (page no longer exists)
+  if (location.pathname === "/select-role") {
     if (role === "admin") return <Navigate to="/admin" replace />;
     if (role === "owner") return <Navigate to="/owner" replace />;
-    if (role === "student") return <Navigate to="/listings" replace />;
+    return <Navigate to="/listings" replace />;
   }
 
   // Handle "none" role (users with no assigned role)
@@ -185,10 +180,9 @@ function ProtectedRoute({
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // If user has NO role → send them to role selection (unless they're admin)
-  if (!role && requiredRole !== "admin") {
-    return <Navigate to="/select-role" replace />;
-  }
+  // If user has NO role, they should be auto-assigned student role on verification
+  // Just allow access - student role is assigned during email verification
+  // No redirect to /select-role anymore
 
   // Role mismatch → unauthorized (only if allowedRoles not specified)
   if (!allowedRoles && requiredRole && role !== requiredRole) {
@@ -250,13 +244,7 @@ const AppRoutes = () => {
           {/* Become Owner - requires auth but accessible to students */}
           <Route path="/become-owner" element={<BecomeOwner />} />
           
-          {/* Role Selection - for users with no role */}
-          <Route 
-            path="/select-role" 
-            element={
-              <ProtectedRoute element={<RoleSelection />} allowedRoles={["none"]} />
-            } 
-          />
+          {/* /select-role removed - students auto-assigned on signup verification */}
 
           {/* Protected Routes - Requires authentication */}
           <Route path="/my-tours" element={<ProtectedRoute element={<StudentTours />} forbiddenRoles={["owner"]} />} />

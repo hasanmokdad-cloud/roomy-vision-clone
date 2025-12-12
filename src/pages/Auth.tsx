@@ -79,7 +79,8 @@ export default function Auth() {
         console.error("Device verify error:", verifyError);
         // Continue with login on error (fail open for UX)
         toast({ title: "Welcome back!", description: "Signed in successfully." });
-        navigate("/intro", { replace: true });
+        const redirect = searchParams.get('redirect');
+        navigate(redirect && !redirect.includes('select-role') ? redirect : "/listings", { replace: true });
         return;
       }
 
@@ -100,7 +101,14 @@ export default function Auth() {
       }
 
       toast({ title: "Welcome back!", description: "Signed in successfully." });
-      navigate("/intro", { replace: true });
+      
+      // Check redirect param first, otherwise go to listings
+      const redirect = searchParams.get('redirect');
+      if (redirect && !redirect.includes('select-role')) {
+        navigate(redirect, { replace: true });
+      } else {
+        navigate("/listings", { replace: true });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -151,7 +159,7 @@ export default function Auth() {
           body: {
             userId: data.user.id,
             email: email,
-            tokenType: 'signup'
+            type: 'signup'
           }
         });
 

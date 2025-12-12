@@ -80,6 +80,56 @@ serve(async (req) => {
       }
 
       console.log(`[verify-email-token] Email verified for user: ${tokenRecord.user_id}`);
+
+      // Auto-assign student role to new users
+      // First, get the student role ID
+      const { data: roleData, error: roleError } = await supabaseAdmin
+        .from("roles")
+        .select("id")
+        .eq("name", "student")
+        .single();
+
+      if (roleError || !roleData) {
+        console.error("[verify-email-token] Failed to find student role:", roleError);
+      } else {
+        // Check if user already has a role
+        const { data: existingRole } = await supabaseAdmin
+          .from("user_roles")
+          .select("id")
+          .eq("user_id", tokenRecord.user_id)
+          .maybeSingle();
+
+        if (!existingRole) {
+          // Assign student role
+          const { error: assignError } = await supabaseAdmin
+            .from("user_roles")
+            .insert({
+              user_id: tokenRecord.user_id,
+              role_id: roleData.id
+            });
+
+          if (assignError) {
+            console.error("[verify-email-token] Failed to assign student role:", assignError);
+          } else {
+            console.log(`[verify-email-token] Auto-assigned student role to user: ${tokenRecord.user_id}`);
+          }
+
+          // Create student profile
+          const { error: profileError } = await supabaseAdmin
+            .from("students")
+            .insert({
+              user_id: tokenRecord.user_id,
+              email: tokenRecord.email,
+              full_name: tokenRecord.email.split('@')[0] // Use email prefix as initial name
+            });
+
+          if (profileError && !profileError.message.includes('duplicate')) {
+            console.error("[verify-email-token] Failed to create student profile:", profileError);
+          } else {
+            console.log(`[verify-email-token] Created student profile for user: ${tokenRecord.user_id}`);
+          }
+        }
+      }
     }
 
     return new Response(
@@ -87,7 +137,8 @@ serve(async (req) => {
         valid: true, 
         userId: tokenRecord.user_id,
         email: tokenRecord.email,
-        tokenType: tokenRecord.token_type
+        tokenType: tokenRecord.token_type,
+        redirectTo: '/listings' // Direct to listings after verification
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
