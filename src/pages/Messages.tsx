@@ -1793,18 +1793,15 @@ let otherUserName = 'User';
                           </div>
                         </div>
                         
-                        {/* Right side controls - in flex flow, not absolute */}
-                        <div className="flex items-center gap-2 shrink-0">
+                        {/* Right side controls - always visible */}
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
                           {/* Blue dot for unread */}
                           {hasUnread && (
                             <div className="w-2.5 h-2.5 rounded-full bg-primary" />
                           )}
                           
-                          {/* Three-dots context menu - visible on hover */}
-                          <div 
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                          {/* Three-dots context menu - always visible */}
+                          <div onClick={(e) => e.stopPropagation()}>
                             <ConversationContextMenu
                               conversationId={conv.id}
                               isPinned={conv.is_pinned || false}
