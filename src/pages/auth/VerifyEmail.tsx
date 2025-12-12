@@ -19,11 +19,11 @@ export default function VerifyEmail() {
     const verifyEmail = async () => {
       // Step 1: Checking
       setStep('checking');
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(resolve => setTimeout(resolve, 600));
       
       // Step 2: Loading
       setStep('loading');
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(resolve => setTimeout(resolve, 600));
       
       // Step 3: Verifying
       setStep('verifying');
@@ -34,85 +34,47 @@ export default function VerifyEmail() {
       const type = urlParams.get('type') || 'signup';
       
       if (token) {
-        // Verify the token directly with Supabase
-        const { data, error } = await supabase.auth.verifyOtp({
-          token_hash: token,
-          type: type as 'signup' | 'email' | 'email_change',
-        });
-        
-        if (error) {
-          console.error('[VerifyEmail] Token verification error:', error);
-          setErrorMessage(error.message);
-          setStep('error');
-          return;
-        }
-        
-        if (data?.session || data?.user?.email_confirmed_at) {
-          setStep('success');
-          toast({
-            title: "Email verified",
-            description: "Your email has been verified successfully.",
+        try {
+          // Verify the token using our custom edge function
+          const { data, error } = await supabase.functions.invoke("verify-email-token", {
+            body: { token, type }
           });
           
-          // Redirect after 2 seconds
-          setTimeout(() => {
-            navigate('/auth?mode=login', { replace: true });
-          }, 2000);
-          return;
-        }
-      }
-      
-      // Fallback: Check for existing session (legacy URL hash flow)
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        setErrorMessage(error.message);
-        setStep('error');
-        return;
-      }
-      
-      if (session?.user?.email_confirmed_at) {
-        // Email is verified
-        setStep('success');
-        toast({
-          title: "Email verified",
-          description: "Your email has been verified successfully.",
-        });
-        
-        // Redirect after 2 seconds
-        setTimeout(() => {
-          navigate('/auth?mode=login', { replace: true });
-        }, 2000);
-      } else {
-        // Listen for auth state changes (verification might complete async)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
+          if (error) {
+            console.error('[VerifyEmail] Token verification error:', error);
+            setErrorMessage(error.message || "Verification failed");
+            setStep('error');
+            return;
+          }
+          
+          if (data?.valid) {
             setStep('success');
             toast({
               title: "Email verified",
-              description: "Your email has been verified successfully.",
+              description: "Your email has been verified successfully. You can now sign in.",
             });
             
+            // Redirect after 2 seconds
             setTimeout(() => {
               navigate('/auth?mode=login', { replace: true });
             }, 2000);
+            return;
+          } else {
+            setErrorMessage(data?.error || "Invalid or expired verification link");
+            setStep('error');
+            return;
           }
-        });
-        
-        // Timeout if verification doesn't complete
-        setTimeout(() => {
-          if (step !== 'success') {
-            subscription.unsubscribe();
-            // Still redirect to login even if we can't confirm verification
-            setStep('success');
-            setTimeout(() => {
-              navigate('/auth?mode=login', { replace: true });
-            }, 2000);
-          }
-        }, 5000);
-        
-        return () => subscription.unsubscribe();
+        } catch (err: any) {
+          console.error('[VerifyEmail] Exception:', err);
+          setErrorMessage("Verification failed. Please try again.");
+          setStep('error');
+          return;
+        }
       }
+      
+      // No token provided - show error
+      setErrorMessage("Missing verification token. Please check your email for the verification link.");
+      setStep('error');
     };
 
     verifyEmail();

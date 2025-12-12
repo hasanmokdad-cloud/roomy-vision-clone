@@ -1128,6 +1128,39 @@ export type Database = {
           },
         ]
       }
+      email_verification_tokens: {
+        Row: {
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          token: string
+          token_type: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          expires_at?: string
+          id?: string
+          token: string
+          token_type?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          token_type?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           acted_by: string | null
@@ -4120,6 +4153,7 @@ export type Database = {
         Args: { p_owner_id: string }
         Returns: boolean
       }
+      cleanup_expired_tokens: { Args: never; Returns: undefined }
       debug_auth_state: { Args: never; Returns: Json }
       decrement_admin_balance: {
         Args: { p_admin_id: string; p_amount: number }
