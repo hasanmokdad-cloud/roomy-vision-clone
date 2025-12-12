@@ -508,7 +508,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                       <Label htmlFor="gender" className="text-foreground/80">Gender</Label>
                       <Select 
                         onValueChange={(value) => setValue('gender', value as any)}
-                        value={formValues.gender}
+                        value={formValues.gender || ""}
                       >
                         <SelectTrigger id="gender" className="mt-2">
                           <SelectValue placeholder="Select gender" />
@@ -529,7 +529,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                       <Label htmlFor="governorate" className="text-sm text-foreground/60">Governorate</Label>
                       <Select 
                         onValueChange={(value) => setSelectedGovernorate(value as Governorate)}
-                        value={selectedGovernorate}
+                        value={selectedGovernorate || ""}
                       >
                         <SelectTrigger id="governorate" className="mt-1">
                           <SelectValue placeholder="Select governorate" />
@@ -547,7 +547,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                         <Label htmlFor="district" className="text-sm text-foreground/60">District</Label>
                         <Select 
                           onValueChange={setSelectedDistrict}
-                          value={selectedDistrict}
+                          value={selectedDistrict || ""}
                         >
                           <SelectTrigger id="district" className="mt-1">
                             <SelectValue placeholder="Select district" />
@@ -566,7 +566,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                         <Label htmlFor="town_village" className="text-sm text-foreground/60">Area</Label>
                         <Select 
                           onValueChange={(value) => setValue('town_village', value)}
-                          value={formValues.town_village}
+                          value={formValues.town_village || ""}
                         >
                           <SelectTrigger id="town_village" className="mt-1">
                             <SelectValue placeholder="Select area" />
@@ -593,7 +593,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                     <Label htmlFor="university" className="text-foreground/80">University</Label>
                     <Select 
                       onValueChange={(value) => setValue('university', value)}
-                      value={formValues.university}
+                      value={formValues.university || ""}
                     >
                       <SelectTrigger id="university" className="mt-2">
                         <SelectValue placeholder="Select university" />
@@ -670,7 +670,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                         
                         <div>
                           <Label htmlFor="current_dorm" className="text-sm text-foreground/60">Dorm</Label>
-                          <Select value={currentDormId} onValueChange={setCurrentDormId}>
+                          <Select value={currentDormId || ""} onValueChange={setCurrentDormId}>
                             <SelectTrigger id="current_dorm" className="mt-1">
                               <SelectValue placeholder="Select your current dorm" />
                             </SelectTrigger>
@@ -687,7 +687,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                         {currentDormId && (
                           <div>
                             <Label htmlFor="current_room" className="text-sm text-foreground/60">Room</Label>
-                            <Select value={currentRoomId} onValueChange={(value) => {
+                            <Select value={currentRoomId || ""} onValueChange={(value) => {
                               setCurrentRoomId(value);
                               // Auto-reset roommate toggle if selecting a single room
                               const selectedRoom = availableRooms.find(r => r.id === value);

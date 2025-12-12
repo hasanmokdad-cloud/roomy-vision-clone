@@ -30,9 +30,15 @@ export async function logAnalyticsEvent({
   metadata = {}
 }: LogEventParams): Promise<void> {
   try {
+    // Skip analytics for unauthenticated users
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      return;
+    }
+
     const payload = {
       type: eventType,
-      user_id: userId || null,
+      user_id: userId || session.user.id,
       dorm_id: dormId || null,
       meta: metadata
     };
