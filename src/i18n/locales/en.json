@@ -11,6 +11,42 @@
     "settings": "Settings",
     "signOut": "Sign Out"
   },
+  "navbar": {
+    "becomeOwner": "Become an Owner",
+    "loginOrSignup": "Log in or sign up",
+    "language": "Language",
+    "myProfile": "My Profile",
+    "controlPanel": "Control Panel",
+    "settings": "Settings",
+    "signOut": "Sign out"
+  },
+  "language": {
+    "chooseLanguage": "Choose a language",
+    "subtitle": "Select your preferred language for Roomy"
+  },
+  "listings": {
+    "browseVerified": "Browse Verified Dorms",
+    "title": "Available Dorms in Lebanon",
+    "subtitle": "Explore verified dorms and find your perfect stay near campus.",
+    "searchPlaceholder": "Search by name, location, or features (e.g., 'single room near AUB')",
+    "filterListings": "Filter Listings",
+    "connectionError": "Connection Error",
+    "noDorms": "No dorms available yet",
+    "checkBack": "Check back soon!",
+    "showing": "Showing {{current}} of {{total}} verified dorms"
+  },
+  "becomeOwner": {
+    "title": "Become a Roomy Owner",
+    "subtitle": "List your dorm and connect with students looking for housing. Get started by filling out the form below.",
+    "formTitle": "Add Your First Dorm",
+    "benefit1": "Reach thousands of students looking for housing",
+    "benefit2": "Easy-to-use dashboard to manage your listings",
+    "benefit3": "AI-powered matching to find ideal tenants",
+    "benefit4": "Secure payment processing with Roomy",
+    "success": "Welcome to Roomy Owners!",
+    "successDesc": "Your dorm has been submitted for verification. You can now access your owner dashboard.",
+    "errorDesc": "Failed to submit your dorm. Please try again."
+  },
   "buttons": {
     "getStarted": "Get Started",
     "signIn": "Sign In",
@@ -41,6 +77,6 @@
     "delete": "Delete",
     "edit": "Edit",
     "search": "Search",
-    "filter": "Filter"
+    "filter": "Filters"
   }
 }

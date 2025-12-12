@@ -1,5 +1,6 @@
 // assign-role/index.ts
-// Securely assigns a role ("student" or "owner") to a logged-in user exactly once.
+// Securely assigns a role ("student" or "owner") to a logged-in user.
+// Allows upgrade from student to owner for the "Become an Owner" flow.
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -112,7 +113,50 @@ serve(async (req) => {
         });
       }
       
-      // If trying to switch to a different role, return 409 with current role
+      // ALLOW UPGRADE: student -> owner (for "Become an Owner" flow)
+      if (existingRoleName === "student" && chosen_role === "owner") {
+        // Update the role instead of rejecting
+        const { error: updateError } = await supabase
+          .from("user_roles")
+          .update({ role_id: roleRow.id })
+          .eq("user_id", user.id);
+
+        if (updateError) {
+          console.error("Role upgrade error:", updateError);
+          return new Response(JSON.stringify({ error: "Failed to upgrade role" }), {
+            status: 500,
+            headers: corsHeaders,
+          });
+        }
+
+        // Create owner profile
+        const userEmail = user.email || "";
+        const userName = user.user_metadata?.full_name || userEmail.split("@")[0];
+
+        const { error: ownerError } = await supabase.from("owners").insert([
+          {
+            user_id: user.id,
+            email: userEmail,
+            full_name: userName,
+          },
+        ]);
+
+        if (ownerError && !ownerError.message.includes("duplicate")) {
+          console.error("Owner profile creation error:", ownerError);
+        }
+
+        return new Response(JSON.stringify({ 
+          success: true,
+          role: chosen_role,
+          upgraded: true,
+          previousRole: existingRoleName
+        }), {
+          status: 200,
+          headers: corsHeaders,
+        });
+      }
+      
+      // If trying to switch to a different role (not student->owner), return 409
       return new Response(JSON.stringify({ 
         success: false,
         role: existingRoleName,
