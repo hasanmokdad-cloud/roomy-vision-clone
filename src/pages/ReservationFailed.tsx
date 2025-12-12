@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { XCircle, Home, RotateCw, Search } from 'lucide-react';
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import { toast } from '@/hooks/use-toast';
 
@@ -65,7 +65,7 @@ export default function ReservationFailed() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
+      <RoomyNavbar />
       
       <main className="flex-1 container mx-auto px-4 py-12 flex items-center justify-center">
         <Card className="w-full max-w-lg shadow-xl border-destructive/20">

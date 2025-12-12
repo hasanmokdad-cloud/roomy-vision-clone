@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -1659,7 +1659,7 @@ let otherUserName = 'User';
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Hide Navbar on mobile, show on desktop */}
-      {!isMobile && <Navbar />}
+      {!isMobile && <RoomyNavbar />}
       
       <main 
         className={`flex-1 flex ${isMobile ? 'pt-0' : 'mt-20'}`}

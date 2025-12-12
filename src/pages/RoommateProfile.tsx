@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CompatibilityChart } from '@/components/match/CompatibilityChart';
 import { MatchReasonsBadges } from '@/components/match/MatchReasonsBadges';
 import { computeSimilarity } from '@/hooks/useRoommateMatch';
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -126,7 +126,7 @@ export default function RoommateProfile() {
 
   return (
     <>
-      {!isMobile && <Navbar />}
+      {!isMobile && <RoomyNavbar />}
       <div className="min-h-screen pt-20 pb-16">
         <div className="container mx-auto px-4 max-w-5xl">
           {/* Back Button */}

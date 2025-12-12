@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import BottomNav from '@/components/BottomNav';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -202,7 +202,7 @@ export default function Legal() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      {!isMobile && <Navbar />}
+      {!isMobile && <RoomyNavbar />}
 
       <div className="container mx-auto px-6 py-32 max-w-4xl mb-20">
         <Button

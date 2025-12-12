@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { StudentProfileForm } from '@/components/StudentProfileForm';
 import { OwnerProfileForm } from '@/components/OwnerProfileForm';
 import { AdminProfileForm } from '@/components/AdminProfileForm';
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -104,7 +104,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen relative bg-background">
-      {!isMobile && <Navbar />}
+      {!isMobile && <RoomyNavbar />}
       
       <motion.div 
         initial={{ opacity: 0, y: 20 }}

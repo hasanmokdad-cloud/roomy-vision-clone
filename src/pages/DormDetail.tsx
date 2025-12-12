@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -259,7 +259,7 @@ export default function DormDetail() {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        {!isMobile && <Navbar />}
+        {!isMobile && <RoomyNavbar />}
         <DormDetailSkeleton />
         <Footer />
       </div>
@@ -279,7 +279,7 @@ export default function DormDetail() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {!isMobile && <Navbar />}
+      {!isMobile && <RoomyNavbar />}
       
       <main className="flex-1 container mx-auto px-4 py-8 mt-20">
         <Button

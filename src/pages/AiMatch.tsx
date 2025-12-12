@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import Navbar from "@/components/shared/Navbar";
+import { RoomyNavbar } from "@/components/RoomyNavbar";
 import Footer from "@/components/shared/Footer";
 import { ProfileIncompleteCard } from "@/components/ai-match/ProfileIncompleteCard";
 import { LoadingState } from "@/components/ai-match/LoadingState";
@@ -318,7 +318,7 @@ const AiMatch = () => {
   if (profileStatus === 'loading') {
     return (
       <div className="min-h-screen bg-background pt-24 md:pt-28">
-        {!isMobile && <Navbar />}
+        {!isMobile && <RoomyNavbar />}
         <div className="container mx-auto px-4 py-8">
           <LoadingState />
         </div>
@@ -329,7 +329,7 @@ const AiMatch = () => {
   if (profileStatus === 'incomplete') {
     return (
       <div className="min-h-screen bg-background pt-24 md:pt-28">
-        {!isMobile && <Navbar />}
+        {!isMobile && <RoomyNavbar />}
         <ProfileIncompleteCard percentage={studentProfile?.profile_completion_score || 0} />
         <Footer />
       </div>
@@ -359,7 +359,7 @@ const AiMatch = () => {
 
   return (
     <div className="min-h-screen bg-background pt-24 md:pt-28">
-      {!isMobile && <Navbar />}
+      {!isMobile && <RoomyNavbar />}
       
       <div className="container mx-auto px-4 py-8 space-y-8">
         {/* Gradient Header */}

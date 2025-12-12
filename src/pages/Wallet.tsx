@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import BottomNav from '@/components/BottomNav';
 
 interface PaymentMethod {
@@ -188,7 +188,7 @@ export default function Wallet() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      {!isMobile && <Navbar />}
+      {!isMobile && <RoomyNavbar />}
 
       <div className="container mx-auto px-4 py-8 pt-24 pb-32 max-w-2xl">
         <Button

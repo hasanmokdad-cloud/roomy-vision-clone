@@ -1,4 +1,4 @@
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import { UnderwaterScene } from '@/components/UnderwaterScene';
 import { Sparkles, Shield } from 'lucide-react';
@@ -12,7 +12,7 @@ export default function About() {
   return (
     <div className="min-h-screen flex flex-col bg-background relative">
       <UnderwaterScene />
-      {!isMobile && <Navbar />}
+      {!isMobile && <RoomyNavbar />}
       
       <main className="flex-1 container mx-auto px-4 py-16 mt-20">
         <div className="max-w-4xl mx-auto">

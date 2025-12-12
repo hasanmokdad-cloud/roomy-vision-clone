@@ -10,7 +10,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Navbar from "@/components/shared/Navbar";
+import { RoomyNavbar } from "@/components/RoomyNavbar";
 import Footer from "@/components/shared/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
@@ -355,7 +355,7 @@ export default function StudentMatch() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
-        {!isMobile && <Navbar />}
+        {!isMobile && <RoomyNavbar />}
         <main className="flex-1 container max-w-6xl mx-auto px-4 py-8 mt-20">
           <div className="space-y-6">
             <MatchCardSkeleton />
@@ -370,7 +370,7 @@ export default function StudentMatch() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
-      {!isMobile && <Navbar />}
+      {!isMobile && <RoomyNavbar />}
 
       <main className="flex-1 container max-w-6xl mx-auto px-4 py-8 mt-20">
         <motion.div

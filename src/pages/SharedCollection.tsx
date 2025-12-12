@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Share2, Lock, AlertCircle, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { EnhancedRoomCard } from '@/components/listings/EnhancedRoomCard';
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -104,7 +104,7 @@ export default function SharedCollection() {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#0F1624] to-[#15203B]">
-        {!isMobile && <Navbar />}
+        {!isMobile && <RoomyNavbar />}
         <div className="container mx-auto px-4 py-32 max-w-2xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -135,7 +135,7 @@ export default function SharedCollection() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0F1624] to-[#15203B]">
-      {!isMobile && <Navbar />}
+      {!isMobile && <RoomyNavbar />}
       
       <div className="container mx-auto px-4 md:px-6 py-32 max-w-7xl">
         {/* Header */}
