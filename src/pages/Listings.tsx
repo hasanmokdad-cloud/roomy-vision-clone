@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
-import FiltersPanel from '@/components/shared/FiltersPanel';
 import { FilterChips } from '@/components/shared/FilterChips';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,13 +10,7 @@ import { Search, Sparkles, SlidersHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { AISmartFilter } from '@/components/listings/AISmartFilter';
 import { DormComparison, DormComparisonCheckbox } from '@/components/listings/DormComparison';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
+import { AirbnbFiltersModal } from '@/components/listings/AirbnbFiltersModal';
 import { useListingsQuery } from '@/hooks/useListingsQuery';
 import { sanitizeInput } from '@/utils/inputValidation';
 import { CinematicDormCard } from '@/components/listings/CinematicDormCard';
@@ -48,6 +41,7 @@ export default function Listings() {
     shuttle: 'all' as 'all' | 'available' | 'none',
     genderPreference: [] as string[],
     amenities: [] as string[],
+    residenceType: null as 'room' | 'apartment' | null,
   });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
@@ -127,14 +121,16 @@ export default function Listings() {
     setFilters(newFilters);
   }, []);
 
-  const handleRemoveFilter = useCallback((category: 'universities' | 'areas' | 'roomTypes' | 'capacity' | 'cities', value?: string) => {
+  const handleRemoveFilter = useCallback((category: 'universities' | 'areas' | 'roomTypes' | 'capacity' | 'cities' | 'genderPreference' | 'amenities' | 'residenceType', value?: string) => {
     setFilters(prev => {
       if (category === 'capacity') {
         return { ...prev, capacity: undefined };
+      } else if (category === 'residenceType') {
+        return { ...prev, residenceType: null };
       } else if (value) {
         return {
           ...prev,
-          [category]: prev[category].filter((v) => v !== value)
+          [category]: (prev[category] as string[]).filter((v) => v !== value)
         };
       }
       return prev;
@@ -222,31 +218,25 @@ export default function Listings() {
               aria-label="Search dorms by name, location, or features"
             />
           </div>
-          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-14 px-6 bg-background/30 border border-white/10 hover:bg-background/40 rounded-2xl whitespace-nowrap"
-                aria-label="Open filters"
-              >
-                <SlidersHorizontal className="w-5 h-5 mr-2" />
-                {t('common.filter', 'Filters')}
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto bg-background border-l border-white/10">
-              <SheetHeader>
-                <SheetTitle>{t('listings.filterListings', 'Filter Listings')}</SheetTitle>
-              </SheetHeader>
-              <div className="mt-6">
-                <FiltersPanel 
-                  filters={filters}
-                  onFilterChange={handleFilterChange}
-                  dorms={data.mode === 'dorm' ? data.dorms : []}
-                />
-              </div>
-            </SheetContent>
-          </Sheet>
+          <Button
+            variant="outline"
+            className="h-14 px-6 bg-background/30 border border-white/10 hover:bg-background/40 rounded-2xl whitespace-nowrap"
+            aria-label="Open filters"
+            onClick={() => setFiltersOpen(true)}
+          >
+            <SlidersHorizontal className="w-5 h-5 mr-2" />
+            {t('common.filter', 'Filters')}
+          </Button>
         </motion.div>
+
+        {/* Airbnb-style Filters Modal */}
+        <AirbnbFiltersModal
+          open={filtersOpen}
+          onOpenChange={setFiltersOpen}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          totalResults={filteredDorms.length}
+        />
 
         {/* AI Smart Filter */}
         <motion.div

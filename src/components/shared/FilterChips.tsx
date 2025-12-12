@@ -9,8 +9,12 @@ interface FilterChipsProps {
     areas: string[];
     roomTypes: string[];
     capacity?: number;
+    cities?: string[];
+    genderPreference?: string[];
+    amenities?: string[];
+    residenceType?: 'room' | 'apartment' | null;
   };
-  onRemoveFilter: (category: 'universities' | 'areas' | 'roomTypes' | 'capacity', value?: string) => void;
+  onRemoveFilter: (category: 'universities' | 'areas' | 'roomTypes' | 'capacity' | 'cities' | 'genderPreference' | 'amenities' | 'residenceType', value?: string) => void;
   onResetPrice: () => void;
 }
 
@@ -20,6 +24,10 @@ export const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemoveFilte
     filters.areas.length > 0 ||
     filters.roomTypes.length > 0 ||
     filters.capacity !== undefined ||
+    (filters.cities && filters.cities.length > 0) ||
+    (filters.genderPreference && filters.genderPreference.length > 0) ||
+    (filters.amenities && filters.amenities.length > 0) ||
+    filters.residenceType !== null && filters.residenceType !== undefined ||
     (filters.priceRange[0] > 0 || filters.priceRange[1] < 2000);
 
   if (!hasActiveFilters) return null;
@@ -77,6 +85,72 @@ export const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemoveFilte
               </Badge>
             </motion.div>
           )}
+
+          {/* Cities */}
+          {filters.cities?.map((city) => (
+            <motion.div
+              key={`city-${city}`}
+              initial={{ opacity: 0, scale: 0.8, x: -10 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.8, x: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Badge variant="secondary" className="neon-glow gap-2 hover:bg-secondary/80 transition-colors">
+                {city}
+                <button
+                  onClick={() => onRemoveFilter('cities', city)}
+                  className="hover:text-primary transition-colors"
+                  aria-label={`Remove ${city} filter`}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            </motion.div>
+          ))}
+
+          {/* Residence Type */}
+          {filters.residenceType && (
+            <motion.div
+              key="residenceType"
+              initial={{ opacity: 0, scale: 0.8, x: -10 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.8, x: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Badge variant="secondary" className="neon-glow gap-2 hover:bg-secondary/80 transition-colors">
+                {filters.residenceType === 'room' ? 'Room' : 'Apartment'}
+                <button
+                  onClick={() => onRemoveFilter('residenceType')}
+                  className="hover:text-primary transition-colors"
+                  aria-label="Remove residence type filter"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            </motion.div>
+          )}
+
+          {/* Gender Preference */}
+          {filters.genderPreference?.map((gender) => (
+            <motion.div
+              key={`gender-${gender}`}
+              initial={{ opacity: 0, scale: 0.8, x: -10 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.8, x: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Badge variant="secondary" className="neon-glow gap-2 hover:bg-secondary/80 transition-colors">
+                {gender === 'Male' ? '♂ Male Only' : gender === 'Female' ? '♀ Female Only' : '⚥ Co-ed'}
+                <button
+                  onClick={() => onRemoveFilter('genderPreference', gender)}
+                  className="hover:text-primary transition-colors"
+                  aria-label={`Remove ${gender} filter`}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            </motion.div>
+          ))}
 
           {/* Universities */}
           {filters.universities.map((uni) => (
@@ -137,6 +211,28 @@ export const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemoveFilte
                   onClick={() => onRemoveFilter('roomTypes', type)}
                   className="hover:text-primary transition-colors"
                   aria-label={`Remove ${type} filter`}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            </motion.div>
+          ))}
+
+          {/* Amenities */}
+          {filters.amenities?.map((amenity) => (
+            <motion.div
+              key={`amenity-${amenity}`}
+              initial={{ opacity: 0, scale: 0.8, x: -10 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.8, x: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Badge variant="secondary" className="neon-glow gap-2 hover:bg-secondary/80 transition-colors">
+                {amenity}
+                <button
+                  onClick={() => onRemoveFilter('amenities', amenity)}
+                  className="hover:text-primary transition-colors"
+                  aria-label={`Remove ${amenity} filter`}
                 >
                   <X className="w-3 h-3" />
                 </button>
