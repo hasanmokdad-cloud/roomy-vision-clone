@@ -40,9 +40,13 @@ interface DormFormProps {
   ownerId: string;
   onSaved: () => void;
   onCancel?: () => void;
+  // For "Become an Owner" flow: called before submit to create owner profile
+  // Returns the new owner_id, or null to abort submission
+  onBeforeSubmit?: () => Promise<string | null>;
+  isSubmitting?: boolean;
 }
 
-export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
+export function DormForm({ dorm, ownerId, onSaved, onCancel, onBeforeSubmit, isSubmitting: externalSubmitting }: DormFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -232,13 +236,17 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
   };
 
   const submitDorm = async () => {
+    await submitDormWithOwnerId(ownerId);
+  };
+
+  const submitDormWithOwnerId = async (effectiveOwnerId: string) => {
     // Ensure authenticated session FIRST
     const isAuthenticated = await ensureAuthenticated();
     if (!isAuthenticated) {
       return;
     }
 
-    console.log('📝 Owner ID from props:', ownerId);
+    console.log('📝 Using Owner ID:', effectiveOwnerId);
 
     // Validate required fields
     const missingFields: string[] = [];
@@ -267,7 +275,7 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
     setLoading(true);
     try {
       const payload: any = {
-        owner_id: ownerId,
+        owner_id: effectiveOwnerId,
         name: formData.name,
         dorm_name: formData.name,
         address: formData.address,
@@ -326,43 +334,43 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
         payload.verification_status = "Pending";
         payload.available = true;
         
-      console.log('🚀 Attempting INSERT via RPC with ownerId:', ownerId);
-      
-      const { data: newDormId, error } = await supabase.rpc('insert_owner_dorm', {
-        p_owner_id: ownerId,
-        p_name: payload.name,
-        p_dorm_name: payload.dorm_name || payload.name,
-        p_address: payload.address,
-        p_area: payload.area || null,
-        p_university: null,
-        p_description: payload.description || null,
-        p_image_url: payload.image_url || null,
-        p_cover_image: payload.cover_image || payload.image_url || null,
-        p_monthly_price: null,
-        p_capacity: payload.capacity ? parseInt(String(payload.capacity)) : null,
-        p_amenities: payload.amenities || [],
-        p_shuttle: payload.shuttle ?? false,
-        p_gender_preference: payload.gender_preference || null,
-        p_phone_number: null,
-        p_email: null,
-        p_website: null,
-        p_gallery_images: payload.gallery_images || []
-      });
-      
-      console.log('📬 RPC Response:', { newDormId, error });
-      
-      if (error) {
-        console.error('❌ RPC Error Details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        throw error;
-      }
-      
-      console.log('✅ Dorm created with ID:', newDormId);
+        console.log('🚀 Attempting INSERT via RPC with ownerId:', effectiveOwnerId);
         
+        const { data: newDormId, error } = await supabase.rpc('insert_owner_dorm', {
+          p_owner_id: effectiveOwnerId,
+          p_name: payload.name,
+          p_dorm_name: payload.dorm_name || payload.name,
+          p_address: payload.address,
+          p_area: payload.area || null,
+          p_university: null,
+          p_description: payload.description || null,
+          p_image_url: payload.image_url || null,
+          p_cover_image: payload.cover_image || payload.image_url || null,
+          p_monthly_price: null,
+          p_capacity: payload.capacity ? parseInt(String(payload.capacity)) : null,
+          p_amenities: payload.amenities || [],
+          p_shuttle: payload.shuttle ?? false,
+          p_gender_preference: payload.gender_preference || null,
+          p_phone_number: null,
+          p_email: null,
+          p_website: null,
+          p_gallery_images: payload.gallery_images || []
+        });
+        
+        console.log('📬 RPC Response:', { newDormId, error });
+        
+        if (error) {
+          console.error('❌ RPC Error Details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
+          throw error;
+        }
+        
+        console.log('✅ Dorm created with ID:', newDormId);
+          
         toast({ 
           title: "Success", 
           description: "Dorm submitted for verification. You'll be notified once it's approved.",
@@ -394,7 +402,20 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
       return;
     }
 
-    await submitDorm();
+    // If onBeforeSubmit is provided (Become Owner flow), call it first
+    // to get the newly created owner_id
+    if (onBeforeSubmit) {
+      const newOwnerId = await onBeforeSubmit();
+      if (!newOwnerId) {
+        // onBeforeSubmit failed or was cancelled
+        return;
+      }
+      // Use the new owner_id for dorm creation
+      await submitDormWithOwnerId(newOwnerId);
+    } else {
+      // Normal flow - use the provided ownerId
+      await submitDorm();
+    }
   };
 
   const handlePreview = (e: React.MouseEvent) => {
@@ -701,17 +722,17 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
               type="button"
               variant="outline"
               onClick={handlePreview}
-              disabled={loading}
+              disabled={loading || externalSubmitting}
               className="gap-2"
             >
               <Eye className="w-4 h-4" />
               Preview Listing
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? (
+            <Button type="submit" disabled={loading || externalSubmitting} className="flex-1">
+              {(loading || externalSubmitting) ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
+                  {externalSubmitting ? "Setting up account..." : "Saving..."}
                 </>
               ) : dorm ? (
                 "Update Dorm"
@@ -729,7 +750,14 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel }: DormFormProps) {
       onClose={() => setShowPreview(false)}
       onSubmit={async () => {
         setShowPreview(false);
-        await submitDorm();
+        // Handle Become Owner flow from preview modal too
+        if (onBeforeSubmit) {
+          const newOwnerId = await onBeforeSubmit();
+          if (!newOwnerId) return;
+          await submitDormWithOwnerId(newOwnerId);
+        } else {
+          await submitDorm();
+        }
       }}
       formData={formData}
     />
