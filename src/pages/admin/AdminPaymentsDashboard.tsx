@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import Navbar from '@/components/shared/Navbar';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
 import { useToast } from '@/hooks/use-toast';
@@ -235,9 +235,8 @@ export default function AdminPaymentsDashboard() {
 
   if (authLoading || roleLoading || loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="container mx-auto px-6 py-32 max-w-6xl">
+      <AdminLayout>
+        <div className="container mx-auto px-6 py-8 max-w-6xl">
           <Skeleton className="h-12 w-64 mb-8" />
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             {[1, 2, 3, 4].map((i) => (
@@ -250,7 +249,7 @@ export default function AdminPaymentsDashboard() {
             ))}
           </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
@@ -260,10 +259,8 @@ export default function AdminPaymentsDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <Navbar />
-
-      <div className="container mx-auto px-6 py-32 max-w-6xl">
+    <AdminLayout>
+      <div className="container mx-auto px-6 py-8 max-w-6xl">
         <Button
           variant="ghost"
           onClick={() => navigate('/admin')}
@@ -582,6 +579,6 @@ export default function AdminPaymentsDashboard() {
           </Tabs>
         </motion.div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
