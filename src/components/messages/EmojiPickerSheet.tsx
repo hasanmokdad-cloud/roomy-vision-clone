@@ -6,13 +6,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useEffect } from "react";
 
 interface EmojiPickerSheetProps {
   open: boolean;
@@ -39,45 +33,6 @@ export function EmojiPickerSheet({
 
   const emojiPickerTheme = theme === "dark" ? Theme.DARK : Theme.LIGHT;
 
-  // Close on outside click for desktop - but not when clicking inside emoji picker
-  useEffect(() => {
-    if (!open || isMobile) return;
-    
-    const handleClickOutside = (e: PointerEvent) => {
-      const target = e.target as HTMLElement;
-      
-      // Check if click is inside emoji picker or any of its internal components
-      // emoji-picker-react uses classes starting with 'epr-' and 'EmojiPickerReact'
-      // Also check for data attributes used by emoji-picker-react
-      const isInsideEmojiPicker = 
-        target.closest('[role="dialog"]') ||
-        target.closest('.emoji-picker-react') ||
-        target.closest('.EmojiPickerReact') ||
-        target.closest('[class*="epr-"]') ||
-        target.closest('[data-name]') || // Emoji buttons have data-name
-        target.closest('[data-unified]') || // Emoji buttons have data-unified
-        target.closest('aside') || // Category navigation
-        target.closest('nav') || // Category tabs
-        target.closest('input') || // Search input
-        target.className?.toString().includes('epr-');
-      
-      if (isInsideEmojiPicker) {
-        return; // Don't close
-      }
-      onOpenChange(false);
-    };
-
-    // Add listener with delay to avoid immediate closure
-    const timeoutId = setTimeout(() => {
-      document.addEventListener('pointerdown', handleClickOutside);
-    }, 150);
-
-    return () => {
-      clearTimeout(timeoutId);
-      document.removeEventListener('pointerdown', handleClickOutside);
-    };
-  }, [open, isMobile, onOpenChange]);
-
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
@@ -95,6 +50,7 @@ export function EmojiPickerSheet({
               height={400}
               searchPlaceHolder="Search emoji..."
               previewConfig={{ showPreview: false }}
+              skinTonesDisabled={true}
             />
           </div>
         </DrawerContent>
@@ -102,33 +58,35 @@ export function EmojiPickerSheet({
     );
   }
 
-  // Desktop: use Dialog (modal) instead of Popover when no trigger
+  // Desktop: Use a simple positioned container instead of Dialog
   if (!trigger) {
+    if (!open) return null;
+    
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent 
-          className="w-auto p-0 border-0 max-w-fit"
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onInteractOutside={(e) => e.preventDefault()}
+      <>
+        {/* Backdrop to catch outside clicks */}
+        <div 
+          className="fixed inset-0 z-40"
+          onClick={() => onOpenChange(false)}
+        />
+        {/* Emoji picker container - positioned in center */}
+        <div 
+          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-background rounded-lg shadow-xl border"
+          onClick={(e) => e.stopPropagation()}
         >
-          <DialogTitle className="sr-only">Choose emoji</DialogTitle>
-          <div 
-            onClick={(e) => e.stopPropagation()} 
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            <EmojiPicker
-              onEmojiClick={handleEmojiClick}
-              theme={emojiPickerTheme}
-              width={350}
-              height={400}
-              searchPlaceHolder="Search emoji..."
-              previewConfig={{ showPreview: false }}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+          <EmojiPicker
+            onEmojiClick={handleEmojiClick}
+            theme={emojiPickerTheme}
+            width={350}
+            height={400}
+            searchPlaceHolder="Search emoji..."
+            previewConfig={{ showPreview: false }}
+            skinTonesDisabled={true}
+          />
+        </div>
+      </>
     );
   }
 
-  return null; // No trigger means it shouldn't render in Popover mode
+  return null;
 }
