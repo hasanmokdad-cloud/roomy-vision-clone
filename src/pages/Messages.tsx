@@ -8,7 +8,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3 } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3, Circle } from 'lucide-react';
+import { formatDistanceToNowStrict } from 'date-fns';
 import { VoiceWaveform } from '@/components/messages/VoiceWaveform';
 import { ConversationContextMenu } from '@/components/messages/ConversationContextMenu';
 import { VoiceRecordingOverlay } from '@/components/messages/VoiceRecordingOverlay';
@@ -46,10 +47,12 @@ type Conversation = {
   other_user_name?: string;
   other_user_avatar?: string | null;
   other_student_id?: string | null;
-  dorm_name?: string;
+  other_user_role?: 'Student' | 'Owner' | 'Admin';
+  owner_dorm_name?: string | null;
   last_message?: string;
   last_message_status?: 'sent' | 'delivered' | 'seen';
-  last_message_sender_id?: string;
+  last_message_sender_id?: string | null;
+  last_message_time?: string;
   other_user_photo?: string | null;
   unreadCount?: number;
   is_pinned?: boolean;
@@ -759,9 +762,11 @@ export default function Messages() {
           dorm = dormData;
         }
 
-        let otherUserName = 'User';
+let otherUserName = 'User';
         let otherUserPhoto: string | null = null;
         let otherStudentId: string | null = null;
+        let otherUserRole: 'Student' | 'Owner' | 'Admin' = 'Student';
+        let ownerDormName: string | null = null;
 
         // Handle support conversations differently
         if (conv.conversation_type === 'support') {
@@ -776,27 +781,55 @@ export default function Messages() {
               .eq('user_id', otherUserId)
               .maybeSingle();
             
-            if (studentData) {
+          if (studentData) {
               otherUserName = studentData.full_name || 'Student';
               otherUserPhoto = studentData.profile_photo_url;
+              otherUserRole = 'Student';
             } else {
               // Try owners
               const { data: ownerData } = await supabase
                 .from('owners')
-                .select('full_name, profile_photo_url')
+                .select('id, full_name, profile_photo_url')
                 .eq('user_id', otherUserId)
                 .maybeSingle();
-              otherUserName = ownerData?.full_name || 'Owner';
-              otherUserPhoto = ownerData?.profile_photo_url;
+              if (ownerData) {
+                otherUserName = ownerData.full_name || 'Owner';
+                otherUserPhoto = ownerData.profile_photo_url;
+                otherUserRole = 'Owner';
+                // Fetch owner's first verified dorm
+                const { data: ownerDorm } = await supabase
+                  .from('dorms')
+                  .select('name, dorm_name')
+                  .eq('owner_id', ownerData.id)
+                  .eq('verification_status', 'approved')
+                  .limit(1)
+                  .maybeSingle();
+                if (ownerDorm) {
+                  ownerDormName = ownerDorm.dorm_name || ownerDorm.name;
+                }
+              } else {
+                // Check if admin
+                const { data: adminData } = await supabase
+                  .from('admins')
+                  .select('full_name, profile_photo_url')
+                  .eq('user_id', otherUserId)
+                  .maybeSingle();
+                if (adminData) {
+                  otherUserName = adminData.full_name || 'Admin';
+                  otherUserPhoto = adminData.profile_photo_url;
+                  otherUserRole = 'Admin';
+                }
+              }
             }
           } else {
             // User viewing: show "Roomy Support"
             otherUserName = 'Roomy Support';
           }
         } else if (conv.user_a_id && conv.user_b_id) {
-          // Student-to-student conversation - look up the OTHER student
+          // Peer-to-peer conversation - look up the OTHER user
           const otherUserId = conv.user_a_id === userId ? conv.user_b_id : conv.user_a_id;
           
+          // Try student first
           const { data: otherStudentData } = await supabase
             .from('students')
             .select('id, full_name, profile_photo_url')
@@ -807,6 +840,44 @@ export default function Messages() {
             otherUserName = otherStudentData.full_name || 'Student';
             otherUserPhoto = otherStudentData.profile_photo_url;
             otherStudentId = otherStudentData.id;
+            otherUserRole = 'Student';
+          } else {
+            // Try owner
+            const { data: otherOwnerData } = await supabase
+              .from('owners')
+              .select('id, full_name, profile_photo_url')
+              .eq('user_id', otherUserId)
+              .maybeSingle();
+            
+            if (otherOwnerData) {
+              otherUserName = otherOwnerData.full_name || 'Owner';
+              otherUserPhoto = otherOwnerData.profile_photo_url;
+              otherUserRole = 'Owner';
+              // Fetch owner's first verified dorm
+              const { data: ownerDorm } = await supabase
+                .from('dorms')
+                .select('name, dorm_name')
+                .eq('owner_id', otherOwnerData.id)
+                .eq('verification_status', 'approved')
+                .limit(1)
+                .maybeSingle();
+              if (ownerDorm) {
+                ownerDormName = ownerDorm.dorm_name || ownerDorm.name;
+              }
+            } else {
+              // Try admin
+              const { data: otherAdminData } = await supabase
+                .from('admins')
+                .select('full_name, profile_photo_url')
+                .eq('user_id', otherUserId)
+                .maybeSingle();
+              
+              if (otherAdminData) {
+                otherUserName = otherAdminData.full_name || 'Admin';
+                otherUserPhoto = otherAdminData.profile_photo_url;
+                otherUserRole = 'Admin';
+              }
+            }
           }
         } else {
           // Regular dorm conversations
@@ -814,28 +885,46 @@ export default function Messages() {
             if (conv.owner_id) {
               const { data: ownerData } = await supabase
                 .from('owners')
-                .select('full_name')
+                .select('id, full_name, profile_photo_url')
                 .eq('id', conv.owner_id)
                 .maybeSingle();
-              otherUserName = ownerData?.full_name || 'Owner';
+              if (ownerData) {
+                otherUserName = ownerData.full_name || 'Owner';
+                otherUserPhoto = ownerData.profile_photo_url;
+                otherUserRole = 'Owner';
+                // Fetch owner's first verified dorm
+                const { data: ownerDorm } = await supabase
+                  .from('dorms')
+                  .select('name, dorm_name')
+                  .eq('owner_id', ownerData.id)
+                  .eq('verification_status', 'approved')
+                  .limit(1)
+                  .maybeSingle();
+                if (ownerDorm) {
+                  ownerDormName = ownerDorm.dorm_name || ownerDorm.name;
+                }
+              }
             } else {
               otherUserName = 'Support';
+              otherUserRole = 'Admin';
             }
           } else {
             const { data: studentData } = await supabase
               .from('students')
-              .select('full_name, profile_photo_url')
+              .select('id, full_name, profile_photo_url')
               .eq('id', conv.student_id)
               .maybeSingle();
             otherUserName = studentData?.full_name || 'Student';
             otherUserPhoto = studentData?.profile_photo_url || null;
+            otherStudentId = studentData?.id || null;
+            otherUserRole = 'Student';
           }
         }
 
-        // Get last message
+        // Get last message with sender info and timestamp
         const { data: lastMsg } = await supabase
           .from('messages')
-          .select('body, attachment_type')
+          .select('body, attachment_type, sender_id, created_at')
           .eq('conversation_id', conv.id)
           .order('created_at', { ascending: false })
           .limit(1)
@@ -886,8 +975,11 @@ export default function Messages() {
           other_user_name: otherUserName,
           other_user_photo: otherUserPhoto,
           other_student_id: otherStudentId,
-          dorm_name: dorm?.dorm_name || dorm?.name || (conv.conversation_type === 'support' ? 'Support' : 'Dorm'),
+          other_user_role: otherUserRole,
+          owner_dorm_name: ownerDormName,
           last_message: lastMessage,
+          last_message_sender_id: lastMsg?.sender_id || null,
+          last_message_time: lastMsg?.created_at || conv.updated_at,
           unreadCount
         };
       }));
@@ -1631,65 +1723,90 @@ export default function Messages() {
                     !searchQuery || 
                     c.other_user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                     c.last_message?.toLowerCase().includes(searchQuery.toLowerCase())
-                  ).map((conv) => (
-                  <div key={conv.id} className="relative group">
-                    <button
-                      onClick={() => {
-                        setSelectedConversation(conv.id);
-                        loadMessages(conv.id);
-                      }}
-                      className={`w-full p-4 border-b border-border hover:bg-muted/50 transition-colors text-left ${
-                        selectedConversation === conv.id ? 'bg-muted' : ''
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="relative">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
-                            <AvatarFallback className="bg-primary/20 text-primary">
-                              {conv.other_user_name?.charAt(0) || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          {conv.student_id && <OnlineIndicator userId={conv.student_id} />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1">
-                              {conv.is_pinned && <Pin className="w-3 h-3 text-primary" />}
-                              {conv.muted_until && new Date(conv.muted_until) > new Date() && (
-                                <BellOff className="w-3 h-3 text-muted-foreground" />
-                              )}
-                              <p className="font-semibold text-sm truncate">{conv.other_user_name}</p>
-                            </div>
-                            {conv.unreadCount > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date()) && (
-                              <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-primary-foreground bg-primary rounded-full shrink-0">
-                                {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
-                              </div>
-                            )}
+                  ).map((conv) => {
+                    const hasUnread = (conv.unreadCount || 0) > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date());
+                    const timeAgo = conv.last_message_time 
+                      ? formatDistanceToNowStrict(new Date(conv.last_message_time), { addSuffix: false })
+                        .replace(' seconds', 's')
+                        .replace(' second', 's')
+                        .replace(' minutes', 'm')
+                        .replace(' minute', 'm')
+                        .replace(' hours', 'h')
+                        .replace(' hour', 'h')
+                        .replace(' days', 'd')
+                        .replace(' day', 'd')
+                        .replace(' weeks', 'w')
+                        .replace(' week', 'w')
+                        .replace(' months', 'mo')
+                        .replace(' month', 'mo')
+                        .replace(' years', 'y')
+                        .replace(' year', 'y')
+                      : '';
+                    
+                    return (
+                    <div key={conv.id} className="relative group">
+                      <button
+                        onClick={() => {
+                          setSelectedConversation(conv.id);
+                          loadMessages(conv.id);
+                        }}
+                        className={`w-full p-4 border-b border-border hover:bg-muted/50 transition-colors text-left ${
+                          selectedConversation === conv.id ? 'bg-muted' : ''
+                        } ${hasUnread ? 'bg-accent/30' : ''}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="relative">
+                            <Avatar className="w-14 h-14">
+                              <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
+                              <AvatarFallback className="bg-primary/20 text-primary text-lg">
+                                {conv.other_user_name?.charAt(0) || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            {conv.student_id && <OnlineIndicator userId={conv.student_id} />}
                           </div>
-                           <div className="flex items-center gap-1">
-                             {conv.last_message_sender_id === userId && (
-                               <MessageStatusIcon status={conv.last_message_status} />
-                             )}
-                             <p className="text-xs text-foreground/60 truncate flex-1">
-                               {conv.last_message}
-                             </p>
-                           </div>
-                          <p className="text-xs text-foreground/60 truncate">{conv.dorm_name}</p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
+                                {conv.muted_until && new Date(conv.muted_until) > new Date() && (
+                                  <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />
+                                )}
+                                <p className={`text-sm truncate ${hasUnread ? 'font-bold' : 'font-semibold'}`}>
+                                  {conv.other_user_name}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className={`text-xs ${hasUnread ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
+                                  {timeAgo}
+                                </span>
+                                {hasUnread && (
+                                  <Circle className="w-2 h-2 fill-primary text-primary" />
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              {conv.last_message_sender_id === userId && (
+                                <MessageStatusIcon status={conv.last_message_status} />
+                              )}
+                              <p className={`text-sm truncate flex-1 ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                                {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message}
+                              </p>
+                            </div>
+                          </div>
                         </div>
+                      </button>
+                      <div className="absolute top-2 right-10 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ConversationContextMenu
+                          conversationId={conv.id}
+                          isPinned={conv.is_pinned || false}
+                          isArchived={conv.is_archived || false}
+                          mutedUntil={conv.muted_until || null}
+                          onUpdate={() => loadConversations()}
+                        />
                       </div>
-                    </button>
-              <div className="absolute top-2 right-2 opacity-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                <ConversationContextMenu
-                  conversationId={conv.id}
-                  isPinned={conv.is_pinned || false}
-                  isArchived={conv.is_archived || false}
-                  mutedUntil={conv.muted_until || null}
-                  onUpdate={() => loadConversations()}
-                />
-              </div>
-                  </div>
-                  ))
+                    </div>
+                    );
+                  })
                 )}
               </ScrollArea>
             )}
@@ -1734,7 +1851,15 @@ export default function Messages() {
                       {conversations.find(c => c.id === selectedConversation)?.other_user_name}
                     </h3>
                     <p className="text-xs text-muted-foreground truncate">
-                      {typingUsers.size > 0 ? 'Typing...' : conversations.find(c => c.id === selectedConversation)?.dorm_name}
+                      {typingUsers.size > 0 ? 'Typing...' : (() => {
+                        const conv = conversations.find(c => c.id === selectedConversation);
+                        if (!conv) return '';
+                        // For owners with a dorm, show dorm name
+                        if (conv.other_user_role === 'Owner' && conv.owner_dorm_name) {
+                          return `${conv.owner_dorm_name} • Owner`;
+                        }
+                        return conv.other_user_role || 'User';
+                      })()}
                     </p>
                   </div>
                   <Button
