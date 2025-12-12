@@ -128,17 +128,12 @@ export const ChatbotBubble = () => {
       return;
     }
     
-    // Students on mobile: show everywhere EXCEPT /messages and /ai-match
-    if (userRole === 'student' && isMobile) {
-      const hiddenRoutes = ['/messages', '/ai-match'];
-      setShouldShow(!hiddenRoutes.includes(location.pathname));
-      return;
-    }
+    // Only show chatbot on /listings and /dorm/:id pages
+    const isListingsPage = location.pathname === '/listings' || location.pathname.startsWith('/dorm/');
     
-    // Students on desktop: show everywhere (existing behavior)
-    // Admins: show everywhere (existing behavior)
+    // Students and admins: only show on listings pages
     if (userRole === 'student' || userRole === 'admin') {
-      setShouldShow(true);
+      setShouldShow(isListingsPage);
       return;
     }
     

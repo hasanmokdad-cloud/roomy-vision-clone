@@ -1753,8 +1753,8 @@ let otherUserName = 'User';
                         loadMessages(conv.id);
                       }}
                     >
-                      <div className="flex items-center gap-3 px-4 py-2">
-                        {/* Avatar */}
+                      <div className="flex items-center gap-3 px-4 py-3">
+                        {/* Avatar - 56px like Instagram */}
                         <div className="relative shrink-0">
                           <Avatar className="w-14 h-14">
                             <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
@@ -1765,43 +1765,44 @@ let otherUserName = 'User';
                           {conv.student_id && <OnlineIndicator userId={conv.student_id} />}
                         </div>
                         
-                        {/* Content */}
-                        <div className="flex-1 min-w-0 py-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                              {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
-                              {conv.muted_until && new Date(conv.muted_until) > new Date() && (
-                                <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />
-                              )}
-                              <span className={`text-[14px] truncate ${hasUnread ? 'font-semibold text-foreground' : 'font-normal text-foreground'}`}>
-                                {conv.other_user_name}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {timeAgo && (
-                                <span className={`text-xs ${hasUnread ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
-                                  {timeAgo}
-                                </span>
-                              )}
-                            </div>
+                        {/* Content - Instagram style: name on top, message + time on bottom */}
+                        <div className="flex-1 min-w-0">
+                          {/* Row 1: Name with icons */}
+                          <div className="flex items-center gap-1.5">
+                            {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
+                            {conv.muted_until && new Date(conv.muted_until) > new Date() && (
+                              <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />
+                            )}
+                            <span className={`text-[14px] truncate ${hasUnread ? 'font-bold text-foreground' : 'font-normal text-foreground'}`}>
+                              {conv.other_user_name}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-1.5 mt-0.5">
+                          
+                          {/* Row 2: Message preview + time (Instagram style: "Message · 1d") */}
+                          <div className="flex items-center gap-1 mt-0.5">
                             {conv.last_message_sender_id === userId && (
                               <MessageStatusIcon status={conv.last_message_status} />
                             )}
-                            <p className={`text-sm truncate flex-1 ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                            <p className={`text-sm truncate ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                               {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
                             </p>
-                            {/* Blue dot for unread - larger and more visible */}
-                            {hasUnread && (
-                              <div className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
+                            {timeAgo && (
+                              <span className="text-sm text-muted-foreground shrink-0">· {timeAgo}</span>
                             )}
                           </div>
                         </div>
+                        
+                        {/* Blue dot for unread - at far right */}
+                        {hasUnread && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
+                        )}
                       </div>
                       
-                      {/* Three-dots context menu - visible on hover, positioned outside content flow */}
-                      <div className="absolute top-1/2 -translate-y-1/2 right-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 rounded-md">
+                      {/* Three-dots context menu - at far right, visible on hover */}
+                      <div 
+                        className="absolute top-1/2 -translate-y-1/2 right-3 z-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <ConversationContextMenu
                           conversationId={conv.id}
                           isPinned={conv.is_pinned || false}
