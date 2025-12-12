@@ -1794,7 +1794,7 @@ let otherUserName = 'User';
                         </div>
                         
                         {/* Right side controls - always visible */}
-                        <div className="flex items-center gap-2 shrink-0 ml-2 z-10">
+                        <div className="flex items-center gap-2 shrink-0 ml-2 z-10 overflow-visible">
                           {/* Blue dot for unread */}
                           {hasUnread && (
                             <div className="w-2.5 h-2.5 rounded-full bg-primary" />
