@@ -1750,52 +1750,53 @@ let otherUserName = 'User';
                           setSelectedConversation(conv.id);
                           loadMessages(conv.id);
                         }}
-                        className={`w-full p-4 border-b border-border hover:bg-muted/50 transition-colors text-left ${
+                        className={`w-full px-4 py-3 border-b border-border hover:bg-muted/50 transition-colors text-left ${
                           selectedConversation === conv.id ? 'bg-muted' : ''
-                        } ${hasUnread ? 'bg-accent/30' : ''}`}
+                        }`}
                       >
-                        <div className="flex items-start gap-3">
-                          <div className="relative">
-                            <Avatar className="w-14 h-14">
+                        <div className="flex items-center gap-3">
+                          <div className="relative shrink-0">
+                            <Avatar className="w-12 h-12">
                               <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
-                              <AvatarFallback className="bg-primary/20 text-primary text-lg">
+                              <AvatarFallback className="bg-primary/20 text-primary text-base">
                                 {conv.other_user_name?.charAt(0) || 'U'}
                               </AvatarFallback>
                             </Avatar>
                             {conv.student_id && <OnlineIndicator userId={conv.student_id} />}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-1.5 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                 {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
                                 {conv.muted_until && new Date(conv.muted_until) > new Date() && (
                                   <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />
                                 )}
-                                <p className={`text-sm truncate ${hasUnread ? 'font-bold' : 'font-semibold'}`}>
+                                <span className={`text-[14px] truncate ${hasUnread ? 'font-bold text-foreground' : 'font-normal text-foreground'}`}>
                                   {conv.other_user_name}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <span className={`text-xs ${hasUnread ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
-                                  {timeAgo}
                                 </span>
-                                {hasUnread && (
-                                  <Circle className="w-2 h-2 fill-primary text-primary" />
+                                {timeAgo && (
+                                  <span className="text-xs text-muted-foreground shrink-0">
+                                    · {timeAgo}
+                                  </span>
                                 )}
                               </div>
+                              {hasUnread && (
+                                <div className="w-2 h-2 rounded-full bg-primary shrink-0 ml-2" />
+                              )}
                             </div>
                             <div className="flex items-center gap-1 mt-0.5">
                               {conv.last_message_sender_id === userId && (
                                 <MessageStatusIcon status={conv.last_message_status} />
                               )}
-                              <p className={`text-sm truncate flex-1 ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                              <p className={`text-[13px] truncate flex-1 ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground font-normal'}`}>
                                 {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message}
                               </p>
                             </div>
                           </div>
                         </div>
                       </button>
-                      <div className="absolute top-2 right-10 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* Three-dots context menu - visible on hover for all roles */}
+                      <div className="absolute top-1/2 -translate-y-1/2 right-3 z-30 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
                         <ConversationContextMenu
                           conversationId={conv.id}
                           isPinned={conv.is_pinned || false}
