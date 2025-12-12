@@ -116,11 +116,29 @@ function generateEmailHtml(type: string, actionUrl: string): { html: string; sub
         </p>
 
         <!-- Button -->
-        <div style="text-align: center; margin-bottom: 28px;">
-          <a href="${actionUrl}" class="button" style="display: inline-block; background: linear-gradient(90deg, #00E0FF, #BD00FF); color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-weight: 600; font-size: 15px;">
-            ${template.buttonText}
-          </a>
-        </div>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 28px;">
+          <tr>
+            <td align="center">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${actionUrl}" style="height:44px;v-text-anchor:middle;width:180px;" arcsize="20%" strokecolor="#8E2DE2" fillcolor="#8E2DE2">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">${template.buttonText}</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" bgcolor="#8E2DE2" style="border-radius: 8px;">
+                    <a href="${actionUrl}" target="_blank" style="display: inline-block; padding: 12px 28px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px;">
+                      ${template.buttonText}
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <!--<![endif]-->
+            </td>
+          </tr>
+        </table>
 
         ${template.expiry ? `<p style="text-align: center; font-size: 13px; color: #6B7280; margin: 0 0 16px 0;">${template.expiry}</p>` : ''}
 
