@@ -1,27 +1,36 @@
 // src/pages/Intro.tsx
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import EntryAnimation from "@/components/EntryAnimation";
 import FluidBackground from "@/components/FluidBackground";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Intro() {
   const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const played = sessionStorage.getItem("intro-played");
-    if (played === "true") {
-      void navigateBasedOnRole();
-    }
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+    };
+    checkSession();
   }, []);
 
-  const navigateBasedOnRole = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+  useEffect(() => {
+    // If intro was already played this session, navigate immediately
+    const played = sessionStorage.getItem("intro-played");
+    if (played === "true") {
+      void navigateAfterIntro();
+    }
+  }, [isLoggedIn]);
 
+  const navigateAfterIntro = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    // If not logged in, go to listings (public access)
     if (!session) {
-      navigate("/auth", { replace: true });
+      navigate("/listings", { replace: true });
       return;
     }
 
@@ -45,12 +54,13 @@ export default function Intro() {
       role = "admin";
     }
 
+    // If no role, they need to select one
     if (!role) {
       navigate("/select-role", { replace: true });
       return;
     }
 
-    // Admin always goes to /admin immediately
+    // Navigate based on role
     if (role === "admin") {
       navigate("/admin", { replace: true });
     } else if (role === "owner") {
@@ -62,13 +72,22 @@ export default function Intro() {
 
   const handleComplete = async () => {
     sessionStorage.setItem("intro-played", "true");
-    await navigateBasedOnRole();
+    await navigateAfterIntro();
   };
+
+  // Don't render until we know login state
+  if (isLoggedIn === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden">
       <FluidBackground />
-      <EntryAnimation onComplete={handleComplete} />
+      <EntryAnimation onComplete={handleComplete} isLoggedIn={isLoggedIn} />
     </div>
   );
 }

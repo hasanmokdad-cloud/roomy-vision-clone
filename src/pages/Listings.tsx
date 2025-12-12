@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import FiltersPanel from '@/components/shared/FiltersPanel';
 import { FilterChips } from '@/components/shared/FilterChips';
@@ -30,10 +30,12 @@ import { logAnalyticsEvent } from '@/utils/analytics';
 import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useTranslation } from 'react-i18next';
 
 export default function Listings() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [filters, setFilters] = useState({
@@ -176,7 +178,7 @@ export default function Listings() {
   return (
     <div className="min-h-screen flex flex-col relative">
       <SkipToContent />
-      {!isMobile && <Navbar />}
+      <RoomyNavbar />
       
       <ScrollImmersion>
         <main id="main-content" className="flex-1 container mx-auto px-4 py-8 mt-20" role="main">
@@ -188,13 +190,13 @@ export default function Listings() {
         >
           <Badge variant="secondary" className="mb-4 neon-glow">
             <Sparkles className="w-4 h-4 mr-2" />
-            Browse Verified Dorms
+            {t('listings.browseVerified', 'Browse Verified Dorms')}
           </Badge>
           <h1 className="text-5xl md:text-6xl font-black gradient-text mb-6">
-            Available Dorms in Lebanon
+            {t('listings.title', 'Available Dorms in Lebanon')}
           </h1>
           <p className="text-xl text-foreground/80">
-            Explore verified dorms and find your perfect stay near campus.
+            {t('listings.subtitle', 'Explore verified dorms and find your perfect stay near campus.')}
           </p>
         </motion.div>
 
@@ -209,7 +211,7 @@ export default function Listings() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/50" aria-hidden="true" />
             <Input
               type="text"
-              placeholder="Search by name, location, or features (e.g., 'single room near AUB')"
+              placeholder={t('listings.searchPlaceholder', "Search by name, location, or features (e.g., 'single room near AUB')")}
               value={searchQuery}
               onChange={(e) => {
                 const sanitized = sanitizeInput(e.target.value);
@@ -228,12 +230,12 @@ export default function Listings() {
                 aria-label="Open filters"
               >
                 <SlidersHorizontal className="w-5 h-5 mr-2" />
-                Filters
+                {t('common.filter', 'Filters')}
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto bg-background border-l border-white/10">
               <SheetHeader>
-                <SheetTitle>Filter Listings</SheetTitle>
+                <SheetTitle>{t('listings.filterListings', 'Filter Listings')}</SheetTitle>
               </SheetHeader>
               <div className="mt-6">
                 <FiltersPanel 
@@ -282,7 +284,7 @@ export default function Listings() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center py-16 glass-hover rounded-3xl p-12"
               >
-                <h3 className="text-2xl font-black gradient-text mb-4">Connection Error</h3>
+                <h3 className="text-2xl font-black gradient-text mb-4">{t('listings.connectionError', 'Connection Error')}</h3>
                 <p className="text-foreground/70">
                   {error}
                 </p>
@@ -293,9 +295,9 @@ export default function Listings() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center py-16 glass-hover rounded-3xl p-12"
               >
-                <h3 className="text-2xl font-black gradient-text mb-4">No dorms available yet</h3>
+                <h3 className="text-2xl font-black gradient-text mb-4">{t('listings.noDorms', 'No dorms available yet')}</h3>
                 <p className="text-foreground/70">
-                  Check back soon!
+                  {t('listings.checkBack', 'Check back soon!')}
                 </p>
               </motion.div>
             ) : (
@@ -324,7 +326,7 @@ export default function Listings() {
                 {paginatedDorms.length > 0 && (
                   <div className="text-center mt-8 space-y-4" role="status" aria-live="polite">
                     <p className="text-sm text-foreground/60">
-                      Showing {paginatedDorms.length} of {filteredDorms.length} verified dorms
+                      {t('listings.showing', 'Showing {{current}} of {{total}} verified dorms', { current: paginatedDorms.length, total: filteredDorms.length })}
                     </p>
                     {hasMore && (
                       <Button 
@@ -334,7 +336,7 @@ export default function Listings() {
                         className="px-8"
                         aria-label={`Load more dorms. Currently showing ${paginatedDorms.length} of ${filteredDorms.length}`}
                       >
-                        Load More
+                        {t('buttons.loadMore', 'Load More')}
                       </Button>
                     )}
                   </div>

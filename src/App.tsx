@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { ChatbotBubble } from "./components/ChatbotBubble";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,9 +14,9 @@ import { MobileSwipeLayout } from "./layouts/MobileSwipeLayout";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { BottomNavProvider } from "@/contexts/BottomNavContext";
 import { MicPermissionProvider } from "@/contexts/MicPermissionContext";
+import { supabase } from "@/integrations/supabase/client";
 
 // Lazy load route components
-const Main = lazy(() => import("./pages/Main"));
 const Auth = lazy(() => import("./pages/Auth"));
 const CheckEmail = lazy(() => import("./pages/auth/CheckEmail"));
 const VerifyEmail = lazy(() => import("./pages/auth/VerifyEmail"));
@@ -116,6 +116,7 @@ const DevicePending = lazy(() => import("./pages/auth/DevicePending"));
 const ApproveDevice = lazy(() => import("./pages/auth/ApproveDevice"));
 const AuthCallback = lazy(() => import("./pages/auth/AuthCallback"));
 const AccountSuspended = lazy(() => import("./pages/AccountSuspended"));
+const BecomeOwner = lazy(() => import("./pages/BecomeOwner"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -128,6 +129,7 @@ const PageLoader = () => (
   </div>
 );
 
+// Protected route component for authenticated routes
 function ProtectedRoute({
   element,
   requiredRole,
@@ -140,7 +142,7 @@ function ProtectedRoute({
   forbiddenRoles?: ("admin" | "owner" | "student")[];
 }) {
   const location = useLocation();
-  const { loading, role } = useRoleGuard(requiredRole);
+  const { loading, role, isAuthenticated } = useRoleGuard(requiredRole);
 
   if (loading) {
     return (
@@ -148,6 +150,11 @@ function ProtectedRoute({
         <p className="text-foreground/60">Loading...</p>
       </div>
     );
+  }
+
+  // If not authenticated, redirect to auth
+  if (!isAuthenticated) {
+    return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
   // Admin must NEVER see /select-role
@@ -190,6 +197,17 @@ function ProtectedRoute({
   return element;
 }
 
+// Component to handle first visit intro redirect
+function IntroRedirect() {
+  const introPlayed = sessionStorage.getItem("intro-played");
+  
+  if (!introPlayed) {
+    return <Navigate to="/intro" replace />;
+  }
+  
+  return <Navigate to="/listings" replace />;
+}
+
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
@@ -200,8 +218,10 @@ const AppRoutes = () => {
       <MobileNavbar />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<ProtectedRoute element={<Main />} forbiddenRoles={["owner"]} />} />
+          {/* Root redirect - check if intro was played */}
+          <Route path="/" element={<IntroRedirect />} />
+          
+          {/* Public Routes - No auth required */}
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/check-email" element={<CheckEmail />} />
           <Route path="/auth/verify" element={<VerifyEmail />} />
@@ -216,12 +236,20 @@ const AppRoutes = () => {
           <Route path="/devices/secure" element={<SecureAccount />} />
           <Route path="/account-suspended" element={<AccountSuspended />} />
           <Route path="/intro" element={<Intro />} />
-          <Route path="/listings" element={<ProtectedRoute element={<MobileSwipeLayout><Listings /></MobileSwipeLayout>} forbiddenRoles={["owner"]} />} />
-          <Route path="/dorm/:id" element={<DormDetail />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
           <Route path="/shared/:shareCode" element={<SharedCollection />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/legal/:page" element={<Legal />} />
+          
+          {/* PUBLIC - Listings and Dorm Details (no auth required) */}
+          <Route path="/listings" element={<MobileSwipeLayout><Listings /></MobileSwipeLayout>} />
+          <Route path="/dorm/:id" element={<DormDetail />} />
+          
+          {/* Become Owner - requires auth but accessible to students */}
+          <Route path="/become-owner" element={<BecomeOwner />} />
+          
+          {/* Role Selection - for users with no role */}
           <Route 
             path="/select-role" 
             element={
@@ -229,6 +257,7 @@ const AppRoutes = () => {
             } 
           />
 
+          {/* Protected Routes - Requires authentication */}
           <Route path="/my-tours" element={<ProtectedRoute element={<StudentTours />} forbiddenRoles={["owner"]} />} />
           <Route path="/onboarding" element={<ProtectedRoute element={<Onboarding />} />} />
           <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
@@ -249,9 +278,6 @@ const AppRoutes = () => {
           <Route path="/reservation/success" element={<ProtectedRoute element={<ReservationSuccess />} requiredRole="student" />} />
           <Route path="/reservation/failed" element={<ProtectedRoute element={<ReservationFailed />} requiredRole="student" />} />
           <Route path="/student/payments" element={<ProtectedRoute element={<StudentPayments />} requiredRole="student" />} />
-          
-          {/* Legal Pages */}
-          <Route path="/legal/:page" element={<Legal />} />
           
           {/* Payment Flow Pages */}
           <Route path="/mock-whish-checkout" element={<ProtectedRoute element={<MockWhishCheckout />} requiredRole="student" />} />
@@ -317,7 +343,7 @@ const AppRoutes = () => {
         </Routes>
       </Suspense>
 
-      {!location.pathname.match(/^\/(auth|intro|select-role)$/) && (
+      {!location.pathname.match(/^\/(auth|intro|select-role|become-owner)$/) && (
         <>
           <BottomNav />
           <ChatbotBubble />
