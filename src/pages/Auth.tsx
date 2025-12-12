@@ -131,17 +131,36 @@ export default function Auth() {
         return;
       }
 
-      const { error } = await supabase.auth.signUp({
+      // Create user with Supabase (email auto-confirm disabled - we handle verification ourselves)
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `https://roomylb.com/auth/verify`,
+          // We don't set emailRedirectTo since we're sending our own verification email
         },
       });
+      
       if (error) {
         toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
         return;
       }
+
+      if (data.user) {
+        // Send our own custom verification email via edge function
+        const { error: emailError } = await supabase.functions.invoke("send-verification-email", {
+          body: {
+            userId: data.user.id,
+            email: email,
+            tokenType: 'signup'
+          }
+        });
+
+        if (emailError) {
+          console.error("Failed to send verification email:", emailError);
+          // Still redirect - user can resend from check-email page
+        }
+      }
+
       // Redirect to check email page
       navigate(`/auth/check-email?email=${encodeURIComponent(email)}`);
     } finally {
