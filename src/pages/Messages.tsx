@@ -1687,26 +1687,27 @@ let otherUserName = 'User';
                 )}
               </div>
 
+              {/* Search bar for ALL roles */}
+              <FriendSearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder={activeTab === 'chats' || role !== 'student' ? 'Search messages...' : 'Search students...'}
+              />
+              
+              {/* Chats/Friends tabs - STUDENT ONLY */}
               {role === 'student' && studentId && (
-                <>
-                  <FriendSearchBar
-                    value={searchQuery}
-                    onChange={setSearchQuery}
-                    placeholder={activeTab === 'chats' ? 'Search messages...' : 'Search students...'}
-                  />
-                  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'chats' | 'friends')}>
-                    <TabsList className="w-full">
-                      <TabsTrigger value="chats" className="flex-1">Chats</TabsTrigger>
-                      <TabsTrigger value="friends" className="flex-1">Friends</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </>
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'chats' | 'friends')}>
+                  <TabsList className="w-full">
+                    <TabsTrigger value="chats" className="flex-1">Chats</TabsTrigger>
+                    <TabsTrigger value="friends" className="flex-1">Friends</TabsTrigger>
+                  </TabsList>
+                </Tabs>
               )}
             </div>
             {activeTab === 'friends' && role === 'student' && studentId ? (
               <FriendsTab studentId={studentId} searchQuery={searchQuery} />
             ) : (
-              <ScrollArea className="flex-1">
+              <ScrollArea className="flex-1 [&>div>div]:!overflow-visible">
                 {conversations.filter(c => 
                   !searchQuery || 
                   c.other_user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1753,7 +1754,7 @@ let otherUserName = 'User';
                         loadMessages(conv.id);
                       }}
                     >
-                      <div className="flex items-center gap-3 px-4 py-3">
+                      <div className="flex items-center gap-3 px-4 py-3 pr-12">
                         {/* Avatar - 56px like Instagram */}
                         <div className="relative shrink-0">
                           <Avatar className="w-14 h-14">
@@ -1800,7 +1801,7 @@ let otherUserName = 'User';
                       
                       {/* Three-dots context menu - at far right, visible on hover */}
                       <div 
-                        className="absolute top-1/2 -translate-y-1/2 right-3 z-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
+                        className="absolute top-1/2 -translate-y-1/2 right-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 rounded"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <ConversationContextMenu
