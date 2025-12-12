@@ -122,12 +122,26 @@ serve(async (req) => {
               <p style="color: #4a4a68; font-size: 16px; line-height: 1.6; margin: 0 0 32px; text-align: center;">
                 ${message}
               </p>
-              <table width="100%" cellpadding="0" cellspacing="0">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td align="center">
-                    <a href="${verifyUrl}" style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #00E0FF 0%, #BD00FF 100%); color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 12px; box-shadow: 0 4px 16px rgba(189, 0, 255, 0.3);">
-                      ${buttonText}
-                    </a>
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${verifyUrl}" style="height:48px;v-text-anchor:middle;width:200px;" arcsize="20%" strokecolor="#8E2DE2" fillcolor="#8E2DE2">
+                      <w:anchorlock/>
+                      <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:bold;">${buttonText}</center>
+                    </v:roundrect>
+                    <![endif]-->
+                    <!--[if !mso]><!-->
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td align="center" bgcolor="#8E2DE2" style="border-radius: 8px;">
+                          <a href="${verifyUrl}" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px;">
+                            ${buttonText}
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                    <!--<![endif]-->
                   </td>
                 </tr>
               </table>

@@ -151,18 +151,54 @@ Deno.serve(async (req) => {
         </div>
 
         <!-- Approve Button -->
-        <div style="text-align: center; margin-bottom: 16px;">
-          <a href="${approveUrl}" class="button" style="display: inline-block; background: linear-gradient(90deg, #00E0FF, #BD00FF); color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-weight: 600; font-size: 15px;">
-            Yes, This Was Me
-          </a>
-        </div>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 16px;">
+          <tr>
+            <td align="center">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${approveUrl}" style="height:44px;v-text-anchor:middle;width:180px;" arcsize="20%" strokecolor="#8E2DE2" fillcolor="#8E2DE2">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">Yes, This Was Me</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" bgcolor="#8E2DE2" style="border-radius: 8px;">
+                    <a href="${approveUrl}" target="_blank" style="display: inline-block; padding: 12px 28px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px;">
+                      Yes, This Was Me
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <!--<![endif]-->
+            </td>
+          </tr>
+        </table>
         
         <!-- Secure Account Button -->
-        <div style="text-align: center; margin-bottom: 24px;">
-          <a href="${secureUrl}" class="button" style="display: inline-block; background: #EF4444; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-weight: 600; font-size: 15px;">
-            No, Secure My Account
-          </a>
-        </div>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
+          <tr>
+            <td align="center">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${secureUrl}" style="height:44px;v-text-anchor:middle;width:200px;" arcsize="20%" strokecolor="#EF4444" fillcolor="#EF4444">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">No, Secure My Account</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" bgcolor="#EF4444" style="border-radius: 8px;">
+                    <a href="${secureUrl}" target="_blank" style="display: inline-block; padding: 12px 28px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px;">
+                      No, Secure My Account
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <!--<![endif]-->
+            </td>
+          </tr>
+        </table>
 
         <!-- Disclaimer -->
         <p style="color: #6B7280; font-size: 14px; text-align: center; margin: 0; line-height: 1.5;">
