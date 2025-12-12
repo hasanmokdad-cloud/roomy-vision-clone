@@ -87,7 +87,7 @@ export default function Intro() {
   return (
     <div className="relative min-h-screen overflow-hidden">
       <FluidBackground />
-      <EntryAnimation onComplete={handleComplete} isLoggedIn={isLoggedIn} />
+      <EntryAnimation onComplete={handleComplete} />
     </div>
   );
 }
