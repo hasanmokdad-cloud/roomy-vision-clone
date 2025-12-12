@@ -45,7 +45,38 @@ export default function ResetPassword() {
       setStep('loading');
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Check for valid recovery session
+      // Get token from URL query params (sent from roomylb.com email links)
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      const type = urlParams.get('type');
+      
+      if (token && type === 'recovery') {
+        // Verify the recovery token with Supabase
+        const { data, error } = await supabase.auth.verifyOtp({
+          token_hash: token,
+          type: 'recovery',
+        });
+        
+        if (error) {
+          console.log("[password_reset_error] Token verification failed:", error);
+          setErrorMessage("This reset link is invalid or has expired.");
+          toast({
+            title: "Invalid reset link",
+            description: "Please request a new password reset link.",
+            variant: "destructive",
+          });
+          setStep('error');
+          return;
+        }
+        
+        if (data?.session) {
+          // Token verified, show password form
+          setStep('form');
+          return;
+        }
+      }
+      
+      // Fallback: Check for valid recovery session (legacy URL hash flow)
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error || !session) {

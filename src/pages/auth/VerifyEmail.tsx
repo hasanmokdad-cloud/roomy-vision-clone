@@ -19,16 +19,50 @@ export default function VerifyEmail() {
     const verifyEmail = async () => {
       // Step 1: Checking
       setStep('checking');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 800));
       
       // Step 2: Loading
       setStep('loading');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 800));
       
       // Step 3: Verifying
       setStep('verifying');
       
-      // Check for session (Supabase automatically verifies from URL hash)
+      // Get token from URL query params (sent from roomylb.com email links)
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      const type = urlParams.get('type') || 'signup';
+      
+      if (token) {
+        // Verify the token directly with Supabase
+        const { data, error } = await supabase.auth.verifyOtp({
+          token_hash: token,
+          type: type as 'signup' | 'email' | 'email_change',
+        });
+        
+        if (error) {
+          console.error('[VerifyEmail] Token verification error:', error);
+          setErrorMessage(error.message);
+          setStep('error');
+          return;
+        }
+        
+        if (data?.session || data?.user?.email_confirmed_at) {
+          setStep('success');
+          toast({
+            title: "Email verified",
+            description: "Your email has been verified successfully.",
+          });
+          
+          // Redirect after 2 seconds
+          setTimeout(() => {
+            navigate('/auth?mode=login', { replace: true });
+          }, 2000);
+          return;
+        }
+      }
+      
+      // Fallback: Check for existing session (legacy URL hash flow)
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
