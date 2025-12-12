@@ -571,7 +571,10 @@ export function MessageBubble({
             {Object.entries(groupedReactions).map(([emoji, data]) => (
               <button
                 key={emoji}
-                onClick={() => handleReactionSelect(emoji)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleReactionSelect(emoji);
+                }}
                 className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${
                   data.userReacted
                     ? "bg-primary/20 border border-primary"
