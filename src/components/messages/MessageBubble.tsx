@@ -154,21 +154,52 @@ export function MessageBubble({
       );
 
       if (existingReaction) {
-        // Remove reaction
-        await supabase
+        // Optimistic update - remove immediately from local state
+        setReactions(prev => prev.filter(r => r.id !== existingReaction.id));
+        
+        // Remove reaction from database
+        const { error } = await supabase
           .from("message_reactions")
           .delete()
           .eq("id", existingReaction.id);
+          
+        if (error) {
+          // Revert on error
+          setReactions(prev => [...prev, existingReaction]);
+          throw error;
+        }
       } else {
-        // Add reaction
-        await supabase.from("message_reactions").insert({
+        // Optimistic update - add immediately to local state
+        const tempReaction = {
+          id: `temp-${Date.now()}`,
           message_id: message.id,
           user_id: userId,
           emoji,
-        });
+          created_at: new Date().toISOString(),
+        };
+        setReactions(prev => [...prev, tempReaction]);
+        
+        // Add reaction to database
+        const { data, error } = await supabase.from("message_reactions").insert({
+          message_id: message.id,
+          user_id: userId,
+          emoji,
+        }).select().single();
+        
+        if (error) {
+          // Revert on error
+          setReactions(prev => prev.filter(r => r.id !== tempReaction.id));
+          throw error;
+        }
+        
+        // Replace temp reaction with real one
+        if (data) {
+          setReactions(prev => prev.map(r => r.id === tempReaction.id ? data : r));
+        }
       }
 
       setShowReactionBar(false);
+      setShowEmojiPicker(false);
     } catch (error) {
       console.error("Error toggling reaction:", error);
     }
