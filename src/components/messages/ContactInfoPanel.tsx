@@ -78,13 +78,6 @@ export function ContactInfoPanel({
     }
   };
 
-  const handleAddToFavorites = async () => {
-    try {
-      toast.success("Added to favorites");
-    } catch (error) {
-      toast.error("Failed to add to favorites");
-    }
-  };
 
   if (showStarredMessages) {
     return (
@@ -251,15 +244,6 @@ export function ContactInfoPanel({
 
         {/* Action buttons */}
         <div className="p-4 space-y-2">
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 text-foreground hover:bg-accent"
-            onClick={handleAddToFavorites}
-          >
-            <UserPlus className="h-5 w-5" />
-            Add to favorites
-          </Button>
-
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 text-destructive hover:bg-destructive/10"

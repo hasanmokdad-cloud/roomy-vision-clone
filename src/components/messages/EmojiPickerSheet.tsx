@@ -39,16 +39,25 @@ export function EmojiPickerSheet({
 
   const emojiPickerTheme = theme === "dark" ? Theme.DARK : Theme.LIGHT;
 
-  // Close on outside click for desktop
+  // Close on outside click for desktop - but not when clicking inside emoji picker
   useEffect(() => {
     if (!open || isMobile) return;
     
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // Check if click is outside emoji picker content
-      if (!target.closest('[role="dialog"]') && !target.closest('.emoji-picker-react')) {
-        onOpenChange(false);
+      // Check if click is inside emoji picker or any of its internal components
+      // emoji-picker-react uses classes starting with 'epr-' and 'EmojiPickerReact'
+      if (
+        target.closest('[role="dialog"]') ||
+        target.closest('.emoji-picker-react') ||
+        target.closest('.EmojiPickerReact') ||
+        target.closest('[class*="epr-"]') ||
+        target.className?.includes?.('epr-') ||
+        target.closest('aside') // Emoji picker uses aside for category navigation
+      ) {
+        return; // Don't close
       }
+      onOpenChange(false);
     };
 
     // Add listener with delay to avoid immediate closure
