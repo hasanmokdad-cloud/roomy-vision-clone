@@ -1754,7 +1754,7 @@ let otherUserName = 'User';
                         loadMessages(conv.id);
                       }}
                     >
-                      <div className="flex items-center gap-3 px-4 py-3 pr-12">
+                      <div className="flex items-center gap-3 px-4 py-3">
                         {/* Avatar - 56px like Instagram */}
                         <div className="relative shrink-0">
                           <Avatar className="w-14 h-14">
@@ -1793,24 +1793,27 @@ let otherUserName = 'User';
                           </div>
                         </div>
                         
-                        {/* Blue dot for unread - at far right */}
-                        {hasUnread && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
-                        )}
-                      </div>
-                      
-                      {/* Three-dots context menu - at far right, visible on hover */}
-                      <div 
-                        className="absolute top-1/2 -translate-y-1/2 right-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 rounded"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <ConversationContextMenu
-                          conversationId={conv.id}
-                          isPinned={conv.is_pinned || false}
-                          isArchived={conv.is_archived || false}
-                          mutedUntil={conv.muted_until || null}
-                          onUpdate={() => loadConversations()}
-                        />
+                        {/* Right side controls - in flex flow, not absolute */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {/* Blue dot for unread */}
+                          {hasUnread && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                          )}
+                          
+                          {/* Three-dots context menu - visible on hover */}
+                          <div 
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ConversationContextMenu
+                              conversationId={conv.id}
+                              isPinned={conv.is_pinned || false}
+                              isArchived={conv.is_archived || false}
+                              mutedUntil={conv.muted_until || null}
+                              onUpdate={() => loadConversations()}
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                     );
