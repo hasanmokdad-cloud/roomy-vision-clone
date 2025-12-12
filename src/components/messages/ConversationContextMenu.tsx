@@ -133,16 +133,15 @@ export function ConversationContextMenu({
   return (
     <>
       <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent" 
-          onClick={(e) => e.stopPropagation()}
-        >
-          <MoreVertical className="w-4 h-4" />
-        </Button>
-      </DropdownMenuTrigger>
+        <DropdownMenuTrigger asChild>
+          <button 
+            type="button"
+            className="h-8 w-8 rounded-md flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-accent/50 transition-colors" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreVertical className="w-5 h-5" />
+          </button>
+        </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuItem onClick={handlePin}>
             <Pin className="w-4 h-4 mr-2" />
