@@ -14,9 +14,8 @@ export default function BecomeOwner() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [user, setUser] = useState<any>(null);
-  const [role, setRole] = useState<string | null>(null);
+  const [ownerId, setOwnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const checkAuthAndRole = async () => {
@@ -39,9 +38,8 @@ export default function BecomeOwner() {
           .maybeSingle();
 
         const currentRole = (roleRow?.roles as any)?.name;
-        setRole(currentRole);
 
-        // If already an owner or admin, redirect to control panel
+        // If already an owner, redirect to control panel
         if (currentRole === 'owner') {
           navigate('/owner', { replace: true });
           return;
@@ -49,6 +47,53 @@ export default function BecomeOwner() {
         if (currentRole === 'admin') {
           navigate('/admin', { replace: true });
           return;
+        }
+
+        // For students or users without role, upgrade to owner and create owner profile
+        try {
+          // Upgrade role from student to owner
+          const { error: roleError } = await supabase.functions.invoke('assign-role', {
+            body: { chosen_role: 'owner' }
+          });
+
+          if (roleError) {
+            console.error('Role upgrade error:', roleError);
+          }
+
+          // Check if owner profile exists
+          const { data: existingOwner } = await supabase
+            .from('owners')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          if (existingOwner) {
+            setOwnerId(existingOwner.id);
+          } else {
+            // Create owner profile
+            const { data: newOwner, error: ownerError } = await supabase
+              .from('owners')
+              .insert({
+                user_id: session.user.id,
+                email: session.user.email,
+                full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
+              })
+              .select('id')
+              .single();
+
+            if (ownerError) {
+              console.error('Owner creation error:', ownerError);
+              throw ownerError;
+            }
+            setOwnerId(newOwner.id);
+          }
+        } catch (error) {
+          console.error('Error setting up owner:', error);
+          toast({
+            title: t('common.error', 'Error'),
+            description: t('becomeOwner.setupError', 'Failed to set up your owner account. Please try again.'),
+            variant: 'destructive',
+          });
         }
       } catch (error) {
         console.error('Error checking auth:', error);
@@ -58,74 +103,16 @@ export default function BecomeOwner() {
     };
 
     checkAuthAndRole();
-  }, [navigate]);
+  }, [navigate, t]);
 
-  const handleDormSubmit = async (dormData: any) => {
-    if (!user) return;
-    
-    setSubmitting(true);
-    try {
-      // First, upgrade role from student to owner
-      const { data: roleData, error: roleError } = await supabase.functions.invoke('assign-role', {
-        body: { chosen_role: 'owner' }
-      });
+  const handleDormSaved = () => {
+    toast({
+      title: t('becomeOwner.success', 'Welcome to Roomy Owners!'),
+      description: t('becomeOwner.successDesc', 'Your dorm has been submitted for verification. You can now access your owner dashboard.'),
+    });
 
-      if (roleError) {
-        throw new Error('Failed to upgrade role');
-      }
-
-      // Create owner profile if doesn't exist
-      const { data: existingOwner } = await supabase
-        .from('owners')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      let ownerId = existingOwner?.id;
-
-      if (!existingOwner) {
-        const { data: newOwner, error: ownerError } = await supabase
-          .from('owners')
-          .insert({
-            user_id: user.id,
-            email: user.email,
-            full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
-          })
-          .select('id')
-          .single();
-
-        if (ownerError) throw ownerError;
-        ownerId = newOwner.id;
-      }
-
-      // Create the dorm with pending verification
-      const { error: dormError } = await supabase
-        .from('dorms')
-        .insert({
-          ...dormData,
-          owner_id: ownerId,
-          verification_status: 'Pending',
-        });
-
-      if (dormError) throw dormError;
-
-      toast({
-        title: t('becomeOwner.success', 'Welcome to Roomy Owners!'),
-        description: t('becomeOwner.successDesc', 'Your dorm has been submitted for verification. You can now access your owner dashboard.'),
-      });
-
-      // Navigate to owner dashboard
-      navigate('/owner', { replace: true });
-    } catch (error: any) {
-      console.error('Error submitting dorm:', error);
-      toast({
-        title: t('common.error', 'Error'),
-        description: error.message || t('becomeOwner.errorDesc', 'Failed to submit your dorm. Please try again.'),
-        variant: 'destructive',
-      });
-    } finally {
-      setSubmitting(false);
-    }
+    // Navigate to owner dashboard
+    navigate('/owner', { replace: true });
   };
 
   if (loading) {
@@ -133,6 +120,21 @@ export default function BecomeOwner() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse text-muted-foreground">
           {t('common.loading', 'Loading...')}
+        </div>
+      </div>
+    );
+  }
+
+  if (!ownerId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">
+            {t('becomeOwner.setupError', 'Failed to set up your owner account. Please try again.')}
+          </p>
+          <Button onClick={() => navigate('/listings')}>
+            {t('buttons.backToListings', 'Back to Listings')}
+          </Button>
         </div>
       </div>
     );
@@ -208,8 +210,8 @@ export default function BecomeOwner() {
               {t('becomeOwner.formTitle', 'Add Your First Dorm')}
             </h2>
             <DormForm 
-              onSubmit={handleDormSubmit}
-              isSubmitting={submitting}
+              ownerId={ownerId}
+              onSaved={handleDormSaved}
             />
           </motion.div>
         </div>

@@ -142,7 +142,8 @@ function ProtectedRoute({
   forbiddenRoles?: ("admin" | "owner" | "student")[];
 }) {
   const location = useLocation();
-  const { loading, role, isAuthenticated } = useRoleGuard(requiredRole);
+  const { loading, role } = useRoleGuard(requiredRole);
+  const isAuthenticated = !!role;
 
   if (loading) {
     return (
