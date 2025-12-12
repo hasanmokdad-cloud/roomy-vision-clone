@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, MessageCircle, Globe, User, Settings, LogOut, Building2, Shield } from 'lucide-react';
+import { Menu, MessageCircle, Globe, User, Settings, LogOut, Building2, Shield, Sparkles, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -189,6 +189,14 @@ export function RoomyNavbar() {
                     // Not logged in menu
                     <>
                       <DropdownMenuItem
+                        onClick={() => navigate('/contact')}
+                        className="cursor-pointer rounded-lg py-3"
+                      >
+                        <Phone className="w-4 h-4 mr-2" />
+                        {t('navbar.contact', 'Contact')}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
                         onClick={() => navigate('/auth')}
                         className="font-semibold cursor-pointer rounded-lg py-3"
                       >
@@ -214,15 +222,44 @@ export function RoomyNavbar() {
                         {t('navbar.myProfile', 'My Profile')}
                       </DropdownMenuItem>
                       
+                      {/* AI Match and Contact for students */}
+                      {role === 'student' && (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => navigate('/ai-match')}
+                            className="cursor-pointer rounded-lg py-3"
+                          >
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            {t('navbar.aiMatch', 'AI Match')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => navigate('/contact')}
+                            className="cursor-pointer rounded-lg py-3"
+                          >
+                            <Phone className="w-4 h-4 mr-2" />
+                            {t('navbar.contact', 'Contact')}
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      
                       {/* Control Panel for owners */}
                       {role === 'owner' && (
-                        <DropdownMenuItem
-                          onClick={() => navigate('/owner')}
-                          className="cursor-pointer rounded-lg py-3"
-                        >
-                          <Building2 className="w-4 h-4 mr-2" />
-                          {t('navbar.controlPanel', 'Control Panel')}
-                        </DropdownMenuItem>
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => navigate('/owner')}
+                            className="cursor-pointer rounded-lg py-3"
+                          >
+                            <Building2 className="w-4 h-4 mr-2" />
+                            {t('navbar.controlPanel', 'Control Panel')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => navigate('/contact')}
+                            className="cursor-pointer rounded-lg py-3"
+                          >
+                            <Phone className="w-4 h-4 mr-2" />
+                            {t('navbar.contact', 'Contact')}
+                          </DropdownMenuItem>
+                        </>
                       )}
                       
                       {/* Control Panel for admins */}

@@ -1,4 +1,4 @@
-import { Menu, X, Bell, MessageSquare, Info, Phone, LogOut, User, Settings, Home, Building2, Brain } from 'lucide-react';
+import { Menu, X, Bell, MessageSquare, Info, Phone, LogOut, User, Settings, Building2, Brain } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -29,9 +29,8 @@ export function AdminNavbar({ sidebarOpen, onToggleSidebar }: AdminNavbarProps) 
     navigate('/auth');
   };
 
-  // Full site navigation items (same as main landing page)
+  // Full site navigation items (same as main landing page, without Home)
   const navItems = [
-    { icon: Home, label: 'Home', href: '/' },
     { icon: Building2, label: 'Dorms', href: '/listings' },
     { icon: MessageSquare, label: 'Messages', href: '/messages', badge: unreadMessages },
     { icon: Brain, label: 'AI Match', href: '/ai-match' },

@@ -177,9 +177,36 @@ serve(async (req) => {
   const { user, email_data } = emailPayload;
   const { token_hash, redirect_to, email_action_type, site_url } = email_data;
 
-  // Build the action URL
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? site_url;
-  const actionUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirect_to}`;
+  // Build the action URL - MUST use roomylb.com domain directly (no Lovable/Supabase redirect domains)
+  // This ensures emails pass firewall checks and have valid SSL
+  const baseUrl = "https://roomylb.com";
+  let actionUrl: string;
+  
+  switch (email_action_type) {
+    case 'signup':
+    case 'email':
+      // Email verification for new signups
+      actionUrl = `${baseUrl}/auth/verify?token=${token_hash}&type=${email_action_type}`;
+      break;
+    case 'recovery':
+      // Password reset
+      actionUrl = `${baseUrl}/auth/reset?token=${token_hash}&type=recovery`;
+      break;
+    case 'magiclink':
+      // Magic link login
+      actionUrl = `${baseUrl}/auth/callback?token=${token_hash}&type=magiclink`;
+      break;
+    case 'email_change':
+      // Email change confirmation
+      actionUrl = `${baseUrl}/auth/verify?token=${token_hash}&type=email_change`;
+      break;
+    case 'invite':
+      // Owner invitation
+      actionUrl = `${baseUrl}/auth/callback?token=${token_hash}&type=invite`;
+      break;
+    default:
+      actionUrl = `${baseUrl}/auth/verify?token=${token_hash}&type=${email_action_type}`;
+  }
 
   console.log(`[send-auth-email] Processing ${email_action_type} email for ${user.email}`);
 
