@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import { UnderwaterScene } from '@/components/UnderwaterScene';
 import { motion } from 'framer-motion';
@@ -203,7 +203,7 @@ export default function Contact() {
   return (
     <div className="min-h-screen flex flex-col bg-background relative">
       <UnderwaterScene />
-      <Navbar />
+      <RoomyNavbar />
       
       <main className="flex-1 container mx-auto px-4 py-16 mt-20">
         <div className="max-w-5xl mx-auto">

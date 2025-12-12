@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, Loader2 } from 'lucide-react';
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import BottomNav from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
@@ -96,7 +96,7 @@ export default function SavedDorms() {
 
   return (
     <div className="min-h-screen relative bg-gradient-to-b from-[#0F1624] to-[#15203B]">
-      {!isMobile && <Navbar />}
+      {!isMobile && <RoomyNavbar />}
 
       <div className="container mx-auto px-4 md:px-6 py-32 max-w-7xl">
         <div className="flex items-center justify-between mb-8">

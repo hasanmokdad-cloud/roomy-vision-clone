@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Navbar from "@/components/shared/Navbar";
+import { RoomyNavbar } from "@/components/RoomyNavbar";
 import Footer from "@/components/shared/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -299,7 +299,7 @@ export default function AiChat() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-gradient-to-b from-background via-muted/20 to-background w-full max-w-screen overflow-x-hidden">
-      {!isMobile && <Navbar />}
+      {!isMobile && <RoomyNavbar />}
       
       <main className={`flex-1 flex flex-col ${!isMobile ? 'mt-16' : ''}`}>
         {/* Fixed Container */}

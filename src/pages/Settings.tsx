@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home, Share2, Copy, CreditCard, Receipt, Save, Smartphone } from 'lucide-react';
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import BottomNav from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -248,7 +248,7 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen relative bg-gradient-to-b from-background to-muted/20">
-      {!isMobile && <Navbar />}
+      {!isMobile && <RoomyNavbar />}
 
       <div className="container mx-auto px-6 py-32 max-w-4xl">
         <Button

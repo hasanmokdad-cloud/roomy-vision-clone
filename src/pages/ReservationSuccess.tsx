@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Home, MessageSquare, Calendar } from 'lucide-react';
 import { Confetti } from '@/components/profile/Confetti';
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 
 export default function ReservationSuccess() {
@@ -65,7 +65,7 @@ export default function ReservationSuccess() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {showConfetti && <Confetti />}
-      <Navbar />
+      <RoomyNavbar />
       
       <main className="flex-1 container mx-auto px-4 py-12 flex items-center justify-center">
         <Card className="w-full max-w-lg shadow-xl">

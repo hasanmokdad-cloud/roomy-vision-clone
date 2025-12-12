@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -206,7 +206,7 @@ export default function StudentTours() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <RoomyNavbar />
       <main className={`pt-16 ${isMobile ? 'pb-20' : ''}`}>
         <div className="container mx-auto px-4 py-8 max-w-4xl space-y-6">
           <div>

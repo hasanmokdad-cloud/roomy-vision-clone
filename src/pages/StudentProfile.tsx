@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, User, Heart, MapPin, GraduationCap, DollarSign } from "lucide-react";
-import Navbar from "@/components/shared/Navbar";
+import { RoomyNavbar } from "@/components/RoomyNavbar";
 import Footer from "@/components/shared/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -84,7 +84,7 @@ export default function StudentProfile() {
   if (!student) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        {!isMobile && <Navbar />}
+        {!isMobile && <RoomyNavbar />}
         <main className="flex-1 flex items-center justify-center">
           <p className="text-foreground/60">Student not found</p>
         </main>
@@ -95,7 +95,7 @@ export default function StudentProfile() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
-      {!isMobile && <Navbar />}
+      {!isMobile && <RoomyNavbar />}
 
       <main className="flex-1 container max-w-4xl mx-auto px-4 py-8 mt-20">
         <motion.div

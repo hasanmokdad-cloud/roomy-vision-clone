@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import Navbar from '@/components/shared/Navbar';
+import { RoomyNavbar } from '@/components/RoomyNavbar';
 import BottomNav from '@/components/BottomNav';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -160,7 +160,7 @@ export default function StudentPayments() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background">
-        {!isMobile && <Navbar />}
+        {!isMobile && <RoomyNavbar />}
         <div className="container mx-auto px-6 py-32 max-w-4xl">
           <Skeleton className="h-12 w-64 mb-8" />
           <div className="space-y-4">
@@ -176,7 +176,7 @@ export default function StudentPayments() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      {!isMobile && <Navbar />}
+      {!isMobile && <RoomyNavbar />}
 
       <div className="container mx-auto px-6 py-32 max-w-4xl mb-20">
         <Button
