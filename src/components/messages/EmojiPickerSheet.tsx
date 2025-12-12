@@ -43,18 +43,25 @@ export function EmojiPickerSheet({
   useEffect(() => {
     if (!open || isMobile) return;
     
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: PointerEvent) => {
       const target = e.target as HTMLElement;
+      
       // Check if click is inside emoji picker or any of its internal components
       // emoji-picker-react uses classes starting with 'epr-' and 'EmojiPickerReact'
-      if (
+      // Also check for data attributes used by emoji-picker-react
+      const isInsideEmojiPicker = 
         target.closest('[role="dialog"]') ||
         target.closest('.emoji-picker-react') ||
         target.closest('.EmojiPickerReact') ||
         target.closest('[class*="epr-"]') ||
-        target.className?.includes?.('epr-') ||
-        target.closest('aside') // Emoji picker uses aside for category navigation
-      ) {
+        target.closest('[data-name]') || // Emoji buttons have data-name
+        target.closest('[data-unified]') || // Emoji buttons have data-unified
+        target.closest('aside') || // Category navigation
+        target.closest('nav') || // Category tabs
+        target.closest('input') || // Search input
+        target.className?.toString().includes('epr-');
+      
+      if (isInsideEmojiPicker) {
         return; // Don't close
       }
       onOpenChange(false);
@@ -62,12 +69,12 @@ export function EmojiPickerSheet({
 
     // Add listener with delay to avoid immediate closure
     const timeoutId = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside);
-    }, 100);
+      document.addEventListener('pointerdown', handleClickOutside);
+    }, 150);
 
     return () => {
       clearTimeout(timeoutId);
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('pointerdown', handleClickOutside);
     };
   }, [open, isMobile, onOpenChange]);
 
