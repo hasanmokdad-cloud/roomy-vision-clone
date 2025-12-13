@@ -22,9 +22,10 @@ export const useAuthGuard = () => {
 
     checkAuth();
 
-    // Listen for sign-out and redirect to /listings
+    // Only redirect on explicit SIGNED_OUT event, NOT on !session
+    // Because INITIAL_SESSION may have null session during hydration across tabs
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
+      if (event === 'SIGNED_OUT') {
         navigate('/listings');
       }
     });
