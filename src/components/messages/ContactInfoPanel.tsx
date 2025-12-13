@@ -101,7 +101,7 @@ export function ContactInfoPanel({
     <div className="w-96 border-l border-border bg-background h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
-        <h2 className="text-lg font-semibold">Contact info</h2>
+        <h2 className="text-lg font-semibold">Details</h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-5 w-5" />
         </Button>
