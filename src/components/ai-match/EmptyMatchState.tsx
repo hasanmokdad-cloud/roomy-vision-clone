@@ -5,7 +5,7 @@ import { Brain, Home, Users, Settings, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface EmptyMatchStateProps {
-  type: 'dorms' | 'roommates' | 'rooms';
+  type: 'apartments' | 'rooms' | 'roommates';
   hasPersonalityTest?: boolean;
   className?: string;
 }
@@ -15,11 +15,11 @@ export const EmptyMatchState = ({ type, hasPersonalityTest = false, className }:
 
   const getContent = () => {
     switch (type) {
-      case 'dorms':
+      case 'apartments':
         return {
           icon: Home,
-          title: 'No Perfect Dorm Matches Yet',
-          description: "We couldn't find dorms that match all your preferences right now.",
+          title: 'No Perfect Apartment Matches Yet',
+          description: "We couldn't find apartments that match all your preferences right now.",
           suggestions: [
             'Try adjusting your budget range',
             'Expand your preferred areas',

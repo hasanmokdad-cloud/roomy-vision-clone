@@ -233,6 +233,10 @@ serve(async (req) => {
       matches = await fetchDormMatches(supabase, student, context, exclude_ids);
     }
 
+    if (mode === 'rooms') {
+      matches = await fetchRoomMatches(supabase, student, context, exclude_ids);
+    }
+
     if (mode === 'roommate' || mode === 'combined') {
       const roommateMatches = await fetchRoommateMatches(
         supabase, 
@@ -492,6 +496,116 @@ async function fetchDormMatches(supabase: any, student: any, context: any = {}, 
   }));
   
   return scoredDorms.sort((a: any, b: any) => b.score - a.score);
+}
+
+/**
+ * Fetch individual room matches with scoring
+ */
+async function fetchRoomMatches(supabase: any, student: any, context: any = {}, exclude_ids?: string[]) {
+  // Fetch available rooms with dorm info
+  let query = supabase
+    .from('rooms')
+    .select('*, dorm:dorms!dorm_id(id, name, dorm_name, area, university, gender_preference, amenities, shuttle, verification_status)')
+    .eq('available', true);
+
+  // Exclude dismissed rooms
+  if (exclude_ids && exclude_ids.length > 0) {
+    query = query.not('id', 'in', `(${exclude_ids.join(',')})`);
+  }
+
+  const { data, error } = await query.limit(50);
+  
+  if (error) throw error;
+
+  // Filter rooms based on capacity, dorm verification, and gender compatibility
+  const validRooms = (data || []).filter((room: any) => {
+    // Must have available capacity
+    if ((room.capacity_occupied || 0) >= (room.capacity || 0)) return false;
+    
+    // Dorm must be verified
+    if (room.dorm?.verification_status !== 'Verified') return false;
+    
+    // Gender compatibility check
+    if (student.gender && room.dorm?.gender_preference) {
+      const genderLower = student.gender.toLowerCase();
+      const dormGender = room.dorm.gender_preference.toLowerCase();
+      
+      if (genderLower === 'male' && (dormGender === 'female' || dormGender === 'female_only')) {
+        return false;
+      }
+      if (genderLower === 'female' && (dormGender === 'male' || dormGender === 'male_only')) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+
+  // Score rooms
+  const scoredRooms = validRooms.map((room: any) => {
+    let score = 50;
+    
+    // Budget scoring
+    if (student.budget && room.price) {
+      if (room.price <= student.budget) {
+        const diff = student.budget - room.price;
+        const percentSaved = diff / student.budget;
+        score += 20 + (percentSaved * 10); // Bonus for under budget
+      } else {
+        const overage = room.price - student.budget;
+        const percentOver = overage / student.budget;
+        score -= Math.min(30, percentOver * 50); // Penalty for over budget
+      }
+    }
+    
+    // Area preference scoring
+    if (student.favorite_areas?.length > 0 && room.dorm?.area) {
+      const areaMatch = student.favorite_areas.some((area: string) => 
+        room.dorm.area.toLowerCase().includes(area.toLowerCase())
+      );
+      if (areaMatch) score += 15;
+    }
+    
+    // University proximity scoring
+    if (student.preferred_university && room.dorm?.university) {
+      if (room.dorm.university.toLowerCase().includes(student.preferred_university.toLowerCase())) {
+        score += 15;
+      }
+    }
+    
+    // Room type preference scoring
+    if (student.preferred_room_types?.length > 0 && room.type) {
+      const typeMatch = student.preferred_room_types.some((type: string) =>
+        room.type.toLowerCase().includes(type.toLowerCase())
+      );
+      if (typeMatch) score += 10;
+    }
+    
+    // Budget warning
+    let budgetWarning = null;
+    if (student.budget && room.price > student.budget) {
+      budgetWarning = `$${room.price - student.budget} over your budget`;
+    }
+
+    return {
+      ...room,
+      type: 'room',
+      dorm_name: room.dorm?.dorm_name || room.dorm?.name,
+      dorm_area: room.dorm?.area,
+      dorm_university: room.dorm?.university,
+      score: Math.min(100, Math.max(0, score)),
+      budgetWarning,
+      subScores: {
+        budget_score: student.budget && room.price ? (room.price <= student.budget ? 80 : 50) : 50,
+        location_score: student.favorite_areas?.length > 0 ? (validRooms.some((r: any) => 
+          student.favorite_areas.some((a: string) => r.dorm?.area?.toLowerCase().includes(a.toLowerCase()))
+        ) ? 75 : 50) : 50,
+        room_type_score: student.preferred_room_types?.length > 0 ? 70 : 50
+      }
+    };
+  });
+
+  return scoredRooms.sort((a: any, b: any) => b.score - a.score);
 }
 
 async function fetchRoommateMatches(

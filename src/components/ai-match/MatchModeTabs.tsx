@@ -3,12 +3,12 @@ import { Home, Users, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface MatchModeTabsProps {
-  activeMode: 'dorms' | 'roommates' | 'rooms';
-  onModeChange: (mode: 'dorms' | 'roommates' | 'rooms') => void;
+  activeMode: 'apartments' | 'rooms' | 'roommates';
+  onModeChange: (mode: 'apartments' | 'rooms' | 'roommates') => void;
   counts?: {
-    dorms?: number;
-    roommates?: number;
+    apartments?: number;
     rooms?: number;
+    roommates?: number;
   };
   className?: string;
 }
@@ -20,9 +20,9 @@ export const MatchModeTabs = ({
   className 
 }: MatchModeTabsProps) => {
   const tabs = [
-    { id: 'dorms' as const, label: 'Dorms', icon: Home, count: counts.dorms },
-    { id: 'roommates' as const, label: 'Roommates', icon: Users, count: counts.roommates },
-    { id: 'rooms' as const, label: 'Rooms', icon: Building2, count: counts.rooms }
+    { id: 'apartments' as const, label: 'Apartments', icon: Home, count: counts.apartments },
+    { id: 'rooms' as const, label: 'Rooms', icon: Building2, count: counts.rooms },
+    { id: 'roommates' as const, label: 'Roommates', icon: Users, count: counts.roommates }
   ];
 
   const activeIndex = tabs.findIndex(tab => tab.id === activeMode);

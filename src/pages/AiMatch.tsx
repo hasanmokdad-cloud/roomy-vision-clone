@@ -22,8 +22,8 @@ import { useMatchTier } from "@/hooks/useMatchTier";
 import { motion } from "framer-motion";
 
 type ProfileStatus = 'loading' | 'incomplete' | 'complete';
-type MatchMode = 'dorms' | 'roommates';
-type ActiveMode = 'dorm' | 'roommate' | 'combined';
+type MatchMode = 'apartments' | 'rooms' | 'roommates';
+type ActiveMode = 'dorm' | 'roommate' | 'rooms' | 'combined';
 
 const AiMatch = () => {
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ const AiMatch = () => {
   const [searchParams] = useSearchParams();
   const [userId, setUserId] = useState<string | null>(null);
   const [profileStatus, setProfileStatus] = useState<ProfileStatus>('loading');
-  const [matchMode, setMatchMode] = useState<MatchMode>('dorms');
+  const [matchMode, setMatchMode] = useState<MatchMode>('apartments');
   const [activeMode, setActiveMode] = useState<ActiveMode>('dorm');
   const [studentProfile, setStudentProfile] = useState<any>(null);
   const [userPlan, setUserPlan] = useState<AiMatchPlan>('basic');
@@ -139,7 +139,7 @@ const AiMatch = () => {
   const determineMatchModeFromProfile = (profile: any) => {
     if (!profile) {
       setActiveMode('dorm');
-      setMatchMode('dorms');
+      setMatchMode('apartments');
       return;
     }
     
@@ -150,16 +150,16 @@ const AiMatch = () => {
     
     if (needsDorm && needsRoommateNewDorm) {
       setActiveMode('combined');
-      setMatchMode('dorms');
+      setMatchMode('apartments');
     } else if (needsDorm) {
       setActiveMode('dorm');
-      setMatchMode('dorms');
+      setMatchMode('apartments');
     } else if (needsRoommateCurrentPlace || legacyNeedsRoommate) {
       setActiveMode('roommate');
       setMatchMode('roommates');
     } else {
       setActiveMode('dorm');
-      setMatchMode('dorms');
+      setMatchMode('apartments');
     }
   };
 
@@ -169,15 +169,18 @@ const AiMatch = () => {
 
     const urlMode = searchParams.get('mode');
     
-    if (urlMode === 'dorm') {
+    if (urlMode === 'dorm' || urlMode === 'apartments') {
       setActiveMode('dorm');
-      setMatchMode('dorms');
+      setMatchMode('apartments');
+    } else if (urlMode === 'rooms') {
+      setActiveMode('rooms');
+      setMatchMode('rooms');
     } else if (urlMode === 'roommate') {
       setActiveMode('roommate');
       setMatchMode('roommates');
     } else if (urlMode === 'combined') {
       setActiveMode('combined');
-      setMatchMode('dorms'); // Default to dorms tab
+      setMatchMode('apartments'); // Default to apartments tab
     } else {
       // Fallback: determine from profile if no URL param
       determineMatchModeFromProfile(studentProfile);
@@ -224,17 +227,25 @@ const AiMatch = () => {
     return reasons.slice(0, 3);
   };
 
+  // Map frontend mode to backend mode
+  const getBackendMode = (mode: MatchMode): string => {
+    if (mode === 'apartments') return 'dorm';
+    if (mode === 'rooms') return 'rooms';
+    return 'roommate';
+  };
+
   // Fetch matches using AI Core
   const fetchMatches = async (excludeIds?: string[]) => {
     setLoading(true);
 
     try {
+      const backendMode = getBackendMode(matchMode);
       const { data, error } = await supabase.functions.invoke('roomy-ai-core', {
         body: {
-          mode: activeMode,
+          mode: backendMode,
           match_tier: selectedPlan,
           personality_enabled: studentProfile?.enable_personality_matching || false,
-          limit: matchMode === 'dorms' ? 10 : undefined,
+          limit: matchMode === 'apartments' ? 10 : matchMode === 'rooms' ? 20 : undefined,
           context: {},
           exclude_ids: excludeIds
         }
@@ -356,13 +367,13 @@ const AiMatch = () => {
 
   // Dynamic header text
   const getHeaderTitle = () => {
-    switch (activeMode) {
-      case 'dorm':
-        return 'AI-Powered Dorm Matching';
-      case 'roommate':
+    switch (matchMode) {
+      case 'apartments':
+        return 'AI-Powered Apartment Matching';
+      case 'rooms':
+        return 'AI-Powered Room Matching';
+      case 'roommates':
         return 'AI-Powered Roommate Matching';
-      case 'combined':
-        return 'AI-Powered Dorm & Roommate Matching';
       default:
         return 'AI-Powered Matching';
     }
@@ -391,17 +402,22 @@ const AiMatch = () => {
           </motion.div>
         </div>
 
-        {/* Mode Tabs for Combined */}
-        {showToggle && (
-          <MatchModeTabs
-            activeMode={matchMode as any}
-            onModeChange={(mode) => setMatchMode(mode as MatchMode)}
-            counts={{
-              dorms: matchMode === 'dorms' ? matches.length : undefined,
-              roommates: matchMode === 'roommates' ? matches.length : undefined
-            }}
-          />
-        )}
+        {/* Mode Tabs - Always show for navigation */}
+        <MatchModeTabs
+          activeMode={matchMode}
+          onModeChange={(mode) => {
+            setMatchMode(mode);
+            // Update activeMode based on selected tab
+            if (mode === 'apartments') setActiveMode('dorm');
+            else if (mode === 'rooms') setActiveMode('rooms');
+            else setActiveMode('roommate');
+          }}
+          counts={{
+            apartments: matchMode === 'apartments' ? matches.length : undefined,
+            rooms: matchMode === 'rooms' ? matches.length : undefined,
+            roommates: matchMode === 'roommates' ? matches.length : undefined
+          }}
+        />
 
         {/* Tier Selection - Show only on roommate views */}
         {(activeMode === 'roommate' || (activeMode === 'combined' && matchMode === 'roommates')) && (
@@ -439,8 +455,8 @@ const AiMatch = () => {
               <AIInsightsCard insights={aiInsights} />
             )}
 
-            {/* Dorm Comparison (only show for dorm mode) */}
-            {matchMode === 'dorms' && matches.length > 0 && (
+            {/* Apartment/Dorm Comparison (only show for apartments mode) */}
+            {matchMode === 'apartments' && matches.length > 0 && (
               <DormComparison 
                 dorms={matches}
                 userId={userId}
@@ -478,18 +494,20 @@ const AiMatch = () => {
               )}
 
               <h2 className="text-2xl font-bold mb-6">
-                {matchMode === 'dorms' 
-                  ? 'Top Dorm Matches' 
-                  : matches.some(m => m.hasPersonalityMatch) 
-                    ? 'Other Compatible Roommates' 
-                    : 'Compatible Roommates'}
+                {matchMode === 'apartments' 
+                  ? 'Top Apartment Matches' 
+                  : matchMode === 'rooms'
+                    ? 'Top Room Matches'
+                    : matches.some(m => m.hasPersonalityMatch) 
+                      ? 'Other Compatible Roommates' 
+                      : 'Compatible Roommates'}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {(matchMode === 'roommates' 
                   ? matches.filter(m => !m.hasPersonalityMatch)
                   : matches
                 ).map((match, index) => (
-                  matchMode === 'dorms' ? (
+                  (matchMode === 'apartments' || matchMode === 'rooms') ? (
                     <DormMatchCard 
                       key={match.id} 
                       dorm={match} 
