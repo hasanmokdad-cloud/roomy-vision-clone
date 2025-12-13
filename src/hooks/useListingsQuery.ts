@@ -66,9 +66,17 @@ export function useListingsQuery(filters: Filters) {
   const [error, setError] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
 
-  // Wait for auth to be ready before querying
+  // Wait for auth to be ready before querying - with safety timeout
   useEffect(() => {
     let isMounted = true;
+    
+    // Safety timeout - don't wait forever for auth (5 seconds max)
+    const authTimeout = setTimeout(() => {
+      if (isMounted && !authReady) {
+        console.log('Auth timeout reached - proceeding without waiting');
+        setAuthReady(true);
+      }
+    }, 5000);
     
     supabase.auth.getSession().then(() => {
       if (isMounted) {
@@ -77,15 +85,15 @@ export function useListingsQuery(filters: Filters) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id);
+      console.log('Auth state changed:', event, session?.user?.id ? 'Authenticated' : 'Anonymous');
       if (isMounted) {
         setAuthReady(true);
-        // Second useEffect will handle reload via authReady dependency
       }
     });
 
     return () => {
       isMounted = false;
+      clearTimeout(authTimeout);
       subscription.unsubscribe();
     };
   }, []);

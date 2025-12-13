@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CinematicDormCard } from "@/components/listings/CinematicDormCard";
 import { AlertCircle, Images } from "lucide-react";
@@ -40,14 +40,13 @@ export function DormPreviewModal({ isOpen, onClose, onSubmit, formData }: DormPr
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="text-center">
+          <DialogTitle className="text-2xl font-bold">Preview Your Listing</DialogTitle>
+          <DialogDescription>
+            This is how students will see your dorm listing
+          </DialogDescription>
+        </DialogHeader>
         <div className="space-y-6">
-          {/* Header */}
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold">Preview Your Listing</h2>
-            <p className="text-muted-foreground">
-              This is how students will see your dorm listing
-            </p>
-          </div>
 
           {/* Preview Card */}
           <div className="flex justify-center py-8 bg-gradient-to-b from-background/50 to-background rounded-xl">

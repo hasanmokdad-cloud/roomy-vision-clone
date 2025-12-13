@@ -177,6 +177,9 @@ export const BookTourModal = ({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Tour Booked Successfully</DialogTitle>
+          </DialogHeader>
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}

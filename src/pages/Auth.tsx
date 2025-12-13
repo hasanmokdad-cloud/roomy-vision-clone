@@ -29,6 +29,22 @@ export default function Auth() {
     }
   }, [searchParams]);
 
+  // Redirect already authenticated users away from auth page
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const redirect = searchParams.get('redirect');
+        if (redirect && !redirect.includes('select-role')) {
+          navigate(redirect, { replace: true });
+        } else {
+          navigate('/listings', { replace: true });
+        }
+      }
+    };
+    checkExistingSession();
+  }, [navigate, searchParams]);
+
   const onLogin = async () => {
     setIsLoading(true);
     try {
