@@ -40,6 +40,17 @@ export default function SavedRooms() {
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [existingCollection, setExistingCollection] = useState<any>(null);
 
+  // Auth state listener to handle sign out
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        navigate('/auth');
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   useEffect(() => {
     if (!authLoading && userId) {
       loadSavedRooms();
@@ -257,18 +268,18 @@ export default function SavedRooms() {
   ];
 
   return (
-    <div className="min-h-screen relative bg-gradient-to-b from-[#0F1624] to-[#15203B]">
+    <div className="min-h-screen relative bg-gradient-to-b from-background to-muted/20">
       {!isMobile && <RoomyNavbar />}
 
       <div className="container mx-auto px-4 md:px-6 py-32 max-w-7xl">
         <div className="flex items-center justify-between mb-8">
           <Button
             variant="ghost"
-            onClick={() => navigate('/listings')}
-            className="text-white/70 hover:text-white hover:bg-white/10"
+            onClick={() => navigate('/settings')}
+            className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Listings
+            Back to Settings
           </Button>
 
           <div className="flex items-center gap-3">
@@ -298,23 +309,23 @@ export default function SavedRooms() {
             <Home className="w-8 h-8 text-secondary" />
             <h1 className="text-4xl md:text-5xl font-bold gradient-text">My Saved Rooms</h1>
           </div>
-          <p className="text-white/60 text-lg mb-8">
+          <p className="text-muted-foreground text-lg mb-8">
             Rooms you've bookmarked for later
           </p>
 
           {/* Filters & Sort Bar */}
           {!loading && savedRooms.length > 0 && (
-            <div className="glass rounded-2xl p-4 md:p-6 mb-8 border-white/20">
+            <div className="bg-card/50 backdrop-blur-sm rounded-2xl p-4 md:p-6 mb-8 border border-border/40">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <SlidersHorizontal className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-semibold text-white">Filters</h3>
+                  <h3 className="text-lg font-semibold text-foreground">Filters</h3>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleClearFilters}
-                  className="text-white/60 hover:text-white"
+                  className="text-muted-foreground hover:text-foreground"
                 >
                   Clear All
                 </Button>
@@ -323,7 +334,7 @@ export default function SavedRooms() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Price Range */}
                 <div className="space-y-3">
-                  <Label className="text-white">
+                  <Label className="text-foreground">
                     Price: ${priceRange[0]} - ${priceRange[1]}
                   </Label>
                   <Slider
@@ -338,9 +349,9 @@ export default function SavedRooms() {
 
                 {/* Room Type */}
                 <div className="space-y-3">
-                  <Label className="text-white">Room Type</Label>
+                  <Label className="text-foreground">Room Type</Label>
                   <Select value={selectedType} onValueChange={setSelectedType}>
-                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                    <SelectTrigger className="bg-background/50 border-border text-foreground">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -355,9 +366,9 @@ export default function SavedRooms() {
 
                 {/* Sort By */}
                 <div className="space-y-3">
-                  <Label className="text-white">Sort By</Label>
+                  <Label className="text-foreground">Sort By</Label>
                   <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                    <SelectTrigger className="bg-background/50 border-border text-foreground">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent>
@@ -382,11 +393,11 @@ export default function SavedRooms() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="glass rounded-3xl p-12 text-center border-white/20"
+              className="bg-card/50 backdrop-blur-sm rounded-3xl p-12 text-center border border-border/40"
             >
               <Home className="w-16 h-16 text-secondary/40 mx-auto mb-6" />
-              <h2 className="text-2xl font-bold text-white mb-3">No Saved Rooms Yet</h2>
-              <p className="text-white/60 mb-8 max-w-md mx-auto">
+              <h2 className="text-2xl font-bold text-foreground mb-3">No Saved Rooms Yet</h2>
+              <p className="text-muted-foreground mb-8 max-w-md mx-auto">
                 Start exploring and save your favorite rooms to keep them here for easy access.
               </p>
               <Button
@@ -397,10 +408,10 @@ export default function SavedRooms() {
               </Button>
             </motion.div>
           ) : filteredRooms.length === 0 ? (
-            <div className="glass rounded-3xl p-12 text-center border-white/20">
+            <div className="bg-card/50 backdrop-blur-sm rounded-3xl p-12 text-center border border-border/40">
               <SlidersHorizontal className="w-16 h-16 text-primary/40 mx-auto mb-6" />
-              <h2 className="text-2xl font-bold text-white mb-3">No Rooms Match Your Filters</h2>
-              <p className="text-white/60 mb-6">Try adjusting your filters to see more results.</p>
+              <h2 className="text-2xl font-bold text-foreground mb-3">No Rooms Match Your Filters</h2>
+              <p className="text-muted-foreground mb-6">Try adjusting your filters to see more results.</p>
               <Button
                 variant="outline"
                 onClick={handleClearFilters}
