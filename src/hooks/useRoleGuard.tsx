@@ -20,46 +20,42 @@ export function useRoleGuard(requiredRole?: AppRole) {
   const validationInProgress = useRef(false);
 
   useEffect(() => {
-    // Listen for sign-out and redirect to /listings
-    // Only redirect on explicit SIGNED_OUT event, NOT on !session
-    // Because INITIAL_SESSION may have null session during hydration across tabs
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') {
-        setRole(null);
-        setUserId(null);
-        setLoading(false);
-        navigate('/listings', { replace: true });
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  useEffect(() => {
     // Prevent concurrent validations
     if (validationInProgress.current) return;
     
-    // Safety timeout to prevent infinite loading (10 seconds max)
+    let isMounted = true;
+    let hasValidated = false;
+    
+    // Safety timeout to prevent infinite loading (15 seconds max)
     const safetyTimeout = setTimeout(() => {
-      if (loading) {
+      if (isMounted && loading && !hasValidated) {
         console.warn("⚠️ useRoleGuard: Safety timeout reached, forcing loading complete");
         setLoading(false);
       }
-    }, 10000);
+    }, 15000);
     
-    const validateSession = async () => {
+    const validateSession = async (sessionToValidate?: any) => {
+      if (!isMounted || validationInProgress.current) return;
       validationInProgress.current = true;
       
       try {
-        // First try getSession (faster, works for fresh logins)
-        console.log("🔄 useRoleGuard: Getting session...");
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        let session = sessionToValidate;
         
-        if (sessionError) {
-          console.warn("⚠️ useRoleGuard: getSession error:", sessionError.message);
+        // If no session passed in, fetch it
+        if (!session) {
+          console.log("🔄 useRoleGuard: Getting session...");
+          
+          // Wait briefly for Supabase to hydrate from localStorage
+          await new Promise(resolve => setTimeout(resolve, 50));
+          
+          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          
+          if (sessionError) {
+            console.warn("⚠️ useRoleGuard: getSession error:", sessionError.message);
+          }
+          
+          session = sessionData?.session;
         }
-        
-        let session = sessionData?.session;
 
         // Only refresh if we have a session AND it's appropriate to refresh
         if (session) {
@@ -72,7 +68,6 @@ export function useRoleGuard(requiredRole?: AppRole) {
               const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
               
               if (refreshError) {
-                // Handle rate limiting gracefully - don't redirect, just use existing session
                 if (refreshError.message?.includes('429') || refreshError.status === 429) {
                   console.warn("⚠️ useRoleGuard: Rate limited, using existing session");
                 } else {
@@ -83,20 +78,20 @@ export function useRoleGuard(requiredRole?: AppRole) {
                 markSessionRefreshed();
               }
             } catch (refreshErr: any) {
-              // Catch any refresh errors and continue with existing session
               console.warn("⚠️ useRoleGuard: Refresh exception:", refreshErr?.message);
             }
           }
         }
 
+        // If no session found, DON'T redirect immediately - wait for onAuthStateChange
         if (!session) {
-          console.log("❌ useRoleGuard: No session found, redirecting to auth");
-          setRole(null);
-          setUserId(null);
-          setLoading(false);
-          navigate("/auth", { replace: true });
+          console.log("⚠️ useRoleGuard: No session on initial check, waiting for auth state...");
+          validationInProgress.current = false;
+          // Don't redirect yet - the onAuthStateChange listener may fire with a valid session
           return;
         }
+        
+        hasValidated = true;
 
         console.log("✅ useRoleGuard: Session active, email_confirmed_at:", session.user.email_confirmed_at);
         
@@ -183,13 +178,46 @@ export function useRoleGuard(requiredRole?: AppRole) {
         setLoading(false);
       } finally {
         validationInProgress.current = false;
-        clearTimeout(safetyTimeout);
       }
     };
 
+    // Set up auth state listener FIRST - this catches the real session state
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("🔄 useRoleGuard: Auth state changed:", event, session ? 'has session' : 'no session');
+      
+      if (event === 'SIGNED_OUT') {
+        setRole(null);
+        setUserId(null);
+        setLoading(false);
+        navigate('/listings', { replace: true });
+        return;
+      }
+      
+      // On SIGNED_IN or INITIAL_SESSION with valid session, validate it
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && session) {
+        void validateSession(session);
+      }
+      
+      // If INITIAL_SESSION fires with no session, wait a bit then check again
+      // This handles the race condition where localStorage hasn't loaded yet
+      if (event === 'INITIAL_SESSION' && !session) {
+        setTimeout(() => {
+          if (isMounted && !hasValidated) {
+            console.log("🔄 useRoleGuard: Re-checking session after INITIAL_SESSION with null...");
+            void validateSession();
+          }
+        }, 200);
+      }
+    });
+
+    // Also do an immediate check
     void validateSession();
     
-    return () => clearTimeout(safetyTimeout);
+    return () => {
+      isMounted = false;
+      clearTimeout(safetyTimeout);
+      subscription.unsubscribe();
+    };
   }, [navigate, requiredRole]);
 
   return { loading, role, userId };

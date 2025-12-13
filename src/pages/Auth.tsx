@@ -29,14 +29,24 @@ export default function Auth() {
     }
   }, [searchParams]);
 
-  // Redirect already authenticated users away from auth page
+  // Redirect already authenticated users away from auth page with role-based routing
   useEffect(() => {
     const checkExistingSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const redirect = searchParams.get('redirect');
+        
+        // Get user role for proper routing
+        const { data: roleData } = await supabase.rpc('get_user_role', {
+          p_user_id: session.user.id
+        });
+        
         if (redirect && !redirect.includes('select-role')) {
           navigate(redirect, { replace: true });
+        } else if (roleData === 'admin') {
+          navigate('/admin', { replace: true });
+        } else if (roleData === 'owner') {
+          navigate('/owner', { replace: true });
         } else {
           navigate('/listings', { replace: true });
         }
@@ -116,12 +126,21 @@ export default function Auth() {
         return;
       }
 
+      // Get user role for proper routing
+      const { data: roleData } = await supabase.rpc('get_user_role', {
+        p_user_id: data.user.id
+      });
+
       toast({ title: "Welcome back!", description: "Signed in successfully." });
       
-      // Check redirect param first, otherwise go to listings
+      // Check redirect param first, otherwise route based on role
       const redirect = searchParams.get('redirect');
       if (redirect && !redirect.includes('select-role')) {
         navigate(redirect, { replace: true });
+      } else if (roleData === 'admin') {
+        navigate("/admin", { replace: true });
+      } else if (roleData === 'owner') {
+        navigate("/owner", { replace: true });
       } else {
         navigate("/listings", { replace: true });
       }

@@ -142,8 +142,11 @@ function ProtectedRoute({
   forbiddenRoles?: ("admin" | "owner" | "student")[];
 }) {
   const location = useLocation();
-  const { loading, role } = useRoleGuard(requiredRole);
-  const isAuthenticated = !!role;
+  const { loading, role, userId } = useRoleGuard(requiredRole);
+  
+  // Consider authenticated if we have either a role OR a userId
+  // This prevents redirect when role resolution is slow but user is logged in
+  const isAuthenticated = !!role || !!userId;
 
   if (loading) {
     return (
@@ -153,7 +156,7 @@ function ProtectedRoute({
     );
   }
 
-  // If not authenticated, redirect to auth
+  // If not authenticated (no role AND no userId), redirect to auth
   if (!isAuthenticated) {
     return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
