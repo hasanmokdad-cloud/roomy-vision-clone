@@ -86,10 +86,9 @@ export function RoomyNavbar() {
           .maybeSingle();
         
         setRole((roleRow?.roles as any)?.name || null);
-      } else {
-        setUser(null);
-        setRole(null);
       }
+      // Do NOT clear state if session is null but event isn't SIGNED_OUT
+      // This prevents false logout during initial tab hydration
     });
 
     return () => subscription.unsubscribe();
