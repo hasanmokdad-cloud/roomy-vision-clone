@@ -8,6 +8,7 @@ import { ProfileIncompleteCard } from "@/components/ai-match/ProfileIncompleteCa
 import { LoadingState } from "@/components/ai-match/LoadingState";
 import { AIInsightsCard } from "@/components/ai-match/AIInsightsCard";
 import { DormMatchCard } from "@/components/ai-match/DormMatchCard";
+import { RoomMatchCard } from "@/components/ai-match/RoomMatchCard";
 import { RoommateMatchCard } from "@/components/ai-match/RoommateMatchCard";
 import { RoommateComparison } from "@/components/ai-match/RoommateComparison";
 import { DormComparison } from "@/components/listings/DormComparison";
@@ -507,23 +508,29 @@ const AiMatch = () => {
                   ? matches.filter(m => !m.hasPersonalityMatch)
                   : matches
                 ).map((match, index) => (
-                  (matchMode === 'apartments' || matchMode === 'rooms') ? (
+                  matchMode === 'apartments' ? (
                     <DormMatchCard 
                       key={match.id} 
                       dorm={match} 
                       index={index}
                       onDismiss={(id) => handleDismissMatch(id, 'dorm')}
                     />
+                  ) : matchMode === 'rooms' ? (
+                    <RoomMatchCard 
+                      key={match.id} 
+                      room={match} 
+                      index={index}
+                    />
                   ) : (
-                      <RoommateMatchCard 
-                        key={match.user_id} 
-                        roommate={match} 
-                        index={index}
-                        showCompatibilityScore={shouldShowCompatibilityScore(userPlan)}
-                        isVip={isVipPlan(userPlan)}
-                        matchTier={selectedPlan}
-                        onDismiss={(id) => handleDismissMatch(id, 'roommate')}
-                      />
+                    <RoommateMatchCard 
+                      key={match.user_id} 
+                      roommate={match} 
+                      index={index}
+                      showCompatibilityScore={shouldShowCompatibilityScore(userPlan)}
+                      isVip={isVipPlan(userPlan)}
+                      matchTier={selectedPlan}
+                      onDismiss={(id) => handleDismissMatch(id, 'roommate')}
+                    />
                   )
                 ))}
               </div>
