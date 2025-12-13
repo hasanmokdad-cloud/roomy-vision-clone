@@ -25,7 +25,7 @@ export default function SavedDorms() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') {
-        navigate('/auth');
+        navigate('/listings');
       }
     });
     
@@ -37,7 +37,7 @@ export default function SavedDorms() {
     const timeout = setTimeout(() => {
       if (authLoading) {
         console.warn('Auth loading timed out on SavedDorms');
-        navigate('/auth');
+        navigate('/listings');
       }
     }, 10000);
     

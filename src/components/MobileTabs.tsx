@@ -91,7 +91,7 @@ export default function MobileTabs() {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     sessionStorage.removeItem('intro-played');
-    navigate('/auth');
+    window.location.href = '/listings';
   };
 
   // All hooks called above - now safe to have conditional returns

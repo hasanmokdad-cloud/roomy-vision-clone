@@ -44,7 +44,7 @@ export default function SavedRooms() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') {
-        navigate('/auth');
+        navigate('/listings');
       }
     });
     
