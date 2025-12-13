@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { renderMarkdown } from "@/utils/markdownRenderer";
 
 interface Message {
   role: "user" | "assistant";
@@ -373,7 +374,7 @@ export const ChatbotBubble = () => {
                           msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
                         }`}
                       >
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                        <div className="text-sm">{renderMarkdown(msg.content, msg.role === "user")}</div>
                       </div>
                     </div>
                     

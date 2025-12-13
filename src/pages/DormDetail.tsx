@@ -22,6 +22,7 @@ import { ThreeDViewer } from '@/components/rooms/ThreeDViewer';
 import { ScrollToTopButton } from '@/components/listings/ScrollToTopButton';
 import { ShareButton } from '@/components/shared/ShareButton';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { renderMarkdown } from '@/utils/markdownRenderer';
 
 export default function DormDetail() {
   const { id } = useParams();
@@ -350,7 +351,7 @@ export default function DormDetail() {
             <Card className="mb-6 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-300/30 animate-fade-in">
               <CardContent className="p-4 flex items-start gap-3">
                 <Sparkles className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-foreground/80">{dormInsight}</p>
+                <div className="text-sm text-foreground/80">{renderMarkdown(dormInsight)}</div>
               </CardContent>
             </Card>
           )}
