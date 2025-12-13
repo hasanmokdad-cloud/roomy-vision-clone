@@ -235,7 +235,7 @@ export default function Listings() {
           onOpenChange={setFiltersOpen}
           filters={filters}
           onFilterChange={handleFilterChange}
-          totalResults={filteredDorms.length}
+          dorms={dorms}
         />
 
         {/* AI Smart Filter */}
