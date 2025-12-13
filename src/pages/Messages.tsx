@@ -988,11 +988,15 @@ let otherUserName = 'User';
   };
 
   const loadMessages = async (conversationId: string) => {
-    const { data } = await supabase
+    console.log('🔄 Loading messages for conversation:', conversationId, 'userId:', userId);
+    
+    const { data, error } = await supabase
       .from('messages')
       .select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
+
+    console.log('📨 Messages loaded:', data?.length || 0, 'Error:', error);
 
     if (data) {
       setMessages(data as Message[]);
@@ -1767,7 +1771,7 @@ let otherUserName = 'User';
                         </div>
                         
                         {/* Content - Instagram style: name on top, message + time on bottom */}
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 overflow-hidden">
                           {/* Row 1: Name with icons */}
                           <div className="flex items-center gap-1.5">
                             {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
@@ -1780,15 +1784,15 @@ let otherUserName = 'User';
                           </div>
                           
                           {/* Row 2: Message preview + time (Instagram style: "Message · 1d") */}
-                          <div className="flex items-center gap-1 mt-0.5">
+                          <div className="flex items-center gap-1 mt-0.5 max-w-full">
                             {conv.last_message_sender_id === userId && (
                               <MessageStatusIcon status={conv.last_message_status} />
                             )}
-                            <p className={`text-sm truncate ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                            <p className={`text-sm truncate flex-1 min-w-0 max-w-[150px] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                               {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
                             </p>
                             {timeAgo && (
-                              <span className="text-sm text-muted-foreground shrink-0">· {timeAgo}</span>
+                              <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">· {timeAgo}</span>
                             )}
                           </div>
                         </div>
