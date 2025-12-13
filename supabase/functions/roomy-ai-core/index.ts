@@ -1135,10 +1135,32 @@ async function enhanceWithGemini(
 ) {
   const topMatches = matches.slice(0, 10);
   
-  // Enhanced prompt with sub-scores
+  // Skip AI if no matches - prevent hallucinations
+  if (topMatches.length === 0) {
+    return {
+      rankedMatches: [],
+      insights: ''
+    };
+  }
+  
+  // Enhanced prompt with sub-scores - handle each mode explicitly
   let prompt = '';
   
-  if (mode === 'dorm' || mode === 'combined') {
+  if (mode === 'rooms') {
+    // ROOMS MODE - Generate room-specific insights
+    const roomMatches = topMatches.filter(m => m.type === 'room');
+    const roomDetails = roomMatches.map(m => 
+      `${m.name || m.type || 'Room'} at ${m.dorm_name} ($${m.price}/month, ${m.dorm_area || 'Area N/A'})`
+    ).join('\n- ');
+    
+    prompt = `Analyze these room matches for a Lebanese student:
+Budget: $${student.budget}, Near: ${student.preferred_university}
+
+Top room matches:
+- ${roomDetails}
+
+Write 1-2 warm, concise sentences about these ROOM matches. Focus on price, location, and room availability. DO NOT mention roommates or invent any names.`;
+  } else if (mode === 'dorm' || mode === 'combined') {
     const dormMatches = topMatches.filter(m => m.type === 'dorm');
     const dormDetails = dormMatches.map(m => 
       `${m.dorm_name || m.name} (Score: ${m.score}%, Location: ${m.subScores?.location_score}%, Budget fit: ${m.subScores?.budget_score}%, Room type: ${m.subScores?.room_type_score}%)`
@@ -1150,8 +1172,9 @@ Budget: $${student.budget}, Near: ${student.preferred_university}, Areas: ${stud
 Top matches with scores:
 - ${dormDetails}
 
-Write 1-2 warm, concise sentences explaining why these are good matches. Be specific about budget, location, or room type when relevant.`;
+Write 1-2 warm, concise sentences explaining why these are good matches. Be specific about budget, location, or room type when relevant. DO NOT mention roommates or invent any names.`;
   } else {
+    // ROOMMATE MODE
     const roommateMatches = topMatches.filter(m => m.type === 'roommate');
     const roommateDetails = roommateMatches.map(m => 
       `${m.full_name} (Score: ${m.score}%, Lifestyle: ${m.subScores?.lifestyle_score}%, Study habits: ${m.subScores?.study_focus_score}%, Cleanliness: ${m.subScores?.cleanliness_score}%)`
@@ -1165,7 +1188,8 @@ Top matches:
 
 Write 1-2 warm sentences about compatibility. ${usePersonality 
   ? 'Mention lifestyle traits like sleep schedule or study style.' 
-  : 'Focus ONLY on preferences like university and budget. DO NOT mention personality scores or traits.'}`;
+  : 'Focus ONLY on preferences like university and budget. DO NOT mention personality scores or traits.'}
+ONLY use names from the matches above. NEVER invent or fabricate names.`;
   }
 
   try {
@@ -1178,7 +1202,10 @@ Write 1-2 warm sentences about compatibility. ${usePersonality
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "You are Roomy AI, a friendly Lebanese housing assistant. Be warm, concise, and specific." },
+          { 
+            role: "system", 
+            content: "You are Roomy AI, a friendly Lebanese housing assistant. Be warm, concise, and specific. CRITICAL: NEVER invent or fabricate names. ONLY mention data explicitly provided. If no matches provided, say 'Looking for options...' Do not create fictional people." 
+          },
           { role: "user", content: prompt }
         ],
       }),

@@ -235,9 +235,14 @@ const AiMatch = () => {
     return 'roommate';
   };
 
-  // Fetch matches using AI Core
+  // Fetch matches using AI Core with timeout
   const fetchMatches = async (excludeIds?: string[]) => {
     setLoading(true);
+    setAiInsights(''); // Clear stale insights immediately
+
+    // Create timeout for request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
 
     try {
       const backendMode = getBackendMode(matchMode);
@@ -252,19 +257,35 @@ const AiMatch = () => {
         }
       });
 
+      clearTimeout(timeoutId);
+
       if (error) throw error;
 
       if (data.matches) {
-        setMatches(data.matches);
+        // Filter matches to ensure correct type for current mode
+        const expectedType = matchMode === 'apartments' ? 'dorm' : matchMode === 'rooms' ? 'room' : 'roommate';
+        const filteredMatches = data.matches.filter((m: any) => m.type === expectedType);
+        setMatches(filteredMatches);
         setAiInsights(data.insights_banner || '');
+      } else {
+        setMatches([]);
+        setAiInsights('');
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching matches:', error);
-      setAiInsights('Roomy AI is temporarily unavailable. Showing cached results.');
+      clearTimeout(timeoutId);
+      
+      // Don't leave stale state on error
+      setMatches([]);
+      setAiInsights('');
+      
+      const isTimeout = error?.name === 'AbortError' || error?.message?.includes('timeout');
       toast({
-        title: "Error",
-        description: "Failed to load matches. Please try again.",
+        title: isTimeout ? "Request Timeout" : "Error",
+        description: isTimeout 
+          ? "AI matching is taking too long. Please try again." 
+          : "Failed to load matches. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -407,6 +428,9 @@ const AiMatch = () => {
         <MatchModeTabs
           activeMode={matchMode}
           onModeChange={(mode) => {
+            // Clear stale data before switching
+            setMatches([]);
+            setAiInsights('');
             setMatchMode(mode);
             // Update activeMode based on selected tab
             if (mode === 'apartments') setActiveMode('dorm');
