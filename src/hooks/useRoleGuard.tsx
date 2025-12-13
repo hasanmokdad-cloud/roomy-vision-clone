@@ -23,6 +23,14 @@ export function useRoleGuard(requiredRole?: AppRole) {
     // Prevent concurrent validations
     if (validationInProgress.current) return;
     
+    // Safety timeout to prevent infinite loading (10 seconds max)
+    const safetyTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn("⚠️ useRoleGuard: Safety timeout reached, forcing loading complete");
+        setLoading(false);
+      }
+    }, 10000);
+    
     const validateSession = async () => {
       validationInProgress.current = true;
       
@@ -159,10 +167,13 @@ export function useRoleGuard(requiredRole?: AppRole) {
         setLoading(false);
       } finally {
         validationInProgress.current = false;
+        clearTimeout(safetyTimeout);
       }
     };
 
     void validateSession();
+    
+    return () => clearTimeout(safetyTimeout);
   }, [navigate, requiredRole]);
 
   return { loading, role, userId };

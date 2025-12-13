@@ -113,8 +113,11 @@ export function RoomyNavbar() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Logo */}
-            <Link to="/listings" className="flex items-center gap-2 shrink-0">
+            {/* Logo - navigates based on role */}
+            <Link 
+              to={role === 'owner' ? '/owner' : role === 'admin' ? '/admin' : '/listings'} 
+              className="flex items-center gap-2 shrink-0"
+            >
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.2 }}
@@ -133,8 +136,8 @@ export function RoomyNavbar() {
 
             {/* Right side actions */}
             <div className="flex items-center gap-2 md:gap-3">
-              {/* Become an Owner - only show if not already an owner */}
-              {role !== 'owner' && role !== 'admin' && (
+              {/* Become an Owner - hide for owners/admins, also hide while loading if user is logged in */}
+              {!loading && role !== 'owner' && role !== 'admin' && (
                 <Button
                   variant="ghost"
                   onClick={handleBecomeOwner}
