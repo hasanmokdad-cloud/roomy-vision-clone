@@ -15,13 +15,16 @@ import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { LanguageModal } from '@/components/LanguageModal';
 import RoomyLogo from '@/assets/roomy-logo.png';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '@/hooks/use-toast';
 
 export function RoomyNavbar() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [signingOut, setSigningOut] = useState(false);
   const [languageModalOpen, setLanguageModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   
@@ -66,6 +69,12 @@ export function RoomyNavbar() {
     loadUserAndRole();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setRole(null);
+        return;
+      }
+      
       if (session?.user) {
         setUser(session.user);
         
@@ -87,8 +96,38 @@ export function RoomyNavbar() {
   }, []);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/listings');
+    if (signingOut) return; // Prevent double-clicks
+    setSigningOut(true);
+    
+    try {
+      // Clear local state first
+      setUser(null);
+      setRole(null);
+      
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Sign out error:', error);
+        toast({
+          title: "Error signing out",
+          description: "Please try again",
+          variant: "destructive"
+        });
+        setSigningOut(false);
+        return;
+      }
+      
+      // Force full page reload to clear all state
+      window.location.href = '/listings';
+    } catch (err) {
+      console.error('Sign out exception:', err);
+      toast({
+        title: "Error signing out",
+        description: "Please try again",
+        variant: "destructive"
+      });
+      setSigningOut(false);
+    }
   };
 
   const handleBecomeOwner = () => {
@@ -298,10 +337,11 @@ export function RoomyNavbar() {
                       
                       <DropdownMenuItem
                         onClick={handleSignOut}
+                        disabled={signingOut}
                         className="cursor-pointer rounded-lg py-3 text-destructive focus:text-destructive"
                       >
                         <LogOut className="w-4 h-4 mr-2" />
-                        {t('navbar.signOut', 'Sign out')}
+                        {signingOut ? t('navbar.signingOut', 'Signing out...') : t('navbar.signOut', 'Sign out')}
                       </DropdownMenuItem>
                     </>
                   )}

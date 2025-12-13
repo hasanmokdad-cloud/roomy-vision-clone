@@ -44,6 +44,17 @@ const AiMatch = () => {
   const [showDebug, setShowDebug] = useState(false);
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
+  // Listen for auth state changes (handle sign out immediately)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        navigate('/auth');
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   // Check authentication and load profile
   useEffect(() => {
     const checkAuth = async () => {

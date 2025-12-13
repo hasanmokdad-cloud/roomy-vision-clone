@@ -2,6 +2,7 @@ import React, { Component, ReactNode } from 'react';
 import { AlertCircle, Home, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   children: ReactNode;
@@ -11,15 +12,16 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  isRedirecting: boolean;
 }
 
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, isRedirecting: false };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
   }
 
@@ -35,8 +37,30 @@ class ErrorBoundary extends Component<Props, State> {
     window.location.reload();
   };
 
-  handleGoHome = () => {
-    window.location.href = '/';
+  handleGoHome = async () => {
+    this.setState({ isRedirecting: true });
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        const { data } = await supabase.rpc('get_user_role', { 
+          p_user_id: session.user.id 
+        });
+        
+        if (data === 'owner') {
+          window.location.href = '/owner';
+          return;
+        } else if (data === 'admin') {
+          window.location.href = '/admin';
+          return;
+        }
+      }
+      
+      window.location.href = '/listings';
+    } catch {
+      window.location.href = '/listings';
+    }
   };
 
   render() {
@@ -78,9 +102,10 @@ class ErrorBoundary extends Component<Props, State> {
                 <Button
                   onClick={this.handleGoHome}
                   variant="outline"
+                  disabled={this.state.isRedirecting}
                 >
                   <Home className="w-4 h-4 mr-2" />
-                  Go Home
+                  {this.state.isRedirecting ? 'Redirecting...' : 'Go Home'}
                 </Button>
               </div>
 

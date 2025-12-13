@@ -109,8 +109,21 @@ export function AirbnbFiltersModal({
     }
   }, [open, filters]);
 
+  // Popular filter combinations for quick selection
+  const popularFilterCombinations = [
+    { label: 'Near LAU Byblos', filters: { cities: ['Byblos'], universities: ['LAU Byblos'] } },
+    { label: 'Near AUB', filters: { cities: ['Beirut'], universities: ['AUB'] } },
+    { label: 'Under $400', filters: { priceRange: [0, 400] as [number, number] } },
+    { label: 'Female Only', filters: { genderPreference: ['Female'] } },
+    { label: 'With Shuttle', filters: { cities: ['Byblos'], shuttle: 'available' as const } },
+    { label: 'Has WiFi & AC', filters: { amenities: ['WiFi', 'Air Conditioning'] } },
+  ];
+
   // Real-time count calculation based on localFilters
   const previewCount = useMemo(() => {
+    // Null safety check
+    if (!dorms || !Array.isArray(dorms)) return 0;
+    
     return dorms.filter(dorm => {
       // Price filter
       const price = dorm.monthly_price || dorm.price || 0;
@@ -225,6 +238,24 @@ export function AirbnbFiltersModal({
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-6 py-6">
           <div className="space-y-8">
+
+            {/* Popular Filters Quick-Select */}
+            <section className="space-y-4">
+              <h3 className="text-base font-semibold">Popular Filters</h3>
+              <div className="flex flex-wrap gap-2">
+                {popularFilterCombinations.map((combo) => (
+                  <button
+                    key={combo.label}
+                    onClick={() => setLocalFilters(prev => ({ ...prev, ...combo.filters }))}
+                    className="px-4 py-2 rounded-full border text-sm transition-all bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/30 hover:border-primary hover:shadow-md"
+                  >
+                    ✨ {combo.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <hr className="border-border" />
             
             {/* Budget Section */}
             <section className="space-y-4">
