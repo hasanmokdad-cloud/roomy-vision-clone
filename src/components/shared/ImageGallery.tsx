@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -41,6 +41,9 @@ export function ImageGallery({ images, initialIndex = 0, isOpen, onClose }: Imag
         className="max-w-7xl w-full h-[90vh] p-0 bg-black/95"
         onKeyDown={handleKeyDown}
       >
+        <DialogHeader className="sr-only">
+          <DialogTitle>Image Gallery</DialogTitle>
+        </DialogHeader>
         <div className="relative w-full h-full flex items-center justify-center">
           {/* Close button */}
           <Button

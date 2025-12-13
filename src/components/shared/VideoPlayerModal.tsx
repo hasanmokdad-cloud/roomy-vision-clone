@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -13,6 +13,9 @@ export function VideoPlayerModal({ open, onOpenChange, videoUrl, title }: VideoP
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black">
+        <DialogHeader className="sr-only">
+          <DialogTitle>{title || 'Video Player'}</DialogTitle>
+        </DialogHeader>
         <div className="relative">
           <Button
             variant="ghost"
