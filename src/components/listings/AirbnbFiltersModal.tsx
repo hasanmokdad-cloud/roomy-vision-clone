@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { X, ChevronDown, ChevronUp, Wifi, Car, Snowflake, Dumbbell, ShieldCheck, UtensilsCrossed, BookOpen, Trees, Users, Zap, Droplets, Building2, Armchair, PawPrint, Sparkles, Waves, Flower2, DoorOpen } from 'lucide-react';
+import { ChevronDown, ChevronUp, Wifi, Car, Snowflake, Dumbbell, ShieldCheck, UtensilsCrossed, BookOpen, Trees, Users, Zap, Droplets, Building2, Armchair, PawPrint, Sparkles, Waves, Flower2, DoorOpen } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -25,12 +25,12 @@ interface AirbnbFiltersModalProps {
   onOpenChange: (open: boolean) => void;
   filters: Filters;
   onFilterChange: (filters: Filters) => void;
-  totalResults: number;
+  dorms: any[]; // For real-time count calculation
 }
 
 // Data
 const byblosAreas = [
-  'Nahr Ibrahim', 'Byblos', 'Halat', 'Jeddayel', 'Mastita', 'Fidar', 'Habboub'
+  'Blat', 'Nahr Ibrahim', 'Halat', 'Jeddayel', 'Mastita', 'Fidar', 'Habboub'
 ];
 
 const beirutAreas = [
@@ -97,7 +97,7 @@ export function AirbnbFiltersModal({
   onOpenChange,
   filters,
   onFilterChange,
-  totalResults
+  dorms
 }: AirbnbFiltersModalProps) {
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [localFilters, setLocalFilters] = useState<Filters>(filters);
@@ -108,6 +108,48 @@ export function AirbnbFiltersModal({
       setLocalFilters(filters);
     }
   }, [open, filters]);
+
+  // Real-time count calculation based on localFilters
+  const previewCount = useMemo(() => {
+    return dorms.filter(dorm => {
+      // Price filter
+      const price = dorm.monthly_price || dorm.price || 0;
+      if (price < localFilters.priceRange[0] || price > localFilters.priceRange[1]) return false;
+
+      // City filter
+      if (localFilters.cities.length > 0) {
+        const dormCity = dorm.location?.toLowerCase().includes('beirut') ? 'Beirut' : 'Byblos';
+        if (!localFilters.cities.includes(dormCity)) return false;
+      }
+
+      // Area filter
+      if (localFilters.areas.length > 0) {
+        if (!localFilters.areas.some(area => dorm.area?.toLowerCase().includes(area.toLowerCase()))) return false;
+      }
+
+      // Gender filter
+      if (localFilters.genderPreference.length > 0) {
+        if (!localFilters.genderPreference.includes(dorm.gender_preference)) return false;
+      }
+
+      // Shuttle filter (only for Byblos)
+      if (localFilters.shuttle === 'available' && !dorm.shuttle) return false;
+      if (localFilters.shuttle === 'none' && dorm.shuttle) return false;
+
+      // University filter
+      if (localFilters.universities.length > 0) {
+        if (!localFilters.universities.some(uni => dorm.university?.includes(uni))) return false;
+      }
+
+      // Amenities filter
+      if (localFilters.amenities.length > 0) {
+        const dormAmenities = dorm.amenities || [];
+        if (!localFilters.amenities.every(a => dormAmenities.some((da: string) => da.toLowerCase().includes(a.toLowerCase())))) return false;
+      }
+
+      return true;
+    }).length;
+  }, [dorms, localFilters]);
 
   const selectedCity = localFilters.cities.length === 1 ? localFilters.cities[0] : null;
   const isByblos = selectedCity === 'Byblos';
@@ -174,21 +216,10 @@ export function AirbnbFiltersModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden bg-background border-border">
-        {/* Fixed Header */}
+      <DialogContent className="max-w-xl max-h-[85vh] p-0 gap-0 flex flex-col overflow-hidden bg-background border-border">
+        {/* Fixed Header - Only the auto-generated X button from DialogContent */}
         <DialogHeader className="flex-shrink-0 border-b border-border px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-5 w-5" />
-            </Button>
-            <DialogTitle className="text-lg font-semibold">Filters</DialogTitle>
-            <div className="w-10" /> {/* Spacer for centering */}
-          </div>
+          <DialogTitle className="text-lg font-semibold text-center">Filters</DialogTitle>
         </DialogHeader>
 
         {/* Scrollable Content */}
@@ -232,30 +263,7 @@ export function AirbnbFiltersModal({
 
             <hr className="border-border" />
 
-            {/* Capacity Section */}
-            <section className="space-y-4">
-              <h3 className="text-base font-semibold">Capacity</h3>
-              <div className="flex flex-wrap gap-2">
-                {capacityOptions.map((cap) => (
-                  <button
-                    key={cap}
-                    onClick={() => updateFilter('capacity', localFilters.capacity === cap ? undefined : cap)}
-                    className={cn(
-                      "px-4 py-2 rounded-full border text-sm transition-colors min-w-[80px]",
-                      localFilters.capacity === cap
-                        ? "bg-foreground text-background border-foreground"
-                        : "border-border hover:border-foreground"
-                    )}
-                  >
-                    {cap}{cap === 6 ? '+' : ''} {cap === 1 ? 'student' : 'students'}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <hr className="border-border" />
-
-            {/* City Section */}
+            {/* City Section - comes right after Budget */}
             <section className="space-y-4">
               <h3 className="text-base font-semibold">City</h3>
               <div className="flex gap-3">
@@ -276,9 +284,55 @@ export function AirbnbFiltersModal({
               </div>
             </section>
 
-            {/* Shuttle Service - Only if Byblos selected */}
+            {/* BYBLOS: Area → Gender → Shuttle */}
             {isByblos && (
               <>
+                <hr className="border-border" />
+                <section className="space-y-4">
+                  <h3 className="text-base font-semibold">Area</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {byblosAreas.map((area) => (
+                      <button
+                        key={area}
+                        onClick={() => toggleArrayFilter('areas', area)}
+                        className={cn(
+                          "px-4 py-2 rounded-full border text-sm transition-colors",
+                          localFilters.areas.includes(area)
+                            ? "bg-foreground text-background border-foreground"
+                            : "border-border hover:border-foreground"
+                        )}
+                      >
+                        {area}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <hr className="border-border" />
+                <section className="space-y-4">
+                  <h3 className="text-base font-semibold">Gender Preference</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { value: 'Male', label: '♂ Male Only' },
+                      { value: 'Female', label: '♀ Female Only' },
+                      { value: 'Mixed', label: '⚥ Co-ed' }
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => toggleArrayFilter('genderPreference', option.value)}
+                        className={cn(
+                          "px-4 py-2 rounded-full border text-sm transition-colors",
+                          localFilters.genderPreference.includes(option.value)
+                            ? "bg-foreground text-background border-foreground"
+                            : "border-border hover:border-foreground"
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
                 <hr className="border-border" />
                 <section className="space-y-4">
                   <h3 className="text-base font-semibold">Shuttle Service</h3>
@@ -306,41 +360,14 @@ export function AirbnbFiltersModal({
               </>
             )}
 
-            <hr className="border-border" />
-
-            {/* Gender Preference Section */}
-            <section className="space-y-4">
-              <h3 className="text-base font-semibold">Gender Preference</h3>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { value: 'Male', label: '♂ Male Only' },
-                  { value: 'Female', label: '♀ Female Only' },
-                  { value: 'Mixed', label: '⚥ Co-ed' }
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => toggleArrayFilter('genderPreference', option.value)}
-                    className={cn(
-                      "px-4 py-2 rounded-full border text-sm transition-colors",
-                      localFilters.genderPreference.includes(option.value)
-                        ? "bg-foreground text-background border-foreground"
-                        : "border-border hover:border-foreground"
-                    )}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            {/* Area Section - Conditional on City */}
-            {(isByblos || isBeirut) && visibleAreas.length > 0 && (
+            {/* BEIRUT: Area → Gender */}
+            {isBeirut && (
               <>
                 <hr className="border-border" />
                 <section className="space-y-4">
                   <h3 className="text-base font-semibold">Area</h3>
                   <div className="flex flex-wrap gap-2">
-                    {visibleAreas.map((area) => (
+                    {beirutAreas.map((area) => (
                       <button
                         key={area}
                         onClick={() => toggleArrayFilter('areas', area)}
@@ -352,6 +379,61 @@ export function AirbnbFiltersModal({
                         )}
                       >
                         {area}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <hr className="border-border" />
+                <section className="space-y-4">
+                  <h3 className="text-base font-semibold">Gender Preference</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { value: 'Male', label: '♂ Male Only' },
+                      { value: 'Female', label: '♀ Female Only' },
+                      { value: 'Mixed', label: '⚥ Co-ed' }
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => toggleArrayFilter('genderPreference', option.value)}
+                        className={cn(
+                          "px-4 py-2 rounded-full border text-sm transition-colors",
+                          localFilters.genderPreference.includes(option.value)
+                            ? "bg-foreground text-background border-foreground"
+                            : "border-border hover:border-foreground"
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              </>
+            )}
+
+            {/* Gender Preference - when no city selected */}
+            {!isByblos && !isBeirut && (
+              <>
+                <hr className="border-border" />
+                <section className="space-y-4">
+                  <h3 className="text-base font-semibold">Gender Preference</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { value: 'Male', label: '♂ Male Only' },
+                      { value: 'Female', label: '♀ Female Only' },
+                      { value: 'Mixed', label: '⚥ Co-ed' }
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => toggleArrayFilter('genderPreference', option.value)}
+                        className={cn(
+                          "px-4 py-2 rounded-full border text-sm transition-colors",
+                          localFilters.genderPreference.includes(option.value)
+                            ? "bg-foreground text-background border-foreground"
+                            : "border-border hover:border-foreground"
+                        )}
+                      >
+                        {option.label}
                       </button>
                     ))}
                   </div>
@@ -384,6 +466,32 @@ export function AirbnbFiltersModal({
                 ))}
               </div>
             </section>
+
+            {/* Capacity Section - Only if Apartment selected */}
+            {localFilters.residenceType === 'apartment' && (
+              <>
+                <hr className="border-border" />
+                <section className="space-y-4">
+                  <h3 className="text-base font-semibold">Capacity</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {capacityOptions.map((cap) => (
+                      <button
+                        key={cap}
+                        onClick={() => updateFilter('capacity', localFilters.capacity === cap ? undefined : cap)}
+                        className={cn(
+                          "px-4 py-2 rounded-full border text-sm transition-colors min-w-[80px]",
+                          localFilters.capacity === cap
+                            ? "bg-foreground text-background border-foreground"
+                            : "border-border hover:border-foreground"
+                        )}
+                      >
+                        {cap}{cap === 6 ? '+' : ''} {cap === 1 ? 'student' : 'students'}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              </>
+            )}
 
             {/* Room Type Section - Only if Room selected */}
             {localFilters.residenceType === 'room' && (
@@ -518,7 +626,7 @@ export function AirbnbFiltersModal({
             onClick={handleApply}
             className="px-6 py-3 bg-foreground text-background hover:bg-foreground/90 rounded-lg font-medium"
           >
-            Show {totalResults}+ {resultLabel}
+            Show {previewCount} {resultLabel}
           </Button>
         </div>
       </DialogContent>
