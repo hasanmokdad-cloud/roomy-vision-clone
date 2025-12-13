@@ -20,12 +20,23 @@ interface Filters {
   residenceType?: 'room' | 'apartment' | null;
 }
 
+interface Room {
+  id: string;
+  dorm_id: string;
+  name?: string;
+  type?: string;
+  price?: number;
+  capacity?: number;
+  available?: boolean;
+}
+
 interface AirbnbFiltersModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   filters: Filters;
   onFilterChange: (filters: Filters) => void;
-  dorms: any[]; // For real-time count calculation
+  dorms: any[];
+  rooms: Room[]; // For accurate room-level filtering
 }
 
 // Data
@@ -97,7 +108,8 @@ export function AirbnbFiltersModal({
   onOpenChange,
   filters,
   onFilterChange,
-  dorms
+  dorms,
+  rooms
 }: AirbnbFiltersModalProps) {
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [localFilters, setLocalFilters] = useState<Filters>(filters);
@@ -119,50 +131,79 @@ export function AirbnbFiltersModal({
     { label: 'Has WiFi & AC', filters: { amenities: ['WiFi', 'Air Conditioning'] } },
   ];
 
-  // Real-time count calculation based on localFilters
+  // Real-time count calculation based on localFilters using actual rooms data
   const previewCount = useMemo(() => {
-    // Null safety check
     if (!dorms || !Array.isArray(dorms)) return 0;
+    if (!rooms || !Array.isArray(rooms)) return 0;
     
-    return dorms.filter(dorm => {
+    // First, get valid dorm IDs based on dorm-level filters
+    const validDormIds = new Set(
+      dorms.filter(dorm => {
+        // City filter
+        if (localFilters.cities.length > 0) {
+          const dormCity = dorm.area?.toLowerCase().includes('beirut') ? 'Beirut' : 'Byblos';
+          if (!localFilters.cities.includes(dormCity)) return false;
+        }
+
+        // Area filter
+        if (localFilters.areas.length > 0) {
+          if (!localFilters.areas.some(area => dorm.area?.toLowerCase().includes(area.toLowerCase()))) return false;
+        }
+
+        // Gender filter
+        if (localFilters.genderPreference.length > 0) {
+          if (!localFilters.genderPreference.includes(dorm.gender_preference)) return false;
+        }
+
+        // Shuttle filter (only for Byblos)
+        if (localFilters.shuttle === 'available' && !dorm.shuttle) return false;
+        if (localFilters.shuttle === 'none' && dorm.shuttle) return false;
+
+        // University filter
+        if (localFilters.universities.length > 0) {
+          if (!localFilters.universities.some(uni => dorm.university?.includes(uni))) return false;
+        }
+
+        // Amenities filter
+        if (localFilters.amenities.length > 0) {
+          const dormAmenities = dorm.amenities || [];
+          if (!localFilters.amenities.every(a => dormAmenities.some((da: string) => da.toLowerCase().includes(a.toLowerCase())))) return false;
+        }
+
+        return true;
+      }).map(d => d.id)
+    );
+    
+    // Count rooms that match room-level filters
+    return rooms.filter(room => {
+      // Must belong to a valid dorm
+      if (!validDormIds.has(room.dorm_id)) return false;
+      
       // Price filter
-      const price = dorm.monthly_price || dorm.price || 0;
+      const price = room.price || 0;
       if (price < localFilters.priceRange[0] || price > localFilters.priceRange[1]) return false;
-
-      // City filter
-      if (localFilters.cities.length > 0) {
-        const dormCity = dorm.location?.toLowerCase().includes('beirut') ? 'Beirut' : 'Byblos';
-        if (!localFilters.cities.includes(dormCity)) return false;
+      
+      // Residence type filter
+      const roomType = room.type?.toLowerCase() || '';
+      if (localFilters.residenceType === 'apartment') {
+        if (!roomType.includes('apartment')) return false;
+      } else if (localFilters.residenceType === 'room') {
+        if (roomType.includes('apartment')) return false;
       }
-
-      // Area filter
-      if (localFilters.areas.length > 0) {
-        if (!localFilters.areas.some(area => dorm.area?.toLowerCase().includes(area.toLowerCase()))) return false;
+      
+      // Room type filter (only when residenceType is 'room')
+      if (localFilters.roomTypes.length > 0) {
+        if (!localFilters.roomTypes.includes(room.type || '')) return false;
       }
-
-      // Gender filter
-      if (localFilters.genderPreference.length > 0) {
-        if (!localFilters.genderPreference.includes(dorm.gender_preference)) return false;
+      
+      // Capacity filter (for apartments)
+      if (localFilters.capacity) {
+        if ((room.capacity || 0) < localFilters.capacity) return false;
       }
-
-      // Shuttle filter (only for Byblos)
-      if (localFilters.shuttle === 'available' && !dorm.shuttle) return false;
-      if (localFilters.shuttle === 'none' && dorm.shuttle) return false;
-
-      // University filter
-      if (localFilters.universities.length > 0) {
-        if (!localFilters.universities.some(uni => dorm.university?.includes(uni))) return false;
-      }
-
-      // Amenities filter
-      if (localFilters.amenities.length > 0) {
-        const dormAmenities = dorm.amenities || [];
-        if (!localFilters.amenities.every(a => dormAmenities.some((da: string) => da.toLowerCase().includes(a.toLowerCase())))) return false;
-      }
-
+      
       return true;
     }).length;
-  }, [dorms, localFilters]);
+  }, [dorms, rooms, localFilters]);
 
   const selectedCity = localFilters.cities.length === 1 ? localFilters.cities[0] : null;
   const isByblos = selectedCity === 'Byblos';
