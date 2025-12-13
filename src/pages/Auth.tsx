@@ -32,6 +32,9 @@ export default function Auth() {
   // Redirect already authenticated users away from auth page with role-based routing
   useEffect(() => {
     const checkExistingSession = async () => {
+      // Wait for Supabase to hydrate from localStorage before checking
+      await new Promise(r => setTimeout(r, 100));
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const redirect = searchParams.get('redirect');

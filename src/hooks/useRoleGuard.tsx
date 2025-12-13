@@ -6,184 +6,173 @@ import { supabase } from "@/integrations/supabase/client";
 type AppRole = "admin" | "owner" | "student";
 
 const SESSION_CACHE_KEY = 'roomy_session_last_refresh';
-const REFRESH_THROTTLE_MS = 30000; // 30 seconds minimum between refreshes
-const TOKEN_EXPIRY_BUFFER_MS = 5 * 60 * 1000; // Only refresh if expiring within 5 minutes
+const REFRESH_THROTTLE_MS = 30000;
+const TOKEN_EXPIRY_BUFFER_MS = 5 * 60 * 1000;
 
 /**
- * useRoleGuard - Custom hook to restrict access based on user roles
+ * useRoleGuard - Uses retry-first getSession approach to avoid race conditions
  */
 export function useRoleGuard(requiredRole?: AppRole) {
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<AppRole | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const navigate = useNavigate();
-  const validationInProgress = useRef(false);
+  const initRef = useRef(false);
 
   useEffect(() => {
-    // Prevent concurrent validations
-    if (validationInProgress.current) return;
+    // Prevent double initialization
+    if (initRef.current) return;
+    initRef.current = true;
     
     let isMounted = true;
-    let hasValidated = false;
-    
-    // Safety timeout to prevent infinite loading (15 seconds max)
-    const safetyTimeout = setTimeout(() => {
-      if (isMounted && loading && !hasValidated) {
-        console.warn("⚠️ useRoleGuard: Safety timeout reached, forcing loading complete");
-        setLoading(false);
-      }
-    }, 15000);
-    
-    const validateSession = async (sessionToValidate?: any) => {
-      if (!isMounted || validationInProgress.current) return;
-      validationInProgress.current = true;
+
+    // Retry-first session detection with exponential backoff
+    const getSessionWithRetry = async (): Promise<any> => {
+      const maxRetries = 5;
+      const delays = [50, 100, 200, 400, 800]; // Exponential backoff
       
-      try {
-        let session = sessionToValidate;
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        if (!isMounted) return null;
         
-        // If no session passed in, fetch it
-        if (!session) {
-          console.log("🔄 useRoleGuard: Getting session...");
-          
-          // Wait briefly for Supabase to hydrate from localStorage
-          await new Promise(resolve => setTimeout(resolve, 50));
-          
-          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-          
-          if (sessionError) {
-            console.warn("⚠️ useRoleGuard: getSession error:", sessionError.message);
-          }
-          
-          session = sessionData?.session;
+        console.log(`🔄 useRoleGuard: Session attempt ${attempt + 1}/${maxRetries}`);
+        
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.warn(`⚠️ useRoleGuard: getSession error on attempt ${attempt + 1}:`, error.message);
         }
-
-        // Only refresh if we have a session AND it's appropriate to refresh
+        
         if (session) {
-          const shouldRefresh = shouldRefreshSession();
-          const tokenExpiringSoon = isTokenExpiringSoon(session);
-          
-          if (shouldRefresh && tokenExpiringSoon) {
-            console.log("🔄 useRoleGuard: Token expiring soon, attempting refresh...");
-            try {
-              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-              
-              if (refreshError) {
-                if (refreshError.message?.includes('429') || refreshError.status === 429) {
-                  console.warn("⚠️ useRoleGuard: Rate limited, using existing session");
-                } else {
-                  console.warn("⚠️ useRoleGuard: Session refresh failed:", refreshError.message);
-                }
-              } else if (refreshData?.session) {
-                session = refreshData.session;
-                markSessionRefreshed();
-              }
-            } catch (refreshErr: any) {
-              console.warn("⚠️ useRoleGuard: Refresh exception:", refreshErr?.message);
-            }
-          }
-        }
-
-        // If no session found, DON'T redirect immediately - wait for onAuthStateChange
-        if (!session) {
-          console.log("⚠️ useRoleGuard: No session on initial check, waiting for auth state...");
-          validationInProgress.current = false;
-          // Don't redirect yet - the onAuthStateChange listener may fire with a valid session
-          return;
+          console.log(`✅ useRoleGuard: Session found on attempt ${attempt + 1}`);
+          return session;
         }
         
-        hasValidated = true;
+        // Wait before next attempt (except on last attempt)
+        if (attempt < maxRetries - 1) {
+          await new Promise(r => setTimeout(r, delays[attempt]));
+        }
+      }
+      
+      console.log("⚠️ useRoleGuard: No session after all retries");
+      return null;
+    };
 
-        console.log("✅ useRoleGuard: Session active, email_confirmed_at:", session.user.email_confirmed_at);
+    const validateRole = async (session: any) => {
+      if (!isMounted || !session) return;
+      
+      const user = session.user;
+      setUserId(user.id);
+      
+      console.log("✅ useRoleGuard: Validating role for user:", user.id);
+
+      const defaultAdminEmails = ["hassan.mokdad01@lau.edu"];
+
+      // Fetch role with retry
+      let resolvedRole: AppRole | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (!isMounted) return;
         
-        const user = session.user;
-        setUserId(user.id);
+        const { data, error } = await supabase.rpc('get_user_role', { 
+          p_user_id: user.id 
+        });
 
-        const defaultAdminEmails = [
-          "hassan.mokdad01@lau.edu",
-        ];
-
-        // Try to read role with retry logic
-        let resolvedRole: AppRole | null = null;
-        let attempts = 0;
-        const maxAttempts = 3;
-
-        while (!resolvedRole && attempts < maxAttempts) {
-          attempts++;
-          console.log(`🔄 useRoleGuard: Attempt ${attempts}/${maxAttempts} to fetch role for user ${user.id}`);
-          
-          const { data, error } = await supabase.rpc('get_user_role', { 
-            p_user_id: user.id 
-          });
-
-          if (error) {
-            console.error(`❌ useRoleGuard: get_user_role RPC failed:`, error);
-          } else {
-            resolvedRole = data as AppRole | null;
-            console.log(`✅ useRoleGuard: Role found on attempt ${attempts}:`, resolvedRole);
-          }
-
-          if (!resolvedRole && attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 200 * attempts));
-          }
+        if (!error && data) {
+          resolvedRole = data as AppRole;
+          console.log(`✅ useRoleGuard: Role resolved: ${resolvedRole}`);
+          break;
         }
-
-        // Fallback for admin emails
-        if (!resolvedRole && defaultAdminEmails.includes(user.email ?? "")) {
-          resolvedRole = "admin";
+        
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 200 * (attempt + 1)));
         }
+      }
 
-        // Admin bypass - admins can never be suspended
-        if (resolvedRole === "admin") {
-          setRole("admin");
-          setLoading(false);
-          return;
-        }
+      // Fallback for admin emails
+      if (!resolvedRole && defaultAdminEmails.includes(user.email ?? "")) {
+        resolvedRole = "admin";
+      }
 
-        // Check suspension status for owners and students
-        if (resolvedRole === "owner" || resolvedRole === "student") {
-          const table = resolvedRole === "owner" ? "owners" : "students";
-          const { data: profileData, error: profileError } = await supabase
-            .from(table)
-            .select("status")
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-          if (!profileError && profileData?.status === "suspended") {
-            console.log(`⛔ useRoleGuard: ${resolvedRole} account is suspended`);
-            setRole(null);
-            setUserId(null);
-            setLoading(false);
-            navigate("/account-suspended", { replace: true });
-            return;
-          }
-        }
-
-        if (!resolvedRole) {
-          setRole(null);
-          if (requiredRole) {
-            navigate("/select-role", { replace: true });
-          }
-          setLoading(false);
-          return;
-        }
-
-        setRole(resolvedRole);
-
-        if (requiredRole && resolvedRole !== requiredRole) {
-          navigate("/unauthorized", { replace: true });
-          setLoading(false);
-          return;
-        }
-
+      // Admin bypass - admins can never be suspended
+      if (resolvedRole === "admin") {
+        setRole("admin");
         setLoading(false);
-      } finally {
-        validationInProgress.current = false;
+        return;
+      }
+
+      // Check suspension status
+      if (resolvedRole === "owner" || resolvedRole === "student") {
+        const table = resolvedRole === "owner" ? "owners" : "students";
+        const { data: profileData, error: profileError } = await supabase
+          .from(table)
+          .select("status")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (!profileError && profileData?.status === "suspended") {
+          console.log(`⛔ useRoleGuard: ${resolvedRole} account is suspended`);
+          setRole(null);
+          setUserId(null);
+          setLoading(false);
+          navigate("/account-suspended", { replace: true });
+          return;
+        }
+      }
+
+      if (!resolvedRole) {
+        setRole(null);
+        if (requiredRole) {
+          navigate("/select-role", { replace: true });
+        }
+        setLoading(false);
+        return;
+      }
+
+      setRole(resolvedRole);
+
+      if (requiredRole && resolvedRole !== requiredRole) {
+        navigate("/unauthorized", { replace: true });
+        setLoading(false);
+        return;
+      }
+
+      setLoading(false);
+    };
+
+    const initAuth = async () => {
+      // Retry-first: Try to get session with exponential backoff
+      const session = await getSessionWithRetry();
+      
+      if (!isMounted) return;
+      
+      if (session) {
+        // Optionally refresh if expiring soon
+        let finalSession = session;
+        if (shouldRefreshSession() && isTokenExpiringSoon(session)) {
+          try {
+            const { data: refreshData } = await supabase.auth.refreshSession();
+            if (refreshData?.session) {
+              finalSession = refreshData.session;
+              markSessionRefreshed();
+            }
+          } catch (e) {
+            console.warn("⚠️ useRoleGuard: Refresh failed, using existing session");
+          }
+        }
+        
+        await validateRole(finalSession);
+      } else {
+        // No session found after retries - user is not logged in
+        console.log("🔓 useRoleGuard: No authenticated session, setting loading false");
+        setLoading(false);
       }
     };
 
-    // Set up auth state listener FIRST - this catches the real session state
+    // Start auth initialization
+    initAuth();
+
+    // Set up listener ONLY for reactive updates (sign-in/sign-out while on page)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("🔄 useRoleGuard: Auth state changed:", event, session ? 'has session' : 'no session');
+      console.log("🔄 useRoleGuard: Auth event:", event);
       
       if (event === 'SIGNED_OUT') {
         setRole(null);
@@ -193,29 +182,14 @@ export function useRoleGuard(requiredRole?: AppRole) {
         return;
       }
       
-      // On SIGNED_IN or INITIAL_SESSION with valid session, validate it
-      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && session) {
-        void validateSession(session);
-      }
-      
-      // If INITIAL_SESSION fires with no session, wait a bit then check again
-      // This handles the race condition where localStorage hasn't loaded yet
-      if (event === 'INITIAL_SESSION' && !session) {
-        setTimeout(() => {
-          if (isMounted && !hasValidated) {
-            console.log("🔄 useRoleGuard: Re-checking session after INITIAL_SESSION with null...");
-            void validateSession();
-          }
-        }, 200);
+      // Handle sign-in that happens while already mounted
+      if (event === 'SIGNED_IN' && session) {
+        validateRole(session);
       }
     });
-
-    // Also do an immediate check
-    void validateSession();
     
     return () => {
       isMounted = false;
-      clearTimeout(safetyTimeout);
       subscription.unsubscribe();
     };
   }, [navigate, requiredRole]);
@@ -223,37 +197,27 @@ export function useRoleGuard(requiredRole?: AppRole) {
   return { loading, role, userId };
 }
 
-// Helper: Check if we should attempt a refresh (throttling)
 function shouldRefreshSession(): boolean {
   try {
     const lastRefresh = localStorage.getItem(SESSION_CACHE_KEY);
     if (!lastRefresh) return true;
-    
-    const now = Date.now();
-    const lastRefreshTime = parseInt(lastRefresh, 10);
-    return (now - lastRefreshTime) > REFRESH_THROTTLE_MS;
+    return (Date.now() - parseInt(lastRefresh, 10)) > REFRESH_THROTTLE_MS;
   } catch {
     return true;
   }
 }
 
-// Helper: Check if token is expiring soon
 function isTokenExpiringSoon(session: any): boolean {
   try {
     if (!session?.expires_at) return false;
-    const expiresAt = session.expires_at * 1000; // Convert to ms
-    const now = Date.now();
-    return (expiresAt - now) < TOKEN_EXPIRY_BUFFER_MS;
+    return (session.expires_at * 1000 - Date.now()) < TOKEN_EXPIRY_BUFFER_MS;
   } catch {
     return false;
   }
 }
 
-// Helper: Mark that we just refreshed
 function markSessionRefreshed(): void {
   try {
     localStorage.setItem(SESSION_CACHE_KEY, Date.now().toString());
-  } catch {
-    // Ignore localStorage errors
-  }
+  } catch {}
 }

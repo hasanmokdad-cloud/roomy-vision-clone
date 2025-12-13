@@ -66,26 +66,41 @@ export function useListingsQuery(filters: Filters) {
   const [error, setError] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
 
-  // Wait for auth to be ready before querying - with safety timeout
+  // Wait for auth to be ready using retry-first approach
   useEffect(() => {
     let isMounted = true;
     
-    // Safety timeout - don't wait forever for auth (5 seconds max)
-    const authTimeout = setTimeout(() => {
-      if (isMounted && !authReady) {
-        console.log('Auth timeout reached - proceeding without waiting');
-        setAuthReady(true);
+    const initAuth = async () => {
+      // Wait briefly for Supabase to hydrate from localStorage
+      await new Promise(r => setTimeout(r, 50));
+      
+      // Try up to 3 times with short delays
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (!isMounted) return;
+        
+        try {
+          await supabase.auth.getSession();
+          if (isMounted) {
+            setAuthReady(true);
+          }
+          return;
+        } catch (e) {
+          if (attempt < 2) {
+            await new Promise(r => setTimeout(r, 100));
+          }
+        }
       }
-    }, 5000);
-    
-    supabase.auth.getSession().then(() => {
+      
+      // Fallback: proceed anyway after retries
       if (isMounted) {
         setAuthReady(true);
       }
-    });
+    };
+    
+    initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id ? 'Authenticated' : 'Anonymous');
+    // Listener for reactive updates only
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
       if (isMounted) {
         setAuthReady(true);
       }
@@ -93,7 +108,6 @@ export function useListingsQuery(filters: Filters) {
 
     return () => {
       isMounted = false;
-      clearTimeout(authTimeout);
       subscription.unsubscribe();
     };
   }, []);
