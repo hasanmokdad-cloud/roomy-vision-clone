@@ -12,7 +12,7 @@ export const useAuthGuard = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        navigate('/auth');
+        navigate('/listings');
         return;
       }
       
@@ -21,6 +21,15 @@ export const useAuthGuard = () => {
     };
 
     checkAuth();
+
+    // Listen for sign-out and redirect to /listings
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        navigate('/listings');
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   return { loading, userId };
