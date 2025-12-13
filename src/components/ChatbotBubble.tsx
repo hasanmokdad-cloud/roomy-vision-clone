@@ -120,8 +120,14 @@ export const ChatbotBubble = () => {
     }
   }, [messages]);
 
-  // ✅ Visibility rules based on role and route
+  // ✅ Visibility rules: Hide for public (signed-out) users, hide for owners
   useEffect(() => {
+    // CRITICAL: Never show chatbot if user is not authenticated
+    if (!userId) {
+      setShouldShow(false);
+      return;
+    }
+    
     // Owners never see the chatbot
     if (userRole === 'owner') {
       setShouldShow(false);
@@ -139,7 +145,7 @@ export const ChatbotBubble = () => {
     
     // Default: hide if no role determined yet
     setShouldShow(false);
-  }, [userRole, location.pathname, isMobile]);
+  }, [userId, userRole, location.pathname, isMobile]);
 
   // ✅ Listen for programmatic open events
   useEffect(() => {

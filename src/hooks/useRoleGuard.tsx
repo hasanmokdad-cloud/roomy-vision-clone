@@ -20,6 +20,20 @@ export function useRoleGuard(requiredRole?: AppRole) {
   const validationInProgress = useRef(false);
 
   useEffect(() => {
+    // Listen for sign-out and redirect to /listings
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        setRole(null);
+        setUserId(null);
+        setLoading(false);
+        navigate('/listings', { replace: true });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  useEffect(() => {
     // Prevent concurrent validations
     if (validationInProgress.current) return;
     

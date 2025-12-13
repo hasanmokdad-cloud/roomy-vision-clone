@@ -24,13 +24,23 @@ export default function Profile() {
   const [whatsappLanguage, setWhatsappLanguage] = useState('EN');
   const navigate = useNavigate();
 
+  // Listen for sign-out and redirect to /listings
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        navigate('/listings');
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   useEffect(() => {
     const loadUserData = async () => {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        navigate('/auth');
+        navigate('/listings');
         return;
       }
 
