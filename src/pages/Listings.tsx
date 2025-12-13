@@ -24,6 +24,7 @@ import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTranslation } from 'react-i18next';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Listings() {
   const navigate = useNavigate();
@@ -48,9 +49,22 @@ export default function Listings() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
+  const [allRooms, setAllRooms] = useState<any[]>([]);
 
   const { data, loading, error } = useListingsQuery(filters);
   const queryClient = useQueryClient();
+
+  // Fetch all rooms for accurate filter count
+  useEffect(() => {
+    const fetchRooms = async () => {
+      const { data: rooms } = await supabase
+        .from('rooms')
+        .select('id, dorm_id, name, type, price, capacity, available');
+      
+      if (rooms) setAllRooms(rooms);
+    };
+    fetchRooms();
+  }, []);
 
   // Real-time subscriptions for dorms and rooms
   useEffect(() => {
@@ -236,6 +250,7 @@ export default function Listings() {
           filters={filters}
           onFilterChange={handleFilterChange}
           dorms={dorms}
+          rooms={allRooms}
         />
 
         {/* AI Smart Filter */}
