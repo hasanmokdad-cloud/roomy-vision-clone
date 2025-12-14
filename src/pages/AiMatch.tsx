@@ -115,7 +115,8 @@ const AiMatch = () => {
     );
   }
 
-    // Check if admin
+  // Check if admin
+  useEffect(() => {
     const checkAdmin = async () => {
       if (!userId) return;
       
@@ -133,7 +134,7 @@ const AiMatch = () => {
     };
 
     checkAdmin();
-  }, [isAuthReady, isAuthenticated, userId, openAuthModal]);
+  }, [userId]);
 
   // Load and check profile completion
   useEffect(() => {
