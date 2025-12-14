@@ -58,14 +58,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🚪 AuthContext: Completing sign-out from previous page...');
       sessionStorage.removeItem('roomy_signing_out');
       
-      // Force clear any lingering session
-      try {
-        await supabase.auth.signOut();
-      } catch (e) {
-        // Ignore errors
-      }
-      
-      // Set auth ready with no user
+      // Session already cleared before redirect - no need to call signOut again
+      // Just set auth ready with no user
       setSession(null);
       setUser(null);
       setRole(null);
