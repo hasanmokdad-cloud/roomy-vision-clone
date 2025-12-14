@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +31,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
 import { useAuth } from '@/contexts/AuthContext';
-import BottomNav from '@/components/BottomNav';
 import BottomNav from '@/components/BottomNav';
 import { useBottomNav } from '@/contexts/BottomNavContext';
 import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
