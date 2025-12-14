@@ -152,13 +152,17 @@ function ProtectedRoute({
     );
   }
 
-  // If not authenticated, open auth modal instead of redirecting
+  // If not authenticated, show loading briefly then open auth modal
+  // Don't open modal during sign-out (window.location.href handles redirect)
   if (!isAuthenticated) {
-    // Trigger auth modal after render
-    setTimeout(() => openAuthModal(), 0);
+    // Only open modal if we're not in the middle of a sign-out redirect
+    const isSigningOut = !document.hasFocus() || window.location.href.includes('/listings');
+    if (!isSigningOut) {
+      setTimeout(() => openAuthModal(), 100);
+    }
     return (
       <div className="flex h-screen items-center justify-center">
-        <p className="text-foreground/60">Please sign in to continue...</p>
+        <p className="text-foreground/60">Loading...</p>
       </div>
     );
   }
