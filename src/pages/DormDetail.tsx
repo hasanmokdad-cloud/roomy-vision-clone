@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home, Video, Bookmark, Images, Eye, Sparkles } from 'lucide-react';
+import { getAmenityIcon } from '@/utils/amenityIcons';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedRoomCard } from '@/components/listings/EnhancedRoomCard';
 import { DormDetailSkeleton } from '@/components/skeletons/DormDetailSkeleton';
@@ -516,11 +517,15 @@ export default function DormDetail() {
                 <CardContent className="p-6">
                   <h2 className="text-2xl font-bold mb-4">Services & Amenities</h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {dorm.amenities.map((amenity: string, idx: number) => (
-                      <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
-                        <span className="text-foreground">{amenity}</span>
-                      </div>
-                    ))}
+                    {dorm.amenities.map((amenity: string, idx: number) => {
+                      const IconComponent = getAmenityIcon(amenity);
+                      return (
+                        <div key={idx} className="flex items-center gap-2 p-3 rounded-lg bg-muted/30">
+                          <IconComponent className="w-5 h-5 text-primary flex-shrink-0" />
+                          <span className="text-foreground">{amenity}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>

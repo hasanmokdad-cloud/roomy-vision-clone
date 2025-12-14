@@ -13,6 +13,7 @@ import { ImageGallery } from '@/components/shared/ImageGallery';
 import { VideoPlayerModal } from '@/components/shared/VideoPlayerModal';
 import { motion } from 'framer-motion';
 import { getStudentDisplayDeposit } from '@/lib/payments/config';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EnhancedRoomCardProps {
   room: {
@@ -47,6 +48,7 @@ export function EnhancedRoomCard({
 }: EnhancedRoomCardProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isAuthenticated, openAuthModal } = useAuth();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [reservationModalOpen, setReservationModalOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -97,16 +99,12 @@ export function EnhancedRoomCard({
     
     if (isUnavailable) return;
     
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast({ 
-        title: 'Sign in required', 
-        description: 'Please sign in to contact the owner',
-        variant: 'destructive' 
-      });
-      navigate('/auth');
+    if (!isAuthenticated) {
+      openAuthModal();
       return;
     }
+
+    const { data: { user } } = await supabase.auth.getUser();
 
     const { data: student } = await supabase
       .from('students')
@@ -174,18 +172,13 @@ export function EnhancedRoomCard({
   const handleSave = async (e: React.MouseEvent) => {
     e.stopPropagation();
     
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast({ 
-        title: 'Sign in required', 
-        description: 'Please sign in to save rooms',
-        variant: 'destructive' 
-      });
-      navigate('/auth');
+    if (!isAuthenticated) {
+      openAuthModal();
       return;
     }
 
-    if (!room.id) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || !room.id) return;
 
     if (isSaved) {
       await supabase

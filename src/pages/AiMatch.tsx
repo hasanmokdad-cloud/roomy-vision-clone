@@ -21,6 +21,7 @@ import { EmptyMatchState } from "@/components/ai-match/EmptyMatchState";
 import { MatchModeTabs } from "@/components/ai-match/MatchModeTabs";
 import { useMatchTier } from "@/hooks/useMatchTier";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 
 type ProfileStatus = 'loading' | 'incomplete' | 'complete';
 type MatchMode = 'apartments' | 'rooms' | 'roommates';
@@ -30,8 +31,8 @@ const AiMatch = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { isAuthReady, userId, isAuthenticated, openAuthModal } = useAuth();
   const [searchParams] = useSearchParams();
-  const [userId, setUserId] = useState<string | null>(null);
   const [profileStatus, setProfileStatus] = useState<ProfileStatus>('loading');
   const [matchMode, setMatchMode] = useState<MatchMode>('apartments');
   const [activeMode, setActiveMode] = useState<ActiveMode>('dorm');
@@ -45,37 +46,23 @@ const AiMatch = () => {
   const [showDebug, setShowDebug] = useState(false);
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
-  // Listen for auth state changes - redirect to /listings on sign-out
+  // Check authentication
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') {
-        navigate('/listings');
-      }
-    });
+    if (!isAuthReady) return;
     
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
 
-  // Check authentication and load profile
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication Required",
-          description: "Please sign in to use AI Match",
-          variant: "destructive"
-        });
-        navigate('/auth');
-        return;
-      }
-      setUserId(user.id);
-
-      // Check if admin
+    // Check if admin
+    const checkAdmin = async () => {
+      if (!userId) return;
+      
       const { data: roles } = await supabase
         .from('user_roles')
         .select('*, roles(*)')
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
       
       const adminRole = roles?.some(r => r.roles?.name === 'admin');
       setIsAdmin(!!adminRole);
@@ -85,8 +72,8 @@ const AiMatch = () => {
       setShowDebug(urlParams.get('ai_debug') === '1' && !!adminRole);
     };
 
-    checkAuth();
-  }, [navigate, toast]);
+    checkAdmin();
+  }, [isAuthReady, isAuthenticated, userId, openAuthModal]);
 
   // Load and check profile completion
   useEffect(() => {

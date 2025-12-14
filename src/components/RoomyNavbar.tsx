@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Menu, MessageCircle, Globe, User, Settings, LogOut, Building2, Shield, Sparkles, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,23 +10,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { supabase } from '@/integrations/supabase/client';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { LanguageModal } from '@/components/LanguageModal';
 import RoomyLogo from '@/assets/roomy-logo.png';
 import { useTranslation } from 'react-i18next';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function RoomyNavbar() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { toast } = useToast();
-  const [user, setUser] = useState<any>(null);
-  const [role, setRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [signingOut, setSigningOut] = useState(false);
+  const { isAuthReady, user, role, isAuthenticated, signOut, openAuthModal } = useAuth();
   const [languageModalOpen, setLanguageModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   
   const { count: unreadCount } = useUnreadMessagesCount(user?.id, role || undefined);
 
@@ -39,99 +35,15 @@ export function RoomyNavbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    const loadUserAndRole = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user) {
-          setUser(session.user);
-          
-          // Fetch role
-          const { data: roleRow } = await supabase
-            .from('user_roles')
-            .select('roles(name)')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-          
-          setRole((roleRow?.roles as any)?.name || null);
-        } else {
-          setUser(null);
-          setRole(null);
-        }
-      } catch (error) {
-        console.error('Error loading user:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUserAndRole();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setRole(null);
-        return;
-      }
-      
-      if (session?.user) {
-        setUser(session.user);
-        
-        // Fetch role
-        const { data: roleRow } = await supabase
-          .from('user_roles')
-          .select('roles(name)')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        
-        setRole((roleRow?.roles as any)?.name || null);
-      }
-      // Do NOT clear state if session is null but event isn't SIGNED_OUT
-      // This prevents false logout during initial tab hydration
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
   const handleSignOut = async () => {
-    if (signingOut) return; // Prevent double-clicks
+    if (signingOut) return;
     setSigningOut(true);
-    
-    try {
-      // Clear local state first
-      setUser(null);
-      setRole(null);
-      
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('Sign out error:', error);
-        toast({
-          title: "Error signing out",
-          description: "Please try again",
-          variant: "destructive"
-        });
-        setSigningOut(false);
-        return;
-      }
-      
-      // Force full page reload to clear all state
-      window.location.href = '/listings';
-    } catch (err) {
-      console.error('Sign out exception:', err);
-      toast({
-        title: "Error signing out",
-        description: "Please try again",
-        variant: "destructive"
-      });
-      setSigningOut(false);
-    }
+    await signOut();
   };
 
   const handleBecomeOwner = () => {
-    if (!user) {
-      navigate('/auth?redirect=/become-owner');
+    if (!isAuthenticated) {
+      openAuthModal();
     } else {
       navigate('/become-owner');
     }
@@ -174,8 +86,8 @@ export function RoomyNavbar() {
 
             {/* Right side actions */}
             <div className="flex items-center gap-2 md:gap-3">
-              {/* Become an Owner - hide for owners/admins, also hide while loading if user is logged in */}
-              {!loading && role !== 'owner' && role !== 'admin' && (
+              {/* Become an Owner - hide for owners/admins */}
+              {isAuthReady && role !== 'owner' && role !== 'admin' && (
                 <Button
                   variant="ghost"
                   onClick={handleBecomeOwner}
@@ -186,7 +98,7 @@ export function RoomyNavbar() {
               )}
 
               {/* Messages - only show when logged in */}
-              {user && (
+              {isAuthenticated && (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -211,7 +123,7 @@ export function RoomyNavbar() {
                   >
                     <Menu className="w-4 h-4" />
                     <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
-                      {user ? (
+                      {isAuthenticated ? (
                         <span className="text-sm font-medium text-foreground">
                           {user.email?.charAt(0).toUpperCase()}
                         </span>
@@ -226,7 +138,7 @@ export function RoomyNavbar() {
                   align="end" 
                   className="w-56 bg-background border border-border shadow-xl rounded-xl p-1"
                 >
-                  {!user ? (
+                  {!isAuthenticated ? (
                     // Not logged in menu
                     <>
                       <DropdownMenuItem
@@ -238,7 +150,7 @@ export function RoomyNavbar() {
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={() => navigate('/auth')}
+                        onClick={openAuthModal}
                         className="font-semibold cursor-pointer rounded-lg py-3"
                       >
                         {t('navbar.loginOrSignup', 'Log in or sign up')}

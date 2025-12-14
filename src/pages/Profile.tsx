@@ -11,61 +11,43 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Profile() {
   const isMobile = useIsMobile();
-  const [userId, setUserId] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { isAuthReady, userId, role, isAuthenticated } = useAuth();
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [ownerData, setOwnerData] = useState<any>(null);
   const [notifyEmail, setNotifyEmail] = useState(true);
   const [notifyWhatsapp, setNotifyWhatsapp] = useState(true);
   const [whatsappLanguage, setWhatsappLanguage] = useState('EN');
-  const navigate = useNavigate();
-
-  // Listen for sign-out and redirect to /listings
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') {
-        navigate('/listings');
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [navigate]);
 
   useEffect(() => {
-    const loadUserData = async () => {
-      setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
+    if (!isAuthReady) return;
+    
+    if (!isAuthenticated) {
+      navigate('/listings');
+      return;
+    }
+
+    const loadProfileData = async () => {
+      if (!userId) return;
       
-      if (!session) {
-        navigate('/listings');
-        return;
-      }
-
-      setUserId(session.user.id);
-
-      // Get user role
-      const { data: roleData } = await supabase.rpc('get_user_role', {
-        p_user_id: session.user.id
-      });
-
-      setRole(roleData);
-
       // Get profile photo based on role
-      if (roleData === 'student') {
+      if (role === 'student') {
         const { data: student } = await supabase
           .from('students')
           .select('profile_photo_url')
-          .eq('user_id', session.user.id)
+          .eq('user_id', userId)
           .single();
         setProfilePhotoUrl(student?.profile_photo_url || null);
-      } else if (roleData === 'owner') {
+      } else if (role === 'owner') {
         const { data: owner } = await supabase
           .from('owners')
           .select('*')
-          .eq('user_id', session.user.id)
+          .eq('user_id', userId)
           .single();
         setProfilePhotoUrl(owner?.profile_photo_url || null);
         if (owner) {
@@ -74,11 +56,11 @@ export default function Profile() {
           setNotifyWhatsapp(owner.notify_whatsapp ?? true);
           setWhatsappLanguage(owner.whatsapp_language || 'EN');
         }
-      } else if (roleData === 'admin') {
+      } else if (role === 'admin') {
         const { data: admin } = await supabase
           .from('admins')
           .select('profile_photo_url')
-          .eq('user_id', session.user.id)
+          .eq('user_id', userId)
           .maybeSingle();
         setProfilePhotoUrl(admin?.profile_photo_url || null);
       }
@@ -86,14 +68,14 @@ export default function Profile() {
       setLoading(false);
     };
 
-    loadUserData();
-  }, [navigate]);
+    loadProfileData();
+  }, [isAuthReady, isAuthenticated, userId, role, navigate]);
 
   const handlePhotoUploaded = (url: string) => {
     setProfilePhotoUrl(url);
   };
 
-  if (!userId || loading) {
+  if (!isAuthReady || !userId || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />

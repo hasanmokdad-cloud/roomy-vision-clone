@@ -3,7 +3,9 @@ import {
   BookOpen, Users, Zap, Droplets, Building2, Armchair, 
   PawPrint, Sparkles, Waves, Flower2, DoorOpen, Home, Tv, 
   WashingMachine, Fan, Bath, Lock, Wind, Bed, Plug, Gamepad2,
-  Baby, Cigarette, Mountain, Thermometer, Phone, type LucideIcon
+  Baby, Cigarette, Mountain, Thermometer, Phone, Lamp, 
+  SquareStack, Microwave, Coffee, Shirt, Flame, AlertTriangle,
+  Package, Sofa, type LucideIcon
 } from 'lucide-react';
 
 // Comprehensive amenity icon map matching AirbnbFiltersModal icons
@@ -51,7 +53,7 @@ export const amenityIconMap: Record<string, LucideIcon> = {
   'common area': Users,
   'common room': Users,
   'shared space': Users,
-  'lounge': Users,
+  'lounge': Sofa,
   'elevator': Building2,
   'lift': Building2,
   'tv': Tv,
@@ -101,11 +103,35 @@ export const amenityIconMap: Record<string, LucideIcon> = {
   'ceiling fan': Fan,
   'locker': Lock,
   'safe': Lock,
-  'storage': Lock,
+  'storage': Package,
   'baby friendly': Baby,
   'family friendly': Baby,
   'no smoking': Cigarette,
   'smoking allowed': Cigarette,
+  
+  // Additional common dorm amenities
+  'desk': Lamp,
+  'work desk': Lamp,
+  'study desk': Lamp,
+  'closet': SquareStack,
+  'wardrobe': SquareStack,
+  'cupboard': SquareStack,
+  'microwave': Microwave,
+  'refrigerator': Snowflake,
+  'mini fridge': Snowflake,
+  'fridge': Snowflake,
+  'coffee maker': Coffee,
+  'kettle': Coffee,
+  'iron': Shirt,
+  'ironing': Shirt,
+  'towels': Shirt,
+  'linens': Bed,
+  'bedding': Bed,
+  'smoke detector': AlertTriangle,
+  'fire extinguisher': Flame,
+  'first aid': AlertTriangle,
+  'first aid kit': AlertTriangle,
+  'mirror': SquareStack,
 };
 
 /**
