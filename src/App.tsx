@@ -142,7 +142,12 @@ function ProtectedRoute({
   forbiddenRoles?: ("admin" | "owner" | "student")[];
 }) {
   const location = useLocation();
-  const { isAuthReady, isAuthenticated, role, userId, openAuthModal } = useAuth();
+  const { isAuthReady, isAuthenticated, role, openAuthModal, isSigningOut } = useAuth();
+
+  // During sign-out, immediately redirect to listings - never show modal
+  if (isSigningOut) {
+    return <Navigate to="/listings" replace />;
+  }
 
   if (!isAuthReady) {
     return (
@@ -152,14 +157,9 @@ function ProtectedRoute({
     );
   }
 
-  // If not authenticated, show loading briefly then open auth modal
-  // Don't open modal during sign-out (window.location.href handles redirect)
+  // If not authenticated, open auth modal
   if (!isAuthenticated) {
-    // Only open modal if we're not in the middle of a sign-out redirect
-    const isSigningOut = !document.hasFocus() || window.location.href.includes('/listings');
-    if (!isSigningOut) {
-      setTimeout(() => openAuthModal(), 100);
-    }
+    setTimeout(() => openAuthModal(), 100);
     return (
       <div className="flex h-screen items-center justify-center">
         <p className="text-foreground/60">Loading...</p>
