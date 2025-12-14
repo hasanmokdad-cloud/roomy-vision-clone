@@ -26,8 +26,8 @@ export default function Profile() {
 
   // Listen for sign-out and redirect to /listings
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
         navigate('/listings');
       }
     });

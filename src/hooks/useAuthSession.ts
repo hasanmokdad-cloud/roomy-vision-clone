@@ -27,40 +27,42 @@ export const useAuthSession = () => {
   };
 
   useEffect(() => {
-    // Check initial session
+    let isMounted = true;
+    
+    // Use retry-first approach - wait briefly for Supabase hydration
     const checkSession = async () => {
+      await new Promise(r => setTimeout(r, 100));
+      
       const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!isMounted) return;
+      
       setIsAuthenticated(!!session);
       setUserId(session?.user?.id || null);
-      
-      if (!session) {
-        toast({
-          title: "Session Expired",
-          description: "Please log in again to continue.",
-          variant: "destructive",
-        });
-        navigate('/auth');
-      }
     };
 
     checkSession();
 
-    // Monitor auth state changes
+    // ONLY react to explicit SIGNED_OUT event - never check !session
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+      
       setIsAuthenticated(!!session);
       setUserId(session?.user?.id || null);
       
-      if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
+      if (event === 'SIGNED_OUT') {
         toast({
-          title: "Session Expired",
-          description: "Please log in again to continue.",
-          variant: "destructive",
+          title: "Signed Out",
+          description: "You have been signed out.",
         });
-        navigate('/auth');
+        navigate('/listings');
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate, toast]);
 
   return { isAuthenticated, userId, refreshSession };
