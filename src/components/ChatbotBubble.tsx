@@ -129,6 +129,12 @@ export const ChatbotBubble = () => {
       return;
     }
     
+    // Wait for role to be determined before deciding visibility
+    if (userRole === null) {
+      // Still loading role, don't make a decision yet - keep current state
+      return;
+    }
+    
     // Owners never see the chatbot
     if (userRole === 'owner') {
       setShouldShow(false);
@@ -144,7 +150,7 @@ export const ChatbotBubble = () => {
       return;
     }
     
-    // Default: hide if no role determined yet
+    // Default: hide if role is something unexpected
     setShouldShow(false);
   }, [userId, userRole, location.pathname, isMobile]);
 
