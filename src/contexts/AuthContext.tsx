@@ -112,7 +112,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
 
     // Listen ONLY for real auth events (not INITIAL_SESSION)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+    // CRITICAL: Do NOT use async callback - causes Chrome "message channel closed" error
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       // Block ALL events during sign-out (check both ref and sessionStorage)
       if (isSigningOutRef.current || sessionStorage.getItem('roomy_signing_out') === 'true') {
         console.log('🔄 AuthContext: Ignoring event during sign-out:', event);
@@ -139,8 +140,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(newSession);
         setUser(newSession.user);
         
-        const userRole = await fetchRole(newSession.user.id);
-        setRole(userRole);
+        // Defer async fetchRole with setTimeout(0) to avoid async callback issues
+        setTimeout(() => {
+          fetchRole(newSession.user.id).then(userRole => {
+            setRole(userRole);
+          });
+        }, 0);
       }
 
       if (event === 'TOKEN_REFRESHED' && newSession) {
