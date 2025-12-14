@@ -12,13 +12,20 @@ type AppRole = "admin" | "owner" | "student";
  */
 export function useRoleGuard(requiredRole?: AppRole) {
   const navigate = useNavigate();
-  const { isAuthReady, isAuthenticated, role, userId } = useAuth();
+  const { isAuthReady, isAuthenticated, role, userId, isSigningOut } = useAuth();
 
   useEffect(() => {
+    // Don't do anything during sign-out
+    if (isSigningOut) return;
+    
     if (!isAuthReady) return;
     
     // Not authenticated - ProtectedRoute handles this
     if (!isAuthenticated || !userId) return;
+    
+    // Don't check role if it's still null (being fetched)
+    // This prevents premature redirect to /unauthorized
+    if (requiredRole && role === null) return;
     
     // Check suspension status for owners/students
     const checkSuspension = async () => {
@@ -37,17 +44,17 @@ export function useRoleGuard(requiredRole?: AppRole) {
         }
       }
       
-      // Role mismatch check
+      // Role mismatch check - only if role is resolved
       if (requiredRole && role !== requiredRole) {
         navigate("/unauthorized", { replace: true });
       }
     };
 
     checkSuspension();
-  }, [isAuthReady, isAuthenticated, role, userId, requiredRole, navigate]);
+  }, [isAuthReady, isAuthenticated, role, userId, requiredRole, navigate, isSigningOut]);
 
   return {
-    loading: !isAuthReady,
+    loading: !isAuthReady || (requiredRole && role === null),
     role,
     userId,
   };

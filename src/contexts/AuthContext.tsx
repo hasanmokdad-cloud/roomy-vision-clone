@@ -11,6 +11,7 @@ interface AuthContextValue {
   role: AppRole;
   userId: string | null;
   isAuthenticated: boolean;
+  isSigningOut: boolean;
   signOut: () => Promise<void>;
   openAuthModal: () => void;
   closeAuthModal: () => void;
@@ -26,7 +27,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<AppRole>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const initRef = useRef(false);
+  const isSigningOutRef = useRef(false);
 
   const fetchRole = useCallback(async (userId: string): Promise<AppRole> => {
     try {
@@ -87,6 +90,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen ONLY for real auth events (not INITIAL_SESSION)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      // Block ALL events during sign-out to prevent modal flash
+      if (isSigningOutRef.current) {
+        console.log('🔄 AuthContext: Ignoring event during sign-out:', event);
+        return;
+      }
+
       console.log('🔄 AuthContext: Auth event:', event);
 
       // Ignore INITIAL_SESSION - we handle it in initializeAuth
@@ -126,7 +135,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     console.log('🚪 AuthContext: Signing out...');
     
-    // Close auth modal FIRST to prevent flash
+    // SET FLAG IMMEDIATELY to block all auth events
+    isSigningOutRef.current = true;
+    setIsSigningOut(true);
+    
+    // Close auth modal
     setAuthModalOpen(false);
     
     // Clear state immediately
@@ -134,14 +147,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setRole(null);
     
-    try {
-      await supabase.auth.signOut();
-    } catch (err) {
-      console.error('Sign out error:', err);
-    }
-    
-    // Force full page reload to /listings
+    // REDIRECT FIRST - don't wait for signOut
     window.location.href = '/listings';
+    
+    // Call signOut in background (page will reload anyway)
+    supabase.auth.signOut().catch(console.error);
   }, []);
 
   const openAuthModal = useCallback(() => {
@@ -166,6 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     role,
     userId: user?.id || null,
     isAuthenticated: !!user,
+    isSigningOut,
     signOut,
     openAuthModal,
     closeAuthModal,
