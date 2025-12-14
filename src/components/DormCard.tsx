@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { Wifi, UtensilsCrossed, Users, CheckCircle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getAmenityIcon } from '@/utils/amenityIcons';
 
 interface DormCardProps {
   image: string;
@@ -11,14 +12,6 @@ interface DormCardProps {
   amenities: string[];
   index: number;
 }
-
-const amenityIcons: Record<string, any> = {
-  WiFi: Wifi,
-  Kitchen: UtensilsCrossed,
-  Shared: Users,
-  Furnished: Users,
-  AC: Users,
-};
 
 export const DormCard = ({ image, name, match, location, price, amenities, index }: DormCardProps) => {
   return (
@@ -66,7 +59,7 @@ export const DormCard = ({ image, name, match, location, price, amenities, index
 
         <div className="flex flex-wrap gap-2">
           {amenities.map((amenity) => {
-            const Icon = amenityIcons[amenity] || Users;
+            const Icon = getAmenityIcon(amenity);
             return (
               <div
                 key={amenity}

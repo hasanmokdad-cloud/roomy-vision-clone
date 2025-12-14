@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, DollarSign, MessageSquare, Wifi, Wind, Droplet, CookingPot, Calendar } from 'lucide-react';
+import { Users, DollarSign, MessageSquare, Calendar } from 'lucide-react';
+import { getAmenityIcon } from '@/utils/amenityIcons';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,12 +20,6 @@ type RoomContactCardProps = {
   index?: number;
 };
 
-const amenityIcons: Record<string, any> = {
-  wifi: Wifi,
-  'air conditioning': Wind,
-  'private bathroom': Droplet,
-  kitchen: CookingPot,
-};
 
 export default function RoomContactCard({ room, dormId, dormName, ownerId, index = 0 }: RoomContactCardProps) {
   const [loading, setLoading] = useState(false);
@@ -163,7 +158,7 @@ export default function RoomContactCard({ room, dormId, dormName, ownerId, index
             {room.amenities && room.amenities.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {room.amenities.slice(0, 4).map((amenity, i) => {
-                  const Icon = amenityIcons[amenity.toLowerCase()] || Wind;
+                  const Icon = getAmenityIcon(amenity);
                   return (
                     <Badge key={i} variant="secondary" className="text-xs">
                       <Icon className="w-3 h-3 mr-1" />

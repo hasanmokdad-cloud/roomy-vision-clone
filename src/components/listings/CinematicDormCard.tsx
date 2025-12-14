@@ -2,7 +2,8 @@ import { motion } from "framer-motion";
 import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, CheckCircle, Wifi, Zap, Home, Navigation, Bookmark, Star } from "lucide-react";
+import { MapPin, CheckCircle, Zap, Bookmark, Star } from "lucide-react";
+import { getAmenityIcon } from "@/utils/amenityIcons";
 import { useNavigate } from "react-router-dom";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -176,22 +177,12 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
     }
   }, [userId, isSaved, dorm.id, toast]);
 
-  const amenityIcons: Record<string, any> = useMemo(
-    () => ({
-      WiFi: Wifi,
-      Internet: Wifi,
-      Electricity: Zap,
-      Furnished: Home,
-    }),
-    [],
-  );
-
-  const getAmenityIcon = useCallback(
+  const renderAmenityIcon = useCallback(
     (amenity: string) => {
-      const IconComponent = amenityIcons[amenity] || Navigation;
+      const IconComponent = getAmenityIcon(amenity);
       return <IconComponent className="w-3 h-3" />;
     },
-    [amenityIcons],
+    [],
   );
 
   const cardVariants = useMemo(
@@ -397,7 +388,7 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
                     <div className="grid grid-cols-2 gap-2">
                       {dorm.amenities.slice(0, 6).map((amenity, i) => (
                         <div key={i} className="flex items-center gap-2 text-xs text-foreground">
-                          {getAmenityIcon(amenity)}
+                          {renderAmenityIcon(amenity)}
                           <span className="truncate">{amenity}</span>
                         </div>
                       ))}

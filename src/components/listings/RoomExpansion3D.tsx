@@ -2,7 +2,8 @@ import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { useState, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, Sparkles, Zap, Wifi, Home, Navigation, CheckCircle, MapPin } from 'lucide-react';
+import { Users, Sparkles, Zap, CheckCircle, MapPin, Home } from 'lucide-react';
+import { getAmenityIcon } from '@/utils/amenityIcons';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -41,15 +42,8 @@ export function RoomExpansion3D({
     navigate(`/dorm/${dormId}?action=contact`);
   };
 
-  const amenityIcons: Record<string, any> = {
-    'WiFi': Wifi,
-    'Internet': Wifi,
-    'Electricity': Zap,
-    'Furnished': Home,
-  };
-
-  const getAmenityIcon = (amenity: string) => {
-    const IconComponent = amenityIcons[amenity] || Navigation;
+  const renderAmenityIcon = (amenity: string) => {
+    const IconComponent = getAmenityIcon(amenity);
     return <IconComponent className="w-3 h-3" />;
   };
 
@@ -209,7 +203,7 @@ export function RoomExpansion3D({
                               key={i}
                               className="flex items-center gap-1.5 text-xs bg-muted/60 backdrop-blur-sm rounded-full px-3 py-1.5 border border-border/30"
                             >
-                              {getAmenityIcon(amenity)}
+                              {renderAmenityIcon(amenity)}
                               <span>{amenity}</span>
                             </div>
                           ))}
@@ -284,7 +278,7 @@ export function RoomExpansion3D({
                           <div className="grid grid-cols-2 gap-2">
                             {room.amenities.slice(0, 6).map((amenity, i) => (
                               <div key={i} className="flex items-center gap-2 text-xs bg-muted/30 rounded-lg px-2 py-1.5">
-                                {getAmenityIcon(amenity)}
+                                {renderAmenityIcon(amenity)}
                                 <span className="truncate">{amenity}</span>
                               </div>
                             ))}
