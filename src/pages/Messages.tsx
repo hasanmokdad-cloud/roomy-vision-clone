@@ -29,6 +29,8 @@ import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
+import { useAuth } from '@/contexts/AuthContext';
+import BottomNav from '@/components/BottomNav';
 import BottomNav from '@/components/BottomNav';
 import { useBottomNav } from '@/contexts/BottomNavContext';
 import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
@@ -175,6 +177,7 @@ const RoomPreviewCard = ({ metadata }: { metadata: Message['attachment_metadata'
 export default function Messages() {
   const { loading: authLoading, userId } = useAuthGuard();
   const { role } = useRoleGuard();
+  const { isAuthenticated, isAuthReady, openAuthModal } = useAuth();
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -217,6 +220,40 @@ export default function Messages() {
   const touchStartTimeRef = useRef<number>(0);
   const touchStartPosRef = useRef({ x: 0, y: 0 });
   const micButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Mobile unauthenticated state - Airbnb style
+  if (isAuthReady && !isAuthenticated && isMobile) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="pt-20 px-6 pb-32">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-md mx-auto text-center space-y-6"
+          >
+            <h1 className="text-3xl font-bold text-foreground">Inbox</h1>
+            
+            <div className="py-12">
+              <MessageSquare className="w-16 h-16 mx-auto text-muted-foreground/30 mb-6" />
+              <h2 className="text-xl font-semibold mb-2">Log in to see messages</h2>
+              <p className="text-muted-foreground">
+                Once you login, you'll find messages from hosts here.
+              </p>
+            </div>
+
+            <Button
+              onClick={() => openAuthModal()}
+              className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-semibold py-6 text-lg rounded-xl"
+            >
+              Log in
+            </Button>
+          </motion.div>
+        </div>
+        
+        <BottomNav />
+      </div>
+    );
+  }
 
   // Get student ID for friends functionality
   useEffect(() => {

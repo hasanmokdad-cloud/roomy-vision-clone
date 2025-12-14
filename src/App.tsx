@@ -117,6 +117,7 @@ const ApproveDevice = lazy(() => import("./pages/auth/ApproveDevice"));
 const AuthCallback = lazy(() => import("./pages/auth/AuthCallback"));
 const AccountSuspended = lazy(() => import("./pages/AccountSuspended"));
 const BecomeOwner = lazy(() => import("./pages/BecomeOwner"));
+const Wishlists = lazy(() => import("./pages/Wishlists"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -259,6 +260,7 @@ const AppRoutes = () => {
           <Route path="/settings/devices" element={<ProtectedRoute element={<DevicesPage />} />} />
           <Route path="/saved-dorms" element={<ProtectedRoute element={<SavedDorms />} />} />
           <Route path="/saved-rooms" element={<ProtectedRoute element={<SavedRooms />} />} />
+          <Route path="/wishlists" element={<Wishlists />} />
           <Route path="/messages" element={<ProtectedRoute element={<Messages />} />} />
           <Route path="/student-profile/:id" element={<ProtectedRoute element={<StudentProfile />} />} />
           <Route path="/roommate/:userId" element={<ProtectedRoute element={<RoommateProfile />} />} />

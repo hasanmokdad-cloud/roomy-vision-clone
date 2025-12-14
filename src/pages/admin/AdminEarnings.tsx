@@ -15,7 +15,6 @@ export default function AdminEarnings() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalCommission: 0,
-    pendingCommission: 0,
     ownerPayoutsCompleted: 0,
   });
   const [reservations, setReservations] = useState<any[]>([]);
@@ -50,18 +49,12 @@ export default function AdminEarnings() {
       const paidReservations = reservationsData.filter(r => r.status === 'paid');
       const totalCommission = paidReservations.reduce((sum, r) => sum + (r.commission_amount || 0), 0);
       
-      const pendingPaymentReservations = reservationsData.filter(r => 
-        r.status === 'pending' || r.status === 'processing'
-      );
-      const pendingCommission = pendingPaymentReservations.reduce((sum, r) => sum + (r.commission_amount || 0), 0);
-      
       const ownerPayoutsCompleted = paidReservations
         .filter(r => r.owner_payout_status === 'paid')
         .reduce((sum, r) => sum + (r.owner_payout_amount || 0), 0);
 
       setStats({
         totalCommission,
-        pendingCommission,
         ownerPayoutsCompleted,
       });
     }
@@ -144,7 +137,7 @@ export default function AdminEarnings() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="glass-hover">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -175,23 +168,6 @@ export default function AdminEarnings() {
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Successfully paid to owners
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-hover">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Pending Commission
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-amber-600">
-                ${stats.pendingCommission.toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Awaiting payment completion
               </p>
             </CardContent>
           </Card>

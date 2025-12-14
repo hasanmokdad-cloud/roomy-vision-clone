@@ -14,7 +14,7 @@ import { RoommateComparison } from "@/components/ai-match/RoommateComparison";
 import { DormComparison } from "@/components/listings/DormComparison";
 import { TierSelector } from "@/components/ai-match/TierSelector";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, Bug } from "lucide-react";
+import { Brain, Bug, Sparkles } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { shouldShowCompatibilityScore, isVipPlan, type AiMatchPlan } from "@/utils/tierLogic";
 import { EmptyMatchState } from "@/components/ai-match/EmptyMatchState";
@@ -22,6 +22,8 @@ import { MatchModeTabs } from "@/components/ai-match/MatchModeTabs";
 import { useMatchTier } from "@/hooks/useMatchTier";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import BottomNav from "@/components/BottomNav";
 
 type ProfileStatus = 'loading' | 'incomplete' | 'complete';
 type MatchMode = 'apartments' | 'rooms' | 'roommates';
@@ -46,14 +48,72 @@ const AiMatch = () => {
   const [showDebug, setShowDebug] = useState(false);
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
-  // Check authentication
+  // Check authentication - show Airbnb-style login prompt for mobile unauthenticated
   useEffect(() => {
     if (!isAuthReady) return;
     
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !isMobile) {
       openAuthModal();
       return;
     }
+
+    // Check if admin
+    const checkAdmin = async () => {
+      if (!userId) return;
+      
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('*, roles(*)')
+        .eq('user_id', userId);
+      
+      const adminRole = roles?.some(r => r.roles?.name === 'admin');
+      setIsAdmin(!!adminRole);
+
+      // Check for debug param
+      const urlParams = new URLSearchParams(window.location.search);
+      setShowDebug(urlParams.get('ai_debug') === '1' && !!adminRole);
+    };
+
+    if (isAuthenticated) {
+      checkAdmin();
+    }
+  }, [isAuthReady, isAuthenticated, userId, openAuthModal, isMobile]);
+
+  // Mobile unauthenticated state - Airbnb style
+  if (isAuthReady && !isAuthenticated && isMobile) {
+    return (
+      <div className="min-h-screen bg-background">
+        {!isMobile && <RoomyNavbar />}
+        
+        <div className="pt-20 px-6 pb-32">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-md mx-auto text-center space-y-6"
+          >
+            <h1 className="text-3xl font-bold text-foreground">AI Match</h1>
+            
+            <div className="py-12">
+              <Sparkles className="w-16 h-16 mx-auto text-muted-foreground/30 mb-6" />
+              <h2 className="text-xl font-semibold mb-2">Log in to find your perfect match</h2>
+              <p className="text-muted-foreground">
+                Get AI-powered recommendations for dorms and roommates.
+              </p>
+            </div>
+
+            <Button
+              onClick={() => openAuthModal()}
+              className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-semibold py-6 text-lg rounded-xl"
+            >
+              Log in
+            </Button>
+          </motion.div>
+        </div>
+        
+        <BottomNav />
+      </div>
+    );
+  }
 
     // Check if admin
     const checkAdmin = async () => {

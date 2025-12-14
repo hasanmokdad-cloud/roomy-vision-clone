@@ -1,176 +1,151 @@
-// Instagram-style mobile bottom navbar with icons only
+// Instagram/Airbnb-style mobile bottom navbar - icons only, clean design
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { supabase } from "@/integrations/supabase/client";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
-import { MobileProfileMenu } from "@/components/mobile/MobileProfileMenu";
 import { useBottomNav } from "@/contexts/BottomNavContext";
+import { useAuth } from "@/contexts/AuthContext";
 import {
-  Settings,
+  Heart,
+  Sparkles,
+  Search,
   MessageSquare,
   User,
-  Sparkles,
-  Building2,
+  Wallet,
+  CalendarDays,
+  Home,
+  MessageCircle,
+  LogIn,
 } from "lucide-react";
+
+type TabConfig = {
+  path: string;
+  icon: React.ElementType;
+  label: string;
+  badge?: number;
+};
 
 export default function MobileTabs() {
   const navigate = useNavigate();
   const location = useLocation();
   const { hideBottomNav } = useBottomNav();
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [userEmail, setUserEmail] = useState<string>();
+  const { isAuthenticated, userId } = useAuth();
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
   const { unreadCount } = useUnreadCount(userId);
-  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      setUserId(user.id);
-      setUserEmail(user.email);
+    const fetchUserRole = async () => {
+      if (!userId) {
+        setUserRole(null);
+        return;
+      }
 
       const { data: roleRow } = await supabase
         .from("user_roles")
         .select("roles(name)")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .single();
 
-      setUserRole(roleRow?.roles?.name || null);
+      setUserRole(roleRow?.roles?.name || 'student');
     };
 
-    fetchUserData();
-  }, []);
+    fetchUserRole();
+  }, [userId]);
 
-  // Owner has unique 3-icon layout
-  const tabs = userRole === 'owner' 
-    ? [
-        { path: "/settings", icon: Settings, label: "Settings" },
-        { path: "/messages", icon: MessageSquare, label: "Messages", center: true, badge: unreadCount },
-        { path: "/profile", icon: User, label: "Profile", isProfile: true },
-      ]
-    : [
-        { path: "/settings", icon: Settings, label: "Settings" },
-        { path: "/messages", icon: MessageSquare, label: "Messages", badge: unreadCount },
-        { path: "/listings", icon: Building2, label: "Dorms", center: true },
+  // Role-based tab configurations
+  const getTabs = (): TabConfig[] => {
+    if (!isAuthenticated) {
+      // Public/Anonymous users
+      return [
+        { path: "/wishlists", icon: Heart, label: "Wishlists" },
         { path: "/ai-match", icon: Sparkles, label: "AI Match" },
-        { path: "/profile", icon: User, label: "Profile", isProfile: true },
+        { path: "/listings", icon: Search, label: "Explore" },
+        { path: "/messages", icon: MessageSquare, label: "Inbox" },
+        { path: "/profile", icon: LogIn, label: "Log in" },
       ];
+    }
 
-  // Update current index when location changes
-  useEffect(() => {
-    const idx = tabs.findIndex(tab => location.pathname.startsWith(tab.path));
-    setCurrentIndex(idx >= 0 ? idx : 0);
-  }, [location.pathname, tabs]);
+    if (userRole === 'owner') {
+      return [
+        { path: "/owner/wallet", icon: Wallet, label: "Wallet" },
+        { path: "/owner/bookings", icon: CalendarDays, label: "Bookings" },
+        { path: "/owner", icon: Home, label: "Owner" },
+        { path: "/messages", icon: MessageSquare, label: "Messages", badge: unreadCount },
+        { path: "/profile", icon: User, label: "Profile" },
+      ];
+    }
 
-  // Swipe handlers - called unconditionally before any returns
-  const swipeHandlers = useSwipeGesture({
-    onSwipeLeft: () => {
-      if (currentIndex < tabs.length - 1) {
-        navigate(tabs[currentIndex + 1].path);
-      }
-    },
-    onSwipeRight: () => {
-      if (currentIndex > 0) {
-        navigate(tabs[currentIndex - 1].path);
-      }
-    },
-    threshold: 75,
-  });
+    if (userRole === 'admin') {
+      return [
+        { path: "/admin/wallet", icon: Wallet, label: "Wallet" },
+        { path: "/admin/chats", icon: MessageCircle, label: "Chats" },
+        { path: "/admin", icon: Home, label: "Admin" },
+        { path: "/messages", icon: MessageSquare, label: "Messages", badge: unreadCount },
+        { path: "/profile", icon: User, label: "Profile" },
+      ];
+    }
 
-  const handleProfileClick = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setUserEmail(user?.email);
-    setProfileMenuOpen(true);
+    // Students (default)
+    return [
+      { path: "/wishlists", icon: Heart, label: "Wishlists" },
+      { path: "/ai-match", icon: Sparkles, label: "AI Match" },
+      { path: "/listings", icon: Search, label: "Explore" },
+      { path: "/messages", icon: MessageSquare, label: "Messages", badge: unreadCount },
+      { path: "/profile", icon: User, label: "Profile" },
+    ];
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    sessionStorage.removeItem('intro-played');
-    window.location.href = '/listings';
-  };
+  const tabs = getTabs();
 
-  // All hooks called above - now safe to have conditional returns
+  // Hide on certain routes
   if (hideBottomNav) return null;
-  if (location.pathname.startsWith("/owner") || location.pathname.startsWith("/admin")) return null;
+  if (location.pathname.startsWith("/owner/") && !location.pathname.match(/^\/owner\/(wallet|bookings)$/)) return null;
+  if (location.pathname.startsWith("/admin/") && !location.pathname.match(/^\/admin\/(wallet|chats)$/)) return null;
+  if (location.pathname === "/owner" || location.pathname === "/admin") return null;
 
   return (
-    <>
-      <motion.div
-        initial={{ y: 80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="fixed bottom-0 left-0 w-full bg-background/95 dark:bg-background/98 backdrop-blur-lg shadow-[0_-2px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_-2px_20px_rgba(0,0,0,0.3)] border-t border-border md:hidden flex justify-around items-center py-2 z-50 safe-area-inset-bottom"
-        {...swipeHandlers}
-      >
-        {tabs.map(({ path, icon: Icon, label, center, isProfile, badge }) => {
-          const active = location.pathname === path || location.pathname.startsWith(path);
-          
-          if (center) {
-            return (
-              <button
-                key={path}
-                onClick={() => navigate(path)}
-                className="relative flex items-center justify-center -mt-7"
-                aria-label={label}
-                aria-current={active ? "page" : undefined}
-              >
-                <motion.div 
-                  className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-xl ${
-                    active
-                      ? "bg-gradient-to-br from-primary via-secondary to-accent shadow-primary/50"
-                      : "bg-gradient-to-br from-primary/70 via-secondary/70 to-accent/70 shadow-primary/30"
-                  }`}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  {Icon && <Icon className="w-7 h-7 text-primary-foreground" />}
-                </motion.div>
-              </button>
-            );
-          }
-
-          return (
-            <button
-              key={path}
-              onClick={() => isProfile ? handleProfileClick() : navigate(path)}
-              className="relative flex items-center justify-center p-2 transition-all"
-              aria-label={label}
-              aria-current={active ? "page" : undefined}
-            >
-              {Icon && (
-                <>
-                  <Icon className={`w-7 h-7 transition-colors ${
-                    active ? "text-primary" : "text-foreground/60"
-                  }`} />
-                  {active && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute -bottom-1 w-1 h-1 rounded-full bg-primary"
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                    />
-                  )}
-                  {badge !== undefined && badge > 0 && (
-                    <div className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
-                      {badge > 9 ? '9+' : badge}
-                    </div>
-                  )}
-                </>
-              )}
-            </button>
-          );
-        })}
-      </motion.div>
-
-      <MobileProfileMenu
-        open={profileMenuOpen}
-        onClose={() => setProfileMenuOpen(false)}
-        onSignOut={handleSignOut}
-        userEmail={userEmail}
-      />
-    </>
+    <nav
+      className="fixed bottom-0 left-0 w-full bg-background border-t border-border md:hidden flex justify-around items-center h-14 z-50 safe-area-inset-bottom"
+      role="navigation"
+      aria-label="Main navigation"
+    >
+      {tabs.map(({ path, icon: Icon, label, badge }) => {
+        const isActive = location.pathname === path || 
+          (path !== '/profile' && location.pathname.startsWith(path) && path !== '/');
+        
+        return (
+          <button
+            key={path}
+            onClick={() => {
+              if (path === '/profile' && !isAuthenticated) {
+                navigate('/profile');
+              } else {
+                navigate(path);
+              }
+            }}
+            className="relative flex flex-col items-center justify-center flex-1 h-full"
+            aria-label={label}
+            aria-current={isActive ? "page" : undefined}
+          >
+            <Icon 
+              className={`w-6 h-6 transition-colors ${
+                isActive 
+                  ? "text-foreground" 
+                  : "text-muted-foreground"
+              }`}
+              fill={isActive && (path === '/wishlists') ? "currentColor" : "none"}
+              strokeWidth={isActive ? 2.5 : 2}
+            />
+            
+            {/* Unread badge */}
+            {badge !== undefined && badge > 0 && (
+              <span className="absolute top-1 right-1/4 bg-red-500 text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold px-1">
+                {badge > 99 ? '99+' : badge}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </nav>
   );
 }
