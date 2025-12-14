@@ -91,8 +91,10 @@ export function EnhancedRoomCard({
     checkSaved();
   }, [room.id]);
 
-  // Strict media scoping - ONLY room images, no fallback
-  const displayImages = room.images && room.images.length > 0 ? room.images : [];
+  // Strict media scoping - ONLY room images, no fallback, deduplicated
+  const displayImages = room.images && room.images.length > 0 
+    ? [...new Set(room.images)] 
+    : [];
 
   const handleContact = async (e: React.MouseEvent) => {
     e.stopPropagation();
