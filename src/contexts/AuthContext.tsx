@@ -147,11 +147,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setRole(null);
     
-    // REDIRECT FIRST - don't wait for signOut
-    window.location.href = '/listings';
+    // MUST await signOut FIRST to clear session from localStorage
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Sign out error:', err);
+    }
     
-    // Call signOut in background (page will reload anyway)
-    supabase.auth.signOut().catch(console.error);
+    // THEN redirect after session is cleared
+    window.location.href = '/listings';
   }, []);
 
   const openAuthModal = useCallback(() => {
