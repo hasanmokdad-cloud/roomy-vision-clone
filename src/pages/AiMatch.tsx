@@ -47,8 +47,8 @@ const AiMatch = () => {
 
   // Listen for auth state changes - redirect to /listings on sign-out
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
         navigate('/listings');
       }
     });
