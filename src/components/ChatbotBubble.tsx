@@ -71,6 +71,10 @@ export const ChatbotBubble = () => {
             
             if (adminData) {
               setUserRole('admin');
+            } else {
+              // User is authenticated but has no profile yet - default to student
+              // This handles the case where user just signed up
+              setUserRole('student');
             }
           }
         }

@@ -12,7 +12,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Eye, Ban, Trash2, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Eye, Ban, Trash2, CheckCircle, MessageCircle } from 'lucide-react';
+import { createOrGetConversation } from '@/lib/conversationUtils';
 import { StudentProfileModal } from '@/components/admin/StudentProfileModal';
 import {
   AlertDialog,
@@ -118,6 +119,38 @@ export default function AdminStudents() {
     loadStudents();
   };
 
+  const handleMessageStudent = async (studentId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: studentData } = await supabase
+      .from('students')
+      .select('user_id')
+      .eq('id', studentId)
+      .single();
+
+    if (!studentData?.user_id) {
+      toast({
+        title: 'Error',
+        description: 'Could not find student contact information',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const conversationId = await createOrGetConversation(user.id, studentData.user_id);
+
+    if (conversationId) {
+      navigate('/messages');
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Could not create conversation',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -188,8 +221,8 @@ export default function AdminStudents() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={student.status === 'active' ? 'default' : 'destructive'}>
-                    {student.status}
+                  <Badge variant={(student.status || 'active') === 'active' ? 'default' : 'destructive'}>
+                    {student.status || 'active'}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -211,7 +244,15 @@ export default function AdminStudents() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => handleSuspendStudent(student.id, student.status)}
+                      onClick={() => handleMessageStudent(student.id)}
+                      title="Message Student"
+                    >
+                      <MessageCircle className="w-4 h-4 text-green-500" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleSuspendStudent(student.id, student.status || 'active')}
                       title={student.status === 'active' ? 'Suspend' : 'Activate'}
                     >
                       {student.status === 'active' ? (
