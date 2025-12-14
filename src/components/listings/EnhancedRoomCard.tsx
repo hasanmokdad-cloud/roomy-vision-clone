@@ -166,6 +166,12 @@ export function EnhancedRoomCard({
   const handleBookTour = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isUnavailable) return;
+    
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
+    
     setBookingModalOpen(true);
   };
 
@@ -232,16 +238,17 @@ export function EnhancedRoomCard({
     e.stopPropagation();
     if (isUnavailable || isFull) return;
     
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    if (!isAuthenticated) {
       toast({ 
         title: 'Sign in required', 
         description: 'Please sign in to reserve a room',
         variant: 'destructive' 
       });
-      navigate('/auth');
+      openAuthModal();
       return;
     }
+    
+    const { data: { user } } = await supabase.auth.getUser();
 
     // Check if student already has a reserved room
     const { data: student } = await supabase

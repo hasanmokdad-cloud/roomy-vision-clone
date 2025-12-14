@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { WhatsAppDropdown } from '@/components/shared/WhatsAppDropdown';
 import { triggerContactEmailNotification } from '@/lib/contactNotifications';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Dynamic field component that shows "University" for students or "Dorm Name" for owners
 function UniversityOrDormField({ value, onChange, error }: { value: string; onChange: (v: string) => void; error?: string }) {
@@ -49,6 +50,7 @@ function UniversityOrDormField({ value, onChange, error }: { value: string; onCh
 export default function Contact() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { isAuthenticated, openAuthModal } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -61,6 +63,12 @@ export default function Contact() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check authentication first
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
 
     // Check rate limiting
     const rateLimitKey = 'contact_form_limit';
