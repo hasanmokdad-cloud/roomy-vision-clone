@@ -22,14 +22,14 @@ export default function AuthCallback() {
           console.error("Auth callback error:", error);
           setState("error");
           setMessage("Authentication failed");
-          setTimeout(() => navigate("/auth"), 2000);
+          setTimeout(() => navigate("/listings"), 2000);
           return;
         }
 
         if (!session) {
           setState("error");
           setMessage("No session found");
-          setTimeout(() => navigate("/auth"), 2000);
+          setTimeout(() => navigate("/listings"), 2000);
           return;
         }
 
@@ -57,7 +57,7 @@ export default function AuthCallback() {
         console.error("Auth callback exception:", err);
         setState("error");
         setMessage("Something went wrong");
-        setTimeout(() => navigate("/auth"), 2000);
+        setTimeout(() => navigate("/listings"), 2000);
       }
     };
 

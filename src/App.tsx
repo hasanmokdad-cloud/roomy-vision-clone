@@ -18,7 +18,6 @@ import { BottomNavProvider } from "@/contexts/BottomNavContext";
 import { MicPermissionProvider } from "@/contexts/MicPermissionContext";
 
 // Lazy load route components
-const Auth = lazy(() => import("./pages/Auth"));
 const CheckEmail = lazy(() => import("./pages/auth/CheckEmail"));
 const VerifyEmail = lazy(() => import("./pages/auth/VerifyEmail"));
 const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
@@ -218,8 +217,8 @@ const AppRoutes = () => {
           {/* Root redirect - check if intro was played */}
           <Route path="/" element={<IntroRedirect />} />
           
-          {/* Public Routes - No auth required */}
-          <Route path="/auth" element={<Auth />} />
+          {/* Auth routes redirected to listings (modal-based auth now) */}
+          <Route path="/auth" element={<Navigate to="/listings" replace />} />
           <Route path="/auth/check-email" element={<CheckEmail />} />
           <Route path="/auth/verify" element={<VerifyEmail />} />
           <Route path="/auth/reset" element={<ResetPassword />} />

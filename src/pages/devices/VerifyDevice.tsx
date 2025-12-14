@@ -33,7 +33,7 @@ export default function VerifyDevice() {
       return () => clearTimeout(timer);
     }
     if (state === "success" && countdown === 0) {
-      navigate("/auth", { replace: true });
+      navigate("/listings", { replace: true });
     }
   }, [state, countdown, navigate]);
 
@@ -111,7 +111,7 @@ export default function VerifyDevice() {
                   Redirecting to login in {countdown}...
                 </p>
                 <Button
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/listings")}
                   className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:opacity-90"
                 >
                   Go to Login Now
@@ -138,7 +138,7 @@ export default function VerifyDevice() {
                 <h2 className="text-2xl font-bold text-red-600">Verification Failed</h2>
                 <p className="text-foreground/70">{errorMessage}</p>
                 <Button
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/listings")}
                   variant="outline"
                   className="w-full"
                 >
@@ -162,10 +162,10 @@ export default function VerifyDevice() {
                   Log in again to receive a new verification email.
                 </p>
                 <Button
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/listings")}
                   className="w-full bg-gradient-to-r from-primary to-purple-600 hover:opacity-90"
                 >
-                  Go to Login
+                  Go to Listings
                 </Button>
               </motion.div>
             )}

@@ -33,17 +33,30 @@ export function GlobalAuthModal() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
       if (error) throw error;
 
+      // Fetch role for redirect
+      const { data: roleData } = await supabase.rpc('get_user_role', {
+        p_user_id: data.user!.id
+      });
+
       toast({ title: 'Welcome back!', description: 'You have been signed in successfully.' });
       resetForm();
       closeAuthModal();
       await refreshAuth();
+      
+      // Role-based redirect
+      if (roleData === 'owner') {
+        navigate('/owner', { replace: true });
+      } else if (roleData === 'admin') {
+        navigate('/admin', { replace: true });
+      }
+      // Students stay on current page
     } catch (error: any) {
       toast({
         title: 'Login failed',

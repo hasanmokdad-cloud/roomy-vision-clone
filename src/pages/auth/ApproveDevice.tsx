@@ -69,9 +69,9 @@ const ApproveDevice = () => {
         if (userId) {
           await redirectBasedOnRole(userId);
         } else {
-          // Fallback - redirect to auth page
+          // Fallback - redirect to listings page
           setTimeout(() => {
-            navigate("/auth", { replace: true });
+            navigate("/listings", { replace: true });
           }, 2000);
         }
       }
@@ -105,13 +105,13 @@ const ApproveDevice = () => {
         } else if (roleData === "student") {
           navigate("/intro", { replace: true });
         } else {
-          // No role yet - go to role selection
-          navigate("/select-role", { replace: true });
+          // No role yet - go to listings
+          navigate("/listings", { replace: true });
         }
       }, 1500);
     } catch (err) {
       console.error("Error redirecting:", err);
-      navigate("/auth", { replace: true });
+      navigate("/listings", { replace: true });
     }
   };
 
@@ -154,8 +154,8 @@ const ApproveDevice = () => {
               <h2 className="text-xl font-semibold text-foreground">Verification Failed</h2>
               <p className="text-muted-foreground">{errorMessage}</p>
               <div className="space-y-2 pt-4">
-                <Button onClick={() => navigate("/auth")} className="w-full">
-                  Go to Login
+                <Button onClick={() => navigate("/listings")} className="w-full">
+                  Go to Listings
                 </Button>
               </div>
             </div>
@@ -169,8 +169,8 @@ const ApproveDevice = () => {
               <h2 className="text-xl font-semibold text-foreground">Link Expired</h2>
               <p className="text-muted-foreground">{errorMessage}</p>
               <div className="space-y-2 pt-4">
-                <Button onClick={() => navigate("/auth")} className="w-full">
-                  Login Again
+                <Button onClick={() => navigate("/listings")} className="w-full">
+                  Go to Listings
                 </Button>
                 <p className="text-xs text-muted-foreground">
                   You'll receive a new verification email when you log in.

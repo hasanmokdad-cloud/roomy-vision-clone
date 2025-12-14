@@ -108,12 +108,12 @@ export default function CheckEmail() {
               </button>
             </div>
             
-            {/* Back to Login */}
+            {/* Back to Listings */}
             <button
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/listings')}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              ← Back to login
+              ← Back to listings
             </button>
           </CardContent>
         </Card>

@@ -36,7 +36,7 @@ export default function RoomContactCard({ room, dormId, dormName, ownerId, index
         description: 'Please sign in to contact dorm owners',
         variant: 'destructive',
       });
-      navigate('/auth');
+      // Auth modal will be triggered by the parent component or context
       return;
     }
 
