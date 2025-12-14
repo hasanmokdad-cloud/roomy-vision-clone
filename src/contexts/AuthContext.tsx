@@ -126,6 +126,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     console.log('🚪 AuthContext: Signing out...');
     
+    // Close auth modal FIRST to prevent flash
+    setAuthModalOpen(false);
+    
     // Clear state immediately
     setSession(null);
     setUser(null);

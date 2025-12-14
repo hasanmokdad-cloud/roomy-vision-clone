@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
-import { ArrowLeft, DollarSign, Clock, TrendingUp, CreditCard } from 'lucide-react';
+import { ArrowLeft, DollarSign, CreditCard } from 'lucide-react';
 import { OwnerTableSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { format } from 'date-fns';
 import { AddWhishCardModal } from '@/components/payments/AddWhishCardModal';
@@ -21,8 +21,6 @@ export default function OwnerEarnings() {
   const [paymentProfile, setPaymentProfile] = useState<any>(null);
   const [stats, setStats] = useState({
     totalEarnings: 0,
-    upcomingPayouts: 0,
-    platformFees: 0,
   });
   const [reservations, setReservations] = useState<any[]>([]);
 
@@ -87,18 +85,10 @@ export default function OwnerEarnings() {
       setReservations(reservationsData);
 
       const paid = reservationsData.filter(r => r.owner_payout_status === 'paid');
-      const pending = reservationsData.filter(r => 
-        r.owner_payout_status === 'pending' || r.owner_payout_status === 'failed'
-      );
-
       const totalEarnings = paid.reduce((sum, r) => sum + (r.owner_payout_amount || 0), 0);
-      const upcomingPayouts = pending.reduce((sum, r) => sum + (r.owner_payout_amount || 0), 0);
-      const platformFees = reservationsData.reduce((sum, r) => sum + (r.commission_amount || 0), 0);
 
       setStats({
         totalEarnings,
-        upcomingPayouts,
-        platformFees,
       });
     }
 
@@ -167,13 +157,13 @@ export default function OwnerEarnings() {
           {paymentProfile ? 'Update Payment Info' : 'Add Payment Info'}
         </Button>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Summary Card */}
+        <div className="max-w-md">
           <Card className="glass-hover">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
-                Total Earnings (Paid)
+                Total Earnings
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -182,40 +172,6 @@ export default function OwnerEarnings() {
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Completed payouts
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-hover">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Upcoming Payouts
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-amber-600">
-                ${stats.upcomingPayouts.toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Pending or scheduled
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-hover">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
-                Platform Fees
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold gradient-text">
-                ${stats.platformFees.toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Total Roomy fees (10%)
               </p>
             </CardContent>
           </Card>
@@ -233,9 +189,6 @@ export default function OwnerEarnings() {
                   <tr className="border-b border-border/40">
                     <th className="text-left p-4 font-semibold">Room</th>
                     <th className="text-left p-4 font-semibold">Student</th>
-                    <th className="text-right p-4 font-semibold">Deposit</th>
-                    <th className="text-right p-4 font-semibold">Roomy Fee</th>
-                    <th className="text-right p-4 font-semibold">Total Paid</th>
                     <th className="text-right p-4 font-semibold">Your Payout</th>
                     <th className="text-center p-4 font-semibold">Status</th>
                     <th className="text-center p-4 font-semibold">Payout Date</th>
@@ -253,13 +206,6 @@ export default function OwnerEarnings() {
                         </div>
                       </td>
                       <td className="p-4">{reservation.students?.full_name}</td>
-                      <td className="text-right p-4">${reservation.deposit_amount?.toFixed(2)}</td>
-                      <td className="text-right p-4 text-orange-600">
-                        ${reservation.commission_amount?.toFixed(2)}
-                      </td>
-                      <td className="text-right p-4 font-semibold">
-                        ${reservation.total_amount?.toFixed(2)}
-                      </td>
                       <td className="text-right p-4 font-semibold text-green-600">
                         ${reservation.owner_payout_amount?.toFixed(2) || reservation.deposit_amount?.toFixed(2)}
                       </td>
@@ -275,7 +221,7 @@ export default function OwnerEarnings() {
                   ))}
                   {reservations.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="text-center p-8 text-foreground/60">
+                      <td colSpan={5} className="text-center p-8 text-foreground/60">
                         No reservations yet
                       </td>
                     </tr>
