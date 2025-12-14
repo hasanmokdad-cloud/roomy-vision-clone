@@ -3,18 +3,19 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense } from "react";
 import { ChatbotBubble } from "./components/ChatbotBubble";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRoleGuard } from "@/hooks/useRoleGuard";
+import { useAuth } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { GlobalAuthModal } from "@/components/auth/GlobalAuthModal";
 import BottomNav from "./components/BottomNav";
 import MobileNavbar from "./components/MobileNavbar";
 import { MobileSwipeLayout } from "./layouts/MobileSwipeLayout";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { BottomNavProvider } from "@/contexts/BottomNavContext";
 import { MicPermissionProvider } from "@/contexts/MicPermissionContext";
-import { supabase } from "@/integrations/supabase/client";
 
 // Lazy load route components
 const Auth = lazy(() => import("./pages/Auth"));
@@ -129,7 +130,7 @@ const PageLoader = () => (
   </div>
 );
 
-// Protected route component for authenticated routes
+// Protected route component using AuthContext
 function ProtectedRoute({
   element,
   requiredRole,
@@ -142,13 +143,9 @@ function ProtectedRoute({
   forbiddenRoles?: ("admin" | "owner" | "student")[];
 }) {
   const location = useLocation();
-  const { loading, role, userId } = useRoleGuard(requiredRole);
-  
-  // Consider authenticated if we have either a role OR a userId
-  // This prevents redirect when role resolution is slow but user is logged in
-  const isAuthenticated = !!role || !!userId;
+  const { isAuthReady, isAuthenticated, role, userId, openAuthModal } = useAuth();
 
-  if (loading) {
+  if (!isAuthReady) {
     return (
       <div className="flex h-screen items-center justify-center">
         <p className="text-foreground/60">Loading...</p>
@@ -156,9 +153,15 @@ function ProtectedRoute({
     );
   }
 
-  // If not authenticated (no role AND no userId), redirect to auth
+  // If not authenticated, open auth modal instead of redirecting
   if (!isAuthenticated) {
-    return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}`} replace />;
+    // Trigger auth modal after render
+    setTimeout(() => openAuthModal(), 0);
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-foreground/60">Please sign in to continue...</p>
+      </div>
+    );
   }
 
   // Redirect any /select-role access to listings (page no longer exists)
@@ -182,10 +185,6 @@ function ProtectedRoute({
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     return <Navigate to="/unauthorized" replace />;
   }
-
-  // If user has NO role, they should be auto-assigned student role on verification
-  // Just allow access - student role is assigned during email verification
-  // No redirect to /select-role anymore
 
   // Role mismatch → unauthorized (only if allowedRoles not specified)
   if (!allowedRoles && requiredRole && role !== requiredRole) {
@@ -350,17 +349,20 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
-          <MicPermissionProvider>
-            <BottomNavProvider>
-              <div className="w-full max-w-screen overflow-x-hidden">
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <AppRoutes />
-                </BrowserRouter>
-              </div>
-            </BottomNavProvider>
-          </MicPermissionProvider>
+          <AuthProvider>
+            <MicPermissionProvider>
+              <BottomNavProvider>
+                <div className="w-full max-w-screen overflow-x-hidden">
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <GlobalAuthModal />
+                    <AppRoutes />
+                  </BrowserRouter>
+                </div>
+              </BottomNavProvider>
+            </MicPermissionProvider>
+          </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
