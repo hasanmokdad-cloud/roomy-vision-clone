@@ -62,7 +62,7 @@ export default function AdminWallet() {
   const [balance, setBalance] = useState(0);
   const [totalCommissions, setTotalCommissions] = useState(0);
   const [recentCommissions, setRecentCommissions] = useState<CommissionRecord[]>([]);
-  const [lastPayoutStatus, setLastPayoutStatus] = useState<string>("none");
+  // lastPayoutStatus removed - not applicable for admin commission model
 
   useEffect(() => {
     if (!roleLoading) {
@@ -112,10 +112,7 @@ export default function AdminWallet() {
 
       setRecentCommissions(recentData || []);
 
-      // Determine last payout status
-      if (recentData && recentData.length > 0) {
-        setLastPayoutStatus(recentData[0].status || "captured");
-      }
+      // lastPayoutStatus logic removed
 
     } catch (error) {
       console.error("Error loading admin wallet:", error);
@@ -227,15 +224,6 @@ export default function AdminWallet() {
                       <div>
                         <p className="text-sm text-foreground/60">Total Commissions Earned</p>
                         <p className="text-xl font-bold text-green-600">${totalCommissions.toFixed(2)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 rounded-xl bg-primary/10">
-                        <DollarSign className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-foreground/60">Last Payout Status</p>
-                        {getStatusBadge(lastPayoutStatus)}
                       </div>
                     </div>
                   </div>
