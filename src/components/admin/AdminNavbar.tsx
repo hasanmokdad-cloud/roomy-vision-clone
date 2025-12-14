@@ -2,7 +2,6 @@ import { Menu, X, Bell, MessageSquare, Info, Phone, LogOut, User, Settings, Buil
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
-import { useRoleGuard } from '@/hooks/useRoleGuard';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AdminNavbarProps {
   sidebarOpen: boolean;
@@ -21,12 +20,11 @@ interface AdminNavbarProps {
 
 export function AdminNavbar({ sidebarOpen, onToggleSidebar }: AdminNavbarProps) {
   const navigate = useNavigate();
-  const { userId, role } = useRoleGuard('admin');
+  const { userId, role, signOut } = useAuth();
   const { count: unreadMessages } = useUnreadMessagesCount(userId, role);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/auth');
+    await signOut();
   };
 
   // Full site navigation items (same as main landing page, without Home)

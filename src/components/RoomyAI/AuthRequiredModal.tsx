@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AuthRequiredModalProps {
   isOpen: boolean;
@@ -9,7 +9,12 @@ interface AuthRequiredModalProps {
 }
 
 export const AuthRequiredModal = ({ isOpen, onClose }: AuthRequiredModalProps) => {
-  const navigate = useNavigate();
+  const { openAuthModal } = useAuth();
+
+  const handleSignIn = () => {
+    onClose();
+    openAuthModal();
+  };
 
   return (
     <AnimatePresence>
@@ -43,7 +48,7 @@ export const AuthRequiredModal = ({ isOpen, onClose }: AuthRequiredModalProps) =
 
             <div className="flex flex-col gap-3">
               <Button
-                onClick={() => navigate('/auth')}
+                onClick={handleSignIn}
                 className="w-full bg-gradient-to-r from-primary to-secondary text-white font-semibold py-6 rounded-xl hover:shadow-[0_0_30px_rgba(139,92,246,0.5)]"
               >
                 Sign Up / Log In

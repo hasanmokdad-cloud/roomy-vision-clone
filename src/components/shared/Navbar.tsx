@@ -74,7 +74,7 @@ export default function Navbar() {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     sessionStorage.removeItem('intro-played');
-    navigate('/auth');
+    window.location.href = '/listings';
   };
 
   const handleDashboardClick = () => {

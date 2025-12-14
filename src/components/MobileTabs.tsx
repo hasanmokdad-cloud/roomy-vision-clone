@@ -96,7 +96,7 @@ export default function MobileTabs() {
 
   // All hooks called above - now safe to have conditional returns
   if (hideBottomNav) return null;
-  if (location.pathname === "/auth" || location.pathname.startsWith("/owner") || location.pathname.startsWith("/admin")) return null;
+  if (location.pathname.startsWith("/owner") || location.pathname.startsWith("/admin")) return null;
 
   return (
     <>

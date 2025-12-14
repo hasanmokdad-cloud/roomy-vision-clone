@@ -158,7 +158,7 @@ export default function DormDetail() {
         description: "Please sign in to save dorms.",
         variant: "destructive",
       });
-      navigate('/auth');
+      // Auth modal will be triggered elsewhere
       return;
     }
 

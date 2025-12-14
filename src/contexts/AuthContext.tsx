@@ -49,6 +49,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('🔐 AuthContext: Initializing...');
 
     try {
+      // Wait 100ms for Supabase to hydrate session from localStorage
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Get session with retry
       const { data: { session: currentSession }, error } = await supabase.auth.getSession();
       

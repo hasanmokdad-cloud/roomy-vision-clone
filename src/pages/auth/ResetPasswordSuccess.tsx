@@ -15,7 +15,7 @@ export default function ResetPasswordSuccess() {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          navigate('/auth?mode=login', { replace: true });
+          navigate('/listings', { replace: true });
           return 0;
         }
         return prev - 1;
@@ -90,11 +90,11 @@ export default function ResetPasswordSuccess() {
                   Redirecting in <span className="font-bold text-primary">{countdown}</span> seconds...
                 </p>
                 <Button
-                  onClick={() => navigate('/auth?mode=login', { replace: true })}
+                  onClick={() => navigate('/listings', { replace: true })}
                   className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90"
                   size="lg"
                 >
-                  Return to Login
+                  Continue to Listings
                 </Button>
               </motion.div>
             </CardContent>

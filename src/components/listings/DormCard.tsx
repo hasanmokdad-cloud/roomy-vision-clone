@@ -51,7 +51,7 @@ export default function DormCard({ dorm, index = 0 }: DormCardProps) {
         description: 'Please sign in to contact the owner',
         variant: 'destructive',
       });
-      navigate('/auth');
+      // Auth modal will be triggered by context
       return;
     }
 

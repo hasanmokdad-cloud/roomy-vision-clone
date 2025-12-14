@@ -56,7 +56,7 @@ export default function VerifyEmail() {
             
             // Redirect after 2 seconds
             setTimeout(() => {
-              navigate('/auth?mode=login', { replace: true });
+              navigate('/listings', { replace: true });
             }, 2000);
             return;
           } else {
@@ -146,7 +146,7 @@ export default function VerifyEmail() {
             {/* Error retry button */}
             {step === 'error' && (
               <button
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate('/listings')}
                 className="text-primary hover:underline font-medium"
               >
                 Back to login

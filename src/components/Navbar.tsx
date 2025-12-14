@@ -3,8 +3,11 @@ import { Home, Sparkles, Info, Phone, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import RoomyLogo from '@/assets/roomy-logo.png';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const Navbar = () => {
+  const { openAuthModal } = useAuth();
+  
   const navItems = [
     { icon: Home, label: 'Home', href: '/' },
     { icon: Building2, label: 'Dorms', href: '/listings' },
@@ -70,10 +73,10 @@ export const Navbar = () => {
             </Link>
           </Button>
           <Button
-            asChild
+            onClick={openAuthModal}
             className="bg-gradient-to-r from-primary to-secondary text-white font-semibold px-6 py-2 rounded-xl hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] transition-all duration-300"
           >
-            <Link to="/auth">Get Started</Link>
+            Get Started
           </Button>
         </motion.div>
       </div>
