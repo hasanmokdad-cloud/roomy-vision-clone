@@ -99,10 +99,19 @@ export function useListingsQuery(filters: Filters) {
     
     initAuth();
 
-    // Listener for reactive updates only
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      if (isMounted) {
-        setAuthReady(true);
+    // Listener for reactive updates only - skip during sign-out transition
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      // Skip if we're in the middle of signing out
+      if (sessionStorage.getItem('roomy_signing_out') === 'true') {
+        return;
+      }
+      
+      // Only react to meaningful auth changes, not INITIAL_SESSION
+      // INITIAL_SESSION is already handled by initAuth above
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        if (isMounted) {
+          setAuthReady(true);
+        }
       }
     });
 
