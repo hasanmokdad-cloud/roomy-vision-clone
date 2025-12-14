@@ -51,6 +51,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     console.log('🔐 AuthContext: Initializing...');
 
+    // Check if we were signing out before page reload
+    const wasSigningOut = sessionStorage.getItem('roomy_signing_out') === 'true';
+    
+    if (wasSigningOut) {
+      console.log('🚪 AuthContext: Completing sign-out from previous page...');
+      sessionStorage.removeItem('roomy_signing_out');
+      
+      // Force clear any lingering session
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        // Ignore errors
+      }
+      
+      // Set auth ready with no user
+      setSession(null);
+      setUser(null);
+      setRole(null);
+      setIsAuthReady(true);
+      console.log('✅ AuthContext: Sign-out completed, auth ready');
+      return;
+    }
+
     try {
       // Wait 100ms for Supabase to hydrate session from localStorage
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -90,8 +113,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen ONLY for real auth events (not INITIAL_SESSION)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      // Block ALL events during sign-out to prevent modal flash
-      if (isSigningOutRef.current) {
+      // Block ALL events during sign-out (check both ref and sessionStorage)
+      if (isSigningOutRef.current || sessionStorage.getItem('roomy_signing_out') === 'true') {
         console.log('🔄 AuthContext: Ignoring event during sign-out:', event);
         return;
       }
@@ -135,7 +158,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     console.log('🚪 AuthContext: Signing out...');
     
-    // SET FLAG IMMEDIATELY to block all auth events
+    // SET FLAG IN SESSION STORAGE - persists across page reload
+    sessionStorage.setItem('roomy_signing_out', 'true');
     isSigningOutRef.current = true;
     setIsSigningOut(true);
     
