@@ -18,6 +18,7 @@ import { BottomNavProvider } from "@/contexts/BottomNavContext";
 import { MicPermissionProvider } from "@/contexts/MicPermissionContext";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Lazy load route components
 const CheckEmail = lazy(() => import("./pages/auth/CheckEmail"));
@@ -146,6 +147,7 @@ function ProtectedRoute({
 }) {
   const location = useLocation();
   const { isAuthReady, isAuthenticated, role, openAuthModal, isSigningOut } = useAuth();
+  const isMobile = useIsMobile();
 
   // During sign-out, immediately redirect to listings - never show modal
   if (isSigningOut) {
@@ -160,14 +162,20 @@ function ProtectedRoute({
     );
   }
 
-  // If not authenticated, open auth modal
+  // Pages that handle unauthenticated state with their own Airbnb-style prompts
+  const mobileAuthPages = ['/messages', '/ai-match', '/profile'];
+  const shouldPassThroughMobile = isMobile && mobileAuthPages.some(p => location.pathname.startsWith(p));
+
+  // If not authenticated
   if (!isAuthenticated) {
+    // On mobile for these pages, pass through to let component handle it with inline prompts
+    if (shouldPassThroughMobile) {
+      return element;
+    }
+    
+    // Desktop or other pages: redirect to listings and open modal
     setTimeout(() => openAuthModal(), 100);
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <p className="text-foreground/60">Loading...</p>
-      </div>
-    );
+    return <Navigate to="/listings" replace />;
   }
 
   // Redirect any /select-role access to listings (page no longer exists)
