@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, Wifi, Car, Snowflake, Dumbbell, ShieldCheck, UtensilsCrossed, BookOpen, Trees, Users, Zap, Droplets, Building2, Armchair, PawPrint, Sparkles, Waves, Flower2, DoorOpen } from 'lucide-react';
+import { ChevronDown, ChevronUp, Wifi, Car, Snowflake, Dumbbell, ShieldCheck, UtensilsCrossed, BookOpen, Trees, Users, Zap, Droplets, Building2, Armchair, PawPrint, Sparkles, Waves, Flower2, DoorOpen, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Filters {
   priceRange: [number, number];
@@ -111,6 +113,7 @@ export function AirbnbFiltersModal({
   dorms,
   rooms
 }: AirbnbFiltersModalProps) {
+  const isMobile = useIsMobile();
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [localFilters, setLocalFilters] = useState<Filters>(filters);
 
@@ -267,6 +270,23 @@ export function AirbnbFiltersModal({
   };
 
   const resultLabel = localFilters.residenceType === 'apartment' ? 'Apartments' : 'Rooms';
+
+  // Check if any filters are different from default
+  const hasActiveFilters = useMemo(() => {
+    return (
+      localFilters.priceRange[0] !== 0 ||
+      localFilters.priceRange[1] !== 2000 ||
+      localFilters.universities.length > 0 ||
+      localFilters.areas.length > 0 ||
+      localFilters.roomTypes.length > 0 ||
+      localFilters.capacity !== undefined ||
+      localFilters.cities.length > 0 ||
+      localFilters.shuttle !== 'all' ||
+      localFilters.genderPreference.length > 0 ||
+      localFilters.amenities.length > 0 ||
+      localFilters.residenceType !== null
+    );
+  }, [localFilters]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -690,7 +710,11 @@ export function AirbnbFiltersModal({
           <Button
             variant="ghost"
             onClick={handleClearAll}
-            className="font-medium underline underline-offset-4"
+            disabled={!hasActiveFilters}
+            className={cn(
+              "font-medium underline underline-offset-4",
+              !hasActiveFilters && "text-muted-foreground/50 no-underline cursor-not-allowed"
+            )}
           >
             Clear all
           </Button>

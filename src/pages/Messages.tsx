@@ -175,10 +175,11 @@ const RoomPreviewCard = ({ metadata }: { metadata: Message['attachment_metadata'
 };
 
 export default function Messages() {
-  const { loading: authLoading, userId } = useAuthGuard();
   const { role } = useRoleGuard();
-  const { isAuthenticated, isAuthReady, openAuthModal } = useAuth();
+  const { isAuthenticated, isAuthReady, openAuthModal, userId } = useAuth();
   const isMobile = useIsMobile();
+  // Skip auth guard loading for mobile unauthenticated - they see login prompt
+  const authLoading = !isAuthReady;
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
