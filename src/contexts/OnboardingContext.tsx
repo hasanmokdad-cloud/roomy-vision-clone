@@ -8,6 +8,7 @@ interface OnboardingContextType {
   setCurrentStep: (step: OnboardingStep) => void;
   startOnboarding: () => void;
   completeOnboarding: () => void;
+  resetOnboarding: () => void;
   isOnboardingComplete: boolean;
 }
 
@@ -40,6 +41,13 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setIsOnboardingComplete(true);
   };
 
+  // Reset onboarding for new signups - clears any previous state
+  const resetOnboarding = () => {
+    localStorage.removeItem(ONBOARDING_KEY);
+    setIsOnboardingComplete(false);
+    setCurrentStep('none');
+  };
+
   return (
     <OnboardingContext.Provider
       value={{
@@ -47,6 +55,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setCurrentStep,
         startOnboarding,
         completeOnboarding,
+        resetOnboarding,
         isOnboardingComplete,
       }}
     >
