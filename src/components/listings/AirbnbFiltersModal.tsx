@@ -288,442 +288,483 @@ export function AirbnbFiltersModal({
     );
   }, [localFilters]);
 
+  const filterContent = (
+    <div className="space-y-8">
+
+      {/* Popular Filters Quick-Select */}
+      <section className="space-y-4">
+        <h3 className="text-base font-semibold">Popular Filters</h3>
+        <div className="flex flex-wrap gap-2">
+          {popularFilterCombinations.map((combo) => (
+            <button
+              key={combo.label}
+              onClick={() => setLocalFilters(prev => ({ ...prev, ...combo.filters }))}
+              className="px-4 py-2 rounded-full border text-sm transition-all bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/30 hover:border-primary hover:shadow-md"
+            >
+              ✨ {combo.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <hr className="border-border" />
+      
+      {/* Budget Section */}
+      <section className="space-y-4">
+        <h3 className="text-base font-semibold">Budget</h3>
+        <div className="space-y-4">
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>${localFilters.priceRange[0]}</span>
+            <span>${localFilters.priceRange[1]}</span>
+          </div>
+          <Slider
+            value={localFilters.priceRange}
+            onValueChange={(value) => updateFilter('priceRange', value as [number, number])}
+            min={0}
+            max={2000}
+            step={50}
+            className="mt-2"
+          />
+          <div className="flex flex-wrap gap-2">
+            {budgetPresets.map((preset) => (
+              <button
+                key={preset.label}
+                onClick={() => updateFilter('priceRange', [preset.min, preset.max])}
+                className={cn(
+                  "px-4 py-2 rounded-full border text-sm transition-colors",
+                  localFilters.priceRange[0] === preset.min && localFilters.priceRange[1] === preset.max
+                    ? "bg-foreground text-background border-foreground"
+                    : "border-border hover:border-foreground"
+                )}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <hr className="border-border" />
+
+      {/* City Section - comes right after Budget */}
+      <section className="space-y-4">
+        <h3 className="text-base font-semibold">City</h3>
+        <div className="flex gap-3">
+          {['Byblos', 'Beirut'].map((city) => (
+            <button
+              key={city}
+              onClick={() => handleCitySelect(city)}
+              className={cn(
+                "flex-1 px-6 py-3 rounded-xl border text-sm font-medium transition-colors",
+                localFilters.cities.includes(city)
+                  ? "bg-foreground text-background border-foreground"
+                  : "border-border hover:border-foreground"
+              )}
+            >
+              {city}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* BYBLOS: Area → Gender → Shuttle */}
+      {isByblos && (
+        <>
+          <hr className="border-border" />
+          <section className="space-y-4">
+            <h3 className="text-base font-semibold">Area</h3>
+            <div className="flex flex-wrap gap-2">
+              {byblosAreas.map((area) => (
+                <button
+                  key={area}
+                  onClick={() => toggleArrayFilter('areas', area)}
+                  className={cn(
+                    "px-4 py-2 rounded-full border text-sm transition-colors",
+                    localFilters.areas.includes(area)
+                      ? "bg-foreground text-background border-foreground"
+                      : "border-border hover:border-foreground"
+                  )}
+                >
+                  {area}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <hr className="border-border" />
+          <section className="space-y-4">
+            <h3 className="text-base font-semibold">Gender Preference</h3>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: 'Male', label: '♂ Male Only' },
+                { value: 'Female', label: '♀ Female Only' },
+                { value: 'Mixed', label: '⚥ Co-ed' }
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => toggleArrayFilter('genderPreference', option.value)}
+                  className={cn(
+                    "px-4 py-2 rounded-full border text-sm transition-colors",
+                    localFilters.genderPreference.includes(option.value)
+                      ? "bg-foreground text-background border-foreground"
+                      : "border-border hover:border-foreground"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <hr className="border-border" />
+          <section className="space-y-4">
+            <h3 className="text-base font-semibold">Shuttle Service</h3>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: 'all', label: 'All' },
+                { value: 'available', label: 'Shuttle Available' },
+                { value: 'none', label: 'No Shuttle' }
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => updateFilter('shuttle', option.value as 'all' | 'available' | 'none')}
+                  className={cn(
+                    "px-4 py-2 rounded-full border text-sm transition-colors",
+                    localFilters.shuttle === option.value
+                      ? "bg-foreground text-background border-foreground"
+                      : "border-border hover:border-foreground"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* BEIRUT: Area → Gender */}
+      {isBeirut && (
+        <>
+          <hr className="border-border" />
+          <section className="space-y-4">
+            <h3 className="text-base font-semibold">Area</h3>
+            <div className="flex flex-wrap gap-2">
+              {beirutAreas.map((area) => (
+                <button
+                  key={area}
+                  onClick={() => toggleArrayFilter('areas', area)}
+                  className={cn(
+                    "px-4 py-2 rounded-full border text-sm transition-colors",
+                    localFilters.areas.includes(area)
+                      ? "bg-foreground text-background border-foreground"
+                      : "border-border hover:border-foreground"
+                  )}
+                >
+                  {area}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <hr className="border-border" />
+          <section className="space-y-4">
+            <h3 className="text-base font-semibold">Gender Preference</h3>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: 'Male', label: '♂ Male Only' },
+                { value: 'Female', label: '♀ Female Only' },
+                { value: 'Mixed', label: '⚥ Co-ed' }
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => toggleArrayFilter('genderPreference', option.value)}
+                  className={cn(
+                    "px-4 py-2 rounded-full border text-sm transition-colors",
+                    localFilters.genderPreference.includes(option.value)
+                      ? "bg-foreground text-background border-foreground"
+                      : "border-border hover:border-foreground"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* Gender Preference - when no city selected */}
+      {!isByblos && !isBeirut && (
+        <>
+          <hr className="border-border" />
+          <section className="space-y-4">
+            <h3 className="text-base font-semibold">Gender Preference</h3>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: 'Male', label: '♂ Male Only' },
+                { value: 'Female', label: '♀ Female Only' },
+                { value: 'Mixed', label: '⚥ Co-ed' }
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => toggleArrayFilter('genderPreference', option.value)}
+                  className={cn(
+                    "px-4 py-2 rounded-full border text-sm transition-colors",
+                    localFilters.genderPreference.includes(option.value)
+                      ? "bg-foreground text-background border-foreground"
+                      : "border-border hover:border-foreground"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+
+      <hr className="border-border" />
+
+      {/* Residence Type Section */}
+      <section className="space-y-4">
+        <h3 className="text-base font-semibold">Residence Type</h3>
+        <div className="flex gap-3">
+          {[
+            { value: 'room' as const, label: 'Room' },
+            { value: 'apartment' as const, label: 'Apartment' }
+          ].map((option) => (
+            <button
+              key={option.value}
+              onClick={() => handleResidenceTypeSelect(option.value)}
+              className={cn(
+                "flex-1 px-6 py-3 rounded-xl border text-sm font-medium transition-colors",
+                localFilters.residenceType === option.value
+                  ? "bg-foreground text-background border-foreground"
+                  : "border-border hover:border-foreground"
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Capacity Section - Only if Apartment selected */}
+      {localFilters.residenceType === 'apartment' && (
+        <>
+          <hr className="border-border" />
+          <section className="space-y-4">
+            <h3 className="text-base font-semibold">Capacity</h3>
+            <div className="flex flex-wrap gap-2">
+              {capacityOptions.map((cap) => (
+                <button
+                  key={cap}
+                  onClick={() => updateFilter('capacity', localFilters.capacity === cap ? undefined : cap)}
+                  className={cn(
+                    "px-4 py-2 rounded-full border text-sm transition-colors min-w-[80px]",
+                    localFilters.capacity === cap
+                      ? "bg-foreground text-background border-foreground"
+                      : "border-border hover:border-foreground"
+                  )}
+                >
+                  {cap}{cap === 6 ? '+' : ''} {cap === 1 ? 'student' : 'students'}
+                </button>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* Room Type Section - Only if Room selected */}
+      {localFilters.residenceType === 'room' && (
+        <>
+          <hr className="border-border" />
+          <section className="space-y-4">
+            <h3 className="text-base font-semibold">Room Type</h3>
+            <div className="flex flex-wrap gap-2">
+              {roomTypesWithoutApartment.map((type) => (
+                <button
+                  key={type}
+                  onClick={() => toggleArrayFilter('roomTypes', type)}
+                  className={cn(
+                    "px-4 py-2 rounded-full border text-sm transition-colors",
+                    localFilters.roomTypes.includes(type)
+                      ? "bg-foreground text-background border-foreground"
+                      : "border-border hover:border-foreground"
+                  )}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* Universities Section - Conditional on City */}
+      {(isByblos || isBeirut) && visibleUniversities.length > 0 && (
+        <>
+          <hr className="border-border" />
+          <section className="space-y-4">
+            <h3 className="text-base font-semibold">Universities</h3>
+            <div className="flex flex-wrap gap-2">
+              {visibleUniversities.map((uni) => (
+                <button
+                  key={uni}
+                  onClick={() => toggleArrayFilter('universities', uni)}
+                  className={cn(
+                    "px-4 py-2 rounded-full border text-sm transition-colors",
+                    localFilters.universities.includes(uni)
+                      ? "bg-foreground text-background border-foreground"
+                      : "border-border hover:border-foreground"
+                  )}
+                >
+                  {uni}
+                </button>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+
+      <hr className="border-border" />
+
+      {/* Amenities Section */}
+      <section className="space-y-4">
+        <h3 className="text-base font-semibold">Amenities</h3>
+        
+        {/* Popular amenities always visible */}
+        <div className="flex flex-wrap gap-3">
+          {popularAmenities.map(({ name, icon: Icon }) => (
+            <button
+              key={name}
+              onClick={() => toggleArrayFilter('amenities', name)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors",
+                localFilters.amenities.includes(name)
+                  ? "bg-foreground text-background border-foreground"
+                  : "border-border hover:border-foreground"
+              )}
+            >
+              <Icon className="h-5 w-5" />
+              {name}
+            </button>
+          ))}
+        </div>
+
+        {/* Show more/less button */}
+        <button
+          onClick={() => setShowAllAmenities(!showAllAmenities)}
+          className="flex items-center gap-1 text-sm font-medium underline underline-offset-4 hover:text-muted-foreground transition-colors"
+        >
+          {showAllAmenities ? 'Show less' : 'Show more'}
+          {showAllAmenities ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+
+        {/* Expanded amenities by category */}
+        {showAllAmenities && (
+          <div className="space-y-6 pt-2">
+            {Object.entries(amenityCategories).map(([category, amenities]) => (
+              category !== 'Popular' && (
+                <div key={category} className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">{category}</h4>
+                  <div className="flex flex-wrap gap-3">
+                    {amenities.map(({ name, icon: Icon }) => (
+                      <button
+                        key={name}
+                        onClick={() => toggleArrayFilter('amenities', name)}
+                        className={cn(
+                          "flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors",
+                          localFilters.amenities.includes(name)
+                            ? "bg-foreground text-background border-foreground"
+                            : "border-border hover:border-foreground"
+                        )}
+                      >
+                        <Icon className="h-5 w-5" />
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            ))}
+          </div>
+        )}
+      </section>
+
+    </div>
+  );
+
+  const footerContent = (
+    <div className="flex items-center justify-between w-full">
+      <Button
+        variant="ghost"
+        onClick={handleClearAll}
+        disabled={!hasActiveFilters}
+        className={cn(
+          "font-medium underline underline-offset-4",
+          !hasActiveFilters && "text-muted-foreground/50 no-underline cursor-not-allowed"
+        )}
+      >
+        Clear all
+      </Button>
+      <Button
+        onClick={handleApply}
+        className="px-6 py-3 bg-foreground text-background hover:bg-foreground/90 rounded-lg font-medium"
+      >
+        Show {previewCount} {resultLabel}
+      </Button>
+    </div>
+  );
+
+  // Mobile: Use Drawer (slides up from bottom like Airbnb)
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="h-[95vh] flex flex-col">
+          {/* Fixed Header */}
+          <DrawerHeader className="flex-shrink-0 border-b border-border px-4 py-3 relative">
+            <button 
+              onClick={() => onOpenChange(false)}
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-muted"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <DrawerTitle className="text-base font-semibold text-center">Filters</DrawerTitle>
+          </DrawerHeader>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto px-4 py-6">
+            {filterContent}
+          </div>
+
+          {/* Fixed Footer */}
+          <div className="flex-shrink-0 border-t border-border px-4 py-3 bg-background">
+            {footerContent}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  // Desktop: Use Dialog
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl max-h-[85vh] p-0 gap-0 flex flex-col overflow-hidden bg-background border-border">
-        {/* Fixed Header - Only the auto-generated X button from DialogContent */}
+        {/* Fixed Header */}
         <DialogHeader className="flex-shrink-0 border-b border-border px-6 py-4">
           <DialogTitle className="text-lg font-semibold text-center">Filters</DialogTitle>
         </DialogHeader>
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-6 py-6">
-          <div className="space-y-8">
-
-            {/* Popular Filters Quick-Select */}
-            <section className="space-y-4">
-              <h3 className="text-base font-semibold">Popular Filters</h3>
-              <div className="flex flex-wrap gap-2">
-                {popularFilterCombinations.map((combo) => (
-                  <button
-                    key={combo.label}
-                    onClick={() => setLocalFilters(prev => ({ ...prev, ...combo.filters }))}
-                    className="px-4 py-2 rounded-full border text-sm transition-all bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/30 hover:border-primary hover:shadow-md"
-                  >
-                    ✨ {combo.label}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <hr className="border-border" />
-            
-            {/* Budget Section */}
-            <section className="space-y-4">
-              <h3 className="text-base font-semibold">Budget</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>${localFilters.priceRange[0]}</span>
-                  <span>${localFilters.priceRange[1]}</span>
-                </div>
-                <Slider
-                  value={localFilters.priceRange}
-                  onValueChange={(value) => updateFilter('priceRange', value as [number, number])}
-                  min={0}
-                  max={2000}
-                  step={50}
-                  className="mt-2"
-                />
-                <div className="flex flex-wrap gap-2">
-                  {budgetPresets.map((preset) => (
-                    <button
-                      key={preset.label}
-                      onClick={() => updateFilter('priceRange', [preset.min, preset.max])}
-                      className={cn(
-                        "px-4 py-2 rounded-full border text-sm transition-colors",
-                        localFilters.priceRange[0] === preset.min && localFilters.priceRange[1] === preset.max
-                          ? "bg-foreground text-background border-foreground"
-                          : "border-border hover:border-foreground"
-                      )}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            <hr className="border-border" />
-
-            {/* City Section - comes right after Budget */}
-            <section className="space-y-4">
-              <h3 className="text-base font-semibold">City</h3>
-              <div className="flex gap-3">
-                {['Byblos', 'Beirut'].map((city) => (
-                  <button
-                    key={city}
-                    onClick={() => handleCitySelect(city)}
-                    className={cn(
-                      "flex-1 px-6 py-3 rounded-xl border text-sm font-medium transition-colors",
-                      localFilters.cities.includes(city)
-                        ? "bg-foreground text-background border-foreground"
-                        : "border-border hover:border-foreground"
-                    )}
-                  >
-                    {city}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            {/* BYBLOS: Area → Gender → Shuttle */}
-            {isByblos && (
-              <>
-                <hr className="border-border" />
-                <section className="space-y-4">
-                  <h3 className="text-base font-semibold">Area</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {byblosAreas.map((area) => (
-                      <button
-                        key={area}
-                        onClick={() => toggleArrayFilter('areas', area)}
-                        className={cn(
-                          "px-4 py-2 rounded-full border text-sm transition-colors",
-                          localFilters.areas.includes(area)
-                            ? "bg-foreground text-background border-foreground"
-                            : "border-border hover:border-foreground"
-                        )}
-                      >
-                        {area}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                <hr className="border-border" />
-                <section className="space-y-4">
-                  <h3 className="text-base font-semibold">Gender Preference</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { value: 'Male', label: '♂ Male Only' },
-                      { value: 'Female', label: '♀ Female Only' },
-                      { value: 'Mixed', label: '⚥ Co-ed' }
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => toggleArrayFilter('genderPreference', option.value)}
-                        className={cn(
-                          "px-4 py-2 rounded-full border text-sm transition-colors",
-                          localFilters.genderPreference.includes(option.value)
-                            ? "bg-foreground text-background border-foreground"
-                            : "border-border hover:border-foreground"
-                        )}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                <hr className="border-border" />
-                <section className="space-y-4">
-                  <h3 className="text-base font-semibold">Shuttle Service</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { value: 'all', label: 'All' },
-                      { value: 'available', label: 'Shuttle Available' },
-                      { value: 'none', label: 'No Shuttle' }
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => updateFilter('shuttle', option.value as 'all' | 'available' | 'none')}
-                        className={cn(
-                          "px-4 py-2 rounded-full border text-sm transition-colors",
-                          localFilters.shuttle === option.value
-                            ? "bg-foreground text-background border-foreground"
-                            : "border-border hover:border-foreground"
-                        )}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              </>
-            )}
-
-            {/* BEIRUT: Area → Gender */}
-            {isBeirut && (
-              <>
-                <hr className="border-border" />
-                <section className="space-y-4">
-                  <h3 className="text-base font-semibold">Area</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {beirutAreas.map((area) => (
-                      <button
-                        key={area}
-                        onClick={() => toggleArrayFilter('areas', area)}
-                        className={cn(
-                          "px-4 py-2 rounded-full border text-sm transition-colors",
-                          localFilters.areas.includes(area)
-                            ? "bg-foreground text-background border-foreground"
-                            : "border-border hover:border-foreground"
-                        )}
-                      >
-                        {area}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                <hr className="border-border" />
-                <section className="space-y-4">
-                  <h3 className="text-base font-semibold">Gender Preference</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { value: 'Male', label: '♂ Male Only' },
-                      { value: 'Female', label: '♀ Female Only' },
-                      { value: 'Mixed', label: '⚥ Co-ed' }
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => toggleArrayFilter('genderPreference', option.value)}
-                        className={cn(
-                          "px-4 py-2 rounded-full border text-sm transition-colors",
-                          localFilters.genderPreference.includes(option.value)
-                            ? "bg-foreground text-background border-foreground"
-                            : "border-border hover:border-foreground"
-                        )}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              </>
-            )}
-
-            {/* Gender Preference - when no city selected */}
-            {!isByblos && !isBeirut && (
-              <>
-                <hr className="border-border" />
-                <section className="space-y-4">
-                  <h3 className="text-base font-semibold">Gender Preference</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { value: 'Male', label: '♂ Male Only' },
-                      { value: 'Female', label: '♀ Female Only' },
-                      { value: 'Mixed', label: '⚥ Co-ed' }
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => toggleArrayFilter('genderPreference', option.value)}
-                        className={cn(
-                          "px-4 py-2 rounded-full border text-sm transition-colors",
-                          localFilters.genderPreference.includes(option.value)
-                            ? "bg-foreground text-background border-foreground"
-                            : "border-border hover:border-foreground"
-                        )}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              </>
-            )}
-
-            <hr className="border-border" />
-
-            {/* Residence Type Section */}
-            <section className="space-y-4">
-              <h3 className="text-base font-semibold">Residence Type</h3>
-              <div className="flex gap-3">
-                {[
-                  { value: 'room' as const, label: 'Room' },
-                  { value: 'apartment' as const, label: 'Apartment' }
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => handleResidenceTypeSelect(option.value)}
-                    className={cn(
-                      "flex-1 px-6 py-3 rounded-xl border text-sm font-medium transition-colors",
-                      localFilters.residenceType === option.value
-                        ? "bg-foreground text-background border-foreground"
-                        : "border-border hover:border-foreground"
-                    )}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            {/* Capacity Section - Only if Apartment selected */}
-            {localFilters.residenceType === 'apartment' && (
-              <>
-                <hr className="border-border" />
-                <section className="space-y-4">
-                  <h3 className="text-base font-semibold">Capacity</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {capacityOptions.map((cap) => (
-                      <button
-                        key={cap}
-                        onClick={() => updateFilter('capacity', localFilters.capacity === cap ? undefined : cap)}
-                        className={cn(
-                          "px-4 py-2 rounded-full border text-sm transition-colors min-w-[80px]",
-                          localFilters.capacity === cap
-                            ? "bg-foreground text-background border-foreground"
-                            : "border-border hover:border-foreground"
-                        )}
-                      >
-                        {cap}{cap === 6 ? '+' : ''} {cap === 1 ? 'student' : 'students'}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              </>
-            )}
-
-            {/* Room Type Section - Only if Room selected */}
-            {localFilters.residenceType === 'room' && (
-              <>
-                <hr className="border-border" />
-                <section className="space-y-4">
-                  <h3 className="text-base font-semibold">Room Type</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {roomTypesWithoutApartment.map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => toggleArrayFilter('roomTypes', type)}
-                        className={cn(
-                          "px-4 py-2 rounded-full border text-sm transition-colors",
-                          localFilters.roomTypes.includes(type)
-                            ? "bg-foreground text-background border-foreground"
-                            : "border-border hover:border-foreground"
-                        )}
-                      >
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              </>
-            )}
-
-            {/* Universities Section - Conditional on City */}
-            {(isByblos || isBeirut) && visibleUniversities.length > 0 && (
-              <>
-                <hr className="border-border" />
-                <section className="space-y-4">
-                  <h3 className="text-base font-semibold">Universities</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {visibleUniversities.map((uni) => (
-                      <button
-                        key={uni}
-                        onClick={() => toggleArrayFilter('universities', uni)}
-                        className={cn(
-                          "px-4 py-2 rounded-full border text-sm transition-colors",
-                          localFilters.universities.includes(uni)
-                            ? "bg-foreground text-background border-foreground"
-                            : "border-border hover:border-foreground"
-                        )}
-                      >
-                        {uni}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              </>
-            )}
-
-            <hr className="border-border" />
-
-            {/* Amenities Section */}
-            <section className="space-y-4">
-              <h3 className="text-base font-semibold">Amenities</h3>
-              
-              {/* Popular amenities always visible */}
-              <div className="flex flex-wrap gap-3">
-                {popularAmenities.map(({ name, icon: Icon }) => (
-                  <button
-                    key={name}
-                    onClick={() => toggleArrayFilter('amenities', name)}
-                    className={cn(
-                      "flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors",
-                      localFilters.amenities.includes(name)
-                        ? "bg-foreground text-background border-foreground"
-                        : "border-border hover:border-foreground"
-                    )}
-                  >
-                    <Icon className="h-5 w-5" />
-                    {name}
-                  </button>
-                ))}
-              </div>
-
-              {/* Show more/less button */}
-              <button
-                onClick={() => setShowAllAmenities(!showAllAmenities)}
-                className="flex items-center gap-1 text-sm font-medium underline underline-offset-4 hover:text-muted-foreground transition-colors"
-              >
-                {showAllAmenities ? 'Show less' : 'Show more'}
-                {showAllAmenities ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </button>
-
-              {/* Expanded amenities by category */}
-              {showAllAmenities && (
-                <div className="space-y-6 pt-2">
-                  {Object.entries(amenityCategories).map(([category, amenities]) => (
-                    category !== 'Popular' && (
-                      <div key={category} className="space-y-3">
-                        <h4 className="text-sm font-medium text-muted-foreground">{category}</h4>
-                        <div className="flex flex-wrap gap-3">
-                          {amenities.map(({ name, icon: Icon }) => (
-                            <button
-                              key={name}
-                              onClick={() => toggleArrayFilter('amenities', name)}
-                              className={cn(
-                                "flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors",
-                                localFilters.amenities.includes(name)
-                                  ? "bg-foreground text-background border-foreground"
-                                  : "border-border hover:border-foreground"
-                              )}
-                            >
-                              <Icon className="h-5 w-5" />
-                              {name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  ))}
-                </div>
-              )}
-            </section>
-
-          </div>
+          {filterContent}
         </div>
 
         {/* Fixed Footer */}
-        <div className="flex-shrink-0 border-t border-border px-6 py-4 flex items-center justify-between bg-background">
-          <Button
-            variant="ghost"
-            onClick={handleClearAll}
-            disabled={!hasActiveFilters}
-            className={cn(
-              "font-medium underline underline-offset-4",
-              !hasActiveFilters && "text-muted-foreground/50 no-underline cursor-not-allowed"
-            )}
-          >
-            Clear all
-          </Button>
-          <Button
-            onClick={handleApply}
-            className="px-6 py-3 bg-foreground text-background hover:bg-foreground/90 rounded-lg font-medium"
-          >
-            Show {previewCount} {resultLabel}
-          </Button>
+        <div className="flex-shrink-0 border-t border-border px-6 py-4 bg-background">
+          {footerContent}
         </div>
       </DialogContent>
     </Dialog>

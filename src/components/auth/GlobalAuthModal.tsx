@@ -270,10 +270,16 @@ export function GlobalAuthModal() {
     </>
   );
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      closeAuthModal();
+    }
+  };
+
   // Mobile: Use Drawer (slides up from bottom like Airbnb)
   if (isMobile) {
     return (
-      <Drawer open={authModalOpen} onOpenChange={(open) => !open && closeAuthModal()}>
+      <Drawer open={authModalOpen} onOpenChange={handleOpenChange}>
         <DrawerContent className="max-h-[90vh]">
           <DrawerHeader className="relative border-b border-border">
             <Button
@@ -303,7 +309,7 @@ export function GlobalAuthModal() {
 
   // Desktop: Use Dialog
   return (
-    <Dialog open={authModalOpen} onOpenChange={(open) => !open && closeAuthModal()}>
+    <Dialog open={authModalOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center">
