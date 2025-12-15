@@ -48,19 +48,12 @@ const AiMatch = () => {
   const [showDebug, setShowDebug] = useState(false);
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
-  // Check authentication - show Airbnb-style login prompt for mobile unauthenticated
+  // Check authentication - show Airbnb-style login prompt for unauthenticated users
   useEffect(() => {
-    if (!isAuthReady) return;
-    
-    if (!isAuthenticated && !isMobile) {
-      openAuthModal();
-      return;
-    }
+    if (!isAuthReady || !isAuthenticated || !userId) return;
 
     // Check if admin
     const checkAdmin = async () => {
-      if (!userId) return;
-      
       const { data: roles } = await supabase
         .from('user_roles')
         .select('*, roles(*)')
@@ -74,18 +67,16 @@ const AiMatch = () => {
       setShowDebug(urlParams.get('ai_debug') === '1' && !!adminRole);
     };
 
-    if (isAuthenticated) {
-      checkAdmin();
-    }
-  }, [isAuthReady, isAuthenticated, userId, openAuthModal, isMobile]);
+    checkAdmin();
+  }, [isAuthReady, isAuthenticated, userId]);
 
-  // Mobile unauthenticated state - Airbnb style
-  if (isAuthReady && !isAuthenticated && isMobile) {
+  // Unauthenticated state - Airbnb style (both mobile and desktop)
+  if (isAuthReady && !isAuthenticated) {
     return (
       <div className="min-h-screen bg-background">
         {!isMobile && <RoomyNavbar />}
         
-        <div className="pt-20 px-6 pb-32">
+        <div className={`${isMobile ? 'pt-20 px-6 pb-32' : 'pt-32 px-6 pb-16'}`}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -110,7 +101,7 @@ const AiMatch = () => {
           </motion.div>
         </div>
         
-        <BottomNav />
+        {isMobile && <BottomNav />}
       </div>
     );
   }

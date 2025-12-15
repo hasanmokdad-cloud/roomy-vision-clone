@@ -15,7 +15,6 @@ import {
   CalendarDays,
   Home,
   MessageCircle,
-  LogIn,
 } from "lucide-react";
 
 type TabConfig = {
@@ -55,13 +54,13 @@ export default function MobileTabs() {
   // Role-based tab configurations
   const getTabs = (): TabConfig[] => {
     if (!isAuthenticated) {
-      // Public/Anonymous users
+      // Public/Anonymous users - use User icon with pink styling for login
       return [
         { path: "/wishlists", icon: Heart, label: "Wishlists" },
         { path: "/ai-match", icon: Sparkles, label: "AI Match" },
         { path: "/listings", icon: Search, label: "Explore" },
         { path: "/messages", icon: MessageSquare, label: "Inbox" },
-        { path: "/profile", icon: LogIn, label: "Log in" },
+        { path: "/profile", icon: User, label: "Log in" },
       ];
     }
 
@@ -129,9 +128,12 @@ export default function MobileTabs() {
           >
             <Icon 
               className={`w-6 h-6 transition-colors ${
-                isActive 
-                  ? "text-foreground" 
-                  : "text-muted-foreground"
+                // Pink styling for Login tab when not authenticated
+                path === '/profile' && !isAuthenticated
+                  ? isActive ? "text-pink-500" : "text-pink-400"
+                  : isActive 
+                    ? "text-foreground" 
+                    : "text-muted-foreground"
               }`}
               fill={isActive && (path === '/wishlists') ? "currentColor" : "none"}
               strokeWidth={isActive ? 2.5 : 2}

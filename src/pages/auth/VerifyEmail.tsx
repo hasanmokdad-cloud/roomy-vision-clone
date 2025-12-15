@@ -6,12 +6,14 @@ import { CheckCircle, Loader2 } from "lucide-react";
 import FluidBackground from "@/components/FluidBackground";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useOnboarding } from "@/contexts/OnboardingContext";
 
 type VerificationStep = 'checking' | 'loading' | 'verifying' | 'success' | 'error';
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { startOnboarding } = useOnboarding();
   const [step, setStep] = useState<VerificationStep>('checking');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -51,13 +53,14 @@ export default function VerifyEmail() {
             setStep('success');
             toast({
               title: "Email verified",
-              description: "Your email has been verified successfully. You can now sign in.",
+              description: "Your email has been verified successfully.",
             });
             
-            // Redirect after 2 seconds
+            // Start onboarding flow and redirect
             setTimeout(() => {
+              startOnboarding();
               navigate('/listings', { replace: true });
-            }, 2000);
+            }, 1500);
             return;
           } else {
             setErrorMessage(data?.error || "Invalid or expired verification link");
