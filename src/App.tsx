@@ -265,7 +265,7 @@ const AppRoutes = () => {
           {/* Protected Routes - Requires authentication */}
           <Route path="/my-tours" element={<ProtectedRoute element={<StudentTours />} forbiddenRoles={["owner"]} />} />
           <Route path="/onboarding" element={<ProtectedRoute element={<Onboarding />} />} />
-          <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<ProtectedRoute element={<Settings />} />} />
           <Route path="/settings/devices" element={<ProtectedRoute element={<DevicesPage />} />} />
           <Route path="/saved-dorms" element={<ProtectedRoute element={<SavedDorms />} />} />
