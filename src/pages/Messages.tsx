@@ -222,11 +222,13 @@ export default function Messages() {
   const touchStartPosRef = useRef({ x: 0, y: 0 });
   const micButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Mobile unauthenticated state - Airbnb style
-  if (isAuthReady && !isAuthenticated && isMobile) {
+  // Unauthenticated state - Airbnb style (both mobile and desktop)
+  if (isAuthReady && !isAuthenticated) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="pt-20 px-6 pb-32">
+        {!isMobile && <RoomyNavbar />}
+        
+        <div className={`${isMobile ? 'pt-20 px-6 pb-32' : 'pt-32 px-6 pb-16'}`}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -251,7 +253,7 @@ export default function Messages() {
           </motion.div>
         </div>
         
-        <BottomNav />
+        {isMobile && <BottomNav />}
       </div>
     );
   }

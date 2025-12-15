@@ -188,7 +188,7 @@ export default function Listings() {
   return (
     <div className="min-h-screen flex flex-col relative">
       <SkipToContent />
-      <RoomyNavbar />
+      {!isMobile && <RoomyNavbar />}
       
       <ScrollImmersion>
         <main id="main-content" className="flex-1 container mx-auto px-4 py-8 mt-20" role="main">

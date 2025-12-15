@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { XCircle, Home, RotateCw, Search } from 'lucide-react';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from '@/hooks/use-toast';
 
 export default function ReservationFailed() {
+  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [pendingReservation, setPendingReservation] = useState<any>(null);
@@ -65,7 +67,7 @@ export default function ReservationFailed() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <RoomyNavbar />
+      {!isMobile && <RoomyNavbar />}
       
       <main className="flex-1 container mx-auto px-4 py-12 flex items-center justify-center">
         <Card className="w-full max-w-lg shadow-xl border-destructive/20">

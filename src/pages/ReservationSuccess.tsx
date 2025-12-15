@@ -7,8 +7,10 @@ import { CheckCircle2, Home, MessageSquare, Calendar } from 'lucide-react';
 import { Confetti } from '@/components/profile/Confetti';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function ReservationSuccess() {
+  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [reservation, setReservation] = useState<any>(null);
@@ -65,7 +67,7 @@ export default function ReservationSuccess() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {showConfetti && <Confetti />}
-      <RoomyNavbar />
+      {!isMobile && <RoomyNavbar />}
       
       <main className="flex-1 container mx-auto px-4 py-12 flex items-center justify-center">
         <Card className="w-full max-w-lg shadow-xl">
