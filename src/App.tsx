@@ -16,6 +16,8 @@ import { MobileSwipeLayout } from "./layouts/MobileSwipeLayout";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { BottomNavProvider } from "@/contexts/BottomNavContext";
 import { MicPermissionProvider } from "@/contexts/MicPermissionContext";
+import { OnboardingProvider } from "@/contexts/OnboardingContext";
+import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 
 // Lazy load route components
 const CheckEmail = lazy(() => import("./pages/auth/CheckEmail"));
@@ -356,16 +358,19 @@ const App = () => (
         <TooltipProvider>
           <AuthProvider>
             <MicPermissionProvider>
-              <BottomNavProvider>
-                <div className="w-full max-w-screen overflow-x-hidden">
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter>
-                    <GlobalAuthModal />
-                    <AppRoutes />
-                  </BrowserRouter>
-                </div>
-              </BottomNavProvider>
+              <OnboardingProvider>
+                <BottomNavProvider>
+                  <div className="w-full max-w-screen overflow-x-hidden">
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter>
+                      <GlobalAuthModal />
+                      <OnboardingFlow />
+                      <AppRoutes />
+                    </BrowserRouter>
+                  </div>
+                </BottomNavProvider>
+              </OnboardingProvider>
             </MicPermissionProvider>
           </AuthProvider>
         </TooltipProvider>
