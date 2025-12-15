@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { StudentProfileForm } from '@/components/StudentProfileForm';
 import { OwnerProfileForm } from '@/components/OwnerProfileForm';
@@ -7,26 +7,29 @@ import { AdminProfileForm } from '@/components/AdminProfileForm';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Loader2, Bell, Globe, Settings, ChevronRight, HelpCircle, Scale, Building2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Bell, Globe, Settings, HelpCircle, Scale, Building2, User, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
 import { LanguageModal } from '@/components/LanguageModal';
 import BottomNav from '@/components/BottomNav';
+import { MobileMenuRow } from '@/components/mobile/MobileMenuRow';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function Profile() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const { isAuthReady, userId, role, isAuthenticated, openAuthModal } = useAuth();
+  const { isAuthReady, userId, role, isAuthenticated, openAuthModal, signOut } = useAuth();
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [ownerData, setOwnerData] = useState<any>(null);
   const [notifyEmail, setNotifyEmail] = useState(true);
   const [notifyWhatsapp, setNotifyWhatsapp] = useState(true);
   const [whatsappLanguage, setWhatsappLanguage] = useState('EN');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showProfileForm, setShowProfileForm] = useState(false);
 
   useEffect(() => {
     if (!isAuthReady) return;
@@ -39,14 +42,15 @@ export default function Profile() {
     const loadProfileData = async () => {
       if (!userId) return;
       
-      // Get profile photo based on role
+      // Get profile photo and name based on role
       if (role === 'student') {
         const { data: student } = await supabase
           .from('students')
-          .select('profile_photo_url')
+          .select('profile_photo_url, full_name')
           .eq('user_id', userId)
           .single();
         setProfilePhotoUrl(student?.profile_photo_url || null);
+        setUserName(student?.full_name || '');
       } else if (role === 'owner') {
         const { data: owner } = await supabase
           .from('owners')
@@ -54,6 +58,7 @@ export default function Profile() {
           .eq('user_id', userId)
           .single();
         setProfilePhotoUrl(owner?.profile_photo_url || null);
+        setUserName(owner?.full_name || '');
         if (owner) {
           setOwnerData(owner);
           setNotifyEmail(owner.notify_email ?? true);
@@ -63,10 +68,11 @@ export default function Profile() {
       } else if (role === 'admin') {
         const { data: admin } = await supabase
           .from('admins')
-          .select('profile_photo_url')
+          .select('profile_photo_url, full_name')
           .eq('user_id', userId)
           .maybeSingle();
         setProfilePhotoUrl(admin?.profile_photo_url || null);
+        setUserName(admin?.full_name || '');
       }
 
       setLoading(false);
@@ -77,6 +83,17 @@ export default function Profile() {
 
   const handlePhotoUploaded = (url: string) => {
     setProfilePhotoUrl(url);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
+  const getRoleLabel = () => {
+    if (role === 'student') return 'Student';
+    if (role === 'owner') return 'Owner';
+    if (role === 'admin') return 'Admin';
+    return '';
   };
 
   // Mobile unauthenticated state - Airbnb style
@@ -102,56 +119,28 @@ export default function Profile() {
               Log in or sign up
             </Button>
 
-            {/* Settings Options */}
-            <div className="pt-6 space-y-2">
-              <Card 
-                className="cursor-pointer hover:bg-accent/50 transition-colors"
+            {/* Menu Items - No Card wrappers */}
+            <div className="pt-4 divide-y divide-border/20">
+              <MobileMenuRow
+                icon={<Settings className="w-6 h-6" />}
+                label="Account settings"
                 onClick={() => openAuthModal()}
-              >
-                <CardContent className="p-4 flex items-center justify-between">
-                  <span className="text-foreground">Settings</span>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                </CardContent>
-              </Card>
-
-              <Card 
-                className="cursor-pointer hover:bg-accent/50 transition-colors"
-                onClick={() => setShowLanguageModal(true)}
-              >
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Globe className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-foreground">Language</span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                </CardContent>
-              </Card>
-
-              <Card 
-                className="cursor-pointer hover:bg-accent/50 transition-colors"
+              />
+              <MobileMenuRow
+                icon={<HelpCircle className="w-6 h-6" />}
+                label="Get help"
                 onClick={() => navigate('/contact')}
-              >
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <HelpCircle className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-foreground">Get help</span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                </CardContent>
-              </Card>
-
-              <Card 
-                className="cursor-pointer hover:bg-accent/50 transition-colors"
+              />
+              <MobileMenuRow
+                icon={<Globe className="w-6 h-6" />}
+                label="Language"
+                onClick={() => setShowLanguageModal(true)}
+              />
+              <MobileMenuRow
+                icon={<Scale className="w-6 h-6" />}
+                label="Legal"
                 onClick={() => navigate('/legal/terms')}
-              >
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Scale className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-foreground">Legal</span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                </CardContent>
-              </Card>
+              />
             </div>
           </motion.div>
         </div>
@@ -187,47 +176,38 @@ export default function Profile() {
     return '/listings';
   };
 
-  // Mobile authenticated profile with extra options
+  // Mobile authenticated profile - Airbnb style hub
   if (isMobile) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="pt-6 px-6 pb-32">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            {/* Header with notification bell */}
-            <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-bold text-foreground">Profile</h1>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => navigate('/settings')}
-              >
-                <Bell className="w-6 h-6" />
-              </Button>
+    // If showing profile form, render it full screen
+    if (showProfileForm) {
+      return (
+        <div className="min-h-screen bg-background">
+          <div className="pt-6 px-6 pb-32">
+            {/* Back button */}
+            <button
+              onClick={() => setShowProfileForm(false)}
+              className="flex items-center gap-2 text-foreground mb-6"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="text-lg font-semibold">Personal info</span>
+            </button>
+
+            {/* Profile Photo */}
+            <div className="flex justify-center mb-6">
+              <ProfilePhotoUpload
+                userId={userId!}
+                currentUrl={profilePhotoUrl}
+                onUploaded={handlePhotoUploaded}
+                tableName={role === 'student' ? 'students' : role === 'owner' ? 'owners' : 'admins'}
+              />
             </div>
 
             {/* Profile Form */}
             {role === 'student' && (
-              <>
-                <div className="bg-card border border-border rounded-2xl p-4 shadow-lg">
-                  <div className="flex justify-center mb-4">
-                    <ProfilePhotoUpload
-                      userId={userId!}
-                      currentUrl={profilePhotoUrl}
-                      onUploaded={handlePhotoUploaded}
-                      tableName="students"
-                    />
-                  </div>
-                </div>
-
-                <StudentProfileForm 
-                  userId={userId!} 
-                  onComplete={() => navigate('/ai-match')}
-                />
-              </>
+              <StudentProfileForm 
+                userId={userId!} 
+                onComplete={() => setShowProfileForm(false)}
+              />
             )}
 
             {role === 'owner' && (
@@ -245,50 +225,105 @@ export default function Profile() {
             {role === 'admin' && (
               <AdminProfileForm userId={userId!} />
             )}
+          </div>
+          <BottomNav />
+        </div>
+      );
+    }
 
-            {/* Quick Actions for Students */}
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="pt-6 px-6 pb-32">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            {/* Header with notification bell */}
+            <div className="flex items-center justify-between">
+              <h1 className="text-3xl font-bold text-foreground">Profile</h1>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="rounded-full"
+                onClick={() => navigate('/settings')}
+              >
+                <Bell className="w-6 h-6" />
+              </Button>
+            </div>
+
+            {/* Profile Avatar Section */}
+            <div className="flex flex-col items-center py-6">
+              <Avatar className="w-24 h-24 mb-4">
+                <AvatarImage src={profilePhotoUrl || undefined} alt={userName} />
+                <AvatarFallback className="bg-muted text-2xl">
+                  {userName ? userName.charAt(0).toUpperCase() : <User className="w-10 h-10" />}
+                </AvatarFallback>
+              </Avatar>
+              <h2 className="text-xl font-semibold text-foreground">
+                {userName || 'Your Name'}
+              </h2>
+              <p className="text-muted-foreground text-sm">{getRoleLabel()}</p>
+            </div>
+
+            {/* Become an Owner Banner - Only for students */}
             {role === 'student' && (
-              <div className="space-y-3 pt-4">
-                <Card 
-                  className="cursor-pointer hover:bg-accent/50 transition-colors"
-                  onClick={() => navigate('/become-owner')}
-                >
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Building2 className="w-5 h-5 text-primary" />
-                      <span className="text-foreground font-medium">Become an Owner</span>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                  </CardContent>
-                </Card>
-
-                <Card 
-                  className="cursor-pointer hover:bg-accent/50 transition-colors"
-                  onClick={() => navigate('/settings')}
-                >
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Settings className="w-5 h-5 text-muted-foreground" />
-                      <span className="text-foreground">Settings</span>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                  </CardContent>
-                </Card>
-
-                <Card 
-                  className="cursor-pointer hover:bg-accent/50 transition-colors"
-                  onClick={() => setShowLanguageModal(true)}
-                >
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Globe className="w-5 h-5 text-muted-foreground" />
-                      <span className="text-foreground">Language</span>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                  </CardContent>
-                </Card>
-              </div>
+              <button
+                onClick={() => navigate('/become-owner')}
+                className="w-full p-4 bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-xl flex items-center gap-4 active:bg-primary/20 transition-colors"
+              >
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Building2 className="w-6 h-6 text-primary" />
+                </div>
+                <div className="text-left flex-1">
+                  <p className="font-semibold text-foreground">Become an Owner</p>
+                  <p className="text-sm text-muted-foreground">List your dorm and earn</p>
+                </div>
+              </button>
             )}
+
+            {/* Menu Items - No Card wrappers, just clean rows */}
+            <div className="divide-y divide-border/20">
+              <MobileMenuRow
+                icon={<Settings className="w-6 h-6" />}
+                label="Account settings"
+                onClick={() => navigate('/settings')}
+              />
+              <MobileMenuRow
+                icon={<HelpCircle className="w-6 h-6" />}
+                label="Get help"
+                onClick={() => navigate('/contact')}
+              />
+              <MobileMenuRow
+                icon={<User className="w-6 h-6" />}
+                label="View profile"
+                onClick={() => setShowProfileForm(true)}
+              />
+              <MobileMenuRow
+                icon={<Globe className="w-6 h-6" />}
+                label="Language"
+                onClick={() => setShowLanguageModal(true)}
+              />
+            </div>
+
+            {/* Separator */}
+            <div className="h-px bg-border/30" />
+
+            {/* Secondary Menu Items */}
+            <div className="divide-y divide-border/20">
+              <MobileMenuRow
+                icon={<Scale className="w-6 h-6" />}
+                label="Legal"
+                onClick={() => navigate('/legal/terms')}
+              />
+              <MobileMenuRow
+                icon={<LogOut className="w-6 h-6" />}
+                label="Log out"
+                onClick={handleSignOut}
+                showChevron={false}
+                destructive
+              />
+            </div>
           </motion.div>
         </div>
         

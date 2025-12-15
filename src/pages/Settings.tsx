@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home, Share2, Copy, CreditCard, Receipt, Save, Smartphone } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home, Share2, Copy, CreditCard, Receipt, Save, Smartphone, User, Palette, ChevronRight } from 'lucide-react';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import BottomNav from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ import { settingsManager, type UserSettings } from '@/utils/settings';
 import { supabase } from '@/integrations/supabase/client';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
+import { MobileMenuRow } from '@/components/mobile/MobileMenuRow';
+import { LanguageModal } from '@/components/LanguageModal';
 
 import { useTranslation } from 'react-i18next';
 
@@ -47,6 +49,7 @@ export default function Settings() {
   const [factorId, setFactorId] = useState('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentProfile, setPaymentProfile] = useState<any>(null);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
   
 
   useEffect(() => {
@@ -246,9 +249,270 @@ export default function Settings() {
 
   if (loading) return null;
 
+  // Mobile Airbnb-style settings
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="pt-6 px-6 pb-32">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            {/* Header with back button */}
+            <div className="flex items-center gap-4 mb-8">
+              <button
+                onClick={() => navigate('/profile')}
+                className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center active:bg-muted/50 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-foreground" />
+              </button>
+              <h1 className="text-2xl font-bold text-foreground">Account settings</h1>
+            </div>
+
+            {/* Settings Menu - Clean list style */}
+            <div className="space-y-6">
+              {/* Personal Info Section */}
+              <div>
+                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-0">
+                  Account
+                </h2>
+                <div className="divide-y divide-border/20">
+                  <MobileMenuRow
+                    icon={<User className="w-6 h-6" />}
+                    label="Personal information"
+                    subtitle="Edit your profile details"
+                    onClick={() => navigate('/profile')}
+                  />
+                  <MobileMenuRow
+                    icon={<Lock className="w-6 h-6" />}
+                    label="Login & security"
+                    subtitle="Password, 2FA, devices"
+                    onClick={() => setShowPasswordModal(true)}
+                  />
+                </div>
+              </div>
+
+              {/* Payments - Only for students */}
+              {role === 'student' && (
+                <div>
+                  <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-0">
+                    Payments
+                  </h2>
+                  <div className="divide-y divide-border/20">
+                    <MobileMenuRow
+                      icon={<CreditCard className="w-6 h-6" />}
+                      label="My Wallet"
+                      subtitle="Manage your payment methods"
+                      onClick={() => navigate('/wallet')}
+                    />
+                    <MobileMenuRow
+                      icon={<Receipt className="w-6 h-6" />}
+                      label="Billing history"
+                      onClick={() => navigate('/billing-history')}
+                    />
+                    <MobileMenuRow
+                      icon={<Home className="w-6 h-6" />}
+                      label="Room reservations"
+                      onClick={() => navigate('/student/payments')}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Preferences */}
+              <div>
+                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-0">
+                  Preferences
+                </h2>
+                <div className="divide-y divide-border/20">
+                  <MobileMenuRow
+                    icon={<Bell className="w-6 h-6" />}
+                    label="Notifications"
+                    onClick={() => {
+                      setSettings(prev => ({ ...prev, notifications: !prev.notifications }));
+                      handleSave();
+                    }}
+                    showChevron={false}
+                    rightElement={
+                      <Switch
+                        checked={settings.notifications}
+                        onCheckedChange={(checked) => {
+                          setSettings(prev => ({ ...prev, notifications: checked }));
+                        }}
+                      />
+                    }
+                  />
+                  <MobileMenuRow
+                    icon={<Globe className="w-6 h-6" />}
+                    label="Translation"
+                    subtitle={settings.language.toUpperCase()}
+                    onClick={() => setShowLanguageModal(true)}
+                  />
+                  <MobileMenuRow
+                    icon={<Palette className="w-6 h-6" />}
+                    label="Appearance"
+                    subtitle={theme === 'dark' ? 'Dark mode' : 'Light mode'}
+                    onClick={handleThemeToggle}
+                    showChevron={false}
+                    rightElement={
+                      <Switch
+                        checked={theme === 'dark'}
+                        onCheckedChange={handleThemeToggle}
+                      />
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Security */}
+              <div>
+                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-0">
+                  Security
+                </h2>
+                <div className="divide-y divide-border/20">
+                  <MobileMenuRow
+                    icon={<Key className="w-6 h-6" />}
+                    label="Change password"
+                    onClick={() => setShowPasswordModal(true)}
+                  />
+                  <MobileMenuRow
+                    icon={<Shield className="w-6 h-6" />}
+                    label="Two-factor authentication"
+                    onClick={handleEnable2FA}
+                  />
+                  <MobileMenuRow
+                    icon={<Smartphone className="w-6 h-6" />}
+                    label="Trusted devices"
+                    onClick={() => navigate('/settings/devices')}
+                  />
+                </div>
+              </div>
+
+              {/* AI Memory - Only for students and admins */}
+              {role !== 'owner' && (
+                <div>
+                  <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-0">
+                    AI
+                  </h2>
+                  <div className="divide-y divide-border/20">
+                    <MobileMenuRow
+                      icon={<Brain className="w-6 h-6" />}
+                      label="AI Memory"
+                      subtitle="Remember your preferences"
+                      onClick={() => {
+                        setSettings(prev => ({ ...prev, aiMemory: !prev.aiMemory }));
+                      }}
+                      showChevron={false}
+                      rightElement={
+                        <Switch
+                          checked={settings.aiMemory}
+                          onCheckedChange={(checked) => {
+                            setSettings(prev => ({ ...prev, aiMemory: checked }));
+                          }}
+                        />
+                      }
+                    />
+                    {settings.aiMemory && (
+                      <MobileMenuRow
+                        icon={<Trash2 className="w-6 h-6" />}
+                        label="Clear AI memory"
+                        onClick={handleClearAIMemory}
+                        destructive
+                        showChevron={false}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* App Info */}
+              <div className="pt-8 text-center">
+                <p className="text-sm text-muted-foreground">Version 1.0.0</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Password Change Modal */}
+        <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+          <DialogContent className="bg-card/95 backdrop-blur-xl border border-border/40">
+            <DialogHeader>
+              <DialogTitle className="gradient-text">Change Password</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="new-password" className="text-foreground">New Password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  className="bg-muted/20 border-border/40"
+                />
+              </div>
+              <div>
+                <Label htmlFor="confirm-password" className="text-foreground">Confirm Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  className="bg-muted/20 border-border/40"
+                />
+              </div>
+              <Button 
+                onClick={handleChangePassword} 
+                className="w-full bg-gradient-to-r from-primary to-secondary"
+              >
+                Update Password
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* 2FA Setup Modal */}
+        <Dialog open={show2FASetup} onOpenChange={setShow2FASetup}>
+          <DialogContent className="bg-card/95 backdrop-blur-xl border border-border/40">
+            <DialogHeader>
+              <DialogTitle className="gradient-text">Enable Two-Factor Authentication</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-foreground/70">
+                Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
+              </p>
+              {qrCode && (
+                <div className="flex justify-center p-4 bg-white rounded-lg">
+                  <img src={qrCode} alt="2FA QR Code" className="w-48 h-48" />
+                </div>
+              )}
+              <Button 
+                onClick={() => {
+                  setShow2FASetup(false);
+                  toast({
+                    title: 'Success',
+                    description: '2FA has been enabled for your account',
+                  });
+                }}
+                className="w-full bg-gradient-to-r from-primary to-secondary"
+              >
+                I've Scanned the Code
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <LanguageModal open={showLanguageModal} onOpenChange={setShowLanguageModal} />
+        <BottomNav />
+      </div>
+    );
+  }
+
+  // Desktop layout - unchanged
   return (
     <div className="min-h-screen relative bg-gradient-to-b from-background to-muted/20">
-      {!isMobile && <RoomyNavbar />}
+      <RoomyNavbar />
 
       <div className="container mx-auto px-6 py-32 max-w-4xl">
         <Button
@@ -332,7 +596,7 @@ export default function Settings() {
               </div>
             </Card>
 
-            {/* Payment Settings - Only for students (owners/admins manage payouts from their control panels) */}
+            {/* Payment Settings - Only for students */}
             {role === 'student' && (
               <Card className="glass p-6 border border-border/40">
                 <div className="flex items-center gap-4 mb-4">
@@ -694,8 +958,6 @@ export default function Settings() {
           </div>
         </DialogContent>
       </Dialog>
-
-      {isMobile && <BottomNav />}
     </div>
   );
 }
