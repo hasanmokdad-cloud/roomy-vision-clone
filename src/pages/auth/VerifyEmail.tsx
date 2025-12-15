@@ -56,11 +56,14 @@ export default function VerifyEmail() {
               description: "Your email has been verified successfully.",
             });
             
-            // Start onboarding flow and redirect
+            // Start onboarding flow first, then navigate after state propagates
             setTimeout(() => {
               startOnboarding();
-              navigate('/listings', { replace: true });
             }, 1500);
+            
+            setTimeout(() => {
+              navigate('/listings', { replace: true });
+            }, 1700);
             return;
           } else {
             setErrorMessage(data?.error || "Invalid or expired verification link");

@@ -102,6 +102,9 @@ export function GlobalAuthModal() {
 
       if (error) throw error;
 
+      // Clear any previous onboarding state for fresh signup experience
+      localStorage.removeItem('roomy_onboarding_complete');
+
       toast({
         title: 'Check your email',
         description: 'We sent you a verification link. Please check your inbox.',
