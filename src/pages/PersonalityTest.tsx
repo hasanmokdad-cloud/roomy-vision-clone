@@ -12,8 +12,10 @@ import { Brain, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import { personalityQuestions } from '@/data/personalityQuestions';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const PersonalityTest = () => {
+  const isMobile = useIsMobile();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
@@ -112,7 +114,7 @@ const PersonalityTest = () => {
 
   return (
     <div className="min-h-screen bg-background pt-24 md:pt-28">
-      <RoomyNavbar />
+      {!isMobile && <RoomyNavbar />}
       
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         {/* Header */}

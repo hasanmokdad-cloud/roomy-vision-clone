@@ -9,10 +9,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import Footer from '@/components/shared/Footer';
 import { useTranslation } from 'react-i18next';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function BecomeOwner() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -169,7 +171,7 @@ export default function BecomeOwner() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <RoomyNavbar />
+      {!isMobile && <RoomyNavbar />}
       
       <main className="flex-1 pt-24 pb-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

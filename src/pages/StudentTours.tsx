@@ -206,7 +206,7 @@ export default function StudentTours() {
 
   return (
     <div className="min-h-screen bg-background">
-      <RoomyNavbar />
+      {!isMobile && <RoomyNavbar />}
       <main className={`pt-16 ${isMobile ? 'pb-20' : ''}`}>
         <div className="container mx-auto px-4 py-8 max-w-4xl space-y-6">
           <div>

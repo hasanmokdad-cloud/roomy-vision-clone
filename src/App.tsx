@@ -271,10 +271,10 @@ const AppRoutes = () => {
           <Route path="/saved-dorms" element={<ProtectedRoute element={<SavedDorms />} />} />
           <Route path="/saved-rooms" element={<ProtectedRoute element={<SavedRooms />} />} />
           <Route path="/wishlists" element={<Wishlists />} />
-          <Route path="/messages" element={<ProtectedRoute element={<Messages />} />} />
+          <Route path="/messages" element={<Messages />} />
           <Route path="/student-profile/:id" element={<ProtectedRoute element={<StudentProfile />} />} />
           <Route path="/roommate/:userId" element={<ProtectedRoute element={<RoommateProfile />} />} />
-          <Route path="/ai-match" element={<ProtectedRoute element={<MobileSwipeLayout><AiMatch /></MobileSwipeLayout>} forbiddenRoles={["owner"]} />} />
+          <Route path="/ai-match" element={<MobileSwipeLayout><AiMatch /></MobileSwipeLayout>} />
           <Route path="/ai-roommate-match" element={<ProtectedRoute element={<StudentMatch />} />} />
           <Route path="/boost-profile" element={<ProtectedRoute element={<BoostProfile />} />} />
           <Route path="/personality" element={<ProtectedRoute element={<PersonalityTest />} requiredRole="student" />} />

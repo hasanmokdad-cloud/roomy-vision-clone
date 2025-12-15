@@ -7,8 +7,10 @@ import { Separator } from '@/components/ui/separator';
 import { CheckCircle2, XCircle, Loader2, Home } from 'lucide-react';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function ReservationConfirmation() {
+  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<'pending' | 'success' | 'failed'>('pending');
@@ -56,7 +58,7 @@ export default function ReservationConfirmation() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <RoomyNavbar />
+      {!isMobile && <RoomyNavbar />}
       
       <main className="flex-1 container mx-auto px-4 py-12 flex items-center justify-center">
         <Card className="w-full max-w-lg">

@@ -211,7 +211,7 @@ export default function Contact() {
   return (
     <div className="min-h-screen flex flex-col bg-background relative">
       <UnderwaterScene />
-      <RoomyNavbar />
+      {!isMobile && <RoomyNavbar />}
       
       <main className="flex-1 container mx-auto px-4 py-16 mt-20">
         <div className="max-w-5xl mx-auto">
