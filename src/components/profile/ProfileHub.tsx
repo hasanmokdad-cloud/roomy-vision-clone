@@ -3,16 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Bell } from 'lucide-react';
+import { Bell, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProfileHubHeader } from './ProfileHubHeader';
-import { HousingMatchingCard } from './accordion/HousingMatchingCard';
-import { AcademicInfoCard } from './accordion/AcademicInfoCard';
-import { CurrentAccommodationCard } from './accordion/CurrentAccommodationCard';
-import { AccountSecurityCard } from './accordion/AccountSecurityCard';
+import { QuickActionCards } from './QuickActionCards';
+import { PersonalityMatchingCard } from './PersonalityMatchingCard';
+import { MatchPlanSection } from './MatchPlanSection';
+import { AccountSettingsSection } from './AccountSettingsSection';
 import { PersonalitySurveyDrawer } from './PersonalitySurveyDrawer';
 import BottomNav from '@/components/BottomNav';
 import { useUnreadNotificationsCount } from '@/hooks/useUnreadNotificationsCount';
+import type { AiMatchPlan } from '@/utils/tierLogic';
 
 interface ProfileHubProps {
   userId: string;
@@ -39,6 +40,7 @@ export interface StudentProfile {
   email?: string | null;
   email_verified?: boolean | null;
   enable_personality_matching: boolean | null;
+  ai_match_plan?: AiMatchPlan;
 }
 
 export function ProfileHub({ userId, onSignOut }: ProfileHubProps) {
@@ -48,9 +50,11 @@ export function ProfileHub({ userId, onSignOut }: ProfileHubProps) {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [showSurveyDrawer, setShowSurveyDrawer] = useState(false);
+  const [savedCount, setSavedCount] = useState(0);
 
   useEffect(() => {
     loadProfile();
+    loadSavedCount();
   }, [userId]);
 
   const loadProfile = async () => {
@@ -62,7 +66,7 @@ export function ProfileHub({ userId, onSignOut }: ProfileHubProps) {
         .single();
 
       if (error) throw error;
-      setProfile(data);
+      setProfile(data as unknown as StudentProfile);
     } catch (err) {
       console.error('Error loading profile:', err);
     } finally {
@@ -70,18 +74,43 @@ export function ProfileHub({ userId, onSignOut }: ProfileHubProps) {
     }
   };
 
-  const handleFindMatches = () => {
-    // Check if preferences are set
-    if (!profile?.preferred_housing_area || !profile?.room_type || !profile?.budget) {
+  const loadSavedCount = async () => {
+    try {
+      // Count saved rooms
+      const { count: roomsCount } = await supabase
+        .from('saved_rooms')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+      setSavedCount(roomsCount || 0);
+    } catch (err) {
+      console.error('Error loading saved count:', err);
+      setSavedCount(0);
+    }
+  };
+
+  const handlePlanChange = async (plan: AiMatchPlan) => {
+    try {
+      const { error } = await supabase
+        .from('students')
+        .update({ ai_match_plan: plan })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      setProfile((prev) => (prev ? { ...prev, ai_match_plan: plan } : null));
       toast({
-        title: 'Set your preferences first',
-        description: 'Complete your housing preferences to find matches',
+        title: 'Plan updated',
+        description: `You're now on the ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan`,
+      });
+    } catch (err) {
+      console.error('Error updating plan:', err);
+      toast({
+        title: 'Error',
+        description: 'Could not update plan',
         variant: 'destructive',
       });
-      navigate('/profile/preferences');
-      return;
     }
-    navigate('/ai-match');
   };
 
   const handleSurveyComplete = () => {
@@ -107,13 +136,13 @@ export function ProfileHub({ userId, onSignOut }: ProfileHubProps) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
+          className="space-y-5"
         >
           {/* Header with notification bell */}
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-foreground">Your Profile</h1>
-            <Button 
-              variant="ghost" 
+            <h1 className="text-2xl font-bold text-foreground">Profile</h1>
+            <Button
+              variant="ghost"
               size="icon"
               className="rounded-full relative"
               onClick={() => navigate('/profile/notifications')}
@@ -128,52 +157,48 @@ export function ProfileHub({ userId, onSignOut }: ProfileHubProps) {
           </div>
 
           {/* Profile Hub Header Card */}
-          <ProfileHubHeader profile={profile} />
+          <ProfileHubHeader profile={profile} userId={userId} />
 
-          {/* Quick Actions */}
-          <div className="space-y-3">
-            <Button
-              onClick={handleFindMatches}
-              className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-primary to-secondary"
-            >
-              Find Matches
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate('/profile/preferences')}
-              className="w-full py-6 text-lg font-semibold"
-            >
-              Edit Preferences
-            </Button>
-          </div>
+          {/* Quick Action Cards */}
+          <QuickActionCards
+            userId={userId}
+            personalityCompleted={!!profile?.personality_test_completed}
+            savedCount={savedCount}
+            onPersonalityClick={() => setShowSurveyDrawer(true)}
+          />
 
-          {/* Accordion Cards */}
-          <div className="space-y-3">
-            <HousingMatchingCard
-              profile={profile}
-              onEditPreferences={() => navigate('/profile/preferences')}
-              onTakeSurvey={() => setShowSurveyDrawer(true)}
-              onFindMatches={handleFindMatches}
-            />
-            
-            <AcademicInfoCard
-              profile={profile}
-              userId={userId}
-              onProfileUpdated={loadProfile}
-            />
-            
-            <CurrentAccommodationCard
-              profile={profile}
-              userId={userId}
-              onProfileUpdated={loadProfile}
-            />
-            
-            <AccountSecurityCard
-              profile={profile}
-              userId={userId}
-              onSignOut={onSignOut}
-            />
-          </div>
+          {/* Personality Matching Card */}
+          <PersonalityMatchingCard
+            userId={userId}
+            personalityCompleted={!!profile?.personality_test_completed}
+            personalityEnabled={profile?.enable_personality_matching ?? true}
+            onTakeSurvey={() => setShowSurveyDrawer(true)}
+            onProfileUpdated={loadProfile}
+          />
+
+          {/* Match Plan Section */}
+          <MatchPlanSection
+            currentPlan={(profile?.ai_match_plan as AiMatchPlan) || 'basic'}
+            studentId={profile?.id}
+            onPlanChange={handlePlanChange}
+          />
+
+          {/* Wishlists Entry */}
+          <button
+            onClick={() => navigate('/wishlists')}
+            className="w-full flex items-center gap-3 p-4 bg-gradient-to-br from-pink-500/5 to-red-500/5 rounded-2xl border border-border/40 hover:border-pink-500/30 transition-all"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-red-500 flex items-center justify-center">
+              <Heart className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 text-left">
+              <h3 className="font-semibold text-foreground text-sm">Wishlists</h3>
+              <p className="text-xs text-muted-foreground">{savedCount} saved items</p>
+            </div>
+          </button>
+
+          {/* Account & Settings */}
+          <AccountSettingsSection onSignOut={onSignOut} />
         </motion.div>
       </div>
 
