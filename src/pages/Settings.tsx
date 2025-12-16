@@ -31,7 +31,7 @@ export default function Settings() {
   const { loading, userId } = useAuthGuard();
   const { role } = useRoleGuard();
   const isMobile = useIsMobile();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { i18n } = useTranslation();
   const { permission, isSubscribed, subscribe, unsubscribe, loading: pushLoading } = usePushNotifications();
   const currentLang = i18n.language;
@@ -153,9 +153,9 @@ export default function Settings() {
     }
   };
 
-  const handleThemeToggle = () => {
-    toggleTheme();
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
+  const handleThemeToggle = (checked?: boolean) => {
+    const newTheme = checked !== undefined ? (checked ? 'dark' : 'light') : (theme === 'dark' ? 'light' : 'dark');
+    setTheme(newTheme);
     setSettings((prev) => ({ ...prev, theme: newTheme }));
     toast({
       title: `${newTheme === 'dark' ? 'Dark' : 'Light'} mode enabled`,
@@ -363,12 +363,12 @@ export default function Settings() {
                     icon={<Palette className="w-6 h-6" />}
                     label="Appearance"
                     subtitle={theme === 'dark' ? 'Dark mode' : 'Light mode'}
-                    onClick={handleThemeToggle}
+                    onClick={() => handleThemeToggle()}
                     showChevron={false}
                     rightElement={
                       <Switch
                         checked={theme === 'dark'}
-                        onCheckedChange={handleThemeToggle}
+                        onCheckedChange={(checked) => handleThemeToggle(checked)}
                       />
                     }
                   />

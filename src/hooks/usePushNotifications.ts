@@ -4,10 +4,24 @@ import { useToast } from '@/hooks/use-toast';
 
 const VAPID_PUBLIC_KEY = 'BNxQvZrYvWnBzVXmQzlNLKvFJ8ZFXwqTJKzTmN8VjXZ9K7LmNpQrStUvWxYz0A1BcDeFgHiJkLmNoPqRsTuVwXy';
 
+// Detect iOS
+const isIOS = () => {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+};
+
+// Check if running as installed PWA
+const isPWA = () => {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone === true;
+};
+
 export function usePushNotifications() {
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isIOSDevice] = useState(isIOS());
+  const [isInstalledPWA] = useState(isPWA());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -42,11 +56,19 @@ export function usePushNotifications() {
 
   const requestPermission = async () => {
     if (!('Notification' in window)) {
-      toast({
-        title: 'Not Supported',
-        description: 'Push notifications are not supported in this browser',
-        variant: 'destructive'
-      });
+      // iOS-specific guidance
+      if (isIOSDevice) {
+        toast({
+          title: 'iOS Notifications',
+          description: 'To enable notifications on iPhone/iPad, first add Roomy to your Home Screen, then enable notifications in Settings.',
+        });
+      } else {
+        toast({
+          title: 'Not Supported',
+          description: 'Push notifications are not supported in this browser',
+          variant: 'destructive'
+        });
+      }
       return false;
     }
 
@@ -76,11 +98,26 @@ export function usePushNotifications() {
 
   const subscribe = async () => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      toast({
-        title: 'Not Supported',
-        description: 'Push notifications are not supported',
-        variant: 'destructive'
-      });
+      // iOS-specific guidance
+      if (isIOSDevice) {
+        if (!isInstalledPWA) {
+          toast({
+            title: 'Add to Home Screen First',
+            description: 'To enable notifications on iPhone/iPad: tap the Share button, then "Add to Home Screen", then open Roomy from there.',
+          });
+        } else {
+          toast({
+            title: 'Enable in Settings',
+            description: 'Go to Settings → Notifications → Roomy to enable notifications.',
+          });
+        }
+      } else {
+        toast({
+          title: 'Not Supported',
+          description: 'Push notifications are not supported in this browser',
+          variant: 'destructive'
+        });
+      }
       return;
     }
 
@@ -183,7 +220,9 @@ export function usePushNotifications() {
     requestPermission,
     subscribe,
     unsubscribe,
-    isSubscribed: !!subscription
+    isSubscribed: !!subscription,
+    isIOSDevice,
+    isInstalledPWA
   };
 }
 
