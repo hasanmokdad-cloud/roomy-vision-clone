@@ -7,7 +7,7 @@ import { AdminProfileForm } from '@/components/AdminProfileForm';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, Bell, Globe, Settings, HelpCircle, Scale, Building2, User, LogOut } from 'lucide-react';
+import { ArrowLeft, Loader2, Bell, Globe, Settings, HelpCircle, Scale, Building2, User, LogOut, Heart, Sparkles, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -16,7 +16,6 @@ import { LanguageModal } from '@/components/LanguageModal';
 import BottomNav from '@/components/BottomNav';
 import { MobileMenuRow } from '@/components/mobile/MobileMenuRow';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ProfileHub } from '@/components/profile/ProfileHub';
 
 export default function Profile() {
   const isMobile = useIsMobile();
@@ -32,6 +31,8 @@ export default function Profile() {
   const [whatsappLanguage, setWhatsappLanguage] = useState('EN');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showProfileForm, setShowProfileForm] = useState(false);
+  const [savedCount, setSavedCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Check for ?edit=true query param to auto-show profile form
   useEffect(() => {
@@ -60,6 +61,21 @@ export default function Profile() {
           .single();
         setProfilePhotoUrl(student?.profile_photo_url || null);
         setUserName(student?.full_name || '');
+        
+        // Fetch saved dorms count
+        const { count } = await supabase
+          .from('saved_rooms')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId);
+        setSavedCount(count || 0);
+        
+        // Fetch unread notifications count
+        const { count: notifCount } = await supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('read', false);
+        setUnreadCount(notifCount || 0);
       } else if (role === 'owner') {
         const { data: owner } = await supabase
           .from('owners')
@@ -185,11 +201,173 @@ export default function Profile() {
     return '/listings';
   };
 
-  // Mobile authenticated profile - use ProfileHub for students
+  // Mobile authenticated profile
   if (isMobile) {
-    // For students, use the new ProfileHub
+    // For students, use clean Airbnb-style layout
     if (role === 'student') {
-      return <ProfileHub userId={userId!} onSignOut={handleSignOut} />;
+      // Show profile form if editing
+      if (showProfileForm) {
+        return (
+          <div className="min-h-screen bg-background">
+            <div className="pt-6 px-6 pb-32">
+              <button
+                onClick={() => setShowProfileForm(false)}
+                className="flex items-center gap-2 text-foreground mb-6"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-lg font-semibold">Personal info</span>
+              </button>
+
+              <div className="flex justify-center mb-6">
+                <ProfilePhotoUpload
+                  userId={userId!}
+                  currentUrl={profilePhotoUrl}
+                  onUploaded={handlePhotoUploaded}
+                  tableName="students"
+                />
+              </div>
+
+              <StudentProfileForm 
+                userId={userId!} 
+                onComplete={() => setShowProfileForm(false)}
+              />
+            </div>
+            <BottomNav />
+          </div>
+        );
+      }
+
+      // Main student profile view - Airbnb style
+      return (
+        <div className="min-h-screen bg-background">
+          <div className="pt-6 px-6 pb-32">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              {/* Header with title and notification bell */}
+              <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold text-foreground">Profile</h1>
+                <button
+                  onClick={() => navigate('/profile/notifications')}
+                  className="relative p-2"
+                >
+                  <Bell className="w-6 h-6 text-foreground" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Avatar Card */}
+              <button
+                onClick={() => setShowProfileForm(true)}
+                className="flex flex-col items-center py-6 w-full"
+              >
+                <Avatar className="w-24 h-24 mb-4">
+                  <AvatarImage src={profilePhotoUrl || undefined} alt={userName} />
+                  <AvatarFallback className="bg-muted text-2xl">
+                    {userName ? userName.charAt(0).toUpperCase() : <User className="w-10 h-10" />}
+                  </AvatarFallback>
+                </Avatar>
+                <h2 className="text-xl font-semibold text-foreground">
+                  {userName || 'Your Name'}
+                </h2>
+                <p className="text-muted-foreground text-sm">Student</p>
+              </button>
+
+              {/* Feature Cards - 2 column grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => navigate('/wishlists')}
+                  className="bg-card border border-border rounded-2xl p-4 text-left hover:bg-muted/50 transition-colors"
+                >
+                  <Heart className="w-6 h-6 text-pink-500 mb-2" />
+                  <p className="font-semibold text-foreground">Saved</p>
+                  <p className="text-sm text-muted-foreground">{savedCount} items</p>
+                </button>
+                <button
+                  onClick={() => navigate('/ai-match')}
+                  className="bg-card border border-border rounded-2xl p-4 text-left hover:bg-muted/50 transition-colors"
+                >
+                  <Sparkles className="w-6 h-6 text-primary mb-2" />
+                  <p className="font-semibold text-foreground">AI Match</p>
+                  <p className="text-sm text-muted-foreground">Find your fit</p>
+                </button>
+              </div>
+
+              {/* Become an Owner Banner */}
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-5">
+                <div className="flex items-start gap-4">
+                  <div className="bg-primary/20 rounded-xl p-3">
+                    <Building2 className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-foreground mb-1">Become an Owner</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      List your property and start earning
+                    </p>
+                    <button
+                      onClick={() => navigate('/become-owner')}
+                      className="text-sm font-medium text-primary flex items-center gap-1"
+                    >
+                      Switch to hosting
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Menu Items */}
+              <div className="divide-y divide-border/20">
+                <MobileMenuRow
+                  icon={<Settings className="w-6 h-6" />}
+                  label="Account settings"
+                  onClick={() => navigate('/settings')}
+                />
+                <MobileMenuRow
+                  icon={<HelpCircle className="w-6 h-6" />}
+                  label="Get help"
+                  onClick={() => navigate('/contact')}
+                />
+                <MobileMenuRow
+                  icon={<User className="w-6 h-6" />}
+                  label="View profile"
+                  onClick={() => setShowProfileForm(true)}
+                />
+                <MobileMenuRow
+                  icon={<Globe className="w-6 h-6" />}
+                  label="Language"
+                  onClick={() => setShowLanguageModal(true)}
+                />
+              </div>
+
+              <div className="h-px bg-border/30" />
+
+              <div className="divide-y divide-border/20">
+                <MobileMenuRow
+                  icon={<Scale className="w-6 h-6" />}
+                  label="Legal"
+                  onClick={() => navigate('/legal/terms')}
+                />
+                <MobileMenuRow
+                  icon={<LogOut className="w-6 h-6" />}
+                  label="Log out"
+                  onClick={handleSignOut}
+                  showChevron={false}
+                  destructive
+                />
+              </div>
+            </motion.div>
+          </div>
+          
+          <LanguageModal open={showLanguageModal} onOpenChange={setShowLanguageModal} />
+          <BottomNav />
+        </div>
+      );
     }
 
     // For owners/admins, keep the existing profile form view
