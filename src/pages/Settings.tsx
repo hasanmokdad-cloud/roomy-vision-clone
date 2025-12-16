@@ -330,28 +330,8 @@ export default function Settings() {
                   <MobileMenuRow
                     icon={<Bell className="w-6 h-6" />}
                     label="Notifications"
-                    subtitle={isSubscribed ? 'Enabled' : 'Disabled'}
-                    onClick={async () => {
-                      if (isSubscribed) {
-                        await unsubscribe();
-                      } else {
-                        await subscribe();
-                      }
-                    }}
-                    showChevron={false}
-                    rightElement={
-                      <Switch
-                        checked={isSubscribed}
-                        disabled={pushLoading}
-                        onCheckedChange={async (checked) => {
-                          if (checked) {
-                            await subscribe();
-                          } else {
-                            await unsubscribe();
-                          }
-                        }}
-                      />
-                    }
+                    subtitle={isSubscribed ? 'Enabled' : 'Manage'}
+                    onClick={() => navigate('/settings/notifications')}
                   />
                   <MobileMenuRow
                     icon={<Globe className="w-6 h-6" />}

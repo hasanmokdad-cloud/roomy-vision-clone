@@ -115,6 +115,7 @@ const AdminEarnings = lazy(() => import("./pages/admin/AdminEarnings"));
 const VerifyDevice = lazy(() => import("./pages/devices/VerifyDevice"));
 const SecureAccount = lazy(() => import("./pages/devices/SecureAccount"));
 const DevicesPage = lazy(() => import("./pages/settings/DevicesPage"));
+const NotificationsSettings = lazy(() => import("./pages/settings/NotificationsSettings"));
 const DevicePending = lazy(() => import("./pages/auth/DevicePending"));
 const ApproveDevice = lazy(() => import("./pages/auth/ApproveDevice"));
 const AuthCallback = lazy(() => import("./pages/auth/AuthCallback"));
@@ -268,6 +269,7 @@ const AppRoutes = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<ProtectedRoute element={<Settings />} />} />
           <Route path="/settings/devices" element={<ProtectedRoute element={<DevicesPage />} />} />
+          <Route path="/settings/notifications" element={<ProtectedRoute element={<NotificationsSettings />} />} />
           <Route path="/saved-dorms" element={<ProtectedRoute element={<SavedDorms />} />} />
           <Route path="/saved-rooms" element={<ProtectedRoute element={<SavedRooms />} />} />
           <Route path="/wishlists" element={<Wishlists />} />

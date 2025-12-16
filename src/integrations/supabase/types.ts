@@ -1446,6 +1446,45 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          notify_messages: boolean
+          notify_promotions: boolean
+          notify_reservations: boolean
+          notify_social: boolean
+          notify_tours: boolean
+          push_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notify_messages?: boolean
+          notify_promotions?: boolean
+          notify_reservations?: boolean
+          notify_social?: boolean
+          notify_tours?: boolean
+          push_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notify_messages?: boolean
+          notify_promotions?: boolean
+          notify_reservations?: boolean
+          notify_social?: boolean
+          notify_tours?: boolean
+          push_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
