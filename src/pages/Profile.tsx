@@ -254,14 +254,17 @@ export default function Profile() {
                 variant="ghost" 
                 size="icon"
                 className="rounded-full"
-                onClick={() => navigate('/settings')}
+                onClick={() => navigate('/profile/notifications')}
               >
                 <Bell className="w-6 h-6" />
               </Button>
             </div>
 
-            {/* Profile Avatar Section */}
-            <div className="flex flex-col items-center py-6">
+            {/* Profile Avatar Section - Clickable */}
+            <button
+              onClick={() => role === 'student' ? navigate('/profile/complete') : setShowProfileForm(true)}
+              className="flex flex-col items-center py-6 w-full"
+            >
               <Avatar className="w-24 h-24 mb-4">
                 <AvatarImage src={profilePhotoUrl || undefined} alt={userName} />
                 <AvatarFallback className="bg-muted text-2xl">
@@ -272,7 +275,7 @@ export default function Profile() {
                 {userName || 'Your Name'}
               </h2>
               <p className="text-muted-foreground text-sm">{getRoleLabel()}</p>
-            </div>
+            </button>
 
             {/* Become an Owner Banner - Only for students */}
             {role === 'student' && (
@@ -305,7 +308,7 @@ export default function Profile() {
               <MobileMenuRow
                 icon={<User className="w-6 h-6" />}
                 label="View profile"
-                onClick={() => setShowProfileForm(true)}
+                onClick={() => role === 'student' ? navigate('/profile/complete') : setShowProfileForm(true)}
               />
               <MobileMenuRow
                 icon={<Globe className="w-6 h-6" />}
