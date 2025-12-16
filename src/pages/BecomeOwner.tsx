@@ -5,6 +5,7 @@ import { ArrowLeft, Building2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import { DormForm } from '@/components/owner/DormForm';
+import { MobileDormWizard } from '@/components/owner/mobile/MobileDormWizard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import Footer from '@/components/shared/Footer';
@@ -162,6 +163,18 @@ export default function BecomeOwner() {
     );
   }
 
+  // Mobile: Show the guided wizard
+  if (isMobile) {
+    return (
+      <MobileDormWizard
+        onBeforeSubmit={handleBeforeSubmit}
+        onSaved={handleDormSaved}
+        isSubmitting={isSubmitting}
+      />
+    );
+  }
+
+  // Desktop: Show the original form layout
   const benefits = [
     t('becomeOwner.benefit1', 'Reach thousands of students looking for housing'),
     t('becomeOwner.benefit2', 'Easy-to-use dashboard to manage your listings'),
@@ -171,7 +184,7 @@ export default function BecomeOwner() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {!isMobile && <RoomyNavbar />}
+      <RoomyNavbar />
       
       <main className="flex-1 pt-24 pb-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
