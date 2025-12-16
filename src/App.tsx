@@ -127,6 +127,7 @@ const AuthCallback = lazy(() => import("./pages/auth/AuthCallback"));
 const AccountSuspended = lazy(() => import("./pages/AccountSuspended"));
 const BecomeOwner = lazy(() => import("./pages/BecomeOwner"));
 const Wishlists = lazy(() => import("./pages/Wishlists"));
+const StudentOnboarding = lazy(() => import("./pages/student/StudentOnboarding"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -271,6 +272,7 @@ const AppRoutes = () => {
           {/* Protected Routes - Requires authentication */}
           <Route path="/my-tours" element={<ProtectedRoute element={<StudentTours />} forbiddenRoles={["owner"]} />} />
           <Route path="/onboarding" element={<ProtectedRoute element={<Onboarding />} />} />
+          <Route path="/onboarding/student" element={<ProtectedRoute element={<StudentOnboarding />} requiredRole="student" />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<ProtectedRoute element={<Settings />} />} />
           <Route path="/settings/devices" element={<ProtectedRoute element={<DevicesPage />} />} />

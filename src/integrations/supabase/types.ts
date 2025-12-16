@@ -3330,6 +3330,7 @@ export type Database = {
           need_roommate: boolean | null
           needs_roommate_current_place: boolean | null
           needs_roommate_new_dorm: boolean | null
+          onboarding_completed: boolean | null
           personality_cleanliness_level: string | null
           personality_conflict_style: string | null
           personality_cooking_frequency: string | null
@@ -3398,6 +3399,7 @@ export type Database = {
           need_roommate?: boolean | null
           needs_roommate_current_place?: boolean | null
           needs_roommate_new_dorm?: boolean | null
+          onboarding_completed?: boolean | null
           personality_cleanliness_level?: string | null
           personality_conflict_style?: string | null
           personality_cooking_frequency?: string | null
@@ -3466,6 +3468,7 @@ export type Database = {
           need_roommate?: boolean | null
           needs_roommate_current_place?: boolean | null
           needs_roommate_new_dorm?: boolean | null
+          onboarding_completed?: boolean | null
           personality_cleanliness_level?: string | null
           personality_conflict_style?: string | null
           personality_cooking_frequency?: string | null
