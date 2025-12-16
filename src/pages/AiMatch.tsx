@@ -13,6 +13,8 @@ import { RoommateMatchCard } from "@/components/ai-match/RoommateMatchCard";
 import { RoommateComparison } from "@/components/ai-match/RoommateComparison";
 import { DormComparison } from "@/components/listings/DormComparison";
 import { TierSelector } from "@/components/ai-match/TierSelector";
+import { AIStatusCard } from "@/components/ai-match/AIStatusCard";
+import { FreeTierInfoCard } from "@/components/ai-match/FreeTierInfoCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Brain, Bug, Sparkles } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -483,6 +485,13 @@ const AiMatch = () => {
           }}
         />
 
+        {/* AI Status Card - Always show */}
+        <AIStatusCard 
+          isLoading={loading} 
+          matchCount={matches.length}
+          matchMode={matchMode}
+        />
+
         {/* Tier Selection - Show only on roommate views */}
         {(activeMode === 'roommate' || (activeMode === 'combined' && matchMode === 'roommates')) && (
           <>
@@ -494,16 +503,14 @@ const AiMatch = () => {
               studentId={studentProfile?.id}
             />
             
-            {/* Basic Tier Messaging */}
-            {userPlan === 'basic' && matchMode === 'roommates' && (
-              <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30">
-                <CardContent className="p-4">
-                  <p className="text-sm">
-                    🎯 <strong>Basic Match</strong>: You're seeing random compatible roommates. 
-                    Upgrade to <strong>Advanced</strong> or <strong>VIP</strong> for personality-based matching!
-                  </p>
-                </CardContent>
-              </Card>
+            {/* Free Tier Info Card */}
+            {userPlan === 'basic' && matchMode === 'roommates' && !loading && (
+              <FreeTierInfoCard 
+                onUpgrade={() => {
+                  // Scroll to tier selector
+                  document.querySelector('[data-tier-selector]')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              />
             )}
           </>
         )}
