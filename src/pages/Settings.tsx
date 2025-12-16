@@ -20,6 +20,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
 import { MobileMenuRow } from '@/components/mobile/MobileMenuRow';
 import { LanguageModal } from '@/components/LanguageModal';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 import { useTranslation } from 'react-i18next';
 
@@ -32,6 +33,7 @@ export default function Settings() {
   const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
   const { i18n } = useTranslation();
+  const { permission, isSubscribed, subscribe, unsubscribe, loading: pushLoading } = usePushNotifications();
   const currentLang = i18n.language;
   const [settings, setSettings] = useState<UserSettings>(settingsManager.load());
   const [saving, setSaving] = useState(false);
@@ -281,7 +283,7 @@ export default function Settings() {
                     icon={<User className="w-6 h-6" />}
                     label="Personal information"
                     subtitle="Edit your profile details"
-                    onClick={() => navigate('/profile')}
+                    onClick={() => navigate('/profile?edit=true')}
                   />
                   <MobileMenuRow
                     icon={<Lock className="w-6 h-6" />}
@@ -328,16 +330,25 @@ export default function Settings() {
                   <MobileMenuRow
                     icon={<Bell className="w-6 h-6" />}
                     label="Notifications"
-                    onClick={() => {
-                      setSettings(prev => ({ ...prev, notifications: !prev.notifications }));
-                      handleSave();
+                    subtitle={isSubscribed ? 'Enabled' : 'Disabled'}
+                    onClick={async () => {
+                      if (isSubscribed) {
+                        await unsubscribe();
+                      } else {
+                        await subscribe();
+                      }
                     }}
                     showChevron={false}
                     rightElement={
                       <Switch
-                        checked={settings.notifications}
-                        onCheckedChange={(checked) => {
-                          setSettings(prev => ({ ...prev, notifications: checked }));
+                        checked={isSubscribed}
+                        disabled={pushLoading}
+                        onCheckedChange={async (checked) => {
+                          if (checked) {
+                            await subscribe();
+                          } else {
+                            await unsubscribe();
+                          }
                         }}
                       />
                     }
