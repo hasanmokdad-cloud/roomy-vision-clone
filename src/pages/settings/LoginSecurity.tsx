@@ -4,6 +4,13 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Key, Shield, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerFooter,
+} from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -169,13 +176,13 @@ export default function LoginSecurity() {
         </motion.div>
       </div>
 
-      {/* Password Change Modal */}
-      <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
-        <DialogContent className="bg-card/95 backdrop-blur-xl border border-border/40">
-          <DialogHeader>
-            <DialogTitle>Change Password</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
+      {/* Password Change Drawer */}
+      <Drawer open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Change Password</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-6 pb-6 space-y-4">
             <div>
               <Label htmlFor="new-password">New Password</Label>
               <Input
@@ -198,15 +205,17 @@ export default function LoginSecurity() {
                 className="mt-1"
               />
             </div>
+          </div>
+          <DrawerFooter>
             <Button 
               onClick={handleChangePassword} 
               className="w-full"
             >
               Update Password
             </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
       {/* 2FA Setup Modal */}
       <Dialog open={show2FASetup} onOpenChange={setShow2FASetup}>
