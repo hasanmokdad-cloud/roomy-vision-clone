@@ -16,12 +16,14 @@ import { LanguageModal } from '@/components/LanguageModal';
 import BottomNav from '@/components/BottomNav';
 import { MobileMenuRow } from '@/components/mobile/MobileMenuRow';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useUnreadNotificationsCount } from '@/hooks/useUnreadNotificationsCount';
 
 export default function Profile() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isAuthReady, userId, role, isAuthenticated, openAuthModal, signOut } = useAuth();
+  const { count: unreadNotifications } = useUnreadNotificationsCount(userId || undefined);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -253,10 +255,15 @@ export default function Profile() {
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="rounded-full"
+                className="rounded-full relative"
                 onClick={() => navigate('/profile/notifications')}
               >
                 <Bell className="w-6 h-6" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                    {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                  </span>
+                )}
               </Button>
             </div>
 
