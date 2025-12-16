@@ -16,14 +16,13 @@ import { LanguageModal } from '@/components/LanguageModal';
 import BottomNav from '@/components/BottomNav';
 import { MobileMenuRow } from '@/components/mobile/MobileMenuRow';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useUnreadNotificationsCount } from '@/hooks/useUnreadNotificationsCount';
+import { ProfileHub } from '@/components/profile/ProfileHub';
 
 export default function Profile() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isAuthReady, userId, role, isAuthenticated, openAuthModal, signOut } = useAuth();
-  const { count: unreadNotifications } = useUnreadNotificationsCount(userId || undefined);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -186,14 +185,18 @@ export default function Profile() {
     return '/listings';
   };
 
-  // Mobile authenticated profile - Airbnb style hub
+  // Mobile authenticated profile - use ProfileHub for students
   if (isMobile) {
-    // If showing profile form, render it full screen
+    // For students, use the new ProfileHub
+    if (role === 'student') {
+      return <ProfileHub userId={userId!} onSignOut={handleSignOut} />;
+    }
+
+    // For owners/admins, keep the existing profile form view
     if (showProfileForm) {
       return (
         <div className="min-h-screen bg-background">
           <div className="pt-6 px-6 pb-32">
-            {/* Back button */}
             <button
               onClick={() => setShowProfileForm(false)}
               className="flex items-center gap-2 text-foreground mb-6"
@@ -202,23 +205,14 @@ export default function Profile() {
               <span className="text-lg font-semibold">Personal info</span>
             </button>
 
-            {/* Profile Photo */}
             <div className="flex justify-center mb-6">
               <ProfilePhotoUpload
                 userId={userId!}
                 currentUrl={profilePhotoUrl}
                 onUploaded={handlePhotoUploaded}
-                tableName={role === 'student' ? 'students' : role === 'owner' ? 'owners' : 'admins'}
+                tableName={role === 'owner' ? 'owners' : 'admins'}
               />
             </div>
-
-            {/* Profile Form */}
-            {role === 'student' && (
-              <StudentProfileForm 
-                userId={userId!} 
-                onComplete={() => setShowProfileForm(false)}
-              />
-            )}
 
             {role === 'owner' && (
               <OwnerProfileForm 
@@ -249,27 +243,12 @@ export default function Profile() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            {/* Header with notification bell */}
             <div className="flex items-center justify-between">
               <h1 className="text-3xl font-bold text-foreground">Profile</h1>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="rounded-full relative"
-                onClick={() => navigate('/profile/notifications')}
-              >
-                <Bell className="w-6 h-6" />
-                {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
-                    {unreadNotifications > 99 ? '99+' : unreadNotifications}
-                  </span>
-                )}
-              </Button>
             </div>
 
-            {/* Profile Avatar Section - Clickable */}
             <button
-              onClick={() => role === 'student' ? navigate('/profile/complete') : setShowProfileForm(true)}
+              onClick={() => setShowProfileForm(true)}
               className="flex flex-col items-center py-6 w-full"
             >
               <Avatar className="w-24 h-24 mb-4">
@@ -284,23 +263,6 @@ export default function Profile() {
               <p className="text-muted-foreground text-sm">{getRoleLabel()}</p>
             </button>
 
-            {/* Become an Owner Banner - Only for students */}
-            {role === 'student' && (
-              <button
-                onClick={() => navigate('/become-owner')}
-                className="w-full p-4 bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-xl flex items-center gap-4 active:bg-primary/20 transition-colors"
-              >
-                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-primary" />
-                </div>
-                <div className="text-left flex-1">
-                  <p className="font-semibold text-foreground">Become an Owner</p>
-                  <p className="text-sm text-muted-foreground">List your dorm and earn</p>
-                </div>
-              </button>
-            )}
-
-            {/* Menu Items - No Card wrappers, just clean rows */}
             <div className="divide-y divide-border/20">
               <MobileMenuRow
                 icon={<Settings className="w-6 h-6" />}
@@ -308,14 +270,9 @@ export default function Profile() {
                 onClick={() => navigate('/settings')}
               />
               <MobileMenuRow
-                icon={<HelpCircle className="w-6 h-6" />}
-                label="Get help"
-                onClick={() => navigate('/contact')}
-              />
-              <MobileMenuRow
                 icon={<User className="w-6 h-6" />}
                 label="View profile"
-                onClick={() => role === 'student' ? navigate('/profile/complete') : setShowProfileForm(true)}
+                onClick={() => setShowProfileForm(true)}
               />
               <MobileMenuRow
                 icon={<Globe className="w-6 h-6" />}
@@ -324,10 +281,8 @@ export default function Profile() {
               />
             </div>
 
-            {/* Separator */}
             <div className="h-px bg-border/30" />
 
-            {/* Secondary Menu Items */}
             <div className="divide-y divide-border/20">
               <MobileMenuRow
                 icon={<Scale className="w-6 h-6" />}
