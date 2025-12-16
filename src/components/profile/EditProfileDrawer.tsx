@@ -36,6 +36,7 @@ import {
 import { universities } from '@/data/universities';
 import { housingAreas } from '@/data/housingAreas';
 import { roomTypes } from '@/data/roomTypes';
+import type { ProfileSection } from '@/pages/profile/CompleteProfile';
 
 interface EditProfileDrawerProps {
   open: boolean;
@@ -43,16 +44,24 @@ interface EditProfileDrawerProps {
   userId: string;
   profileData: any;
   onProfileUpdated: () => void;
+  initialSection?: ProfileSection;
 }
 
 type FieldKey = 'full_name' | 'age' | 'gender' | 'university' | 'major' | 'year_of_study' | 'budget' | 'preferred_housing_area' | 'room_type';
+
+const SECTION_FIELDS: Record<string, FieldKey[]> = {
+  personal: ['full_name', 'age', 'gender'],
+  academic: ['university', 'major', 'year_of_study'],
+  housing: ['budget', 'preferred_housing_area', 'room_type'],
+};
 
 export function EditProfileDrawer({ 
   open, 
   onClose, 
   userId, 
   profileData, 
-  onProfileUpdated 
+  onProfileUpdated,
+  initialSection
 }: EditProfileDrawerProps) {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
@@ -162,7 +171,7 @@ export function EditProfileDrawer({
     setEditValue(formData[field]);
   };
 
-  const fields: { key: FieldKey; label: string; icon: React.ReactNode; type: 'text' | 'number' | 'select'; options?: string[] }[] = [
+  const allFields: { key: FieldKey; label: string; icon: React.ReactNode; type: 'text' | 'number' | 'select'; options?: string[] }[] = [
     { key: 'full_name', label: 'Full name', icon: <User className="w-5 h-5" />, type: 'text' },
     { key: 'age', label: 'Age', icon: <Calendar className="w-5 h-5" />, type: 'number' },
     { key: 'gender', label: 'Gender', icon: <Users className="w-5 h-5" />, type: 'select', options: ['Male', 'Female'] },
@@ -174,6 +183,17 @@ export function EditProfileDrawer({
     { key: 'room_type', label: 'Room type', icon: <Home className="w-5 h-5" />, type: 'select', options: roomTypes },
   ];
 
+  // Filter fields by section if initialSection is provided
+  const fields = initialSection && SECTION_FIELDS[initialSection]
+    ? allFields.filter(f => SECTION_FIELDS[initialSection].includes(f.key))
+    : allFields;
+
+  const sectionTitles: Record<string, string> = {
+    personal: 'Personal Info',
+    academic: 'Academic Info',
+    housing: 'Housing Preferences',
+  };
+
   return (
     <>
       <Drawer open={open && !editingField} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -181,12 +201,12 @@ export function EditProfileDrawer({
           <div className="flex flex-col h-full">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/40">
-              <DrawerClose asChild>
+              <DrawerClose asChild onClick={onClose}>
                 <button className="w-10 h-10 rounded-full hover:bg-muted/30 flex items-center justify-center">
                   <X className="w-6 h-6" />
                 </button>
               </DrawerClose>
-              <DrawerTitle className="text-lg font-semibold">Edit profile</DrawerTitle>
+              <DrawerTitle className="text-lg font-semibold">{initialSection ? sectionTitles[initialSection] : 'Edit profile'}</DrawerTitle>
               <div className="w-10" />
             </div>
 
@@ -273,7 +293,7 @@ export function EditProfileDrawer({
           </DrawerHeader>
           <div className="px-6 pb-6">
             {editingField && (() => {
-              const field = fields.find(f => f.key === editingField);
+              const field = allFields.find(f => f.key === editingField);
               if (!field) return null;
 
               if (field.type === 'select' && field.options) {

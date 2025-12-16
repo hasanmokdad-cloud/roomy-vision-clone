@@ -145,10 +145,11 @@ export const ChatbotBubble = () => {
       return;
     }
     
-    // ONLY show chatbot on /listings page - NOT on dorm detail pages
+    // Show chatbot on /listings page AND dorm detail pages
     const isListingsPage = location.pathname === '/listings';
+    const isDormDetailPage = location.pathname.startsWith('/dorm/');
     
-    setShouldShow(isListingsPage);
+    setShouldShow(isListingsPage || isDormDetailPage);
   }, [userId, userRole, location.pathname, isMobile]);
 
   // ✅ Listen for programmatic open events

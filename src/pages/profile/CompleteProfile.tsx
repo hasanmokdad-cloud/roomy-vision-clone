@@ -10,6 +10,8 @@ import BottomNav from '@/components/BottomNav';
 import { AboutProfileDrawer } from '@/components/profile/AboutProfileDrawer';
 import { EditProfileDrawer } from '@/components/profile/EditProfileDrawer';
 
+export type ProfileSection = 'personal' | 'academic' | 'housing' | null;
+
 export default function CompleteProfile() {
   const navigate = useNavigate();
   const { userId, isAuthenticated, isAuthReady, role } = useAuth();
@@ -20,6 +22,7 @@ export default function CompleteProfile() {
   const [showEditDrawer, setShowEditDrawer] = useState(false);
   const [hasSeenAboutDrawer, setHasSeenAboutDrawer] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
+  const [activeSection, setActiveSection] = useState<ProfileSection>(null);
 
   useEffect(() => {
     if (!isAuthReady) return;
@@ -161,25 +164,25 @@ export default function CompleteProfile() {
 
           {/* Profile Sections Preview */}
           <div className="space-y-4">
-            <ProfileSection
+            <ProfileSectionItem
               title="Personal Info"
               completed={!!(profileData?.full_name && profileData?.age && profileData?.gender)}
-              onClick={() => setShowEditDrawer(true)}
+              onClick={() => { setActiveSection('personal'); setShowEditDrawer(true); }}
             />
-            <ProfileSection
+            <ProfileSectionItem
               title="Academic Info"
               completed={!!(profileData?.university && profileData?.major)}
-              onClick={() => setShowEditDrawer(true)}
+              onClick={() => { setActiveSection('academic'); setShowEditDrawer(true); }}
             />
-            <ProfileSection
+            <ProfileSectionItem
               title="Housing Preferences"
               completed={!!(profileData?.budget && profileData?.preferred_housing_area)}
-              onClick={() => setShowEditDrawer(true)}
+              onClick={() => { setActiveSection('housing'); setShowEditDrawer(true); }}
             />
-            <ProfileSection
+            <ProfileSectionItem
               title="Personality Matching"
               completed={!!profileData?.personality_test_completed}
-              onClick={() => navigate('/personality-test')}
+              onClick={() => navigate('/personality')}
             />
           </div>
         </motion.div>
@@ -195,10 +198,11 @@ export default function CompleteProfile() {
       {/* Edit Profile Drawer */}
       <EditProfileDrawer
         open={showEditDrawer}
-        onClose={() => setShowEditDrawer(false)}
+        onClose={() => { setShowEditDrawer(false); setActiveSection(null); }}
         userId={userId!}
         profileData={profileData}
         onProfileUpdated={handleProfileUpdated}
+        initialSection={activeSection}
       />
 
       <BottomNav />
@@ -206,7 +210,7 @@ export default function CompleteProfile() {
   );
 }
 
-function ProfileSection({ 
+function ProfileSectionItem({ 
   title, 
   completed, 
   onClick 
