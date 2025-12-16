@@ -283,13 +283,13 @@ export default function Settings() {
                     icon={<User className="w-6 h-6" />}
                     label="Personal information"
                     subtitle="Edit your profile details"
-                    onClick={() => navigate('/profile?edit=true')}
+                    onClick={() => navigate('/settings/personal-info')}
                   />
                   <MobileMenuRow
                     icon={<Lock className="w-6 h-6" />}
                     label="Login & security"
                     subtitle="Password, 2FA, devices"
-                    onClick={() => setShowPasswordModal(true)}
+                    onClick={() => navigate('/settings/security')}
                   />
                 </div>
               </div>
@@ -355,29 +355,6 @@ export default function Settings() {
                 </div>
               </div>
 
-              {/* Security */}
-              <div>
-                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-0">
-                  Security
-                </h2>
-                <div className="divide-y divide-border/20">
-                  <MobileMenuRow
-                    icon={<Key className="w-6 h-6" />}
-                    label="Change password"
-                    onClick={() => setShowPasswordModal(true)}
-                  />
-                  <MobileMenuRow
-                    icon={<Shield className="w-6 h-6" />}
-                    label="Two-factor authentication"
-                    onClick={handleEnable2FA}
-                  />
-                  <MobileMenuRow
-                    icon={<Smartphone className="w-6 h-6" />}
-                    label="Trusted devices"
-                    onClick={() => navigate('/settings/devices')}
-                  />
-                </div>
-              </div>
 
               {/* AI Memory - Only for students and admins */}
               {role !== 'owner' && (

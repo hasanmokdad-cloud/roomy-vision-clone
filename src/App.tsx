@@ -116,6 +116,10 @@ const VerifyDevice = lazy(() => import("./pages/devices/VerifyDevice"));
 const SecureAccount = lazy(() => import("./pages/devices/SecureAccount"));
 const DevicesPage = lazy(() => import("./pages/settings/DevicesPage"));
 const NotificationsSettings = lazy(() => import("./pages/settings/NotificationsSettings"));
+const LoginSecurity = lazy(() => import("./pages/settings/LoginSecurity"));
+const PersonalInfo = lazy(() => import("./pages/settings/PersonalInfo"));
+const ProfileNotifications = lazy(() => import("./pages/profile/Notifications"));
+const CompleteProfile = lazy(() => import("./pages/profile/CompleteProfile"));
 const DevicePending = lazy(() => import("./pages/auth/DevicePending"));
 const ApproveDevice = lazy(() => import("./pages/auth/ApproveDevice"));
 const AuthCallback = lazy(() => import("./pages/auth/AuthCallback"));
@@ -270,6 +274,10 @@ const AppRoutes = () => {
           <Route path="/settings" element={<ProtectedRoute element={<Settings />} />} />
           <Route path="/settings/devices" element={<ProtectedRoute element={<DevicesPage />} />} />
           <Route path="/settings/notifications" element={<ProtectedRoute element={<NotificationsSettings />} />} />
+          <Route path="/settings/security" element={<ProtectedRoute element={<LoginSecurity />} />} />
+          <Route path="/settings/personal-info" element={<ProtectedRoute element={<PersonalInfo />} />} />
+          <Route path="/profile/notifications" element={<ProtectedRoute element={<ProfileNotifications />} />} />
+          <Route path="/profile/complete" element={<ProtectedRoute element={<CompleteProfile />} requiredRole="student" />} />
           <Route path="/saved-dorms" element={<ProtectedRoute element={<SavedDorms />} />} />
           <Route path="/saved-rooms" element={<ProtectedRoute element={<SavedRooms />} />} />
           <Route path="/wishlists" element={<Wishlists />} />
