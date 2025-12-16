@@ -120,6 +120,7 @@ const LoginSecurity = lazy(() => import("./pages/settings/LoginSecurity"));
 const PersonalInfo = lazy(() => import("./pages/settings/PersonalInfo"));
 const ProfileNotifications = lazy(() => import("./pages/profile/Notifications"));
 const CompleteProfile = lazy(() => import("./pages/profile/CompleteProfile"));
+const Preferences = lazy(() => import("./pages/profile/Preferences"));
 const DevicePending = lazy(() => import("./pages/auth/DevicePending"));
 const ApproveDevice = lazy(() => import("./pages/auth/ApproveDevice"));
 const AuthCallback = lazy(() => import("./pages/auth/AuthCallback"));
@@ -278,6 +279,7 @@ const AppRoutes = () => {
           <Route path="/settings/personal-info" element={<ProtectedRoute element={<PersonalInfo />} />} />
           <Route path="/profile/notifications" element={<ProtectedRoute element={<ProfileNotifications />} />} />
           <Route path="/profile/complete" element={<ProtectedRoute element={<CompleteProfile />} requiredRole="student" />} />
+          <Route path="/profile/preferences" element={<ProtectedRoute element={<Preferences />} requiredRole="student" />} />
           <Route path="/saved-dorms" element={<ProtectedRoute element={<SavedDorms />} />} />
           <Route path="/saved-rooms" element={<ProtectedRoute element={<SavedRooms />} />} />
           <Route path="/wishlists" element={<Wishlists />} />
