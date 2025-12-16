@@ -125,7 +125,7 @@ export const ChatbotBubble = () => {
     }
   }, [messages]);
 
-  // ✅ Visibility rules: Hide for public (signed-out) users, hide for owners
+  // ✅ Visibility rules: ONLY show for authenticated students on /listings page
   useEffect(() => {
     // CRITICAL: Never show chatbot if user is not authenticated
     if (!userId) {
@@ -139,23 +139,16 @@ export const ChatbotBubble = () => {
       return;
     }
     
-    // Owners never see the chatbot
-    if (userRole === 'owner') {
+    // ONLY students can see the chatbot - no owners, no admins
+    if (userRole !== 'student') {
       setShouldShow(false);
       return;
     }
     
-    // Only show chatbot on /listings and /dorm/:id pages
-    const isListingsPage = location.pathname === '/listings' || location.pathname.startsWith('/dorm/');
+    // ONLY show chatbot on /listings page - NOT on dorm detail pages
+    const isListingsPage = location.pathname === '/listings';
     
-    // Students and admins: only show on listings pages
-    if (userRole === 'student' || userRole === 'admin') {
-      setShouldShow(isListingsPage);
-      return;
-    }
-    
-    // Default: hide if role is something unexpected
-    setShouldShow(false);
+    setShouldShow(isListingsPage);
   }, [userId, userRole, location.pathname, isMobile]);
 
   // ✅ Listen for programmatic open events

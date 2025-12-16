@@ -24,16 +24,17 @@ import { ScrollToTopButton } from '@/components/listings/ScrollToTopButton';
 import { ShareButton } from '@/components/shared/ShareButton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { renderMarkdown } from '@/utils/markdownRenderer';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function DormDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { user, role, openAuthModal } = useAuth();
   const [dorm, setDorm] = useState<any>(null);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
@@ -43,15 +44,14 @@ export default function DormDetail() {
 
   useEffect(() => {
     loadDorm();
-    checkAuth();
   }, [id]);
 
-  // Fetch AI insight for this dorm
+  // Fetch AI insight for this dorm (only for students)
   useEffect(() => {
-    if (user && dorm) {
+    if (user && dorm && role === 'student') {
       fetchDormInsight();
     }
-  }, [user, dorm]);
+  }, [user, dorm, role]);
 
   const fetchDormInsight = async () => {
     if (!user) return;
@@ -102,11 +102,6 @@ export default function DormDetail() {
     }
   }, [id, user, loading]);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    setUser(session?.user ?? null);
-  };
-
   const loadDorm = async () => {
     const { data, error } = await supabase
       .from('dorms')
@@ -153,12 +148,7 @@ export default function DormDetail() {
 
   const toggleSave = async () => {
     if (!user) {
-      toast({
-        title: "Sign in Required",
-        description: "Please sign in to save dorms.",
-        variant: "destructive",
-      });
-      // Auth modal will be triggered elsewhere
+      openAuthModal();
       return;
     }
 
@@ -357,16 +347,18 @@ export default function DormDetail() {
             </Card>
           )}
 
-          {/* Action Buttons */}
-          <div className="mb-8 flex flex-wrap gap-3 animate-fade-in">
-            <Button
-              onClick={handleChatWithRoomy}
-              className="bg-gradient-to-r from-purple-600 to-blue-500 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Chat with Roomy AI
-            </Button>
-          </div>
+          {/* Action Buttons - Only show Chat with Roomy AI for authenticated students */}
+          {user && role === 'student' && (
+            <div className="mb-8 flex flex-wrap gap-3 animate-fade-in">
+              <Button
+                onClick={handleChatWithRoomy}
+                className="bg-gradient-to-r from-purple-600 to-blue-500 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Chat with Roomy AI
+              </Button>
+            </div>
+          )}
 
           {/* Image Carousel */}
           {images.length > 0 ? (

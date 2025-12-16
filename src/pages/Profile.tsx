@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { StudentProfileForm } from '@/components/StudentProfileForm';
 import { OwnerProfileForm } from '@/components/OwnerProfileForm';
@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 export default function Profile() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isAuthReady, userId, role, isAuthenticated, openAuthModal, signOut } = useAuth();
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
@@ -30,6 +31,13 @@ export default function Profile() {
   const [whatsappLanguage, setWhatsappLanguage] = useState('EN');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showProfileForm, setShowProfileForm] = useState(false);
+
+  // Check for ?edit=true query param to auto-show profile form
+  useEffect(() => {
+    if (searchParams.get('edit') === 'true' && isAuthenticated) {
+      setShowProfileForm(true);
+    }
+  }, [searchParams, isAuthenticated]);
 
   useEffect(() => {
     if (!isAuthReady) return;
