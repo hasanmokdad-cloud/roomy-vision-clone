@@ -194,6 +194,9 @@ export default function VerifyEmail() {
                 email: user.email,
                 full_name: user.email?.split('@')[0] || 'Student'
               });
+              
+              // Pre-cache onboarding status for faster redirect
+              sessionStorage.setItem(`roomy_onboarding_${user.id}`, 'pending');
             }
           }
           

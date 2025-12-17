@@ -6,6 +6,7 @@ type AppRole = 'admin' | 'owner' | 'student' | null;
 
 interface AuthContextValue {
   isAuthReady: boolean;
+  isRoleReady: boolean;
   session: Session | null;
   user: User | null;
   role: AppRole;
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isRoleReady, setIsRoleReady] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<AppRole>(null);
@@ -64,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setRole(null);
       setIsAuthReady(true);
+      setIsRoleReady(true);
       console.log('✅ AuthContext: Sign-out completed, auth ready');
       return;
     }
@@ -87,15 +90,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Fetch role
         const userRole = await fetchRole(currentSession.user.id);
         setRole(userRole);
+        setIsRoleReady(true);
         console.log('✅ AuthContext: Role resolved:', userRole);
       } else {
         console.log('🔓 AuthContext: No session found');
         setSession(null);
         setUser(null);
         setRole(null);
+        setIsRoleReady(true);
       }
     } catch (err) {
       console.error('AuthContext: Init error:', err);
+      setIsRoleReady(true);
     } finally {
       setIsAuthReady(true);
       console.log('✅ AuthContext: Ready');
@@ -133,11 +139,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('👤 AuthContext: User signed in');
         setSession(newSession);
         setUser(newSession.user);
+        setIsRoleReady(false); // Reset while fetching
         
         // Defer async fetchRole with setTimeout(0) to avoid async callback issues
         setTimeout(() => {
           fetchRole(newSession.user.id).then(userRole => {
             setRole(userRole);
+            setIsRoleReady(true);
           });
         }, 0);
       }
@@ -198,6 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value: AuthContextValue = {
     isAuthReady,
+    isRoleReady,
     session,
     user,
     role,
