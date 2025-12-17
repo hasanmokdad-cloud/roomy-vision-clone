@@ -19,6 +19,7 @@ import { MicPermissionProvider } from "@/contexts/MicPermissionContext";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { useIsMobile } from "@/hooks/use-mobile";
+import OnboardingGuard from "@/components/guards/OnboardingGuard";
 
 // Lazy load route components
 const CheckEmail = lazy(() => import("./pages/auth/CheckEmail"));
@@ -260,9 +261,9 @@ const AppRoutes = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/legal/:page" element={<Legal />} />
           
-          {/* PUBLIC - Listings and Dorm Details (no auth required) */}
-          <Route path="/listings" element={<MobileSwipeLayout><Listings /></MobileSwipeLayout>} />
-          <Route path="/dorm/:id" element={<DormDetail />} />
+          {/* PUBLIC - Listings and Dorm Details (no auth required, but OnboardingGuard for students) */}
+          <Route path="/listings" element={<OnboardingGuard><MobileSwipeLayout><Listings /></MobileSwipeLayout></OnboardingGuard>} />
+          <Route path="/dorm/:id" element={<OnboardingGuard><DormDetail /></OnboardingGuard>} />
           
           {/* Become Owner - requires auth but accessible to students */}
           <Route path="/become-owner" element={<BecomeOwner />} />
@@ -284,11 +285,11 @@ const AppRoutes = () => {
           <Route path="/profile/preferences" element={<ProtectedRoute element={<Preferences />} requiredRole="student" />} />
           <Route path="/saved-dorms" element={<ProtectedRoute element={<SavedDorms />} />} />
           <Route path="/saved-rooms" element={<ProtectedRoute element={<SavedRooms />} />} />
-          <Route path="/wishlists" element={<Wishlists />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/student-profile/:id" element={<ProtectedRoute element={<StudentProfile />} />} />
-          <Route path="/roommate/:userId" element={<ProtectedRoute element={<RoommateProfile />} />} />
-          <Route path="/ai-match" element={<MobileSwipeLayout><AiMatch /></MobileSwipeLayout>} />
+          <Route path="/wishlists" element={<OnboardingGuard><Wishlists /></OnboardingGuard>} />
+          <Route path="/messages" element={<OnboardingGuard><Messages /></OnboardingGuard>} />
+          <Route path="/student-profile/:id" element={<ProtectedRoute element={<OnboardingGuard><StudentProfile /></OnboardingGuard>} />} />
+          <Route path="/roommate/:userId" element={<ProtectedRoute element={<OnboardingGuard><RoommateProfile /></OnboardingGuard>} />} />
+          <Route path="/ai-match" element={<OnboardingGuard><MobileSwipeLayout><AiMatch /></MobileSwipeLayout></OnboardingGuard>} />
           <Route path="/ai-roommate-match" element={<ProtectedRoute element={<StudentMatch />} />} />
           <Route path="/boost-profile" element={<ProtectedRoute element={<BoostProfile />} />} />
           <Route path="/personality" element={<ProtectedRoute element={<PersonalityTest />} requiredRole="student" />} />
