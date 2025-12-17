@@ -21,11 +21,11 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, email, tokenType = 'signup' } = await req.json();
+    const { email } = await req.json();
 
-    if (!userId || !email) {
+    if (!email) {
       return new Response(
-        JSON.stringify({ error: "Missing userId or email" }),
+        JSON.stringify({ error: "Missing email" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -36,63 +36,59 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // Look up user by email
+    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers();
+    
+    if (userError) {
+      console.error("[send-password-reset] Error listing users:", userError);
+      // Return success to prevent email enumeration
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const user = userData.users.find(u => u.email?.toLowerCase() === email.toLowerCase().trim());
+
+    if (!user) {
+      console.log("[send-password-reset] User not found for email:", email);
+      // Return success to prevent email enumeration
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Generate secure token
     const token = generateSecureToken();
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour for password reset
 
-    // Delete any existing unused tokens for this user/type
+    // Delete any existing unused recovery tokens for this user
     await supabaseAdmin
       .from("email_verification_tokens")
       .delete()
-      .eq("user_id", userId)
-      .eq("token_type", tokenType)
+      .eq("user_id", user.id)
+      .eq("token_type", "recovery")
       .is("used_at", null);
 
     // Store new token
     const { error: insertError } = await supabaseAdmin
       .from("email_verification_tokens")
       .insert({
-        user_id: userId,
-        email,
+        user_id: user.id,
+        email: user.email,
         token,
-        token_type: tokenType,
+        token_type: "recovery",
         expires_at: expiresAt.toISOString(),
       });
 
     if (insertError) {
-      console.error("Token insert error:", insertError);
-      throw new Error("Failed to create verification token");
+      console.error("[send-password-reset] Token insert error:", insertError);
+      throw new Error("Failed to create reset token");
     }
 
-    // Construct verification URL - recovery goes to /auth/reset, others to /auth/verify
-    const verifyUrl = tokenType === 'recovery' 
-      ? `https://roomylb.com/auth/reset?token=${token}&type=${tokenType}`
-      : `https://roomylb.com/auth/verify?token=${token}&type=${tokenType}`;
-    // Determine email content based on type
-    let subject: string;
-    let heading: string;
-    let message: string;
-    let buttonText: string;
-
-    switch (tokenType) {
-      case 'recovery':
-        subject = "Reset your Roomy password";
-        heading = "Reset Your Password";
-        message = "We received a request to reset your password. Click the button below to create a new password.";
-        buttonText = "Reset Password";
-        break;
-      case 'email_change':
-        subject = "Confirm your new email for Roomy";
-        heading = "Confirm Email Change";
-        message = "Please confirm your new email address by clicking the button below.";
-        buttonText = "Confirm Email";
-        break;
-      default: // signup
-        subject = "Confirm your Roomy email";
-        heading = "Welcome to Roomy!";
-        message = "Thank you for signing up! Please verify your email address to get started finding your perfect student housing.";
-        buttonText = "Verify Email";
-    }
+    // Construct reset URL
+    const resetUrl = `https://roomylb.com/auth/reset?token=${token}&type=recovery`;
 
     // Send branded email via Resend
     const emailHtml = `
@@ -101,7 +97,7 @@ serve(async (req) => {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subject}</title>
+  <title>Reset your Roomy password</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #0B0E1A; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0B0E1A; padding: 40px 20px;">
@@ -118,26 +114,26 @@ serve(async (req) => {
           <tr>
             <td style="padding: 0 40px 40px;">
               <h1 style="color: #1a1a2e; font-size: 24px; font-weight: 600; margin: 0 0 16px; text-align: center;">
-                ${heading}
+                Reset Your Password
               </h1>
               <p style="color: #4a4a68; font-size: 16px; line-height: 1.6; margin: 0 0 32px; text-align: center;">
-                ${message}
+                We received a request to reset your password. Click the button below to create a new password.
               </p>
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td align="center">
                     <!--[if mso]>
-                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${verifyUrl}" style="height:48px;v-text-anchor:middle;width:200px;" arcsize="20%" strokecolor="#8E2DE2" fillcolor="#8E2DE2">
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${resetUrl}" style="height:48px;v-text-anchor:middle;width:200px;" arcsize="20%" strokecolor="#8E2DE2" fillcolor="#8E2DE2">
                       <w:anchorlock/>
-                      <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:bold;">${buttonText}</center>
+                      <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:bold;">Reset Password</center>
                     </v:roundrect>
                     <![endif]-->
                     <!--[if !mso]><!-->
                     <table cellpadding="0" cellspacing="0" border="0">
                       <tr>
                         <td align="center" bgcolor="#8E2DE2" style="border-radius: 8px;">
-                          <a href="${verifyUrl}" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px;">
-                            ${buttonText}
+                          <a href="${resetUrl}" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px;">
+                            Reset Password
                           </a>
                         </td>
                       </tr>
@@ -150,7 +146,7 @@ serve(async (req) => {
                 If you didn't request this, you can safely ignore this email.
               </p>
               <p style="color: #8888a0; font-size: 12px; line-height: 1.5; margin: 24px 0 0; text-align: center; word-break: break-all;">
-                Or copy this link: ${verifyUrl}
+                Or copy this link: ${resetUrl}
               </p>
             </td>
           </tr>
@@ -161,7 +157,7 @@ serve(async (req) => {
                 Roomy Security • <a href="https://roomylb.com" style="color: #BD00FF; text-decoration: none;">roomylb.com</a>
               </p>
               <p style="color: #aaaab8; font-size: 11px; margin: 8px 0 0; text-align: center;">
-                This link expires in 24 hours.
+                This link expires in 1 hour.
               </p>
             </td>
           </tr>
@@ -182,8 +178,8 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: "Roomy Security <security@roomylb.com>",
-        to: [email],
-        subject,
+        to: [user.email],
+        subject: "Reset your Roomy password",
         html: emailHtml,
       }),
     });
@@ -191,21 +187,22 @@ serve(async (req) => {
     const emailResult = await emailResponse.json();
 
     if (!emailResponse.ok) {
-      console.error("[send-verification-email] Resend error:", emailResult);
+      console.error("[send-password-reset] Resend error:", emailResult);
       throw new Error(emailResult.message || "Failed to send email");
     }
 
-    console.log(`[send-verification-email] Email sent to ${email}, type: ${tokenType}`);
+    console.log(`[send-password-reset] Password reset email sent to ${user.email}`);
 
     return new Response(
-      JSON.stringify({ success: true, messageId: emailResult.id }),
+      JSON.stringify({ success: true }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
-    console.error("[send-verification-email] Error:", error);
+    console.error("[send-password-reset] Error:", error);
+    // Return success to prevent email enumeration
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ success: true }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

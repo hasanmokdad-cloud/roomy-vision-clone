@@ -33,22 +33,30 @@ export default function PasswordReset() {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset`,
+      // Look up user by email to get their user_id
+      // We use a custom edge function to handle this securely
+      const { data, error } = await supabase.functions.invoke('send-password-reset', {
+        body: { email: email.trim() }
       });
 
       if (error) throw error;
 
+      if (data?.error) {
+        // If user doesn't exist, still show success to prevent email enumeration
+        console.log('[PasswordReset] User lookup result:', data.error);
+      }
+
       setIsSent(true);
       toast({
         title: "Reset link sent",
-        description: "Check your email for the password reset link.",
+        description: "If an account exists, you'll receive an email from security@roomylb.com",
       });
     } catch (error: any) {
+      // Always show success to prevent email enumeration attacks
+      setIsSent(true);
       toast({
-        title: "Failed to send reset link",
-        description: error.message || "Please try again later.",
-        variant: "destructive",
+        title: "Reset link sent",
+        description: "If an account exists, you'll receive an email from security@roomylb.com",
       });
     } finally {
       setIsLoading(false);

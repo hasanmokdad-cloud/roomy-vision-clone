@@ -34,6 +34,8 @@ export default function ResetPassword() {
   const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
   const isFormValid = isMinLength && hasNumber && hasUppercase && passwordsMatch;
 
+  const [verifiedUserId, setVerifiedUserId] = useState<string | null>(null);
+
   useEffect(() => {
     // Log password reset attempt
     console.log("[password_reset_attempt]", new Date().toISOString());
@@ -51,14 +53,30 @@ export default function ResetPassword() {
       const type = urlParams.get('type');
       
       if (token && type === 'recovery') {
-        // Verify the recovery token with Supabase
-        const { data, error } = await supabase.auth.verifyOtp({
-          token_hash: token,
-          type: 'recovery',
-        });
-        
-        if (error) {
-          console.log("[password_reset_error] Token verification failed:", error);
+        // Verify the recovery token with our custom edge function
+        try {
+          const { data, error } = await supabase.functions.invoke('verify-email-token', {
+            body: { token, type: 'recovery' }
+          });
+          
+          if (error || !data?.valid) {
+            console.log("[password_reset_error] Token verification failed:", error || data?.error);
+            setErrorMessage("This reset link is invalid or has expired.");
+            toast({
+              title: "Invalid reset link",
+              description: "Please request a new password reset link.",
+              variant: "destructive",
+            });
+            setStep('error');
+            return;
+          }
+          
+          // Token verified, store user ID and show password form
+          setVerifiedUserId(data.userId);
+          setStep('form');
+          return;
+        } catch (err) {
+          console.log("[password_reset_error] Token verification exception:", err);
           setErrorMessage("This reset link is invalid or has expired.");
           toast({
             title: "Invalid reset link",
@@ -66,12 +84,6 @@ export default function ResetPassword() {
             variant: "destructive",
           });
           setStep('error');
-          return;
-        }
-        
-        if (data?.session) {
-          // Token verified, show password form
-          setStep('form');
           return;
         }
       }
@@ -91,6 +103,7 @@ export default function ResetPassword() {
         return;
       }
       
+      setVerifiedUserId(session.user.id);
       setStep('form');
     };
 
@@ -134,9 +147,18 @@ export default function ResetPassword() {
         return;
       }
 
-      const { error } = await supabase.auth.updateUser({ password });
+      // Update password via admin API (since we verified token via our custom flow)
+      if (verifiedUserId) {
+        const { error } = await supabase.functions.invoke('update-user-password', {
+          body: { userId: verifiedUserId, password }
+        });
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Fallback to regular update if we have a session
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+      }
 
       // Log success
       console.log("[password_reset_success]", new Date().toISOString());
