@@ -13,9 +13,8 @@ import HometownStep from './steps/HometownStep';
 import AcademicStep from './steps/AcademicStep';
 import LivingHabitsStep from './steps/LivingHabitsStep';
 import SocialStyleStep from './steps/SocialStyleStep';
-import CommutePrefsStep from './steps/CommutePrefsStep';
-import BudgetStep from './steps/BudgetStep';
 import AccommodationStatusStep from './steps/AccommodationStatusStep';
+import HousingPreferencesStep from './steps/HousingPreferencesStep';
 import ProfileExtrasStep from './steps/ProfileExtrasStep';
 import StudentReviewStep from './steps/StudentReviewStep';
 
@@ -35,11 +34,14 @@ interface WizardFormData {
   personality_intro_extro: string;
   personality_guests_frequency: string;
   personality_study_environment: string;
+  accommodation_status: string;
+  current_dorm_id: string;
+  current_room_id: string;
+  city: string;
   preferred_housing_area: string;
-  distance_preference: string;
+  // distance_preference: string; // COMMENTED - future implementation with distance algorithm
   budget: number;
   room_type: string;
-  accommodation_status: string;
   needs_roommate: boolean;
   enable_personality_matching: boolean;
   profile_photo_url: string;
@@ -63,11 +65,14 @@ const INITIAL_DATA: WizardFormData = {
   personality_intro_extro: '',
   personality_guests_frequency: '',
   personality_study_environment: '',
+  accommodation_status: 'need_dorm',
+  current_dorm_id: '',
+  current_room_id: '',
+  city: '',
   preferred_housing_area: '',
-  distance_preference: '',
+  // distance_preference: '', // COMMENTED - future implementation
   budget: 300,
   room_type: '',
-  accommodation_status: 'need_dorm',
   needs_roommate: false,
   enable_personality_matching: false,
   profile_photo_url: '',
@@ -75,7 +80,20 @@ const INITIAL_DATA: WizardFormData = {
   bio: ''
 };
 
-const TOTAL_STEPS = 13;
+// Step flow:
+// 0: Intro
+// 1: Phase 1 Overview (About You)
+// 2: Basic Info
+// 3: Hometown
+// 4: Academic
+// 5: Phase 2 Overview (Lifestyle)
+// 6: Living Habits
+// 7: Social Style
+// 8: Phase 3 Overview (Dorm Preferences)
+// 9: Accommodation Status (Do you need a dorm?)
+// 10: Housing Preferences (only if need_dorm, includes budget, location, room type)
+// 11: Profile Extras
+// 12: Review
 
 const MobileStudentWizard = () => {
   const navigate = useNavigate();
@@ -85,6 +103,12 @@ const MobileStudentWizard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const STORAGE_KEY = `roomy_student_onboarding_${user?.id}`;
+
+  // Calculate total steps dynamically based on accommodation status
+  const getTotalSteps = () => {
+    // If have_dorm, skip housing preferences step (step 10)
+    return formData.accommodation_status === 'have_dorm' ? 11 : 12;
+  };
 
   // Load saved progress
   useEffect(() => {
@@ -123,16 +147,29 @@ const MobileStudentWizard = () => {
   };
 
   const handleNext = async () => {
-    if (currentStep === TOTAL_STEPS) {
+    const totalSteps = getTotalSteps();
+    
+    if (currentStep === totalSteps) {
       await handleSubmit();
     } else {
-      setCurrentStep(prev => prev + 1);
+      // Skip housing preferences step if have_dorm
+      if (currentStep === 9 && formData.accommodation_status === 'have_dorm') {
+        // Skip step 10 (housing preferences) and go directly to profile extras
+        setCurrentStep(11);
+      } else {
+        setCurrentStep(prev => prev + 1);
+      }
     }
   };
 
   const handleBack = () => {
     if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
+      // When going back from profile extras (11) and have_dorm, skip to accommodation status (9)
+      if (currentStep === 11 && formData.accommodation_status === 'have_dorm') {
+        setCurrentStep(9);
+      } else {
+        setCurrentStep(prev => prev - 1);
+      }
     }
   };
 
@@ -168,6 +205,10 @@ const MobileStudentWizard = () => {
           budget: formData.budget,
           room_type: formData.room_type,
           accommodation_status: formData.accommodation_status,
+          current_dorm_id: formData.current_dorm_id || null,
+          current_room_id: formData.current_room_id || null,
+          preferred_housing_area: formData.preferred_housing_area || null,
+          // distance_preference: formData.distance_preference || null, // COMMENTED - future implementation
           profile_photo_url: formData.profile_photo_url || null,
           phone_number: formData.phone_number || null,
           onboarding_completed: true
@@ -178,6 +219,9 @@ const MobileStudentWizard = () => {
 
       // Clear saved progress
       localStorage.removeItem(STORAGE_KEY);
+      
+      // Mark onboarding as completed in sessionStorage
+      sessionStorage.setItem(`roomy_onboarding_${user.id}`, 'completed');
 
       toast.success('Profile setup complete!');
       navigate('/listings');
@@ -195,8 +239,13 @@ const MobileStudentWizard = () => {
         return !!(formData.full_name.trim() && formData.gender);
       case 4: // Academic
         return !!formData.university;
-      case 10: // Budget
-        return formData.budget > 0 && !!formData.room_type;
+      case 9: // Accommodation Status
+        if (formData.accommodation_status === 'have_dorm') {
+          return !!(formData.current_dorm_id && formData.current_room_id);
+        }
+        return !!formData.accommodation_status;
+      case 10: // Housing Preferences (only shown if need_dorm)
+        return formData.budget > 0 && !!formData.room_type && !!formData.city;
       default:
         return true;
     }
@@ -257,30 +306,33 @@ const MobileStudentWizard = () => {
         return <StudentStepOverview phase={3} />;
       case 9:
         return (
-          <CommutePrefsStep
-            data={{ preferred_housing_area: formData.preferred_housing_area, distance_preference: formData.distance_preference }}
-            onChange={handleDataChange}
-          />
-        );
-      case 10:
-        return (
-          <BudgetStep
-            data={{ budget: formData.budget, room_type: formData.room_type }}
-            onChange={handleDataChange}
-          />
-        );
-      case 11:
-        return (
           <AccommodationStatusStep
             data={{
               accommodation_status: formData.accommodation_status,
+              current_dorm_id: formData.current_dorm_id,
+              current_room_id: formData.current_room_id,
               needs_roommate: formData.needs_roommate,
               enable_personality_matching: formData.enable_personality_matching
             }}
             onChange={handleDataChange}
           />
         );
-      case 12:
+      case 10:
+        // Housing preferences - only shown if need_dorm
+        return (
+          <HousingPreferencesStep
+            data={{
+              budget: formData.budget,
+              room_type: formData.room_type,
+              city: formData.city,
+              preferred_housing_area: formData.preferred_housing_area,
+              needs_roommate: formData.needs_roommate,
+              enable_personality_matching: formData.enable_personality_matching
+            }}
+            onChange={handleDataChange}
+          />
+        );
+      case 11:
         return (
           <ProfileExtrasStep
             data={{
@@ -291,7 +343,7 @@ const MobileStudentWizard = () => {
             onChange={handleDataChange}
           />
         );
-      case 13:
+      case 12:
         return <StudentReviewStep data={formData} onEdit={handleEditFromReview} />;
       default:
         return null;
@@ -308,17 +360,19 @@ const MobileStudentWizard = () => {
     );
   }
 
+  const totalSteps = getTotalSteps();
+
   return (
     <div className="min-h-screen bg-background">
       <StudentWizardTopBar onSaveAndExit={handleSaveAndExit} />
       {renderStep()}
       <StudentWizardFooter
         currentStep={currentStep}
-        totalSteps={TOTAL_STEPS}
+        totalSteps={totalSteps}
         onBack={handleBack}
         onNext={handleNext}
         isFirstStep={currentStep <= 1}
-        isLastStep={currentStep === TOTAL_STEPS}
+        isLastStep={currentStep === totalSteps}
         canProceed={canProceed()}
         isSubmitting={isSubmitting}
       />

@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AcademicStepProps {
   data: {
@@ -19,6 +20,8 @@ interface AcademicStepProps {
 }
 
 const AcademicStep = ({ data, onChange }: AcademicStepProps) => {
+  const isMobile = useIsMobile();
+  
   const universities = [
     'LAU Byblos',
     'LAU Beirut',
@@ -29,6 +32,9 @@ const AcademicStep = ({ data, onChange }: AcademicStepProps) => {
     'BAU',
     'LU',
     'Haigazian',
+    'Lebanese International University',
+    'Antonine University',
+    'Beirut Arab University',
     'Other'
   ];
 
@@ -58,37 +64,43 @@ const AcademicStep = ({ data, onChange }: AcademicStepProps) => {
         {/* University */}
         <div className="mb-6">
           <Label className="text-base font-medium">University</Label>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            {universities.slice(0, 6).map((uni) => (
-              <motion.button
-                key={uni}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => onChange({ university: uni })}
-                className={`p-3 rounded-xl border-2 text-left transition-all ${
-                  data.university === uni
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border bg-background hover:border-primary/50'
-                }`}
-              >
-                <span className="font-medium text-foreground text-sm">{uni}</span>
-              </motion.button>
-            ))}
-          </div>
-          <Select
-            value={universities.slice(6).includes(data.university) ? data.university : ''}
-            onValueChange={(value) => onChange({ university: value })}
-          >
-            <SelectTrigger className="mt-2 h-12">
-              <SelectValue placeholder="Other university..." />
-            </SelectTrigger>
-            <SelectContent>
-              {universities.slice(6).map((uni) => (
-                <SelectItem key={uni} value={uni}>
-                  {uni}
-                </SelectItem>
+          
+          {isMobile ? (
+            // Mobile: Use dropdown
+            <Select
+              value={data.university}
+              onValueChange={(value) => onChange({ university: value })}
+            >
+              <SelectTrigger className="mt-2 h-12 text-base">
+                <SelectValue placeholder="Select your university" />
+              </SelectTrigger>
+              <SelectContent>
+                {universities.map((uni) => (
+                  <SelectItem key={uni} value={uni}>
+                    {uni}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            // Desktop: Show all as cards
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {universities.map((uni) => (
+                <motion.button
+                  key={uni}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => onChange({ university: uni })}
+                  className={`p-3 rounded-xl border-2 text-left transition-all ${
+                    data.university === uni
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-background hover:border-primary/50'
+                  }`}
+                >
+                  <span className="font-medium text-foreground text-sm">{uni}</span>
+                </motion.button>
               ))}
-            </SelectContent>
-          </Select>
+            </div>
+          )}
         </div>
 
         {/* Major */}
@@ -108,22 +120,43 @@ const AcademicStep = ({ data, onChange }: AcademicStepProps) => {
         {/* Year of Study */}
         <div>
           <Label className="text-base font-medium">Year of Study</Label>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            {years.map((year) => (
-              <motion.button
-                key={year.value}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => onChange({ year_of_study: year.value })}
-                className={`p-3 rounded-xl border-2 text-left transition-all ${
-                  data.year_of_study === year.value
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border bg-background hover:border-primary/50'
-                }`}
-              >
-                <span className="font-medium text-foreground text-sm">{year.label}</span>
-              </motion.button>
-            ))}
-          </div>
+          
+          {isMobile ? (
+            // Mobile: Use dropdown
+            <Select
+              value={data.year_of_study?.toString()}
+              onValueChange={(value) => onChange({ year_of_study: parseInt(value) })}
+            >
+              <SelectTrigger className="mt-2 h-12 text-base">
+                <SelectValue placeholder="Select your year" />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((year) => (
+                  <SelectItem key={year.value} value={year.value.toString()}>
+                    {year.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            // Desktop: Show as cards
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              {years.map((year) => (
+                <motion.button
+                  key={year.value}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => onChange({ year_of_study: year.value })}
+                  className={`p-3 rounded-xl border-2 text-left transition-all ${
+                    data.year_of_study === year.value
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-background hover:border-primary/50'
+                  }`}
+                >
+                  <span className="font-medium text-foreground text-sm">{year.label}</span>
+                </motion.button>
+              ))}
+            </div>
+          )}
         </div>
       </motion.div>
     </div>

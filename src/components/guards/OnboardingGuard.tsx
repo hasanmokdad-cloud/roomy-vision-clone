@@ -24,6 +24,14 @@ const OnboardingGuard = ({ children }: OnboardingGuardProps) => {
         return;
       }
 
+      // First check sessionStorage for cached status (reduces delay)
+      const cachedStatus = sessionStorage.getItem(`roomy_onboarding_${user.id}`);
+      if (cachedStatus === 'completed') {
+        setNeedsOnboarding(false);
+        setIsChecking(false);
+        return;
+      }
+
       try {
         const { data: student } = await supabase
           .from('students')
@@ -31,8 +39,14 @@ const OnboardingGuard = ({ children }: OnboardingGuardProps) => {
           .eq('user_id', user.id)
           .single();
 
-        // If no student record or onboarding not completed, needs onboarding
-        setNeedsOnboarding(!student?.onboarding_completed);
+        const completed = !!student?.onboarding_completed;
+        
+        // Cache the result in sessionStorage
+        if (completed) {
+          sessionStorage.setItem(`roomy_onboarding_${user.id}`, 'completed');
+        }
+        
+        setNeedsOnboarding(!completed);
       } catch (error) {
         console.error('Error checking onboarding status:', error);
         setNeedsOnboarding(false);

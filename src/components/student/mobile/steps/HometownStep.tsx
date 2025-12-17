@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { residentialAreas, Governorate } from '@/data/residentialAreas';
 
 interface HometownStepProps {
   data: {
@@ -18,30 +19,27 @@ interface HometownStepProps {
 }
 
 const HometownStep = ({ data, onChange }: HometownStepProps) => {
-  // Lebanon governorates and districts
-  const governorates = [
-    'Beirut',
-    'Mount Lebanon',
-    'North Lebanon',
-    'South Lebanon',
-    'Beqaa',
-    'Nabatieh',
-    'Akkar',
-    'Baalbek-Hermel'
-  ];
+  // Get governorates from residentialAreas data
+  const governorates = Object.keys(residentialAreas) as Governorate[];
 
-  const districtsByGovernorate: Record<string, string[]> = {
-    'Beirut': ['Beirut'],
-    'Mount Lebanon': ['Baabda', 'Aley', 'Chouf', 'Keserwan', 'Metn', 'Jbeil'],
-    'North Lebanon': ['Tripoli', 'Zgharta', 'Bsharri', 'Koura', 'Minieh-Danniyeh', 'Batroun'],
-    'South Lebanon': ['Sidon', 'Tyre', 'Jezzine'],
-    'Beqaa': ['Zahle', 'Western Beqaa', 'Rashaya'],
-    'Nabatieh': ['Nabatieh', 'Bint Jbeil', 'Hasbaya', 'Marjeyoun'],
-    'Akkar': ['Akkar'],
-    'Baalbek-Hermel': ['Baalbek', 'Hermel']
+  // Get districts for selected governorate
+  const getDistricts = () => {
+    if (!data.governorate) return [];
+    const govData = residentialAreas[data.governorate as Governorate];
+    return govData ? Object.keys(govData) : [];
   };
 
-  const districts = data.governorate ? districtsByGovernorate[data.governorate] || [] : [];
+  // Get towns/villages for selected district
+  const getTowns = () => {
+    if (!data.governorate || !data.district) return [];
+    const govData = residentialAreas[data.governorate as Governorate];
+    if (!govData) return [];
+    const districtData = govData[data.district as keyof typeof govData];
+    return Array.isArray(districtData) ? districtData : [];
+  };
+
+  const districts = getDistricts();
+  const towns = getTowns();
 
   return (
     <div className="px-6 pt-20 pb-32">
@@ -54,7 +52,7 @@ const HometownStep = ({ data, onChange }: HometownStepProps) => {
           Where are you from?
         </h2>
         <p className="text-muted-foreground mb-8">
-          This helps us understand your commute needs
+          This helps us understand your background
         </p>
 
         {/* Governorate */}
@@ -98,19 +96,24 @@ const HometownStep = ({ data, onChange }: HometownStepProps) => {
           </Select>
         </div>
 
-        {/* Town/Village - Optional */}
+        {/* Town/Village */}
         <div>
           <Label className="text-base font-medium">Town/Village (optional)</Label>
           <Select
             value={data.town_village}
             onValueChange={(value) => onChange({ town_village: value })}
-            disabled={!data.district}
+            disabled={!data.district || towns.length === 0}
           >
             <SelectTrigger className="mt-2 h-12 text-base">
-              <SelectValue placeholder="Select or skip" />
+              <SelectValue placeholder={towns.length > 0 ? "Select town/village" : "No towns available"} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
+              {towns.map((town) => (
+                <SelectItem key={town} value={town}>
+                  {town}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
