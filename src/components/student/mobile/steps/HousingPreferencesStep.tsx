@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { DollarSign, Bed, Users, Home, Building2, Sparkles, MapPin } from 'lucide-react';
+import { DollarSign, Users, Sparkles, MapPin } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { roomTypes, isSingleRoom } from '@/data/roomTypes';
 
 interface HousingPreferencesStepProps {
   data: {
@@ -25,13 +26,6 @@ interface HousingPreferencesStepProps {
 
 const HousingPreferencesStep = ({ data, onChange }: HousingPreferencesStepProps) => {
   const budgetPresets = [200, 300, 400, 500];
-  
-  const roomTypeOptions = [
-    { value: 'private', label: 'Private Room', icon: Bed, description: 'Your own space' },
-    { value: 'shared', label: 'Shared Room', icon: Users, description: 'Share with roommate' },
-    { value: 'studio', label: 'Studio', icon: Home, description: 'All-in-one space' },
-    { value: 'apartment', label: 'Apartment', icon: Building2, description: 'Full apartment' }
-  ];
 
   const cities = [
     { value: 'byblos', label: 'Byblos' },
@@ -62,9 +56,7 @@ const HousingPreferencesStep = ({ data, onChange }: HousingPreferencesStepProps)
   const areas = data.city ? areasByCity[data.city] || [] : [];
 
   // Check if room type is single (no roommate toggle)
-  const isSingleRoomType = data.room_type?.toLowerCase().includes('single') ||
-                           data.room_type?.toLowerCase().includes('private') ||
-                           data.room_type === 'studio';
+  const isSingleRoomType = isSingleRoom(data.room_type || '');
 
   return (
     <div className="px-6 pt-20 pb-32">
@@ -175,33 +167,22 @@ const HousingPreferencesStep = ({ data, onChange }: HousingPreferencesStepProps)
           </Select>
         </div>
 
-        {/* Room Type */}
+        {/* Room Type - Dropdown */}
         <div className="mb-6">
           <Label className="text-base font-medium mb-3 block">Preferred room type</Label>
-          <div className="grid grid-cols-2 gap-3">
-            {roomTypeOptions.map((option) => (
-              <motion.button
-                key={option.value}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => onChange({ room_type: option.value })}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${
-                  data.room_type === option.value
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border bg-background hover:border-primary/50'
-                }`}
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
-                  data.room_type === option.value ? 'bg-primary/10' : 'bg-muted'
-                }`}>
-                  <option.icon className={`w-5 h-5 ${
-                    data.room_type === option.value ? 'text-primary' : 'text-muted-foreground'
-                  }`} />
-                </div>
-                <span className="font-medium text-foreground block">{option.label}</span>
-                <span className="text-xs text-muted-foreground">{option.description}</span>
-              </motion.button>
-            ))}
-          </div>
+          <Select
+            value={data.room_type}
+            onValueChange={(value) => onChange({ room_type: value })}
+          >
+            <SelectTrigger className="h-12 text-base">
+              <SelectValue placeholder="Select room type" />
+            </SelectTrigger>
+            <SelectContent className="bg-background z-50 max-h-[300px]">
+              {roomTypes.map((type) => (
+                <SelectItem key={type} value={type}>{type}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Roommate Search Toggle - Only for non-single room types */}
