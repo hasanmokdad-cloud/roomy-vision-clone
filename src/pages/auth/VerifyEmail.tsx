@@ -37,9 +37,11 @@ export default function VerifyEmail() {
       
       if (token) {
         try {
-          // Verify the token using our custom edge function
-          const { data, error } = await supabase.functions.invoke("verify-email-token", {
-            body: { token, type }
+          // Use Supabase's native verifyOtp with the token_hash from the email
+          const otpType = type === 'signup' || type === 'email' ? 'email' : 'recovery';
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: otpType,
           });
           
           if (error) {
@@ -49,7 +51,37 @@ export default function VerifyEmail() {
             return;
           }
           
-          if (data?.valid) {
+          if (data?.user) {
+            // User is now authenticated - check if they need role assignment
+            const { data: existingRole } = await supabase
+              .from('user_roles')
+              .select('id')
+              .eq('user_id', data.user.id)
+              .maybeSingle();
+            
+            if (!existingRole) {
+              // Auto-assign student role
+              const { data: studentRole } = await supabase
+                .from('roles')
+                .select('id')
+                .eq('name', 'student')
+                .single();
+              
+              if (studentRole) {
+                await supabase.from('user_roles').insert({
+                  user_id: data.user.id,
+                  role_id: studentRole.id
+                });
+                
+                // Create student profile
+                await supabase.from('students').insert({
+                  user_id: data.user.id,
+                  email: data.user.email,
+                  full_name: data.user.email?.split('@')[0] || 'Student'
+                });
+              }
+            }
+            
             setStep('success');
             toast({
               title: "Email verified",
@@ -66,7 +98,7 @@ export default function VerifyEmail() {
             }, 1700);
             return;
           } else {
-            setErrorMessage(data?.error || "Invalid or expired verification link");
+            setErrorMessage("Invalid or expired verification link");
             setStep('error');
             return;
           }
