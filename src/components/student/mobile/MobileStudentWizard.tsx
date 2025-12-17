@@ -67,7 +67,7 @@ const INITIAL_DATA: WizardFormData = {
   distance_preference: '',
   budget: 300,
   room_type: '',
-  accommodation_status: 'searching',
+  accommodation_status: 'need_dorm',
   needs_roommate: false,
   enable_personality_matching: false,
   profile_photo_url: '',

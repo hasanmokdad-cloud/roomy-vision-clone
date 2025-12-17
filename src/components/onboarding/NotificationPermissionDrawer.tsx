@@ -84,6 +84,9 @@ export function NotificationPermissionDrawer({ open, onAllow, onSkip }: Notifica
       <DialogContent className="sm:max-w-md [&>button]:hidden">
         <DialogHeader>
           <DialogTitle className="sr-only">Turn on notifications</DialogTitle>
+          <DialogDescription className="sr-only">
+            Allow Roomy to send you notifications about messages and updates
+          </DialogDescription>
         </DialogHeader>
         {content}
         <DialogFooter className="flex-col sm:flex-col gap-3">
