@@ -15,7 +15,7 @@ interface AccommodationStatusStepProps {
 const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProps) => {
   const statusOptions = [
     { 
-      value: 'searching', 
+      value: 'need_dorm', 
       label: 'Looking for a dorm', 
       icon: Search, 
       description: 'I need to find housing' 
