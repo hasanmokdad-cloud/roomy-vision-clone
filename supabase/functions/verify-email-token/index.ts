@@ -64,25 +64,12 @@ serve(async (req) => {
       .update({ used_at: new Date().toISOString() })
       .eq("id", tokenRecord.id);
 
-    // For signup verification, update the user's email_confirmed_at and assign roles
+    // For signup verification - user is already auto-confirmed by Supabase
+    // We just need to assign role and create profile
     if (tokenRecord.token_type === 'signup') {
-      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-        tokenRecord.user_id,
-        { email_confirm: true }
-      );
-
-      if (updateError) {
-        console.error("[verify-email-token] Failed to confirm email:", updateError);
-        return new Response(
-          JSON.stringify({ error: "Failed to verify email", valid: false }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      console.log(`[verify-email-token] Email verified for user: ${tokenRecord.user_id}`);
+      console.log(`[verify-email-token] Signup token verified for user: ${tokenRecord.user_id}`);
 
       // Auto-assign student role to new users
-      // First, get the student role ID
       const { data: roleData, error: roleError } = await supabaseAdmin
         .from("roles")
         .select("id")
@@ -120,7 +107,7 @@ serve(async (req) => {
             .insert({
               user_id: tokenRecord.user_id,
               email: tokenRecord.email,
-              full_name: tokenRecord.email.split('@')[0] // Use email prefix as initial name
+              full_name: tokenRecord.email.split('@')[0]
             });
 
           if (profileError && !profileError.message.includes('duplicate')) {

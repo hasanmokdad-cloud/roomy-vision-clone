@@ -92,14 +92,10 @@ export function GlobalAuthModal() {
         );
       }
 
-      // Sign up user (email confirmation will be sent via our custom edge function)
+      // Sign up user - auto-confirm is enabled, we send our own verification email
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
-        options: {
-          // Don't use Supabase's email - we'll send our own
-          emailRedirectTo: `${window.location.origin}/auth/verify`,
-        },
       });
 
       if (error) throw error;
