@@ -11,7 +11,7 @@ interface MatchCardProps {
     dorm: string;
     room: string;
     matchPercentage: number;
-    distance: string;
+    // distance: string; // TODO: Re-enable after distance algorithm implementation
     price: number;
     capacity: number;
     reasons: string[];
@@ -73,6 +73,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, index }) => {
             </div>
 
             <div className="w-full space-y-3">
+              {/* Distance - TODO: Re-enable after distance algorithm implementation
               <div className="flex items-center justify-between p-3 glass rounded-xl">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-primary" />
@@ -80,6 +81,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, index }) => {
                 </div>
                 <span className="text-sm font-semibold">{match.distance}</span>
               </div>
+              */}
 
               <div className="flex items-center justify-between p-3 glass rounded-xl">
                 <div className="flex items-center gap-2">

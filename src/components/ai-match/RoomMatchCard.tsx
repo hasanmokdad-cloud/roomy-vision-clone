@@ -103,12 +103,13 @@ export const RoomMatchCard = ({ room, index }: RoomMatchCardProps) => {
               </div>
             </div>
 
-            {/* Distance */}
+            {/* Distance - TODO: Re-enable after distance algorithm implementation
             {room.distance && (
               <p className="text-xs text-muted-foreground">
                 📍 {room.distance} from university
               </p>
             )}
+            */}
 
             {/* Why This Match */}
             {room.explanations && room.explanations.length > 0 && (

@@ -5,7 +5,7 @@ import type { DormPublic } from '@/types/dorm';
 interface DormListing extends DormPublic {
   deposit?: number;
   city?: string;
-  walking_distance?: string;
+  // walking_distance?: string; // TODO: Re-enable after distance algorithm implementation
   services_amenities?: string;
 }
 

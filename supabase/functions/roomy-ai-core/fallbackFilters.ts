@@ -15,7 +15,7 @@ export async function fetchWithRelaxedFilters(
   if (mode === 'dorm') {
     // Dorm fallback strategy:
     // 1. Increase budget by +10% (already done in main query, so expand to +20%)
-    // 2. Expand to nearby areas (all areas if specific area was set)
+    // 2. Expand to all areas (TODO: Re-enable nearby area expansion after distance algorithm implementation)
     // 3. Ignore room type preference
     // 4. Keep gender filter STRICT (never relax)
     
