@@ -461,7 +461,7 @@ serve(async (req) => {
               capacityResponse += `• Room ${r.name}: ${spots} spot${spots === 1 ? '' : 's'} left (${r.capacity_occupied || 0}/${r.capacity})\n`;
             });
           } else {
-            capacityResponse += `Unfortunately, all rooms at ${dormName} are currently full. Would you like me to suggest similar dorms nearby?`;
+            capacityResponse += `Unfortunately, all rooms at ${dormName} are currently full. Would you like me to suggest other available dorms?`;
           }
         } else {
           capacityResponse = `Great news! 🎉 Room ${room.name} at ${dormName} has **${available} spot${available === 1 ? '' : 's'} available** (${room.capacity_occupied || 0}/${room.capacity} beds occupied).${warningMessage}\n\nWould you like to know more about this dorm or see other options?`;
@@ -857,7 +857,7 @@ serve(async (req) => {
 
       if (totalAvailableSpots === 0) {
         fullDormAlerts += `\n\n⚠️ FULL DORM ALERT: ${dorm.dorm_name} has NO available rooms (0 spots).\n`;
-        fullDormAlerts += `Tell the student: "This dorm is currently full, but I can recommend similar available options nearby. Want me to show them?"`;
+        fullDormAlerts += `Tell the student: "This dorm is currently full, but I can recommend other available options. Want me to show them?"`;
         
         // Find alternatives
         const alternatives = await findSimilarAvailableDorms(supabase, dorm, studentProfile);
@@ -1030,7 +1030,7 @@ CRITICAL RULES (YOU MUST FOLLOW THESE):
    - If a room shows "3/3 occupied" or "capacity_occupied >= capacity":
      * Say: "Room [X] is currently full (3/3 beds occupied)"
      * Suggest other available rooms in the same dorm
-     * If all rooms full → suggest similar nearby dorms
+     * If all rooms full → suggest other available dorms
    - Always mention remaining spots: "This room has 1 spot left" or "2/4 beds occupied"
    
 3. 💰 BUDGET MISMATCH - PROACTIVE ALTERNATIVES:

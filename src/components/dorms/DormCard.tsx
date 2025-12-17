@@ -70,7 +70,7 @@ export const DormCard: React.FC<DormCardProps> = ({ dorm, capacityFilter }) => {
             <span className="text-sm text-foreground/60">/month</span>
           </div>
 
-          {/* Distance Badges */}
+          {/* Distance Badges - TODO: Re-enable after distance algorithm implementation
           <div className="flex flex-wrap gap-2 mb-4">
             {Object.entries(dorm.distanceToUniversities)
               .slice(0, 2)
@@ -80,6 +80,7 @@ export const DormCard: React.FC<DormCardProps> = ({ dorm, capacityFilter }) => {
                 </Badge>
               ))}
           </div>
+          */}
 
           {/* Room Count */}
           <div className="text-sm text-foreground/70">

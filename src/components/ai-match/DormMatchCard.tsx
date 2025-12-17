@@ -131,12 +131,14 @@ export const DormMatchCard = ({ dorm, index, onDismiss }: DormMatchCardProps) =>
               <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                 <MapPin className="w-3 h-3" />
                 <span className="line-clamp-1">{dorm.area}</span>
+                {/* Distance - TODO: Re-enable after distance algorithm implementation
                 {dorm.distance && (
                   <>
                     <span>•</span>
                     <span>{dorm.distance}</span>
                   </>
                 )}
+                */}
               </div>
             </div>
 
