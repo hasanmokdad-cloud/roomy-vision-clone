@@ -195,35 +195,38 @@ serve(async (req) => {
   const { user, email_data } = emailPayload;
   const { token_hash, redirect_to, email_action_type, site_url } = email_data;
 
-  // Build the action URL - MUST use roomylb.com domain directly (no Lovable/Supabase redirect domains)
-  // This ensures emails pass firewall checks and have valid SSL
+  // Build the action URL
+  // For email verification (signup/email), use Supabase's native verification endpoint
+  // which validates the token server-side and redirects back to our callback
   const baseUrl = "https://roomylb.com";
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "https://vtdtmhgzisigtqryojwl.supabase.co";
   let actionUrl: string;
   
   switch (email_action_type) {
     case 'signup':
     case 'email':
-      // Email verification for new signups
-      actionUrl = `${baseUrl}/auth/verify?token=${token_hash}&type=${email_action_type}`;
+      // Use Supabase's native verification endpoint - it validates token server-side
+      // then redirects to our callback with the session established
+      actionUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=signup&redirect_to=${encodeURIComponent(baseUrl + '/auth/callback')}`;
       break;
     case 'recovery':
-      // Password reset
-      actionUrl = `${baseUrl}/auth/reset?token=${token_hash}&type=recovery`;
+      // Password reset - use Supabase native endpoint with redirect to our reset page
+      actionUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=recovery&redirect_to=${encodeURIComponent(baseUrl + '/auth/reset')}`;
       break;
     case 'magiclink':
       // Magic link login
-      actionUrl = `${baseUrl}/auth/callback?token=${token_hash}&type=magiclink`;
+      actionUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=magiclink&redirect_to=${encodeURIComponent(baseUrl + '/auth/callback')}`;
       break;
     case 'email_change':
       // Email change confirmation
-      actionUrl = `${baseUrl}/auth/verify?token=${token_hash}&type=email_change`;
+      actionUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=email_change&redirect_to=${encodeURIComponent(baseUrl + '/auth/callback')}`;
       break;
     case 'invite':
       // Owner invitation
-      actionUrl = `${baseUrl}/auth/callback?token=${token_hash}&type=invite`;
+      actionUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=invite&redirect_to=${encodeURIComponent(baseUrl + '/auth/callback')}`;
       break;
     default:
-      actionUrl = `${baseUrl}/auth/verify?token=${token_hash}&type=${email_action_type}`;
+      actionUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${encodeURIComponent(baseUrl + '/auth/callback')}`;
   }
 
   console.log(`[send-auth-email] Processing ${email_action_type} email for ${user.email}`);
