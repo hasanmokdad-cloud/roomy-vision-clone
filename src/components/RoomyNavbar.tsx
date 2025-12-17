@@ -175,44 +175,26 @@ export function RoomyNavbar() {
                         {t('navbar.myProfile', 'My Profile')}
                       </DropdownMenuItem>
                       
-                      {/* AI Match and Contact for students */}
+                      {/* AI Match - only for confirmed students */}
                       {role === 'student' && (
-                        <>
-                          <DropdownMenuItem
-                            onClick={() => navigate('/ai-match')}
-                            className="cursor-pointer rounded-lg py-3"
-                          >
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            {t('navbar.aiMatch', 'AI Match')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => navigate('/contact')}
-                            className="cursor-pointer rounded-lg py-3"
-                          >
-                            <Phone className="w-4 h-4 mr-2" />
-                            {t('navbar.contact', 'Contact')}
-                          </DropdownMenuItem>
-                        </>
+                        <DropdownMenuItem
+                          onClick={() => navigate('/ai-match')}
+                          className="cursor-pointer rounded-lg py-3"
+                        >
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          {t('navbar.aiMatch', 'AI Match')}
+                        </DropdownMenuItem>
                       )}
                       
                       {/* Control Panel for owners */}
                       {role === 'owner' && (
-                        <>
-                          <DropdownMenuItem
-                            onClick={() => navigate('/owner')}
-                            className="cursor-pointer rounded-lg py-3"
-                          >
-                            <Building2 className="w-4 h-4 mr-2" />
-                            {t('navbar.controlPanel', 'Control Panel')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => navigate('/contact')}
-                            className="cursor-pointer rounded-lg py-3"
-                          >
-                            <Phone className="w-4 h-4 mr-2" />
-                            {t('navbar.contact', 'Contact')}
-                          </DropdownMenuItem>
-                        </>
+                        <DropdownMenuItem
+                          onClick={() => navigate('/owner')}
+                          className="cursor-pointer rounded-lg py-3"
+                        >
+                          <Building2 className="w-4 h-4 mr-2" />
+                          {t('navbar.controlPanel', 'Control Panel')}
+                        </DropdownMenuItem>
                       )}
                       
                       {/* Control Panel for admins */}
@@ -225,6 +207,15 @@ export function RoomyNavbar() {
                           {t('navbar.controlPanel', 'Control Panel')}
                         </DropdownMenuItem>
                       )}
+                      
+                      {/* Contact - show for all authenticated users */}
+                      <DropdownMenuItem
+                        onClick={() => navigate('/contact')}
+                        className="cursor-pointer rounded-lg py-3"
+                      >
+                        <Phone className="w-4 h-4 mr-2" />
+                        {t('navbar.contact', 'Contact')}
+                      </DropdownMenuItem>
                       
                       <DropdownMenuItem
                         onClick={() => navigate('/settings')}

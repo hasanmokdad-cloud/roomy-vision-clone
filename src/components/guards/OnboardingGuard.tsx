@@ -8,14 +8,15 @@ interface OnboardingGuardProps {
 }
 
 const OnboardingGuard = ({ children }: OnboardingGuardProps) => {
-  const { user, role, isAuthReady } = useAuth();
+  const { user, role, isAuthReady, isRoleReady } = useAuth();
   const location = useLocation();
   const [isChecking, setIsChecking] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
     const checkOnboarding = async () => {
-      if (!isAuthReady) return;
+      // Wait for BOTH auth AND role to be ready before making decisions
+      if (!isAuthReady || !isRoleReady) return;
       
       // Skip for non-students or non-authenticated users
       if (!user || role !== 'student') {
@@ -56,10 +57,10 @@ const OnboardingGuard = ({ children }: OnboardingGuardProps) => {
     };
 
     checkOnboarding();
-  }, [user, role, isAuthReady]);
+  }, [user, role, isAuthReady, isRoleReady]);
 
-  // Still checking auth or onboarding status
-  if (!isAuthReady || isChecking) {
+  // Still checking auth, role, or onboarding status
+  if (!isAuthReady || !isRoleReady || isChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
