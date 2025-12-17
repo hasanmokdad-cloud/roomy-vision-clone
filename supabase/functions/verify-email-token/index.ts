@@ -64,8 +64,8 @@ serve(async (req) => {
       .update({ used_at: new Date().toISOString() })
       .eq("id", tokenRecord.id);
 
-    // For signup verification, update the user's email_confirmed_at
-    if (type === 'signup' || tokenRecord.token_type === 'signup') {
+    // For signup verification, update the user's email_confirmed_at and assign roles
+    if (tokenRecord.token_type === 'signup') {
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
         tokenRecord.user_id,
         { email_confirm: true }
@@ -130,6 +130,11 @@ serve(async (req) => {
           }
         }
       }
+    }
+    
+    // For recovery tokens, we just validate - password update happens separately
+    if (tokenRecord.token_type === 'recovery') {
+      console.log(`[verify-email-token] Recovery token verified for user: ${tokenRecord.user_id}`);
     }
 
     return new Response(

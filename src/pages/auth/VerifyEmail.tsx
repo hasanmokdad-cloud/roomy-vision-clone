@@ -36,14 +36,15 @@ export default function VerifyEmail() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         
         // Check for different verification methods
-        const code = urlParams.get('code');
-        const token = urlParams.get('token') || urlParams.get('token_hash');
+        const customToken = urlParams.get('token'); // Our custom Roomy token
+        const code = urlParams.get('code'); // Supabase PKCE code (legacy)
+        const token_hash = urlParams.get('token_hash'); // Supabase token_hash (legacy)
         const type = urlParams.get('type') || 'signup';
         const accessToken = hashParams.get('access_token');
         const errorParam = urlParams.get('error') || hashParams.get('error');
         const errorDescription = urlParams.get('error_description') || hashParams.get('error_description');
         
-        console.log('[VerifyEmail] URL params:', { code: !!code, token: !!token, type, accessToken: !!accessToken, error: errorParam });
+        console.log('[VerifyEmail] URL params:', { customToken: !!customToken, code: !!code, token_hash: !!token_hash, type, accessToken: !!accessToken, error: errorParam });
         
         // Handle error in URL (from Supabase redirect)
         if (errorParam) {
@@ -55,7 +56,42 @@ export default function VerifyEmail() {
         
         let user = null;
         
-        // Method 1: Handle PKCE code (from Supabase default emails with ?code=)
+        // Method 1: Handle custom Roomy token (from security@roomylb.com emails)
+        if (customToken) {
+          console.log('[VerifyEmail] Verifying custom Roomy token...');
+          const { data, error } = await supabase.functions.invoke('verify-email-token', {
+            body: { token: customToken, type }
+          });
+          
+          if (error || !data?.valid) {
+            console.error('[VerifyEmail] Custom token verification error:', error || data?.error);
+            setErrorMessage(data?.error || error?.message || "Verification failed");
+            setStep('error');
+            return;
+          }
+          
+          // Token verified - user is now confirmed
+          console.log('[VerifyEmail] Custom token verified for user:', data.userId);
+          
+          // Sign in the user automatically after verification
+          // We need to get a session for them - they should sign in
+          setStep('success');
+          toast({
+            title: "Email verified",
+            description: "Your email has been verified successfully. Please sign in.",
+          });
+          
+          setTimeout(() => {
+            startOnboarding();
+          }, 1500);
+          
+          setTimeout(() => {
+            navigate('/listings', { replace: true });
+          }, 1700);
+          return;
+        }
+        
+        // Method 2: Handle PKCE code (from Supabase default emails with ?code=) - legacy
         if (code) {
           console.log('[VerifyEmail] Exchanging PKCE code for session...');
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
@@ -82,12 +118,12 @@ export default function VerifyEmail() {
             user = data?.user;
           }
         }
-        // Method 2: Handle token_hash (from custom emails with ?token=)
-        else if (token) {
+        // Method 3: Handle token_hash (from legacy emails with ?token_hash=)
+        else if (token_hash) {
           console.log('[VerifyEmail] Verifying with token_hash...');
           const otpType = type === 'signup' || type === 'email' ? 'email' : 'recovery';
           const { data, error } = await supabase.auth.verifyOtp({
-            token_hash: token,
+            token_hash: token_hash,
             type: otpType,
           });
           
@@ -99,7 +135,7 @@ export default function VerifyEmail() {
           }
           user = data?.user;
         }
-        // Method 3: Handle hash fragment (magic links/OAuth - session already set)
+        // Method 4: Handle hash fragment (magic links/OAuth - session already set)
         else if (accessToken) {
           console.log('[VerifyEmail] Access token in hash, getting session...');
           const { data: sessionData, error } = await supabase.auth.getSession();
@@ -112,7 +148,7 @@ export default function VerifyEmail() {
           }
           user = sessionData?.session?.user;
         }
-        // Method 4: No verification params - check if already authenticated
+        // Method 5: No verification params - check if already authenticated
         else {
           console.log('[VerifyEmail] No verification params, checking existing session...');
           const { data: sessionData } = await supabase.auth.getSession();

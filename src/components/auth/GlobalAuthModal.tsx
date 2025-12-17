@@ -92,22 +92,40 @@ export function GlobalAuthModal() {
         );
       }
 
-      const { error } = await supabase.auth.signUp({
+      // Sign up user (email confirmation will be sent via our custom edge function)
+      const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
+          // Don't use Supabase's email - we'll send our own
           emailRedirectTo: `${window.location.origin}/auth/verify`,
         },
       });
 
       if (error) throw error;
 
+      // Send custom Roomy-branded verification email
+      if (data.user) {
+        const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
+          body: {
+            userId: data.user.id,
+            email: email.trim(),
+            tokenType: 'signup'
+          }
+        });
+
+        if (emailError) {
+          console.error('[GlobalAuthModal] Failed to send verification email:', emailError);
+          // Don't throw - user is created, just notify them
+        }
+      }
+
       // Clear any previous onboarding state for fresh signup experience
       localStorage.removeItem('roomy_onboarding_complete');
 
       toast({
         title: 'Check your email',
-        description: 'We sent you a verification link. Please check your inbox.',
+        description: 'We sent you a verification link from security@roomylb.com',
       });
       
       resetForm();
