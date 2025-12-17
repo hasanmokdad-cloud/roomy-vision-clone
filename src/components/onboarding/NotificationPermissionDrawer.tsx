@@ -82,6 +82,9 @@ export function NotificationPermissionDrawer({ open, onAllow, onSkip }: Notifica
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-md [&>button]:hidden">
+        <DialogHeader>
+          <DialogTitle className="sr-only">Turn on notifications</DialogTitle>
+        </DialogHeader>
         {content}
         <DialogFooter className="flex-col sm:flex-col gap-3">
           {footer}

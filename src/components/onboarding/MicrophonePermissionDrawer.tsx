@@ -1,5 +1,5 @@
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
-import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Mic } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -81,6 +81,9 @@ export function MicrophonePermissionDrawer({ open, onAllow, onSkip }: Microphone
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-md [&>button]:hidden">
+        <DialogHeader>
+          <DialogTitle className="sr-only">Enable voice messages</DialogTitle>
+        </DialogHeader>
         {content}
         <DialogFooter className="flex-col sm:flex-col gap-3">
           {footer}
