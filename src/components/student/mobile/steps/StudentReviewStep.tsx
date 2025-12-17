@@ -16,8 +16,9 @@ interface StudentReviewStepProps {
     personality_noise_tolerance: string;
     personality_cleanliness_level: string;
     personality_intro_extro: string;
+    city: string;
     preferred_housing_area: string;
-    distance_preference: string;
+    // distance_preference: string; // COMMENTED - future implementation
     budget: number;
     room_type: string;
     accommodation_status: string;
@@ -71,8 +72,9 @@ const StudentReviewStep = ({ data, onEdit }: StudentReviewStepProps) => {
       icon: Home,
       step: 9,
       items: [
-        { label: 'Area', value: data.preferred_housing_area || 'Not set' },
-        { label: 'Distance', value: data.distance_preference?.replace(/_/g, ' ') || 'Not set' }
+        { label: 'City', value: data.city ? data.city.charAt(0).toUpperCase() + data.city.slice(1) : 'Not set' },
+        { label: 'Area', value: data.preferred_housing_area?.replace(/_/g, ' ') || 'Not set' }
+        // { label: 'Distance', value: data.distance_preference?.replace(/_/g, ' ') || 'Not set' } // COMMENTED - future implementation
       ]
     },
     {
