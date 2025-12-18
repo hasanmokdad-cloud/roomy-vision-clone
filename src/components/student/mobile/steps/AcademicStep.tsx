@@ -34,8 +34,7 @@ const AcademicStep = ({ data, onChange }: AcademicStepProps) => {
     'Haigazian',
     'Lebanese International University',
     'Antonine University',
-    'Beirut Arab University',
-    'Other'
+    'Beirut Arab University'
   ];
 
   const years = [
@@ -64,43 +63,21 @@ const AcademicStep = ({ data, onChange }: AcademicStepProps) => {
         {/* University */}
         <div className="mb-6">
           <Label className="text-base font-medium">University</Label>
-          
-          {isMobile ? (
-            // Mobile: Use dropdown
-            <Select
-              value={data.university}
-              onValueChange={(value) => onChange({ university: value })}
-            >
-              <SelectTrigger className="mt-2 h-12 text-base">
-                <SelectValue placeholder="Select your university" />
-              </SelectTrigger>
-              <SelectContent>
-                {universities.map((uni) => (
-                  <SelectItem key={uni} value={uni}>
-                    {uni}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            // Desktop: Show all as cards
-            <div className="grid grid-cols-3 gap-2 mt-2">
+          <Select
+            value={data.university}
+            onValueChange={(value) => onChange({ university: value })}
+          >
+            <SelectTrigger className="mt-2 h-12 text-base">
+              <SelectValue placeholder="Select your university" />
+            </SelectTrigger>
+            <SelectContent className="bg-background z-50">
               {universities.map((uni) => (
-                <motion.button
-                  key={uni}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => onChange({ university: uni })}
-                  className={`p-3 rounded-xl border-2 text-left transition-all ${
-                    data.university === uni
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border bg-background hover:border-primary/50'
-                  }`}
-                >
-                  <span className="font-medium text-foreground text-sm">{uni}</span>
-                </motion.button>
+                <SelectItem key={uni} value={uni}>
+                  {uni}
+                </SelectItem>
               ))}
-            </div>
-          )}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Major */}
@@ -120,43 +97,21 @@ const AcademicStep = ({ data, onChange }: AcademicStepProps) => {
         {/* Year of Study */}
         <div>
           <Label className="text-base font-medium">Year of Study</Label>
-          
-          {isMobile ? (
-            // Mobile: Use dropdown
-            <Select
-              value={data.year_of_study?.toString()}
-              onValueChange={(value) => onChange({ year_of_study: parseInt(value) })}
-            >
-              <SelectTrigger className="mt-2 h-12 text-base">
-                <SelectValue placeholder="Select your year" />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map((year) => (
-                  <SelectItem key={year.value} value={year.value.toString()}>
-                    {year.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            // Desktop: Show as cards
-            <div className="grid grid-cols-2 gap-2 mt-2">
+          <Select
+            value={data.year_of_study?.toString()}
+            onValueChange={(value) => onChange({ year_of_study: parseInt(value) })}
+          >
+            <SelectTrigger className="mt-2 h-12 text-base">
+              <SelectValue placeholder="Select your year" />
+            </SelectTrigger>
+            <SelectContent className="bg-background z-50">
               {years.map((year) => (
-                <motion.button
-                  key={year.value}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => onChange({ year_of_study: year.value })}
-                  className={`p-3 rounded-xl border-2 text-left transition-all ${
-                    data.year_of_study === year.value
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border bg-background hover:border-primary/50'
-                  }`}
-                >
-                  <span className="font-medium text-foreground text-sm">{year.label}</span>
-                </motion.button>
+                <SelectItem key={year.value} value={year.value.toString()}>
+                  {year.label}
+                </SelectItem>
               ))}
-            </div>
-          )}
+            </SelectContent>
+          </Select>
         </div>
       </motion.div>
     </div>

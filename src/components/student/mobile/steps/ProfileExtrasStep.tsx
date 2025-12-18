@@ -1,15 +1,13 @@
 import { motion } from 'framer-motion';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Camera, Phone, FileText } from 'lucide-react';
+import { Camera, Phone } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface ProfileExtrasStepProps {
   data: {
     profile_photo_url: string;
     phone_number: string;
-    bio: string;
   };
   onChange: (data: Partial<ProfileExtrasStepProps['data']>) => void;
 }
@@ -69,24 +67,6 @@ const ProfileExtrasStep = ({ data, onChange }: ProfileExtrasStepProps) => {
           />
           <p className="text-xs text-muted-foreground mt-1">
             For verification and emergency contact
-          </p>
-        </div>
-
-        {/* Bio */}
-        <div>
-          <Label className="text-base font-medium mb-3 flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            About me
-          </Label>
-          <Textarea
-            value={data.bio}
-            onChange={(e) => onChange({ bio: e.target.value })}
-            placeholder="Tell potential roommates a bit about yourself..."
-            className="min-h-[120px] resize-none"
-            maxLength={500}
-          />
-          <p className="text-xs text-muted-foreground mt-1 text-right">
-            {data.bio?.length || 0}/500
           </p>
         </div>
 

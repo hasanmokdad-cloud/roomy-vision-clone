@@ -46,7 +46,6 @@ interface WizardFormData {
   enable_personality_matching: boolean;
   profile_photo_url: string;
   phone_number: string;
-  bio: string;
 }
 
 const INITIAL_DATA: WizardFormData = {
@@ -76,8 +75,7 @@ const INITIAL_DATA: WizardFormData = {
   needs_roommate: false,
   enable_personality_matching: false,
   profile_photo_url: '',
-  phone_number: '',
-  bio: ''
+  phone_number: ''
 };
 
 // Step flow:
@@ -199,16 +197,28 @@ const MobileStudentWizard = () => {
         .from('students')
         .update({
           full_name: formData.full_name,
+          age: formData.age,
           gender: formData.gender,
+          governorate: formData.governorate || null,
+          district: formData.district || null,
+          town_village: formData.town_village || null,
           university: formData.university,
           major: formData.major,
+          year_of_study: formData.year_of_study,
+          personality_sleep_schedule: formData.personality_sleep_schedule || null,
+          personality_noise_tolerance: formData.personality_noise_tolerance || null,
+          personality_cleanliness_level: formData.personality_cleanliness_level || null,
+          personality_intro_extro: formData.personality_intro_extro || null,
+          personality_guests_frequency: formData.personality_guests_frequency || null,
+          personality_study_environment: formData.personality_study_environment || null,
           budget: formData.budget,
           room_type: formData.room_type,
           accommodation_status: formData.accommodation_status,
           current_dorm_id: formData.current_dorm_id || null,
           current_room_id: formData.current_room_id || null,
           preferred_housing_area: formData.preferred_housing_area || null,
-          // distance_preference: formData.distance_preference || null, // COMMENTED - future implementation
+          needs_roommate_new_dorm: formData.needs_roommate,
+          enable_personality_matching: formData.enable_personality_matching,
           profile_photo_url: formData.profile_photo_url || null,
           phone_number: formData.phone_number || null,
           onboarding_completed: true
@@ -337,8 +347,7 @@ const MobileStudentWizard = () => {
           <ProfileExtrasStep
             data={{
               profile_photo_url: formData.profile_photo_url,
-              phone_number: formData.phone_number,
-              bio: formData.bio
+              phone_number: formData.phone_number
             }}
             onChange={handleDataChange}
           />

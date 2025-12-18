@@ -16,8 +16,7 @@ interface BasicInfoStepProps {
 const BasicInfoStep = ({ data, onChange }: BasicInfoStepProps) => {
   const genderOptions = [
     { value: 'Male', label: 'Male', emoji: '👨' },
-    { value: 'Female', label: 'Female', emoji: '👩' },
-    { value: 'Other', label: 'Other', emoji: '🧑' }
+    { value: 'Female', label: 'Female', emoji: '👩' }
   ];
 
   return (
