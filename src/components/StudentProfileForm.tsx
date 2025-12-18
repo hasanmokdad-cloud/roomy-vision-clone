@@ -679,9 +679,36 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
     return `${selectedAreas.slice(0, 2).join(', ')} +${selectedAreas.length - 2}`;
   };
 
-  const shouldShowPersonalityMatching = 
-    (accommodationStatus === 'have_dorm' && needsRoommateCurrentPlace) ||
-    (accommodationStatus === 'need_dorm' && needsRoommateNewDorm);
+  const shouldShowPersonalityMatching = (() => {
+    if (accommodationStatus === 'need_dorm' && needsRoommateNewDorm) {
+      return true;
+    }
+    
+    if (accommodationStatus === 'have_dorm' && needsRoommateCurrentPlace) {
+      // Must have a room selected AND room must not be single-occupancy
+      if (!currentRoomId) return false;
+      const selectedRoom = availableRooms.find(r => r.id === currentRoomId);
+      if (!selectedRoom) return false;
+      return !isSingleRoom(selectedRoom.type) && selectedRoom.capacity > 1;
+    }
+    
+    return false;
+  })();
+
+  const getActionButtonText = () => {
+    if (loading) return 'Saving...';
+    if (!hasProfile) return 'Create Profile';
+    
+    if (accommodationStatus === 'need_dorm') {
+      return needsRoommateNewDorm ? 'Find Roommate Matches' : 'Find Dorm Matches';
+    }
+    
+    if (accommodationStatus === 'have_dorm' && needsRoommateCurrentPlace) {
+      return 'Find Roommate Matches';
+    }
+    
+    return 'Save Changes';
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -988,16 +1015,16 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
       </form>
 
       {/* Sticky Footer Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border shadow-lg lg:left-1/2">
-        <div className="max-w-2xl mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border shadow-lg z-50">
+        <div className="max-w-4xl mx-auto">
           <Button
             type="submit"
             onClick={handleSubmit(onSubmit)}
             disabled={loading}
-            className="w-full"
+            className="w-full lg:w-auto lg:min-w-[200px] lg:float-right"
             size="lg"
           >
-            {loading ? 'Saving...' : hasProfile ? 'Save Changes' : 'Create Profile'}
+            {getActionButtonText()}
           </Button>
         </div>
       </div>
