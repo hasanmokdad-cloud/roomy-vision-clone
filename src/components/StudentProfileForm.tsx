@@ -695,8 +695,8 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
             <div className="w-full max-w-md">
               <ProfilePhotoUpload
                 userId={userId}
-                currentPhotoUrl={profilePhotoUrl}
-                onPhotoUpdate={setProfilePhotoUrl}
+                currentUrl={profilePhotoUrl}
+                onUploaded={setProfilePhotoUrl}
               />
             </div>
           </div>
@@ -708,7 +708,6 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
               <ProfileSectionHeader
                 icon={<User className="w-5 h-5" />}
                 title="Personal Information"
-                description="Tell us about yourself"
               />
               
               <div className="space-y-0 divide-y divide-border">
@@ -755,7 +754,6 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
               <ProfileSectionHeader
                 icon={<GraduationCap className="w-5 h-5" />}
                 title="Academic Information"
-                description="Your educational background"
               />
               
               <div className="space-y-0 divide-y divide-border">
@@ -787,7 +785,6 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
               <ProfileSectionHeader
                 icon={<Home className="w-5 h-5" />}
                 title="Accommodation Status"
-                description="Your current housing situation"
               />
               
               <div className="space-y-4 pt-4">
@@ -950,7 +947,6 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                 <ProfileSectionHeader
                   icon={<Home className="w-5 h-5" />}
                   title="Housing Preferences"
-                  description="What are you looking for?"
                 />
                 
                 <div className="space-y-0 divide-y divide-border">
@@ -1275,7 +1271,11 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
       <PersonalitySurveyModal
         open={showPersonalitySurvey}
         onOpenChange={setShowPersonalitySurvey}
-        onComplete={handlePersonalitySurveyComplete}
+        userId={userId}
+        onComplete={() => {
+          setPersonalityTestCompleted(true);
+          setShowPersonalitySurvey(false);
+        }}
       />
     </div>
   );
