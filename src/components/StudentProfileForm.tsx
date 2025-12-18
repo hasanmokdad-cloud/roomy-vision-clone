@@ -11,17 +11,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, MapPin, GraduationCap, DollarSign, Home, CheckCircle, ArrowRight, ArrowLeft, Users, Brain, Phone, Calendar } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { User, MapPin, GraduationCap, DollarSign, Home, CheckCircle, ArrowRight, ArrowLeft, Users, Brain, Phone, Calendar, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Confetti } from '@/components/profile/Confetti';
-import { ProfileProgress } from '@/components/profile/ProfileProgress';
+
 import { PersonalitySurveyModal } from '@/components/profile/PersonalitySurveyModal';
 import { ProfileFieldRow } from '@/components/profile/ProfileFieldRow';
 import { ProfileFieldModal } from '@/components/profile/ProfileFieldModal';
 import { ProfileSectionHeader } from '@/components/profile/ProfileSectionHeader';
 import { residentialAreas, type Governorate, type District } from '@/data/residentialAreas';
 import { universities } from '@/data/universities';
-import { housingAreas } from '@/data/housingAreas';
+
 import { roomTypes, isSingleRoom } from '@/data/roomTypes';
 
 const studentProfileSchema = z.object({
@@ -48,7 +49,8 @@ const studentProfileSchema = z.object({
   
   // Step 2 - Housing Preferences (only if need_dorm)
   budget: z.number().min(0).optional(),
-  preferred_housing_area: z.string().optional(),
+  preferred_city: z.enum(['Byblos', 'Beirut']).optional(),
+  preferred_areas: z.array(z.string()).optional(),
   room_type: z.string().optional(),
 });
 
@@ -60,7 +62,7 @@ interface StudentProfileFormProps {
 }
 
 // Field types for the modal
-type EditableField = 'full_name' | 'phone_number' | 'age' | 'gender' | 'location' | 'university' | 'major' | 'year_of_study' | 'budget' | 'preferred_housing_area' | 'room_type';
+type EditableField = 'full_name' | 'phone_number' | 'age' | 'gender' | 'location' | 'university' | 'major' | 'year_of_study' | 'budget' | 'preferred_city' | 'preferred_areas' | 'room_type';
 
 export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormProps) => {
   const [loading, setLoading] = useState(false);
@@ -102,6 +104,18 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   const [currentRoomData, setCurrentRoomData] = useState<any>(null);
   const [isRoomFull, setIsRoomFull] = useState(false);
   
+  // Housing area state
+  const [selectedCity, setSelectedCity] = useState<'Byblos' | 'Beirut' | ''>('');
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [tempAreas, setTempAreas] = useState<string[]>([]);
+  
+  // Area data by city
+  const byblosAreas = ['Blat', 'Nahr Ibrahim', 'Halat', 'Jeddayel', 'Mastita', 'Fidar', 'Habboub'];
+  const beirutAreas = ['Hamra', 'Manara', 'Ain El Mraisseh', 'Raoucheh', 'Ras Beirut', 'UNESCO', 
+    'Geitawi', 'Dora', 'Badaro', 'Ashrafieh', 'Verdun', 'Sin El Fil', 'Dekwaneh', 'Jdeideh', 
+    'Mar Elias', 'Borj Hammoud', 'Hazmieh', 'Furn El Chebbak', 'Tayouneh', 'Jnah', 
+    "Ras Al Naba'a", 'Gemmayze', 'Clemenceau', 'Khalde'];
+  
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -114,22 +128,6 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
 
   const formValues = watch();
   
-  // Calculate profile completion percentage
-  const calculateProgress = () => {
-    let fields = ['full_name', 'age', 'gender', 'governorate', 'district', 'town_village', 'university', 'major', 'year_of_study'];
-    
-    if (accommodationStatus === 'need_dorm') {
-      fields = [...fields, 'budget', 'preferred_housing_area', 'room_type'];
-    }
-    
-    const filledFields = fields.filter(field => {
-      const value = formValues[field as keyof StudentProfile];
-      return value !== undefined && value !== null && value !== '';
-    });
-    return Math.round((filledFields.length / fields.length) * 100);
-  };
-
-  const progress = calculateProgress();
 
   useEffect(() => {
     loadProfile();
@@ -309,6 +307,14 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         setValue('town_village', data.town_village);
       }
       
+      // Set housing area preferences
+      if (data.preferred_city) {
+        setSelectedCity(data.preferred_city as 'Byblos' | 'Beirut');
+      }
+      if (data.preferred_areas && Array.isArray(data.preferred_areas)) {
+        setSelectedAreas(data.preferred_areas);
+      }
+      
       // Set other fields
       Object.keys(data).forEach((key) => {
         if (key !== 'id' && key !== 'user_id' && key !== 'created_at' && key !== 'updated_at' && key !== 'email') {
@@ -377,14 +383,15 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         enable_personality_matching: enablePersonalityMatching,
         current_dorm_id: currentDormId || null,
         current_room_id: currentRoomId || null,
-        profile_completion_score: calculateProgress(),
+        
         updated_at: new Date().toISOString()
       };
 
       // Only include housing preferences if need_dorm
       if (accommodationStatus === 'need_dorm') {
         updateData.budget = data.budget;
-        updateData.preferred_housing_area = data.preferred_housing_area;
+        updateData.preferred_city = selectedCity || null;
+        updateData.preferred_areas = selectedAreas.length > 0 ? selectedAreas : null;
         updateData.room_type = data.room_type;
       }
 
@@ -547,7 +554,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         {showConfetti && <Confetti />}
       </AnimatePresence>
 
-      <ProfileProgress percentage={progress} />
+      
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -900,8 +907,8 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                   Back to Profile
                 </Button>
 
-                {/* Housing Preferences */}
-                <ProfileSectionHeader icon={<Home className="w-5 h-5" />} title="Housing Preferences" />
+                {/* Budget Section */}
+                <ProfileSectionHeader icon={<DollarSign className="w-5 h-5" />} title="Budget" />
                 
                 <div className="divide-y divide-border">
                   <ProfileFieldRow
@@ -911,15 +918,38 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                     placeholder="Set your budget"
                     onClick={() => openFieldModal('budget')}
                   />
-                  
+                </div>
+                
+                {/* Housing Area Section */}
+                <ProfileSectionHeader icon={<MapPin className="w-5 h-5" />} title="Housing Area" className="mt-8" />
+                
+                <div className="divide-y divide-border">
                   <ProfileFieldRow
-                    icon={<MapPin className="w-5 h-5" />}
-                    label="Preferred housing area"
-                    value={formValues.preferred_housing_area}
-                    placeholder="Select area"
-                    onClick={() => openFieldModal('preferred_housing_area')}
+                    icon={<Building2 className="w-5 h-5" />}
+                    label="City"
+                    value={selectedCity || null}
+                    placeholder="Select city"
+                    onClick={() => openFieldModal('preferred_city')}
                   />
                   
+                  {selectedCity && (
+                    <ProfileFieldRow
+                      icon={<MapPin className="w-5 h-5" />}
+                      label="Preferred areas"
+                      value={selectedAreas.length > 0 ? selectedAreas.join(', ') : null}
+                      placeholder="Select areas"
+                      onClick={() => {
+                        setTempAreas([...selectedAreas]);
+                        openFieldModal('preferred_areas');
+                      }}
+                    />
+                  )}
+                </div>
+                
+                {/* Room Type Section */}
+                <ProfileSectionHeader icon={<Home className="w-5 h-5" />} title="Room Preferences" className="mt-8" />
+                
+                <div className="divide-y divide-border">
                   <ProfileFieldRow
                     icon={<Home className="w-5 h-5" />}
                     label="Preferred room type"
@@ -1240,23 +1270,67 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
       </ProfileFieldModal>
       
       <ProfileFieldModal
-        open={editingField === 'preferred_housing_area'}
+        open={editingField === 'preferred_city'}
         onOpenChange={(open) => !open && setEditingField(null)}
-        title="Preferred housing area"
-        description="Where would you like to live?"
-        onSave={saveFieldFromModal}
+        title="City"
+        description="Which city would you prefer to live in?"
+        onSave={() => {
+          if (tempValue !== selectedCity) {
+            setSelectedAreas([]); // Clear areas when city changes
+          }
+          setSelectedCity(tempValue as 'Byblos' | 'Beirut');
+          setEditingField(null);
+          setTempValue(null);
+        }}
         isSaving={isSaving}
       >
-        <Select value={tempValue || ''} onValueChange={setTempValue}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select area" />
-          </SelectTrigger>
-          <SelectContent className="bg-background max-h-[300px]">
-            {housingAreas.map((area) => (
-              <SelectItem key={area} value={area}>{area}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="space-y-2">
+          {(['Byblos', 'Beirut'] as const).map((city) => (
+            <button
+              key={city}
+              type="button"
+              onClick={() => setTempValue(city)}
+              className={`w-full p-4 text-left rounded-xl border transition-all ${
+                tempValue === city ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
+              }`}
+            >
+              {city}
+            </button>
+          ))}
+        </div>
+      </ProfileFieldModal>
+      
+      <ProfileFieldModal
+        open={editingField === 'preferred_areas'}
+        onOpenChange={(open) => !open && setEditingField(null)}
+        title="Preferred areas"
+        description="Select the areas you'd prefer to live in (you can select multiple)"
+        onSave={() => {
+          setSelectedAreas([...tempAreas]);
+          setEditingField(null);
+        }}
+        isSaving={isSaving}
+      >
+        <div className="space-y-2 max-h-[300px] overflow-y-auto">
+          {(selectedCity === 'Byblos' ? byblosAreas : beirutAreas).map((area) => (
+            <label
+              key={area}
+              className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
+            >
+              <Checkbox
+                checked={tempAreas.includes(area)}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    setTempAreas([...tempAreas, area]);
+                  } else {
+                    setTempAreas(tempAreas.filter(a => a !== area));
+                  }
+                }}
+              />
+              <span>{area}</span>
+            </label>
+          ))}
+        </div>
       </ProfileFieldModal>
       
       <ProfileFieldModal

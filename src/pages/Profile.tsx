@@ -17,20 +17,8 @@ import BottomNav from '@/components/BottomNav';
 import { MobileMenuRow } from '@/components/mobile/MobileMenuRow';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StudentOnboardingDrawer } from '@/components/student/mobile/StudentOnboardingDrawer';
-import { ProfileCompletionIndicator, calculateProfileSections } from '@/components/profile/ProfileCompletionIndicator';
 
-interface StudentProfileData {
-  profile_photo_url: string | null;
-  full_name: string | null;
-  university: string | null;
-  gender: string | null;
-  governorate: string | null;
-  district: string | null;
-  accommodation_status: string | null;
-  budget: number | null;
-  room_type: string | null;
-  personality_test_completed: boolean | null;
-}
+
 
 export default function Profile() {
   const isMobile = useIsMobile();
@@ -50,7 +38,7 @@ export default function Profile() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [hasCompletedProfile, setHasCompletedProfile] = useState(true); // Default true to hide button
   const [showOnboardingDrawer, setShowOnboardingDrawer] = useState(false);
-  const [studentData, setStudentData] = useState<StudentProfileData | null>(null);
+  
 
   // Check for ?edit=true query param to auto-show profile form
   useEffect(() => {
@@ -83,7 +71,6 @@ export default function Profile() {
         if (student) {
           setProfilePhotoUrl(student.profile_photo_url || null);
           setUserName(student.full_name || '');
-          setStudentData(student as StudentProfileData);
           
           // Check if profile is complete (has key fields filled)
           const profileComplete = !!(student.full_name && student.university && student.gender);
@@ -91,7 +78,6 @@ export default function Profile() {
         } else {
           // No student record yet - definitely needs onboarding
           setHasCompletedProfile(false);
-          setStudentData(null);
         }
         
         // Fetch saved dorms count
@@ -150,12 +136,10 @@ export default function Profile() {
     if (student) {
       setProfilePhotoUrl(student.profile_photo_url || null);
       setUserName(student.full_name || '');
-      setStudentData(student as StudentProfileData);
       const profileComplete = !!(student.full_name && student.university && student.gender);
       setHasCompletedProfile(profileComplete);
     } else {
       setHasCompletedProfile(false);
-      setStudentData(null);
     }
   };
 
@@ -361,12 +345,6 @@ export default function Profile() {
                 </div>
               )}
 
-              {/* Profile Completion Indicator */}
-              {studentData && (
-                <ProfileCompletionIndicator 
-                  sections={calculateProfileSections(studentData)} 
-                />
-              )}
 
               {/* Feature Cards - 2 column grid */}
               <div className="grid grid-cols-2 gap-4">
@@ -633,19 +611,6 @@ export default function Profile() {
               </motion.div>
             )}
 
-            {/* Profile Completion Indicator for Desktop */}
-            {studentData && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15, duration: 0.6 }}
-                className="max-w-2xl mx-auto mb-6"
-              >
-                <ProfileCompletionIndicator 
-                  sections={calculateProfileSections(studentData)} 
-                />
-              </motion.div>
-            )}
 
             {/* Profile Photo Section for Students - only show if profile is complete */}
             {hasCompletedProfile && (

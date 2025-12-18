@@ -3351,6 +3351,8 @@ export type Database = {
           phone_number: string | null
           phone_verified: boolean | null
           preferred_amenities: string[] | null
+          preferred_areas: string[] | null
+          preferred_city: string | null
           preferred_housing_area: string | null
           preferred_room_types: string[] | null
           preferred_university: string | null
@@ -3420,6 +3422,8 @@ export type Database = {
           phone_number?: string | null
           phone_verified?: boolean | null
           preferred_amenities?: string[] | null
+          preferred_areas?: string[] | null
+          preferred_city?: string | null
           preferred_housing_area?: string | null
           preferred_room_types?: string[] | null
           preferred_university?: string | null
@@ -3489,6 +3493,8 @@ export type Database = {
           phone_number?: string | null
           phone_verified?: boolean | null
           preferred_amenities?: string[] | null
+          preferred_areas?: string[] | null
+          preferred_city?: string | null
           preferred_housing_area?: string | null
           preferred_room_types?: string[] | null
           preferred_university?: string | null
