@@ -7,7 +7,7 @@ import { AdminProfileForm } from '@/components/AdminProfileForm';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, Bell, Globe, Settings, HelpCircle, Scale, Building2, User, LogOut, Heart, Sparkles, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Loader2, Bell, Globe, Settings, HelpCircle, Scale, Building2, User, LogOut, Heart, Sparkles, ChevronRight, Rocket } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -33,6 +33,7 @@ export default function Profile() {
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [savedCount, setSavedCount] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [hasCompletedProfile, setHasCompletedProfile] = useState(true); // Default true to hide button
 
   // Check for ?edit=true query param to auto-show profile form
   useEffect(() => {
@@ -56,11 +57,15 @@ export default function Profile() {
       if (role === 'student') {
         const { data: student } = await supabase
           .from('students')
-          .select('profile_photo_url, full_name')
+          .select('profile_photo_url, full_name, university, gender')
           .eq('user_id', userId)
           .single();
         setProfilePhotoUrl(student?.profile_photo_url || null);
         setUserName(student?.full_name || '');
+        
+        // Check if profile is complete (has key fields filled)
+        const profileComplete = !!(student?.full_name && student?.university && student?.gender);
+        setHasCompletedProfile(profileComplete);
         
         // Fetch saved dorms count
         const { count } = await supabase
@@ -278,6 +283,30 @@ export default function Profile() {
                 </h2>
                 <p className="text-muted-foreground text-sm">Student</p>
               </button>
+
+              {/* Get Started Banner - only show if profile not complete */}
+              {!hasCompletedProfile && (
+                <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="bg-white/20 rounded-xl p-3">
+                      <Rocket className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-white mb-1">Complete Your Profile</h3>
+                      <p className="text-sm text-white/80 mb-3">
+                        Set up your profile to get personalized dorm matches
+                      </p>
+                      <Button
+                        onClick={() => navigate('/onboarding/student')}
+                        variant="secondary"
+                        className="bg-white text-primary hover:bg-white/90"
+                      >
+                        Get Started
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Feature Cards - 2 column grid */}
               <div className="grid grid-cols-2 gap-4">
@@ -506,30 +535,67 @@ export default function Profile() {
 
         {role === 'student' && (
           <>
-            {/* Profile Photo Section for Students */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.6 }}
-              className="max-w-2xl mx-auto mb-6"
-            >
-              <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
-                <h3 className="text-xl font-bold text-foreground mb-4">Profile Photo</h3>
-                <div className="flex justify-center">
-                  <ProfilePhotoUpload
-                    userId={userId!}
-                    currentUrl={profilePhotoUrl}
-                    onUploaded={handlePhotoUploaded}
-                    tableName="students"
-                  />
+            {/* Get Started Banner - only show if profile not complete */}
+            {!hasCompletedProfile && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, duration: 0.6 }}
+                className="max-w-2xl mx-auto mb-6"
+              >
+                <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-6 shadow-lg">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-white/20 rounded-xl p-3">
+                      <Rocket className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-white mb-1">Complete Your Profile</h3>
+                      <p className="text-white/80 mb-4">
+                        Set up your profile to get personalized dorm matches and find the perfect roommate
+                      </p>
+                      <Button
+                        onClick={() => navigate('/onboarding/student')}
+                        variant="secondary"
+                        size="lg"
+                        className="bg-white text-primary hover:bg-white/90"
+                      >
+                        <Rocket className="w-4 h-4 mr-2" />
+                        Get Started
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            )}
 
-            <StudentProfileForm 
-              userId={userId!} 
-              onComplete={() => navigate('/ai-match')}
-            />
+            {/* Profile Photo Section for Students - only show if profile is complete */}
+            {hasCompletedProfile && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1, duration: 0.6 }}
+                  className="max-w-2xl mx-auto mb-6"
+                >
+                  <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
+                    <h3 className="text-xl font-bold text-foreground mb-4">Profile Photo</h3>
+                    <div className="flex justify-center">
+                      <ProfilePhotoUpload
+                        userId={userId!}
+                        currentUrl={profilePhotoUrl}
+                        onUploaded={handlePhotoUploaded}
+                        tableName="students"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+
+                <StudentProfileForm 
+                  userId={userId!} 
+                  onComplete={() => navigate('/ai-match')}
+                />
+              </>
+            )}
           </>
         )}
 

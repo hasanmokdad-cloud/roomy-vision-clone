@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { supabase } from '@/integrations/supabase/client';
 import MobileStudentWizard from '@/components/student/mobile/MobileStudentWizard';
 
 const StudentOnboarding = () => {
@@ -19,17 +18,7 @@ const StudentOnboarding = () => {
         navigate('/listings');
         return;
       }
-
-      // Check if already completed onboarding
-      const { data: student } = await supabase
-        .from('students')
-        .select('onboarding_completed')
-        .eq('user_id', user.id)
-        .single();
-
-      if (student?.onboarding_completed) {
-        navigate('/listings');
-      }
+      // No longer redirect if onboarding is completed - user explicitly clicked "Get Started"
     };
 
     checkAccess();
@@ -48,7 +37,7 @@ const StudentOnboarding = () => {
     return <MobileStudentWizard />;
   }
 
-  // Desktop can also use wizard (or show different layout later)
+  // Desktop can also use wizard
   return <MobileStudentWizard />;
 };
 
