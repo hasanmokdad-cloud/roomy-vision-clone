@@ -612,33 +612,12 @@ export default function Profile() {
             )}
 
 
-            {/* Profile Photo Section for Students - only show if profile is complete */}
+            {/* Student Profile Form - only show if profile is complete */}
             {hasCompletedProfile && (
-              <>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1, duration: 0.6 }}
-                  className="max-w-2xl mx-auto mb-6"
-                >
-                  <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
-                    <h3 className="text-xl font-bold text-foreground mb-4">Profile Photo</h3>
-                    <div className="flex justify-center">
-                      <ProfilePhotoUpload
-                        userId={userId!}
-                        currentUrl={profilePhotoUrl}
-                        onUploaded={handlePhotoUploaded}
-                        tableName="students"
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-
-                <StudentProfileForm 
-                  userId={userId!} 
-                  onComplete={() => navigate('/ai-match')}
-                />
-              </>
+              <StudentProfileForm 
+                userId={userId!} 
+                onComplete={() => navigate('/ai-match')}
+              />
             )}
           </>
         )}
