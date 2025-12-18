@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { User, MapPin, GraduationCap, DollarSign, Home, CheckCircle, ArrowRight, ArrowLeft, Users, Brain, Phone, Calendar, Building2 } from 'lucide-react';
+import { User, MapPin, GraduationCap, DollarSign, Home, Users, Brain, Phone, Calendar, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Confetti } from '@/components/profile/Confetti';
 
@@ -20,13 +20,14 @@ import { PersonalitySurveyModal } from '@/components/profile/PersonalitySurveyMo
 import { ProfileFieldRow } from '@/components/profile/ProfileFieldRow';
 import { ProfileFieldModal } from '@/components/profile/ProfileFieldModal';
 import { ProfileSectionHeader } from '@/components/profile/ProfileSectionHeader';
+import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
 import { residentialAreas, type Governorate, type District } from '@/data/residentialAreas';
 import { universities } from '@/data/universities';
 
 import { roomTypes, isSingleRoom } from '@/data/roomTypes';
 
 const studentProfileSchema = z.object({
-  // Step 1 - Personal Info
+  // Personal Info
   full_name: z.string().min(2, 'Name must be at least 2 characters').max(100),
   age: z.number().min(16, 'Must be at least 16').max(100).optional(),
   gender: z.enum(['Male', 'Female']).optional(),
@@ -35,19 +36,18 @@ const studentProfileSchema = z.object({
   district: z.string().optional(),
   town_village: z.string().optional(),
   
-  // Step 1 - Academic Info
+  // Academic Info
   university: z.string().optional(),
   major: z.string().optional(),
   year_of_study: z.number().min(1).max(6).optional(),
   
-  // Personality matching toggle (survey is handled separately via PersonalitySurveyModal)
-  // Step 1 - Accommodation
+  // Accommodation
   accommodation_status: z.enum(['need_dorm', 'have_dorm']).default('need_dorm'),
   needs_roommate_current_place: z.boolean().optional(),
   needs_roommate_new_dorm: z.boolean().optional(),
   enable_personality_matching: z.boolean().optional(),
   
-  // Step 2 - Housing Preferences (only if need_dorm)
+  // Housing Preferences (only if need_dorm)
   budget: z.number().min(0).optional(),
   preferred_city: z.enum(['Byblos', 'Beirut']).optional(),
   preferred_areas: z.array(z.string()).optional(),
@@ -69,13 +69,13 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   const [hasProfile, setHasProfile] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   
   // Modal state
   const [editingField, setEditingField] = useState<EditableField | null>(null);
   const [tempValue, setTempValue] = useState<any>(null);
   
-  // Step management
-  const [currentStep, setCurrentStep] = useState(1);
+  // Accommodation state
   const [accommodationStatus, setAccommodationStatus] = useState<'need_dorm' | 'have_dorm'>('need_dorm');
   const [needsRoommateCurrentPlace, setNeedsRoommateCurrentPlace] = useState(false);
   const [needsRoommateNewDorm, setNeedsRoommateNewDorm] = useState(false);
@@ -127,7 +127,6 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   });
 
   const formValues = watch();
-  
 
   useEffect(() => {
     loadProfile();
@@ -261,6 +260,11 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
     if (data && !error) {
       setHasProfile(true);
       
+      // Set profile photo
+      if (data.profile_photo_url) {
+        setProfilePhotoUrl(data.profile_photo_url);
+      }
+      
       // Set accommodation status
       if (data.accommodation_status) {
         setAccommodationStatus(data.accommodation_status as 'need_dorm' | 'have_dorm');
@@ -313,398 +317,547 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
       }
       if (data.preferred_areas && Array.isArray(data.preferred_areas)) {
         setSelectedAreas(data.preferred_areas);
+        setValue('preferred_areas', data.preferred_areas);
       }
-      
-      // Set other fields
+
+      // Set all other form values
       Object.keys(data).forEach((key) => {
-        if (key !== 'id' && key !== 'user_id' && key !== 'created_at' && key !== 'updated_at' && key !== 'email') {
-          const value = data[key];
-          if (value !== null && value !== undefined) {
-            setValue(key as keyof StudentProfile, value);
-          }
+        if (key in studentProfileSchema.shape && data[key] !== null) {
+          setValue(key as any, data[key]);
         }
       });
     }
   };
 
-  const handleStep1Complete = async (data: StudentProfile) => {
-    if (accommodationStatus === 'have_dorm') {
-      if (needsRoommateCurrentPlace) {
-        // Save profile then navigate to roommate matching
-        await saveProfile(data);
-        navigate('/ai-match?mode=roommate');
-      } else {
-        // Just save profile
-        await saveProfile(data);
-      }
-    } else {
-      // Continue to Step 2
-      setCurrentStep(2);
-    }
-  };
-
-  const handleStep2Complete = async (data: StudentProfile) => {
-    // Save profile first
-    await saveProfile(data);
+  const openFieldModal = (field: EditableField) => {
+    setEditingField(field);
     
-    if (needsRoommateNewDorm) {
-      // Combined mode: both dorm and roommate matching
-      navigate('/ai-match?mode=combined');
+    // Initialize temp values based on field
+    if (field === 'location') {
+      setTempGovernorate(selectedGovernorate);
+      setTempDistrict(selectedDistrict);
+      setTempTown(formValues.town_village || '');
+    } else if (field === 'preferred_areas') {
+      setTempAreas([...selectedAreas]);
     } else {
-      // Dorm-only mode
-      navigate('/ai-match?mode=dorm');
+      setTempValue(formValues[field]);
     }
   };
 
-  const saveProfile = async (data: StudentProfile) => {
-    setLoading(true);
+  const saveFieldValue = async () => {
+    if (!editingField) return;
+    
     setIsSaving(true);
+    
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      let updateData: any = {};
       
-      if (!user) throw new Error('User not authenticated');
+      if (editingField === 'location') {
+        updateData = {
+          governorate: tempGovernorate || null,
+          district: tempDistrict || null,
+          town_village: tempTown || null,
+        };
+        
+        setSelectedGovernorate(tempGovernorate);
+        setSelectedDistrict(tempDistrict);
+        setValue('governorate', tempGovernorate || undefined);
+        setValue('district', tempDistrict || undefined);
+        setValue('town_village', tempTown || undefined);
+      } else if (editingField === 'preferred_areas') {
+        updateData = { preferred_areas: tempAreas };
+        setSelectedAreas(tempAreas);
+        setValue('preferred_areas', tempAreas);
+      } else {
+        updateData = { [editingField]: tempValue };
+        setValue(editingField, tempValue);
+      }
+      
+      const { error } = await supabase
+        .from('students')
+        .update(updateData)
+        .eq('user_id', userId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Success',
+        description: 'Profile updated successfully',
+      });
+      
+      setEditingField(null);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-      const updateData: any = {
+  const onSubmit = async (data: StudentProfile) => {
+    setLoading(true);
+
+    try {
+      const profileData: any = {
         user_id: userId,
-        email: user.email || '',
         full_name: data.full_name,
-        age: data.age,
-        gender: data.gender,
-        governorate: data.governorate,
-        district: data.district,
-        town_village: data.town_village,
-        university: data.university,
-        major: data.major,
-        year_of_study: data.year_of_study,
+        age: data.age || null,
+        gender: data.gender || null,
         phone_number: data.phone_number || null,
+        governorate: selectedGovernorate || null,
+        district: selectedDistrict || null,
+        town_village: data.town_village || null,
+        university: data.university || null,
+        major: data.major || null,
+        year_of_study: data.year_of_study || null,
         accommodation_status: accommodationStatus,
         needs_roommate_current_place: needsRoommateCurrentPlace,
         needs_roommate_new_dorm: needsRoommateNewDorm,
         enable_personality_matching: enablePersonalityMatching,
         current_dorm_id: currentDormId || null,
         current_room_id: currentRoomId || null,
-        
-        updated_at: new Date().toISOString()
       };
 
-      // Only include housing preferences if need_dorm
+      // Add housing preferences only if need_dorm
       if (accommodationStatus === 'need_dorm') {
-        updateData.budget = data.budget;
-        updateData.preferred_city = selectedCity || null;
-        updateData.preferred_areas = selectedAreas.length > 0 ? selectedAreas : null;
-        updateData.room_type = data.room_type;
+        profileData.budget = data.budget || null;
+        profileData.preferred_city = selectedCity || null;
+        profileData.preferred_areas = selectedAreas.length > 0 ? selectedAreas : null;
+        profileData.room_type = data.room_type || null;
       }
 
-      const { error } = await supabase
-        .from('students')
-        .upsert(updateData, {
-          onConflict: 'user_id'
-        });
+      if (hasProfile) {
+        const { error } = await supabase
+          .from('students')
+          .update(profileData)
+          .eq('user_id', userId);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('students')
+          .insert([profileData]);
+
+        if (error) throw error;
+        setHasProfile(true);
+      }
 
       setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 2000);
+      setTimeout(() => setShowConfetti(false), 5000);
 
       toast({
-        title: 'Profile saved! ✨',
-        description: 'Your profile has been updated successfully.',
+        title: 'Success!',
+        description: 'Your profile has been saved successfully.',
       });
 
-      onComplete?.();
-    } catch (error) {
-      console.error('Profile save error:', error);
+      if (onComplete) {
+        onComplete();
+      }
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Failed to save profile. Please try again.',
+        description: error.message,
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
-      setIsSaving(false);
     }
   };
 
-  const handleLeaveRoom = async () => {
-    if (!currentRoomId) return;
+  const handleAccommodationStatusChange = async (newStatus: 'need_dorm' | 'have_dorm') => {
+    setAccommodationStatus(newStatus);
+    setValue('accommodation_status', newStatus);
+    
+    // Reset roommate preferences when switching
+    if (newStatus === 'need_dorm') {
+      setNeedsRoommateCurrentPlace(false);
+      setValue('needs_roommate_current_place', false);
+    } else {
+      setNeedsRoommateNewDorm(false);
+      setValue('needs_roommate_new_dorm', false);
+    }
+    
+    // Save to database if profile exists
+    if (hasProfile) {
+      const updateData: any = {
+        accommodation_status: newStatus,
+      };
+      
+      if (newStatus === 'need_dorm') {
+        updateData.needs_roommate_current_place = false;
+      } else {
+        updateData.needs_roommate_new_dorm = false;
+      }
+      
+      await supabase
+        .from('students')
+        .update(updateData)
+        .eq('user_id', userId);
+    }
+  };
 
+  const handleRoommateToggle = async (type: 'current' | 'new', value: boolean) => {
+    if (type === 'current') {
+      setNeedsRoommateCurrentPlace(value);
+      setValue('needs_roommate_current_place', value);
+      
+      // If turning off roommate search, also turn off personality matching
+      if (!value) {
+        setEnablePersonalityMatching(false);
+        setValue('enable_personality_matching', false);
+      }
+      
+      // Clear current room if toggling on (to force re-selection of multi-bed room)
+      if (value) {
+        setCurrentRoomId('');
+      }
+    } else {
+      setNeedsRoommateNewDorm(value);
+      setValue('needs_roommate_new_dorm', value);
+      
+      // If turning off roommate search, also turn off personality matching
+      if (!value) {
+        setEnablePersonalityMatching(false);
+        setValue('enable_personality_matching', false);
+      }
+    }
+    
+    // Save to database if profile exists
+    if (hasProfile) {
+      const updateData: any = {
+        [type === 'current' ? 'needs_roommate_current_place' : 'needs_roommate_new_dorm']: value,
+      };
+      
+      if (!value) {
+        updateData.enable_personality_matching = false;
+      }
+      
+      await supabase
+        .from('students')
+        .update(updateData)
+        .eq('user_id', userId);
+    }
+  };
+
+  const handlePersonalityMatchingToggle = async (value: boolean) => {
+    if (value && !personalityTestCompleted) {
+      setShowPersonalitySurvey(true);
+      return;
+    }
+    
+    setEnablePersonalityMatching(value);
+    setValue('enable_personality_matching', value);
+    
+    if (hasProfile) {
+      await supabase
+        .from('students')
+        .update({ enable_personality_matching: value })
+        .eq('user_id', userId);
+    }
+  };
+
+  const handlePersonalitySurveyComplete = async (answers: Record<string, number>) => {
     try {
-      setLoading(true);
+      // Calculate personality scores
+      const scores = {
+        openness: 0,
+        conscientiousness: 0,
+        extraversion: 0,
+        agreeableness: 0,
+        neuroticism: 0,
+      };
 
-      // Decrement room occupancy
-      const { error: rpcError } = await supabase.rpc('decrement_room_occupancy', {
-        room_id: currentRoomId
+      // Simple scoring logic (you can make this more sophisticated)
+      Object.entries(answers).forEach(([question, answer]) => {
+        const questionNum = parseInt(question.replace('q', ''));
+        
+        if (questionNum <= 2) scores.openness += answer;
+        else if (questionNum <= 4) scores.conscientiousness += answer;
+        else if (questionNum <= 6) scores.extraversion += answer;
+        else if (questionNum <= 8) scores.agreeableness += answer;
+        else scores.neuroticism += answer;
       });
 
-      if (rpcError) throw rpcError;
+      // Normalize scores (0-100)
+      Object.keys(scores).forEach((key) => {
+        scores[key as keyof typeof scores] = Math.round((scores[key as keyof typeof scores] / 10) * 100);
+      });
 
-      // Clear student's current room
-      const { error: updateError } = await supabase
+      // Save to database
+      await supabase
         .from('students')
         .update({
-          current_dorm_id: null,
-          current_room_id: null,
-          accommodation_status: 'need_dorm'
+          personality_scores: scores,
+          personality_test_completed: true,
+          enable_personality_matching: true,
         })
         .eq('user_id', userId);
 
-      if (updateError) throw updateError;
-
-      // Update local state
-      setCurrentDormId('');
-      setCurrentRoomId('');
-      setCurrentRoomData(null);
-      setIsRoomFull(false);
-      setAccommodationStatus('need_dorm');
+      setPersonalityTestCompleted(true);
+      setEnablePersonalityMatching(true);
+      setValue('enable_personality_matching', true);
+      setShowPersonalitySurvey(false);
 
       toast({
-        title: 'Room vacated',
-        description: 'Your room has been freed up for other students.',
+        title: 'Success!',
+        description: 'Personality test completed. Matching enabled!',
       });
-    } catch (error) {
-      console.error('Leave room error:', error);
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Failed to leave room. Please try again.',
+        description: error.message,
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const onSubmit = (data: StudentProfile) => {
-    if (currentStep === 1) {
-      handleStep1Complete(data);
-    } else {
-      handleStep2Complete(data);
+  const handleCurrentDormChange = async (dormId: string) => {
+    setCurrentDormId(dormId);
+    setCurrentRoomId(''); // Reset room when dorm changes
+    
+    if (hasProfile) {
+      await supabase
+        .from('students')
+        .update({ 
+          current_dorm_id: dormId || null,
+          current_room_id: null 
+        })
+        .eq('user_id', userId);
     }
   };
-  
-  // Open field edit modal
-  const openFieldModal = (field: EditableField) => {
-    setEditingField(field);
+
+  const handleCurrentRoomChange = async (roomId: string) => {
+    setCurrentRoomId(roomId);
     
-    if (field === 'location') {
-      setTempGovernorate(selectedGovernorate);
-      setTempDistrict(selectedDistrict);
-      setTempTown(formValues.town_village || '');
-      if (selectedGovernorate) {
-        setTempAvailableDistricts(Object.keys(residentialAreas[selectedGovernorate]));
-        if (selectedDistrict) {
-          const towns = residentialAreas[selectedGovernorate][selectedDistrict as District<typeof selectedGovernorate>];
-          setTempAvailableTowns(towns || []);
-        }
-      }
-    } else {
-      setTempValue(formValues[field as keyof StudentProfile] ?? '');
+    if (hasProfile) {
+      await supabase
+        .from('students')
+        .update({ current_room_id: roomId || null })
+        .eq('user_id', userId);
     }
   };
-  
-  // Save field from modal
-  const saveFieldFromModal = () => {
-    if (!editingField) return;
+
+  const handleCityChange = async (city: 'Byblos' | 'Beirut') => {
+    setSelectedCity(city);
+    setSelectedAreas([]); // Reset areas when city changes
+    setValue('preferred_city', city);
+    setValue('preferred_areas', []);
     
-    if (editingField === 'location') {
-      setSelectedGovernorate(tempGovernorate);
-      setSelectedDistrict(tempDistrict);
-      setValue('governorate', tempGovernorate);
-      setValue('district', tempDistrict);
-      setValue('town_village', tempTown);
-      if (tempGovernorate) {
-        setAvailableDistricts(Object.keys(residentialAreas[tempGovernorate]));
-        if (tempDistrict) {
-          const towns = residentialAreas[tempGovernorate][tempDistrict as District<typeof tempGovernorate>];
-          setAvailableTowns(towns || []);
-        }
-      }
-    } else if (editingField === 'age' || editingField === 'year_of_study' || editingField === 'budget') {
-      setValue(editingField, tempValue ? Number(tempValue) : undefined);
-    } else {
-      setValue(editingField as keyof StudentProfile, tempValue);
+    if (hasProfile) {
+      await supabase
+        .from('students')
+        .update({ 
+          preferred_city: city,
+          preferred_areas: []
+        })
+        .eq('user_id', userId);
     }
-    
-    setEditingField(null);
-    setTempValue(null);
   };
-  
-  // Get location display value
+
+  const toggleArea = (area: string) => {
+    setTempAreas(prev => 
+      prev.includes(area) 
+        ? prev.filter(a => a !== area)
+        : [...prev, area]
+    );
+  };
+
   const getLocationDisplay = () => {
-    const parts = [formValues.town_village, selectedDistrict, selectedGovernorate].filter(Boolean);
-    return parts.join(', ') || null;
+    const parts = [];
+    if (formValues.town_village) parts.push(formValues.town_village);
+    if (selectedDistrict) parts.push(selectedDistrict);
+    if (selectedGovernorate) parts.push(selectedGovernorate);
+    return parts.join(', ') || undefined;
   };
-  
-  // Get year of study display
-  const getYearDisplay = (year: number | undefined) => {
-    if (!year) return null;
-    const yearLabels: Record<number, string> = {
-      1: 'Year 1 (Freshman)',
-      2: 'Year 2 (Sophomore)',
-      3: 'Year 3 (Junior)',
-      4: 'Year 4 (Senior)',
-      5: 'Year 5+',
-      6: 'Graduate Student'
-    };
-    return yearLabels[year] || null;
+
+  const getAreasDisplay = () => {
+    if (selectedAreas.length === 0) return undefined;
+    if (selectedAreas.length <= 2) return selectedAreas.join(', ');
+    return `${selectedAreas.slice(0, 2).join(', ')} +${selectedAreas.length - 2}`;
   };
+
+  const shouldShowPersonalityMatching = 
+    (accommodationStatus === 'have_dorm' && needsRoommateCurrentPlace) ||
+    (accommodationStatus === 'need_dorm' && needsRoommateNewDorm);
 
   return (
-    <>
-      <AnimatePresence>
-        {showConfetti && <Confetti />}
-      </AnimatePresence>
-
+    <div className="min-h-screen bg-background">
+      {showConfetti && <Confetti />}
       
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.6 }}
-        className="w-full px-4 md:px-6"
-      >
-        <div className="space-y-2 mb-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-            {currentStep === 1 ? 'Create Your Profile' : 'Set Your Preferences'}
-          </h2>
-          <p className="text-muted-foreground">
-            {currentStep === 1 
-              ? 'Tell us about yourself to get started' 
-              : 'Let us know your housing preferences'}
-          </p>
-          <div className="flex gap-2 mt-4">
-            <div className={`h-1 flex-1 rounded-full ${currentStep >= 1 ? 'bg-primary' : 'bg-muted'}`} />
-            <div className={`h-1 flex-1 rounded-full ${currentStep >= 2 ? 'bg-primary' : 'bg-muted'}`} />
+      <form onSubmit={handleSubmit(onSubmit)} className="pb-24">
+        {/* Airbnb-style layout: Photo on left, form on right */}
+        <div className="grid lg:grid-cols-2 min-h-screen">
+          {/* Left side - Photo (sticky on desktop) */}
+          <div className="lg:sticky lg:top-0 lg:h-screen bg-muted/30 p-6 lg:p-12 flex items-center justify-center">
+            <div className="w-full max-w-md">
+              <ProfilePhotoUpload
+                userId={userId}
+                currentPhotoUrl={profilePhotoUrl}
+                onPhotoUpdate={setProfilePhotoUrl}
+              />
+            </div>
           </div>
-        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <AnimatePresence mode="wait">
-            {currentStep === 1 && (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-0"
-              >
-                {/* Personal Information Section */}
-                <ProfileSectionHeader icon={<User className="w-5 h-5" />} title="Personal Information" />
+          {/* Right side - Form fields */}
+          <div className="p-6 lg:p-12 space-y-8">
+            {/* Personal Information */}
+            <div>
+              <ProfileSectionHeader
+                icon={<User className="w-5 h-5" />}
+                title="Personal Information"
+                description="Tell us about yourself"
+              />
+              
+              <div className="space-y-0 divide-y divide-border">
+                <ProfileFieldRow
+                  icon={<User className="w-5 h-5" />}
+                  label="Full Name"
+                  value={formValues.full_name}
+                  onClick={() => openFieldModal('full_name')}
+                  required
+                />
                 
-                <div className="divide-y divide-border">
-                  <ProfileFieldRow
-                    icon={<User className="w-5 h-5" />}
-                    label="Full name"
-                    value={formValues.full_name}
-                    placeholder="Add your name"
-                    onClick={() => openFieldModal('full_name')}
-                    required
-                  />
-                  
-                  <ProfileFieldRow
-                    icon={<Phone className="w-5 h-5" />}
-                    label="Phone number"
-                    value={formValues.phone_number}
-                    placeholder="Add phone number"
-                    onClick={() => openFieldModal('phone_number')}
-                  />
-                  
-                  <ProfileFieldRow
-                    icon={<Calendar className="w-5 h-5" />}
-                    label="Age"
-                    value={formValues.age}
-                    placeholder="Add your age"
-                    onClick={() => openFieldModal('age')}
-                  />
-                  
-                  <ProfileFieldRow
-                    icon={<User className="w-5 h-5" />}
-                    label="Gender"
-                    value={formValues.gender}
-                    placeholder="Select gender"
-                    onClick={() => openFieldModal('gender')}
-                  />
-                  
-                  <ProfileFieldRow
-                    icon={<MapPin className="w-5 h-5" />}
-                    label="Residential area"
-                    value={getLocationDisplay()}
-                    placeholder="Add your location"
-                    onClick={() => openFieldModal('location')}
-                  />
-                </div>
+                <ProfileFieldRow
+                  icon={<Phone className="w-5 h-5" />}
+                  label="Phone Number"
+                  value={formValues.phone_number}
+                  onClick={() => openFieldModal('phone_number')}
+                />
+                
+                <ProfileFieldRow
+                  icon={<Calendar className="w-5 h-5" />}
+                  label="Age"
+                  value={formValues.age}
+                  onClick={() => openFieldModal('age')}
+                />
+                
+                <ProfileFieldRow
+                  icon={<User className="w-5 h-5" />}
+                  label="Gender"
+                  value={formValues.gender}
+                  onClick={() => openFieldModal('gender')}
+                />
+                
+                <ProfileFieldRow
+                  icon={<MapPin className="w-5 h-5" />}
+                  label="Home Location"
+                  value={getLocationDisplay()}
+                  onClick={() => openFieldModal('location')}
+                />
+              </div>
+            </div>
 
-                {/* Academic Information Section */}
-                <ProfileSectionHeader icon={<GraduationCap className="w-5 h-5" />} title="Academic Information" className="mt-8" />
+            {/* Academic Information */}
+            <div>
+              <ProfileSectionHeader
+                icon={<GraduationCap className="w-5 h-5" />}
+                title="Academic Information"
+                description="Your educational background"
+              />
+              
+              <div className="space-y-0 divide-y divide-border">
+                <ProfileFieldRow
+                  icon={<Building2 className="w-5 h-5" />}
+                  label="University"
+                  value={formValues.university}
+                  onClick={() => openFieldModal('university')}
+                />
                 
-                <div className="divide-y divide-border">
-                  <ProfileFieldRow
-                    icon={<GraduationCap className="w-5 h-5" />}
-                    label="University"
-                    value={formValues.university}
-                    placeholder="Select university"
-                    onClick={() => openFieldModal('university')}
-                  />
-                  
-                  <ProfileFieldRow
-                    icon={<GraduationCap className="w-5 h-5" />}
-                    label="Major"
-                    value={formValues.major}
-                    placeholder="Add your major"
-                    onClick={() => openFieldModal('major')}
-                  />
-                  
-                  <ProfileFieldRow
-                    icon={<Calendar className="w-5 h-5" />}
-                    label="Year of study"
-                    value={getYearDisplay(formValues.year_of_study)}
-                    placeholder="Select year"
-                    onClick={() => openFieldModal('year_of_study')}
-                  />
-                </div>
+                <ProfileFieldRow
+                  icon={<GraduationCap className="w-5 h-5" />}
+                  label="Major"
+                  value={formValues.major}
+                  onClick={() => openFieldModal('major')}
+                />
+                
+                <ProfileFieldRow
+                  icon={<Calendar className="w-5 h-5" />}
+                  label="Year of Study"
+                  value={formValues.year_of_study}
+                  onClick={() => openFieldModal('year_of_study')}
+                />
+              </div>
+            </div>
 
-                {/* Accommodation Status Section */}
-                <ProfileSectionHeader icon={<Home className="w-5 h-5" />} title="Accommodation Status" className="mt-8" />
-                
-                <div className="py-4">
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="space-y-1">
-                      <Label className="text-base font-medium text-foreground">
-                        Do you need a dorm?
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Toggle based on your current situation
-                      </p>
+            {/* Accommodation Status */}
+            <div>
+              <ProfileSectionHeader
+                icon={<Home className="w-5 h-5" />}
+                title="Accommodation Status"
+                description="Your current housing situation"
+              />
+              
+              <div className="space-y-4 pt-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleAccommodationStatusChange('need_dorm')}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      accommodationStatus === 'need_dorm'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <Home className="w-6 h-6 mx-auto mb-2" />
+                      <div className="font-medium">Need Dorm</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Looking for accommodation
+                      </div>
                     </div>
-                    <Switch
-                      checked={accommodationStatus === 'need_dorm'}
-                      onCheckedChange={(checked) => {
-                        setAccommodationStatus(checked ? 'need_dorm' : 'have_dorm');
-                        setValue('accommodation_status', checked ? 'need_dorm' : 'have_dorm');
-                      }}
-                    />
-                  </div>
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => handleAccommodationStatusChange('have_dorm')}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      accommodationStatus === 'have_dorm'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <Home className="w-6 h-6 mx-auto mb-2" />
+                      <div className="font-medium">Have Dorm</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Already have accommodation
+                      </div>
+                    </div>
+                  </button>
+                </div>
 
-                  {accommodationStatus === 'have_dorm' && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="pt-4 mt-4 border-t border-border"
-                    >
-                      
-                      {/* Current Dorm Selection */}
-                      <div id="current-dorm-section" className="space-y-4">
-                        <Label className="text-base font-medium">Your Current Dorm</Label>
-                        <p className="text-sm text-muted-foreground">Select your current accommodation</p>
-                        
+                {/* Roommate preference based on status */}
+                {accommodationStatus === 'have_dorm' && (
+                  <div className="space-y-4 pt-4">
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+                      <div className="flex items-center gap-3">
+                        <Users className="w-5 h-5 text-muted-foreground" />
                         <div>
-                          <Label htmlFor="current_dorm" className="text-sm text-muted-foreground">Dorm</Label>
-                          <Select value={currentDormId || ""} onValueChange={setCurrentDormId}>
-                            <SelectTrigger id="current_dorm" className="mt-1">
-                              <SelectValue placeholder="Select your current dorm" />
+                          <div className="font-medium">Looking for Roommate</div>
+                          <div className="text-sm text-muted-foreground">
+                            Find someone to share your current place
+                          </div>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={needsRoommateCurrentPlace}
+                        onCheckedChange={(checked) => handleRoommateToggle('current', checked)}
+                      />
+                    </div>
+
+                    {/* Current Dorm/Room Selection */}
+                    {needsRoommateCurrentPlace && (
+                      <div id="current-dorm-section" className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+                        <div className="space-y-2">
+                          <Label>Current Dorm</Label>
+                          <Select value={currentDormId} onValueChange={handleCurrentDormChange}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select your dorm" />
                             </SelectTrigger>
-                            <SelectContent className="bg-background z-50">
+                            <SelectContent>
                               {availableDorms.map((dorm) => (
                                 <SelectItem key={dorm.id} value={dorm.id}>
                                   {dorm.name} - {dorm.area}
@@ -713,477 +866,265 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                             </SelectContent>
                           </Select>
                         </div>
-                        
+
                         {currentDormId && (
-                          <div>
-                            <Label htmlFor="current_room" className="text-sm text-muted-foreground">Room</Label>
-                            <Select value={currentRoomId || ""} onValueChange={(value) => {
-                              setCurrentRoomId(value);
-                              // Auto-reset roommate toggle if selecting a single room
-                              const selectedRoom = availableRooms.find(r => r.id === value);
-                              if (selectedRoom && (isSingleRoom(selectedRoom.type) || selectedRoom.capacity === 1)) {
-                                setNeedsRoommateCurrentPlace(false);
-                                setValue('needs_roommate_current_place', false);
-                              }
-                            }}>
-                              <SelectTrigger id="current_room" className="mt-1">
-                                <SelectValue placeholder="Select your current room" />
+                          <div className="space-y-2">
+                            <Label>Current Room</Label>
+                            <Select value={currentRoomId} onValueChange={handleCurrentRoomChange}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select your room" />
                               </SelectTrigger>
-                              <SelectContent className="bg-background z-50">
+                              <SelectContent>
                                 {availableRooms.map((room) => (
                                   <SelectItem key={room.id} value={room.id}>
-                                    {room.name} ({room.type}) - {room.capacity_occupied}/{room.capacity} occupied
+                                    {room.name} - {room.type} ({room.capacity_occupied}/{room.capacity})
                                   </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
+                            
+                            {currentRoomId && isRoomFull && (
+                              <p className="text-sm text-amber-600 dark:text-amber-500">
+                                ⚠️ This room is currently full. You may need to wait for a spot to open.
+                              </p>
+                            )}
                           </div>
                         )}
-                        
-                        {/* Need a Roommate Toggle - only for multi-bed rooms */}
-                        {currentRoomId && (() => {
-                          const selectedRoom = availableRooms.find(r => r.id === currentRoomId);
-                          const isRoomSingleOccupancy = selectedRoom 
-                            ? (isSingleRoom(selectedRoom.type) || selectedRoom.capacity === 1) 
-                            : true;
-                          return !isRoomSingleOccupancy && !isRoomFull;
-                        })() && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="flex items-center justify-between flex-wrap gap-4 p-4 bg-muted/50 rounded-lg"
-                          >
-                            <div className="space-y-1">
-                              <Label className="text-base font-medium text-foreground flex items-center gap-2">
-                                <Users className="w-4 h-4" />
-                                Need a Roommate for Your Current Place?
-                              </Label>
-                              <p className="text-sm text-muted-foreground">
-                                Find compatible people to share your existing accommodation
-                              </p>
-                            </div>
-                            <Switch
-                              checked={needsRoommateCurrentPlace}
-                              onCheckedChange={(checked) => {
-                                setNeedsRoommateCurrentPlace(checked);
-                                setValue('needs_roommate_current_place', checked);
-                              }}
-                            />
-                          </motion.div>
-                        )}
-                        
-                        {/* Leaving Your Room Toggle */}
-                        {currentRoomId && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            className="flex items-center justify-between p-4 border-2 border-destructive/20 rounded-lg bg-destructive/5 mt-4"
-                          >
-                            <div>
-                              <Label className="text-base font-medium text-destructive">Leaving Your Room?</Label>
-                              <p className="text-sm text-muted-foreground">
-                                This will free up your spot for other students and update your accommodation status
-                              </p>
-                            </div>
-                            <Button 
-                              type="button"
-                              variant="destructive" 
-                              onClick={handleLeaveRoom}
-                              disabled={loading}
-                            >
-                              {loading ? 'Processing...' : 'Leave Room'}
-                            </Button>
-                          </motion.div>
-                        )}
                       </div>
-                    </motion.div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
 
-                {/* Personality Matching Section - Only when needsRoommateCurrentPlace is true */}
-                {accommodationStatus === 'have_dorm' && needsRoommateCurrentPlace && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="py-4 border-t border-border"
-                  >
-                    <ProfileSectionHeader icon={<Brain className="w-5 h-5" />} title="Personality Matching (Optional)" />
-                    
-                    <div className="flex items-center justify-between py-4">
-                      <div className="space-y-1">
-                        <Label className="text-base font-medium">Enable Personality Matching?</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Recommended for better roommate compatibility
-                        </p>
+                {accommodationStatus === 'need_dorm' && (
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+                    <div className="flex items-center gap-3">
+                      <Users className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <div className="font-medium">Looking for Roommate</div>
+                        <div className="text-sm text-muted-foreground">
+                          Find someone to share a new dorm with
+                        </div>
                       </div>
-                      <Switch 
+                    </div>
+                    <Switch
+                      checked={needsRoommateNewDorm}
+                      onCheckedChange={(checked) => handleRoommateToggle('new', checked)}
+                    />
+                  </div>
+                )}
+
+                {/* Personality Matching - Only show if seeking roommate */}
+                {shouldShowPersonalityMatching && (
+                  <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Brain className="w-5 h-5 text-muted-foreground" />
+                        <div>
+                          <div className="font-medium">Personality Matching</div>
+                          <div className="text-sm text-muted-foreground">
+                            Find compatible roommates based on personality
+                          </div>
+                        </div>
+                      </div>
+                      <Switch
                         checked={enablePersonalityMatching}
-                        onCheckedChange={(checked) => {
-                          setEnablePersonalityMatching(checked);
-                          setValue('enable_personality_matching', checked);
-                        }}
+                        onCheckedChange={handlePersonalityMatchingToggle}
                       />
                     </div>
                     
-                    {enablePersonalityMatching && !personalityTestCompleted && (
-                      <Button 
-                        type="button"
-                        onClick={() => navigate('/personality')} 
-                        variant="outline"
-                        className="w-full"
-                      >
-                        <Brain className="w-4 h-4 mr-2" />
-                        Take Personality Test
-                      </Button>
+                    {personalityTestCompleted && (
+                      <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-500">
+                        <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30">
+                          ✓ Test Completed
+                        </Badge>
+                      </div>
                     )}
-                    
-                    {enablePersonalityMatching && personalityTestCompleted && (
-                      <Badge className="bg-green-100 text-green-700 border-green-300">
-                        ✔ Personality test completed – used for advanced matching
-                      </Badge>
-                    )}
-                  </motion.div>
+                  </div>
                 )}
+              </div>
+            </div>
 
-                {/* Step 1 Action Buttons */}
-                <div className="flex gap-3 pt-6 mt-6 border-t border-border">
-                  {accommodationStatus === 'have_dorm' && (!needsRoommateCurrentPlace || isRoomFull) ? (
-                    <Button
-                      type="submit"
-                      disabled={loading}
-                      className="flex-1"
-                    >
-                      {loading ? 'Saving...' : (
-                        <>
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Save Profile
-                        </>
-                      )}
-                    </Button>
-                  ) : accommodationStatus === 'have_dorm' && needsRoommateCurrentPlace && !isRoomFull ? (
-                    <Button
-                      type="submit"
-                      disabled={loading}
-                      className="flex-1"
-                    >
-                      {loading ? 'Saving...' : (
-                        <>
-                          <Users className="w-4 h-4 mr-2" />
-                          Find Roommate Matches
-                        </>
-                      )}
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      onClick={() => setCurrentStep(2)}
-                      className="flex-1"
-                    >
-                      Continue to Step 2
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  )}
-                </div>
-              </motion.div>
-            )}
-
-            {currentStep === 2 && (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-0"
-              >
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setCurrentStep(1)}
-                  className="mb-4 -ml-2"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Profile
-                </Button>
-
-                {/* Budget Section */}
-                <ProfileSectionHeader icon={<DollarSign className="w-5 h-5" />} title="Budget" />
+            {/* Housing Preferences - Only show if need_dorm */}
+            {accommodationStatus === 'need_dorm' && (
+              <div>
+                <ProfileSectionHeader
+                  icon={<Home className="w-5 h-5" />}
+                  title="Housing Preferences"
+                  description="What are you looking for?"
+                />
                 
-                <div className="divide-y divide-border">
+                <div className="space-y-0 divide-y divide-border">
                   <ProfileFieldRow
                     icon={<DollarSign className="w-5 h-5" />}
-                    label="Monthly budget (USD)"
-                    value={formValues.budget ? `$${formValues.budget}` : null}
-                    placeholder="Set your budget"
+                    label="Budget (per month)"
+                    value={formValues.budget ? `$${formValues.budget}` : undefined}
                     onClick={() => openFieldModal('budget')}
                   />
-                </div>
-                
-                {/* Housing Area Section */}
-                <ProfileSectionHeader icon={<MapPin className="w-5 h-5" />} title="Housing Area" className="mt-8" />
-                
-                <div className="divide-y divide-border">
+                  
                   <ProfileFieldRow
-                    icon={<Building2 className="w-5 h-5" />}
-                    label="City"
-                    value={selectedCity || null}
-                    placeholder="Select city"
+                    icon={<MapPin className="w-5 h-5" />}
+                    label="Preferred City"
+                    value={formValues.preferred_city}
                     onClick={() => openFieldModal('preferred_city')}
                   />
                   
                   {selectedCity && (
                     <ProfileFieldRow
                       icon={<MapPin className="w-5 h-5" />}
-                      label="Preferred areas"
-                      value={selectedAreas.length > 0 ? selectedAreas.join(', ') : null}
+                      label="Preferred Areas"
+                      value={getAreasDisplay()}
                       placeholder="Select areas"
-                      onClick={() => {
-                        setTempAreas([...selectedAreas]);
-                        openFieldModal('preferred_areas');
-                      }}
+                      onClick={() => openFieldModal('preferred_areas')}
                     />
                   )}
-                </div>
-                
-                {/* Room Type Section */}
-                <ProfileSectionHeader icon={<Home className="w-5 h-5" />} title="Room Preferences" className="mt-8" />
-                
-                <div className="divide-y divide-border">
+                  
                   <ProfileFieldRow
                     icon={<Home className="w-5 h-5" />}
-                    label="Preferred room type"
+                    label="Room Type"
                     value={formValues.room_type}
-                    placeholder="Select room type"
                     onClick={() => openFieldModal('room_type')}
                   />
                 </div>
-
-                {/* Roommate Toggle for Non-Single Rooms */}
-                {formValues.room_type && !isSingleRoom(formValues.room_type) && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="py-4 border-t border-border mt-4"
-                  >
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                      <div className="space-y-1">
-                        <Label className="text-base font-medium text-foreground flex items-center gap-2">
-                          <Users className="w-4 h-4" />
-                          Need a Roommate?
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          We'll find students with matching preferences to share a dorm
-                        </p>
-                      </div>
-                      <Switch
-                        checked={needsRoommateNewDorm}
-                        onCheckedChange={(checked) => {
-                          setNeedsRoommateNewDorm(checked);
-                          setValue('needs_roommate_new_dorm', checked);
-                        }}
-                      />
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Personality Matching Section for Step 2 - Only when needsRoommateNewDorm is true */}
-                {needsRoommateNewDorm && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="py-4 border-t border-border mt-4"
-                  >
-                    <ProfileSectionHeader icon={<Brain className="w-5 h-5" />} title="Personality Matching (Optional)" />
-                    
-                    <div className="flex items-center justify-between py-4">
-                      <div className="space-y-1">
-                        <Label className="text-base font-medium">Enable Personality Matching?</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Recommended for better roommate compatibility
-                        </p>
-                      </div>
-                      <Switch 
-                        checked={enablePersonalityMatching}
-                        onCheckedChange={(checked) => {
-                          setEnablePersonalityMatching(checked);
-                          setValue('enable_personality_matching', checked);
-                          // Open survey modal when enabled and not completed
-                          if (checked && !personalityTestCompleted) {
-                            setShowPersonalitySurvey(true);
-                          }
-                        }}
-                      />
-                    </div>
-                    
-                    {enablePersonalityMatching && (
-                      <Button 
-                        type="button"
-                        onClick={() => setShowPersonalitySurvey(true)}
-                        variant="outline"
-                        className="w-full"
-                      >
-                        <Brain className="w-4 h-4 mr-2" />
-                        {personalityTestCompleted ? 'Edit Survey' : 'Take Survey'}
-                      </Button>
-                    )}
-                    
-                    {enablePersonalityMatching && personalityTestCompleted && (
-                      <Badge className="bg-green-100 text-green-700 border-green-300 mt-3">
-                        ✔ Personality survey completed
-                      </Badge>
-                    )}
-                  </motion.div>
-                )}
-
-                {/* Step 2 Action Button */}
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full mt-6"
-                >
-                  {loading ? 'Saving...' : (
-                    needsRoommateNewDorm ? (
-                      <>
-                        <Home className="w-4 h-4 mr-2" />
-                        <Users className="w-4 h-4 mr-2" />
-                        Find Matches
-                      </>
-                    ) : (
-                      <>
-                        <Home className="w-4 h-4 mr-2" />
-                        Find Dorm Matches
-                      </>
-                    )
-                  )}
-                </Button>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
-        </form>
-      </motion.div>
-      
+          </div>
+        </div>
+      </form>
+
+      {/* Sticky Footer Button */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border shadow-lg lg:left-1/2">
+        <div className="max-w-2xl mx-auto">
+          <Button
+            type="submit"
+            onClick={handleSubmit(onSubmit)}
+            disabled={loading}
+            className="w-full"
+            size="lg"
+          >
+            {loading ? 'Saving...' : hasProfile ? 'Save Changes' : 'Create Profile'}
+          </Button>
+        </div>
+      </div>
+
       {/* Field Edit Modals */}
       <ProfileFieldModal
         open={editingField === 'full_name'}
         onOpenChange={(open) => !open && setEditingField(null)}
-        title="Full name"
-        description="This is the name that will be shown to other students and dorm owners."
-        onSave={saveFieldFromModal}
+        title="Full Name"
+        onSave={saveFieldValue}
         isSaving={isSaving}
       >
         <Input
           value={tempValue || ''}
           onChange={(e) => setTempValue(e.target.value)}
-          placeholder="Your full name"
-          autoFocus
+          placeholder="Enter your full name"
         />
       </ProfileFieldModal>
-      
+
       <ProfileFieldModal
         open={editingField === 'phone_number'}
         onOpenChange={(open) => !open && setEditingField(null)}
-        title="Phone number"
-        description="Your phone number will be used for important notifications."
-        onSave={saveFieldFromModal}
+        title="Phone Number"
+        onSave={saveFieldValue}
         isSaving={isSaving}
       >
         <Input
-          type="tel"
           value={tempValue || ''}
           onChange={(e) => setTempValue(e.target.value)}
-          placeholder="+961 XX XXX XXX"
-          autoFocus
+          placeholder="Enter your phone number"
+          type="tel"
         />
       </ProfileFieldModal>
-      
+
       <ProfileFieldModal
         open={editingField === 'age'}
         onOpenChange={(open) => !open && setEditingField(null)}
         title="Age"
-        description="Your age helps us match you with suitable accommodations."
-        onSave={saveFieldFromModal}
+        onSave={saveFieldValue}
         isSaving={isSaving}
       >
         <Input
-          type="number"
           value={tempValue || ''}
-          onChange={(e) => setTempValue(e.target.value)}
-          placeholder="Your age"
-          min={16}
-          max={100}
-          autoFocus
+          onChange={(e) => setTempValue(parseInt(e.target.value) || '')}
+          placeholder="Enter your age"
+          type="number"
+          min="16"
+          max="100"
         />
       </ProfileFieldModal>
-      
+
       <ProfileFieldModal
         open={editingField === 'gender'}
         onOpenChange={(open) => !open && setEditingField(null)}
         title="Gender"
-        description="This helps match you with gender-appropriate dorms."
-        onSave={saveFieldFromModal}
+        onSave={saveFieldValue}
         isSaving={isSaving}
       >
         <Select value={tempValue || ''} onValueChange={setTempValue}>
           <SelectTrigger>
             <SelectValue placeholder="Select gender" />
           </SelectTrigger>
-          <SelectContent className="bg-background">
+          <SelectContent>
             <SelectItem value="Male">Male</SelectItem>
             <SelectItem value="Female">Female</SelectItem>
           </SelectContent>
         </Select>
       </ProfileFieldModal>
-      
+
       <ProfileFieldModal
         open={editingField === 'location'}
         onOpenChange={(open) => !open && setEditingField(null)}
-        title="Residential area"
-        description="Where is your hometown located?"
-        onSave={saveFieldFromModal}
+        title="Home Location"
+        onSave={saveFieldValue}
         isSaving={isSaving}
       >
         <div className="space-y-4">
-          <div>
-            <Label className="text-sm text-muted-foreground">Governorate</Label>
-            <Select value={tempGovernorate || ''} onValueChange={(val) => setTempGovernorate(val as Governorate)}>
-              <SelectTrigger className="mt-1">
+          <div className="space-y-2">
+            <Label>Governorate</Label>
+            <Select value={tempGovernorate} onValueChange={(value) => setTempGovernorate(value as Governorate)}>
+              <SelectTrigger>
                 <SelectValue placeholder="Select governorate" />
               </SelectTrigger>
-              <SelectContent className="bg-background">
+              <SelectContent>
                 {Object.keys(residentialAreas).map((gov) => (
-                  <SelectItem key={gov} value={gov}>{gov}</SelectItem>
+                  <SelectItem key={gov} value={gov}>
+                    {gov}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          
-          {tempAvailableDistricts.length > 0 && (
-            <div>
-              <Label className="text-sm text-muted-foreground">District</Label>
-              <Select value={tempDistrict || ''} onValueChange={setTempDistrict}>
-                <SelectTrigger className="mt-1">
+
+          {tempGovernorate && (
+            <div className="space-y-2">
+              <Label>District</Label>
+              <Select value={tempDistrict} onValueChange={setTempDistrict}>
+                <SelectTrigger>
                   <SelectValue placeholder="Select district" />
                 </SelectTrigger>
-                <SelectContent className="bg-background">
+                <SelectContent>
                   {tempAvailableDistricts.map((district) => (
-                    <SelectItem key={district} value={district}>{district}</SelectItem>
+                    <SelectItem key={district} value={district}>
+                      {district}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           )}
-          
-          {tempAvailableTowns.length > 0 && (
-            <div>
-              <Label className="text-sm text-muted-foreground">Area</Label>
-              <Select value={tempTown || ''} onValueChange={setTempTown}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select area" />
+
+          {tempDistrict && (
+            <div className="space-y-2">
+              <Label>Town/Village</Label>
+              <Select value={tempTown} onValueChange={setTempTown}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select town/village" />
                 </SelectTrigger>
-                <SelectContent className="bg-background max-h-[200px]">
+                <SelectContent>
                   {tempAvailableTowns.map((town) => (
-                    <SelectItem key={town} value={town}>{town}</SelectItem>
+                    <SelectItem key={town} value={town}>
+                      {town}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1191,180 +1132,151 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
           )}
         </div>
       </ProfileFieldModal>
-      
+
       <ProfileFieldModal
         open={editingField === 'university'}
         onOpenChange={(open) => !open && setEditingField(null)}
         title="University"
-        description="Which university are you attending?"
-        onSave={saveFieldFromModal}
+        onSave={saveFieldValue}
         isSaving={isSaving}
       >
         <Select value={tempValue || ''} onValueChange={setTempValue}>
           <SelectTrigger>
             <SelectValue placeholder="Select university" />
           </SelectTrigger>
-          <SelectContent className="bg-background">
+          <SelectContent>
             {universities.map((uni) => (
-              <SelectItem key={uni} value={uni}>{uni}</SelectItem>
+              <SelectItem key={uni} value={uni}>
+                {uni}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </ProfileFieldModal>
-      
+
       <ProfileFieldModal
         open={editingField === 'major'}
         onOpenChange={(open) => !open && setEditingField(null)}
         title="Major"
-        description="What are you studying?"
-        onSave={saveFieldFromModal}
+        onSave={saveFieldValue}
         isSaving={isSaving}
       >
         <Input
           value={tempValue || ''}
           onChange={(e) => setTempValue(e.target.value)}
-          placeholder="e.g., Computer Science"
-          autoFocus
+          placeholder="Enter your major"
         />
       </ProfileFieldModal>
-      
+
       <ProfileFieldModal
         open={editingField === 'year_of_study'}
         onOpenChange={(open) => !open && setEditingField(null)}
-        title="Year of study"
-        description="What year are you currently in?"
-        onSave={saveFieldFromModal}
+        title="Year of Study"
+        onSave={saveFieldValue}
         isSaving={isSaving}
       >
-        <Select value={tempValue?.toString() || ''} onValueChange={(val) => setTempValue(parseInt(val))}>
+        <Select value={tempValue?.toString() || ''} onValueChange={(value) => setTempValue(parseInt(value))}>
           <SelectTrigger>
             <SelectValue placeholder="Select year" />
           </SelectTrigger>
-          <SelectContent className="bg-background">
-            <SelectItem value="1">Year 1 (Freshman)</SelectItem>
-            <SelectItem value="2">Year 2 (Sophomore)</SelectItem>
-            <SelectItem value="3">Year 3 (Junior)</SelectItem>
-            <SelectItem value="4">Year 4 (Senior)</SelectItem>
-            <SelectItem value="5">Year 5+</SelectItem>
-            <SelectItem value="6">Graduate Student</SelectItem>
+          <SelectContent>
+            {[1, 2, 3, 4, 5, 6].map((year) => (
+              <SelectItem key={year} value={year.toString()}>
+                Year {year}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </ProfileFieldModal>
-      
+
       <ProfileFieldModal
         open={editingField === 'budget'}
         onOpenChange={(open) => !open && setEditingField(null)}
-        title="Monthly budget"
-        description="What's your maximum monthly budget for accommodation (in USD)?"
-        onSave={saveFieldFromModal}
+        title="Monthly Budget"
+        onSave={saveFieldValue}
         isSaving={isSaving}
       >
         <Input
-          type="number"
           value={tempValue || ''}
-          onChange={(e) => setTempValue(e.target.value)}
-          placeholder="e.g., 500"
-          min={0}
-          autoFocus
+          onChange={(e) => setTempValue(parseInt(e.target.value) || '')}
+          placeholder="Enter your budget"
+          type="number"
+          min="0"
         />
       </ProfileFieldModal>
-      
+
       <ProfileFieldModal
         open={editingField === 'preferred_city'}
         onOpenChange={(open) => !open && setEditingField(null)}
-        title="City"
-        description="Which city would you prefer to live in?"
-        onSave={() => {
-          if (tempValue !== selectedCity) {
-            setSelectedAreas([]); // Clear areas when city changes
-          }
-          setSelectedCity(tempValue as 'Byblos' | 'Beirut');
-          setEditingField(null);
-          setTempValue(null);
-        }}
+        title="Preferred City"
+        onSave={saveFieldValue}
         isSaving={isSaving}
       >
-        <div className="space-y-2">
-          {(['Byblos', 'Beirut'] as const).map((city) => (
-            <button
-              key={city}
-              type="button"
-              onClick={() => setTempValue(city)}
-              className={`w-full p-4 text-left rounded-xl border transition-all ${
-                tempValue === city ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
-              }`}
-            >
-              {city}
-            </button>
-          ))}
-        </div>
+        <Select value={tempValue || ''} onValueChange={setTempValue}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select city" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Byblos">Byblos</SelectItem>
+            <SelectItem value="Beirut">Beirut</SelectItem>
+          </SelectContent>
+        </Select>
       </ProfileFieldModal>
-      
+
       <ProfileFieldModal
         open={editingField === 'preferred_areas'}
         onOpenChange={(open) => !open && setEditingField(null)}
-        title="Preferred areas"
-        description="Select the areas you'd prefer to live in (you can select multiple)"
-        onSave={() => {
-          setSelectedAreas([...tempAreas]);
-          setEditingField(null);
-        }}
+        title="Preferred Areas"
+        description={`Select areas in ${selectedCity}`}
+        onSave={saveFieldValue}
         isSaving={isSaving}
       >
-        <div className="space-y-2 max-h-[300px] overflow-y-auto">
+        <div className="space-y-2 max-h-[400px] overflow-y-auto">
           {(selectedCity === 'Byblos' ? byblosAreas : beirutAreas).map((area) => (
-            <label
-              key={area}
-              className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
-            >
+            <div key={area} className="flex items-center space-x-2">
               <Checkbox
+                id={area}
                 checked={tempAreas.includes(area)}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    setTempAreas([...tempAreas, area]);
-                  } else {
-                    setTempAreas(tempAreas.filter(a => a !== area));
-                  }
-                }}
+                onCheckedChange={() => toggleArea(area)}
               />
-              <span>{area}</span>
-            </label>
+              <label
+                htmlFor={area}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                {area}
+              </label>
+            </div>
           ))}
         </div>
       </ProfileFieldModal>
-      
+
       <ProfileFieldModal
         open={editingField === 'room_type'}
         onOpenChange={(open) => !open && setEditingField(null)}
-        title="Preferred room type"
-        description="What type of room are you looking for?"
-        onSave={saveFieldFromModal}
+        title="Room Type"
+        onSave={saveFieldValue}
         isSaving={isSaving}
       >
         <Select value={tempValue || ''} onValueChange={setTempValue}>
           <SelectTrigger>
             <SelectValue placeholder="Select room type" />
           </SelectTrigger>
-          <SelectContent className="bg-background max-h-[300px]">
+          <SelectContent>
             {roomTypes.map((type) => (
-              <SelectItem key={type} value={type}>{type}</SelectItem>
+              <SelectItem key={type} value={type}>
+                {type}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </ProfileFieldModal>
-      
+
+      {/* Personality Survey Modal */}
       <PersonalitySurveyModal
         open={showPersonalitySurvey}
         onOpenChange={setShowPersonalitySurvey}
-        userId={userId}
-        onComplete={() => {
-          setPersonalityTestCompleted(true);
-          toast({
-            title: "Survey Complete!",
-            description: "Your personality preferences will help us find better roommate matches"
-          });
-        }}
+        onComplete={handlePersonalitySurveyComplete}
       />
-    </>
+    </div>
   );
 };
