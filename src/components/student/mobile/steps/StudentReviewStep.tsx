@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { User, MapPin, GraduationCap, Heart, Home, DollarSign, Edit2, CheckCircle } from 'lucide-react';
+import { User, MapPin, GraduationCap, Home, DollarSign, Edit2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface StudentReviewStepProps {
@@ -12,13 +12,8 @@ interface StudentReviewStepProps {
     university: string;
     major: string;
     year_of_study: number;
-    personality_sleep_schedule: string;
-    personality_noise_tolerance: string;
-    personality_cleanliness_level: string;
-    personality_intro_extro: string;
     city: string;
     preferred_housing_area: string;
-    // distance_preference: string; // COMMENTED - future implementation
     budget: number;
     room_type: string;
     accommodation_status: string;
@@ -58,29 +53,18 @@ const StudentReviewStep = ({ data, onEdit }: StudentReviewStepProps) => {
       ]
     },
     {
-      title: 'Lifestyle',
-      icon: Heart,
-      step: 6,
-      items: [
-        { label: 'Sleep', value: data.personality_sleep_schedule?.replace(/_/g, ' ') || 'Not set' },
-        { label: 'Noise', value: data.personality_noise_tolerance?.replace(/_/g, ' ') || 'Not set' },
-        { label: 'Social', value: data.personality_intro_extro || 'Not set' }
-      ]
-    },
-    {
       title: 'Preferences',
       icon: Home,
-      step: 9,
+      step: 8,
       items: [
         { label: 'City', value: data.city ? data.city.charAt(0).toUpperCase() + data.city.slice(1) : 'Not set' },
         { label: 'Area', value: data.preferred_housing_area?.replace(/_/g, ' ') || 'Not set' }
-        // { label: 'Distance', value: data.distance_preference?.replace(/_/g, ' ') || 'Not set' } // COMMENTED - future implementation
       ]
     },
     {
       title: 'Budget & Type',
       icon: DollarSign,
-      step: 10,
+      step: 9,
       items: [
         { label: 'Budget', value: data.budget ? `$${data.budget}/mo` : 'Not set' },
         { label: 'Room type', value: data.room_type || 'Not set' },

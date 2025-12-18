@@ -11,8 +11,7 @@ import StudentStepOverview from './steps/StudentStepOverview';
 import BasicInfoStep from './steps/BasicInfoStep';
 import HometownStep from './steps/HometownStep';
 import AcademicStep from './steps/AcademicStep';
-import LivingHabitsStep from './steps/LivingHabitsStep';
-import SocialStyleStep from './steps/SocialStyleStep';
+import PersonalityMatchingStep from './steps/PersonalityMatchingStep';
 import AccommodationStatusStep from './steps/AccommodationStatusStep';
 import HousingPreferencesStep from './steps/HousingPreferencesStep';
 import ProfileExtrasStep from './steps/ProfileExtrasStep';
@@ -28,18 +27,11 @@ interface WizardFormData {
   university: string;
   major: string;
   year_of_study: number;
-  personality_sleep_schedule: string;
-  personality_noise_tolerance: string;
-  personality_cleanliness_level: string;
-  personality_intro_extro: string;
-  personality_guests_frequency: string;
-  personality_study_environment: string;
   accommodation_status: string;
   current_dorm_id: string;
   current_room_id: string;
   city: string;
   preferred_housing_area: string;
-  // distance_preference: string; // COMMENTED - future implementation with distance algorithm
   budget: number;
   room_type: string;
   needs_roommate: boolean;
@@ -58,18 +50,11 @@ const INITIAL_DATA: WizardFormData = {
   university: '',
   major: '',
   year_of_study: 1,
-  personality_sleep_schedule: '',
-  personality_noise_tolerance: '',
-  personality_cleanliness_level: '',
-  personality_intro_extro: '',
-  personality_guests_frequency: '',
-  personality_study_environment: '',
   accommodation_status: 'need_dorm',
   current_dorm_id: '',
   current_room_id: '',
   city: '',
   preferred_housing_area: '',
-  // distance_preference: '', // COMMENTED - future implementation
   budget: 300,
   room_type: '',
   needs_roommate: false,
@@ -78,20 +63,19 @@ const INITIAL_DATA: WizardFormData = {
   phone_number: ''
 };
 
-// Step flow:
+// Step flow (updated - removed separate lifestyle steps, now uses single personality step):
 // 0: Intro
 // 1: Phase 1 Overview (About You)
 // 2: Basic Info
 // 3: Hometown
 // 4: Academic
-// 5: Phase 2 Overview (Lifestyle)
-// 6: Living Habits
-// 7: Social Style
-// 8: Phase 3 Overview (Dorm Preferences)
-// 9: Accommodation Status (Do you need a dorm?)
-// 10: Housing Preferences (only if need_dorm, includes budget, location, room type)
-// 11: Profile Extras
-// 12: Review
+// 5: Phase 2 Overview (Personality)
+// 6: Personality Matching (opens survey modal)
+// 7: Phase 3 Overview (Dorm Preferences)
+// 8: Accommodation Status (Do you need a dorm?)
+// 9: Housing Preferences (only if need_dorm)
+// 10: Profile Extras
+// 11: Review
 
 const MobileStudentWizard = () => {
   const navigate = useNavigate();
@@ -104,8 +88,8 @@ const MobileStudentWizard = () => {
 
   // Calculate total steps dynamically based on accommodation status
   const getTotalSteps = () => {
-    // If have_dorm, skip housing preferences step (step 10)
-    return formData.accommodation_status === 'have_dorm' ? 11 : 12;
+    // If have_dorm, skip housing preferences step (step 9)
+    return formData.accommodation_status === 'have_dorm' ? 10 : 11;
   };
 
   // Load saved progress
@@ -151,9 +135,9 @@ const MobileStudentWizard = () => {
       await handleSubmit();
     } else {
       // Skip housing preferences step if have_dorm
-      if (currentStep === 9 && formData.accommodation_status === 'have_dorm') {
-        // Skip step 10 (housing preferences) and go directly to profile extras
-        setCurrentStep(11);
+      if (currentStep === 8 && formData.accommodation_status === 'have_dorm') {
+        // Skip step 9 (housing preferences) and go directly to profile extras
+        setCurrentStep(10);
       } else {
         setCurrentStep(prev => prev + 1);
       }
@@ -162,9 +146,9 @@ const MobileStudentWizard = () => {
 
   const handleBack = () => {
     if (currentStep > 0) {
-      // When going back from profile extras (11) and have_dorm, skip to accommodation status (9)
-      if (currentStep === 11 && formData.accommodation_status === 'have_dorm') {
-        setCurrentStep(9);
+      // When going back from profile extras (10) and have_dorm, skip to accommodation status (8)
+      if (currentStep === 10 && formData.accommodation_status === 'have_dorm') {
+        setCurrentStep(8);
       } else {
         setCurrentStep(prev => prev - 1);
       }
@@ -193,6 +177,7 @@ const MobileStudentWizard = () => {
       }
 
       // Update student profile with all onboarding data
+      // Note: Personality fields are saved separately via PersonalitySurveyModal
       const { error } = await supabase
         .from('students')
         .update({
@@ -205,12 +190,6 @@ const MobileStudentWizard = () => {
           university: formData.university,
           major: formData.major,
           year_of_study: formData.year_of_study,
-          personality_sleep_schedule: formData.personality_sleep_schedule || null,
-          personality_noise_tolerance: formData.personality_noise_tolerance || null,
-          personality_cleanliness_level: formData.personality_cleanliness_level || null,
-          personality_intro_extro: formData.personality_intro_extro || null,
-          personality_guests_frequency: formData.personality_guests_frequency || null,
-          personality_study_environment: formData.personality_study_environment || null,
           budget: formData.budget,
           room_type: formData.room_type,
           accommodation_status: formData.accommodation_status,
@@ -249,12 +228,12 @@ const MobileStudentWizard = () => {
         return !!(formData.full_name.trim() && formData.gender);
       case 4: // Academic
         return !!formData.university;
-      case 9: // Accommodation Status
+      case 8: // Accommodation Status
         if (formData.accommodation_status === 'have_dorm') {
           return !!(formData.current_dorm_id && formData.current_room_id);
         }
         return !!formData.accommodation_status;
-      case 10: // Housing Preferences (only shown if need_dorm)
+      case 9: // Housing Preferences (only shown if need_dorm)
         return formData.budget > 0 && !!formData.room_type && !!formData.city;
       default:
         return true;
@@ -291,30 +270,10 @@ const MobileStudentWizard = () => {
       case 5:
         return <StudentStepOverview phase={2} />;
       case 6:
-        return (
-          <LivingHabitsStep
-            data={{
-              personality_sleep_schedule: formData.personality_sleep_schedule,
-              personality_noise_tolerance: formData.personality_noise_tolerance,
-              personality_cleanliness_level: formData.personality_cleanliness_level
-            }}
-            onChange={handleDataChange}
-          />
-        );
+        return <PersonalityMatchingStep />;
       case 7:
-        return (
-          <SocialStyleStep
-            data={{
-              personality_intro_extro: formData.personality_intro_extro,
-              personality_guests_frequency: formData.personality_guests_frequency,
-              personality_study_environment: formData.personality_study_environment
-            }}
-            onChange={handleDataChange}
-          />
-        );
-      case 8:
         return <StudentStepOverview phase={3} />;
-      case 9:
+      case 8:
         return (
           <AccommodationStatusStep
             data={{
@@ -327,7 +286,7 @@ const MobileStudentWizard = () => {
             onChange={handleDataChange}
           />
         );
-      case 10:
+      case 9:
         // Housing preferences - only shown if need_dorm
         return (
           <HousingPreferencesStep
@@ -342,7 +301,7 @@ const MobileStudentWizard = () => {
             onChange={handleDataChange}
           />
         );
-      case 11:
+      case 10:
         return (
           <ProfileExtrasStep
             data={{
@@ -352,7 +311,7 @@ const MobileStudentWizard = () => {
             onChange={handleDataChange}
           />
         );
-      case 12:
+      case 11:
         return <StudentReviewStep data={formData} onEdit={handleEditFromReview} />;
       default:
         return null;
