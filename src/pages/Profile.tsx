@@ -16,12 +16,27 @@ import { LanguageModal } from '@/components/LanguageModal';
 import BottomNav from '@/components/BottomNav';
 import { MobileMenuRow } from '@/components/mobile/MobileMenuRow';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { StudentOnboardingDrawer } from '@/components/student/mobile/StudentOnboardingDrawer';
+import { ProfileCompletionIndicator, calculateProfileSections } from '@/components/profile/ProfileCompletionIndicator';
+
+interface StudentProfileData {
+  profile_photo_url: string | null;
+  full_name: string | null;
+  university: string | null;
+  gender: string | null;
+  governorate: string | null;
+  district: string | null;
+  accommodation_status: string | null;
+  budget: number | null;
+  room_type: string | null;
+  personality_test_completed: boolean | null;
+}
 
 export default function Profile() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { isAuthReady, userId, role, isAuthenticated, openAuthModal, signOut } = useAuth();
+  const { isAuthReady, isRoleReady, userId, role, isAuthenticated, openAuthModal, signOut } = useAuth();
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -34,6 +49,8 @@ export default function Profile() {
   const [savedCount, setSavedCount] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
   const [hasCompletedProfile, setHasCompletedProfile] = useState(true); // Default true to hide button
+  const [showOnboardingDrawer, setShowOnboardingDrawer] = useState(false);
+  const [studentData, setStudentData] = useState<StudentProfileData | null>(null);
 
   // Check for ?edit=true query param to auto-show profile form
   useEffect(() => {
@@ -43,7 +60,8 @@ export default function Profile() {
   }, [searchParams, isAuthenticated]);
 
   useEffect(() => {
-    if (!isAuthReady) return;
+    // Wait for both auth AND role to be ready
+    if (!isAuthReady || !isRoleReady) return;
     
     if (!isAuthenticated) {
       setLoading(false);
@@ -57,11 +75,13 @@ export default function Profile() {
       if (role === 'student') {
         const { data: student } = await supabase
           .from('students')
-          .select('profile_photo_url, full_name, university, gender')
+          .select('profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed')
           .eq('user_id', userId)
           .single();
+        
         setProfilePhotoUrl(student?.profile_photo_url || null);
         setUserName(student?.full_name || '');
+        setStudentData(student as StudentProfileData | null);
         
         // Check if profile is complete (has key fields filled)
         const profileComplete = !!(student?.full_name && student?.university && student?.gender);
@@ -109,7 +129,29 @@ export default function Profile() {
     };
 
     loadProfileData();
-  }, [isAuthReady, isAuthenticated, userId, role, navigate]);
+  }, [isAuthReady, isRoleReady, isAuthenticated, userId, role, navigate]);
+
+  const reloadProfileData = async () => {
+    if (!userId || role !== 'student') return;
+    
+    const { data: student } = await supabase
+      .from('students')
+      .select('profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed')
+      .eq('user_id', userId)
+      .single();
+    
+    setProfilePhotoUrl(student?.profile_photo_url || null);
+    setUserName(student?.full_name || '');
+    setStudentData(student as StudentProfileData | null);
+    
+    const profileComplete = !!(student?.full_name && student?.university && student?.gender);
+    setHasCompletedProfile(profileComplete);
+  };
+
+  const handleOnboardingComplete = () => {
+    setShowOnboardingDrawer(false);
+    reloadProfileData();
+  };
 
   const handlePhotoUploaded = (url: string) => {
     setProfilePhotoUrl(url);
@@ -181,7 +223,7 @@ export default function Profile() {
     );
   }
 
-  if (!isAuthReady || loading) {
+  if (!isAuthReady || !isRoleReady || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -297,7 +339,7 @@ export default function Profile() {
                         Set up your profile to get personalized dorm matches
                       </p>
                       <Button
-                        onClick={() => navigate('/onboarding/student')}
+                        onClick={() => setShowOnboardingDrawer(true)}
                         variant="secondary"
                         className="bg-white text-primary hover:bg-white/90"
                       >
@@ -306,6 +348,13 @@ export default function Profile() {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {/* Profile Completion Indicator */}
+              {studentData && (
+                <ProfileCompletionIndicator 
+                  sections={calculateProfileSections(studentData)} 
+                />
               )}
 
               {/* Feature Cards - 2 column grid */}
@@ -394,6 +443,11 @@ export default function Profile() {
           </div>
           
           <LanguageModal open={showLanguageModal} onOpenChange={setShowLanguageModal} />
+          <StudentOnboardingDrawer 
+            open={showOnboardingDrawer} 
+            onOpenChange={setShowOnboardingDrawer}
+            onComplete={handleOnboardingComplete}
+          />
           <BottomNav />
         </div>
       );
@@ -565,6 +619,20 @@ export default function Profile() {
                     </div>
                   </div>
                 </div>
+              </motion.div>
+            )}
+
+            {/* Profile Completion Indicator for Desktop */}
+            {studentData && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15, duration: 0.6 }}
+                className="max-w-2xl mx-auto mb-6"
+              >
+                <ProfileCompletionIndicator 
+                  sections={calculateProfileSections(studentData)} 
+                />
               </motion.div>
             )}
 

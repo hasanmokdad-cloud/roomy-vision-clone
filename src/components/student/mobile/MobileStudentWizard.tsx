@@ -77,7 +77,12 @@ const INITIAL_DATA: WizardFormData = {
 // 10: Profile Extras
 // 11: Review
 
-const MobileStudentWizard = () => {
+interface MobileStudentWizardProps {
+  isDrawerMode?: boolean;
+  onComplete?: () => void;
+}
+
+const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudentWizardProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
@@ -121,7 +126,11 @@ const MobileStudentWizard = () => {
 
   const handleSaveAndExit = () => {
     toast.success('Progress saved! You can continue later.');
-    navigate('/listings');
+    if (isDrawerMode && onComplete) {
+      onComplete();
+    } else {
+      navigate('/listings');
+    }
   };
 
   const handleDataChange = (updates: Partial<WizardFormData>) => {
@@ -213,7 +222,12 @@ const MobileStudentWizard = () => {
       sessionStorage.setItem(`roomy_onboarding_${user.id}`, 'completed');
 
       toast.success('Profile setup complete!');
-      navigate('/listings');
+      
+      if (isDrawerMode && onComplete) {
+        onComplete();
+      } else {
+        navigate('/listings');
+      }
     } catch (error) {
       console.error('Error saving profile:', error);
       toast.error('Failed to save profile. Please try again.');
