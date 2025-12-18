@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, MapPin, GraduationCap, DollarSign, Home, CheckCircle, ArrowRight, ArrowLeft, Users, Brain } from 'lucide-react';
+import { User, MapPin, GraduationCap, DollarSign, Home, CheckCircle, ArrowRight, ArrowLeft, Users, Brain, Moon, Volume2, Sparkles, MessageSquare, BookOpen, Phone } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Confetti } from '@/components/profile/Confetti';
 import { ProfileProgress } from '@/components/profile/ProfileProgress';
@@ -33,8 +33,16 @@ const studentProfileSchema = z.object({
   // Step 1 - Academic Info
   university: z.string().optional(),
   major: z.string().optional(),
-  year_of_study: z.number().min(1).max(5).optional(),
+  year_of_study: z.number().min(1).max(6).optional(),
+  phone_number: z.string().optional(),
   
+  // Lifestyle/Personality
+  personality_sleep_schedule: z.string().optional(),
+  personality_noise_tolerance: z.string().optional(),
+  personality_cleanliness_level: z.string().optional(),
+  personality_intro_extro: z.string().optional(),
+  personality_guests_frequency: z.string().optional(),
+  personality_study_environment: z.string().optional(),
   // Step 1 - Accommodation
   accommodation_status: z.enum(['need_dorm', 'have_dorm']).default('need_dorm'),
   needs_roommate_current_place: z.boolean().optional(),
@@ -326,6 +334,13 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         university: data.university,
         major: data.major,
         year_of_study: data.year_of_study,
+        phone_number: (data as any).phone_number || null,
+        personality_sleep_schedule: data.personality_sleep_schedule || null,
+        personality_noise_tolerance: data.personality_noise_tolerance || null,
+        personality_cleanliness_level: data.personality_cleanliness_level || null,
+        personality_intro_extro: data.personality_intro_extro || null,
+        personality_guests_frequency: data.personality_guests_frequency || null,
+        personality_study_environment: data.personality_study_environment || null,
         accommodation_status: accommodationStatus,
         needs_roommate_current_place: needsRoommateCurrentPlace,
         needs_roommate_new_dorm: needsRoommateNewDorm,
@@ -618,15 +633,169 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
 
                   <div>
                     <Label htmlFor="year_of_study" className="text-foreground/80">Year of Study</Label>
+                    <Select 
+                      onValueChange={(value) => setValue('year_of_study', parseInt(value))}
+                      value={formValues.year_of_study?.toString() || ""}
+                    >
+                      <SelectTrigger id="year_of_study" className="mt-2">
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50">
+                        <SelectItem value="1">Year 1 (Freshman)</SelectItem>
+                        <SelectItem value="2">Year 2 (Sophomore)</SelectItem>
+                        <SelectItem value="3">Year 3 (Junior)</SelectItem>
+                        <SelectItem value="4">Year 4 (Senior)</SelectItem>
+                        <SelectItem value="5">Year 5+</SelectItem>
+                        <SelectItem value="6">Graduate Student</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="phone_number" className="text-foreground/80 flex items-center gap-2">
+                      <Phone className="w-4 h-4" />
+                      Phone Number
+                    </Label>
                     <Input
-                      id="year_of_study"
-                      type="number"
-                      min="1"
-                      max="5"
-                      {...register('year_of_study', { valueAsNumber: true })}
-                      placeholder="1-5"
+                      id="phone_number"
+                      type="tel"
+                      {...register('phone_number' as any)}
+                      placeholder="+961 XX XXX XXX"
                       className="mt-2"
                     />
+                  </div>
+                </div>
+
+                {/* Lifestyle & Personality Section */}
+                <div className="space-y-4 bg-secondary/10 border border-secondary/20 rounded-xl p-6">
+                  <h3 className="text-xl font-black text-secondary-foreground flex items-center gap-2">
+                    <Moon className="w-5 h-5" />
+                    Lifestyle & Personality
+                  </h3>
+                  <p className="text-sm text-foreground/60">
+                    Help us match you with compatible roommates
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="personality_sleep_schedule" className="text-foreground/80 flex items-center gap-2">
+                        <Moon className="w-4 h-4" />
+                        Sleep Schedule
+                      </Label>
+                      <Select 
+                        onValueChange={(value) => setValue('personality_sleep_schedule', value)}
+                        value={formValues.personality_sleep_schedule || ""}
+                      >
+                        <SelectTrigger id="personality_sleep_schedule" className="mt-2">
+                          <SelectValue placeholder="Select preference" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          <SelectItem value="early_bird">Early Bird (before 10pm)</SelectItem>
+                          <SelectItem value="night_owl">Night Owl (after midnight)</SelectItem>
+                          <SelectItem value="flexible">Flexible</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="personality_noise_tolerance" className="text-foreground/80 flex items-center gap-2">
+                        <Volume2 className="w-4 h-4" />
+                        Noise Tolerance
+                      </Label>
+                      <Select 
+                        onValueChange={(value) => setValue('personality_noise_tolerance', value)}
+                        value={formValues.personality_noise_tolerance || ""}
+                      >
+                        <SelectTrigger id="personality_noise_tolerance" className="mt-2">
+                          <SelectValue placeholder="Select preference" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          <SelectItem value="quiet">Prefer Quiet</SelectItem>
+                          <SelectItem value="some_noise">Some Noise OK</SelectItem>
+                          <SelectItem value="dont_mind">Don't Mind Noise</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="personality_cleanliness_level" className="text-foreground/80 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4" />
+                        Cleanliness Level
+                      </Label>
+                      <Select 
+                        onValueChange={(value) => setValue('personality_cleanliness_level', value)}
+                        value={formValues.personality_cleanliness_level || ""}
+                      >
+                        <SelectTrigger id="personality_cleanliness_level" className="mt-2">
+                          <SelectValue placeholder="Select preference" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          <SelectItem value="very_tidy">Very Tidy</SelectItem>
+                          <SelectItem value="average">Average</SelectItem>
+                          <SelectItem value="relaxed">Relaxed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="personality_intro_extro" className="text-foreground/80 flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        Social Preference
+                      </Label>
+                      <Select 
+                        onValueChange={(value) => setValue('personality_intro_extro', value)}
+                        value={formValues.personality_intro_extro || ""}
+                      >
+                        <SelectTrigger id="personality_intro_extro" className="mt-2">
+                          <SelectValue placeholder="Select preference" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          <SelectItem value="introvert">Introvert</SelectItem>
+                          <SelectItem value="extrovert">Extrovert</SelectItem>
+                          <SelectItem value="ambivert">Ambivert</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="personality_guests_frequency" className="text-foreground/80 flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4" />
+                        Guest Frequency
+                      </Label>
+                      <Select 
+                        onValueChange={(value) => setValue('personality_guests_frequency', value)}
+                        value={formValues.personality_guests_frequency || ""}
+                      >
+                        <SelectTrigger id="personality_guests_frequency" className="mt-2">
+                          <SelectValue placeholder="Select preference" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          <SelectItem value="rarely">Rarely</SelectItem>
+                          <SelectItem value="sometimes">Sometimes</SelectItem>
+                          <SelectItem value="often">Often</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="personality_study_environment" className="text-foreground/80 flex items-center gap-2">
+                        <BookOpen className="w-4 h-4" />
+                        Study Environment
+                      </Label>
+                      <Select 
+                        onValueChange={(value) => setValue('personality_study_environment', value)}
+                        value={formValues.personality_study_environment || ""}
+                      >
+                        <SelectTrigger id="personality_study_environment" className="mt-2">
+                          <SelectValue placeholder="Select preference" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          <SelectItem value="silent">Need Silence</SelectItem>
+                          <SelectItem value="background_noise">Background Noise OK</SelectItem>
+                          <SelectItem value="anywhere">Can Study Anywhere</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
