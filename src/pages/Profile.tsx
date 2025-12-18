@@ -72,20 +72,27 @@ export default function Profile() {
       if (!userId) return;
       
       // Get profile photo and name based on role
-      if (role === 'student') {
+      // Treat null role as student for new accounts
+      if (role === 'student' || role === null) {
         const { data: student } = await supabase
           .from('students')
           .select('profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed')
           .eq('user_id', userId)
-          .single();
+          .maybeSingle(); // Use maybeSingle for new accounts that may not have a record
         
-        setProfilePhotoUrl(student?.profile_photo_url || null);
-        setUserName(student?.full_name || '');
-        setStudentData(student as StudentProfileData | null);
-        
-        // Check if profile is complete (has key fields filled)
-        const profileComplete = !!(student?.full_name && student?.university && student?.gender);
-        setHasCompletedProfile(profileComplete);
+        if (student) {
+          setProfilePhotoUrl(student.profile_photo_url || null);
+          setUserName(student.full_name || '');
+          setStudentData(student as StudentProfileData);
+          
+          // Check if profile is complete (has key fields filled)
+          const profileComplete = !!(student.full_name && student.university && student.gender);
+          setHasCompletedProfile(profileComplete);
+        } else {
+          // No student record yet - definitely needs onboarding
+          setHasCompletedProfile(false);
+          setStudentData(null);
+        }
         
         // Fetch saved dorms count
         const { count } = await supabase
@@ -132,20 +139,24 @@ export default function Profile() {
   }, [isAuthReady, isRoleReady, isAuthenticated, userId, role, navigate]);
 
   const reloadProfileData = async () => {
-    if (!userId || role !== 'student') return;
+    if (!userId || (role !== 'student' && role !== null)) return;
     
     const { data: student } = await supabase
       .from('students')
       .select('profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
     
-    setProfilePhotoUrl(student?.profile_photo_url || null);
-    setUserName(student?.full_name || '');
-    setStudentData(student as StudentProfileData | null);
-    
-    const profileComplete = !!(student?.full_name && student?.university && student?.gender);
-    setHasCompletedProfile(profileComplete);
+    if (student) {
+      setProfilePhotoUrl(student.profile_photo_url || null);
+      setUserName(student.full_name || '');
+      setStudentData(student as StudentProfileData);
+      const profileComplete = !!(student.full_name && student.university && student.gender);
+      setHasCompletedProfile(profileComplete);
+    } else {
+      setHasCompletedProfile(false);
+      setStudentData(null);
+    }
   };
 
   const handleOnboardingComplete = () => {
@@ -251,7 +262,7 @@ export default function Profile() {
   // Mobile authenticated profile
   if (isMobile) {
     // For students, use clean Airbnb-style layout
-    if (role === 'student') {
+    if (role === 'student' || role === null) {
       // Show profile form if editing
       if (showProfileForm) {
         return (
@@ -587,7 +598,7 @@ export default function Profile() {
           {getBackButtonText()}
         </Button>
 
-        {role === 'student' && (
+        {(role === 'student' || role === null) && (
           <>
             {/* Get Started Banner - only show if profile not complete */}
             {!hasCompletedProfile && (
