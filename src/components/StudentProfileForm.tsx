@@ -718,7 +718,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         {/* Airbnb-style layout: Photo on left, form on right */}
         <div className="grid lg:grid-cols-2 min-h-screen">
           {/* Left side - Photo (sticky on desktop) */}
-          <div className="lg:sticky lg:top-0 lg:h-screen bg-muted/30 p-6 lg:p-12 flex items-center justify-center">
+          <div className="lg:sticky lg:top-0 lg:h-screen p-6 lg:p-12 flex items-center justify-center">
             <div className="w-full max-w-md">
               <ProfilePhotoUpload
                 userId={userId}
@@ -1016,12 +1016,12 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
 
       {/* Sticky Footer Button */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border shadow-lg z-50">
-        <div className="max-w-4xl mx-auto">
+        <div className="flex justify-end max-w-7xl mx-auto px-4 lg:px-12">
           <Button
             type="submit"
             onClick={handleSubmit(onSubmit)}
             disabled={loading}
-            className="w-full lg:w-auto lg:min-w-[200px] lg:float-right"
+            className="w-full lg:w-auto lg:min-w-[200px]"
             size="lg"
           >
             {getActionButtonText()}
