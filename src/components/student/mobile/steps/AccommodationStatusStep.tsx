@@ -104,15 +104,15 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
   const statusOptions = [
     { 
       value: 'need_dorm', 
-      label: 'I need a dorm', 
+      label: 'Need Dorm', 
       icon: Search, 
-      description: 'Looking for housing' 
+      description: 'Looking for accommodation' 
     },
     { 
       value: 'have_dorm', 
-      label: 'I already have a dorm', 
+      label: 'Have Dorm', 
       icon: Home, 
-      description: 'Currently housed' 
+      description: 'Already have accommodation' 
     }
   ];
 

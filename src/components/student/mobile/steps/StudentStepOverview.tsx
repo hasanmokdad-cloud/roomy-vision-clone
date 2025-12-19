@@ -14,16 +14,16 @@ const StudentStepOverview = ({ phase }: StudentStepOverviewProps) => {
       color: 'from-blue-500 to-cyan-500'
     },
     2: {
+      icon: Home,
+      title: 'Accommodation',
+      subtitle: 'What are you looking for?',
+      color: 'from-purple-500 to-violet-500'
+    },
+    3: {
       icon: Heart,
       title: 'Lifestyle & Habits',
       subtitle: 'Help us find your perfect match',
       color: 'from-pink-500 to-rose-500'
-    },
-    3: {
-      icon: Home,
-      title: 'Dorm Preferences',
-      subtitle: 'What are you looking for?',
-      color: 'from-purple-500 to-violet-500'
     }
   };
 

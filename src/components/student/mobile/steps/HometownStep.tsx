@@ -107,8 +107,7 @@ const HometownStep = ({ data, onChange }: HometownStepProps) => {
             <SelectTrigger className="mt-2 h-12 text-base">
               <SelectValue placeholder={towns.length > 0 ? "Select town/village" : "No towns available"} />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
+            <SelectContent className="max-h-[300px]">
               {towns.map((town) => (
                 <SelectItem key={town} value={town}>
                   {town}

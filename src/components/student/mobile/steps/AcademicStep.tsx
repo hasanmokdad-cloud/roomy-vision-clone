@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { universities } from '@/data/universities';
 
 interface AcademicStepProps {
   data: {
@@ -20,22 +20,6 @@ interface AcademicStepProps {
 }
 
 const AcademicStep = ({ data, onChange }: AcademicStepProps) => {
-  const isMobile = useIsMobile();
-  
-  const universities = [
-    'LAU Byblos',
-    'LAU Beirut',
-    'AUB',
-    'USJ',
-    'USEK',
-    'NDU',
-    'BAU',
-    'LU',
-    'Haigazian',
-    'Lebanese International University',
-    'Antonine University',
-    'Beirut Arab University'
-  ];
 
   const years = [
     { value: 1, label: 'Year 1 (Freshman)' },
@@ -70,7 +54,7 @@ const AcademicStep = ({ data, onChange }: AcademicStepProps) => {
             <SelectTrigger className="mt-2 h-12 text-base">
               <SelectValue placeholder="Select your university" />
             </SelectTrigger>
-            <SelectContent className="bg-background z-50">
+            <SelectContent className="bg-background z-50 max-h-[300px]">
               {universities.map((uni) => (
                 <SelectItem key={uni} value={uni}>
                   {uni}
