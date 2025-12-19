@@ -15,6 +15,7 @@ import { LanguageModal } from '@/components/LanguageModal';
 import RoomyLogo from '@/assets/roomy-logo.png';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export function RoomyNavbar() {
   const navigate = useNavigate();
@@ -23,8 +24,41 @@ export function RoomyNavbar() {
   const [languageModalOpen, setLanguageModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
   
   const { count: unreadCount } = useUnreadMessagesCount(user?.id, role || undefined);
+
+  // Fetch user's full_name based on role
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (!user?.id || !role) return;
+      
+      if (role === 'student') {
+        const { data } = await supabase
+          .from('students')
+          .select('full_name')
+          .eq('user_id', user.id)
+          .single();
+        setUserName(data?.full_name || null);
+      } else if (role === 'owner') {
+        const { data } = await supabase
+          .from('owners')
+          .select('full_name')
+          .eq('user_id', user.id)
+          .single();
+        setUserName(data?.full_name || null);
+      } else if (role === 'admin') {
+        const { data } = await supabase
+          .from('admins')
+          .select('full_name')
+          .eq('user_id', user.id)
+          .single();
+        setUserName(data?.full_name || null);
+      }
+    };
+    
+    fetchUserName();
+  }, [user?.id, role]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -125,7 +159,7 @@ export function RoomyNavbar() {
                     <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
                       {isAuthenticated ? (
                         <span className="text-sm font-medium text-foreground">
-                          {user.email?.charAt(0).toUpperCase()}
+                          {userName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
                         </span>
                       ) : (
                         <User className="w-4 h-4 text-muted-foreground" />
