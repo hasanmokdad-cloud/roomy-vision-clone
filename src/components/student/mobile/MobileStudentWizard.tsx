@@ -63,17 +63,17 @@ const INITIAL_DATA: WizardFormData = {
   phone_number: ''
 };
 
-// Step flow (updated - removed separate lifestyle steps, now uses single personality step):
+// Step flow (updated - accommodation comes before lifestyle):
 // 0: Intro
 // 1: Phase 1 Overview (About You)
 // 2: Basic Info
 // 3: Hometown
 // 4: Academic
-// 5: Phase 2 Overview (Personality)
-// 6: Personality Matching (opens survey modal)
-// 7: Phase 3 Overview (Dorm Preferences)
-// 8: Accommodation Status (Do you need a dorm?)
-// 9: Housing Preferences (only if need_dorm)
+// 5: Phase 2 Overview (Accommodation)
+// 6: Accommodation Status (Do you need a dorm?)
+// 7: Housing Preferences (only if need_dorm)
+// 8: Phase 3 Overview (Lifestyle & Habits)
+// 9: Personality Matching (opens survey modal)
 // 10: Profile Extras
 // 11: Review
 
@@ -93,7 +93,7 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
 
   // Calculate total steps dynamically based on accommodation status
   const getTotalSteps = () => {
-    // If have_dorm, skip housing preferences step (step 9)
+    // If have_dorm, skip housing preferences step (step 7)
     return formData.accommodation_status === 'have_dorm' ? 10 : 11;
   };
 
@@ -144,9 +144,9 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
       await handleSubmit();
     } else {
       // Skip housing preferences step if have_dorm
-      if (currentStep === 8 && formData.accommodation_status === 'have_dorm') {
-        // Skip step 9 (housing preferences) and go directly to profile extras
-        setCurrentStep(10);
+      if (currentStep === 6 && formData.accommodation_status === 'have_dorm') {
+        // Skip step 7 (housing preferences) and go directly to phase 3 overview
+        setCurrentStep(8);
       } else {
         setCurrentStep(prev => prev + 1);
       }
@@ -155,9 +155,9 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
 
   const handleBack = () => {
     if (currentStep > 0) {
-      // When going back from profile extras (10) and have_dorm, skip to accommodation status (8)
-      if (currentStep === 10 && formData.accommodation_status === 'have_dorm') {
-        setCurrentStep(8);
+      // When going back from phase 3 overview (8) and have_dorm, skip to accommodation status (6)
+      if (currentStep === 8 && formData.accommodation_status === 'have_dorm') {
+        setCurrentStep(6);
       } else {
         setCurrentStep(prev => prev - 1);
       }
@@ -242,12 +242,12 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
         return !!(formData.full_name.trim() && formData.gender);
       case 4: // Academic
         return !!formData.university;
-      case 8: // Accommodation Status
+      case 6: // Accommodation Status
         if (formData.accommodation_status === 'have_dorm') {
           return !!(formData.current_dorm_id && formData.current_room_id);
         }
         return !!formData.accommodation_status;
-      case 9: // Housing Preferences (only shown if need_dorm)
+      case 7: // Housing Preferences (only shown if need_dorm)
         return formData.budget > 0 && !!formData.room_type && !!formData.city;
       default:
         return true;
@@ -284,10 +284,6 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
       case 5:
         return <StudentStepOverview phase={2} />;
       case 6:
-        return <PersonalityMatchingStep />;
-      case 7:
-        return <StudentStepOverview phase={3} />;
-      case 8:
         return (
           <AccommodationStatusStep
             data={{
@@ -300,7 +296,7 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
             onChange={handleDataChange}
           />
         );
-      case 9:
+      case 7:
         // Housing preferences - only shown if need_dorm
         return (
           <HousingPreferencesStep
@@ -315,6 +311,10 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
             onChange={handleDataChange}
           />
         );
+      case 8:
+        return <StudentStepOverview phase={3} />;
+      case 9:
+        return <PersonalityMatchingStep />;
       case 10:
         return (
           <ProfileExtrasStep

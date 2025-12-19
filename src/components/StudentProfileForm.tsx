@@ -672,6 +672,19 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
     );
   };
 
+  const handleAreaSelect = async (area: string) => {
+    const newAreas = [area];
+    setSelectedAreas(newAreas);
+    setValue('preferred_areas', newAreas);
+    
+    if (hasProfile) {
+      await supabase
+        .from('students')
+        .update({ preferred_areas: newAreas })
+        .eq('user_id', userId);
+    }
+  };
+
   const getLocationDisplay = () => {
     const parts = [];
     if (formValues.town_village) parts.push(formValues.town_village);
@@ -998,13 +1011,51 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                     onClick={() => openFieldModal('budget')}
                   />
                   
-                  <ProfileFieldRow
-                    icon={<MapPin className="w-5 h-5" />}
-                    label="Preferred Location"
-                    value={selectedCity ? (selectedAreas.length > 0 ? `${selectedCity} · ${getAreasDisplay()}` : selectedCity) : undefined}
-                    placeholder="Select city & areas"
-                    onClick={() => openFieldModal('preferred_location')}
-                  />
+                  {/* Inline City Selection */}
+                  <div className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <MapPin className="w-5 h-5 text-muted-foreground" />
+                      <span className="font-medium text-foreground">Preferred City</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {(['Byblos', 'Beirut'] as const).map((city) => (
+                        <button
+                          key={city}
+                          type="button"
+                          onClick={() => handleCityChange(city)}
+                          className={`p-3 rounded-lg border-2 text-center transition-all ${
+                            selectedCity === city
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                        >
+                          <span className="font-medium">{city}</span>
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {/* Area Dropdown - Only show when city is selected */}
+                    {selectedCity && (
+                      <div className="mt-4">
+                        <Label className="mb-2 block text-sm text-muted-foreground">Preferred Area</Label>
+                        <Select 
+                          value={selectedAreas[0] || ''} 
+                          onValueChange={(value) => handleAreaSelect(value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select preferred area" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            {(selectedCity === 'Byblos' ? byblosAreas : beirutAreas).map((area) => (
+                              <SelectItem key={area} value={area}>
+                                {area}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
                   
                   <ProfileFieldRow
                     icon={<Home className="w-5 h-5" />}
@@ -1214,7 +1265,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
           <SelectTrigger>
             <SelectValue placeholder="Select university" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="max-h-[300px]">
             {universities.map((uni) => (
               <SelectItem key={uni} value={uni}>
                 {uni}

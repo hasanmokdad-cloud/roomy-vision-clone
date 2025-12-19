@@ -4,10 +4,13 @@ export const universities = [
   "AUB",
   "NDU",
   "USJ",
+  "USEK",
   "BAU",
   "LU Hadat",
   "Balamand Dekwaneh",
   "Balamand ALBA",
   "Haigazian",
-  "USEK"
+  "Lebanese International University",
+  "Antonine University",
+  "Beirut Arab University"
 ];
