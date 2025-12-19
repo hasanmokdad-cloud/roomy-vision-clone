@@ -73,9 +73,18 @@ export async function fetchWithRelaxedFilters(
         .eq('dorm_id', dorm.id)
         .eq('available', true);
       
-      const availableRooms = (rooms || []).filter((room: any) => 
+      let availableRooms = (rooms || []).filter((room: any) => 
         (room.capacity_occupied || 0) < (room.capacity || 0)
       );
+      
+      // If student selected "Any" room type AND needs roommate, exclude single rooms
+      const studentRoomType = student.room_type;
+      if ((studentRoomType === 'Any' || !studentRoomType) && student.need_roommate) {
+        availableRooms = availableRooms.filter((room: any) => 
+          !room.type?.toLowerCase().includes('single')
+        );
+        console.log(`[roomy-ai-core] Fallback: Filtered out single rooms for dorm "${dorm.name}" - student needs roommate`);
+      }
       
       // Calculate budget warning
       let budgetWarning = null;

@@ -1,4 +1,5 @@
 export const roomTypes = [
+  "Any",
   "Single",
   "Double",
   "Triple",
@@ -19,6 +20,6 @@ export const roomTypes = [
 ];
 
 export const isSingleRoom = (roomType: string | undefined | null): boolean => {
-  if (!roomType) return false;
+  if (!roomType || roomType === 'Any') return false;
   return roomType.toLowerCase().includes('single');
 };
