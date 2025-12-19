@@ -37,7 +37,7 @@ export function ImageGallery({ images, initialIndex = 0, isOpen, onClose }: Imag
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="max-w-screen w-screen h-screen p-0 bg-white border-none rounded-none [&>button.absolute]:hidden"
+        className="max-w-screen w-screen h-screen p-0 bg-white border-none rounded-none [&>button[class*='top-4'][class*='right-4']]:hidden"
         onKeyDown={handleKeyDown}
       >
         <DialogHeader className="sr-only">
