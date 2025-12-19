@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Heart, Loader2 } from 'lucide-react';
+import { Heart, Loader2 } from 'lucide-react';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
-import BottomNav from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SubPageHeader } from '@/components/mobile/SubPageHeader';
+import { SwipeBackWrapper } from '@/components/mobile/SwipeBackWrapper';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -124,24 +125,27 @@ export default function SavedDorms() {
   }
 
   return (
-    <div className="min-h-screen relative bg-gradient-to-b from-background to-muted/20">
-      {!isMobile && <RoomyNavbar />}
+    <SwipeBackWrapper>
+      <div className="min-h-screen relative bg-gradient-to-b from-background to-muted/20">
+        {isMobile && <SubPageHeader title="Saved Dorms" />}
+        {!isMobile && <RoomyNavbar />}
 
-      <div className="container mx-auto px-4 md:px-6 py-32 max-w-7xl">
-        <div className="flex items-center justify-between mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/settings')}
-            className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Settings
-          </Button>
+        <div className={`container mx-auto px-4 md:px-6 max-w-7xl ${isMobile ? 'pt-20 pb-8' : 'py-32'}`}>
+          {!isMobile && (
+            <div className="flex items-center justify-between mb-8">
+              <Badge variant="secondary" className="text-base">
+                {savedDorms.length} {savedDorms.length === 1 ? 'Dorm' : 'Dorms'}
+              </Badge>
+            </div>
+          )}
 
-          <Badge variant="secondary" className="text-base">
-            {savedDorms.length} {savedDorms.length === 1 ? 'Dorm' : 'Dorms'}
-          </Badge>
-        </div>
+          {isMobile && (
+            <div className="flex items-center justify-end mb-4">
+              <Badge variant="secondary" className="text-base">
+                {savedDorms.length} {savedDorms.length === 1 ? 'Dorm' : 'Dorms'}
+              </Badge>
+            </div>
+          )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -199,8 +203,8 @@ export default function SavedDorms() {
         </motion.div>
       </div>
 
-      {isMobile && <BottomNav />}
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </SwipeBackWrapper>
   );
 }
