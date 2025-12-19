@@ -18,6 +18,7 @@ export const roomTypes = [
   "Large Quadruple"
 ];
 
-export const isSingleRoom = (roomType: string): boolean => {
+export const isSingleRoom = (roomType: string | undefined | null): boolean => {
+  if (!roomType) return false;
   return roomType.toLowerCase().includes('single');
 };
