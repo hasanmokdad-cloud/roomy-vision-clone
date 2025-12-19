@@ -472,7 +472,6 @@ export default function Settings() {
         </Dialog>
 
         <LanguageModal open={showLanguageModal} onOpenChange={setShowLanguageModal} />
-        <BottomNav />
       </div>
     );
   }
