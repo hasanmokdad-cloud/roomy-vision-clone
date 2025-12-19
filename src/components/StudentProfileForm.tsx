@@ -173,11 +173,6 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         .eq('dorm_id', currentDormId)
         .order('name');
       
-      // CRITICAL: If seeking roommate for current place, only show multi-bed rooms (capacity > 1)
-      if (needsRoommateCurrentPlace && accommodationStatus === 'have_dorm') {
-        query = query.gt('capacity', 1);
-      }
-
       const { data } = await query;
       
       if (data) {
@@ -200,7 +195,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
     };
 
     loadRoomsForDorm();
-  }, [currentDormId, currentRoomId, needsRoommateCurrentPlace, accommodationStatus]);
+  }, [currentDormId, currentRoomId]);
 
   // Handle governorate selection
   useEffect(() => {
@@ -517,10 +512,6 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         setValue('enable_personality_matching', false);
       }
       
-      // Clear current room if toggling on (to force re-selection of multi-bed room)
-      if (value) {
-        setCurrentRoomId('');
-      }
     } else {
       setNeedsRoommateNewDorm(value);
       setValue('needs_roommate_new_dorm', value);
