@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageSquare, User, Heart, MapPin, GraduationCap, DollarSign } from "lucide-react";
+import { MessageSquare, MapPin, GraduationCap, DollarSign, Home, Users, Calendar, ChevronLeft, Loader2 } from "lucide-react";
 import { RoomyNavbar } from "@/components/RoomyNavbar";
 import Footer from "@/components/shared/Footer";
 import { useToast } from "@/hooks/use-toast";
@@ -73,10 +70,29 @@ export default function StudentProfile() {
     });
   };
 
+  const getLocationDisplay = () => {
+    const parts = [student?.town_village, student?.district, student?.governorate].filter(Boolean);
+    return parts.join(', ') || null;
+  };
+
+  // Profile field row component for consistent styling
+  const ProfileRow = ({ icon, label, value }: { icon: React.ReactNode; label: string; value?: string | null }) => {
+    if (!value) return null;
+    return (
+      <div className="flex items-center gap-4 py-4 border-b border-border last:border-b-0">
+        <div className="text-muted-foreground">{icon}</div>
+        <div className="flex-1">
+          <div className="text-sm text-muted-foreground">{label}</div>
+          <div className="font-medium">{value}</div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -85,8 +101,11 @@ export default function StudentProfile() {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         {!isMobile && <RoomyNavbar />}
-        <main className="flex-1 flex items-center justify-center">
-          <p className="text-foreground/60">Student not found</p>
+        <main className="flex-1 flex flex-col items-center justify-center gap-4">
+          <p className="text-muted-foreground">Student not found</p>
+          <Button variant="outline" onClick={() => navigate(-1)}>
+            Go Back
+          </Button>
         </main>
         <Footer />
       </div>
@@ -94,124 +113,137 @@ export default function StudentProfile() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen flex flex-col bg-background">
       {!isMobile && <RoomyNavbar />}
 
-      <main className="flex-1 container max-w-4xl mx-auto px-4 py-8 mt-20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          {/* Header Card */}
-          <Card className="mb-6 shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
-            <CardContent className="pt-6">
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                <Avatar className="w-24 h-24 border-4 border-primary/20">
-                  <AvatarImage 
-                    src={student.profile_photo_url || undefined} 
-                    alt={student.full_name} 
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="text-2xl bg-gradient-to-br from-primary to-secondary text-white">
-                    {student.full_name?.charAt(0) || "S"}
-                  </AvatarFallback>
-                </Avatar>
+      {/* Back button for mobile */}
+      <div className="lg:hidden p-4 border-b border-border mt-0">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+          <ChevronLeft className="w-4 h-4 mr-1" />
+          Back
+        </Button>
+      </div>
 
-                <div className="flex-1 text-center md:text-left">
-                  <h1 className="text-3xl font-bold gradient-text mb-2">
-                    {student.full_name}
-                  </h1>
-                  {matchScore && (
-                    <Badge className="mb-2 bg-gradient-to-r from-green-500 to-emerald-400">
-                      {matchScore}% Match
-                    </Badge>
-                  )}
-                  <div className="flex flex-wrap gap-2 justify-center md:justify-start mt-3">
-                    {student.university && (
-                      <Badge variant="outline">
-                        <GraduationCap className="w-3 h-3 mr-1" />
-                        {student.university}
-                      </Badge>
-                    )}
-                    {student.age && (
-                      <Badge variant="outline">
-                        <User className="w-3 h-3 mr-1" />
-                        {student.age} years old
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleMessage}
-                  className="bg-gradient-to-r from-primary to-secondary text-white px-6 py-3 rounded-xl shadow-lg hover:scale-105 transition-transform"
-                >
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Message
-                </Button>
+      <main className="flex-1">
+        <div className="grid lg:grid-cols-[320px_1fr] min-h-[calc(100vh-120px)] lg:min-h-[calc(100vh-80px)] lg:mt-16">
+          {/* Left Side - Profile Photo */}
+          <div className="p-6 lg:p-12 flex flex-col items-center justify-start lg:justify-center lg:border-r border-border">
+            <Avatar className="w-40 h-40 lg:w-52 lg:h-52 ring-4 ring-border/30">
+              <AvatarImage src={student.profile_photo_url || undefined} alt={student.full_name} />
+              <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-4xl lg:text-5xl">
+                {student.full_name?.charAt(0).toUpperCase() || "S"}
+              </AvatarFallback>
+            </Avatar>
+            
+            <h1 className="mt-6 text-2xl lg:text-3xl font-semibold text-center">{student.full_name}</h1>
+            
+            {matchScore && (
+              <div className="mt-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                {matchScore}% Match
               </div>
-            </CardContent>
-          </Card>
+            )}
 
-          {/* Preferences Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Living Preferences */}
-            <Card className="shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-primary" />
-                  Living Preferences
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {student.budget && (
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-foreground/60" />
-                    <span className="text-sm">Budget: ${student.budget}/month</span>
-                  </div>
-                )}
-                {student.room_type && (
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-foreground/60" />
-                    <span className="text-sm">Room Type: {student.room_type}</span>
-                  </div>
-                )}
-                {student.residential_area && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-foreground/60" />
-                    <span className="text-sm">Preferred Area: {student.residential_area}</span>
-                  </div>
-                )}
-                {student.roommate_needed !== null && (
-                  <Badge variant={student.roommate_needed ? "default" : "secondary"}>
-                    {student.roommate_needed ? "Looking for roommate" : "No roommate needed"}
-                  </Badge>
-                )}
-              </CardContent>
-            </Card>
+            <Button onClick={handleMessage} className="mt-6 w-full max-w-[200px]">
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Message
+            </Button>
+          </div>
 
-            {/* Additional Info */}
-            {preferences && (
-              <Card className="shadow-lg border border-muted/40 bg-card/80 backdrop-blur-md">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="w-5 h-5 text-primary" />
-                    About
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {Object.entries(preferences).map(([key, value]) => (
-                    <div key={key} className="text-sm">
-                      <span className="font-medium text-foreground/80">{key}: </span>
-                      <span className="text-foreground/60">{String(value)}</span>
+          {/* Right Side - Profile Details */}
+          <div className="p-6 lg:p-12">
+            <h2 className="text-xl font-semibold mb-6 hidden lg:block">View Profile</h2>
+
+            {/* Personal Info */}
+            <div className="mb-8">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Personal Info</h3>
+              <div className="bg-card rounded-lg border border-border p-4">
+                <ProfileRow 
+                  icon={<Calendar className="w-5 h-5" />} 
+                  label="Age" 
+                  value={student.age ? `${student.age} years old` : null} 
+                />
+                <ProfileRow 
+                  icon={<Users className="w-5 h-5" />} 
+                  label="Gender" 
+                  value={student.gender} 
+                />
+                <ProfileRow 
+                  icon={<MapPin className="w-5 h-5" />} 
+                  label="Home Location" 
+                  value={getLocationDisplay()} 
+                />
+              </div>
+            </div>
+
+            {/* Academic Info */}
+            <div className="mb-8">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Academic Info</h3>
+              <div className="bg-card rounded-lg border border-border p-4">
+                <ProfileRow 
+                  icon={<GraduationCap className="w-5 h-5" />} 
+                  label="University" 
+                  value={student.university} 
+                />
+                <ProfileRow 
+                  icon={<GraduationCap className="w-5 h-5" />} 
+                  label="Major" 
+                  value={student.major} 
+                />
+                <ProfileRow 
+                  icon={<Calendar className="w-5 h-5" />} 
+                  label="Year of Study" 
+                  value={student.year_of_study ? `Year ${student.year_of_study}` : null} 
+                />
+              </div>
+            </div>
+
+            {/* Housing Preferences */}
+            {(student.budget || student.preferred_city || student.room_type) && (
+              <div className="mb-8">
+                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Housing Preferences</h3>
+                <div className="bg-card rounded-lg border border-border p-4">
+                  <ProfileRow 
+                    icon={<DollarSign className="w-5 h-5" />} 
+                    label="Budget" 
+                    value={student.budget ? `$${student.budget}/month` : null} 
+                  />
+                  <ProfileRow 
+                    icon={<MapPin className="w-5 h-5" />} 
+                    label="Preferred Location" 
+                    value={student.preferred_city ? 
+                      (student.preferred_areas?.length 
+                        ? `${student.preferred_city} · ${student.preferred_areas.slice(0, 2).join(', ')}${student.preferred_areas.length > 2 ? ` +${student.preferred_areas.length - 2}` : ''}`
+                        : student.preferred_city) 
+                      : null
+                    } 
+                  />
+                  <ProfileRow 
+                    icon={<Home className="w-5 h-5" />} 
+                    label="Room Type" 
+                    value={student.room_type} 
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Additional Preferences */}
+            {preferences && Object.keys(preferences).length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Additional Preferences</h3>
+                <div className="bg-card rounded-lg border border-border p-4">
+                  {Object.entries(preferences).map(([key, value], index) => (
+                    <div key={index} className="flex items-center gap-4 py-3 border-b border-border last:border-b-0">
+                      <div className="flex-1">
+                        <div className="text-sm text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</div>
+                        <div className="font-medium">{String(value)}</div>
+                      </div>
                     </div>
                   ))}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )}
           </div>
-        </motion.div>
+        </div>
       </main>
 
       <Footer />
