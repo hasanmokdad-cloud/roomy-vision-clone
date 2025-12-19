@@ -1,27 +1,70 @@
 import { motion } from 'framer-motion';
-import { MapPin, GraduationCap } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { housingAreas } from '@/data/housingAreas';
 
 interface LocationStepProps {
+  city: string;
   area: string;
   address: string;
-  nearUniversity: boolean;
+  onCityChange: (value: string) => void;
   onAreaChange: (value: string) => void;
   onAddressChange: (value: string) => void;
-  onNearUniversityChange: (value: boolean) => void;
 }
 
+const cities = [
+  { value: 'beirut', label: 'Beirut' },
+  { value: 'byblos', label: 'Byblos' },
+];
+
+const areasByCity: Record<string, string[]> = {
+  beirut: [
+    'Hamra',
+    'Manara',
+    'Ain El Mraisseh',
+    'Raoucheh',
+    'Ras Beirut',
+    'UNESCO',
+    'Geitawi',
+    'Dora',
+    'Badaro',
+    'Ashrafieh',
+    'Verdun',
+    'Sin El Fil',
+    'Dekwaneh',
+    'Jdeideh',
+    'Mar Elias',
+    'Borj Hammoud',
+    'Hazmieh',
+    'Furn El Chebbak',
+    'Tayouneh',
+    'Jnah',
+    "Ras Al Naba'a",
+    'Gemmayze',
+    'Clemenceau',
+    'Khalde',
+  ],
+  byblos: [
+    'Nahr Ibrahim',
+    'Byblos',
+    'Halat',
+    'Jeddayel',
+    'Mastita',
+    'Fidar',
+    'Habboub',
+  ],
+};
+
 export function LocationStep({
+  city,
   area,
   address,
-  nearUniversity,
+  onCityChange,
   onAreaChange,
   onAddressChange,
-  onNearUniversityChange,
 }: LocationStepProps) {
+  const availableAreas = city ? areasByCity[city] || [] : [];
+
   return (
     <div className="px-6 pt-24 pb-32">
       <motion.div
@@ -43,37 +86,68 @@ export function LocationStep({
         transition={{ delay: 0.1 }}
         className="space-y-6"
       >
-        {/* Area Selection */}
+        {/* City Selection */}
         <div>
           <Label className="text-base font-medium mb-3 flex items-center gap-2">
             <MapPin className="w-4 h-4" />
-            Area / Region
+            City
           </Label>
-          <div className="grid grid-cols-2 gap-2 mt-3 max-h-64 overflow-y-auto">
-            {housingAreas.map((areaOption) => (
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            {cities.map((cityOption) => (
               <button
-                key={areaOption}
-                onClick={() => onAreaChange(areaOption)}
-                className={`p-3 rounded-xl border-2 text-left transition-all ${
-                  area === areaOption
+                key={cityOption.value}
+                onClick={() => onCityChange(cityOption.value)}
+                className={`p-4 rounded-xl border-2 text-center transition-all ${
+                  city === cityOption.value
                     ? 'border-primary bg-primary/5'
                     : 'border-border hover:border-primary/50'
                 }`}
               >
-                <span className={`font-medium ${
-                  area === areaOption ? 'text-primary' : 'text-foreground'
+                <span className={`font-medium text-lg ${
+                  city === cityOption.value ? 'text-primary' : 'text-foreground'
                 }`}>
-                  {areaOption}
+                  {cityOption.label}
                 </span>
               </button>
             ))}
           </div>
         </div>
 
+        {/* Area Selection - only show after city is selected */}
+        {city && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Label className="text-base font-medium mb-3 block">
+              Area / Region
+            </Label>
+            <div className="grid grid-cols-2 gap-2 mt-3 max-h-64 overflow-y-auto">
+              {availableAreas.map((areaOption) => (
+                <button
+                  key={areaOption}
+                  onClick={() => onAreaChange(areaOption)}
+                  className={`p-3 rounded-xl border-2 text-left transition-all ${
+                    area === areaOption
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                >
+                  <span className={`font-medium ${
+                    area === areaOption ? 'text-primary' : 'text-foreground'
+                  }`}>
+                    {areaOption}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         {/* Address Input */}
         <div>
           <Label htmlFor="address" className="text-base font-medium">
-            Street Address
+            Street Address (Optional)
           </Label>
           <Input
             id="address"
@@ -83,26 +157,6 @@ export function LocationStep({
             className="mt-2 h-12 text-base"
           />
         </div>
-
-        {/* Near University Toggle */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex items-center justify-between p-4 rounded-xl bg-muted/50"
-        >
-          <div className="flex items-center gap-3">
-            <GraduationCap className="w-5 h-5 text-primary" />
-            <div>
-              <p className="font-medium text-foreground">Near a university</p>
-              <p className="text-sm text-muted-foreground">Within walking distance</p>
-            </div>
-          </div>
-          <Switch
-            checked={nearUniversity}
-            onCheckedChange={onNearUniversityChange}
-          />
-        </motion.div>
       </motion.div>
     </div>
   );

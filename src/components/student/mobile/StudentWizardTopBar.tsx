@@ -1,12 +1,11 @@
-import { X, HelpCircle } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface StudentWizardTopBarProps {
   onSaveAndExit: () => void;
-  onHelp?: () => void;
 }
 
-const StudentWizardTopBar = ({ onSaveAndExit, onHelp }: StudentWizardTopBarProps) => {
+const StudentWizardTopBar = ({ onSaveAndExit }: StudentWizardTopBarProps) => {
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border px-4 py-3 flex items-center justify-between">
       <Button
@@ -19,15 +18,8 @@ const StudentWizardTopBar = ({ onSaveAndExit, onHelp }: StudentWizardTopBarProps
         Save & exit
       </Button>
       
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onHelp}
-        className="text-foreground hover:bg-muted"
-      >
-        <HelpCircle className="w-5 h-5 mr-1" />
-        Questions?
-      </Button>
+      {/* Questions button removed */}
+      <div />
     </div>
   );
 };

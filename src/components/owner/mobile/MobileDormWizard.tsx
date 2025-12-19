@@ -7,7 +7,6 @@ import { WizardTopBar } from './WizardTopBar';
 import { WizardFooter } from './WizardFooter';
 import { IntroStep } from './steps/IntroStep';
 import { StepOverview } from './steps/StepOverview';
-import { PropertyTypeStep } from './steps/PropertyTypeStep';
 import { LocationStep } from './steps/LocationStep';
 import { CapacityStep } from './steps/CapacityStep';
 import { AmenitiesStep } from './steps/AmenitiesStep';
@@ -34,9 +33,9 @@ interface MobileDormWizardProps {
 
 interface WizardFormData {
   propertyType: string;
+  city: string;
   area: string;
   address: string;
-  nearUniversity: boolean;
   capacity: number;
   amenities: string[];
   genderPreference: string;
@@ -49,20 +48,44 @@ interface WizardFormData {
 
 const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 
-const TOTAL_STEPS = 16;
+// Reduced from 16 to 15 steps (removed PropertyType step)
+const TOTAL_STEPS = 15;
+
+// Description generation based on highlights
+const highlightDescriptions: Record<string, string> = {
+  'peaceful': 'A peaceful environment perfect for focused studying and relaxation.',
+  'unique': 'A unique living space with distinctive character and charm.',
+  'student-friendly': 'Designed with students in mind, offering everything you need for a comfortable stay during your studies.',
+  'modern': 'Modern facilities with contemporary amenities and stylish interiors.',
+  'central': 'Centrally located with easy access to universities, shops, and public transportation.',
+  'spacious': 'Spacious rooms and common areas providing plenty of room to live and study.',
+  'cozy': 'A cozy and welcoming atmosphere that feels like home.',
+  'affordable': 'Affordable pricing without compromising on quality or comfort.',
+};
+
+function generateDescriptionFromHighlights(highlights: string[]): string {
+  if (highlights.length === 0) return '';
+  
+  const descriptions = highlights
+    .map(h => highlightDescriptions[h])
+    .filter(Boolean);
+  
+  if (descriptions.length === 0) return '';
+  
+  return `Welcome to this wonderful dorm! ${descriptions.join(' ')}`;
+}
 
 export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: MobileDormWizardProps) {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
-  const [showHelpDialog, setShowHelpDialog] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<WizardFormData>({
-    propertyType: '',
+    propertyType: 'dorm', // Default to 'dorm' since we removed the selection step
+    city: '',
     area: '',
     address: '',
-    nearUniversity: false,
     capacity: 1,
     amenities: [],
     genderPreference: '',
@@ -84,7 +107,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         try {
           const { step, formData: savedData } = JSON.parse(saved);
           setCurrentStep(step);
-          setFormData(savedData);
+          setFormData({ ...formData, ...savedData, propertyType: 'dorm' });
         } catch (e) {
           console.error('Failed to parse saved wizard data');
         }
@@ -130,6 +153,13 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
   };
 
   const handleNext = () => {
+    // When moving from highlights step (step 10) to title step (step 11),
+    // generate description if not already set
+    if (currentStep === 10 && formData.highlights.length > 0 && !formData.description) {
+      const generatedDesc = generateDescriptionFromHighlights(formData.highlights);
+      setFormData(prev => ({ ...prev, description: generatedDesc }));
+    }
+    
     if (currentStep < TOTAL_STEPS - 1) {
       setCurrentStep(currentStep + 1);
     }
@@ -152,17 +182,17 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       // Build payload
       const payload = {
         owner_id: effectiveOwnerId,
-        name: formData.title || `${formData.propertyType} in ${formData.area}`,
-        dorm_name: formData.title || `${formData.propertyType} in ${formData.area}`,
+        name: formData.title || `Dorm in ${formData.area}`,
+        dorm_name: formData.title || `Dorm in ${formData.area}`,
         address: formData.address,
         area: formData.area || null,
         description: formData.description || null,
         image_url: formData.coverImage || null,
         cover_image: formData.coverImage || null,
-        location: formData.area || formData.address,
+        location: formData.city || formData.area || formData.address,
         capacity: formData.capacity,
         amenities: formData.amenities,
-        shuttle: formData.nearUniversity,
+        shuttle: false,
         gender_preference: formData.genderPreference,
         gallery_images: formData.galleryImages,
         verification_status: 'Pending',
@@ -214,12 +244,11 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
   const isNextDisabled = () => {
     switch (currentStep) {
-      case 2: return !formData.propertyType;
-      case 3: return !formData.area;
-      case 4: return formData.capacity < 1;
-      case 9: return !formData.genderPreference;
-      case 10: return !formData.coverImage || formData.galleryImages.length < 2;
-      case 15: return !formData.title || !formData.area || !formData.propertyType;
+      case 2: return !formData.city || !formData.area; // Location step now requires city and area
+      case 3: return formData.capacity < 1 || formData.capacity > 2000; // Capacity step
+      case 8: return !formData.genderPreference; // Gender preference step
+      case 9: return !formData.coverImage; // Photos step - only cover is required now
+      case 14: return !formData.title || !formData.area; // Review step
       default: return false;
     }
   };
@@ -239,34 +268,29 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         return <IntroStep onGetStarted={handleNext} />;
       case 1:
         return <StepOverview phase={1} />;
+      // Step 2: Location (was step 3, PropertyType step removed)
       case 2:
         return (
-          <PropertyTypeStep
-            value={formData.propertyType}
-            onChange={(v) => setFormData({ ...formData, propertyType: v })}
-          />
-        );
-      case 3:
-        return (
           <LocationStep
+            city={formData.city}
             area={formData.area}
             address={formData.address}
-            nearUniversity={formData.nearUniversity}
+            onCityChange={(v) => setFormData({ ...formData, city: v, area: '' })}
             onAreaChange={(v) => setFormData({ ...formData, area: v })}
             onAddressChange={(v) => setFormData({ ...formData, address: v })}
-            onNearUniversityChange={(v) => setFormData({ ...formData, nearUniversity: v })}
           />
         );
-      case 4:
+      // Step 3: Capacity (was step 4)
+      case 3:
         return (
           <CapacityStep
             value={formData.capacity}
             onChange={(v) => setFormData({ ...formData, capacity: v })}
           />
         );
-      case 5:
+      case 4:
         return <StepOverview phase={2} />;
-      case 6:
+      case 5:
         return (
           <AmenitiesStep
             category="essentials"
@@ -274,7 +298,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onToggle={toggleAmenity}
           />
         );
-      case 7:
+      case 6:
         return (
           <AmenitiesStep
             category="shared"
@@ -282,7 +306,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onToggle={toggleAmenity}
           />
         );
-      case 8:
+      case 7:
         return (
           <AmenitiesStep
             category="safety"
@@ -290,14 +314,14 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onToggle={toggleAmenity}
           />
         );
-      case 9:
+      case 8:
         return (
           <GenderPreferenceStep
             value={formData.genderPreference}
             onChange={(v) => setFormData({ ...formData, genderPreference: v })}
           />
         );
-      case 10:
+      case 9:
         return (
           <PhotosStep
             coverImage={formData.coverImage}
@@ -306,7 +330,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onGalleryChange={(v) => setFormData({ ...formData, galleryImages: v })}
           />
         );
-      case 11:
+      case 10:
         return (
           <DescriptionStep
             mode="highlights"
@@ -318,7 +342,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onDescriptionChange={(v) => setFormData({ ...formData, description: v })}
           />
         );
-      case 12:
+      case 11:
         return (
           <DescriptionStep
             mode="title"
@@ -330,7 +354,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onDescriptionChange={(v) => setFormData({ ...formData, description: v })}
           />
         );
-      case 13:
+      case 12:
         return (
           <DescriptionStep
             mode="description"
@@ -342,9 +366,9 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onDescriptionChange={(v) => setFormData({ ...formData, description: v })}
           />
         );
-      case 14:
+      case 13:
         return <StepOverview phase={3} />;
-      case 15:
+      case 14:
         return (
           <ReviewStep
             formData={formData}
@@ -361,7 +385,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
   return (
     <div className="min-h-screen bg-background">
-      <WizardTopBar onSaveExit={handleSaveExit} onHelp={() => setShowHelpDialog(true)} />
+      <WizardTopBar onSaveExit={handleSaveExit} />
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -399,21 +423,6 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmExit}>Save & exit</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Help dialog */}
-      <AlertDialog open={showHelpDialog} onOpenChange={setShowHelpDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Need help?</AlertDialogTitle>
-            <AlertDialogDescription>
-              If you have any questions about listing your dorm, feel free to contact us at support@roomylb.com or visit our Help Center.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction>Got it</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

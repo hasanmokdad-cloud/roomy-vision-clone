@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { Minus, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface CapacityStepProps {
   value: number;
@@ -8,12 +8,23 @@ interface CapacityStepProps {
 }
 
 export function CapacityStep({ value, onChange }: CapacityStepProps) {
-  const handleDecrement = () => {
-    if (value > 1) onChange(value - 1);
-  };
-
-  const handleIncrement = () => {
-    if (value < 100) onChange(value + 1);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    
+    // Allow empty input for typing
+    if (inputValue === '') {
+      onChange(0);
+      return;
+    }
+    
+    const numValue = parseInt(inputValue, 10);
+    
+    // Only update if it's a valid number within range
+    if (!isNaN(numValue)) {
+      // Clamp the value between 1 and 2000
+      const clampedValue = Math.max(1, Math.min(2000, numValue));
+      onChange(clampedValue);
+    }
   };
 
   return (
@@ -21,7 +32,7 @@ export function CapacityStep({ value, onChange }: CapacityStepProps) {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-12"
+        className="text-center mb-12 w-full"
       >
         <h1 className="text-2xl font-bold text-foreground mb-2">
           How many rooms does your dorm have?
@@ -35,36 +46,24 @@ export function CapacityStep({ value, onChange }: CapacityStepProps) {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2 }}
-        className="flex items-center gap-8"
+        className="w-full max-w-xs"
       >
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={handleDecrement}
-          disabled={value <= 1}
-          className="w-16 h-16 rounded-full border-2 hover:bg-muted"
-        >
-          <Minus className="w-6 h-6" />
-        </Button>
-
-        <motion.div
-          key={value}
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="w-24 h-24 flex items-center justify-center"
-        >
-          <span className="text-6xl font-bold text-foreground">{value}</span>
-        </motion.div>
-
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={handleIncrement}
-          disabled={value >= 100}
-          className="w-16 h-16 rounded-full border-2 hover:bg-muted"
-        >
-          <Plus className="w-6 h-6" />
-        </Button>
+        <Label htmlFor="rooms" className="text-base font-medium text-center block mb-3">
+          Number of Rooms
+        </Label>
+        <Input
+          id="rooms"
+          type="number"
+          min={1}
+          max={2000}
+          value={value || ''}
+          onChange={handleChange}
+          placeholder="Enter number of rooms"
+          className="h-16 text-3xl font-bold text-center"
+        />
+        <p className="text-center text-sm text-muted-foreground mt-3">
+          Enter a number between 1 and 2000
+        </p>
       </motion.div>
 
       <motion.p

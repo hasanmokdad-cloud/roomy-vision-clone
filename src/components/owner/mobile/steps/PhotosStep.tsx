@@ -21,7 +21,6 @@ export function PhotosStep({
   const [uploading, setUploading] = useState(false);
 
   const handleUpload = async (file: File, isCover: boolean) => {
-    setUploading(true);
     try {
       const compressed = await compressImage(file);
       const fileName = `${Date.now()}-${file.name}`;
@@ -43,28 +42,55 @@ export function PhotosStep({
         onGalleryChange([...galleryImages, publicUrl]);
       }
 
-      toast({ title: 'Photo uploaded!' });
+      return true;
     } catch (error: any) {
       toast({ 
         title: 'Upload failed', 
         description: error.message,
         variant: 'destructive' 
       });
-    } finally {
+      return false;
+    }
+  };
+
+  const handleCoverFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploading(true);
+      await handleUpload(file, true);
       setUploading(false);
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, isCover: boolean) => {
-    const file = e.target.files?.[0];
-    if (file) handleUpload(file, isCover);
+  const handleGalleryFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    
+    // Process files one by one but show single loading state
+    const filesToUpload = Array.from(files).slice(0, 10 - galleryImages.length);
+    
+    for (const file of filesToUpload) {
+      await handleUpload(file, false);
+    }
+    
+    if (filesToUpload.length > 0) {
+      toast({ title: `${filesToUpload.length} photo(s) uploaded!` });
+    }
+    
+    setUploading(false);
+    
+    // Reset input value so the same files can be selected again
+    e.target.value = '';
   };
 
   const removeGalleryImage = (index: number) => {
     onGalleryChange(galleryImages.filter((_, i) => i !== index));
   };
 
-  const hasMinimumPhotos = coverImage && galleryImages.length >= 2;
+  // Only cover image is required now
+  const hasCoverPhoto = !!coverImage;
 
   return (
     <div className="px-6 pt-24 pb-32">
@@ -81,8 +107,8 @@ export function PhotosStep({
         </p>
       </motion.div>
 
-      {/* Requirements notice */}
-      {!hasMinimumPhotos && (
+      {/* Requirements notice - only show if cover photo is missing */}
+      {!hasCoverPhoto && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -90,7 +116,7 @@ export function PhotosStep({
         >
           <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
           <p className="text-sm text-amber-600 dark:text-amber-400">
-            Please add at least 1 cover photo and 2 gallery photos to continue
+            Please add a cover photo to continue
           </p>
         </motion.div>
       )}
@@ -124,7 +150,7 @@ export function PhotosStep({
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => handleFileSelect(e, true)}
+                onChange={handleCoverFileSelect}
                 disabled={uploading}
               />
             </label>
@@ -139,7 +165,7 @@ export function PhotosStep({
         transition={{ delay: 0.2 }}
       >
         <label className="block text-sm font-medium text-foreground mb-2">
-          Gallery Photos (Rooms, Common Areas) *
+          Gallery Photos (Rooms, Common Areas) - Optional
         </label>
         <div className="grid grid-cols-3 gap-2">
           {galleryImages.map((url, index) => (
@@ -157,18 +183,20 @@ export function PhotosStep({
           {galleryImages.length < 10 && (
             <label className="flex flex-col items-center justify-center aspect-square rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors">
               <Plus className="w-6 h-6 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground mt-1">Add photos</span>
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 className="hidden"
-                onChange={(e) => handleFileSelect(e, false)}
+                onChange={handleGalleryFileSelect}
                 disabled={uploading}
               />
             </label>
           )}
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          {galleryImages.length}/10 photos • Add at least 2
+          {galleryImages.length}/10 photos
         </p>
       </motion.div>
 
