@@ -147,7 +147,12 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
       if (currentStep === 6 && formData.accommodation_status === 'have_dorm') {
         // Skip step 7 (housing preferences) and go directly to phase 3 overview
         setCurrentStep(8);
-      } else {
+      } 
+      // Skip personality matching step (9) if toggle is off, go directly to profile extras (10)
+      else if (currentStep === 8 && !formData.enable_personality_matching) {
+        setCurrentStep(10);
+      }
+      else {
         setCurrentStep(prev => prev + 1);
       }
     }
@@ -158,7 +163,12 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
       // When going back from phase 3 overview (8) and have_dorm, skip to accommodation status (6)
       if (currentStep === 8 && formData.accommodation_status === 'have_dorm') {
         setCurrentStep(6);
-      } else {
+      } 
+      // When going back from profile extras (10) and personality matching is off, skip to phase 3 overview (8)
+      else if (currentStep === 10 && !formData.enable_personality_matching) {
+        setCurrentStep(8);
+      }
+      else {
         setCurrentStep(prev => prev - 1);
       }
     }

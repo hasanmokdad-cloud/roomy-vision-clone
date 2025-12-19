@@ -33,6 +33,13 @@ const PersonalityMatchingStep = ({ onSurveyComplete }: PersonalityMatchingStepPr
     checkSurveyStatus();
   }, [user?.id]);
 
+  // Auto-open survey when step is reached and not yet completed
+  useEffect(() => {
+    if (!surveyCompleted && user?.id) {
+      setShowSurvey(true);
+    }
+  }, [surveyCompleted, user?.id]);
+
   const handleSurveyComplete = () => {
     setSurveyCompleted(true);
     onSurveyComplete?.();
