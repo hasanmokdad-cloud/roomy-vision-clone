@@ -9,11 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { OwnerLayout } from "@/components/owner/OwnerLayout";
 import { OwnerBreadcrumb } from "@/components/owner/OwnerBreadcrumb";
-import { ArrowLeft, Download, Upload, DollarSign, ToggleLeft } from "lucide-react";
+import { ArrowLeft, Download, Upload, DollarSign, ToggleLeft, Images, ImagePlus, ImageOff, Trash2 } from "lucide-react";
 import { OwnerTableSkeleton } from "@/components/skeletons/OwnerSkeletons";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion } from "framer-motion";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { compressImage } from "@/utils/imageCompression";
+import { generateUniqueFileName } from "@/utils/fileUtils";
 
 export default function BulkRoomOps() {
   const navigate = useNavigate();
@@ -24,8 +27,21 @@ export default function BulkRoomOps() {
   const [bulkPrice, setBulkPrice] = useState("");
   const [ownerId, setOwnerId] = useState<string | null>(null);
 
+  // Bulk image state
+  const [bulkImages, setBulkImages] = useState<File[]>([]);
+  const [bulkImagePreviews, setBulkImagePreviews] = useState<string[]>([]);
+  const [imageMode, setImageMode] = useState<'append' | 'replace'>('append');
+  const [uploadingImages, setUploadingImages] = useState(false);
+
   useEffect(() => {
     loadRooms();
+  }, []);
+
+  // Cleanup previews on unmount
+  useEffect(() => {
+    return () => {
+      bulkImagePreviews.forEach(url => URL.revokeObjectURL(url));
+    };
   }, []);
 
   const loadRooms = async () => {
@@ -162,6 +178,147 @@ export default function BulkRoomOps() {
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  // Bulk Image Handlers
+  const handleBulkImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // Filter valid image types
+    const validFiles = files.filter(file => file.type.startsWith('image/'));
+
+    if (validFiles.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select valid image files",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create previews
+    const previews = validFiles.map(file => URL.createObjectURL(file));
+
+    setBulkImages(prev => [...prev, ...validFiles]);
+    setBulkImagePreviews(prev => [...prev, ...previews]);
+
+    // Reset input
+    e.target.value = "";
+  };
+
+  const removeBulkImagePreview = (index: number) => {
+    URL.revokeObjectURL(bulkImagePreviews[index]);
+    setBulkImages(prev => prev.filter((_, i) => i !== index));
+    setBulkImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const clearAllBulkImages = () => {
+    bulkImagePreviews.forEach(url => URL.revokeObjectURL(url));
+    setBulkImages([]);
+    setBulkImagePreviews([]);
+  };
+
+  const handleBulkImageApply = async () => {
+    if (selectedRooms.size === 0) {
+      toast({ title: "Error", description: "Please select rooms", variant: "destructive" });
+      return;
+    }
+    if (bulkImages.length === 0) {
+      toast({ title: "Error", description: "Please add images first", variant: "destructive" });
+      return;
+    }
+
+    setUploadingImages(true);
+    try {
+      // Upload all images to storage
+      const uploadedUrls: string[] = [];
+
+      for (const file of bulkImages) {
+        const compressed = await compressImage(file, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+        });
+
+        const fileName = generateUniqueFileName(file.name);
+        const filePath = `bulk/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('room-images')
+          .upload(filePath, compressed);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('room-images')
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      // Apply to selected rooms
+      const roomIds = Array.from(selectedRooms);
+
+      for (const roomId of roomIds) {
+        const room = rooms.find(r => r.id === roomId);
+        const existingImages = room?.images || [];
+
+        const newImages = imageMode === 'replace'
+          ? uploadedUrls
+          : [...existingImages, ...uploadedUrls];
+
+        const { error } = await supabase
+          .from('rooms')
+          .update({ images: newImages })
+          .eq('id', roomId);
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: `Added ${uploadedUrls.length} image(s) to ${roomIds.length} room(s)`,
+      });
+
+      // Clear state
+      clearAllBulkImages();
+      loadRooms();
+      setSelectedRooms(new Set());
+
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const handleBulkImageClear = async () => {
+    if (selectedRooms.size === 0) {
+      toast({ title: "Error", description: "Please select rooms", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const roomIds = Array.from(selectedRooms);
+
+      const { error } = await supabase
+        .from('rooms')
+        .update({ images: [] })
+        .in('id', roomIds);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Cleared images from ${roomIds.length} room(s)`,
+      });
+
+      loadRooms();
+      setSelectedRooms(new Set());
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   };
 
@@ -442,11 +599,145 @@ export default function BulkRoomOps() {
                 </Card>
               </motion.div>
 
+              {/* Bulk Image Updates */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.18 }}
+              >
+                <Card className="rounded-2xl shadow-md">
+                  <CardHeader>
+                    <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                      <Images className="w-5 h-5" />
+                      Bulk Image Updates
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <p className="text-sm text-muted-foreground">
+                      Upload images once and apply them to multiple rooms at once. 
+                      Perfect for identical rooms (e.g., all single rooms look the same).
+                    </p>
+
+                    {/* Image Mode Selection */}
+                    <div className="space-y-2">
+                      <Label>When adding images:</Label>
+                      <RadioGroup
+                        value={imageMode}
+                        onValueChange={(v) => setImageMode(v as 'append' | 'replace')}
+                        className="flex gap-6"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="append" id="append" />
+                          <Label htmlFor="append" className="cursor-pointer font-normal">
+                            Add to existing images
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="replace" id="replace" />
+                          <Label htmlFor="replace" className="cursor-pointer font-normal">
+                            Replace all images
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    {/* Image Upload Area */}
+                    <div className="space-y-3">
+                      <div className="flex gap-2 flex-wrap">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleBulkImageSelect}
+                          className="hidden"
+                          id="bulk-image-input"
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={() => document.getElementById('bulk-image-input')?.click()}
+                          className="gap-2 rounded-xl"
+                        >
+                          <ImagePlus className="w-4 h-4" />
+                          Select Images
+                        </Button>
+
+                        {bulkImages.length > 0 && (
+                          <>
+                            <Button
+                              onClick={handleBulkImageApply}
+                              disabled={uploadingImages || selectedRooms.size === 0}
+                              className="gap-2 bg-gradient-to-r from-primary to-primary/80 rounded-xl"
+                            >
+                              <Upload className="w-4 h-4" />
+                              {uploadingImages
+                                ? 'Uploading...'
+                                : `Apply to ${selectedRooms.size} Room(s)`}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={clearAllBulkImages}
+                              className="gap-2 rounded-xl text-muted-foreground"
+                            >
+                              Clear Selection
+                            </Button>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Image Previews */}
+                      {bulkImagePreviews.length > 0 && (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                          {bulkImagePreviews.map((url, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={url}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-24 object-cover rounded-lg border"
+                              />
+                              <Button
+                                size="icon"
+                                variant="destructive"
+                                className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => removeBulkImagePreview(index)}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {bulkImagePreviews.length > 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          {bulkImages.length} image(s) ready to apply
+                        </p>
+                      )}
+                    </div>
+
+                    <Separator />
+
+                    {/* Clear Images */}
+                    <div className="space-y-3">
+                      <Label>Remove images from selected rooms:</Label>
+                      <Button
+                        variant="destructive"
+                        onClick={handleBulkImageClear}
+                        disabled={selectedRooms.size === 0}
+                        className="gap-2 rounded-xl"
+                      >
+                        <ImageOff className="w-4 h-4" />
+                        Clear All Images ({selectedRooms.size} rooms)
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
               {/* Room List */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
+                transition={{ delay: 0.22 }}
               >
                 <Card className="rounded-2xl shadow-md">
                   <CardHeader>
@@ -474,7 +765,7 @@ export default function BulkRoomOps() {
                             <div className="flex-1">
                               <h4 className="font-semibold text-foreground">{room.name}</h4>
                               <p className="text-sm text-muted-foreground">
-                                {room.dorms?.dorm_name || room.dorms?.name} • {room.type}
+                                {room.dorms?.dorm_name || room.dorms?.name} • {room.type} • {room.images?.length || 0} images
                               </p>
                             </div>
                           </div>
