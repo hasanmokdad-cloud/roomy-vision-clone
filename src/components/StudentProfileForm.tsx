@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { User, MapPin, GraduationCap, DollarSign, Home, Users, Brain, Phone, Calendar, Building2 } from 'lucide-react';
+import { User, MapPin, GraduationCap, DollarSign, Home, Users, Brain, Calendar, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Confetti } from '@/components/profile/Confetti';
 
@@ -31,7 +31,7 @@ const studentProfileSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters').max(100),
   age: z.number().min(16, 'Must be at least 16').max(100).optional(),
   gender: z.enum(['Male', 'Female']).optional(),
-  phone_number: z.string().optional(),
+  
   governorate: z.string().optional(),
   district: z.string().optional(),
   town_village: z.string().optional(),
@@ -62,7 +62,7 @@ interface StudentProfileFormProps {
 }
 
 // Field types for the modal
-type EditableField = 'full_name' | 'phone_number' | 'age' | 'gender' | 'location' | 'university' | 'major' | 'year_of_study' | 'budget' | 'preferred_city' | 'preferred_areas' | 'room_type';
+type EditableField = 'full_name' | 'age' | 'gender' | 'location' | 'university' | 'major' | 'year_of_study' | 'budget' | 'preferred_city' | 'preferred_areas' | 'room_type';
 
 export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormProps) => {
   const [loading, setLoading] = useState(false);
@@ -406,7 +406,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         full_name: data.full_name,
         age: data.age || null,
         gender: data.gender || null,
-        phone_number: data.phone_number || null,
+        
         governorate: selectedGovernorate || null,
         district: selectedDistrict || null,
         town_village: data.town_village || null,
@@ -715,11 +715,11 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
       {showConfetti && <Confetti />}
       
       <form onSubmit={handleSubmit(onSubmit)} className="pb-24">
-        {/* Airbnb-style layout: Photo on left, form on right */}
-        <div className="grid lg:grid-cols-2 min-h-screen">
+        {/* Airbnb-style layout: Photo on left (~30%), form on right (~70%) */}
+        <div className="grid lg:grid-cols-[320px_1fr] xl:grid-cols-[380px_1fr] min-h-screen">
           {/* Left side - Photo (sticky on desktop) */}
-          <div className="lg:sticky lg:top-0 lg:h-screen p-6 lg:p-12 flex items-center justify-center">
-            <div className="w-full max-w-md">
+          <div className="lg:sticky lg:top-0 lg:h-screen p-6 lg:p-8 xl:p-12 flex items-start lg:items-center justify-center pt-8 lg:pt-0">
+            <div className="w-full max-w-[280px]">
               <ProfilePhotoUpload
                 userId={userId}
                 currentUrl={profilePhotoUrl}
@@ -729,7 +729,15 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
           </div>
 
           {/* Right side - Form fields */}
-          <div className="p-6 lg:p-12 space-y-8">
+          <div className="p-6 lg:p-8 xl:p-12 space-y-8">
+            {/* My Profile Header */}
+            <div className="pb-2">
+              <h1 className="text-3xl lg:text-4xl font-semibold text-foreground">My profile</h1>
+              <p className="text-muted-foreground mt-2 text-sm lg:text-base">
+                Complete your profile to find the best matches
+              </p>
+            </div>
+
             {/* Personal Information */}
             <div>
               <ProfileSectionHeader
@@ -737,42 +745,44 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                 title="Personal Information"
               />
               
-              <div className="space-y-0 divide-y divide-border">
-                <ProfileFieldRow
-                  icon={<User className="w-5 h-5" />}
-                  label="Full Name"
-                  value={formValues.full_name}
-                  onClick={() => openFieldModal('full_name')}
-                  required
-                />
+              {/* 2-column grid layout like Airbnb */}
+              <div className="grid grid-cols-1 md:grid-cols-2">
+                <div className="border-b border-border md:border-r md:border-b-0">
+                  <ProfileFieldRow
+                    icon={<User className="w-5 h-5" />}
+                    label="Full Name"
+                    value={formValues.full_name}
+                    onClick={() => openFieldModal('full_name')}
+                    required
+                  />
+                </div>
                 
-                <ProfileFieldRow
-                  icon={<Phone className="w-5 h-5" />}
-                  label="Phone Number"
-                  value={formValues.phone_number}
-                  onClick={() => openFieldModal('phone_number')}
-                />
+                <div className="border-b border-border">
+                  <ProfileFieldRow
+                    icon={<Calendar className="w-5 h-5" />}
+                    label="Age"
+                    value={formValues.age}
+                    onClick={() => openFieldModal('age')}
+                  />
+                </div>
                 
-                <ProfileFieldRow
-                  icon={<Calendar className="w-5 h-5" />}
-                  label="Age"
-                  value={formValues.age}
-                  onClick={() => openFieldModal('age')}
-                />
+                <div className="border-b border-border md:border-r">
+                  <ProfileFieldRow
+                    icon={<User className="w-5 h-5" />}
+                    label="Gender"
+                    value={formValues.gender}
+                    onClick={() => openFieldModal('gender')}
+                  />
+                </div>
                 
-                <ProfileFieldRow
-                  icon={<User className="w-5 h-5" />}
-                  label="Gender"
-                  value={formValues.gender}
-                  onClick={() => openFieldModal('gender')}
-                />
-                
-                <ProfileFieldRow
-                  icon={<MapPin className="w-5 h-5" />}
-                  label="Home Location"
-                  value={getLocationDisplay()}
-                  onClick={() => openFieldModal('location')}
-                />
+                <div className="border-b border-border md:border-b-0">
+                  <ProfileFieldRow
+                    icon={<MapPin className="w-5 h-5" />}
+                    label="Home Location"
+                    value={getLocationDisplay()}
+                    onClick={() => openFieldModal('location')}
+                  />
+                </div>
               </div>
             </div>
 
@@ -783,27 +793,34 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                 title="Academic Information"
               />
               
-              <div className="space-y-0 divide-y divide-border">
-                <ProfileFieldRow
-                  icon={<Building2 className="w-5 h-5" />}
-                  label="University"
-                  value={formValues.university}
-                  onClick={() => openFieldModal('university')}
-                />
+              {/* 2-column grid layout like Airbnb */}
+              <div className="grid grid-cols-1 md:grid-cols-2">
+                <div className="border-b border-border md:border-r md:border-b-0">
+                  <ProfileFieldRow
+                    icon={<Building2 className="w-5 h-5" />}
+                    label="University"
+                    value={formValues.university}
+                    onClick={() => openFieldModal('university')}
+                  />
+                </div>
                 
-                <ProfileFieldRow
-                  icon={<GraduationCap className="w-5 h-5" />}
-                  label="Major"
-                  value={formValues.major}
-                  onClick={() => openFieldModal('major')}
-                />
+                <div className="border-b border-border">
+                  <ProfileFieldRow
+                    icon={<GraduationCap className="w-5 h-5" />}
+                    label="Major"
+                    value={formValues.major}
+                    onClick={() => openFieldModal('major')}
+                  />
+                </div>
                 
-                <ProfileFieldRow
-                  icon={<Calendar className="w-5 h-5" />}
-                  label="Year of Study"
-                  value={formValues.year_of_study}
-                  onClick={() => openFieldModal('year_of_study')}
-                />
+                <div className="md:col-span-2 border-b border-border md:border-b-0">
+                  <ProfileFieldRow
+                    icon={<Calendar className="w-5 h-5" />}
+                    label="Year of Study"
+                    value={formValues.year_of_study}
+                    onClick={() => openFieldModal('year_of_study')}
+                  />
+                </div>
               </div>
             </div>
 
@@ -919,26 +936,8 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                   </div>
                 )}
 
-                {accommodationStatus === 'need_dorm' && (
-                  <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
-                    <div className="flex items-center gap-3">
-                      <Users className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <div className="font-medium">Looking for Roommate</div>
-                        <div className="text-sm text-muted-foreground">
-                          Find someone to share a new dorm with
-                        </div>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={needsRoommateNewDorm}
-                      onCheckedChange={(checked) => handleRoommateToggle('new', checked)}
-                    />
-                  </div>
-                )}
-
-                {/* Personality Matching - Only show if seeking roommate */}
-                {shouldShowPersonalityMatching && (
+                {/* Personality Matching - Only show if have_dorm and seeking roommate */}
+                {accommodationStatus === 'have_dorm' && needsRoommateCurrentPlace && (
                   <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -1008,6 +1007,54 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                     onClick={() => openFieldModal('room_type')}
                   />
                 </div>
+
+                {/* Looking for Roommate toggle - only visible after non-single room type selected */}
+                {formValues.room_type && !isSingleRoom(formValues.room_type) && (
+                  <div className="flex items-center justify-between p-4 mt-4 rounded-lg border border-border bg-muted/30">
+                    <div className="flex items-center gap-3">
+                      <Users className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <div className="font-medium">Looking for Roommate</div>
+                        <div className="text-sm text-muted-foreground">
+                          Find someone to share a new dorm with
+                        </div>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={needsRoommateNewDorm}
+                      onCheckedChange={(checked) => handleRoommateToggle('new', checked)}
+                    />
+                  </div>
+                )}
+
+                {/* Personality Matching - Only show if seeking roommate */}
+                {needsRoommateNewDorm && (
+                  <div className="space-y-3 p-4 mt-4 rounded-lg border border-border bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Brain className="w-5 h-5 text-muted-foreground" />
+                        <div>
+                          <div className="font-medium">Personality Matching</div>
+                          <div className="text-sm text-muted-foreground">
+                            Find compatible roommates based on personality
+                          </div>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={enablePersonalityMatching}
+                        onCheckedChange={handlePersonalityMatchingToggle}
+                      />
+                    </div>
+                    
+                    {personalityTestCompleted && (
+                      <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-500">
+                        <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30">
+                          ✓ Test Completed
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1044,20 +1091,6 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         />
       </ProfileFieldModal>
 
-      <ProfileFieldModal
-        open={editingField === 'phone_number'}
-        onOpenChange={(open) => !open && setEditingField(null)}
-        title="Phone Number"
-        onSave={saveFieldValue}
-        isSaving={isSaving}
-      >
-        <Input
-          value={tempValue || ''}
-          onChange={(e) => setTempValue(e.target.value)}
-          placeholder="Enter your phone number"
-          type="tel"
-        />
-      </ProfileFieldModal>
 
       <ProfileFieldModal
         open={editingField === 'age'}
