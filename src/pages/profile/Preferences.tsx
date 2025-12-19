@@ -12,7 +12,7 @@ import { MobileSelector } from '@/components/profile/MobileSelector';
 import { PersonalitySurveyDrawer } from '@/components/profile/PersonalitySurveyDrawer';
 import BottomNav from '@/components/BottomNav';
 import { housingAreas } from '@/data/housingAreas';
-import { roomTypes } from '@/data/roomTypes';
+import { roomTypes, isSingleRoom } from '@/data/roomTypes';
 
 export default function Preferences() {
   const navigate = useNavigate();
@@ -200,17 +200,19 @@ export default function Preferences() {
               />
             </div>
 
-            {/* Need Roommate */}
-            <div className="flex items-center justify-between p-4 bg-card border border-border/40 rounded-xl">
-              <div>
-                <p className="font-medium text-foreground">Need a Roommate</p>
-                <p className="text-sm text-muted-foreground">Looking for someone to share with</p>
+            {/* Need Roommate - Only show for non-single room types */}
+            {!isSingleRoom(formData.room_type) && (
+              <div className="flex items-center justify-between p-4 bg-card border border-border/40 rounded-xl">
+                <div>
+                  <p className="font-medium text-foreground">Need a Roommate</p>
+                  <p className="text-sm text-muted-foreground">Looking for someone to share with</p>
+                </div>
+                <Switch
+                  checked={formData.need_roommate}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, need_roommate: checked }))}
+                />
               </div>
-              <Switch
-                checked={formData.need_roommate}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, need_roommate: checked }))}
-              />
-            </div>
+            )}
 
             {/* Personality Matching */}
             <div className="space-y-3 p-4 bg-card border border-border/40 rounded-xl">

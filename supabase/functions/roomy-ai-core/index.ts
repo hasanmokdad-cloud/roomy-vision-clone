@@ -434,9 +434,18 @@ async function fetchDormMatches(supabase: any, student: any, context: any = {}, 
       .eq('available', true);
     
     // CRITICAL FIX: Filter rooms where capacity_occupied < capacity (JavaScript filter since Supabase doesn't support column comparison)
-    const availableRooms = (rooms || []).filter((room: any) => 
+    let availableRooms = (rooms || []).filter((room: any) => 
       (room.capacity_occupied || 0) < (room.capacity || 0)
     );
+    
+    // If student selected "Any" room type AND needs roommate, exclude single rooms
+    const studentRoomType = student.room_type;
+    if ((studentRoomType === 'Any' || !studentRoomType) && student.need_roommate) {
+      availableRooms = availableRooms.filter((room: any) => 
+        !room.type?.toLowerCase().includes('single')
+      );
+      console.log(`[roomy-ai-core] Filtered out single rooms for dorm "${dorm.name}" - student needs roommate with "Any" room type`);
+    }
     
     return {
       ...dorm,
@@ -517,7 +526,7 @@ async function fetchRoomMatches(supabase: any, student: any, context: any = {}, 
   
   if (error) throw error;
 
-  // Filter rooms based on capacity, dorm verification, and gender compatibility
+  // Filter rooms based on capacity, dorm verification, gender compatibility, and room type preference
   const validRooms = (data || []).filter((room: any) => {
     // Must have available capacity
     if ((room.capacity_occupied || 0) >= (room.capacity || 0)) return false;
@@ -534,6 +543,15 @@ async function fetchRoomMatches(supabase: any, student: any, context: any = {}, 
         return false;
       }
       if (genderLower === 'female' && (dormGender === 'male' || dormGender === 'male_only')) {
+        return false;
+      }
+    }
+    
+    // If student selected "Any" room type AND needs roommate, exclude single rooms
+    const studentRoomType = student.room_type;
+    if ((studentRoomType === 'Any' || !studentRoomType) && student.need_roommate) {
+      if (room.type?.toLowerCase().includes('single')) {
+        console.log(`[roomy-ai-core] Excluding single room "${room.name}" - student needs roommate with "Any" room type`);
         return false;
       }
     }
