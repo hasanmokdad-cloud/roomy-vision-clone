@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Camera, Loader2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { compressImage } from '@/utils/imageCompression';
+import { ProfilePhotoCropModal } from './ProfilePhotoCropModal';
 
 interface ProfilePhotoUploadProps {
   userId: string;
@@ -15,6 +16,8 @@ interface ProfilePhotoUploadProps {
 export function ProfilePhotoUpload({ userId, currentUrl, onUploaded, tableName = 'students' }: ProfilePhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(currentUrl);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -35,11 +38,20 @@ export function ProfilePhotoUpload({ userId, currentUrl, onUploaded, tableName =
       return;
     }
 
+    // Open crop modal instead of uploading directly
+    setSelectedFile(file);
+    setShowCropModal(true);
+    
+    // Reset input so same file can be selected again
+    e.target.value = '';
+  };
+
+  const handleCropComplete = async (croppedFile: File) => {
     setUploading(true);
 
     try {
       // Compress image
-      const compressedFile = await compressImage(file, {
+      const compressedFile = await compressImage(croppedFile, {
         maxSizeMB: 0.5,
         maxWidthOrHeight: 800,
       });
@@ -86,6 +98,7 @@ export function ProfilePhotoUpload({ userId, currentUrl, onUploaded, tableName =
       });
     } finally {
       setUploading(false);
+      setSelectedFile(null);
     }
   };
 
@@ -134,50 +147,60 @@ export function ProfilePhotoUpload({ userId, currentUrl, onUploaded, tableName =
   };
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative">
-        {/* Airbnb-style large profile photo circle - 208px diameter */}
-        <Avatar className="w-52 h-52 ring-4 ring-border/30">
-          <AvatarImage src={previewUrl || undefined} alt="Profile photo" />
-          <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-5xl">
-            <Camera className="w-16 h-16" />
-          </AvatarFallback>
-        </Avatar>
+    <>
+      <div className="flex flex-col items-center">
+        <div className="relative">
+          {/* Airbnb-style large profile photo circle - 208px diameter */}
+          <Avatar className="w-52 h-52 ring-4 ring-border/30">
+            <AvatarImage src={previewUrl || undefined} alt="Profile photo" />
+            <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-5xl">
+              <Camera className="w-16 h-16" />
+            </AvatarFallback>
+          </Avatar>
+          
+          {/* Airbnb-style Add button at bottom of circle */}
+          <label className="absolute -bottom-2 left-1/2 -translate-x-1/2 cursor-pointer">
+            <div className={`flex items-center gap-1.5 px-4 py-2 bg-background border border-border rounded-full shadow-md hover:shadow-lg transition-shadow ${uploading ? 'opacity-70' : ''}`}>
+              {uploading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Camera className="w-4 h-4" />
+                  <span className="text-sm font-medium">Add</span>
+                </>
+              )}
+            </div>
+            <input
+              type="file"
+              hidden
+              accept="image/*"
+              onChange={handleFileChange}
+              disabled={uploading}
+            />
+          </label>
+        </div>
         
-        {/* Airbnb-style Add button at bottom of circle */}
-        <label className="absolute -bottom-2 left-1/2 -translate-x-1/2 cursor-pointer">
-          <div className={`flex items-center gap-1.5 px-4 py-2 bg-background border border-border rounded-full shadow-md hover:shadow-lg transition-shadow ${uploading ? 'opacity-70' : ''}`}>
-            {uploading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                <Camera className="w-4 h-4" />
-                <span className="text-sm font-medium">Add</span>
-              </>
-            )}
-          </div>
-          <input
-            type="file"
-            hidden
-            accept="image/*"
-            onChange={handleFileChange}
+        {/* Show delete button only if photo exists */}
+        {previewUrl && (
+          <button
+            type="button"
+            onClick={handleDeletePhoto}
             disabled={uploading}
-          />
-        </label>
+            className="mt-6 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+            Remove
+          </button>
+        )}
       </div>
-      
-      {/* Show delete button only if photo exists */}
-      {previewUrl && (
-        <button
-          type="button"
-          onClick={handleDeletePhoto}
-          disabled={uploading}
-          className="mt-6 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive transition-colors"
-        >
-          <Trash2 className="w-4 h-4" />
-          Remove
-        </button>
-      )}
-    </div>
+
+      {/* Crop Modal */}
+      <ProfilePhotoCropModal
+        open={showCropModal}
+        onOpenChange={setShowCropModal}
+        imageFile={selectedFile}
+        onCropComplete={handleCropComplete}
+      />
+    </>
   );
 }

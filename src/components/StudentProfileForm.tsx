@@ -963,10 +963,18 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                     </div>
                     
                     {personalityTestCompleted && (
-                      <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-500">
+                      <div className="flex items-center justify-between">
                         <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30">
                           ✓ Test Completed
                         </Badge>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          type="button"
+                          onClick={() => setShowPersonalitySurvey(true)}
+                        >
+                          Edit Survey
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -1045,10 +1053,18 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                     </div>
                     
                     {personalityTestCompleted && (
-                      <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-500">
+                      <div className="flex items-center justify-between">
                         <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30">
                           ✓ Test Completed
                         </Badge>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          type="button"
+                          onClick={() => setShowPersonalitySurvey(true)}
+                        >
+                          Edit Survey
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -1287,28 +1303,37 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
             </Select>
           </div>
 
-          {tempValue && (
-            <div className="space-y-2">
-              <Label>Areas</Label>
-              <div className="space-y-2 max-h-[300px] overflow-y-auto border border-border rounded-lg p-3">
-                {(tempValue === 'Byblos' ? byblosAreas : beirutAreas).map((area) => (
-                  <div key={area} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`modal-${area}`}
-                      checked={tempAreas.includes(area)}
-                      onCheckedChange={() => toggleArea(area)}
-                    />
-                    <label
-                      htmlFor={`modal-${area}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                    >
-                      {area}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <AnimatePresence mode="wait">
+            {tempValue && (
+              <motion.div
+                key={tempValue}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-2"
+              >
+                <Label>Areas</Label>
+                <div className="space-y-2 max-h-[300px] overflow-y-auto border border-border rounded-lg p-3">
+                  {(tempValue === 'Byblos' ? byblosAreas : beirutAreas).map((area) => (
+                    <div key={area} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`modal-${area}`}
+                        checked={tempAreas.includes(area)}
+                        onCheckedChange={() => toggleArea(area)}
+                      />
+                      <label
+                        htmlFor={`modal-${area}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {area}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </ProfileFieldModal>
 
