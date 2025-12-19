@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload, Loader2, Camera, Trash2 } from 'lucide-react';
+import { Camera, Loader2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { compressImage } from '@/utils/imageCompression';
 
@@ -135,31 +134,28 @@ export function ProfilePhotoUpload({ userId, currentUrl, onUploaded, tableName =
   };
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <Avatar className="w-32 h-32 ring-4 ring-primary/20">
-        <AvatarImage src={previewUrl || undefined} alt="Profile photo" />
-        <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-3xl">
-          <Camera className="w-12 h-12" />
-        </AvatarFallback>
-      </Avatar>
-
-      <Button
-        variant="outline"
-        className="relative"
-        disabled={uploading}
-      >
-        <label className="cursor-pointer flex items-center gap-2">
-          {uploading ? (
-            <>
+    <div className="flex flex-col items-center">
+      <div className="relative">
+        {/* Airbnb-style large profile photo circle - 208px diameter */}
+        <Avatar className="w-52 h-52 ring-4 ring-border/30">
+          <AvatarImage src={previewUrl || undefined} alt="Profile photo" />
+          <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-5xl">
+            <Camera className="w-16 h-16" />
+          </AvatarFallback>
+        </Avatar>
+        
+        {/* Airbnb-style Add button at bottom of circle */}
+        <label className="absolute -bottom-2 left-1/2 -translate-x-1/2 cursor-pointer">
+          <div className={`flex items-center gap-1.5 px-4 py-2 bg-background border border-border rounded-full shadow-md hover:shadow-lg transition-shadow ${uploading ? 'opacity-70' : ''}`}>
+            {uploading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
-              Uploading...
-            </>
-          ) : (
-            <>
-              <Upload className="w-4 h-4" />
-              Upload Photo
-            </>
-          )}
+            ) : (
+              <>
+                <Camera className="w-4 h-4" />
+                <span className="text-sm font-medium">Add</span>
+              </>
+            )}
+          </div>
           <input
             type="file"
             hidden
@@ -168,23 +164,20 @@ export function ProfilePhotoUpload({ userId, currentUrl, onUploaded, tableName =
             disabled={uploading}
           />
         </label>
-      </Button>
-
+      </div>
+      
+      {/* Show delete button only if photo exists */}
       {previewUrl && (
-        <Button
-          variant="outline"
+        <button
+          type="button"
           onClick={handleDeletePhoto}
           disabled={uploading}
-          className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-400"
+          className="mt-6 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive transition-colors"
         >
-          <Trash2 className="w-4 h-4 mr-2" />
-          Delete Photo
-        </Button>
+          <Trash2 className="w-4 h-4" />
+          Remove
+        </button>
       )}
-
-      <p className="text-xs text-muted-foreground text-center">
-        Max size: 5MB. Recommended: 800x800px
-      </p>
     </div>
   );
 }

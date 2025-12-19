@@ -1,9 +1,10 @@
 import { ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 interface ProfileFieldModalProps {
   open: boolean;
@@ -77,6 +78,10 @@ export const ProfileFieldModal = ({
           <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
           <div className="w-9" /> {/* Spacer */}
         </DialogHeader>
+        
+        <VisuallyHidden>
+          <DialogDescription>Edit {title}</DialogDescription>
+        </VisuallyHidden>
         
         <div className="py-4">
           {description && (

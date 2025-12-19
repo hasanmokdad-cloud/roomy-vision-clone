@@ -62,7 +62,7 @@ interface StudentProfileFormProps {
 }
 
 // Field types for the modal
-type EditableField = 'full_name' | 'age' | 'gender' | 'location' | 'university' | 'major' | 'year_of_study' | 'budget' | 'preferred_city' | 'preferred_areas' | 'room_type';
+type EditableField = 'full_name' | 'age' | 'gender' | 'location' | 'university' | 'major' | 'year_of_study' | 'budget' | 'preferred_location' | 'room_type';
 
 export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormProps) => {
   const [loading, setLoading] = useState(false);
@@ -337,10 +337,11 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
       setTempGovernorate(selectedGovernorate);
       setTempDistrict(selectedDistrict);
       setTempTown(formValues.town_village || '');
-    } else if (field === 'preferred_areas') {
+    } else if (field === 'preferred_location') {
+      setTempValue(selectedCity);
       setTempAreas([...selectedAreas]);
     } else {
-      setTempValue(formValues[field]);
+      setTempValue(formValues[field as keyof StudentProfile]);
     }
   };
 
@@ -364,13 +365,19 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         setValue('governorate', tempGovernorate || undefined);
         setValue('district', tempDistrict || undefined);
         setValue('town_village', tempTown || undefined);
-      } else if (editingField === 'preferred_areas') {
-        updateData = { preferred_areas: tempAreas };
+      } else if (editingField === 'preferred_location') {
+        // Save both city and areas together
+        updateData = { 
+          preferred_city: tempValue || null,
+          preferred_areas: tempAreas 
+        };
+        setSelectedCity(tempValue as 'Byblos' | 'Beirut' | '');
         setSelectedAreas(tempAreas);
+        setValue('preferred_city', tempValue || undefined);
         setValue('preferred_areas', tempAreas);
       } else {
         updateData = { [editingField]: tempValue };
-        setValue(editingField, tempValue);
+        setValue(editingField as keyof StudentProfile, tempValue);
       }
       
       const { error } = await supabase
@@ -985,20 +992,11 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                   
                   <ProfileFieldRow
                     icon={<MapPin className="w-5 h-5" />}
-                    label="Preferred City"
-                    value={formValues.preferred_city}
-                    onClick={() => openFieldModal('preferred_city')}
+                    label="Preferred Location"
+                    value={selectedCity ? (selectedAreas.length > 0 ? `${selectedCity} · ${getAreasDisplay()}` : selectedCity) : undefined}
+                    placeholder="Select city & areas"
+                    onClick={() => openFieldModal('preferred_location')}
                   />
-                  
-                  {selectedCity && (
-                    <ProfileFieldRow
-                      icon={<MapPin className="w-5 h-5" />}
-                      label="Preferred Areas"
-                      value={getAreasDisplay()}
-                      placeholder="Select areas"
-                      onClick={() => openFieldModal('preferred_areas')}
-                    />
-                  )}
                   
                   <ProfileFieldRow
                     icon={<Home className="w-5 h-5" />}
@@ -1262,47 +1260,55 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
       </ProfileFieldModal>
 
       <ProfileFieldModal
-        open={editingField === 'preferred_city'}
+        open={editingField === 'preferred_location'}
         onOpenChange={(open) => !open && setEditingField(null)}
-        title="Preferred City"
+        title="Preferred Location"
         onSave={saveFieldValue}
         isSaving={isSaving}
       >
-        <Select value={tempValue || ''} onValueChange={setTempValue}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select city" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Byblos">Byblos</SelectItem>
-            <SelectItem value="Beirut">Beirut</SelectItem>
-          </SelectContent>
-        </Select>
-      </ProfileFieldModal>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>City</Label>
+            <Select 
+              value={tempValue || ''} 
+              onValueChange={(value) => {
+                setTempValue(value);
+                // Reset areas when city changes
+                setTempAreas([]);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select city" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Byblos">Byblos</SelectItem>
+                <SelectItem value="Beirut">Beirut</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-      <ProfileFieldModal
-        open={editingField === 'preferred_areas'}
-        onOpenChange={(open) => !open && setEditingField(null)}
-        title="Preferred Areas"
-        description={`Select areas in ${selectedCity}`}
-        onSave={saveFieldValue}
-        isSaving={isSaving}
-      >
-        <div className="space-y-2 max-h-[400px] overflow-y-auto">
-          {(selectedCity === 'Byblos' ? byblosAreas : beirutAreas).map((area) => (
-            <div key={area} className="flex items-center space-x-2">
-              <Checkbox
-                id={area}
-                checked={tempAreas.includes(area)}
-                onCheckedChange={() => toggleArea(area)}
-              />
-              <label
-                htmlFor={area}
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-              >
-                {area}
-              </label>
+          {tempValue && (
+            <div className="space-y-2">
+              <Label>Areas</Label>
+              <div className="space-y-2 max-h-[300px] overflow-y-auto border border-border rounded-lg p-3">
+                {(tempValue === 'Byblos' ? byblosAreas : beirutAreas).map((area) => (
+                  <div key={area} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`modal-${area}`}
+                      checked={tempAreas.includes(area)}
+                      onCheckedChange={() => toggleArea(area)}
+                    />
+                    <label
+                      htmlFor={`modal-${area}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {area}
+                    </label>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          )}
         </div>
       </ProfileFieldModal>
 
