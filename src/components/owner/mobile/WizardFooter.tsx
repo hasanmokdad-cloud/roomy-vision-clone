@@ -20,25 +20,41 @@ export function WizardFooter({
   isLastStep = false,
   isSubmitting = false,
 }: WizardFooterProps) {
-  // Calculate progress phases (3 main phases like Airbnb)
-  const phase = currentStep <= 4 ? 1 : currentStep <= 9 ? 2 : 3;
+  // Content steps (excluding transition pages 0, 1, 4, 13)
+  const contentSteps = [2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 14];
+  const totalContentSteps = contentSteps.length; // 11 steps
+
+  // Find current position in content steps
+  const currentContentIndex = contentSteps.findIndex(s => s === currentStep);
+  const actualProgress = currentContentIndex === -1 
+    ? contentSteps.filter(s => s < currentStep).length
+    : currentContentIndex + 1;
+
+  // Calculate progress as percentage
+  const progressPercentage = actualProgress / totalContentSteps;
+
+  // Distribute across 3 phases
+  const phase1Fill = Math.min(1, progressPercentage * 3);
+  const phase2Fill = Math.min(1, Math.max(0, (progressPercentage * 3) - 1));
+  const phase3Fill = Math.min(1, Math.max(0, (progressPercentage * 3) - 2));
   
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
       {/* Progress bar */}
       <div className="flex gap-1 px-4 pt-2">
-        {[1, 2, 3].map((p) => (
+        {[phase1Fill, phase2Fill, phase3Fill].map((fill, index) => (
           <div
-            key={p}
-            className={`h-1 flex-1 rounded-full transition-colors ${
-              p < phase ? 'bg-foreground' : p === phase ? 'bg-foreground' : 'bg-muted'
-            }`}
-            style={{
-              background: p <= phase 
-                ? 'linear-gradient(to right, hsl(var(--primary)), hsl(var(--secondary)))' 
-                : undefined
-            }}
-          />
+            key={index}
+            className="h-1 flex-1 rounded-full bg-muted overflow-hidden"
+          >
+            <div
+              className="h-full rounded-full transition-all duration-300"
+              style={{
+                width: `${fill * 100}%`,
+                background: 'linear-gradient(to right, hsl(var(--primary)), hsl(var(--secondary)))'
+              }}
+            />
+          </div>
         ))}
       </div>
       
