@@ -260,16 +260,7 @@ export default function Profile() {
                 <span className="text-lg font-semibold">Personal info</span>
               </button>
 
-              <div className="flex justify-center mb-6">
-                <ProfilePhotoUpload
-                  userId={userId!}
-                  currentUrl={profilePhotoUrl}
-                  onUploaded={handlePhotoUploaded}
-                  tableName="students"
-                />
-              </div>
-
-              <StudentProfileForm 
+              <StudentProfileForm
                 userId={userId!} 
                 onComplete={() => setShowProfileForm(false)}
               />
