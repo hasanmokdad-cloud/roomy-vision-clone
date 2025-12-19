@@ -45,8 +45,8 @@ const areasByCity: Record<string, string[]> = {
     'Khalde',
   ],
   byblos: [
+    'Blat',
     'Nahr Ibrahim',
-    'Byblos',
     'Halat',
     'Jeddayel',
     'Mastita',

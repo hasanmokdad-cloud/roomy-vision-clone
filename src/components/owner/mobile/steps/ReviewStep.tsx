@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
-import { MapPin, Users, Home, Camera, FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import { MapPin, Users, Camera, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { IsometricRoomAnimation } from '../IsometricRoomAnimation';
 
 interface ReviewStepProps {
   formData: {
-    propertyType: string;
+    city: string;
     area: string;
     address: string;
     capacity: number;
@@ -18,55 +18,48 @@ interface ReviewStepProps {
   onEditStep: (step: number) => void;
 }
 
-const propertyTypeLabels: Record<string, string> = {
-  dormitory: 'Dormitory',
-  student_residence: 'Student Residence',
-  shared_apartment: 'Shared Apartment',
-  private_building: 'Private Building',
-};
-
 const genderLabels: Record<string, string> = {
   male: 'Male only',
   female: 'Female only',
   mixed: 'Mixed (Co-ed)',
 };
 
+const cityLabels: Record<string, string> = {
+  byblos: 'Byblos',
+  beirut: 'Beirut',
+};
+
 export function ReviewStep({ formData, onEditStep }: ReviewStepProps) {
   const sections = [
     {
-      icon: Home,
-      title: 'Property',
-      value: propertyTypeLabels[formData.propertyType] || 'Not set',
-      complete: !!formData.propertyType,
-      editStep: 2,
-    },
-    {
       icon: MapPin,
       title: 'Location',
-      value: formData.area ? `${formData.area}${formData.address ? ` • ${formData.address}` : ''}` : 'Not set',
-      complete: !!formData.area,
-      editStep: 3,
+      value: formData.city && formData.area 
+        ? `${cityLabels[formData.city] || formData.city} • ${formData.area}${formData.address ? ` • ${formData.address}` : ''}`
+        : 'Not set',
+      complete: !!formData.city && !!formData.area,
+      editStep: 2,
     },
     {
       icon: Users,
       title: 'Capacity & Gender',
       value: `${formData.capacity} rooms • ${genderLabels[formData.genderPreference] || 'Not set'}`,
       complete: formData.capacity > 0 && !!formData.genderPreference,
-      editStep: 4,
+      editStep: 3,
     },
     {
       icon: Camera,
       title: 'Photos',
       value: `${formData.coverImage ? 1 : 0} cover, ${formData.galleryImages.length} gallery`,
-      complete: !!formData.coverImage && formData.galleryImages.length >= 2,
-      editStep: 10,
+      complete: !!formData.coverImage,
+      editStep: 9,
     },
     {
       icon: FileText,
       title: 'Description',
       value: formData.title || 'No title',
       complete: !!formData.title,
-      editStep: 12,
+      editStep: 11,
     },
   ];
 
