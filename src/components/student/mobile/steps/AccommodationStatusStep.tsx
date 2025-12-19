@@ -225,9 +225,8 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
           </motion.div>
         )}
 
-        {/* Roommate Search Toggle - Only show for have_dorm with non-single room OR need_dorm */}
-        {(data.accommodation_status === 'need_dorm' || 
-          (data.accommodation_status === 'have_dorm' && data.current_room_id && !isSingleRoom)) && (
+        {/* Roommate Search Toggle - Only show for have_dorm with non-single room */}
+        {(data.accommodation_status === 'have_dorm' && data.current_room_id && !isSingleRoom) && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -249,11 +248,12 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
           </motion.div>
         )}
 
-        {/* Personality Matching Toggle - Only show if needs_roommate AND (need_dorm OR have_dorm with non-single room) */}
-        {data.needs_roommate && (
-          data.accommodation_status === 'need_dorm' || 
-          (data.accommodation_status === 'have_dorm' && data.current_dorm_id && data.current_room_id && !isSingleRoom)
-        ) && (
+        {/* Personality Matching Toggle - Only show if needs_roommate AND have_dorm with non-single room */}
+        {data.needs_roommate && 
+          data.accommodation_status === 'have_dorm' && 
+          data.current_dorm_id && 
+          data.current_room_id && 
+          !isSingleRoom && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
