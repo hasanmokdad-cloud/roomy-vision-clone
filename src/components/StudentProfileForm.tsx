@@ -890,105 +890,105 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                   </button>
                 </div>
 
-                {/* Roommate preference based on status */}
+                {/* Have Dorm Flow - Matches onboarding sequence */}
                 {accommodationStatus === 'have_dorm' && (
                   <div className="space-y-4 pt-4">
-                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
-                      <div className="flex items-center gap-3">
-                        <Users className="w-5 h-5 text-muted-foreground" />
-                        <div>
-                          <div className="font-medium">Looking for Roommate</div>
-                          <div className="text-sm text-muted-foreground">
-                            Find someone to share your current place
-                          </div>
-                        </div>
+                    {/* 1. Current Dorm/Room Selection - Show immediately for have_dorm */}
+                    <div id="current-dorm-section" className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+                      <div className="space-y-2">
+                        <Label>Current Dorm</Label>
+                        <Select value={currentDormId} onValueChange={handleCurrentDormChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select your dorm" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableDorms.map((dorm) => (
+                              <SelectItem key={dorm.id} value={dorm.id}>
+                                {dorm.name} - {dorm.area}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <Switch
-                        checked={needsRoommateCurrentPlace}
-                        onCheckedChange={(checked) => handleRoommateToggle('current', checked)}
-                      />
-                    </div>
 
-                    {/* Current Dorm/Room Selection */}
-                    {needsRoommateCurrentPlace && (
-                      <div id="current-dorm-section" className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+                      {currentDormId && (
                         <div className="space-y-2">
-                          <Label>Current Dorm</Label>
-                          <Select value={currentDormId} onValueChange={handleCurrentDormChange}>
+                          <Label>Current Room</Label>
+                          <Select value={currentRoomId} onValueChange={handleCurrentRoomChange}>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select your dorm" />
+                              <SelectValue placeholder="Select your room" />
                             </SelectTrigger>
                             <SelectContent>
-                              {availableDorms.map((dorm) => (
-                                <SelectItem key={dorm.id} value={dorm.id}>
-                                  {dorm.name} - {dorm.area}
+                              {availableRooms.map((room) => (
+                                <SelectItem key={room.id} value={room.id}>
+                                  {room.name} - {room.type} ({room.capacity_occupied}/{room.capacity})
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
+                          
+                          {currentRoomId && isRoomFull && (
+                            <p className="text-sm text-amber-600 dark:text-amber-500">
+                              ⚠️ This room is currently full. You may need to wait for a spot to open.
+                            </p>
+                          )}
                         </div>
+                      )}
+                    </div>
 
-                        {currentDormId && (
-                          <div className="space-y-2">
-                            <Label>Current Room</Label>
-                            <Select value={currentRoomId} onValueChange={handleCurrentRoomChange}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select your room" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {availableRooms.map((room) => (
-                                  <SelectItem key={room.id} value={room.id}>
-                                    {room.name} - {room.type} ({room.capacity_occupied}/{room.capacity})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            
-                            {currentRoomId && isRoomFull && (
-                              <p className="text-sm text-amber-600 dark:text-amber-500">
-                                ⚠️ This room is currently full. You may need to wait for a spot to open.
-                              </p>
-                            )}
+                    {/* 2. Looking for Roommate - Only show AFTER room selected AND room is NOT single */}
+                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && (
+                      <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+                        <div className="flex items-center gap-3">
+                          <Users className="w-5 h-5 text-muted-foreground" />
+                          <div>
+                            <div className="font-medium">Looking for Roommate</div>
+                            <div className="text-sm text-muted-foreground">
+                              Find someone to share your current place
+                            </div>
                           </div>
-                        )}
+                        </div>
+                        <Switch
+                          checked={needsRoommateCurrentPlace}
+                          onCheckedChange={(checked) => handleRoommateToggle('current', checked)}
+                        />
                       </div>
                     )}
-                  </div>
-                )}
 
-                {/* Personality Matching - Only show if have_dorm, seeking roommate, dorm/room selected, and NOT single room */}
-                {accommodationStatus === 'have_dorm' && needsRoommateCurrentPlace && 
-                 currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && (
-                  <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Brain className="w-5 h-5 text-muted-foreground" />
-                        <div>
-                          <div className="font-medium">Personality Matching</div>
-                          <div className="text-sm text-muted-foreground">
-                            Find compatible roommates based on personality
+                    {/* 3. AI Personality Matching - Only show if roommate toggle is ON */}
+                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && needsRoommateCurrentPlace && (
+                      <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Brain className="w-5 h-5 text-muted-foreground" />
+                            <div>
+                              <div className="font-medium">AI Personality Matching</div>
+                              <div className="text-sm text-muted-foreground">
+                                Find compatible roommates based on personality
+                              </div>
+                            </div>
                           </div>
+                          <Switch
+                            checked={enablePersonalityMatching}
+                            onCheckedChange={handlePersonalityMatchingToggle}
+                          />
                         </div>
-                      </div>
-                      <Switch
-                        checked={enablePersonalityMatching}
-                        onCheckedChange={handlePersonalityMatchingToggle}
-                      />
-                    </div>
-                    
-                    {personalityTestCompleted && (
-                      <div className="flex items-center justify-between">
-                        <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30">
-                          ✓ Test Completed
-                        </Badge>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          type="button"
-                          onClick={() => setShowPersonalitySurvey(true)}
-                        >
-                          Edit Survey
-                        </Button>
+                        
+                        {personalityTestCompleted && (
+                          <div className="flex items-center justify-between">
+                            <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30">
+                              ✓ Test Completed
+                            </Badge>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              type="button"
+                              onClick={() => setShowPersonalitySurvey(true)}
+                            >
+                              Edit Survey
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
