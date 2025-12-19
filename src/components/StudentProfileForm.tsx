@@ -711,7 +711,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
     if (!hasProfile) return 'Create Profile';
     
     if (accommodationStatus === 'need_dorm') {
-      return needsRoommateNewDorm ? 'Find Roommate Matches' : 'Find Dorm Matches';
+      return needsRoommateNewDorm ? 'Find Matches' : 'Find Room Matches';
     }
     
     if (accommodationStatus === 'have_dorm' && needsRoommateCurrentPlace) {
