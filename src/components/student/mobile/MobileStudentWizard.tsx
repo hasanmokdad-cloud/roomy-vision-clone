@@ -91,19 +91,55 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
 
   const STORAGE_KEY = `roomy_student_onboarding_${user?.id}`;
 
-  // Calculate total steps dynamically based on accommodation status and personality matching
+  // Transition steps that auto-advance (not counted in progress)
+  const TRANSITION_STEPS = [1, 5, 8];
+  const isTransitionStep = TRANSITION_STEPS.includes(currentStep);
+
+  // Calculate total FORM steps (excluding intro and transition steps)
+  // Form steps: basic(2), hometown(3), academic(4), accommodation(6), extras(10), review(11) = 6 base
+  // + housing prefs(7) if need_dorm
+  // + personality(9) if enabled
   const getTotalSteps = () => {
-    const hasHousingPrefs = formData.accommodation_status === 'need_dorm';
-    const hasPersonalitySteps = formData.enable_personality_matching;
-    
-    // Base: 12 steps (0-11)
-    // Skip step 7 if have_dorm (-1)
-    // Skip steps 8 and 9 if no personality matching (-2)
-    let total = 11;
-    if (!hasHousingPrefs) total -= 1; // Skip housing prefs
-    if (!hasPersonalitySteps) total -= 2; // Skip lifestyle overview + personality matching
+    let total = 6; // Base form steps
+    if (formData.accommodation_status === 'need_dorm') total += 1; // Housing prefs
+    if (formData.enable_personality_matching) total += 1; // Personality matching
     return total;
   };
+
+  // Map actual step number to display step (for progress bar)
+  const getDisplayStep = () => {
+    const hasHousingPrefs = formData.accommodation_status === 'need_dorm';
+    const hasPersonality = formData.enable_personality_matching;
+    
+    switch (currentStep) {
+      case 2: return 1;  // Basic Info
+      case 3: return 2;  // Hometown
+      case 4: return 3;  // Academic
+      case 6: return 4;  // Accommodation Status
+      case 7: return 5;  // Housing Preferences (only if need_dorm)
+      case 9: return hasHousingPrefs ? 6 : 5;  // Personality Matching
+      case 10: {
+        // Profile Extras step number depends on what's enabled
+        let step = 5;
+        if (hasHousingPrefs) step++;
+        if (hasPersonality) step++;
+        return step;
+      }
+      case 11: return getTotalSteps(); // Review (always last)
+      default: return 0;
+    }
+  };
+
+  // Auto-advance transition steps after animation delay
+  useEffect(() => {
+    if (TRANSITION_STEPS.includes(currentStep)) {
+      const timer = setTimeout(() => {
+        // Advance to next step
+        setCurrentStep(prev => prev + 1);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
 
   // Load saved progress
   useEffect(() => {
@@ -177,18 +213,31 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
 
   const handleBack = () => {
     if (currentStep > 0) {
+      // Skip transition steps when going back
+      // Step 2 -> skip 1 -> go to 0 (intro)
+      if (currentStep === 2) {
+        setCurrentStep(0);
+      }
+      // Step 6 -> skip 5 -> go to 4 (academic)
+      else if (currentStep === 6) {
+        setCurrentStep(4);
+      }
       // When going back from profile extras (10) and personality matching is off
-      if (currentStep === 10 && !formData.enable_personality_matching) {
+      else if (currentStep === 10 && !formData.enable_personality_matching) {
+        if (formData.accommodation_status === 'have_dorm') {
+          setCurrentStep(6); // Skip back to accommodation status (skip 7, 8, 9)
+        } else {
+          setCurrentStep(7); // Skip back to housing preferences (skip 8, 9)
+        }
+      }
+      // When going back from personality matching (9), skip phase 3 overview (8)
+      else if (currentStep === 9) {
         if (formData.accommodation_status === 'have_dorm') {
           setCurrentStep(6); // Skip back to accommodation status
         } else {
           setCurrentStep(7); // Skip back to housing preferences
         }
       }
-      // When going back from phase 3 overview (8) and have_dorm, skip to accommodation status (6)
-      else if (currentStep === 8 && formData.accommodation_status === 'have_dorm') {
-        setCurrentStep(6);
-      } 
       else {
         setCurrentStep(prev => prev - 1);
       }
@@ -374,21 +423,24 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
   }
 
   const totalSteps = getTotalSteps();
+  const displayStep = getDisplayStep();
 
   return (
     <div className="min-h-screen bg-background">
       <StudentWizardTopBar onSaveAndExit={handleSaveAndExit} />
       {renderStep()}
-      <StudentWizardFooter
-        currentStep={currentStep}
-        totalSteps={totalSteps}
-        onBack={handleBack}
-        onNext={handleNext}
-        isFirstStep={currentStep <= 1}
-        isLastStep={currentStep === totalSteps}
-        canProceed={canProceed()}
-        isSubmitting={isSubmitting}
-      />
+      {!isTransitionStep && (
+        <StudentWizardFooter
+          currentStep={displayStep}
+          totalSteps={totalSteps}
+          onBack={handleBack}
+          onNext={handleNext}
+          isFirstStep={currentStep <= 1}
+          isLastStep={currentStep === 11}
+          canProceed={canProceed()}
+          isSubmitting={isSubmitting}
+        />
+      )}
     </div>
   );
 };
