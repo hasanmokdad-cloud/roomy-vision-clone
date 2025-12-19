@@ -956,8 +956,9 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                   </div>
                 )}
 
-                {/* Personality Matching - Only show if have_dorm and seeking roommate */}
-                {accommodationStatus === 'have_dorm' && needsRoommateCurrentPlace && (
+                {/* Personality Matching - Only show if have_dorm, seeking roommate, dorm/room selected, and NOT single room */}
+                {accommodationStatus === 'have_dorm' && needsRoommateCurrentPlace && 
+                 currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && (
                   <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">

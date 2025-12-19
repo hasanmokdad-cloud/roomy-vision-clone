@@ -249,8 +249,11 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
           </motion.div>
         )}
 
-        {/* Personality Matching Toggle */}
+        {/* Personality Matching Toggle - Only show for need_dorm OR have_dorm with non-single room selected */}
         {data.needs_roommate && (
+          data.accommodation_status === 'need_dorm' || 
+          (data.accommodation_status === 'have_dorm' && data.current_dorm_id && data.current_room_id && !isSingleRoom)
+        ) && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
