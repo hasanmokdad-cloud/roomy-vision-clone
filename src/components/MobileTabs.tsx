@@ -96,8 +96,38 @@ export default function MobileTabs() {
 
   const tabs = getTabs();
 
+  // Define sub-page routes where bottom nav should be hidden
+  const hiddenRoutes = [
+    // Wishlists sub-pages
+    '/saved-dorms',
+    '/saved-rooms',
+    
+    // Profile sub-pages  
+    '/settings',
+    '/wallet',
+    '/billing-history',
+    '/student/payments',
+    '/student/tours',
+    '/boost-profile',
+    '/notifications',
+    
+    // Viewing other profiles
+    '/student-profile/',
+    '/view-profile/',
+    '/roommate/',
+    
+    // Legal pages
+    '/legal/',
+  ];
+
+  // Check if current path matches any hidden route
+  const shouldHideNav = hiddenRoutes.some(route => 
+    location.pathname === route || location.pathname.startsWith(route)
+  );
+
   // Hide on certain routes
   if (hideBottomNav) return null;
+  if (shouldHideNav) return null;
   if (location.pathname.startsWith("/owner/") && !location.pathname.match(/^\/owner\/(wallet|bookings)$/)) return null;
   if (location.pathname.startsWith("/admin/") && !location.pathname.match(/^\/admin\/(wallet|chats)$/)) return null;
   if (location.pathname === "/owner" || location.pathname === "/admin") return null;

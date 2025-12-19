@@ -3,7 +3,6 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
-import BottomNav from '@/components/BottomNav';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function Legal() {
@@ -219,8 +218,6 @@ export default function Legal() {
           {content}
         </Card>
       </div>
-
-      {isMobile && <BottomNav />}
     </div>
   );
 }
