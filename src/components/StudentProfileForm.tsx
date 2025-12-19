@@ -1315,6 +1315,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
           placeholder="Enter your budget"
           type="number"
           min="0"
+          max="2000"
         />
       </ProfileFieldModal>
 

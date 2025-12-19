@@ -91,10 +91,18 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
 
   const STORAGE_KEY = `roomy_student_onboarding_${user?.id}`;
 
-  // Calculate total steps dynamically based on accommodation status
+  // Calculate total steps dynamically based on accommodation status and personality matching
   const getTotalSteps = () => {
-    // If have_dorm, skip housing preferences step (step 7)
-    return formData.accommodation_status === 'have_dorm' ? 10 : 11;
+    const hasHousingPrefs = formData.accommodation_status === 'need_dorm';
+    const hasPersonalitySteps = formData.enable_personality_matching;
+    
+    // Base: 12 steps (0-11)
+    // Skip step 7 if have_dorm (-1)
+    // Skip steps 8 and 9 if no personality matching (-2)
+    let total = 11;
+    if (!hasHousingPrefs) total -= 1; // Skip housing prefs
+    if (!hasPersonalitySteps) total -= 2; // Skip lifestyle overview + personality matching
+    return total;
   };
 
   // Load saved progress
@@ -145,10 +153,19 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
     } else {
       // Skip housing preferences step if have_dorm
       if (currentStep === 6 && formData.accommodation_status === 'have_dorm') {
-        // Skip step 7 (housing preferences) and go directly to phase 3 overview
-        setCurrentStep(8);
+        // Skip step 7 (housing preferences)
+        // Also skip phase 3 overview (8) and personality matching (9) if not enabled
+        if (!formData.enable_personality_matching) {
+          setCurrentStep(10); // Skip to profile extras
+        } else {
+          setCurrentStep(8); // Go to phase 3 overview
+        }
       } 
-      // Skip personality matching step (9) if toggle is off, go directly to profile extras (10)
+      // If need_dorm, after housing preferences (step 7), check if we should skip phase 3
+      else if (currentStep === 7 && !formData.enable_personality_matching) {
+        setCurrentStep(10); // Skip phase 3 overview (8) and personality matching (9)
+      }
+      // Skip personality matching step (9) if toggle is off (coming from phase 3 overview)
       else if (currentStep === 8 && !formData.enable_personality_matching) {
         setCurrentStep(10);
       }
@@ -160,14 +177,18 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
 
   const handleBack = () => {
     if (currentStep > 0) {
+      // When going back from profile extras (10) and personality matching is off
+      if (currentStep === 10 && !formData.enable_personality_matching) {
+        if (formData.accommodation_status === 'have_dorm') {
+          setCurrentStep(6); // Skip back to accommodation status
+        } else {
+          setCurrentStep(7); // Skip back to housing preferences
+        }
+      }
       // When going back from phase 3 overview (8) and have_dorm, skip to accommodation status (6)
-      if (currentStep === 8 && formData.accommodation_status === 'have_dorm') {
+      else if (currentStep === 8 && formData.accommodation_status === 'have_dorm') {
         setCurrentStep(6);
       } 
-      // When going back from profile extras (10) and personality matching is off, skip to phase 3 overview (8)
-      else if (currentStep === 10 && !formData.enable_personality_matching) {
-        setCurrentStep(8);
-      }
       else {
         setCurrentStep(prev => prev - 1);
       }
