@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, CreditCard, Plus, Trash2, Star, Loader2 } from 'lucide-react';
+import { CreditCard, Plus, Trash2, Star, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,8 @@ import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
-import BottomNav from '@/components/BottomNav';
+import { SubPageHeader } from '@/components/mobile/SubPageHeader';
+import { SwipeBackWrapper } from '@/components/mobile/SwipeBackWrapper';
 
 interface PaymentMethod {
   id: string;
@@ -187,25 +188,18 @@ export default function Wallet() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      {!isMobile && <RoomyNavbar />}
+    <SwipeBackWrapper>
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+        {isMobile && <SubPageHeader title="My Wallet" />}
+        {!isMobile && <RoomyNavbar />}
 
-      <div className="container mx-auto px-4 py-8 pt-24 pb-32 max-w-2xl">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/settings')}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Settings
-        </Button>
-
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold gradient-text">My Wallet</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your Whish cards & payment preferences
-          </p>
-        </div>
+        <div className={`container mx-auto px-4 max-w-2xl ${isMobile ? 'pt-20 pb-8' : 'py-8 pt-24 pb-32'}`}>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold gradient-text">My Wallet</h1>
+            <p className="text-muted-foreground mt-2">
+              Manage your Whish cards & payment preferences
+            </p>
+          </div>
 
         {/* Add Card Button */}
         <Button
@@ -307,45 +301,44 @@ export default function Wallet() {
         </Card>
       </div>
 
-      {isMobile && <BottomNav />}
-
-      {/* Delete Confirmation Modal */}
-      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Remove this card?</DialogTitle>
-            <DialogDescription>
-              You won't be able to use this card for payments anymore. 
-              {cardToDelete?.is_default && paymentMethods.length > 1 && (
-                <span className="block mt-2 text-amber-600">
-                  Another card will be set as your default payment method.
-                </span>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteModalOpen(false)}
-              disabled={isDeleting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteCard}
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <Trash2 className="w-4 h-4 mr-2" />
-              )}
-              Remove
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+        {/* Delete Confirmation Modal */}
+        <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Remove this card?</DialogTitle>
+              <DialogDescription>
+                You won't be able to use this card for payments anymore. 
+                {cardToDelete?.is_default && paymentMethods.length > 1 && (
+                  <span className="block mt-2 text-amber-600">
+                    Another card will be set as your default payment method.
+                  </span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteModalOpen(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteCard}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Trash2 className="w-4 h-4 mr-2" />
+                )}
+                Remove
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </SwipeBackWrapper>
   );
 }

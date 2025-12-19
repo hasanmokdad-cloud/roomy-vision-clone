@@ -3,11 +3,13 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageSquare, MapPin, GraduationCap, DollarSign, Home, Users, Calendar, ChevronLeft, Loader2 } from "lucide-react";
+import { MessageSquare, MapPin, GraduationCap, DollarSign, Home, Users, Calendar, Loader2 } from "lucide-react";
 import { RoomyNavbar } from "@/components/RoomyNavbar";
 import Footer from "@/components/shared/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { SubPageHeader } from "@/components/mobile/SubPageHeader";
+import { SwipeBackWrapper } from "@/components/mobile/SwipeBackWrapper";
 
 export default function StudentProfile() {
   const { id } = useParams();
@@ -113,18 +115,12 @@ export default function StudentProfile() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {!isMobile && <RoomyNavbar />}
+    <SwipeBackWrapper>
+      <div className="min-h-screen flex flex-col bg-background">
+        {isMobile && <SubPageHeader title="View Profile" />}
+        {!isMobile && <RoomyNavbar />}
 
-      {/* Back button for mobile */}
-      <div className="lg:hidden p-4 border-b border-border mt-0">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-          <ChevronLeft className="w-4 h-4 mr-1" />
-          Back
-        </Button>
-      </div>
-
-      <main className="flex-1">
+        <main className={`flex-1 ${isMobile ? 'pt-14' : ''}`}>
         <div className="grid lg:grid-cols-[320px_1fr] min-h-[calc(100vh-120px)] lg:min-h-[calc(100vh-80px)] lg:mt-16">
           {/* Left Side - Profile Photo */}
           <div className="p-6 lg:p-12 flex flex-col items-center justify-start lg:justify-center lg:border-r border-border">
@@ -244,9 +240,10 @@ export default function StudentProfile() {
             )}
           </div>
         </div>
-      </main>
+        </main>
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </SwipeBackWrapper>
   );
 }

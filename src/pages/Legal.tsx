@@ -1,9 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { SubPageHeader } from '@/components/mobile/SubPageHeader';
+import { SwipeBackWrapper } from '@/components/mobile/SwipeBackWrapper';
 
 export default function Legal() {
   const { page } = useParams();
@@ -200,24 +200,18 @@ export default function Legal() {
   const { title, content } = getContent();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      {!isMobile && <RoomyNavbar />}
+    <SwipeBackWrapper>
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+        {isMobile && <SubPageHeader title={title} />}
+        {!isMobile && <RoomyNavbar />}
 
-      <div className="container mx-auto px-6 py-32 max-w-4xl mb-20">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(-1)}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-
-        <Card className="p-8">
-          <h1 className="text-4xl font-bold mb-8 gradient-text">{title}</h1>
-          {content}
-        </Card>
+        <div className={`container mx-auto px-6 max-w-4xl mb-20 ${isMobile ? 'pt-20 pb-8' : 'py-32'}`}>
+          <Card className="p-8">
+            <h1 className="text-4xl font-bold mb-8 gradient-text">{title}</h1>
+            {content}
+          </Card>
+        </div>
       </div>
-    </div>
+    </SwipeBackWrapper>
   );
 }

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Home, Loader2, SlidersHorizontal, Share2 } from 'lucide-react';
+import { Home, Loader2, SlidersHorizontal, Share2 } from 'lucide-react';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
-import BottomNav from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SubPageHeader } from '@/components/mobile/SubPageHeader';
+import { SwipeBackWrapper } from '@/components/mobile/SwipeBackWrapper';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
@@ -268,37 +269,52 @@ export default function SavedRooms() {
   ];
 
   return (
-    <div className="min-h-screen relative bg-gradient-to-b from-background to-muted/20">
-      {!isMobile && <RoomyNavbar />}
+    <SwipeBackWrapper>
+      <div className="min-h-screen relative bg-gradient-to-b from-background to-muted/20">
+        {isMobile && <SubPageHeader title="Saved Rooms" />}
+        {!isMobile && <RoomyNavbar />}
 
-      <div className="container mx-auto px-4 md:px-6 py-32 max-w-7xl">
-        <div className="flex items-center justify-between mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/settings')}
-            className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Settings
-          </Button>
+        <div className={`container mx-auto px-4 md:px-6 max-w-7xl ${isMobile ? 'pt-20 pb-8' : 'py-32'}`}>
+          {!isMobile && (
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <Badge variant="secondary" className="text-base">
+                  {filteredRooms.length} {filteredRooms.length === 1 ? 'Room' : 'Rooms'}
+                </Badge>
+                
+                {savedRooms.length > 0 && (
+                  <Button
+                    onClick={handleShareCollection}
+                    disabled={isGeneratingLink}
+                    className="bg-gradient-to-r from-primary to-secondary hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]"
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    {isGeneratingLink ? 'Generating...' : 'Share Collection'}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
 
-          <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="text-base">
-              {filteredRooms.length} {filteredRooms.length === 1 ? 'Room' : 'Rooms'}
-            </Badge>
-            
-            {savedRooms.length > 0 && (
-              <Button
-                onClick={handleShareCollection}
-                disabled={isGeneratingLink}
-                className="bg-gradient-to-r from-primary to-secondary hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]"
-              >
-                <Share2 className="w-4 h-4 mr-2" />
-                {isGeneratingLink ? 'Generating...' : 'Share Collection'}
-              </Button>
-            )}
-          </div>
-        </div>
+          {isMobile && (
+            <div className="flex items-center justify-between mb-4">
+              <Badge variant="secondary" className="text-base">
+                {filteredRooms.length} {filteredRooms.length === 1 ? 'Room' : 'Rooms'}
+              </Badge>
+              
+              {savedRooms.length > 0 && (
+                <Button
+                  size="sm"
+                  onClick={handleShareCollection}
+                  disabled={isGeneratingLink}
+                  className="bg-gradient-to-r from-primary to-secondary"
+                >
+                  <Share2 className="w-4 h-4 mr-1" />
+                  Share
+                </Button>
+              )}
+            </div>
+          )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -441,19 +457,19 @@ export default function SavedRooms() {
         </motion.div>
       </div>
 
-      {isMobile && <BottomNav />}
-      <Footer />
+        <Footer />
 
-      {/* Share Collection Dialog */}
-      {showShareDialog && existingCollection && (
-        <ShareCollectionDialog
-          open={showShareDialog}
-          onOpenChange={setShowShareDialog}
-          shareUrl={shareUrl}
-          collection={existingCollection}
-          onUpdateCollection={handleUpdateCollection}
-        />
-      )}
-    </div>
+        {/* Share Collection Dialog */}
+        {showShareDialog && existingCollection && (
+          <ShareCollectionDialog
+            open={showShareDialog}
+            onOpenChange={setShowShareDialog}
+            shareUrl={shareUrl}
+            collection={existingCollection}
+            onUpdateCollection={handleUpdateCollection}
+          />
+        )}
+      </div>
+    </SwipeBackWrapper>
   );
 }
