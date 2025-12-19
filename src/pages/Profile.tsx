@@ -17,6 +17,7 @@ import BottomNav from '@/components/BottomNav';
 import { MobileMenuRow } from '@/components/mobile/MobileMenuRow';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StudentOnboardingDrawer } from '@/components/student/mobile/StudentOnboardingDrawer';
+import { useBottomNav } from '@/contexts/BottomNavContext';
 
 
 
@@ -25,6 +26,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isAuthReady, isRoleReady, userId, role, isAuthenticated, openAuthModal, signOut } = useAuth();
+  const { setHideBottomNav } = useBottomNav();
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -39,6 +41,11 @@ export default function Profile() {
   const [hasCompletedProfile, setHasCompletedProfile] = useState(true); // Default true to hide button
   const [showOnboardingDrawer, setShowOnboardingDrawer] = useState(false);
   
+  // Hide bottom nav when viewing profile form (sub-page)
+  useEffect(() => {
+    setHideBottomNav(showProfileForm);
+    return () => setHideBottomNav(false);
+  }, [showProfileForm, setHideBottomNav]);
 
   // Check for ?edit=true query param to auto-show profile form
   useEffect(() => {
