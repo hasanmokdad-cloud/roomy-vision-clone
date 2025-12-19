@@ -11,11 +11,13 @@ import { toast } from '@/hooks/use-toast';
 import Footer from '@/components/shared/Footer';
 import { useTranslation } from 'react-i18next';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function BecomeOwner() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const { refreshAuth } = useAuth();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -127,15 +129,20 @@ export default function BecomeOwner() {
     }
   };
 
-  const handleDormSaved = () => {
+  const handleDormSaved = async () => {
     setIsSubmitting(false);
     toast({
       title: t('becomeOwner.success', 'Welcome to Roomy Owners!'),
       description: t('becomeOwner.successDesc', 'Your dorm has been submitted for verification. You can now access your owner dashboard.'),
     });
 
-    // Navigate to owner dashboard
-    navigate('/owner', { replace: true });
+    // Refresh auth context to get new owner role
+    await refreshAuth();
+    
+    // Small delay to ensure state propagates before navigation
+    setTimeout(() => {
+      navigate('/owner', { replace: true });
+    }, 100);
   };
 
   if (loading) {

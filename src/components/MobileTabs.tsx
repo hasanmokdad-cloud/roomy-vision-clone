@@ -1,7 +1,5 @@
 // Instagram/Airbnb-style mobile bottom navbar - icons only, clean design
-import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { useBottomNav } from "@/contexts/BottomNavContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,28 +26,9 @@ export default function MobileTabs() {
   const navigate = useNavigate();
   const location = useLocation();
   const { hideBottomNav } = useBottomNav();
-  const { isAuthenticated, userId } = useAuth();
-  const [userRole, setUserRole] = useState<string | null>(null);
+  // Use role directly from AuthContext - ensures it updates when role changes
+  const { isAuthenticated, userId, role } = useAuth();
   const { unreadCount } = useUnreadCount(userId);
-
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      if (!userId) {
-        setUserRole(null);
-        return;
-      }
-
-      const { data: roleRow } = await supabase
-        .from("user_roles")
-        .select("roles(name)")
-        .eq("user_id", userId)
-        .single();
-
-      setUserRole(roleRow?.roles?.name || 'student');
-    };
-
-    fetchUserRole();
-  }, [userId]);
 
   // Role-based tab configurations
   const getTabs = (): TabConfig[] => {
@@ -64,7 +43,7 @@ export default function MobileTabs() {
       ];
     }
 
-    if (userRole === 'owner') {
+    if (role === 'owner') {
       return [
         { path: "/owner/wallet", icon: Wallet, label: "Wallet" },
         { path: "/owner/bookings", icon: CalendarDays, label: "Bookings" },
@@ -74,7 +53,7 @@ export default function MobileTabs() {
       ];
     }
 
-    if (userRole === 'admin') {
+    if (role === 'admin') {
       return [
         { path: "/admin/wallet", icon: Wallet, label: "Wallet" },
         { path: "/admin/chats", icon: MessageCircle, label: "Chats" },
