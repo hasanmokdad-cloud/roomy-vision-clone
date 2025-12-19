@@ -22,36 +22,24 @@ const StudentWizardFooter = ({
   canProceed,
   isSubmitting = false
 }: StudentWizardFooterProps) => {
-  // Calculate phase (3 phases total)
-  const getPhase = () => {
-    if (currentStep <= 4) return 1; // About You
-    if (currentStep <= 7) return 2; // Lifestyle
-    return 3; // Preferences
-  };
-  
-  const phase = getPhase();
+  // Calculate progress percentage
+  const progressPercent = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
-      {/* Progress bar */}
-      <div className="flex gap-1 px-4 pt-3">
-        {[1, 2, 3].map((p) => (
-          <div
-            key={p}
-            className={`h-1 flex-1 rounded-full transition-colors ${
-              p <= phase ? 'bg-primary' : 'bg-muted'
-            }`}
+      {/* Continuous progress bar */}
+      <div className="px-4 pt-3 pb-2">
+        <div className="h-1 rounded-full bg-muted overflow-hidden">
+          <div 
+            className="h-full bg-primary transition-all duration-300 ease-out"
+            style={{ width: `${progressPercent}%` }}
           />
-        ))}
-      </div>
-      
-      {/* Phase label */}
-      <div className="px-4 pt-1 pb-2">
-        <span className="text-xs text-muted-foreground">
-          {phase === 1 && 'About You'}
-          {phase === 2 && 'Lifestyle'}
-          {phase === 3 && 'Preferences'}
-        </span>
+        </div>
+        <div className="flex justify-between mt-1">
+          <span className="text-xs text-muted-foreground">
+            Step {currentStep} of {totalSteps}
+          </span>
+        </div>
       </div>
       
       {/* Navigation buttons */}

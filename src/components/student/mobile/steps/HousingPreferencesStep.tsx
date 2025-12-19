@@ -25,7 +25,7 @@ interface HousingPreferencesStepProps {
 }
 
 const HousingPreferencesStep = ({ data, onChange }: HousingPreferencesStepProps) => {
-  const budgetPresets = [200, 300, 400, 500];
+  const budgetPresets = [300, 500, 800, 1000];
 
   const cities = [
     { value: 'byblos', label: 'Byblos' },
@@ -88,7 +88,7 @@ const HousingPreferencesStep = ({ data, onChange }: HousingPreferencesStepProps)
             value={[data.budget]}
             onValueChange={(value) => onChange({ budget: value[0] })}
             min={100}
-            max={800}
+            max={2000}
             step={25}
             className="mb-4"
           />
@@ -111,14 +111,14 @@ const HousingPreferencesStep = ({ data, onChange }: HousingPreferencesStepProps)
             ))}
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={() => onChange({ budget: 600 })}
+              onClick={() => onChange({ budget: 1500 })}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                data.budget >= 500
+                data.budget >= 1200
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
-              $500+
+              $1200+
             </motion.button>
           </div>
         </div>
