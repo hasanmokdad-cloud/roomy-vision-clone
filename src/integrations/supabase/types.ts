@@ -2889,6 +2889,108 @@ export type Database = {
           },
         ]
       }
+      room_occupancy_claims: {
+        Row: {
+          claim_type: string
+          confirmed_at: string | null
+          created_at: string | null
+          dorm_id: string
+          id: string
+          owner_id: string
+          rejected_at: string | null
+          rejection_reason: string | null
+          room_id: string
+          status: string
+          student_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          claim_type?: string
+          confirmed_at?: string | null
+          created_at?: string | null
+          dorm_id: string
+          id?: string
+          owner_id: string
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          room_id: string
+          status?: string
+          student_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          claim_type?: string
+          confirmed_at?: string | null
+          created_at?: string | null
+          dorm_id?: string
+          id?: string
+          owner_id?: string
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          room_id?: string
+          status?: string
+          student_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_occupancy_claims_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_claims_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_claims_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_claims_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_claims_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owner_messaging_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_claims_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_claims_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_claims_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       roommate_matches: {
         Row: {
           advanced_score: number | null
@@ -2946,6 +3048,7 @@ export type Database = {
           name: string
           panorama_urls: string[] | null
           price: number
+          roomy_confirmed_occupants: number | null
           three_d_model_url: string | null
           type: string
           updated_at: string
@@ -2965,6 +3068,7 @@ export type Database = {
           name: string
           panorama_urls?: string[] | null
           price: number
+          roomy_confirmed_occupants?: number | null
           three_d_model_url?: string | null
           type: string
           updated_at?: string
@@ -2984,6 +3088,7 @@ export type Database = {
           name?: string
           panorama_urls?: string[] | null
           price?: number
+          roomy_confirmed_occupants?: number | null
           three_d_model_url?: string | null
           type?: string
           updated_at?: string
@@ -3308,6 +3413,7 @@ export type Database = {
           ai_match_tier_last_paid_at: string | null
           budget: number | null
           compatibility_test_completed: boolean | null
+          confirmation_type: string | null
           created_at: string | null
           current_dorm_id: string | null
           current_room_id: string | null
@@ -3359,6 +3465,8 @@ export type Database = {
           profile_completion_score: number | null
           profile_photo_url: string | null
           residential_area: string | null
+          room_confirmed: boolean | null
+          room_confirmed_at: string | null
           room_type: string | null
           roommate_needed: boolean | null
           roommates_needed: number | null
@@ -3379,6 +3487,7 @@ export type Database = {
           ai_match_tier_last_paid_at?: string | null
           budget?: number | null
           compatibility_test_completed?: boolean | null
+          confirmation_type?: string | null
           created_at?: string | null
           current_dorm_id?: string | null
           current_room_id?: string | null
@@ -3430,6 +3539,8 @@ export type Database = {
           profile_completion_score?: number | null
           profile_photo_url?: string | null
           residential_area?: string | null
+          room_confirmed?: boolean | null
+          room_confirmed_at?: string | null
           room_type?: string | null
           roommate_needed?: boolean | null
           roommates_needed?: number | null
@@ -3450,6 +3561,7 @@ export type Database = {
           ai_match_tier_last_paid_at?: string | null
           budget?: number | null
           compatibility_test_completed?: boolean | null
+          confirmation_type?: string | null
           created_at?: string | null
           current_dorm_id?: string | null
           current_room_id?: string | null
@@ -3501,6 +3613,8 @@ export type Database = {
           profile_completion_score?: number | null
           profile_photo_url?: string | null
           residential_area?: string | null
+          room_confirmed?: boolean | null
+          room_confirmed_at?: string | null
           room_type?: string | null
           roommate_needed?: boolean | null
           roommates_needed?: number | null
