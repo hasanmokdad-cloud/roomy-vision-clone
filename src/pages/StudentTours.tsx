@@ -14,6 +14,8 @@ import { MeetingLinkButton } from '@/components/bookings/MeetingLinkButton';
 import { AddToCalendarDropdown } from '@/components/bookings/AddToCalendarDropdown';
 import { sendTourSystemMessage } from '@/lib/tourMessaging';
 import { type MeetingPlatform } from '@/lib/meetingUtils';
+import { SwipeableSubPage } from '@/components/mobile/SwipeableSubPage';
+import { SubPageHeader } from '@/components/mobile/SubPageHeader';
 
 type TourBooking = {
   id: string;
@@ -205,9 +207,11 @@ export default function StudentTours() {
   );
 
   return (
+    <SwipeableSubPage enabled={isMobile}>
     <div className="min-h-screen bg-background">
+      {isMobile && <SubPageHeader title="My Tours" />}
       {!isMobile && <RoomyNavbar />}
-      <main className={`pt-16 ${isMobile ? 'pb-20' : ''}`}>
+      <main className={`${isMobile ? 'pt-20 pb-20' : 'pt-16'}`}>
         <div className="container mx-auto px-4 py-8 max-w-4xl space-y-6">
           <div>
             <h1 className="text-3xl font-bold mb-2">My Tours</h1>
@@ -363,5 +367,6 @@ export default function StudentTours() {
       </main>
       {isMobile && <BottomNav />}
     </div>
+    </SwipeableSubPage>
   );
 }

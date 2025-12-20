@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ResponsiveAlertModal } from "@/components/ui/responsive-alert-modal";
 import { formatDistanceToNow } from "date-fns";
+import { SwipeableSubPage } from "@/components/mobile/SwipeableSubPage";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Device {
   id: string;
@@ -135,7 +137,10 @@ export default function DevicesPage() {
     );
   }
 
+  const isMobile = useIsMobile();
+  
   return (
+    <SwipeableSubPage enabled={isMobile}>
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3">
@@ -245,5 +250,6 @@ export default function DevicesPage() {
         isLoading={deleting}
       />
     </div>
+    </SwipeableSubPage>
   );
 }

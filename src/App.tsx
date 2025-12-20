@@ -275,7 +275,7 @@ const AppRoutes = () => {
           <Route path="/my-tours" element={<ProtectedRoute element={<StudentTours />} forbiddenRoles={["owner"]} />} />
           <Route path="/onboarding" element={<ProtectedRoute element={<Onboarding />} />} />
           <Route path="/onboarding/student" element={<ProtectedRoute element={<StudentOnboarding />} requiredRole="student" />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile" element={<MobileSwipeLayout><Profile /></MobileSwipeLayout>} />
           <Route path="/settings" element={<ProtectedRoute element={<Settings />} />} />
           <Route path="/settings/devices" element={<ProtectedRoute element={<DevicesPage />} />} />
           <Route path="/settings/notifications" element={<ProtectedRoute element={<NotificationsSettings />} />} />
@@ -286,8 +286,8 @@ const AppRoutes = () => {
           <Route path="/profile/preferences" element={<ProtectedRoute element={<Preferences />} requiredRole="student" />} />
           <Route path="/saved-dorms" element={<ProtectedRoute element={<SavedDorms />} />} />
           <Route path="/saved-rooms" element={<ProtectedRoute element={<SavedRooms />} />} />
-          <Route path="/wishlists" element={<OnboardingGuard><Wishlists /></OnboardingGuard>} />
-          <Route path="/messages" element={<OnboardingGuard><Messages /></OnboardingGuard>} />
+          <Route path="/wishlists" element={<OnboardingGuard><MobileSwipeLayout><Wishlists /></MobileSwipeLayout></OnboardingGuard>} />
+          <Route path="/messages" element={<OnboardingGuard><MobileSwipeLayout><Messages /></MobileSwipeLayout></OnboardingGuard>} />
           <Route path="/student-profile/:id" element={<ProtectedRoute element={<OnboardingGuard><StudentProfile /></OnboardingGuard>} />} />
           <Route path="/roommate/:userId" element={<ProtectedRoute element={<OnboardingGuard><RoommateProfile /></OnboardingGuard>} />} />
           <Route path="/ai-match" element={<OnboardingGuard><MobileSwipeLayout><AiMatch /></MobileSwipeLayout></OnboardingGuard>} />
@@ -295,7 +295,7 @@ const AppRoutes = () => {
           <Route path="/boost-profile" element={<ProtectedRoute element={<BoostProfile />} />} />
           <Route path="/personality" element={<ProtectedRoute element={<PersonalityTest />} requiredRole="student" />} />
           <Route path="/compatibility-test" element={<ProtectedRoute element={<CompatibilityTest />} requiredRole="student" />} />
-          <Route path="/ai-chat" element={<ProtectedRoute element={<MobileSwipeLayout><AiChat /></MobileSwipeLayout>} />} />
+          <Route path="/ai-chat" element={<ProtectedRoute element={<AiChat />} />} />
           <Route path="/reservation/confirmation" element={<ProtectedRoute element={<ReservationConfirmation />} requiredRole="student" />} />
           <Route path="/reservation/success" element={<ProtectedRoute element={<ReservationSuccess />} requiredRole="student" />} />
           <Route path="/reservation/failed" element={<ProtectedRoute element={<ReservationFailed />} requiredRole="student" />} />

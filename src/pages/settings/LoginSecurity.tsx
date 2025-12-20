@@ -17,6 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MobileMenuRow } from '@/components/mobile/MobileMenuRow';
 import BottomNav from '@/components/BottomNav';
+import { SwipeableSubPage } from '@/components/mobile/SwipeableSubPage';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function LoginSecurity() {
   const navigate = useNavigate();
@@ -119,7 +121,10 @@ export default function LoginSecurity() {
     }
   };
 
+  const isMobile = useIsMobile();
+
   return (
+    <SwipeableSubPage enabled={isMobile}>
     <div className="min-h-screen bg-background">
       <div className="pt-6 px-6 pb-32">
         <motion.div
@@ -256,5 +261,6 @@ export default function LoginSecurity() {
 
       <BottomNav />
     </div>
+    </SwipeableSubPage>
   );
 }
