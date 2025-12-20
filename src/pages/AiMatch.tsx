@@ -271,33 +271,49 @@ const AiMatch = () => {
     return 'roommate';
   };
 
-  // Fetch matches using AI Core with timeout
-  const fetchMatches = async (excludeIds?: string[]) => {
+  // Fetch matches using AI Core with timeout and retry
+  const fetchMatches = async (excludeIds?: string[], retryCount = 0) => {
     setLoading(true);
-    setAiInsights(''); // Clear stale insights immediately
+    if (retryCount === 0) {
+      setAiInsights(''); // Clear stale insights on first attempt only
+    }
 
-    // Create timeout for request
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
+    // Timeout promise for mobile reliability
+    const timeoutMs = 25000; // 25s timeout
+    
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout')), timeoutMs);
+    });
 
     try {
       const backendMode = getBackendMode(matchMode);
-      const { data, error } = await supabase.functions.invoke('roomy-ai-core', {
-        body: {
-          mode: backendMode,
-          match_tier: selectedPlan,
-          personality_enabled: studentProfile?.enable_personality_matching || false,
-          limit: matchMode === 'rooms' ? 20 : undefined,
-          context: {},
-          exclude_ids: excludeIds
+      
+      // Race between the actual request and timeout
+      const { data, error } = await Promise.race([
+        supabase.functions.invoke('roomy-ai-core', {
+          body: {
+            mode: backendMode,
+            match_tier: selectedPlan,
+            personality_enabled: studentProfile?.enable_personality_matching || false,
+            limit: matchMode === 'rooms' ? 20 : undefined,
+            context: {},
+            exclude_ids: excludeIds
+          }
+        }),
+        timeoutPromise
+      ]);
+
+      if (error) {
+        // Retry once on transient errors
+        if (retryCount < 1 && (error.message?.includes('FunctionsFetchError') || error.message?.includes('network'))) {
+          console.log('[AiMatch] Retrying after transient error...');
+          await new Promise(r => setTimeout(r, 1000));
+          return fetchMatches(excludeIds, retryCount + 1);
         }
-      });
+        throw error;
+      }
 
-      clearTimeout(timeoutId);
-
-      if (error) throw error;
-
-      if (data.matches) {
+      if (data?.matches) {
         // Filter matches to ensure correct type for current mode
         const expectedType = matchMode === 'rooms' ? 'room' : 'roommate';
         const filteredMatches = data.matches.filter((m: any) => m.type === expectedType);
@@ -309,19 +325,29 @@ const AiMatch = () => {
       }
 
     } catch (error: any) {
-      console.error('Error fetching matches:', error);
-      clearTimeout(timeoutId);
+      console.error('[AiMatch] Error fetching matches:', error);
+      
+      // Retry once on timeout if not already retried
+      if (retryCount < 1 && error?.message?.includes('timeout')) {
+        console.log('[AiMatch] Retrying after timeout...');
+        await new Promise(r => setTimeout(r, 500));
+        return fetchMatches(excludeIds, retryCount + 1);
+      }
       
       // Don't leave stale state on error
       setMatches([]);
       setAiInsights('');
       
-      const isTimeout = error?.name === 'AbortError' || error?.message?.includes('timeout');
+      const isTimeout = error?.message?.includes('timeout');
+      const isNetwork = error?.message?.includes('FunctionsFetchError') || error?.message?.includes('network');
+      
       toast({
-        title: isTimeout ? "Request Timeout" : "Error",
+        title: isTimeout ? "Request Timeout" : isNetwork ? "Connection Error" : "Error",
         description: isTimeout 
           ? "AI matching is taking too long. Please try again." 
-          : "Failed to load matches. Please try again.",
+          : isNetwork
+            ? "Network issue detected. Check your connection and try again."
+            : "Failed to load matches. Please try again.",
         variant: "destructive"
       });
     } finally {
