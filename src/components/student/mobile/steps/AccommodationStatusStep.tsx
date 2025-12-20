@@ -9,8 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Home, Search, Users, Sparkles } from 'lucide-react';
+import { Home, Search, Users, Sparkles, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
 
 interface AccommodationStatusStepProps {
   data: {
@@ -34,6 +35,8 @@ interface Room {
   name: string;
   type: string | null;
   capacity: number | null;
+  capacity_occupied: number | null;
+  roomy_confirmed_occupants: number | null;
 }
 
 const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProps) => {
@@ -67,7 +70,7 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
     }
   }, [data.accommodation_status]);
 
-  // Fetch rooms for selected dorm
+  // Fetch rooms for selected dorm with occupancy data
   useEffect(() => {
     const fetchRooms = async () => {
       if (!data.current_dorm_id) {
@@ -79,9 +82,8 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
       try {
         const { data: roomsData } = await supabase
           .from('rooms')
-          .select('id, name, type, capacity')
+          .select('id, name, type, capacity, capacity_occupied, roomy_confirmed_occupants')
           .eq('dorm_id', data.current_dorm_id)
-          .eq('available', true)
           .order('name');
         
         setRooms(roomsData || []);
@@ -95,11 +97,31 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
     fetchRooms();
   }, [data.current_dorm_id]);
 
-  // Check if room is single (no roommate toggle needed)
+  // Check if room can be selected (not fully booked via Roomy)
+  const canSelectRoom = (room: Room): boolean => {
+    const capacity = room.capacity || 1;
+    const roomyConfirmed = room.roomy_confirmed_occupants || 0;
+    return roomyConfirmed < capacity;
+  };
+
+  // Get room display with occupancy
+  const getRoomDisplay = (room: Room): string => {
+    const capacity = room.capacity || 1;
+    const occupied = room.capacity_occupied || 0;
+    const typeLabel = room.type ? ` - ${room.type}` : '';
+    return `${room.name}${typeLabel} (${occupied}/${capacity})`;
+  };
+
+  // Check if selected room is single
   const selectedRoom = rooms.find(r => r.id === data.current_room_id);
   const isSingleRoom = selectedRoom?.type?.toLowerCase().includes('single') || 
                        selectedRoom?.type?.toLowerCase().includes('private') ||
                        selectedRoom?.capacity === 1;
+
+  // Check if room is full (for hiding roommate toggle)
+  const isRoomFull = selectedRoom ? 
+    (selectedRoom.capacity_occupied || 0) >= (selectedRoom.capacity || 1) : 
+    false;
 
   const statusOptions = [
     { 
@@ -174,6 +196,14 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
             <div className="p-4 rounded-xl bg-muted/50 space-y-4">
               <h3 className="font-semibold text-foreground">Your Current Dorm</h3>
               
+              {/* Info about claim process */}
+              <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg text-sm">
+                <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                <p className="text-amber-700 dark:text-amber-300">
+                  After selecting your room, your claim will be sent to the owner for confirmation.
+                </p>
+              </div>
+              
               {/* Dorm Dropdown */}
               <div>
                 <Label className="text-sm font-medium">Select your dorm</Label>
@@ -195,7 +225,7 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
                 </Select>
               </div>
 
-              {/* Room Dropdown */}
+              {/* Room Dropdown with Occupancy */}
               {data.current_dorm_id && (
                 <div>
                   <Label className="text-sm font-medium">Select your room</Label>
@@ -212,21 +242,47 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
                       } />
                     </SelectTrigger>
                     <SelectContent>
-                      {rooms.map((room) => (
-                        <SelectItem key={room.id} value={room.id}>
-                          {room.name} {room.type ? `(${room.type})` : ''}
-                        </SelectItem>
-                      ))}
+                      {rooms.map((room) => {
+                        const canSelect = canSelectRoom(room);
+                        const capacity = room.capacity || 1;
+                        const occupied = room.capacity_occupied || 0;
+                        
+                        return (
+                          <SelectItem 
+                            key={room.id} 
+                            value={room.id}
+                            disabled={!canSelect}
+                            className={!canSelect ? 'opacity-50' : ''}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span>{getRoomDisplay(room)}</span>
+                              {!canSelect && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Fully Reserved
+                                </Badge>
+                              )}
+                              {occupied >= capacity && canSelect && (
+                                <Badge variant="outline" className="text-xs">
+                                  Full
+                                </Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Rooms showing (occupied/capacity). Rooms fully reserved via Roomy are disabled.
+                  </p>
                 </div>
               )}
             </div>
           </motion.div>
         )}
 
-        {/* Roommate Search Toggle - Only show for have_dorm with non-single room */}
-        {(data.accommodation_status === 'have_dorm' && data.current_room_id && !isSingleRoom) && (
+        {/* Roommate Search Toggle - Only show for have_dorm with non-single room and room not full */}
+        {(data.accommodation_status === 'have_dorm' && data.current_room_id && !isSingleRoom && !isRoomFull) && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -253,7 +309,8 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
           data.accommodation_status === 'have_dorm' && 
           data.current_dorm_id && 
           data.current_room_id && 
-          !isSingleRoom && (
+          !isSingleRoom && 
+          !isRoomFull && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
