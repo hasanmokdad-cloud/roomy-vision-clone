@@ -639,7 +639,7 @@ async function fetchRoommateMatches(
   
   let query = supabase
     .from('students')
-    .select('*, current_dorm:dorms!current_dorm_id(name, area), current_room:rooms!current_room_id(name, type, capacity, capacity_occupied)')
+    .select('*, current_dorm:dorms!current_dorm_id(name, dorm_name, area), current_room:rooms!current_room_id(name, type, capacity, capacity_occupied)')
     .neq('id', student.id);
 
   // Exclude dismissed roommates
@@ -736,6 +736,9 @@ async function fetchRoommateMatches(
       type: 'roommate',
       score: overallScore,
       compatibility_score: usePersonality ? overallScore : null,
+      // Add confirmed room info for display
+      current_room_name: candidate.room_confirmed && candidate.current_room ? candidate.current_room.name : null,
+      current_dorm_name: candidate.room_confirmed && candidate.current_dorm ? (candidate.current_dorm.dorm_name || candidate.current_dorm.name) : null,
       subScores: {
         lifestyle_score: lifestyleScore,
         cleanliness_score: cleanlinessScore,

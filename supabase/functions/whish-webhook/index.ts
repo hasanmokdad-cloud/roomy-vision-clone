@@ -278,21 +278,55 @@ async function handleReservationPayment(supabaseClient: any, payload: any, metad
     room_id: reservation.room_id 
   });
 
-  // Update student's current dorm/room after successful payment
+  // Increment roomy_confirmed_occupants for reservation-based bookings
+  const { data: currentRoom } = await supabaseClient
+    .from('rooms')
+    .select('roomy_confirmed_occupants')
+    .eq('id', reservation.room_id)
+    .single();
+
+  if (currentRoom) {
+    await supabaseClient
+      .from('rooms')
+      .update({ 
+        roomy_confirmed_occupants: (currentRoom.roomy_confirmed_occupants || 0) + 1 
+      })
+      .eq('id', reservation.room_id);
+  }
+
+  // Update student's current dorm/room after successful payment with room confirmation
   await supabaseClient
     .from('students')
     .update({
       current_dorm_id: reservation.dorm_id,
       current_room_id: reservation.room_id,
-      accommodation_status: 'have_dorm'
+      accommodation_status: 'have_dorm',
+      room_confirmed: true,
+      room_confirmed_at: new Date().toISOString(),
+      confirmation_type: 'reservation'
     })
     .eq('id', reservation.student_id);
+
+  // Create a confirmed room_occupancy_claim for consistency tracking
+  await supabaseClient
+    .from('room_occupancy_claims')
+    .insert({
+      student_id: reservation.student_id,
+      room_id: reservation.room_id,
+      dorm_id: reservation.dorm_id,
+      owner_id: ownerId,
+      status: 'confirmed',
+      claim_type: 'reservation',
+      confirmed_at: new Date().toISOString()
+    });
 
   console.log('Reservation payment processed:', {
     reservationId,
     roomId: reservation.room_id,
     studentId: reservation.student_id,
-    autoUpdatedStudentProfile: true
+    autoUpdatedStudentProfile: true,
+    roomConfirmed: true,
+    claimCreated: true
   });
 
   // Get room and dorm details for notifications

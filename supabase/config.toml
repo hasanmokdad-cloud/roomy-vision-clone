@@ -95,3 +95,6 @@ verify_jwt = true
 
 [functions.confirm-room-occupant]
 verify_jwt = true
+
+[functions.student-checkout]
+verify_jwt = true
