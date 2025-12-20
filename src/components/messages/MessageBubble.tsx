@@ -12,6 +12,9 @@ import { MessageActionOverlay } from "./MessageActionOverlay";
 import { ForwardMessageSheet } from "./ForwardMessageSheet";
 import { MediaLightbox } from "./MediaLightbox";
 import { HighlightedText } from "./ConversationSearchBar";
+import { AnimatedReaction } from "./AnimatedReaction";
+import { InlineReactionCelebration } from "./ReactionCelebration";
+import { ReactionSummarySheet } from "./ReactionSummarySheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -100,6 +103,10 @@ export function MessageBubble({
   const [reactions, setReactions] = useState<MessageReaction[]>([]);
   const [localIsStarred, setLocalIsStarred] = useState(message.is_starred);
   const [localIsPinned, setLocalIsPinned] = useState(message.is_pinned);
+  const [showReactionSummary, setShowReactionSummary] = useState(false);
+  const [selectedSummaryEmoji, setSelectedSummaryEmoji] = useState<string | null>(null);
+  const [celebrationEmoji, setCelebrationEmoji] = useState<string | null>(null);
+  const [newReactionEmojis, setNewReactionEmojis] = useState<Set<string>>(new Set());
   const longPressTimerRef = useRef<NodeJS.Timeout>();
   const touchStartPosRef = useRef({ x: 0, y: 0 });
 
@@ -184,6 +191,20 @@ export function MessageBubble({
           throw error;
         }
       } else {
+        // Trigger celebration effect
+        setCelebrationEmoji(emoji);
+        haptics.selection();
+        
+        // Mark this emoji as new for animation
+        setNewReactionEmojis(prev => new Set(prev).add(emoji));
+        setTimeout(() => {
+          setNewReactionEmojis(prev => {
+            const next = new Set(prev);
+            next.delete(emoji);
+            return next;
+          });
+        }, 500);
+
         // Optimistic update - add immediately to local state
         const tempReaction = {
           id: `temp-${Date.now()}`,
@@ -599,28 +620,41 @@ export function MessageBubble({
           )}
         </div>
 
-        {/* Reactions Display - below message */}
+        {/* Celebration effect */}
+        <InlineReactionCelebration
+          emoji={celebrationEmoji}
+          onComplete={() => setCelebrationEmoji(null)}
+          position={isSender ? "right" : "left"}
+        />
+
+        {/* Reactions Display - below message with animations */}
         {Object.keys(groupedReactions).length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1">
+          <div className="flex flex-wrap gap-1 mt-1 relative">
             {Object.entries(groupedReactions).map(([emoji, data]) => (
-              <button
+              <AnimatedReaction
                 key={emoji}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleReactionSelect(emoji);
+                emoji={emoji}
+                count={data.count}
+                userReacted={data.userReacted}
+                isNew={newReactionEmojis.has(emoji)}
+                onClick={() => handleReactionSelect(emoji)}
+                onLongPress={() => {
+                  setSelectedSummaryEmoji(emoji);
+                  setShowReactionSummary(true);
                 }}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${
-                  data.userReacted
-                    ? "bg-primary/20 border border-primary"
-                    : "bg-muted border border-border"
-                }`}
-              >
-                <span>{emoji}</span>
-                <span className="font-medium">{data.count}</span>
-              </button>
+              />
             ))}
           </div>
         )}
+
+        {/* Reaction Summary Sheet */}
+        <ReactionSummarySheet
+          open={showReactionSummary}
+          onOpenChange={setShowReactionSummary}
+          messageId={message.id}
+          currentUserId={userId}
+          initialEmoji={selectedSummaryEmoji || undefined}
+        />
 
         {/* Full Emoji Picker */}
         <EmojiPickerSheet

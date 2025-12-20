@@ -21,28 +21,61 @@ export function ReactionBar({ onReactionSelect, onOpenFullPicker, selectedEmojis
       className={`absolute -top-14 z-50 ${isSender ? 'right-0' : 'left-0'}`}
     >
       <div className="bg-popover border border-border rounded-full shadow-lg px-2 py-2 flex items-center gap-1">
-        {WHATSAPP_REACTIONS.map((emoji) => (
-          <Button
+        {WHATSAPP_REACTIONS.map((emoji, index) => (
+          <motion.div
             key={emoji}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ 
+              delay: index * 0.03, 
+              type: "spring",
+              stiffness: 500,
+              damping: 25
+            }}
+          >
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-10 w-10 p-0 text-2xl hover:scale-125 active:scale-90 transition-transform ${
+                selectedEmojis.includes(emoji) ? 'bg-accent' : ''
+              }`}
+              onClick={() => onReactionSelect(emoji)}
+            >
+              <motion.span
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.8 }}
+              >
+                {emoji}
+              </motion.span>
+            </Button>
+          </motion.div>
+        ))}
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: WHATSAPP_REACTIONS.length * 0.03 + 0.05 }}
+        >
+          <div className="w-px h-6 bg-border mx-1" />
+        </motion.div>
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ 
+            delay: WHATSAPP_REACTIONS.length * 0.03 + 0.08,
+            type: "spring",
+            stiffness: 500,
+            damping: 25
+          }}
+        >
+          <Button
             variant="ghost"
             size="sm"
-            className={`h-10 w-10 p-0 text-2xl hover:scale-110 transition-transform ${
-              selectedEmojis.includes(emoji) ? 'bg-accent' : ''
-            }`}
-            onClick={() => onReactionSelect(emoji)}
+            className="h-10 w-10 p-0 hover:scale-110 active:scale-90 transition-transform"
+            onClick={onOpenFullPicker}
           >
-            {emoji}
+            <Plus className="h-5 w-5" />
           </Button>
-        ))}
-        <div className="w-px h-6 bg-border mx-1" />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-10 w-10 p-0 hover:scale-110 transition-transform"
-          onClick={onOpenFullPicker}
-        >
-          <Plus className="h-5 w-5" />
-        </Button>
+        </motion.div>
       </div>
     </motion.div>
   );
