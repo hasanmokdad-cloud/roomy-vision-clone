@@ -154,7 +154,7 @@ function ProtectedRoute({
   forbiddenRoles?: ("admin" | "owner" | "student")[];
 }) {
   const location = useLocation();
-  const { isAuthReady, isAuthenticated, role, openAuthModal, isSigningOut } = useAuth();
+  const { isAuthReady, isRoleReady, isAuthenticated, role, openAuthModal, isSigningOut } = useAuth();
   const isMobile = useIsMobile();
 
   // During sign-out, immediately redirect to listings - never show modal
@@ -162,7 +162,8 @@ function ProtectedRoute({
     return <Navigate to="/listings" replace />;
   }
 
-  if (!isAuthReady) {
+  // Wait for both auth AND role to be ready before making decisions
+  if (!isAuthReady || !isRoleReady) {
     return (
       <div className="flex h-screen items-center justify-center">
         <p className="text-foreground/60">Loading...</p>

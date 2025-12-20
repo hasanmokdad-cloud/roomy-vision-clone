@@ -32,14 +32,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const initRef = useRef(false);
   const isSigningOutRef = useRef(false);
+  const lastHandledUserRef = useRef<string | null>(null);
 
-  const fetchRole = useCallback(async (userId: string): Promise<AppRole> => {
+  const fetchRole = useCallback(async (userId: string, retryCount = 0): Promise<AppRole> => {
     try {
       const { data, error } = await supabase.rpc('get_user_role', { p_user_id: userId });
       if (error) {
         console.warn('Failed to fetch role:', error);
         return null;
       }
+      
+      // If null and user is authenticated, retry (role might still be getting created)
+      if (!data && retryCount < 2) {
+        console.log('🔄 AuthContext: Role is null, retrying in 500ms...');
+        await new Promise(r => setTimeout(r, 500));
+        return fetchRole(userId, retryCount + 1);
+      }
+      
       return data as AppRole;
     } catch (err) {
       console.warn('Error fetching role:', err);
@@ -136,6 +145,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (event === 'SIGNED_IN' && newSession?.user) {
+        // Skip duplicate SIGNED_IN events for the same user
+        if (lastHandledUserRef.current === newSession.user.id) {
+          console.log('🔄 AuthContext: Skipping duplicate SIGNED_IN for same user');
+          return;
+        }
+        lastHandledUserRef.current = newSession.user.id;
+        
         console.log('👤 AuthContext: User signed in');
         setSession(newSession);
         setUser(newSession.user);
