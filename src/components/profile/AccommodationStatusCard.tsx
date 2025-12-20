@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Home, Clock, CheckCircle2, LogOut, Users, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -55,65 +55,96 @@ export const AccommodationStatusCard = ({ userId, onStatusChange }: Accommodatio
   
   const { existingClaim, checkOut, loading: claimLoading, refetch } = useRoomOccupancyClaim(userId);
 
+  // Fetch data function
+  const fetchData = useCallback(async () => {
+    if (!userId) return;
+    
+    setError(null);
+    try {
+      const { data: studentData, error: studentError } = await supabase
+        .from('students')
+        .select('accommodation_status, current_dorm_id, current_room_id, room_confirmed, need_roommate')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (studentError) {
+        console.error('Error fetching student data:', studentError);
+        setError('Failed to load accommodation data');
+        return;
+      }
+
+      if (studentData) {
+        setStudent(studentData);
+
+        if (studentData.current_dorm_id) {
+          const { data: dormData, error: dormError } = await supabase
+            .from('dorms')
+            .select('id, name, dorm_name')
+            .eq('id', studentData.current_dorm_id)
+            .maybeSingle();
+          
+          if (!dormError && dormData) {
+            setDorm(dormData);
+          }
+        }
+
+        if (studentData.current_room_id) {
+          const { data: roomData, error: roomError } = await supabase
+            .from('rooms')
+            .select('id, name, type, capacity, capacity_occupied')
+            .eq('id', studentData.current_room_id)
+            .maybeSingle();
+          
+          if (!roomError && roomData) {
+            setRoom(roomData);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching accommodation data:', error);
+      setError('Failed to load accommodation data');
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  // Initial fetch
   useEffect(() => {
     if (!userId) {
       setLoading(false);
       setError('No user ID provided');
       return;
     }
-
-    const fetchData = async () => {
-      setError(null);
-      try {
-        const { data: studentData, error: studentError } = await supabase
-          .from('students')
-          .select('accommodation_status, current_dorm_id, current_room_id, room_confirmed, need_roommate')
-          .eq('user_id', userId)
-          .maybeSingle();
-
-        if (studentError) {
-          console.error('Error fetching student data:', studentError);
-          setError('Failed to load accommodation data');
-          return;
-        }
-
-        if (studentData) {
-          setStudent(studentData);
-
-          if (studentData.current_dorm_id) {
-            const { data: dormData, error: dormError } = await supabase
-              .from('dorms')
-              .select('id, name, dorm_name')
-              .eq('id', studentData.current_dorm_id)
-              .maybeSingle();
-            
-            if (!dormError && dormData) {
-              setDorm(dormData);
-            }
-          }
-
-          if (studentData.current_room_id) {
-            const { data: roomData, error: roomError } = await supabase
-              .from('rooms')
-              .select('id, name, type, capacity, capacity_occupied')
-              .eq('id', studentData.current_room_id)
-              .maybeSingle();
-            
-            if (!roomError && roomData) {
-              setRoom(roomData);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching accommodation data:', error);
-        setError('Failed to load accommodation data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
-  }, [userId]);
+  }, [userId, fetchData]);
+
+  // Real-time subscription for student updates
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`student-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'students',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          console.log('Real-time student update:', payload);
+          // Refetch all data when student record changes
+          fetchData();
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, fetchData, refetch]);
 
   const handleCheckOut = async () => {
     const success = await checkOut();

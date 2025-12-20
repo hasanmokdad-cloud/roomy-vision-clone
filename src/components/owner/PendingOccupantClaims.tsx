@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,15 +53,10 @@ export function PendingOccupantClaims({ ownerId, onClaimProcessed }: PendingOccu
   const [rejectionReason, setRejectionReason] = useState('');
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (ownerId && ownerId.trim() !== '') {
-      loadPendingClaims();
-    } else {
-      setLoading(false);
-    }
-  }, [ownerId]);
-
-  const loadPendingClaims = async () => {
+  // Load pending claims function
+  const loadPendingClaims = useCallback(async () => {
+    if (!ownerId || ownerId.trim() === '') return;
+    
     try {
       const { data, error } = await supabase
         .from('room_occupancy_claims')
@@ -121,7 +116,43 @@ export function PendingOccupantClaims({ ownerId, onClaimProcessed }: PendingOccu
     } finally {
       setLoading(false);
     }
-  };
+  }, [ownerId]);
+
+  // Initial load
+  useEffect(() => {
+    if (ownerId && ownerId.trim() !== '') {
+      loadPendingClaims();
+    } else {
+      setLoading(false);
+    }
+  }, [ownerId, loadPendingClaims]);
+
+  // Real-time subscription for new claims
+  useEffect(() => {
+    if (!ownerId || ownerId.trim() === '') return;
+
+    const channel = supabase
+      .channel(`owner-claims-${ownerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'room_occupancy_claims',
+          filter: `owner_id=eq.${ownerId}`
+        },
+        (payload) => {
+          console.log('Real-time claim update for owner:', payload);
+          // Refresh claims list when any change occurs
+          loadPendingClaims();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [ownerId, loadPendingClaims]);
 
   const handleConfirm = async (claim: PendingClaim) => {
     setProcessingId(claim.id);
