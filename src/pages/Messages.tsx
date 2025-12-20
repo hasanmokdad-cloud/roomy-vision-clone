@@ -9,7 +9,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Paperclip, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3 } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3, Plus, Camera, Keyboard } from 'lucide-react';
+import { AttachmentModal } from '@/components/messages/AttachmentModal';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { VoiceWaveform } from '@/components/messages/VoiceWaveform';
 import { ConversationContextMenu } from '@/components/messages/ConversationContextMenu';
@@ -211,6 +212,8 @@ export default function Messages() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [showMicPermissionModal, setShowMicPermissionModal] = useState(false);
+  const [showAttachmentModal, setShowAttachmentModal] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
@@ -653,6 +656,19 @@ export default function Messages() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Hide bottom nav when in conversation on mobile
+  useEffect(() => {
+    if (isMobile && selectedConversation) {
+      setHideBottomNav(true);
+    } else {
+      setHideBottomNav(false);
+    }
+    
+    return () => {
+      setHideBottomNav(false);
+    };
+  }, [selectedConversation, isMobile, setHideBottomNav]);
 
   // Load pinned messages for current conversation
   const loadPinnedMessages = async () => {
@@ -2039,8 +2055,9 @@ let otherUserName = 'User';
                   )}
 
                   
-                  {/* WhatsApp-style input layout */}
+                  {/* WhatsApp-style input layout: [+] [Input] [Camera] [Mic/Send] */}
                   <div className="flex items-center gap-2">
+                    {/* Hidden file inputs */}
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -2048,56 +2065,103 @@ let otherUserName = 'User';
                       className="hidden"
                       onChange={handleFileUpload}
                     />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading || recording}
-                      aria-label="Attach image or video"
-                      title="Attach image or video"
-                    >
-                      {uploading ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <Paperclip className="w-5 h-5" />
-                      )}
-                    </Button>
-
-                    <Input
-                      placeholder="Type a message..."
-                      value={messageInput}
-                      onChange={(e) => {
-                        setMessageInput(e.target.value);
-                        handleTyping();
-                      }}
-                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                      disabled={sending || recording}
-                      className="flex-1"
-                      aria-label="Message input"
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={handleFileUpload}
                     />
 
-                    {/* Emoji Picker Button */}
-                    <EmojiPickerSheet
-                      open={showEmojiPicker}
-                      onOpenChange={setShowEmojiPicker}
-                      onEmojiSelect={(emoji) => {
-                        setMessageInput(prev => prev + emoji);
-                      }}
-                      mode="input"
-                      trigger={
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          disabled={recording}
-                          aria-label="Add emoji"
-                          title="Add emoji"
-                        >
-                          <Smile className="w-5 h-5" />
-                        </Button>
-                      }
-                    />
+                    {/* [+] Button - opens attachment modal on mobile, shows keyboard icon when modal open */}
+                    {isMobile ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowAttachmentModal(!showAttachmentModal)}
+                        disabled={uploading || recording}
+                        aria-label={showAttachmentModal ? "Close attachments" : "Add attachment"}
+                        className="shrink-0"
+                      >
+                        {uploading ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : showAttachmentModal ? (
+                          <Keyboard className="w-5 h-5" />
+                        ) : (
+                          <Plus className="w-5 h-5" />
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading || recording}
+                        aria-label="Attach file"
+                        className="shrink-0"
+                      >
+                        {uploading ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <Plus className="w-5 h-5" />
+                        )}
+                      </Button>
+                    )}
+
+                    {/* Input field with emoji picker inside */}
+                    <div className="flex-1 relative flex items-center bg-muted rounded-full">
+                      <Input
+                        placeholder="Message"
+                        value={messageInput}
+                        onChange={(e) => {
+                          setMessageInput(e.target.value);
+                          handleTyping();
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                        disabled={sending || recording}
+                        className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 pr-10"
+                        aria-label="Message input"
+                      />
+                      {/* Emoji picker inside input */}
+                      <div className="absolute right-2">
+                        <EmojiPickerSheet
+                          open={showEmojiPicker}
+                          onOpenChange={setShowEmojiPicker}
+                          onEmojiSelect={(emoji) => {
+                            setMessageInput(prev => prev + emoji);
+                          }}
+                          mode="input"
+                          trigger={
+                            <button
+                              type="button"
+                              disabled={recording}
+                              aria-label="Add emoji"
+                              className="p-1 hover:bg-background/50 rounded-full transition-colors"
+                            >
+                              <Smile className="w-5 h-5 text-muted-foreground" />
+                            </button>
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    {/* Camera button - only show when no text (mobile only) */}
+                    {isMobile && !messageInput.trim() && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => cameraInputRef.current?.click()}
+                        disabled={uploading || recording}
+                        aria-label="Take photo"
+                        className="shrink-0"
+                      >
+                        <Camera className="w-5 h-5" />
+                      </Button>
+                    )}
 
                     {/* Dynamic button: Mic when empty, Send when typing */}
                     {messageInput.trim() ? (
@@ -2106,8 +2170,7 @@ let otherUserName = 'User';
                         disabled={sending} 
                         size="icon"
                         aria-label="Send message"
-                        title="Send message"
-                        className="shrink-0"
+                        className="shrink-0 rounded-full bg-primary text-primary-foreground"
                       >
                         <Send className="w-4 h-4" />
                       </Button>
@@ -2126,6 +2189,18 @@ let otherUserName = 'User';
                       </Button>
                     )}
                   </div>
+
+                  {/* Attachment Modal (Mobile Only) */}
+                  {isMobile && (
+                    <AttachmentModal
+                      open={showAttachmentModal}
+                      onOpenChange={setShowAttachmentModal}
+                      onSelectPhoto={() => fileInputRef.current?.click()}
+                      onSelectCamera={() => cameraInputRef.current?.click()}
+                      onSelectDocument={() => fileInputRef.current?.click()}
+                      uploading={uploading}
+                    />
+                  )}
                 </div>
 
                 {/* Voice Recording Overlay (Mobile Only) */}
