@@ -50,42 +50,63 @@ export const AccommodationStatusCard = ({ userId, onStatusChange }: Accommodatio
   const [dorm, setDorm] = useState<DormData | null>(null);
   const [room, setRoom] = useState<RoomData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [updatingRoommate, setUpdatingRoommate] = useState(false);
   
   const { existingClaim, checkOut, loading: claimLoading, refetch } = useRoomOccupancyClaim(userId);
 
   useEffect(() => {
+    if (!userId) {
+      setLoading(false);
+      setError('No user ID provided');
+      return;
+    }
+
     const fetchData = async () => {
+      setError(null);
       try {
-        const { data: studentData } = await supabase
+        const { data: studentData, error: studentError } = await supabase
           .from('students')
           .select('accommodation_status, current_dorm_id, current_room_id, room_confirmed, need_roommate')
           .eq('user_id', userId)
           .maybeSingle();
 
+        if (studentError) {
+          console.error('Error fetching student data:', studentError);
+          setError('Failed to load accommodation data');
+          return;
+        }
+
         if (studentData) {
           setStudent(studentData);
 
           if (studentData.current_dorm_id) {
-            const { data: dormData } = await supabase
+            const { data: dormData, error: dormError } = await supabase
               .from('dorms')
               .select('id, name, dorm_name')
               .eq('id', studentData.current_dorm_id)
-              .single();
-            setDorm(dormData);
+              .maybeSingle();
+            
+            if (!dormError && dormData) {
+              setDorm(dormData);
+            }
           }
 
           if (studentData.current_room_id) {
-            const { data: roomData } = await supabase
+            const { data: roomData, error: roomError } = await supabase
               .from('rooms')
               .select('id, name, type, capacity, capacity_occupied')
               .eq('id', studentData.current_room_id)
-              .single();
-            setRoom(roomData);
+              .maybeSingle();
+            
+            if (!roomError && roomData) {
+              setRoom(roomData);
+            }
           }
         }
       } catch (error) {
         console.error('Error fetching accommodation data:', error);
+        setError('Failed to load accommodation data');
       } finally {
         setLoading(false);
       }
@@ -134,6 +155,23 @@ export const AccommodationStatusCard = ({ userId, onStatusChange }: Accommodatio
     return (
       <div className="bg-card border border-border rounded-2xl p-5 flex items-center justify-center">
         <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="bg-destructive/10 rounded-full p-2">
+            <Home className="w-5 h-5 text-destructive" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground">Accommodation Status</h3>
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+        </div>
       </div>
     );
   }

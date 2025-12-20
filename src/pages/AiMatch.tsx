@@ -11,7 +11,6 @@ import { DormMatchCard } from "@/components/ai-match/DormMatchCard";
 import { RoomMatchCard } from "@/components/ai-match/RoomMatchCard";
 import { RoommateMatchCard } from "@/components/ai-match/RoommateMatchCard";
 import { RoommateComparison } from "@/components/ai-match/RoommateComparison";
-import { DormComparison } from "@/components/listings/DormComparison";
 import { TierSelector } from "@/components/ai-match/TierSelector";
 import { AIStatusCard } from "@/components/ai-match/AIStatusCard";
 import { FreeTierInfoCard } from "@/components/ai-match/FreeTierInfoCard";
