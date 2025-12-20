@@ -76,6 +76,7 @@ type Message = {
   status?: 'sent' | 'delivered' | 'seen';
   delivered_at?: string | null;
   seen_at?: string | null;
+  played_at?: string | null;
   attachment_type?: 'image' | 'video' | 'audio' | null;
   attachment_url?: string | null;
   attachment_duration?: number | null;
@@ -1159,6 +1160,32 @@ let otherUserName = 'User';
     }
   };
 
+  // Mark voice message as played (for recipients only)
+  const markMessageAsPlayed = async (messageId: string) => {
+    if (!userId) return;
+    
+    // Only mark as played if it hasn't been played yet
+    const message = messages.find(m => m.id === messageId);
+    if (!message || message.played_at) return;
+    
+    const { error } = await supabase
+      .from('messages')
+      .update({ played_at: new Date().toISOString() })
+      .eq('id', messageId)
+      .is('played_at', null);
+
+    if (!error) {
+      // Update local state
+      setMessages(prev => 
+        prev.map(m => 
+          m.id === messageId 
+            ? { ...m, played_at: new Date().toISOString() } 
+            : m
+        )
+      );
+    }
+  };
+
   const handleAutoMessage = async () => {
     const { openThreadWithUserId, initialMessage, matchProfile } = location.state || {};
     if (!openThreadWithUserId || !initialMessage || !userId) return;
@@ -1867,6 +1894,8 @@ let otherUserName = 'User';
           audioUrl={msg.attachment_url || ''} 
           duration={msg.attachment_duration || 0}
           isSender={msg.sender_id === userId}
+          messageId={msg.id}
+          onPlay={markMessageAsPlayed}
         />
       );
     }

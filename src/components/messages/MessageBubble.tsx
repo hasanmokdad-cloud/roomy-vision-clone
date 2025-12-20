@@ -6,7 +6,7 @@ import { ReactionBar } from "./ReactionBar";
 import { MessageContextMenu } from "./MessageContextMenu";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
 import { ReplyQuote } from "./ReplyQuote";
-import { MessageInfoModal } from "./MessageInfoModal";
+import { MessageInfoSheet } from "./MessageInfoSheet";
 import { TranslateModal } from "./TranslateModal";
 import { MessageActionOverlay } from "./MessageActionOverlay";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,7 @@ interface Message {
   read?: boolean;
   delivered_at?: string | null;
   seen_at?: string | null;
+  played_at?: string | null;
   reply_to_message_id?: string | null;
   is_starred?: boolean;
   is_pinned?: boolean;
@@ -604,15 +605,19 @@ export function MessageBubble({
           mode="reaction"
         />
 
-        {/* Message Info Modal */}
-        <MessageInfoModal
+        {/* Message Info Sheet */}
+        <MessageInfoSheet
           open={showInfoModal}
           onOpenChange={setShowInfoModal}
           messageText={message.body}
           createdAt={message.created_at}
           deliveredAt={message.delivered_at}
           seenAt={message.seen_at}
+          playedAt={message.played_at}
           isSender={isSender}
+          attachmentType={message.attachment_type}
+          attachmentUrl={message.attachment_url}
+          attachmentDuration={message.attachment_duration}
         />
 
         {/* Translate Modal */}
