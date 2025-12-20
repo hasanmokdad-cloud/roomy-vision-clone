@@ -203,6 +203,13 @@ export default function Messages() {
   const shouldUploadVoiceRef = useRef(true);
   const [slideOffset, setSlideOffset] = useState({ x: 0, y: 0 });
   const [isLocked, setIsLocked] = useState(false);
+  // Phase 3: Voice recording enhancements
+  const [isPaused, setIsPaused] = useState(false);
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+  const [previewProgress, setPreviewProgress] = useState(0);
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const previewIntervalRef = useRef<NodeJS.Timeout>();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
@@ -1326,7 +1333,12 @@ let otherUserName = 'User';
     try {
       setIsRecordingActive(true);
       shouldUploadVoiceRef.current = true; // Reset flag for new recording
+      setIsPaused(false);
+      setIsPreviewPlaying(false);
+      setPreviewProgress(0);
+      
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setMediaStream(stream); // Store for live waveform
       
       const mimeType = getSupportedMimeType();
       const mediaRecorder = mimeType 
@@ -1344,6 +1356,7 @@ let otherUserName = 'User';
 
       mediaRecorder.onstop = async () => {
         setIsRecordingActive(false);
+        setMediaStream(null);
         
         // Only upload if not cancelled
         if (shouldUploadVoiceRef.current && audioChunksRef.current.length > 0) {
@@ -1370,6 +1383,9 @@ let otherUserName = 'User';
           clearInterval(recordingTimerRef.current);
         }
         setRecordingDuration(0);
+        setIsPaused(false);
+        setIsPreviewPlaying(false);
+        setPreviewProgress(0);
       };
 
       mediaRecorder.start(100);
@@ -1497,6 +1513,16 @@ let otherUserName = 'User';
 
   const cancelRecording = () => {
     shouldUploadVoiceRef.current = false;
+    
+    // Stop preview if playing
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    if (previewIntervalRef.current) {
+      clearInterval(previewIntervalRef.current);
+    }
+    
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
@@ -1504,6 +1530,10 @@ let otherUserName = 'User';
     setIsRecordingActive(false);
     setIsLocked(false);
     setSlideOffset({ x: 0, y: 0 });
+    setIsPaused(false);
+    setIsPreviewPlaying(false);
+    setPreviewProgress(0);
+    setMediaStream(null);
     
     if (recordingTimerRef.current) {
       clearInterval(recordingTimerRef.current);
@@ -1512,9 +1542,98 @@ let otherUserName = 'User';
     toast({ title: 'Recording cancelled' });
   };
 
-  const handleStopLockedRecording = () => {
+  // Pause recording
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.pause();
+      setIsPaused(true);
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+    }
+  };
+
+  // Resume recording
+  const resumeRecording = () => {
+    // Stop any preview that might be playing
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    if (previewIntervalRef.current) {
+      clearInterval(previewIntervalRef.current);
+    }
+    setIsPreviewPlaying(false);
+    setPreviewProgress(0);
+    
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+      mediaRecorderRef.current.resume();
+      setIsPaused(false);
+      
+      // Resume timer
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
+    }
+  };
+
+  // Play preview of recorded audio
+  const playPreview = () => {
+    if (audioChunksRef.current.length === 0) return;
+    
+    const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
+    const previewBlob = new Blob(audioChunksRef.current, { type: mimeType });
+    const previewUrl = URL.createObjectURL(previewBlob);
+    
+    const audio = new Audio(previewUrl);
+    previewAudioRef.current = audio;
+    
+    audio.onended = () => {
+      setIsPreviewPlaying(false);
+      setPreviewProgress(0);
+      if (previewIntervalRef.current) {
+        clearInterval(previewIntervalRef.current);
+      }
+    };
+    
+    audio.play();
+    setIsPreviewPlaying(true);
+    
+    // Update progress
+    previewIntervalRef.current = setInterval(() => {
+      if (audio.duration && audio.currentTime) {
+        setPreviewProgress(audio.currentTime / audio.duration);
+      }
+    }, 100);
+  };
+
+  // Pause preview playback
+  const pausePreview = () => {
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      setIsPreviewPlaying(false);
+      if (previewIntervalRef.current) {
+        clearInterval(previewIntervalRef.current);
+      }
+    }
+  };
+
+  // Send the recorded voice message
+  const sendRecording = () => {
+    // Stop preview if playing
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    if (previewIntervalRef.current) {
+      clearInterval(previewIntervalRef.current);
+    }
+    
     setIsLocked(false);
     setSlideOffset({ x: 0, y: 0 });
+    setIsPaused(false);
+    setIsPreviewPlaying(false);
+    setPreviewProgress(0);
     stopRecording();
   };
 
@@ -2299,16 +2418,24 @@ let otherUserName = 'User';
                 {isMobile && (
                   <VoiceRecordingOverlay
                     isRecording={recording}
-                    duration={recordingDuration}
+                    isPaused={isPaused}
                     isLocked={isLocked}
+                    isPreviewPlaying={isPreviewPlaying}
+                    duration={recordingDuration}
+                    previewProgress={previewProgress}
                     slideOffset={slideOffset}
+                    mediaStream={mediaStream}
                     onCancel={cancelRecording}
-                    onStop={handleStopLockedRecording}
+                    onSend={sendRecording}
+                    onPause={pauseRecording}
+                    onResume={resumeRecording}
+                    onPreviewPlay={playPreview}
+                    onPreviewPause={pausePreview}
                     onSlideChange={setSlideOffset}
                     onLock={() => {
                       setIsLocked(true);
                       setSlideOffset({ x: 0, y: 0 });
-                      toast({ title: 'Recording locked', description: 'Tap stop when done' });
+                      toast({ title: 'Recording locked', description: 'Tap send when done' });
                     }}
                   />
                 )}
