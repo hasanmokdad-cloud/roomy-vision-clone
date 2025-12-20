@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home, Share2, Copy, CreditCard, Receipt, Save, Smartphone, User, Palette, ChevronRight } from 'lucide-react';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import { SubPageHeader } from '@/components/mobile/SubPageHeader';
-import { SwipeBackWrapper } from '@/components/mobile/SwipeBackWrapper';
+import { SwipeableSubPage } from '@/components/mobile/SwipeableSubPage';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
@@ -254,7 +254,7 @@ export default function Settings() {
 
   if (isMobile) {
     return (
-      <SwipeBackWrapper>
+      <SwipeableSubPage>
         <div className="min-h-screen bg-background">
           <SubPageHeader title="Account settings" onBack={() => navigate('/profile')} />
           <div className="pt-20 px-6 pb-32">
@@ -465,7 +465,7 @@ export default function Settings() {
 
           <LanguageModal open={showLanguageModal} onOpenChange={setShowLanguageModal} />
         </div>
-      </SwipeBackWrapper>
+      </SwipeableSubPage>
     );
   }
 

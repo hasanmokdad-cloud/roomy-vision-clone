@@ -7,7 +7,7 @@ import Footer from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SubPageHeader } from '@/components/mobile/SubPageHeader';
-import { SwipeBackWrapper } from '@/components/mobile/SwipeBackWrapper';
+import { SwipeableSubPage } from '@/components/mobile/SwipeableSubPage';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -125,7 +125,7 @@ export default function SavedDorms() {
   }
 
   return (
-    <SwipeBackWrapper>
+    <SwipeableSubPage>
       <div className="min-h-screen relative bg-gradient-to-b from-background to-muted/20">
         {isMobile && <SubPageHeader title="Saved Dorms" />}
         {!isMobile && <RoomyNavbar />}
@@ -205,6 +205,6 @@ export default function SavedDorms() {
 
         <Footer />
       </div>
-    </SwipeBackWrapper>
+    </SwipeableSubPage>
   );
 }

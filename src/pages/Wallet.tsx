@@ -11,7 +11,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import { SubPageHeader } from '@/components/mobile/SubPageHeader';
-import { SwipeBackWrapper } from '@/components/mobile/SwipeBackWrapper';
+import { SwipeableSubPage } from '@/components/mobile/SwipeableSubPage';
 
 interface PaymentMethod {
   id: string;
@@ -188,7 +188,7 @@ export default function Wallet() {
   if (loading) return null;
 
   return (
-    <SwipeBackWrapper>
+    <SwipeableSubPage>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         {isMobile && <SubPageHeader title="My Wallet" />}
         {!isMobile && <RoomyNavbar />}
@@ -318,6 +318,6 @@ export default function Wallet() {
           isLoading={isDeleting}
         />
       </div>
-    </SwipeBackWrapper>
+    </SwipeableSubPage>
   );
 }

@@ -7,7 +7,7 @@ import Footer from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SubPageHeader } from '@/components/mobile/SubPageHeader';
-import { SwipeBackWrapper } from '@/components/mobile/SwipeBackWrapper';
+import { SwipeableSubPage } from '@/components/mobile/SwipeableSubPage';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
@@ -269,7 +269,7 @@ export default function SavedRooms() {
   ];
 
   return (
-    <SwipeBackWrapper>
+    <SwipeableSubPage>
       <div className="min-h-screen relative bg-gradient-to-b from-background to-muted/20">
         {isMobile && <SubPageHeader title="Saved Rooms" />}
         {!isMobile && <RoomyNavbar />}
@@ -470,6 +470,6 @@ export default function SavedRooms() {
           />
         )}
       </div>
-    </SwipeBackWrapper>
+    </SwipeableSubPage>
   );
 }

@@ -12,6 +12,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import BottomNav from '@/components/BottomNav';
+import { SwipeableSubPage } from '@/components/mobile/SwipeableSubPage';
 
 interface BillingRecord {
   id: string;
@@ -99,6 +100,7 @@ export default function BillingHistory() {
   if (loading) return null;
 
   return (
+    <SwipeableSubPage enabled={isMobile}>
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       {!isMobile && <RoomyNavbar />}
 
@@ -294,5 +296,6 @@ export default function BillingHistory() {
         </DialogContent>
       </Dialog>
     </div>
+    </SwipeableSubPage>
   );
 }

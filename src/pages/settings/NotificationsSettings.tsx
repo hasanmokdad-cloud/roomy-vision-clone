@@ -8,6 +8,7 @@ import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { PWAInstallBanner } from '@/components/pwa/PWAInstallBanner';
 import { useToast } from '@/hooks/use-toast';
+import { SwipeableSubPage } from '@/components/mobile/SwipeableSubPage';
 
 interface NotificationRowProps {
   icon: React.ReactNode;
@@ -104,6 +105,7 @@ export default function NotificationsSettings() {
   }
 
   return (
+    <SwipeableSubPage enabled={isMobile}>
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3">
@@ -231,5 +233,6 @@ export default function NotificationsSettings() {
         </div>
       </div>
     </div>
+    </SwipeableSubPage>
   );
 }
