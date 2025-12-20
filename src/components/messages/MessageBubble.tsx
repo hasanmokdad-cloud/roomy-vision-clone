@@ -9,6 +9,9 @@ import { ReplyQuote } from "./ReplyQuote";
 import { MessageInfoSheet } from "./MessageInfoSheet";
 import { TranslateModal } from "./TranslateModal";
 import { MessageActionOverlay } from "./MessageActionOverlay";
+import { ForwardMessageSheet } from "./ForwardMessageSheet";
+import { MediaLightbox } from "./MediaLightbox";
+import { HighlightedText } from "./ConversationSearchBar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -61,6 +64,8 @@ interface MessageBubbleProps {
   allMessages?: Message[];
   onScrollToMessage?: (messageId: string) => void;
   onPinChange?: (messageId: string, isPinned: boolean) => void;
+  searchQuery?: string;
+  isCurrentSearchMatch?: boolean;
 }
 
 export function MessageBubble({
@@ -76,6 +81,8 @@ export function MessageBubble({
   allMessages = [],
   onScrollToMessage,
   onPinChange,
+  searchQuery = "",
+  isCurrentSearchMatch = false,
 }: MessageBubbleProps) {
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -87,6 +94,8 @@ export function MessageBubble({
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showTranslateModal, setShowTranslateModal] = useState(false);
   const [showActionOverlay, setShowActionOverlay] = useState(false);
+  const [showForwardSheet, setShowForwardSheet] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
   const [messageRect, setMessageRect] = useState<DOMRect | null>(null);
   const [reactions, setReactions] = useState<MessageReaction[]>([]);
   const [localIsStarred, setLocalIsStarred] = useState(message.is_starred);
@@ -361,12 +370,29 @@ export function MessageBubble({
   };
 
   const handleForward = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Message forwarding will be available soon!",
-    });
+    setShowForwardSheet(true);
     setShowContextMenu(false);
+    setShowActionOverlay(false);
   };
+
+  // Handle image/video click to open lightbox
+  const handleMediaClick = () => {
+    if (message.attachment_type === 'image' || message.attachment_type === 'video') {
+      setShowLightbox(true);
+    }
+  };
+
+  // Get all media from conversation for lightbox navigation
+  const conversationMedia = allMessages
+    .filter(m => m.attachment_type === 'image' || m.attachment_type === 'video')
+    .map(m => ({
+      id: m.id,
+      url: m.attachment_url || '',
+      type: m.attachment_type as 'image' | 'video',
+      timestamp: format(new Date(m.created_at), 'MMM d, yyyy HH:mm'),
+    }));
+
+  const currentMediaIndex = conversationMedia.findIndex(m => m.id === message.id);
 
   // Helper to get message status for read receipts
   const getMessageStatus = (msg: Message): 'sent' | 'delivered' | 'seen' => {
@@ -625,6 +651,30 @@ export function MessageBubble({
           onOpenChange={setShowTranslateModal}
           messageText={message.body}
         />
+
+        {/* Forward Message Sheet */}
+        <ForwardMessageSheet
+          open={showForwardSheet}
+          onOpenChange={setShowForwardSheet}
+          messages={[{
+            id: message.id,
+            body: message.body,
+            attachment_type: message.attachment_type,
+            attachment_url: message.attachment_url,
+            attachment_duration: message.attachment_duration,
+          }]}
+        />
+
+        {/* Media Lightbox */}
+        {(message.attachment_type === 'image' || message.attachment_type === 'video') && (
+          <MediaLightbox
+            open={showLightbox}
+            onClose={() => setShowLightbox(false)}
+            media={conversationMedia}
+            initialIndex={currentMediaIndex >= 0 ? currentMediaIndex : 0}
+            onForward={() => setShowForwardSheet(true)}
+          />
+        )}
 
         {/* Mobile Action Overlay with blur background */}
         <MessageActionOverlay
