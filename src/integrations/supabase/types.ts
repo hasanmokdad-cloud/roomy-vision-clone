@@ -1367,6 +1367,7 @@ export type Database = {
           is_starred: boolean | null
           pinned_at: string | null
           pinned_by: string | null
+          played_at: string | null
           read: boolean
           read_at: string | null
           receiver_id: string | null
@@ -1393,6 +1394,7 @@ export type Database = {
           is_starred?: boolean | null
           pinned_at?: string | null
           pinned_by?: string | null
+          played_at?: string | null
           read?: boolean
           read_at?: string | null
           receiver_id?: string | null
@@ -1419,6 +1421,7 @@ export type Database = {
           is_starred?: boolean | null
           pinned_at?: string | null
           pinned_by?: string | null
+          played_at?: string | null
           read?: boolean
           read_at?: string | null
           receiver_id?: string | null

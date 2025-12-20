@@ -6,10 +6,13 @@ interface VoiceWaveformProps {
   audioUrl: string;
   duration?: number;
   isSender?: boolean;
+  messageId?: string;
+  onPlay?: (messageId: string) => void;
 }
 
-export function VoiceWaveform({ audioUrl, duration, isSender = false }: VoiceWaveformProps) {
+export function VoiceWaveform({ audioUrl, duration, isSender = false, messageId, onPlay }: VoiceWaveformProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const hasTriggeredPlayRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(duration || 0);
@@ -46,7 +49,7 @@ export function VoiceWaveform({ audioUrl, duration, isSender = false }: VoiceWav
       audio.pause();
       audio.src = '';
     };
-  }, [audioUrl]);
+  }, [audioUrl, duration]);
 
   const togglePlayPause = () => {
     if (!audioRef.current) return;
@@ -55,6 +58,12 @@ export function VoiceWaveform({ audioUrl, duration, isSender = false }: VoiceWav
       audioRef.current.pause();
     } else {
       audioRef.current.play();
+      
+      // Trigger onPlay callback only once per message (for recipients)
+      if (onPlay && messageId && !hasTriggeredPlayRef.current && !isSender) {
+        hasTriggeredPlayRef.current = true;
+        onPlay(messageId);
+      }
     }
     setIsPlaying(!isPlaying);
   };
