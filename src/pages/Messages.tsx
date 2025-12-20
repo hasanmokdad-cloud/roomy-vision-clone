@@ -9,7 +9,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3, Plus, Camera, Keyboard } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3, Plus, Camera, Keyboard, Trash2 } from 'lucide-react';
 import { AttachmentModal } from '@/components/messages/AttachmentModal';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { VoiceWaveform } from '@/components/messages/VoiceWaveform';
@@ -19,6 +20,7 @@ import { TourMessageCard } from '@/components/messages/TourMessageCard';
 import { MessageBubble } from '@/components/messages/MessageBubble';
 import { EmojiPickerSheet } from '@/components/messages/EmojiPickerSheet';
 import { SwipeableMessage } from '@/components/messages/SwipeableMessage';
+import { SwipeableChatRow } from '@/components/messages/SwipeableChatRow';
 import { OnlineIndicator } from '@/components/messages/OnlineIndicator';
 import { EditMessageModal } from '@/components/messages/EditMessageModal';
 import { ContactInfoPanel } from '@/components/messages/ContactInfoPanel';
@@ -688,6 +690,53 @@ export default function Messages() {
       setPinnedMessages(data as Message[]);
     }
   };
+
+  // Conversation action handlers for swipe gestures
+  const handlePinConversation = async (conversationId: string, isPinned: boolean) => {
+    const { error } = await supabase
+      .from('conversations')
+      .update({ is_pinned: !isPinned })
+      .eq('id', conversationId);
+
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to pin chat', variant: 'destructive' });
+    } else {
+      toast({ title: isPinned ? 'Chat unpinned' : 'Chat pinned' });
+      loadConversations();
+    }
+  };
+
+  const handleArchiveConversation = async (conversationId: string, isArchived: boolean) => {
+    const { error } = await supabase
+      .from('conversations')
+      .update({ is_archived: !isArchived })
+      .eq('id', conversationId);
+
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to archive chat', variant: 'destructive' });
+    } else {
+      toast({ title: isArchived ? 'Chat unarchived' : 'Chat archived' });
+      loadConversations();
+    }
+  };
+
+  const handleMarkConversationRead = async (conversationId: string) => {
+    if (!userId) return;
+    
+    const { error } = await supabase
+      .from('messages')
+      .update({ seen_at: new Date().toISOString() })
+      .eq('conversation_id', conversationId)
+      .neq('sender_id', userId)
+      .is('seen_at', null);
+
+    if (!error) {
+      loadConversations();
+    }
+  };
+
+  // State for "More" action sheet
+  const [moreActionConversation, setMoreActionConversation] = useState<Conversation | null>(null);
 
   useEffect(() => {
     loadPinnedMessages();
@@ -1779,102 +1828,145 @@ let otherUserName = 'User';
                     <p className="text-sm mt-2">Start chatting about dorms to see conversations here</p>
                   </div>
                 ) : (
-                  conversations.filter(c => 
-                    !searchQuery || 
-                    c.other_user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    c.last_message?.toLowerCase().includes(searchQuery.toLowerCase())
-                  ).map((conv) => {
-                    const hasUnread = (conv.unreadCount || 0) > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date());
-                    const timeAgo = conv.last_message_time 
-                      ? formatDistanceToNowStrict(new Date(conv.last_message_time), { addSuffix: false })
-                        .replace(' seconds', 's')
-                        .replace(' second', 's')
-                        .replace(' minutes', 'm')
-                        .replace(' minute', 'm')
-                        .replace(' hours', 'h')
-                        .replace(' hour', 'h')
-                        .replace(' days', 'd')
-                        .replace(' day', 'd')
-                        .replace(' weeks', 'w')
-                        .replace(' week', 'w')
-                        .replace(' months', 'mo')
-                        .replace(' month', 'mo')
-                        .replace(' years', 'y')
-                        .replace(' year', 'y')
-                      : '';
+                  <>
+                    {/* Archived section row - WhatsApp style */}
+                    {!showArchived && conversations.some(c => c.is_archived) && (
+                      <button
+                        onClick={() => setShowArchived(true)}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border"
+                      >
+                        <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Archive className="w-6 h-6 text-primary" />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <span className="font-medium text-foreground">Archived</span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {conversations.filter(c => c.is_archived).length}
+                        </span>
+                      </button>
+                    )}
                     
-                    return (
-                    <div 
-                      key={conv.id} 
-                      className={`relative group cursor-pointer hover:bg-muted/50 transition-colors ${
-                        selectedConversation === conv.id ? 'bg-muted' : ''
-                      } ${hasUnread ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
-                      onClick={() => {
-                        setSelectedConversation(conv.id);
-                        loadMessages(conv.id);
-                      }}
-                    >
-                      <div className="flex items-center gap-3 px-4 py-3">
-                        {/* Avatar - 56px like Instagram */}
-                        <div className="relative shrink-0">
-                          <Avatar className="w-14 h-14">
-                            <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
-                            <AvatarFallback className="bg-primary/20 text-primary text-lg">
-                              {conv.other_user_name?.charAt(0) || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          {conv.student_id && <OnlineIndicator userId={conv.student_id} />}
-                        </div>
-                        
-                        {/* Content - Instagram style: name on top, message + time on bottom */}
-                        <div className="flex-1 min-w-0 overflow-hidden">
-                          {/* Row 1: Name with icons */}
-                          <div className="flex items-center gap-1.5">
-                            {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
-                            {conv.muted_until && new Date(conv.muted_until) > new Date() && (
-                              <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />
-                            )}
-                            <span className={`text-[14px] truncate ${hasUnread ? 'font-bold text-foreground' : 'font-normal text-foreground'}`}>
-                              {conv.other_user_name}
-                            </span>
+                    {conversations.filter(c => 
+                      !searchQuery || 
+                      c.other_user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      c.last_message?.toLowerCase().includes(searchQuery.toLowerCase())
+                    ).map((conv) => {
+                      const hasUnread = (conv.unreadCount || 0) > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date());
+                      const timeAgo = conv.last_message_time 
+                        ? formatDistanceToNowStrict(new Date(conv.last_message_time), { addSuffix: false })
+                          .replace(' seconds', 's')
+                          .replace(' second', 's')
+                          .replace(' minutes', 'm')
+                          .replace(' minute', 'm')
+                          .replace(' hours', 'h')
+                          .replace(' hour', 'h')
+                          .replace(' days', 'd')
+                          .replace(' day', 'd')
+                          .replace(' weeks', 'w')
+                          .replace(' week', 'w')
+                          .replace(' months', 'mo')
+                          .replace(' month', 'mo')
+                          .replace(' years', 'y')
+                          .replace(' year', 'y')
+                        : '';
+                      
+                      const chatRowContent = (
+                        <div 
+                          className={`relative group cursor-pointer hover:bg-muted/50 transition-colors ${
+                            selectedConversation === conv.id ? 'bg-muted' : ''
+                          } ${hasUnread ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
+                          onClick={() => {
+                            setSelectedConversation(conv.id);
+                            loadMessages(conv.id);
+                          }}
+                        >
+                          <div className="flex items-center gap-3 px-4 py-3">
+                            {/* Avatar - 56px like Instagram */}
+                            <div className="relative shrink-0">
+                              <Avatar className="w-14 h-14">
+                                <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
+                                <AvatarFallback className="bg-primary/20 text-primary text-lg">
+                                  {conv.other_user_name?.charAt(0) || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                              {conv.student_id && <OnlineIndicator userId={conv.student_id} />}
+                            </div>
+                            
+                            {/* Content - Instagram style: name on top, message + time on bottom */}
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                              {/* Row 1: Name with icons */}
+                              <div className="flex items-center gap-1.5">
+                                {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
+                                {conv.muted_until && new Date(conv.muted_until) > new Date() && (
+                                  <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />
+                                )}
+                                <span className={`text-[14px] truncate ${hasUnread ? 'font-bold text-foreground' : 'font-normal text-foreground'}`}>
+                                  {conv.other_user_name}
+                                </span>
+                              </div>
+                              
+                              {/* Row 2: Message preview + time (Instagram style: "Message · 1d") */}
+                              <div className="flex items-center gap-1 mt-0.5 max-w-full">
+                                {conv.last_message_sender_id === userId && (
+                                  <MessageStatusIcon status={conv.last_message_status} />
+                                )}
+                                <p className={`text-sm truncate flex-1 min-w-0 max-w-[150px] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                                  {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
+                                </p>
+                                {timeAgo && (
+                                  <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">· {timeAgo}</span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* Right side controls */}
+                            <div className="flex items-center gap-2 shrink-0 ml-2 z-10 overflow-visible">
+                              {/* Blue dot for unread */}
+                              {hasUnread && (
+                                <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                              )}
+                              
+                              {/* Three-dots context menu - DESKTOP ONLY */}
+                              {!isMobile && (
+                                <div onClick={(e) => e.stopPropagation()}>
+                                  <ConversationContextMenu
+                                    conversationId={conv.id}
+                                    isPinned={conv.is_pinned || false}
+                                    isArchived={conv.is_archived || false}
+                                    mutedUntil={conv.muted_until || null}
+                                    onUpdate={() => loadConversations()}
+                                  />
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          
-                          {/* Row 2: Message preview + time (Instagram style: "Message · 1d") */}
-                          <div className="flex items-center gap-1 mt-0.5 max-w-full">
-                            {conv.last_message_sender_id === userId && (
-                              <MessageStatusIcon status={conv.last_message_status} />
-                            )}
-                            <p className={`text-sm truncate flex-1 min-w-0 max-w-[150px] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                              {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
-                            </p>
-                            {timeAgo && (
-                              <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">· {timeAgo}</span>
-                            )}
-                          </div>
                         </div>
-                        
-                        {/* Right side controls - always visible */}
-                        <div className="flex items-center gap-2 shrink-0 ml-2 z-10 overflow-visible">
-                          {/* Blue dot for unread */}
-                          {hasUnread && (
-                            <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                          )}
-                          
-                          {/* Three-dots context menu - always visible */}
-                          <div onClick={(e) => e.stopPropagation()}>
-                            <ConversationContextMenu
-                              conversationId={conv.id}
-                              isPinned={conv.is_pinned || false}
-                              isArchived={conv.is_archived || false}
-                              mutedUntil={conv.muted_until || null}
-                              onUpdate={() => loadConversations()}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    );
-                  })
+                      );
+                      
+                      // On mobile, wrap with SwipeableChatRow
+                      if (isMobile) {
+                        return (
+                          <SwipeableChatRow
+                            key={conv.id}
+                            conversationId={conv.id}
+                            isPinned={conv.is_pinned || false}
+                            isArchived={conv.is_archived || false}
+                            hasUnread={hasUnread}
+                            onPin={() => handlePinConversation(conv.id, conv.is_pinned || false)}
+                            onArchive={() => handleArchiveConversation(conv.id, conv.is_archived || false)}
+                            onMore={() => setMoreActionConversation(conv)}
+                            onMarkRead={() => handleMarkConversationRead(conv.id)}
+                          >
+                            {chatRowContent}
+                          </SwipeableChatRow>
+                        );
+                      }
+                      
+                      // On desktop, render without swipe wrapper
+                      return <div key={conv.id}>{chatRowContent}</div>;
+                    })}
+                  </>
                 )}
               </ScrollArea>
             )}
@@ -2355,6 +2447,72 @@ let otherUserName = 'User';
         open={showMicPermissionModal}
         onOpenChange={setShowMicPermissionModal}
       />
+
+      {/* "More" Action Sheet for mobile swipe */}
+      <Sheet open={!!moreActionConversation} onOpenChange={(open) => !open && setMoreActionConversation(null)}>
+        <SheetContent side="bottom" className="rounded-t-xl">
+          <SheetHeader>
+            <SheetTitle className="text-left">
+              {moreActionConversation?.other_user_name}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="py-4 space-y-1">
+            {/* Mute/Unmute */}
+            <button
+              onClick={async () => {
+                if (!moreActionConversation) return;
+                const isMuted = moreActionConversation.muted_until && new Date(moreActionConversation.muted_until) > new Date();
+                const { error } = await supabase
+                  .from('conversations')
+                  .update({ muted_until: isMuted ? null : new Date('2099-12-31').toISOString() })
+                  .eq('id', moreActionConversation.id);
+                if (!error) {
+                  toast({ title: isMuted ? 'Notifications unmuted' : 'Notifications muted' });
+                  loadConversations();
+                }
+                setMoreActionConversation(null);
+              }}
+              className="w-full flex items-center gap-4 px-4 py-3 hover:bg-muted rounded-lg transition-colors"
+            >
+              <BellOff className="w-5 h-5 text-muted-foreground" />
+              <span>{moreActionConversation?.muted_until && new Date(moreActionConversation.muted_until) > new Date() ? 'Unmute' : 'Mute'}</span>
+            </button>
+
+            {/* Pin/Unpin */}
+            <button
+              onClick={async () => {
+                if (!moreActionConversation) return;
+                await handlePinConversation(moreActionConversation.id, moreActionConversation.is_pinned || false);
+                setMoreActionConversation(null);
+              }}
+              className="w-full flex items-center gap-4 px-4 py-3 hover:bg-muted rounded-lg transition-colors"
+            >
+              <Pin className="w-5 h-5 text-muted-foreground" />
+              <span>{moreActionConversation?.is_pinned ? 'Unpin' : 'Pin'}</span>
+            </button>
+
+            {/* Delete */}
+            <button
+              onClick={async () => {
+                if (!moreActionConversation) return;
+                const { error } = await supabase
+                  .from('conversations')
+                  .delete()
+                  .eq('id', moreActionConversation.id);
+                if (!error) {
+                  toast({ title: 'Chat deleted' });
+                  loadConversations();
+                }
+                setMoreActionConversation(null);
+              }}
+              className="w-full flex items-center gap-4 px-4 py-3 hover:bg-muted rounded-lg transition-colors text-destructive"
+            >
+              <Trash2 className="w-5 h-5" />
+              <span>Delete chat</span>
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
