@@ -95,15 +95,31 @@ export default function AdminStudents() {
   const handleDeleteStudent = async () => {
     if (!studentToDelete) return;
 
-    const { error } = await supabase
+    // First get the user_id from students table
+    const { data: studentData, error: fetchError } = await supabase
       .from('students')
-      .delete()
-      .eq('id', studentToDelete);
+      .select('user_id')
+      .eq('id', studentToDelete)
+      .single();
+
+    if (fetchError || !studentData?.user_id) {
+      toast({
+        title: 'Error',
+        description: 'Student not found',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Call edge function to delete everything including auth.users
+    const { error } = await supabase.functions.invoke('delete-user-account', {
+      body: { userId: studentData.user_id, accountType: 'student' }
+    });
 
     if (error) {
       toast({
         title: 'Error',
-        description: 'Failed to delete student',
+        description: 'Failed to delete student account completely',
         variant: 'destructive',
       });
       return;
@@ -111,7 +127,7 @@ export default function AdminStudents() {
 
     toast({
       title: 'Success',
-      description: 'Student deleted successfully',
+      description: 'Student account completely deleted',
     });
 
     setDeleteDialogOpen(false);
