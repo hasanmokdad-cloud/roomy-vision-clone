@@ -12,6 +12,9 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3, Plus, Camera, Keyboard, Trash2, Search } from 'lucide-react';
 import { ConversationSearchBar, HighlightedText } from '@/components/messages/ConversationSearchBar';
+import { TypingIndicator } from '@/components/messages/TypingIndicator';
+import { RecordingIndicator } from '@/components/messages/RecordingIndicator';
+import { AnimatePresence } from 'framer-motion';
 import { AttachmentModal } from '@/components/messages/AttachmentModal';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { VoiceWaveform } from '@/components/messages/VoiceWaveform';
@@ -196,6 +199,7 @@ export default function Messages() {
   const [messageInput, setMessageInput] = useState('');
   const [sending, setSending] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const [recordingUsers, setRecordingUsers] = useState<Set<string>>(new Set());
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -646,14 +650,21 @@ export default function Messages() {
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
         const typingSet = new Set<string>();
+        const recordingSet = new Set<string>();
         Object.values(state).forEach((presences: any[]) => {
           presences.forEach((presence) => {
-            if (presence.userId !== userId && presence.typing) {
-              typingSet.add(presence.userId);
+            if (presence.userId !== userId) {
+              if (presence.typing) {
+                typingSet.add(presence.userId);
+              }
+              if (presence.recording) {
+                recordingSet.add(presence.userId);
+              }
             }
           });
         });
         setTypingUsers(typingSet);
+        setRecordingUsers(recordingSet);
       })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
@@ -802,6 +813,7 @@ export default function Messages() {
     presenceChannelRef.current.track({
       userId,
       typing: true,
+      recording: false,
       timestamp: Date.now()
     });
 
@@ -812,6 +824,21 @@ export default function Messages() {
     typingTimeoutRef.current = setTimeout(() => {
       presenceChannelRef.current?.untrack();
     }, 2000);
+  };
+
+  const handleRecordingPresence = (isRecording: boolean) => {
+    if (!selectedConversation || !userId || !presenceChannelRef.current) return;
+
+    if (isRecording) {
+      presenceChannelRef.current.track({
+        userId,
+        typing: false,
+        recording: true,
+        timestamp: Date.now()
+      });
+    } else {
+      presenceChannelRef.current.untrack();
+    }
   };
 
   const loadConversations = async () => {
@@ -1431,6 +1458,7 @@ let otherUserName = 'User';
       setRecording(true);
       setRecordingStartTime(Date.now());
       setRecordingDuration(0);
+      handleRecordingPresence(true);
       
       recordingTimerRef.current = setInterval(() => {
         setRecordingDuration((prev) => prev + 1);
@@ -1457,6 +1485,7 @@ let otherUserName = 'User';
     if (mediaRecorderRef.current && recording) {
       mediaRecorderRef.current.stop();
       setRecording(false);
+      handleRecordingPresence(false);
       if (recordingTimerRef.current) {
         clearInterval(recordingTimerRef.current);
       }
@@ -1573,6 +1602,7 @@ let otherUserName = 'User';
     setIsPreviewPlaying(false);
     setPreviewProgress(0);
     setMediaStream(null);
+    handleRecordingPresence(false);
     
     if (recordingTimerRef.current) {
       clearInterval(recordingTimerRef.current);
@@ -2185,7 +2215,7 @@ let otherUserName = 'User';
                       {conversations.find(c => c.id === selectedConversation)?.other_user_name}
                     </h3>
                     <p className="text-xs text-muted-foreground truncate">
-                      {typingUsers.size > 0 ? 'Typing...' : (() => {
+                      {recordingUsers.size > 0 ? 'Recording audio...' : typingUsers.size > 0 ? 'Typing...' : (() => {
                         const conv = conversations.find(c => c.id === selectedConversation);
                         if (!conv) return '';
                         // For owners with a dorm, show dorm name
@@ -2305,14 +2335,21 @@ let otherUserName = 'User';
                       );
                     })}
                     
-                    {/* Typing indicator */}
-                    {typingUsers.size > 0 && (
-                      <div className="flex justify-start">
-                        <div className="bg-muted rounded-2xl px-4 py-3 text-foreground/60 italic text-sm">
-                          Typing...
-                        </div>
-                      </div>
-                    )}
+                    {/* Typing and Recording indicators */}
+                    <AnimatePresence mode="wait">
+                      {recordingUsers.size > 0 && (
+                        <RecordingIndicator 
+                          userName={conversations.find(c => c.id === selectedConversation)?.other_user_name}
+                          avatarUrl={conversations.find(c => c.id === selectedConversation)?.other_user_photo}
+                        />
+                      )}
+                      {recordingUsers.size === 0 && typingUsers.size > 0 && (
+                        <TypingIndicator 
+                          userName={conversations.find(c => c.id === selectedConversation)?.other_user_name}
+                          avatarUrl={conversations.find(c => c.id === selectedConversation)?.other_user_photo}
+                        />
+                      )}
+                    </AnimatePresence>
                     
                     <div ref={messagesEndRef} />
                   </div>
