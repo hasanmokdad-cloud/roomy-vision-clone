@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -10,7 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3, Plus, Camera, Keyboard, Trash2 } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3, Plus, Camera, Keyboard, Trash2, Search } from 'lucide-react';
+import { ConversationSearchBar, HighlightedText } from '@/components/messages/ConversationSearchBar';
 import { AttachmentModal } from '@/components/messages/AttachmentModal';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { VoiceWaveform } from '@/components/messages/VoiceWaveform';
@@ -223,6 +224,11 @@ export default function Messages() {
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [showMicPermissionModal, setShowMicPermissionModal] = useState(false);
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
+  // In-conversation search state
+  const [showConversationSearch, setShowConversationSearch] = useState(false);
+  const [conversationSearchQuery, setConversationSearchQuery] = useState('');
+  const [matchingMessageIds, setMatchingMessageIds] = useState<string[]>([]);
+  const [currentSearchMatchIndex, setCurrentSearchMatchIndex] = useState(-1);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -1103,6 +1109,12 @@ let otherUserName = 'User';
   const loadMessages = async (conversationId: string) => {
     console.log('🔄 Loading messages for conversation:', conversationId, 'userId:', userId);
     
+    // Reset search state when changing conversations
+    setShowConversationSearch(false);
+    setConversationSearchQuery('');
+    setMatchingMessageIds([]);
+    setCurrentSearchMatchIndex(-1);
+    
     const { data, error } = await supabase
       .from('messages')
       .select('*')
@@ -1824,7 +1836,21 @@ let otherUserName = 'User';
     }
   };
 
-  const renderMessageContent = (msg: Message) => {
+  const renderMessageContent = (msg: Message, isCurrentMatch: boolean = false) => {
+    // Helper function to wrap text with highlighting
+    const wrapWithHighlight = (text: string) => {
+      if (conversationSearchQuery.trim()) {
+        return (
+          <HighlightedText 
+            text={text} 
+            searchQuery={conversationSearchQuery} 
+            isCurrentMatch={isCurrentMatch}
+          />
+        );
+      }
+      return text;
+    };
+
     // Tour booking card if present
     if (msg.attachment_metadata?.type === 'tour_booking' || msg.attachment_metadata?.type === 'tour_reminder') {
       return <TourMessageCard metadata={msg.attachment_metadata as any} message={msg} />;
@@ -1834,7 +1860,7 @@ let otherUserName = 'User';
     if (msg.attachment_metadata?.type === 'room_inquiry') {
       return (
         <>
-          <p className="text-sm whitespace-pre-wrap break-words">{formatMessageBody(msg)}</p>
+          <p className="text-sm whitespace-pre-wrap break-words">{wrapWithHighlight(formatMessageBody(msg))}</p>
           <RoomPreviewCard metadata={msg.attachment_metadata} />
         </>
       );
@@ -1867,7 +1893,7 @@ let otherUserName = 'User';
                 </a>
               );
             }
-            return part;
+            return <span key={index}>{wrapWithHighlight(part)}</span>;
           })}
         </p>
       );
@@ -1900,7 +1926,7 @@ let otherUserName = 'User';
       );
     }
 
-    return <p className="text-sm whitespace-pre-wrap break-words">{formatMessageBody(msg)}</p>;
+    return <p className="text-sm whitespace-pre-wrap break-words">{wrapWithHighlight(formatMessageBody(msg))}</p>;
   };
 
   const totalUnreadCount = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
@@ -2173,12 +2199,47 @@ let otherUserName = 'User';
                   <Button
                     variant="ghost"
                     size="icon"
+                    onClick={() => setShowConversationSearch(true)}
+                    className="shrink-0"
+                  >
+                    <Search className="w-5 h-5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setShowContactInfo(!showContactInfo)}
                     className="shrink-0"
                   >
                     <Info className="w-5 h-5" />
                   </Button>
                 </div>
+
+                {/* In-conversation search bar */}
+                <ConversationSearchBar
+                  open={showConversationSearch}
+                  onClose={() => {
+                    setShowConversationSearch(false);
+                    setConversationSearchQuery('');
+                    setMatchingMessageIds([]);
+                    setCurrentSearchMatchIndex(-1);
+                  }}
+                  messages={messages}
+                  onNavigateToMatch={(messageId) => {
+                    const element = document.getElementById(`message-${messageId}`);
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      // Flash highlight effect
+                      element.classList.add('bg-primary/20');
+                      setTimeout(() => element.classList.remove('bg-primary/20'), 1500);
+                    }
+                  }}
+                  currentMatchIndex={currentSearchMatchIndex}
+                  setCurrentMatchIndex={setCurrentSearchMatchIndex}
+                  matchingMessageIds={matchingMessageIds}
+                  setMatchingMessageIds={setMatchingMessageIds}
+                  searchQuery={conversationSearchQuery}
+                  setSearchQuery={setConversationSearchQuery}
+                />
 
 
                 <ScrollArea className={`flex-1 p-4 ${isMobile ? 'pb-32' : ''}`}>
@@ -2231,11 +2292,13 @@ let otherUserName = 'User';
                                 setEditingMessage(msg);
                                 setShowEditModal(true);
                               }}
-                              renderContent={() => renderMessageContent(msg)}
+                              renderContent={() => renderMessageContent(msg, matchingMessageIds[currentSearchMatchIndex] === msg.id)}
                               showAvatar={!isSender}
                               allMessages={messages}
                               onScrollToMessage={scrollToMessage}
                               onPinChange={handlePinChange}
+                              searchQuery={conversationSearchQuery}
+                              isCurrentSearchMatch={matchingMessageIds[currentSearchMatchIndex] === msg.id}
                             />
                           </div>
                         </SwipeableMessage>
