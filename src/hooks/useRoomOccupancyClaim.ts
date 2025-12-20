@@ -184,54 +184,21 @@ export const useRoomOccupancyClaim = (userId: string | null) => {
     return { canClaim: true };
   };
 
-  // Check out from current room
+  // Check out from current room using edge function
   const checkOut = async (): Promise<boolean> => {
     if (!studentId) return false;
 
     setLoading(true);
     try {
-      // Update the claim status if exists
-      if (existingClaim) {
-        await supabase
-          .from('room_occupancy_claims')
-          .update({ status: 'rejected', rejection_reason: 'Student checked out' })
-          .eq('id', existingClaim.id);
+      const { data, error } = await supabase.functions.invoke('student-checkout', {});
+
+      if (error) {
+        console.error('Checkout error:', error);
+        throw new Error(error.message || 'Failed to check out');
       }
 
-      // Clear student's room data
-      const { error } = await supabase
-        .from('students')
-        .update({
-          current_dorm_id: null,
-          current_room_id: null,
-          room_confirmed: false,
-          room_confirmed_at: null,
-          confirmation_type: null,
-          accommodation_status: 'need_dorm',
-          need_roommate: false
-        })
-        .eq('id', studentId);
-
-      if (error) throw error;
-
-      // If it was a confirmed reservation, decrement room occupancy
-      if (existingClaim?.status === 'confirmed' && existingClaim.claim_type === 'reservation') {
-        const { data: room } = await supabase
-          .from('rooms')
-          .select('capacity_occupied, roomy_confirmed_occupants')
-          .eq('id', existingClaim.room_id)
-          .single();
-
-        if (room) {
-          await supabase
-            .from('rooms')
-            .update({
-              capacity_occupied: Math.max(0, (room.capacity_occupied || 0) - 1),
-              roomy_confirmed_occupants: Math.max(0, (room.roomy_confirmed_occupants || 0) - 1),
-              available: true
-            })
-            .eq('id', existingClaim.room_id);
-        }
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to check out');
       }
 
       setExistingClaim(null);
@@ -246,7 +213,7 @@ export const useRoomOccupancyClaim = (userId: string | null) => {
       console.error('Error checking out:', error);
       toast({
         title: "Error",
-        description: "Failed to check out",
+        description: error instanceof Error ? error.message : "Failed to check out",
         variant: "destructive"
       });
       return false;

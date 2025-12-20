@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign, BarChart2, Crown, Lock, X, UserPlus } from "lucide-react";
+import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign, BarChart2, Crown, Lock, X, UserPlus, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MatchBreakdownModal } from "./MatchBreakdownModal";
@@ -37,6 +37,11 @@ export const RoommateMatchCard = ({
   const matchScore = roommate.matchScore || roommate.scores?.overallScore || 70;
   const hasPersonalityMatch = roommate.hasPersonalityMatch || roommate.scores !== undefined;
   const personalityScore = roommate.personalityMatchScore;
+  
+  // Room confirmation info
+  const hasConfirmedRoom = roommate.room_confirmed && roommate.current_room_name;
+  const currentRoomName = roommate.current_room_name;
+  const currentDormName = roommate.current_dorm_name;
   
   // Get scores for breakdown modal
   const scores: CompatibilityScores = roommate.scores || {
@@ -182,6 +187,14 @@ export const RoommateMatchCard = ({
               </TooltipProvider>
             )}
           </div>
+
+          {/* Confirmed Room Badge */}
+          {hasConfirmedRoom && (
+            <Badge variant="secondary" className="text-xs flex items-center gap-1 w-fit bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+              <Home className="w-3 h-3" />
+              {currentRoomName} at {currentDormName}
+            </Badge>
+          )}
 
           {/* Details */}
           <div className="space-y-2 text-sm">

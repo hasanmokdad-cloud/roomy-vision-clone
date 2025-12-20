@@ -1,12 +1,11 @@
 import { motion } from 'framer-motion';
-import { Home, Users, Building2 } from 'lucide-react';
+import { Users, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface MatchModeTabsProps {
-  activeMode: 'apartments' | 'rooms' | 'roommates';
-  onModeChange: (mode: 'apartments' | 'rooms' | 'roommates') => void;
+  activeMode: 'rooms' | 'roommates';
+  onModeChange: (mode: 'rooms' | 'roommates') => void;
   counts?: {
-    apartments?: number;
     rooms?: number;
     roommates?: number;
   };
@@ -20,7 +19,6 @@ export const MatchModeTabs = ({
   className 
 }: MatchModeTabsProps) => {
   const tabs = [
-    { id: 'apartments' as const, label: 'Apartments', icon: Home, count: counts.apartments },
     { id: 'rooms' as const, label: 'Rooms', icon: Building2, count: counts.rooms },
     { id: 'roommates' as const, label: 'Roommates', icon: Users, count: counts.roommates }
   ];
@@ -35,8 +33,8 @@ export const MatchModeTabs = ({
           className="absolute inset-y-1.5 bg-background rounded-lg shadow-sm"
           initial={false}
           animate={{
-            left: `calc(${activeIndex * 33.33}% + 6px)`,
-            width: 'calc(33.33% - 8px)'
+            left: `calc(${activeIndex * 50}% + 6px)`,
+            width: 'calc(50% - 8px)'
           }}
           transition={{ type: 'spring', stiffness: 400, damping: 35 }}
         />
@@ -46,14 +44,14 @@ export const MatchModeTabs = ({
           className="absolute bottom-0 h-0.5 bg-primary rounded-full"
           initial={false}
           animate={{
-            left: `calc(${activeIndex * 33.33}% + 8px)`,
-            width: 'calc(33.33% - 16px)'
+            left: `calc(${activeIndex * 50}% + 8px)`,
+            width: 'calc(50% - 16px)'
           }}
           transition={{ type: 'spring', stiffness: 400, damping: 35 }}
         />
 
         {/* Tabs Container - CSS Grid for perfect alignment */}
-        <div className="relative z-10 grid grid-cols-3 w-full">
+        <div className="relative z-10 grid grid-cols-2 w-full">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeMode === tab.id;
