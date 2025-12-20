@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ChevronDown, Smile, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { EmojiPickerSheet } from "./EmojiPickerSheet";
 import { ReplyQuote } from "./ReplyQuote";
 import { MessageInfoModal } from "./MessageInfoModal";
 import { TranslateModal } from "./TranslateModal";
+import { MessageActionOverlay } from "./MessageActionOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -77,11 +78,14 @@ export function MessageBubble({
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const messageRef = useRef<HTMLDivElement>(null);
+  const bubbleRef = useRef<HTMLDivElement>(null);
   const [showReactionBar, setShowReactionBar] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showTranslateModal, setShowTranslateModal] = useState(false);
+  const [showActionOverlay, setShowActionOverlay] = useState(false);
+  const [messageRect, setMessageRect] = useState<DOMRect | null>(null);
   const [reactions, setReactions] = useState<MessageReaction[]>([]);
   const [localIsStarred, setLocalIsStarred] = useState(message.is_starred);
   const [localIsPinned, setLocalIsPinned] = useState(message.is_pinned);
@@ -258,7 +262,7 @@ export function MessageBubble({
     }
   };
 
-  // Long press detection for mobile
+  // Long press detection for mobile - opens new overlay
   const handleTouchStart = (e: React.TouchEvent) => {
     e.preventDefault();  // Block Safari text selection
     e.stopPropagation();
@@ -269,8 +273,11 @@ export function MessageBubble({
     };
 
     longPressTimerRef.current = setTimeout(() => {
-      setShowReactionBar(true);
-      setShowContextMenu(true);
+      // Get the bubble rect for overlay positioning
+      if (bubbleRef.current) {
+        setMessageRect(bubbleRef.current.getBoundingClientRect());
+        setShowActionOverlay(true);
+      }
       // Haptic feedback if supported
       if (navigator.vibrate) {
         navigator.vibrate(50);
@@ -469,6 +476,7 @@ export function MessageBubble({
 
           {/* Message Bubble */}
           <div
+            ref={bubbleRef}
             className={`relative rounded-lg px-4 py-2 ${
               isSender
                 ? "bg-primary text-primary-foreground"
@@ -612,6 +620,39 @@ export function MessageBubble({
           open={showTranslateModal}
           onOpenChange={setShowTranslateModal}
           messageText={message.body}
+        />
+
+        {/* Mobile Action Overlay with blur background */}
+        <MessageActionOverlay
+          open={showActionOverlay}
+          onClose={() => setShowActionOverlay(false)}
+          message={{
+            id: message.id,
+            body: message.body,
+            created_at: message.created_at,
+            sender_id: message.sender_id,
+            is_starred: localIsStarred,
+            is_pinned: localIsPinned,
+            attachment_url: message.attachment_url,
+            attachment_type: message.attachment_type,
+          }}
+          isSender={isSender}
+          messageRect={messageRect}
+          onReply={() => {
+            onReply();
+            setShowActionOverlay(false);
+          }}
+          onForward={handleForward}
+          onCopy={handleCopy}
+          onStar={handleStar}
+          onPin={handlePin}
+          onInfo={() => setShowInfoModal(true)}
+          onTranslate={() => setShowTranslateModal(true)}
+          onEdit={onEdit}
+          onDelete={handleDelete}
+          onReact={handleReactionSelect}
+          onOpenEmojiPicker={() => setShowEmojiPicker(true)}
+          canEdit={canEdit}
         />
       </div>
     </div>
