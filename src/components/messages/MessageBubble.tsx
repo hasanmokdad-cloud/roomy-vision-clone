@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ChevronDown, Smile, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
+import { haptics } from "@/utils/haptics";
 
 interface Message {
   id: string;
@@ -279,10 +280,8 @@ export function MessageBubble({
         setMessageRect(bubbleRef.current.getBoundingClientRect());
         setShowActionOverlay(true);
       }
-      // Haptic feedback if supported
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
-      }
+      // Haptic feedback
+      haptics.longPress();
     }, 350); // 350ms for WhatsApp-style feel
   };
 

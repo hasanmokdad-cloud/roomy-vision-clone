@@ -16,6 +16,8 @@ import {
 import { format } from "date-fns";
 import { useState } from "react";
 import { DeleteMessageDrawer } from "./DeleteMessageDrawer";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { haptics } from "@/utils/haptics";
 
 interface Message {
   id: string;
@@ -70,24 +72,59 @@ export function MessageActionOverlay({
   canEdit = false,
 }: MessageActionOverlayProps) {
   const [showDeleteDrawer, setShowDeleteDrawer] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
   if (!open || !messageRect) return null;
 
   const handleAction = (action: () => void) => {
+    haptics.selection();
     action();
     onClose();
   };
 
   const handleReact = (emoji: string) => {
+    haptics.light();
     onReact(emoji);
     onClose();
   };
 
-  // Calculate position to keep message in place
-  const messageTop = messageRect.top;
-  const messageLeft = isSender ? undefined : messageRect.left;
-  const messageRight = isSender ? window.innerWidth - messageRect.right : undefined;
-  const messageWidth = messageRect.width;
+  // Calculate position to keep message in place, with edge case handling
+  const viewportHeight = window.innerHeight;
+  const viewportWidth = window.innerWidth;
+  
+  // Ensure message doesn't go off screen
+  const messageTop = Math.max(80, Math.min(messageRect.top, viewportHeight - 300));
+  const messageLeft = isSender ? undefined : Math.max(8, messageRect.left);
+  const messageRight = isSender ? Math.max(8, window.innerWidth - messageRect.right) : undefined;
+  const messageWidth = Math.min(messageRect.width, viewportWidth - 16);
+
+  // Animation variants with reduced motion support
+  const fadeVariants = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 },
+  };
+
+  const scaleVariants = {
+    initial: { scale: prefersReducedMotion ? 1 : 0.95, opacity: 0 },
+    animate: { scale: 1, opacity: 1 },
+    exit: { scale: prefersReducedMotion ? 1 : 0.95, opacity: 0 },
+  };
+
+  const slideDownVariants = {
+    initial: { opacity: 0, y: prefersReducedMotion ? 0 : 10 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: prefersReducedMotion ? 0 : 10 },
+  };
+
+  const slideUpVariants = {
+    initial: { opacity: 0, y: prefersReducedMotion ? 0 : -10 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: prefersReducedMotion ? 0 : -10 },
+  };
+
+  const transitionFast = prefersReducedMotion ? { duration: 0.1 } : { duration: 0.2 };
+  const transitionDelayed = prefersReducedMotion ? { duration: 0.1 } : { delay: 0.1, duration: 0.2 };
 
   const content = (
     <AnimatePresence>
@@ -95,49 +132,59 @@ export function MessageActionOverlay({
         <>
           {/* Blur backdrop */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            variants={fadeVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={transitionFast}
             className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm"
             onClick={onClose}
           />
 
           {/* Message clone in original position */}
           <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            variants={scaleVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={transitionFast}
             className="fixed z-[101]"
             style={{
               top: messageTop,
               left: messageLeft,
               right: messageRight,
               width: messageWidth,
+              maxWidth: 'calc(100vw - 16px)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Reaction bar - ABOVE message */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              variants={slideDownVariants}
+              initial="initial"
+              animate="animate"
+              transition={transitionDelayed}
               className={`flex items-center gap-1 mb-2 ${isSender ? 'justify-end' : 'justify-start'}`}
             >
               <div className="bg-card/95 backdrop-blur-lg rounded-full px-3 py-2 flex items-center gap-1 shadow-lg border border-border/50">
-                {QUICK_REACTIONS.map((emoji) => (
-                  <button
+                {QUICK_REACTIONS.map((emoji, index) => (
+                  <motion.button
                     key={emoji}
+                    initial={prefersReducedMotion ? {} : { scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.1 + index * 0.03, type: "spring", stiffness: 400 }}
                     onClick={() => handleReact(emoji)}
                     className="w-10 h-10 flex items-center justify-center text-2xl hover:scale-125 active:scale-95 transition-transform"
+                    whileHover={prefersReducedMotion ? {} : { scale: 1.2 }}
+                    whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
                   >
                     {emoji}
-                  </button>
+                  </motion.button>
                 ))}
                 <div className="w-px h-6 bg-border mx-1" />
                 <button
                   onClick={() => {
+                    haptics.light();
                     onOpenEmojiPicker();
                     onClose();
                   }}
@@ -150,7 +197,7 @@ export function MessageActionOverlay({
 
             {/* Message preview bubble */}
             <div
-              className={`rounded-2xl px-4 py-3 shadow-lg ${
+              className={`rounded-2xl px-4 py-3 shadow-lg max-h-48 overflow-y-auto ${
                 isSender
                   ? "bg-primary text-primary-foreground ml-auto"
                   : "bg-card text-card-foreground"
@@ -161,10 +208,12 @@ export function MessageActionOverlay({
                 <img
                   src={message.attachment_url}
                   alt="attachment"
-                  className="w-full rounded-lg mb-2 max-h-48 object-cover"
+                  className="w-full rounded-lg mb-2 max-h-32 object-cover"
                 />
               )}
-              {message.body && <p className="text-sm whitespace-pre-wrap">{message.body}</p>}
+              {message.body && (
+                <p className="text-sm whitespace-pre-wrap line-clamp-6">{message.body}</p>
+              )}
               <p className="text-xs opacity-70 mt-1">
                 {format(new Date(message.created_at), "HH:mm")}
               </p>
@@ -172,40 +221,50 @@ export function MessageActionOverlay({
 
             {/* Action menu - BELOW message */}
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
+              variants={slideUpVariants}
+              initial="initial"
+              animate="animate"
+              transition={prefersReducedMotion ? { duration: 0.1 } : { delay: 0.15, duration: 0.2 }}
               className={`mt-2 ${isSender ? 'ml-auto' : ''}`}
               style={{ width: 'fit-content', minWidth: '200px' }}
             >
               <div className="bg-card/95 backdrop-blur-lg rounded-2xl overflow-hidden shadow-lg border border-border/50">
-                <ActionButton icon={Reply} label="Reply" onClick={() => handleAction(onReply)} />
-                <ActionButton icon={Forward} label="Forward" onClick={() => handleAction(onForward)} />
+                <ActionButton icon={Reply} label="Reply" onClick={() => handleAction(onReply)} index={0} reduced={prefersReducedMotion} />
+                <ActionButton icon={Forward} label="Forward" onClick={() => handleAction(onForward)} index={1} reduced={prefersReducedMotion} />
                 {message.body && (
-                  <ActionButton icon={Copy} label="Copy" onClick={() => handleAction(onCopy)} />
+                  <ActionButton icon={Copy} label="Copy" onClick={() => handleAction(onCopy)} index={2} reduced={prefersReducedMotion} />
                 )}
                 {isSender && canEdit && (
-                  <ActionButton icon={Edit3} label="Edit" onClick={() => handleAction(onEdit!)} />
+                  <ActionButton icon={Edit3} label="Edit" onClick={() => handleAction(onEdit!)} index={3} reduced={prefersReducedMotion} />
                 )}
                 {isSender && (
-                  <ActionButton icon={Info} label="Info" onClick={() => handleAction(onInfo)} />
+                  <ActionButton icon={Info} label="Info" onClick={() => handleAction(onInfo)} index={4} reduced={prefersReducedMotion} />
                 )}
                 <ActionButton 
                   icon={message.is_starred ? StarOff : Star} 
                   label={message.is_starred ? "Unstar" : "Star"} 
-                  onClick={() => handleAction(onStar)} 
+                  onClick={() => handleAction(onStar)}
+                  index={5}
+                  reduced={prefersReducedMotion}
                 />
                 <ActionButton 
                   icon={Pin} 
                   label={message.is_pinned ? "Unpin" : "Pin"} 
-                  onClick={() => handleAction(onPin)} 
+                  onClick={() => handleAction(onPin)}
+                  index={6}
+                  reduced={prefersReducedMotion}
                 />
-                <ActionButton icon={Languages} label="Translate" onClick={() => handleAction(onTranslate)} />
+                <ActionButton icon={Languages} label="Translate" onClick={() => handleAction(onTranslate)} index={7} reduced={prefersReducedMotion} />
                 <ActionButton 
                   icon={Trash2} 
                   label="Delete" 
-                  onClick={() => setShowDeleteDrawer(true)} 
-                  destructive 
+                  onClick={() => {
+                    haptics.warning();
+                    setShowDeleteDrawer(true);
+                  }} 
+                  destructive
+                  index={8}
+                  reduced={prefersReducedMotion}
                 />
               </div>
             </motion.div>
@@ -217,10 +276,12 @@ export function MessageActionOverlay({
             onOpenChange={setShowDeleteDrawer}
             isSender={isSender}
             onDeleteForMe={() => {
+              haptics.medium();
               onDelete(false);
               onClose();
             }}
             onDeleteForEveryone={() => {
+              haptics.heavy();
               onDelete(true);
               onClose();
             }}
@@ -238,18 +299,24 @@ interface ActionButtonProps {
   label: string;
   onClick: () => void;
   destructive?: boolean;
+  index?: number;
+  reduced?: boolean;
 }
 
-function ActionButton({ icon: Icon, label, onClick, destructive }: ActionButtonProps) {
+function ActionButton({ icon: Icon, label, onClick, destructive, index = 0, reduced }: ActionButtonProps) {
   return (
-    <button
+    <motion.button
+      initial={reduced ? {} : { opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={reduced ? { duration: 0 } : { delay: 0.2 + index * 0.02, duration: 0.15 }}
       onClick={onClick}
-      className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-accent/50 transition-colors text-left border-t border-border/30 first:border-t-0 ${
+      className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-accent/50 active:bg-accent transition-colors text-left border-t border-border/30 first:border-t-0 ${
         destructive ? 'text-destructive' : ''
       }`}
+      whileTap={reduced ? {} : { scale: 0.98 }}
     >
       <Icon className={`w-5 h-5 ${destructive ? '' : 'text-primary'}`} />
       <span className="font-medium">{label}</span>
-    </button>
+    </motion.button>
   );
 }

@@ -1,6 +1,8 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { motion, PanInfo, useAnimation } from "framer-motion";
-import { Archive, ArchiveRestore, Pin, PinOff, MoreHorizontal, Mail } from "lucide-react";
+import { Archive, ArchiveRestore, Pin, PinOff, MoreHorizontal, Mail, Loader2 } from "lucide-react";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { haptics } from "@/utils/haptics";
 
 interface SwipeableChatRowProps {
   children: React.ReactNode;
@@ -27,22 +29,26 @@ export function SwipeableChatRow({
 }: SwipeableChatRowProps) {
   const controls = useAnimation();
   const [isRevealed, setIsRevealed] = useState<'left' | 'right' | null>(null);
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const prefersReducedMotion = useReducedMotion();
+  
   const swipeThreshold = 80;
   const actionWidth = 160; // Width for action buttons (2 buttons × 80px each)
   const pinActionWidth = 80; // Width for pin button
+
+  const springTransition = prefersReducedMotion 
+    ? { duration: 0.15 } 
+    : { type: "spring", stiffness: 300, damping: 30 };
 
   const handleDragEnd = async (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const { offset, velocity } = info;
     
     // Right swipe (reveal left actions: More + Archive/Unarchive)
     if (offset.x > swipeThreshold || velocity.x > 500) {
-      // Haptic feedback
-      if (navigator.vibrate) {
-        navigator.vibrate(30);
-      }
+      haptics.medium();
       await controls.start({ 
         x: actionWidth, 
-        transition: { type: "spring", stiffness: 300, damping: 30 } 
+        transition: springTransition 
       });
       setIsRevealed('left');
       return;
@@ -50,32 +56,40 @@ export function SwipeableChatRow({
     
     // Left swipe (reveal right action: Pin)
     if (offset.x < -swipeThreshold || velocity.x < -500) {
-      // Haptic feedback
-      if (navigator.vibrate) {
-        navigator.vibrate(30);
-      }
+      haptics.medium();
       await controls.start({ 
         x: -pinActionWidth, 
-        transition: { type: "spring", stiffness: 300, damping: 30 } 
+        transition: springTransition 
       });
       setIsRevealed('right');
       return;
     }
     
     // Snap back
-    await controls.start({ x: 0, transition: { type: "spring", stiffness: 300, damping: 30 } });
+    await controls.start({ x: 0, transition: springTransition });
     setIsRevealed(null);
   };
 
-  const handleAction = async (action: () => Promise<void> | void) => {
-    await action();
-    // Snap back after action
-    await controls.start({ x: 0, transition: { type: "spring", stiffness: 300, damping: 30 } });
-    setIsRevealed(null);
+  const handleAction = async (actionName: string, action: () => Promise<void> | void) => {
+    setLoadingAction(actionName);
+    haptics.selection();
+    
+    try {
+      await action();
+      haptics.success();
+    } catch (error) {
+      haptics.error();
+      console.error('Action failed:', error);
+    } finally {
+      setLoadingAction(null);
+      // Snap back after action
+      await controls.start({ x: 0, transition: springTransition });
+      setIsRevealed(null);
+    }
   };
 
   const resetPosition = async () => {
-    await controls.start({ x: 0, transition: { type: "spring", stiffness: 300, damping: 30 } });
+    await controls.start({ x: 0, transition: springTransition });
     setIsRevealed(null);
   };
 
@@ -85,11 +99,18 @@ export function SwipeableChatRow({
       <div className="absolute left-0 inset-y-0 flex items-stretch">
         {/* More button */}
         <button
-          onClick={() => handleAction(onMore)}
-          className="w-20 flex flex-col items-center justify-center gap-1 bg-muted-foreground/80 text-white"
+          onClick={() => handleAction('more', onMore)}
+          disabled={loadingAction !== null}
+          className="w-20 flex flex-col items-center justify-center gap-1 bg-muted-foreground/80 text-white disabled:opacity-50 transition-opacity"
         >
-          <MoreHorizontal className="w-6 h-6" />
-          <span className="text-xs font-medium">More</span>
+          {loadingAction === 'more' ? (
+            <Loader2 className="w-6 h-6 animate-spin" />
+          ) : (
+            <>
+              <MoreHorizontal className="w-6 h-6" />
+              <span className="text-xs font-medium">More</span>
+            </>
+          )}
         </button>
         
         {/* Archive/Unarchive OR Unread/Unpin based on state */}
@@ -97,28 +118,45 @@ export function SwipeableChatRow({
           <>
             {hasUnread && onMarkRead ? (
               <button
-                onClick={() => handleAction(onMarkRead)}
-                className="w-20 flex flex-col items-center justify-center gap-1 bg-blue-500 text-white"
+                onClick={() => handleAction('read', onMarkRead)}
+                disabled={loadingAction !== null}
+                className="w-20 flex flex-col items-center justify-center gap-1 bg-blue-500 text-white disabled:opacity-50 transition-opacity"
               >
-                <Mail className="w-6 h-6" />
-                <span className="text-xs font-medium">Read</span>
+                {loadingAction === 'read' ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                ) : (
+                  <>
+                    <Mail className="w-6 h-6" />
+                    <span className="text-xs font-medium">Read</span>
+                  </>
+                )}
               </button>
             ) : (
               <button
-                onClick={() => handleAction(onPin)}
-                className="w-20 flex flex-col items-center justify-center gap-1 bg-amber-500 text-white"
+                onClick={() => handleAction('unpin', onPin)}
+                disabled={loadingAction !== null}
+                className="w-20 flex flex-col items-center justify-center gap-1 bg-amber-500 text-white disabled:opacity-50 transition-opacity"
               >
-                <PinOff className="w-6 h-6" />
-                <span className="text-xs font-medium">Unpin</span>
+                {loadingAction === 'unpin' ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                ) : (
+                  <>
+                    <PinOff className="w-6 h-6" />
+                    <span className="text-xs font-medium">Unpin</span>
+                  </>
+                )}
               </button>
             )}
           </>
         ) : (
           <button
-            onClick={() => handleAction(onArchive)}
-            className="w-20 flex flex-col items-center justify-center gap-1 bg-emerald-500 text-white"
+            onClick={() => handleAction('archive', onArchive)}
+            disabled={loadingAction !== null}
+            className="w-20 flex flex-col items-center justify-center gap-1 bg-emerald-500 text-white disabled:opacity-50 transition-opacity"
           >
-            {isArchived ? (
+            {loadingAction === 'archive' ? (
+              <Loader2 className="w-6 h-6 animate-spin" />
+            ) : isArchived ? (
               <>
                 <ArchiveRestore className="w-6 h-6" />
                 <span className="text-xs font-medium">Unarchive</span>
@@ -136,10 +174,13 @@ export function SwipeableChatRow({
       {/* Right action button (revealed on left swipe) */}
       <div className="absolute right-0 inset-y-0 flex items-stretch">
         <button
-          onClick={() => handleAction(onPin)}
-          className="w-20 flex flex-col items-center justify-center gap-1 bg-amber-500 text-white"
+          onClick={() => handleAction('pin', onPin)}
+          disabled={loadingAction !== null}
+          className="w-20 flex flex-col items-center justify-center gap-1 bg-amber-500 text-white disabled:opacity-50 transition-opacity"
         >
-          {isPinned ? (
+          {loadingAction === 'pin' ? (
+            <Loader2 className="w-6 h-6 animate-spin" />
+          ) : isPinned ? (
             <>
               <PinOff className="w-6 h-6" />
               <span className="text-xs font-medium">Unpin</span>
