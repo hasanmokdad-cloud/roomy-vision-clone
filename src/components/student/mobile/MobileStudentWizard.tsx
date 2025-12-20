@@ -266,7 +266,6 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
       }
 
       // Update student profile with all onboarding data
-      // Note: Personality fields are saved separately via PersonalitySurveyModal
       const { error } = await supabase
         .from('students')
         .update({
@@ -289,11 +288,45 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
           enable_personality_matching: formData.enable_personality_matching,
           profile_photo_url: formData.profile_photo_url || null,
           phone_number: formData.phone_number || null,
-          onboarding_completed: true
+          onboarding_completed: true,
+          room_confirmed: false
         })
         .eq('id', student.id);
 
       if (error) throw error;
+
+      // Create room occupancy claim if student selected a room
+      if (formData.accommodation_status === 'have_dorm' && formData.current_dorm_id && formData.current_room_id) {
+        // Get dorm owner
+        const { data: dorm } = await supabase
+          .from('dorms')
+          .select('owner_id')
+          .eq('id', formData.current_dorm_id)
+          .single();
+
+        if (dorm?.owner_id) {
+          // Check if claim already exists
+          const { data: existingClaim } = await supabase
+            .from('room_occupancy_claims')
+            .select('id')
+            .eq('student_id', student.id)
+            .eq('room_id', formData.current_room_id)
+            .maybeSingle();
+
+          if (!existingClaim) {
+            await supabase
+              .from('room_occupancy_claims')
+              .insert({
+                student_id: student.id,
+                room_id: formData.current_room_id,
+                dorm_id: formData.current_dorm_id,
+                owner_id: dorm.owner_id,
+                status: 'pending',
+                claim_type: 'legacy'
+              });
+          }
+        }
+      }
 
       // Clear saved progress
       localStorage.removeItem(STORAGE_KEY);

@@ -18,6 +18,7 @@ import { MobileMenuRow } from '@/components/mobile/MobileMenuRow';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StudentOnboardingDrawer } from '@/components/student/mobile/StudentOnboardingDrawer';
 import { useBottomNav } from '@/contexts/BottomNavContext';
+import { AccommodationStatusCard } from '@/components/profile/AccommodationStatusCard';
 
 
 
@@ -343,6 +344,13 @@ export default function Profile() {
                 </div>
               )}
 
+              {/* Accommodation Status Card */}
+              {hasCompletedProfile && userId && (
+                <AccommodationStatusCard 
+                  userId={userId} 
+                  onStatusChange={reloadProfileData}
+                />
+              )}
 
               {/* Feature Cards - 2 column grid */}
               <div className="grid grid-cols-2 gap-4">
