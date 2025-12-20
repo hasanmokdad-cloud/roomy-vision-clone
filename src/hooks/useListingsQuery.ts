@@ -33,7 +33,6 @@ interface Filters {
   shuttle?: 'all' | 'available' | 'none';
   genderPreference?: string[];
   amenities?: string[];
-  residenceType?: 'room' | 'apartment' | null;
 }
 
 interface DormModeResult {
@@ -261,27 +260,6 @@ export function useListingsQuery(filters: Filters) {
           roomTypeMatch = filters.roomTypes.some(rt => dorm.room_types?.includes(rt));
         }
 
-        // Residence type filter
-        let residenceTypeMatch = true;
-        if (filters.residenceType) {
-          if (roomTypesJson && Array.isArray(roomTypesJson)) {
-            if (filters.residenceType === 'apartment') {
-              residenceTypeMatch = roomTypesJson.some(room => 
-                room.type.toLowerCase().includes('apartment')
-              );
-            } else if (filters.residenceType === 'room') {
-              residenceTypeMatch = roomTypesJson.some(room => 
-                !room.type.toLowerCase().includes('apartment')
-              );
-            }
-          } else if (dorm.room_types) {
-            if (filters.residenceType === 'apartment') {
-              residenceTypeMatch = dorm.room_types.toLowerCase().includes('apartment');
-            } else if (filters.residenceType === 'room') {
-              residenceTypeMatch = !dorm.room_types.toLowerCase().includes('apartment');
-            }
-          }
-        }
 
         // Amenities filter
         let amenitiesMatch = true;
@@ -292,7 +270,7 @@ export function useListingsQuery(filters: Filters) {
           );
         }
 
-        return priceMatch && roomTypeMatch && residenceTypeMatch && amenitiesMatch;
+        return priceMatch && roomTypeMatch && amenitiesMatch;
       });
 
       setData({ mode: 'dorm', dorms: filteredDorms as unknown as Dorm[] });
