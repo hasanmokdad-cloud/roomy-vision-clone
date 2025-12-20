@@ -4,16 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Shield, Mail, Key, LogOut, Trash2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ResponsiveAlertModal } from '@/components/ui/responsive-alert-modal';
 import type { StudentProfile } from '../ProfileHub';
 
 interface AccountSecurityCardProps {
@@ -146,20 +137,15 @@ export function AccountSecurityCard({ profile, userId, onSignOut }: AccountSecur
       </div>
 
       {/* Sign Out Confirmation */}
-      <AlertDialog open={showSignOutConfirm} onOpenChange={setShowSignOutConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Sign out?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You'll need to sign in again to access your account.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={onSignOut}>Sign out</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ResponsiveAlertModal
+        open={showSignOutConfirm}
+        onOpenChange={setShowSignOutConfirm}
+        title="Sign out?"
+        description="You'll need to sign in again to access your account."
+        cancelText="Cancel"
+        confirmText="Sign out"
+        onConfirm={onSignOut}
+      />
     </>
   );
 }

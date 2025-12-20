@@ -14,16 +14,7 @@ import { GenderPreferenceStep } from './steps/GenderPreferenceStep';
 import { PhotosStep } from './steps/PhotosStep';
 import { DescriptionStep } from './steps/DescriptionStep';
 import { ReviewStep } from './steps/ReviewStep';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ResponsiveAlertModal } from '@/components/ui/responsive-alert-modal';
 
 interface MobileDormWizardProps {
   onBeforeSubmit?: () => Promise<string | null>;
@@ -412,20 +403,15 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       )}
 
       {/* Exit confirmation dialog */}
-      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Save and exit?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your progress has been saved. You can come back anytime to finish your listing.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmExit}>Save & exit</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ResponsiveAlertModal
+        open={showExitDialog}
+        onOpenChange={setShowExitDialog}
+        title="Save and exit?"
+        description="Your progress has been saved. You can come back anytime to finish your listing."
+        cancelText="Cancel"
+        confirmText="Save & exit"
+        onConfirm={confirmExit}
+      />
     </div>
   );
 }
