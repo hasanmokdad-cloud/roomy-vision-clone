@@ -4,7 +4,7 @@ import { CreditCard, Plus, Trash2, Star, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ResponsiveAlertModal } from '@/components/ui/responsive-alert-modal';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -302,42 +302,21 @@ export default function Wallet() {
       </div>
 
         {/* Delete Confirmation Modal */}
-        <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Remove this card?</DialogTitle>
-              <DialogDescription>
-                You won't be able to use this card for payments anymore. 
-                {cardToDelete?.is_default && paymentMethods.length > 1 && (
-                  <span className="block mt-2 text-amber-600">
-                    Another card will be set as your default payment method.
-                  </span>
-                )}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                variant="outline"
-                onClick={() => setDeleteModalOpen(false)}
-                disabled={isDeleting}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteCard}
-                disabled={isDeleting}
-              >
-                {isDeleting ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : (
-                  <Trash2 className="w-4 h-4 mr-2" />
-                )}
-                Remove
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <ResponsiveAlertModal
+          open={deleteModalOpen}
+          onOpenChange={setDeleteModalOpen}
+          title="Remove this card?"
+          description={`You won't be able to use this card for payments anymore.${
+            cardToDelete?.is_default && paymentMethods.length > 1
+              ? ' Another card will be set as your default payment method.'
+              : ''
+          }`}
+          cancelText="Cancel"
+          confirmText="Remove"
+          onConfirm={handleDeleteCard}
+          variant="destructive"
+          isLoading={isDeleting}
+        />
       </div>
     </SwipeBackWrapper>
   );

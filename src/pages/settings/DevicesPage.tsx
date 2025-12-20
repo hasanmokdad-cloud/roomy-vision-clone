@@ -15,16 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ResponsiveAlertModal } from "@/components/ui/responsive-alert-modal";
 import { formatDistanceToNow } from "date-fns";
 
 interface Device {
@@ -242,27 +233,17 @@ export default function DevicesPage() {
       </div>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Device?</AlertDialogTitle>
-            <AlertDialogDescription>
-              <strong>{deviceToDelete?.device_name}</strong> will be removed from your trusted devices. 
-              It will need to be verified again on the next login attempt.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              disabled={deleting}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              {deleting ? "Removing..." : "Remove Device"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ResponsiveAlertModal
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Remove Device?"
+        description={`${deviceToDelete?.device_name} will be removed from your trusted devices. It will need to be verified again on the next login attempt.`}
+        cancelText="Cancel"
+        confirmText="Remove Device"
+        onConfirm={confirmDelete}
+        variant="destructive"
+        isLoading={deleting}
+      />
     </div>
   );
 }
