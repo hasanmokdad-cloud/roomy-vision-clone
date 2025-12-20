@@ -54,8 +54,10 @@ export function PendingOccupantClaims({ ownerId, onClaimProcessed }: PendingOccu
   const { toast } = useToast();
 
   useEffect(() => {
-    if (ownerId) {
+    if (ownerId && ownerId.trim() !== '') {
       loadPendingClaims();
+    } else {
+      setLoading(false);
     }
   }, [ownerId]);
 
