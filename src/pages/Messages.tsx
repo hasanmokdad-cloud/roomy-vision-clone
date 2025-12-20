@@ -26,6 +26,7 @@ import { EmojiPickerSheet } from '@/components/messages/EmojiPickerSheet';
 import { SwipeableMessage } from '@/components/messages/SwipeableMessage';
 import { SwipeableChatRow } from '@/components/messages/SwipeableChatRow';
 import { OnlineIndicator } from '@/components/messages/OnlineIndicator';
+import { LastSeenStatus } from '@/components/messages/LastSeenStatus';
 import { EditMessageModal } from '@/components/messages/EditMessageModal';
 import { ContactInfoPanel } from '@/components/messages/ContactInfoPanel';
 import { FriendsTab } from '@/components/friends/FriendsTab';
@@ -2214,17 +2215,27 @@ let otherUserName = 'User';
                     <h3 className="font-semibold text-base truncate">
                       {conversations.find(c => c.id === selectedConversation)?.other_user_name}
                     </h3>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {recordingUsers.size > 0 ? 'Recording audio...' : typingUsers.size > 0 ? 'Typing...' : (() => {
+                    <LastSeenStatus
+                      userId={(() => {
+                        const conv = conversations.find(c => c.id === selectedConversation);
+                        if (!conv) return null;
+                        // Determine the other user's ID based on conversation type and role
+                        if (conv.conversation_type === 'student_to_student') {
+                          return conv.user_a_id === userId ? conv.user_b_id : conv.user_a_id;
+                        }
+                        return role === 'owner' ? conv.student_id : conv.owner_id;
+                      })()}
+                      isTyping={typingUsers.size > 0}
+                      isRecording={recordingUsers.size > 0}
+                      fallbackText={(() => {
                         const conv = conversations.find(c => c.id === selectedConversation);
                         if (!conv) return '';
-                        // For owners with a dorm, show dorm name
                         if (conv.other_user_role === 'Owner' && conv.owner_dorm_name) {
                           return `${conv.owner_dorm_name} • Owner`;
                         }
                         return conv.other_user_role || 'User';
                       })()}
-                    </p>
+                    />
                   </div>
                   <Button
                     variant="ghost"
