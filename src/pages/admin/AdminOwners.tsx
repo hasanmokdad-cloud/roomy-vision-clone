@@ -156,15 +156,31 @@ export default function AdminOwners() {
   const handleDeleteOwner = async () => {
     if (!ownerToDelete) return;
 
-    const { error } = await supabase
+    // First get the user_id from owners table
+    const { data: ownerData, error: fetchError } = await supabase
       .from('owners')
-      .delete()
-      .eq('id', ownerToDelete);
+      .select('user_id')
+      .eq('id', ownerToDelete)
+      .single();
+
+    if (fetchError || !ownerData?.user_id) {
+      toast({
+        title: 'Error',
+        description: 'Owner not found',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Call edge function to delete everything including auth.users
+    const { error } = await supabase.functions.invoke('delete-user-account', {
+      body: { userId: ownerData.user_id, accountType: 'owner' }
+    });
 
     if (error) {
       toast({
         title: 'Error',
-        description: 'Failed to delete owner',
+        description: 'Failed to delete owner account completely',
         variant: 'destructive',
       });
       return;
@@ -172,7 +188,7 @@ export default function AdminOwners() {
 
     toast({
       title: 'Success',
-      description: 'Owner deleted successfully',
+      description: 'Owner account completely deleted',
     });
 
     setDeleteDialogOpen(false);
