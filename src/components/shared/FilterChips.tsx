@@ -12,9 +12,8 @@ interface FilterChipsProps {
     cities?: string[];
     genderPreference?: string[];
     amenities?: string[];
-    residenceType?: 'room' | 'apartment' | null;
   };
-  onRemoveFilter: (category: 'universities' | 'areas' | 'roomTypes' | 'capacity' | 'cities' | 'genderPreference' | 'amenities' | 'residenceType', value?: string) => void;
+  onRemoveFilter: (category: 'universities' | 'areas' | 'roomTypes' | 'capacity' | 'cities' | 'genderPreference' | 'amenities', value?: string) => void;
   onResetPrice: () => void;
 }
 
@@ -27,7 +26,6 @@ export const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemoveFilte
     (filters.cities && filters.cities.length > 0) ||
     (filters.genderPreference && filters.genderPreference.length > 0) ||
     (filters.amenities && filters.amenities.length > 0) ||
-    filters.residenceType !== null && filters.residenceType !== undefined ||
     (filters.priceRange[0] > 0 || filters.priceRange[1] < 2000);
 
   if (!hasActiveFilters) return null;
@@ -108,27 +106,6 @@ export const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemoveFilte
             </motion.div>
           ))}
 
-          {/* Residence Type */}
-          {filters.residenceType && (
-            <motion.div
-              key="residenceType"
-              initial={{ opacity: 0, scale: 0.8, x: -10 }}
-              animate={{ opacity: 1, scale: 1, x: 0 }}
-              exit={{ opacity: 0, scale: 0.8, x: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Badge variant="secondary" className="neon-glow gap-2 hover:bg-secondary/80 transition-colors">
-                {filters.residenceType === 'room' ? 'Room' : 'Apartment'}
-                <button
-                  onClick={() => onRemoveFilter('residenceType')}
-                  className="hover:text-primary transition-colors"
-                  aria-label="Remove residence type filter"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </Badge>
-            </motion.div>
-          )}
 
           {/* Gender Preference */}
           {filters.genderPreference?.map((gender) => (

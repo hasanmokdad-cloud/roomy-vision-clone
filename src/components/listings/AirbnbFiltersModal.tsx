@@ -19,7 +19,6 @@ interface Filters {
   shuttle: 'all' | 'available' | 'none';
   genderPreference: string[];
   amenities: string[];
-  residenceType?: 'room' | 'apartment' | null;
 }
 
 interface Room {
@@ -186,20 +185,12 @@ export function AirbnbFiltersModal({
       const price = room.price || 0;
       if (price < localFilters.priceRange[0] || price > localFilters.priceRange[1]) return false;
       
-      // Residence type filter
-      const roomType = room.type?.toLowerCase() || '';
-      if (localFilters.residenceType === 'apartment') {
-        if (!roomType.includes('apartment')) return false;
-      } else if (localFilters.residenceType === 'room') {
-        if (roomType.includes('apartment')) return false;
-      }
-      
-      // Room type filter (only when residenceType is 'room')
+      // Room type filter
       if (localFilters.roomTypes.length > 0) {
         if (!localFilters.roomTypes.includes(room.type || '')) return false;
       }
       
-      // Capacity filter (for apartments)
+      // Capacity filter
       if (localFilters.capacity) {
         if ((room.capacity || 0) < localFilters.capacity) return false;
       }
@@ -240,14 +231,6 @@ export function AirbnbFiltersModal({
     }));
   };
 
-  const handleResidenceTypeSelect = (type: 'room' | 'apartment') => {
-    setLocalFilters(prev => ({
-      ...prev,
-      residenceType: prev.residenceType === type ? null : type,
-      // Clear room types when switching
-      roomTypes: []
-    }));
-  };
 
   const handleClearAll = () => {
     setLocalFilters({
@@ -259,8 +242,7 @@ export function AirbnbFiltersModal({
       cities: [],
       shuttle: 'all',
       genderPreference: [],
-      amenities: [],
-      residenceType: null
+      amenities: []
     });
   };
 
@@ -269,7 +251,7 @@ export function AirbnbFiltersModal({
     onOpenChange(false);
   };
 
-  const resultLabel = localFilters.residenceType === 'apartment' ? 'Apartments' : 'Rooms';
+  const resultLabel = 'Rooms';
 
   // Check if any filters are different from default
   const hasActiveFilters = useMemo(() => {
@@ -283,8 +265,7 @@ export function AirbnbFiltersModal({
       localFilters.cities.length > 0 ||
       localFilters.shuttle !== 'all' ||
       localFilters.genderPreference.length > 0 ||
-      localFilters.amenities.length > 0 ||
-      localFilters.residenceType !== null
+      localFilters.amenities.length > 0
     );
   }, [localFilters]);
 
@@ -526,81 +507,27 @@ export function AirbnbFiltersModal({
 
       <hr className="border-border" />
 
-      {/* Residence Type Section */}
+      {/* Room Type Section */}
       <section className="space-y-4">
-        <h3 className="text-base font-semibold">Residence Type</h3>
-        <div className="flex gap-3">
-          {[
-            { value: 'room' as const, label: 'Room' },
-            { value: 'apartment' as const, label: 'Apartment' }
-          ].map((option) => (
+        <h3 className="text-base font-semibold">Room Type</h3>
+        <div className="flex flex-wrap gap-2">
+          {roomTypesWithoutApartment.map((type) => (
             <button
-              key={option.value}
-              onClick={() => handleResidenceTypeSelect(option.value)}
+              key={type}
+              onClick={() => toggleArrayFilter('roomTypes', type)}
               className={cn(
-                "flex-1 px-6 py-3 rounded-xl border text-sm font-medium transition-colors",
-                localFilters.residenceType === option.value
+                "px-4 py-2 rounded-full border text-sm transition-colors",
+                localFilters.roomTypes.includes(type)
                   ? "bg-foreground text-background border-foreground"
                   : "border-border hover:border-foreground"
               )}
             >
-              {option.label}
+              {type}
             </button>
           ))}
         </div>
       </section>
 
-      {/* Capacity Section - Only if Apartment selected */}
-      {localFilters.residenceType === 'apartment' && (
-        <>
-          <hr className="border-border" />
-          <section className="space-y-4">
-            <h3 className="text-base font-semibold">Capacity</h3>
-            <div className="flex flex-wrap gap-2">
-              {capacityOptions.map((cap) => (
-                <button
-                  key={cap}
-                  onClick={() => updateFilter('capacity', localFilters.capacity === cap ? undefined : cap)}
-                  className={cn(
-                    "px-4 py-2 rounded-full border text-sm transition-colors min-w-[80px]",
-                    localFilters.capacity === cap
-                      ? "bg-foreground text-background border-foreground"
-                      : "border-border hover:border-foreground"
-                  )}
-                >
-                  {cap}{cap === 6 ? '+' : ''} {cap === 1 ? 'student' : 'students'}
-                </button>
-              ))}
-            </div>
-          </section>
-        </>
-      )}
-
-      {/* Room Type Section - Only if Room selected */}
-      {localFilters.residenceType === 'room' && (
-        <>
-          <hr className="border-border" />
-          <section className="space-y-4">
-            <h3 className="text-base font-semibold">Room Type</h3>
-            <div className="flex flex-wrap gap-2">
-              {roomTypesWithoutApartment.map((type) => (
-                <button
-                  key={type}
-                  onClick={() => toggleArrayFilter('roomTypes', type)}
-                  className={cn(
-                    "px-4 py-2 rounded-full border text-sm transition-colors",
-                    localFilters.roomTypes.includes(type)
-                      ? "bg-foreground text-background border-foreground"
-                      : "border-border hover:border-foreground"
-                  )}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
-          </section>
-        </>
-      )}
 
       {/* Universities Section - Conditional on City */}
       {(isByblos || isBeirut) && visibleUniversities.length > 0 && (

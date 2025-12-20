@@ -42,7 +42,6 @@ export default function Listings() {
     shuttle: 'all' as 'all' | 'available' | 'none',
     genderPreference: [] as string[],
     amenities: [] as string[],
-    residenceType: null as 'room' | 'apartment' | null,
   });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
@@ -135,12 +134,10 @@ export default function Listings() {
     setFilters(newFilters);
   }, []);
 
-  const handleRemoveFilter = useCallback((category: 'universities' | 'areas' | 'roomTypes' | 'capacity' | 'cities' | 'genderPreference' | 'amenities' | 'residenceType', value?: string) => {
+  const handleRemoveFilter = useCallback((category: 'universities' | 'areas' | 'roomTypes' | 'capacity' | 'cities' | 'genderPreference' | 'amenities', value?: string) => {
     setFilters(prev => {
       if (category === 'capacity') {
         return { ...prev, capacity: undefined };
-      } else if (category === 'residenceType') {
-        return { ...prev, residenceType: null };
       } else if (value) {
         return {
           ...prev,

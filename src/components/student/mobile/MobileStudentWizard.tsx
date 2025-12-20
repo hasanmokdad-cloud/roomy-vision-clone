@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-
+import { calculateProfileCompletion } from '@/utils/profileCompletion';
 import StudentWizardTopBar from './StudentWizardTopBar';
 import StudentWizardFooter from './StudentWizardFooter';
 import StudentIntroStep from './steps/StudentIntroStep';
@@ -265,6 +265,26 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
         return;
       }
 
+      // Calculate profile completion score
+      const completionScore = calculateProfileCompletion({
+        full_name: formData.full_name,
+        age: formData.age,
+        gender: formData.gender,
+        governorate: formData.governorate,
+        university: formData.university,
+        major: formData.major,
+        year_of_study: formData.year_of_study,
+        accommodation_status: formData.accommodation_status,
+        current_dorm_id: formData.current_dorm_id,
+        current_room_id: formData.current_room_id,
+        budget: formData.budget,
+        room_type: formData.room_type,
+        city: formData.city,
+        preferred_housing_area: formData.preferred_housing_area,
+        profile_photo_url: formData.profile_photo_url,
+        phone_number: formData.phone_number,
+      });
+
       // Update student profile with all onboarding data
       const { error } = await supabase
         .from('students')
@@ -289,7 +309,8 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
           profile_photo_url: formData.profile_photo_url || null,
           phone_number: formData.phone_number || null,
           onboarding_completed: true,
-          room_confirmed: false
+          room_confirmed: false,
+          profile_completion_score: completionScore
         })
         .eq('id', student.id);
 
