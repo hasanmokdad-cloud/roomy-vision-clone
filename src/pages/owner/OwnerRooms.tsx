@@ -13,6 +13,8 @@ import { useNavigate } from 'react-router-dom';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
 import { OwnerBreadcrumb } from '@/components/owner/OwnerBreadcrumb';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PendingOccupantClaims } from '@/components/owner/PendingOccupantClaims';
+import { RoomOccupantPreview } from '@/components/owner/RoomOccupantPreview';
 
 interface Room {
   id: string;
@@ -39,6 +41,7 @@ interface DormWithRooms {
 export default function OwnerRooms() {
   const { userId } = useRoleGuard('owner');
   const [dorms, setDorms] = useState<DormWithRooms[]>([]);
+  const [ownerId, setOwnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedDorms, setExpandedDorms] = useState<Set<string>>(new Set());
   const { toast } = useToast();
@@ -60,6 +63,8 @@ export default function OwnerRooms() {
         .single();
 
       if (!ownerData) return;
+      
+      setOwnerId(ownerData.id);
 
       // Fetch dorms
       const { data: dormsData, error: dormsError } = await supabase
@@ -212,6 +217,14 @@ export default function OwnerRooms() {
             </p>
           </motion.div>
 
+          {/* Pending Claims Section */}
+          {ownerId && (
+            <PendingOccupantClaims 
+              ownerId={ownerId} 
+              onClaimProcessed={loadDormsWithRooms} 
+            />
+          )}
+
           {dorms.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -339,6 +352,11 @@ export default function OwnerRooms() {
                                           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
                                             <Users className="w-4 h-4" />
                                             <span>{room.capacity_occupied} / {room.capacity} occupied</span>
+                                          </div>
+
+                                          {/* Confirmed Occupants Preview */}
+                                          <div className="mb-3">
+                                            <RoomOccupantPreview roomId={room.id} />
                                           </div>
 
                                           {/* Occupancy bar */}

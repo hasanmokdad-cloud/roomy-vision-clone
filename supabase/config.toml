@@ -92,3 +92,6 @@ verify_jwt = false
 
 [functions.delete-user-account]
 verify_jwt = true
+
+[functions.confirm-room-occupant]
+verify_jwt = true
