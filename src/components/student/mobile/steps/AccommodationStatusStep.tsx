@@ -118,10 +118,18 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
                        selectedRoom?.type?.toLowerCase().includes('private') ||
                        selectedRoom?.capacity === 1;
 
-  // Check if room is full by roomy_confirmed_occupants (for hiding roommate toggle)
-  const isRoomFull = selectedRoom ? 
+  // Check if room is CURRENTLY full by roomy_confirmed_occupants
+  const isRoomCurrentlyFull = selectedRoom ? 
     (selectedRoom.roomy_confirmed_occupants || 0) >= (selectedRoom.capacity || 1) : 
     false;
+
+  // Check if room WILL BE full after this student joins (projected occupancy)
+  // This disables the roommate toggle immediately when selecting a room
+  const projectedOccupancy = selectedRoom ? (selectedRoom.roomy_confirmed_occupants || 0) + 1 : 0;
+  const willRoomBeFull = selectedRoom ? projectedOccupancy >= (selectedRoom.capacity || 1) : false;
+
+  // Use projected fullness for roommate toggle visibility
+  const isRoomFull = isRoomCurrentlyFull || willRoomBeFull;
 
   const statusOptions = [
     { 
