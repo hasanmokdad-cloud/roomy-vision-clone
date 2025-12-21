@@ -365,7 +365,7 @@ export default function OwnerRooms() {
 
                                           {/* Confirmed Occupants Preview */}
                                           <div className="mb-3">
-                                            <RoomOccupantPreview key={`${room.id}-${refreshKey}`} roomId={room.id} />
+                                            <RoomOccupantPreview roomId={room.id} refreshTrigger={refreshKey} />
                                           </div>
 
                                           {/* Occupancy bar */}

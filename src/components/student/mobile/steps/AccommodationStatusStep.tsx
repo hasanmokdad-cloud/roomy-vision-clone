@@ -261,11 +261,6 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
                                   Fully Reserved
                                 </Badge>
                               )}
-                              {occupied >= capacity && canSelect && (
-                                <Badge variant="outline" className="text-xs">
-                                  Full
-                                </Badge>
-                              )}
                             </div>
                           </SelectItem>
                         );

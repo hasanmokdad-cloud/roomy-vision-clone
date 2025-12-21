@@ -29,29 +29,36 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
 
-      // Use Permissions API if available
+      // Use Permissions API if available (note: iOS Safari doesn't support microphone query)
       if ('permissions' in navigator && 'query' in navigator.permissions) {
-        const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
-        
-        const state = result.state as MicPermission;
-        setPermission(state);
-        
-        if (state === 'granted') {
-          localStorage.setItem('roomyMicPermission', 'granted');
-        }
-
-        // Listen for permission changes
-        result.onchange = () => {
-          const newState = result.state as MicPermission;
-          setPermission(newState);
-          if (newState === 'granted') {
+        try {
+          const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+          
+          const state = result.state as MicPermission;
+          setPermission(state);
+          
+          if (state === 'granted') {
             localStorage.setItem('roomyMicPermission', 'granted');
-          } else {
-            localStorage.removeItem('roomyMicPermission');
           }
-        };
+
+          // Listen for permission changes
+          result.onchange = () => {
+            const newState = result.state as MicPermission;
+            setPermission(newState);
+            if (newState === 'granted') {
+              localStorage.setItem('roomyMicPermission', 'granted');
+            } else {
+              localStorage.removeItem('roomyMicPermission');
+            }
+          };
+        } catch {
+          // iOS Safari throws on microphone query - fall back to 'prompt'
+          // Permission will be requested inline when user tries to record
+          setPermission('prompt');
+        }
       } else {
-        // Fallback for browsers without Permissions API
+        // Fallback for browsers without Permissions API (e.g., iOS Safari)
+        // Permission will be requested inline when user tries to record
         setPermission('prompt');
       }
     } catch (error) {
