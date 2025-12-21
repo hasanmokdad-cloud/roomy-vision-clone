@@ -724,7 +724,46 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   const handleCurrentRoomChange = async (roomId: string) => {
     setCurrentRoomId(roomId);
     
-    if (hasProfile) {
+    if (hasProfile && currentDormId) {
+      try {
+        // Use edge function to properly handle claim transitions
+        const { data: result, error } = await supabase.functions.invoke('student-change-room', {
+          body: {
+            newRoomId: roomId || null,
+            newDormId: currentDormId
+          }
+        });
+
+        if (error) {
+          console.error('Error calling student-change-room:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to update room. Please try again.',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        console.log('Room change result:', result);
+        
+        // If a new claim was created, update UI state
+        if (result?.newClaimId) {
+          setHasPendingClaim(true);
+          toast({
+            title: 'Room Claim Submitted',
+            description: 'Waiting for owner to confirm. You will be notified once approved.',
+          });
+        }
+      } catch (err) {
+        console.error('Failed to change room:', err);
+        toast({
+          title: 'Error',
+          description: 'Failed to update room. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    } else if (hasProfile) {
+      // Just update the student's current_room_id directly if no dorm selected
       await supabase
         .from('students')
         .update({ current_room_id: roomId || null })
