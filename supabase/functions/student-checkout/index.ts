@@ -60,8 +60,8 @@ Deno.serve(async (req) => {
 
     console.log('Processing checkout for student:', student.id, 'from room:', student.current_room_id);
 
-    // Get the student's current claim
-    const { data: claim } = await supabaseClient
+    // Get the student's current claim - use maybeSingle to handle no results gracefully
+    const { data: claim, error: claimError } = await supabaseClient
       .from('room_occupancy_claims')
       .select('id, claim_type, status, room_id, dorm_id, owner_id')
       .eq('student_id', student.id)
@@ -69,7 +69,13 @@ Deno.serve(async (req) => {
       .in('status', ['confirmed', 'pending'])
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
+
+    if (claimError) {
+      console.error('Error finding claim:', claimError);
+    }
+
+    console.log('Found claim for checkout:', claim?.id || 'none', 'status:', claim?.status || 'N/A');
 
     // Get room info for occupancy update
     const { data: room } = await supabaseClient
@@ -96,15 +102,24 @@ Deno.serve(async (req) => {
         console.log('Decremented both capacity_occupied and roomy_confirmed_occupants for reservation checkout');
       }
       // For legacy claims, owner manages capacity manually - don't decrement capacity_occupied
-      
-      // Update claim status to checked_out
-      await supabaseClient
+    }
+
+    // ALWAYS update claim status to rejected on checkout (regardless of claim type)
+    if (claim) {
+      const { error: claimUpdateError } = await supabaseClient
         .from('room_occupancy_claims')
         .update({ 
           status: 'rejected', 
-          rejection_reason: 'Student checked out' 
+          rejection_reason: 'Student checked out',
+          rejected_at: new Date().toISOString()
         })
         .eq('id', claim.id);
+
+      if (claimUpdateError) {
+        console.error('Failed to update claim status:', claimUpdateError);
+      } else {
+        console.log('Claim status updated to rejected for claim:', claim.id);
+      }
     }
 
     // Clear student's room data
