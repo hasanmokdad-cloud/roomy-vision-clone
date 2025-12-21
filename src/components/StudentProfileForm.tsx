@@ -447,6 +447,59 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         setHasProfile(true);
       }
 
+      // Create room occupancy claim if student selected a dorm/room
+      if (accommodationStatus === 'have_dorm' && currentDormId && currentRoomId) {
+        try {
+          // Get dorm owner
+          const { data: dorm } = await supabase
+            .from('dorms')
+            .select('owner_id')
+            .eq('id', currentDormId)
+            .single();
+
+          if (dorm?.owner_id) {
+            // Get student ID
+            const { data: student } = await supabase
+              .from('students')
+              .select('id')
+              .eq('user_id', userId)
+              .single();
+
+            if (student) {
+              // Check if claim already exists for this room
+              const { data: existingClaim } = await supabase
+                .from('room_occupancy_claims')
+                .select('id, status')
+                .eq('student_id', student.id)
+                .eq('room_id', currentRoomId)
+                .maybeSingle();
+
+              // Only create new claim if none exists or previous was rejected
+              if (!existingClaim || existingClaim.status === 'rejected') {
+                await supabase
+                  .from('room_occupancy_claims')
+                  .insert({
+                    student_id: student.id,
+                    room_id: currentRoomId,
+                    dorm_id: currentDormId,
+                    owner_id: dorm.owner_id,
+                    status: 'pending',
+                    claim_type: 'legacy'
+                  });
+                
+                toast({
+                  title: 'Room Claim Submitted',
+                  description: 'Your claim is pending owner confirmation.',
+                });
+              }
+            }
+          }
+        } catch (claimError) {
+          console.error('Error creating room claim:', claimError);
+          // Don't fail the whole save if claim creation fails
+        }
+      }
+
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 5000);
 
