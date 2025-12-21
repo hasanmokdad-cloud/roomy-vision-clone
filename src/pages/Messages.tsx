@@ -1520,20 +1520,30 @@ let otherUserName = 'User';
     const micButton = micButtonRef.current;
     let pressTimer: NodeJS.Timeout;
     
-    const handleTouchStart = (e: TouchEvent) => {
+    const handleTouchStart = async (e: TouchEvent) => {
       e.preventDefault(); // Now works because { passive: false }
       e.stopPropagation();
       
-      // Check permission FIRST - exit early if not granted
-      if (permission !== 'granted') {
+      // If permission is explicitly denied, show modal and exit
+      if (permission === 'denied') {
         setShowMicPermissionModal(true);
-        return; // Don't proceed with any recording logic
+        return;
       }
       
       touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       
       // Start recording after 220ms hold
-      pressTimer = setTimeout(() => {
+      // For iOS Safari and other browsers that don't support Permissions API,
+      // permission will be 'prompt' - we request inline when starting recording
+      pressTimer = setTimeout(async () => {
+        if (permission === 'prompt') {
+          // Request permission inline (iOS Safari needs this approach)
+          const granted = await requestPermission();
+          if (!granted) {
+            setShowMicPermissionModal(true);
+            return;
+          }
+        }
         startRecording();
       }, 220);
     };

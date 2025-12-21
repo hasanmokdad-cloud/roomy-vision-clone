@@ -14,15 +14,16 @@ interface Occupant {
 interface RoomOccupantPreviewProps {
   roomId: string;
   maxDisplay?: number;
+  refreshTrigger?: number;
 }
 
-export function RoomOccupantPreview({ roomId, maxDisplay = 3 }: RoomOccupantPreviewProps) {
+export function RoomOccupantPreview({ roomId, maxDisplay = 3, refreshTrigger }: RoomOccupantPreviewProps) {
   const [occupants, setOccupants] = useState<Occupant[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadOccupants();
-  }, [roomId]);
+  }, [roomId, refreshTrigger]);
 
   const loadOccupants = async () => {
     try {
