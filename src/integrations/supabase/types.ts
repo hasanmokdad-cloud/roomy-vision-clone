@@ -4279,6 +4279,7 @@ export type Database = {
         Returns: boolean
       }
       assert_security_baseline: { Args: never; Returns: boolean }
+      assign_student_role: { Args: { p_user_id: string }; Returns: undefined }
       check_booking_conflicts: {
         Args: {
           p_dorm_id: string
