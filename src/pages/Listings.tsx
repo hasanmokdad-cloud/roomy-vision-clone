@@ -25,6 +25,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
+import { PullToRefresh } from '@/components/mobile/PullToRefresh';
+import { useScrollPreservation } from '@/hooks/useScrollPreservation';
 
 export default function Listings() {
   const navigate = useNavigate();
@@ -49,6 +51,9 @@ export default function Listings() {
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
   const [allRooms, setAllRooms] = useState<any[]>([]);
+
+  // Enable scroll preservation
+  useScrollPreservation();
 
   const { data, loading, error } = useListingsQuery(filters);
   const queryClient = useQueryClient();

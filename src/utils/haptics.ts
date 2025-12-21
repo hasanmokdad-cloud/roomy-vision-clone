@@ -44,6 +44,31 @@ export const haptics = {
   warning: () => {
     if (canVibrate()) navigator.vibrate([20, 30, 20]);
   },
+  
+  /** Swipe threshold reached - ready to navigate */
+  swipeReady: () => {
+    if (canVibrate()) navigator.vibrate(8);
+  },
+  
+  /** Page navigation complete */
+  pageChange: () => {
+    if (canVibrate()) navigator.vibrate(12);
+  },
+  
+  /** Pull-to-refresh threshold reached */
+  pullReady: () => {
+    if (canVibrate()) navigator.vibrate(20);
+  },
+  
+  /** Pull-to-refresh triggered */
+  refresh: () => {
+    if (canVibrate()) navigator.vibrate([15, 30, 15]);
+  },
+  
+  /** Boundary reached - can't go further */
+  boundary: () => {
+    if (canVibrate()) navigator.vibrate([8, 20, 8]);
+  },
 };
 
 export type HapticType = keyof typeof haptics;
