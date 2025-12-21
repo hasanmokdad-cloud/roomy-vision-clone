@@ -120,6 +120,18 @@ serve(async (req) => {
         throw updateStudentError;
       }
 
+      // Increment roomy_confirmed_occupants on the room
+      const { error: rpcError } = await supabaseClient.rpc('increment_roomy_confirmed_occupants', {
+        p_room_id: claim.room_id
+      });
+
+      if (rpcError) {
+        console.error('Error incrementing roomy_confirmed_occupants:', rpcError);
+        // Don't throw - continue with confirmation but log the error
+      } else {
+        console.log(`Incremented roomy_confirmed_occupants for room ${claim.room_id}`);
+      }
+
       // Send notification to student
       if (student?.user_id) {
         const roomName = claim.rooms?.name || 'your room';

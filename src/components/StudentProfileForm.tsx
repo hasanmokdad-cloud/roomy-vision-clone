@@ -179,27 +179,34 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
 
       let query = supabase
         .from('rooms')
-        .select('id, name, type, capacity, capacity_occupied')
+        .select('id, name, type, capacity, capacity_occupied, roomy_confirmed_occupants')
         .eq('dorm_id', currentDormId)
         .order('name');
       
       const { data } = await query;
       
       if (data) {
-        setAvailableRooms(data);
+        // Filter rooms: show room if roomy_confirmed_occupants < capacity
+        // (even if capacity_occupied = capacity)
+        const selectableRooms = data.filter(room => {
+          const roomyConfirmed = room.roomy_confirmed_occupants || 0;
+          return roomyConfirmed < (room.capacity || 1);
+        });
+        setAvailableRooms(selectableRooms);
       }
 
       // Fetch current room data if room is selected
       if (currentRoomId) {
         const { data: roomData } = await supabase
           .from('rooms')
-          .select('capacity, capacity_occupied')
+          .select('capacity, capacity_occupied, roomy_confirmed_occupants')
           .eq('id', currentRoomId)
           .single();
 
         if (roomData) {
           setCurrentRoomData(roomData);
-          setIsRoomFull(roomData.capacity_occupied >= roomData.capacity);
+          // Room is full when roomy_confirmed_occupants = capacity
+          setIsRoomFull((roomData.roomy_confirmed_occupants || 0) >= (roomData.capacity || 1));
         }
       }
     };
@@ -974,14 +981,16 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction onClick={async () => {
                             try {
-                              // Get student ID
+                              // Get student data including current room
                               const { data: student } = await supabase
                                 .from('students')
-                                .select('id')
+                                .select('id, current_room_id')
                                 .eq('user_id', userId)
                                 .single();
                               
                               if (student) {
+                                const roomIdToDecrement = student.current_room_id;
+                                
                                 // Delete room occupancy claims
                                 await supabase
                                   .from('room_occupancy_claims')
@@ -998,6 +1007,13 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                                     accommodation_status: 'need_dorm'
                                   })
                                   .eq('user_id', userId);
+                                
+                                // Decrement roomy_confirmed_occupants on the room
+                                if (roomIdToDecrement) {
+                                  await supabase.rpc('decrement_roomy_confirmed_occupants', {
+                                    p_room_id: roomIdToDecrement
+                                  });
+                                }
                                 
                                 // Reset local state
                                 setIsRoomConfirmed(false);
@@ -1108,7 +1124,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                             <SelectContent>
                               {availableRooms.map((room) => (
                                 <SelectItem key={room.id} value={room.id}>
-                                  {room.name} - {room.type} ({room.capacity_occupied}/{room.capacity})
+                                  {room.name} - {room.type} ({room.roomy_confirmed_occupants || 0}/{room.capacity} via Roomy)
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -1116,15 +1132,15 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                           
                           {currentRoomId && isRoomFull && !isAccommodationLocked && (
                             <p className="text-sm text-amber-600 dark:text-amber-500">
-                              ⚠️ This room is currently full. You may need to wait for a spot to open.
+                              ⚠️ This room is fully booked via Roomy. You may need to wait for a spot to open.
                             </p>
                           )}
                         </div>
                       )}
                     </div>
 
-                    {/* 2. Looking for Roommate - Show when room selected, not single, and either confirmed OR not pending */}
-                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && (isRoomConfirmed || !hasPendingClaim) && (
+                    {/* 2. Looking for Roommate - Show when room selected, not single, room not full (by roomy_confirmed), and either confirmed OR not pending */}
+                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && !isRoomFull && (isRoomConfirmed || !hasPendingClaim) && (
                       <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
                         <div className="flex items-center gap-3">
                           <Users className="w-5 h-5 text-muted-foreground" />
@@ -1138,6 +1154,25 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                         <Switch
                           checked={needsRoommateCurrentPlace}
                           onCheckedChange={(checked) => handleRoommateToggle('current', checked)}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Show message when room is full - no roommate search available */}
+                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && isRoomFull && isRoomConfirmed && (
+                      <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30 opacity-50">
+                        <div className="flex items-center gap-3">
+                          <Users className="w-5 h-5 text-muted-foreground" />
+                          <div>
+                            <div className="font-medium">Looking for Roommate</div>
+                            <div className="text-sm text-muted-foreground">
+                              Room is full. Roommate search not available.
+                            </div>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={false}
+                          disabled
                         />
                       </div>
                     )}
@@ -1161,8 +1196,8 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                       </div>
                     )}
 
-                    {/* 3. AI Personality Matching - Show if roommate toggle is ON and (confirmed OR not pending) */}
-                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && needsRoommateCurrentPlace && (isRoomConfirmed || !hasPendingClaim) && (
+                    {/* 3. AI Personality Matching - Show if roommate toggle is ON and (confirmed OR not pending) and room not full */}
+                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && needsRoommateCurrentPlace && !isRoomFull && (isRoomConfirmed || !hasPendingClaim) && (
                       <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
