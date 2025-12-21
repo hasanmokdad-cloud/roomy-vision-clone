@@ -17,6 +17,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { BottomNavProvider } from "@/contexts/BottomNavContext";
 import { MicPermissionProvider } from "@/contexts/MicPermissionContext";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
+import { ScrollPositionProvider } from "@/contexts/ScrollPositionContext";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { useIsMobile } from "@/hooks/use-mobile";
 import OnboardingGuard from "@/components/guards/OnboardingGuard";
@@ -384,15 +385,17 @@ const App = () => (
             <MicPermissionProvider>
               <OnboardingProvider>
                 <BottomNavProvider>
-                  <div className="w-full max-w-screen overflow-x-hidden">
-                    <Toaster />
-                    <Sonner />
-                    <BrowserRouter>
-                      <GlobalAuthModal />
-                      <OnboardingFlow />
-                      <AppRoutes />
-                    </BrowserRouter>
-                  </div>
+                  <ScrollPositionProvider>
+                    <div className="w-full max-w-screen overflow-x-hidden">
+                      <Toaster />
+                      <Sonner />
+                      <BrowserRouter>
+                        <GlobalAuthModal />
+                        <OnboardingFlow />
+                        <AppRoutes />
+                      </BrowserRouter>
+                    </div>
+                  </ScrollPositionProvider>
                 </BottomNavProvider>
               </OnboardingProvider>
             </MicPermissionProvider>

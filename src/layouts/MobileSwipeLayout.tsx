@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, PanInfo, useMotionValue, animate } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
+import { haptics } from '@/utils/haptics';
 
 interface MobileSwipeLayoutProps {
   children: ReactNode;
@@ -21,6 +22,7 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
   const x = useMotionValue(0);
   const isDragging = useRef(false);
   const startX = useRef(0);
+  const hasTriggeredHaptic = useRef(false);
 
   // Get pages based on role
   const getPages = () => {
@@ -41,17 +43,19 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
   const currentIndex = getCurrentIndex();
 
   const handleSwipe = useCallback((offsetX: number, velocity: number) => {
-    const swipeThreshold = 50; // Reduced for quicker response
-    const velocityThreshold = 300; // Lower velocity threshold
+    const swipeThreshold = 50;
+    const velocityThreshold = 300;
 
     if (currentIndex === -1) return;
 
     // Swipe left to go to next page (higher index)
     if ((offsetX < -swipeThreshold || velocity < -velocityThreshold) && currentIndex < pages.length - 1) {
+      haptics.pageChange();
       navigate(pages[currentIndex + 1]);
     }
     // Swipe right to go to previous page (lower index)
     else if ((offsetX > swipeThreshold || velocity > velocityThreshold) && currentIndex > 0) {
+      haptics.pageChange();
       navigate(pages[currentIndex - 1]);
     }
   }, [currentIndex, navigate, pages]);
@@ -59,6 +63,7 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
   // Reset position on route change - instant, no animation
   useEffect(() => {
     x.set(0);
+    hasTriggeredHaptic.current = false;
   }, [location.pathname, x]);
 
   // Don't apply swipe layout on desktop or non-swipeable pages
@@ -90,7 +95,7 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
       <motion.div
         drag="x"
         dragDirectionLock
-        dragElastic={0.05} // Very tight elastic for snappy feel
+        dragElastic={0.05}
         dragConstraints={{ 
           left: canSwipeLeft ? -50 : 0, 
           right: canSwipeRight ? 50 : 0 
@@ -98,7 +103,23 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
         onDragStart={(_, info) => {
           isDragging.current = true;
           startX.current = info.point.x;
+          hasTriggeredHaptic.current = false;
           document.body.style.overflow = 'hidden';
+        }}
+        onDrag={(_, info: PanInfo) => {
+          const offsetX = info.offset.x;
+          const atLeftBoundary = currentIndex === 0 && offsetX > 30;
+          const atRightBoundary = currentIndex === pages.length - 1 && offsetX < -30;
+          
+          // Haptic feedback when threshold is reached
+          if (Math.abs(offsetX) > 50 && !hasTriggeredHaptic.current) {
+            if (atLeftBoundary || atRightBoundary) {
+              haptics.boundary();
+            } else {
+              haptics.swipeReady();
+            }
+            hasTriggeredHaptic.current = true;
+          }
         }}
         onDragEnd={(_, info: PanInfo) => {
           isDragging.current = false;

@@ -2,6 +2,7 @@ import { ReactNode, useCallback, useRef } from 'react';
 import { motion, useMotionValue, useTransform, PanInfo, animate } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { haptics } from '@/utils/haptics';
 
 interface SwipeableSubPageProps {
   children: ReactNode;
@@ -14,6 +15,7 @@ export function SwipeableSubPage({ children, onBack, enabled = true }: Swipeable
   const isMobile = useIsMobile();
   const x = useMotionValue(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasTriggeredHaptic = useRef(false);
   
   // iOS-style parallax effect
   const backgroundX = useTransform(x, [0, 300], [-100, 0]);
@@ -27,6 +29,7 @@ export function SwipeableSubPage({ children, onBack, enabled = true }: Swipeable
       
       // Navigate back if swiped far enough or fast enough from left edge
       if (info.offset.x > threshold || velocity > 800) {
+        haptics.pageChange();
         // Animate out before navigating
         animate(x, window.innerWidth, {
           type: 'spring',
@@ -48,8 +51,22 @@ export function SwipeableSubPage({ children, onBack, enabled = true }: Swipeable
           damping: 35,
         });
       }
+      hasTriggeredHaptic.current = false;
     },
     [navigate, onBack, x]
+  );
+
+  const handleDrag = useCallback(
+    (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      // Haptic feedback when threshold is reached
+      if (info.offset.x > 100 && !hasTriggeredHaptic.current) {
+        haptics.swipeReady();
+        hasTriggeredHaptic.current = true;
+      } else if (info.offset.x < 80 && hasTriggeredHaptic.current) {
+        hasTriggeredHaptic.current = false;
+      }
+    },
+    []
   );
 
   // Only enable on mobile
@@ -83,6 +100,7 @@ export function SwipeableSubPage({ children, onBack, enabled = true }: Swipeable
         dragElastic={0.15}
         dragConstraints={{ left: 0, right: 0 }}
         dragSnapToOrigin={false}
+        onDrag={handleDrag}
         onDragEnd={handleDragEnd}
         style={{ x, scale }}
         className="min-h-screen bg-background touch-pan-y will-change-transform"
