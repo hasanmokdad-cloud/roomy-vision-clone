@@ -167,6 +167,9 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
     }
   };
 
+  // State for projected room fullness (after student joins)
+  const [projectedRoomFull, setProjectedRoomFull] = useState(false);
+
   // Load rooms when current dorm is selected
   useEffect(() => {
     const loadRoomsForDorm = async () => {
@@ -174,24 +177,32 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         setAvailableRooms([]);
         setCurrentRoomData(null);
         setIsRoomFull(false);
+        setProjectedRoomFull(false);
         return;
       }
 
-      let query = supabase
+      const { data } = await supabase
         .from('rooms')
         .select('id, name, type, capacity, capacity_occupied, roomy_confirmed_occupants')
         .eq('dorm_id', currentDormId)
         .order('name');
       
-      const { data } = await query;
-      
       if (data) {
         // Filter rooms: show room if roomy_confirmed_occupants < capacity
-        // (even if capacity_occupied = capacity)
-        const selectableRooms = data.filter(room => {
+        let selectableRooms = data.filter(room => {
           const roomyConfirmed = room.roomy_confirmed_occupants || 0;
           return roomyConfirmed < (room.capacity || 1);
         });
+        
+        // ALWAYS include the student's current room even if it's "full"
+        // This ensures the dropdown shows the current room correctly
+        if (currentRoomId && !selectableRooms.find(r => r.id === currentRoomId)) {
+          const currentRoom = data.find(r => r.id === currentRoomId);
+          if (currentRoom) {
+            selectableRooms = [currentRoom, ...selectableRooms];
+          }
+        }
+        
         setAvailableRooms(selectableRooms);
       }
 
@@ -205,14 +216,26 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
 
         if (roomData) {
           setCurrentRoomData(roomData);
-          // Room is full when roomy_confirmed_occupants = capacity
-          setIsRoomFull((roomData.roomy_confirmed_occupants || 0) >= (roomData.capacity || 1));
+          const currentOccupancy = roomData.roomy_confirmed_occupants || 0;
+          const capacity = roomData.capacity || 1;
+          
+          // Room is currently full when roomy_confirmed_occupants = capacity
+          setIsRoomFull(currentOccupancy >= capacity);
+          
+          // Room will be full after this student joins (projected)
+          // If student is already confirmed in this room, don't add +1
+          const projectedOccupancy = isRoomConfirmed ? currentOccupancy : currentOccupancy + 1;
+          setProjectedRoomFull(projectedOccupancy >= capacity);
         }
+      } else {
+        setCurrentRoomData(null);
+        setIsRoomFull(false);
+        setProjectedRoomFull(false);
       }
     };
 
     loadRoomsForDorm();
-  }, [currentDormId, currentRoomId]);
+  }, [currentDormId, currentRoomId, isRoomConfirmed]);
 
   // Handle governorate selection
   useEffect(() => {
@@ -1178,8 +1201,8 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                       )}
                     </div>
 
-                    {/* 2. Looking for Roommate - Show when room selected, not single, room not full (by roomy_confirmed), and either confirmed OR not pending */}
-                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && !isRoomFull && (isRoomConfirmed || !hasPendingClaim) && (
+                    {/* 2. Looking for Roommate - Show when room selected, not single, room not full (current OR projected), and either confirmed OR not pending */}
+                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && !isRoomFull && !projectedRoomFull && (isRoomConfirmed || !hasPendingClaim) && (
                       <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
                         <div className="flex items-center gap-3">
                           <Users className="w-5 h-5 text-muted-foreground" />
@@ -1197,15 +1220,15 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                       </div>
                     )}
                     
-                    {/* Show message when room is full - no roommate search available */}
-                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && isRoomFull && isRoomConfirmed && (
+                    {/* Show message when room is full (current or projected) - no roommate search available */}
+                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && (isRoomFull || projectedRoomFull) && (isRoomConfirmed || !hasPendingClaim) && (
                       <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30 opacity-50">
                         <div className="flex items-center gap-3">
                           <Users className="w-5 h-5 text-muted-foreground" />
                           <div>
                             <div className="font-medium">Looking for Roommate</div>
                             <div className="text-sm text-muted-foreground">
-                              Room is full. Roommate search not available.
+                              Room will be full. Roommate search not available.
                             </div>
                           </div>
                         </div>
@@ -1235,8 +1258,8 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                       </div>
                     )}
 
-                    {/* 3. AI Personality Matching - Show if roommate toggle is ON and (confirmed OR not pending) and room not full */}
-                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && needsRoommateCurrentPlace && !isRoomFull && (isRoomConfirmed || !hasPendingClaim) && (
+                    {/* 3. AI Personality Matching - Show if roommate toggle is ON and (confirmed OR not pending) and room not full (current or projected) */}
+                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && needsRoommateCurrentPlace && !isRoomFull && !projectedRoomFull && (isRoomConfirmed || !hasPendingClaim) && (
                       <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">

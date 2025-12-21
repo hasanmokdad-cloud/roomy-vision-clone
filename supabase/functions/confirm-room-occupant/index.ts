@@ -91,7 +91,50 @@ serve(async (req) => {
       .single();
 
     if (action === 'confirm') {
-      // Update the claim to confirmed
+      // FIRST: Reject any existing confirmed claims for this student on OTHER rooms
+      // This prevents ghost occupants when a student changes rooms
+      const { data: otherConfirmedClaims, error: fetchOtherError } = await supabaseClient
+        .from('room_occupancy_claims')
+        .select('id, room_id')
+        .eq('student_id', claim.student_id)
+        .eq('status', 'confirmed')
+        .neq('id', claimId); // Exclude the current claim being confirmed
+
+      if (fetchOtherError) {
+        console.error('Error fetching other claims:', fetchOtherError);
+      } else if (otherConfirmedClaims && otherConfirmedClaims.length > 0) {
+        console.log(`Found ${otherConfirmedClaims.length} other confirmed claims to reject`);
+        
+        for (const oldClaim of otherConfirmedClaims) {
+          // Decrement roomy_confirmed_occupants for the old room
+          const { error: decrementError } = await supabaseClient.rpc('decrement_roomy_confirmed_occupants', {
+            p_room_id: oldClaim.room_id
+          });
+          
+          if (decrementError) {
+            console.error(`Error decrementing roomy_confirmed_occupants for room ${oldClaim.room_id}:`, decrementError);
+          } else {
+            console.log(`Decremented roomy_confirmed_occupants for old room ${oldClaim.room_id}`);
+          }
+          
+          // Reject the old claim
+          const { error: rejectError } = await supabaseClient
+            .from('room_occupancy_claims')
+            .update({
+              status: 'rejected',
+              rejection_reason: 'Student moved to a new room',
+            })
+            .eq('id', oldClaim.id);
+          
+          if (rejectError) {
+            console.error(`Error rejecting old claim ${oldClaim.id}:`, rejectError);
+          } else {
+            console.log(`Rejected old claim ${oldClaim.id}`);
+          }
+        }
+      }
+
+      // NOW: Update the new claim to confirmed
       const { error: updateClaimError } = await supabaseClient
         .from('room_occupancy_claims')
         .update({
@@ -105,13 +148,15 @@ serve(async (req) => {
         throw updateClaimError;
       }
 
-      // Update student's room confirmation fields
+      // Update student's room confirmation fields AND current_room_id
       const { error: updateStudentError } = await supabaseClient
         .from('students')
         .update({
           room_confirmed: true,
           room_confirmed_at: new Date().toISOString(),
           confirmation_type: 'legacy_claim',
+          current_room_id: claim.room_id,
+          current_dorm_id: claim.dorm_id,
         })
         .eq('id', claim.student_id);
 
