@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { User, MapPin, GraduationCap, DollarSign, Home, Users, Brain, Calendar, Building2 } from 'lucide-react';
+import { User, MapPin, GraduationCap, DollarSign, Home, Users, Brain, Calendar, Building2, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Confetti } from '@/components/profile/Confetti';
 
@@ -82,6 +82,10 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
   const [enablePersonalityMatching, setEnablePersonalityMatching] = useState(false);
   const [personalityTestCompleted, setPersonalityTestCompleted] = useState(false);
   const [showPersonalitySurvey, setShowPersonalitySurvey] = useState(false);
+  
+  // Pending claim state - locks form when claim is pending owner confirmation
+  const [hasPendingClaim, setHasPendingClaim] = useState(false);
+  const [pendingClaimCreated, setPendingClaimCreated] = useState(false);
   
   // Hierarchical location state
   const [selectedGovernorate, setSelectedGovernorate] = useState<Governorate | ''>('');
@@ -293,6 +297,20 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         setCurrentRoomId(data.current_room_id);
       }
 
+      // Check for pending room occupancy claim
+      if (data.current_room_id && data.accommodation_status === 'have_dorm') {
+        const { data: existingClaim } = await supabase
+          .from('room_occupancy_claims')
+          .select('id, status')
+          .eq('room_id', data.current_room_id)
+          .in('status', ['pending', 'confirmed'])
+          .maybeSingle();
+        
+        if (existingClaim?.status === 'pending') {
+          setHasPendingClaim(true);
+        }
+      }
+
       // Set location fields
       if (data.governorate) {
         setSelectedGovernorate(data.governorate as Governorate);
@@ -487,9 +505,13 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                     claim_type: 'legacy'
                   });
                 
+                // Set pending claim state to prevent redirect
+                setPendingClaimCreated(true);
+                setHasPendingClaim(true);
+                
                 toast({
                   title: 'Room Claim Submitted',
-                  description: 'Your claim is pending owner confirmation.',
+                  description: 'Waiting for owner to confirm. You will be notified once approved.',
                 });
               }
             }
@@ -508,7 +530,8 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
         description: 'Your profile has been saved successfully.',
       });
 
-      if (onComplete) {
+      // DON'T call onComplete if a pending claim was just created - stay on profile
+      if (onComplete && !pendingClaimCreated && !(accommodationStatus === 'have_dorm' && currentDormId && currentRoomId)) {
         onComplete();
       }
     } catch (error: any) {
@@ -895,16 +918,32 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                 title="Accommodation Status"
               />
               
+              {/* Pending Claim Warning Banner */}
+              {hasPendingClaim && (
+                <div className="mt-4 p-4 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20">
+                  <div className="flex items-start gap-3">
+                    <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-amber-800 dark:text-amber-300">Pending Owner Confirmation</p>
+                      <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                        Your room claim is awaiting owner confirmation. You cannot modify your accommodation status or use roommate matching until approved.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-4 pt-4">
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={() => handleAccommodationStatusChange('need_dorm')}
+                    onClick={() => !hasPendingClaim && handleAccommodationStatusChange('need_dorm')}
+                    disabled={hasPendingClaim}
                     className={`p-4 rounded-lg border-2 transition-all ${
                       accommodationStatus === 'need_dorm'
                         ? 'border-primary bg-primary/5'
                         : 'border-border hover:border-primary/50'
-                    }`}
+                    } ${hasPendingClaim ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="text-center">
                       <Home className="w-6 h-6 mx-auto mb-2" />
@@ -917,12 +956,13 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                   
                   <button
                     type="button"
-                    onClick={() => handleAccommodationStatusChange('have_dorm')}
+                    onClick={() => !hasPendingClaim && handleAccommodationStatusChange('have_dorm')}
+                    disabled={hasPendingClaim}
                     className={`p-4 rounded-lg border-2 transition-all ${
                       accommodationStatus === 'have_dorm'
                         ? 'border-primary bg-primary/5'
                         : 'border-border hover:border-primary/50'
-                    }`}
+                    } ${hasPendingClaim ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="text-center">
                       <Home className="w-6 h-6 mx-auto mb-2" />
@@ -941,8 +981,12 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                     <div id="current-dorm-section" className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
                       <div className="space-y-2">
                         <Label>Current Dorm</Label>
-                        <Select value={currentDormId} onValueChange={handleCurrentDormChange}>
-                          <SelectTrigger>
+                        <Select 
+                          value={currentDormId} 
+                          onValueChange={handleCurrentDormChange}
+                          disabled={hasPendingClaim}
+                        >
+                          <SelectTrigger className={hasPendingClaim ? 'opacity-50 cursor-not-allowed' : ''}>
                             <SelectValue placeholder="Select your dorm" />
                           </SelectTrigger>
                           <SelectContent>
@@ -958,8 +1002,12 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                       {currentDormId && (
                         <div className="space-y-2">
                           <Label>Current Room</Label>
-                          <Select value={currentRoomId} onValueChange={handleCurrentRoomChange}>
-                            <SelectTrigger>
+                          <Select 
+                            value={currentRoomId} 
+                            onValueChange={handleCurrentRoomChange}
+                            disabled={hasPendingClaim}
+                          >
+                            <SelectTrigger className={hasPendingClaim ? 'opacity-50 cursor-not-allowed' : ''}>
                               <SelectValue placeholder="Select your room" />
                             </SelectTrigger>
                             <SelectContent>
@@ -980,8 +1028,8 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                       )}
                     </div>
 
-                    {/* 2. Looking for Roommate - Only show AFTER room selected AND room is NOT single */}
-                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && (
+                    {/* 2. Looking for Roommate - Only show AFTER room selected AND room is NOT single AND not pending */}
+                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && !hasPendingClaim && (
                       <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
                         <div className="flex items-center gap-3">
                           <Users className="w-5 h-5 text-muted-foreground" />
@@ -998,9 +1046,28 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
                         />
                       </div>
                     )}
+                    
+                    {/* Show disabled roommate toggle with message when pending */}
+                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && hasPendingClaim && (
+                      <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30 opacity-50">
+                        <div className="flex items-center gap-3">
+                          <Users className="w-5 h-5 text-muted-foreground" />
+                          <div>
+                            <div className="font-medium">Looking for Roommate</div>
+                            <div className="text-sm text-amber-600 dark:text-amber-400">
+                              Available after owner confirms your room
+                            </div>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={false}
+                          disabled
+                        />
+                      </div>
+                    )}
 
-                    {/* 3. AI Personality Matching - Only show if roommate toggle is ON */}
-                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && needsRoommateCurrentPlace && (
+                    {/* 3. AI Personality Matching - Only show if roommate toggle is ON and not pending */}
+                    {currentDormId && currentRoomId && !isSingleRoom(availableRooms.find(r => r.id === currentRoomId)?.type) && needsRoommateCurrentPlace && !hasPendingClaim && (
                       <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">

@@ -619,6 +619,7 @@ export default function Profile() {
 
 
             {/* Student Profile Form - only show if profile is complete */}
+            {/* Note: StudentProfileForm handles preventing redirect to /ai-match when pending claim exists */}
             {hasCompletedProfile && (
               <StudentProfileForm 
                 userId={userId!} 

@@ -48,6 +48,7 @@ const AiMatch = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
+  const [hasPendingClaim, setHasPendingClaim] = useState(false);
 
   // Check authentication - show Airbnb-style login prompt for unauthenticated users
   useEffect(() => {
@@ -166,6 +167,20 @@ const AiMatch = () => {
           const plan = (data.ai_match_plan || 'basic') as AiMatchPlan;
           setUserPlan(plan);
           setSelectedPlan(plan);
+          
+          // Check for pending room claim if student has accommodation
+          if (data.accommodation_status === 'have_dorm' && data.current_room_id && !data.room_confirmed) {
+            const { data: existingClaim } = await supabase
+              .from('room_occupancy_claims')
+              .select('id, status')
+              .eq('room_id', data.current_room_id)
+              .eq('status', 'pending')
+              .maybeSingle();
+            
+            if (existingClaim) {
+              setHasPendingClaim(true);
+            }
+          }
         }
       } catch (err) {
         console.error('Error in checkProfile:', err);
@@ -482,6 +497,23 @@ const AiMatch = () => {
             </p>
           </motion.div>
         </div>
+
+        {/* Pending Claim Warning for Roommates Tab */}
+        {hasPendingClaim && matchMode === 'roommates' && (
+          <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-amber-800 dark:text-amber-300">Roommate Matching Unavailable</p>
+                  <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                    Your room claim is pending owner confirmation. Roommate matching will be available after your dorm owner confirms your room.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Mode Tabs - Always show for navigation */}
         <MatchModeTabs
