@@ -44,8 +44,14 @@ export default function OwnerRooms() {
   const [ownerId, setOwnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedDorms, setExpandedDorms] = useState<Set<string>>(new Set());
+  const [refreshKey, setRefreshKey] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  const handleClaimProcessed = () => {
+    loadDormsWithRooms();
+    setRefreshKey(prev => prev + 1); // Force RoomOccupantPreview to refresh
+  };
 
   useEffect(() => {
     if (userId) {
@@ -221,7 +227,7 @@ export default function OwnerRooms() {
           {ownerId && (
             <PendingOccupantClaims 
               ownerId={ownerId} 
-              onClaimProcessed={loadDormsWithRooms} 
+              onClaimProcessed={handleClaimProcessed} 
             />
           )}
 
@@ -356,7 +362,7 @@ export default function OwnerRooms() {
 
                                           {/* Confirmed Occupants Preview */}
                                           <div className="mb-3">
-                                            <RoomOccupantPreview roomId={room.id} />
+                                            <RoomOccupantPreview key={`${room.id}-${refreshKey}`} roomId={room.id} />
                                           </div>
 
                                           {/* Occupancy bar */}
