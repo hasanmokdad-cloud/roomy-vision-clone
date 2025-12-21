@@ -23,6 +23,7 @@ interface Room {
   price: number;
   capacity: number;
   capacity_occupied: number;
+  roomy_confirmed_occupants: number;
   area_m2: number | null;
   description: string | null;
   images: string[];
@@ -98,6 +99,7 @@ export default function OwnerRooms() {
               price: Number(room.price),
               capacity: room.capacity || 1,
               capacity_occupied: room.capacity_occupied || 0,
+              roomy_confirmed_occupants: room.roomy_confirmed_occupants || 0,
               area_m2: room.area_m2 ? Number(room.area_m2) : null,
               description: room.description,
               images: room.images || [],
@@ -318,8 +320,9 @@ export default function OwnerRooms() {
                                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                                     {dorm.rooms.map((room) => {
                                       const isAvailable = room.available;
+                                      // Use roomy_confirmed_occupants for the occupancy bar
                                       const occupancyPercent = room.capacity > 0 
-                                        ? (room.capacity_occupied / room.capacity) * 100 
+                                        ? (room.roomy_confirmed_occupants / room.capacity) * 100 
                                         : 0;
                                       
                                       return (
@@ -354,10 +357,10 @@ export default function OwnerRooms() {
                                             </div>
                                           </div>
 
-                                          {/* Capacity */}
+                                          {/* Capacity - Show Roomy-confirmed occupants */}
                                           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
                                             <Users className="w-4 h-4" />
-                                            <span>{room.capacity_occupied} / {room.capacity} occupied</span>
+                                            <span>{room.roomy_confirmed_occupants} / {room.capacity} confirmed via Roomy</span>
                                           </div>
 
                                           {/* Confirmed Occupants Preview */}

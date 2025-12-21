@@ -4332,6 +4332,10 @@ export type Database = {
         Args: { room_id: string }
         Returns: undefined
       }
+      decrement_roomy_confirmed_occupants: {
+        Args: { p_room_id: string }
+        Returns: undefined
+      }
       find_next_available_slot: {
         Args: {
           p_dorm_id: string
@@ -4391,6 +4395,10 @@ export type Database = {
       }
       increment_room_occupancy: {
         Args: { room_id: string }
+        Returns: undefined
+      }
+      increment_roomy_confirmed_occupants: {
+        Args: { p_room_id: string }
         Returns: undefined
       }
       insert_owner_dorm: {

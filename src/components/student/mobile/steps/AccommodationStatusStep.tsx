@@ -104,12 +104,12 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
     return roomyConfirmed < capacity;
   };
 
-  // Get room display with occupancy
+  // Get room display with occupancy (showing roomy-confirmed count)
   const getRoomDisplay = (room: Room): string => {
     const capacity = room.capacity || 1;
-    const occupied = room.capacity_occupied || 0;
+    const roomyConfirmed = room.roomy_confirmed_occupants || 0;
     const typeLabel = room.type ? ` - ${room.type}` : '';
-    return `${room.name}${typeLabel} (${occupied}/${capacity})`;
+    return `${room.name}${typeLabel} (${roomyConfirmed}/${capacity} via Roomy)`;
   };
 
   // Check if selected room is single
@@ -118,9 +118,9 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
                        selectedRoom?.type?.toLowerCase().includes('private') ||
                        selectedRoom?.capacity === 1;
 
-  // Check if room is full (for hiding roommate toggle)
+  // Check if room is full by roomy_confirmed_occupants (for hiding roommate toggle)
   const isRoomFull = selectedRoom ? 
-    (selectedRoom.capacity_occupied || 0) >= (selectedRoom.capacity || 1) : 
+    (selectedRoom.roomy_confirmed_occupants || 0) >= (selectedRoom.capacity || 1) : 
     false;
 
   const statusOptions = [
