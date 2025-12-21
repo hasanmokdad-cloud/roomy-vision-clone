@@ -651,6 +651,10 @@ async function fetchRoommateMatches(
   if (student.gender) {
     query = query.ilike('gender', student.gender);
   }
+  
+  // CRITICAL: Exclude students with unconfirmed rooms (pending claims)
+  // Only include students who are confirmed OR don't have a room (need_dorm)
+  query = query.or('room_confirmed.eq.true,accommodation_status.eq.need_dorm,current_room_id.is.null');
 
   if (seekingRoommateForCurrentPlace) {
     // Prioritize candidates who need a dorm (will join student's current place)
