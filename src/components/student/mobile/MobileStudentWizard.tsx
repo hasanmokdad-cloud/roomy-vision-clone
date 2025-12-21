@@ -316,36 +316,30 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
 
       if (error) throw error;
 
-      // Create room occupancy claim if student selected a room
+      // Create room occupancy claim via edge function if student selected a room
       if (formData.accommodation_status === 'have_dorm' && formData.current_dorm_id && formData.current_room_id) {
-        // Get dorm owner
-        const { data: dorm } = await supabase
-          .from('dorms')
-          .select('owner_id')
-          .eq('id', formData.current_dorm_id)
-          .single();
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const accessToken = sessionData?.session?.access_token;
+          
+          if (accessToken) {
+            const { data: changeRoomResult, error: changeRoomError } = await supabase.functions.invoke('student-change-room', {
+              body: {
+                newRoomId: formData.current_room_id,
+                newDormId: formData.current_dorm_id
+              }
+            });
 
-        if (dorm?.owner_id) {
-          // Check if claim already exists
-          const { data: existingClaim } = await supabase
-            .from('room_occupancy_claims')
-            .select('id')
-            .eq('student_id', student.id)
-            .eq('room_id', formData.current_room_id)
-            .maybeSingle();
-
-          if (!existingClaim) {
-            await supabase
-              .from('room_occupancy_claims')
-              .insert({
-                student_id: student.id,
-                room_id: formData.current_room_id,
-                dorm_id: formData.current_dorm_id,
-                owner_id: dorm.owner_id,
-                status: 'pending',
-                claim_type: 'legacy'
-              });
+            if (changeRoomError) {
+              console.error('Error calling student-change-room:', changeRoomError);
+              // Don't fail the whole submission if room claim fails
+            } else {
+              console.log('Room change result:', changeRoomResult);
+            }
           }
+        } catch (claimError) {
+          console.error('Error creating room claim via edge function:', claimError);
+          // Don't fail the whole save if claim creation fails
         }
       }
 

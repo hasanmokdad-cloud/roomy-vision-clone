@@ -101,3 +101,6 @@ verify_jwt = true
 
 [functions.student-checkout]
 verify_jwt = true
+
+[functions.student-change-room]
+verify_jwt = true
