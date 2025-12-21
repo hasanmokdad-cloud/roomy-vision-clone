@@ -231,6 +231,13 @@ serve(async (req) => {
           .eq('user_id', userId);
         console.log('Deleted personality responses');
 
+        // Delete room occupancy claims
+        await supabaseAdmin
+          .from('room_occupancy_claims')
+          .delete()
+          .eq('student_id', studentId);
+        console.log('Deleted room occupancy claims');
+
         // Delete student record
         await supabaseAdmin
           .from('students')
@@ -332,6 +339,15 @@ serve(async (req) => {
       .delete()
       .eq('user_id', userId);
     console.log('Deleted device security logs');
+
+    // Delete saved rooms
+    await supabaseAdmin
+      .from('saved_rooms')
+      .delete()
+      .eq('user_id', userId);
+    console.log('Deleted saved rooms');
+
+    // Note: room_occupancy_claims are deleted in the student section (uses student_id)
 
     // Delete user roles
     await supabaseAdmin
