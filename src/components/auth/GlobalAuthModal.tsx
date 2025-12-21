@@ -100,20 +100,38 @@ export function GlobalAuthModal() {
 
       if (error) throw error;
 
-      // Send custom Roomy-branded verification email
+      // Immediately create student profile and assign role (don't wait for email verification)
       if (data.user) {
-        const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
+        // Create student profile first
+        const { error: studentError } = await supabase.from('students').upsert({
+          user_id: data.user.id,
+          email: email.trim(),
+          full_name: email.trim().split('@')[0],
+        }, { onConflict: 'user_id' });
+
+        if (studentError) {
+          console.error('[GlobalAuthModal] Failed to create student profile:', studentError);
+        }
+
+        // Assign student role via RPC
+        const { error: roleError } = await supabase.rpc('assign_student_role', { 
+          p_user_id: data.user.id 
+        });
+
+        if (roleError) {
+          console.error('[GlobalAuthModal] Failed to assign student role:', roleError);
+        }
+
+        // Send verification email (non-blocking - don't fail signup if this fails)
+        supabase.functions.invoke('send-verification-email', {
           body: {
             userId: data.user.id,
             email: email.trim(),
             tokenType: 'signup'
           }
+        }).catch(err => {
+          console.error('[GlobalAuthModal] Failed to send verification email:', err);
         });
-
-        if (emailError) {
-          console.error('[GlobalAuthModal] Failed to send verification email:', emailError);
-          // Don't throw - user is created, just notify them
-        }
       }
 
       // Clear any previous onboarding state for fresh signup experience
