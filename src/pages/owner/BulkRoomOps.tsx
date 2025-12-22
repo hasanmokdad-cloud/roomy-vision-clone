@@ -634,16 +634,16 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
     try {
       const roomIds = Array.from(selectedRooms);
 
-      // Upload video
+      // Upload video to dorm-uploads bucket (supports video MIME types)
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`;
       const { data, error } = await supabase.storage
-        .from("room-images")
-        .upload(fileName, file);
+        .from("dorm-uploads")
+        .upload(`room-videos/${fileName}`, file);
 
       if (error) throw error;
 
       const { data: urlData } = supabase.storage
-        .from("room-images")
+        .from("dorm-uploads")
         .getPublicUrl(data.path);
 
       // Update all selected rooms with the video URL
