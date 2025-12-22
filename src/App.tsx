@@ -56,7 +56,6 @@ const OwnerBookings = lazy(() => import("./pages/owner/OwnerBookings"));
 const OwnerListings = lazy(() => import("./pages/owner/OwnerListings"));
 
 const RoomForm = lazy(() => import("./pages/owner/RoomForm"));
-const BulkImport = lazy(() => import("./pages/owner/BulkImport"));
 // RoleSelection removed - students are auto-assigned on signup
 const StudentProfile = lazy(() => import("./pages/StudentProfile"));
 const StudentMatch = lazy(() => import("./pages/StudentMatch"));
@@ -317,7 +316,6 @@ const AppRoutes = () => {
           
           <Route path="/owner/dorms/:dormId/rooms/new" element={<ProtectedRoute element={<RoomForm />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/dorms/:dormId/rooms/:roomId/edit" element={<ProtectedRoute element={<RoomForm />} allowedRoles={["owner", "admin"]} />} />
-          <Route path="/owner/bulk-import" element={<ProtectedRoute element={<BulkImport />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/performance" element={<ProtectedRoute element={<OwnerPerformance />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/rooms" element={<ProtectedRoute element={<OwnerRooms />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/bookings" element={<ProtectedRoute element={<OwnerBookings />} allowedRoles={["owner", "admin"]} />} />
