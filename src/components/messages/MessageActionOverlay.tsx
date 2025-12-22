@@ -52,6 +52,44 @@ interface MessageActionOverlayProps {
 
 const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "👏"];
 
+// WhatsApp-style smart positioning - shift message up if near bottom
+const calculateSmartPosition = (messageRect: DOMRect, isSender: boolean) => {
+  const viewportHeight = window.innerHeight;
+  const viewportWidth = window.innerWidth;
+  
+  const REACTION_BAR_HEIGHT = 56;
+  const MENU_HEIGHT = 400; // Approximate menu height
+  const SAFE_MARGIN = 16;
+  const TOP_MARGIN = 80;
+  
+  // Calculate space available below message for menu
+  const spaceBelow = viewportHeight - messageRect.bottom;
+  const spaceAbove = messageRect.top;
+  
+  let shiftY = 0;
+  
+  // If not enough space below for menu, shift everything up
+  if (spaceBelow < MENU_HEIGHT + SAFE_MARGIN) {
+    const neededShift = (MENU_HEIGHT + SAFE_MARGIN) - spaceBelow;
+    // But don't shift so much that reactions go off top
+    const maxShift = spaceAbove - REACTION_BAR_HEIGHT - TOP_MARGIN;
+    shiftY = Math.min(neededShift, Math.max(0, maxShift));
+  }
+  
+  const adjustedTop = Math.max(TOP_MARGIN + REACTION_BAR_HEIGHT, messageRect.top - shiftY);
+  const messageLeft = isSender ? undefined : Math.max(8, messageRect.left);
+  const messageRight = isSender ? Math.max(8, viewportWidth - messageRect.right) : undefined;
+  const messageWidth = Math.min(messageRect.width, viewportWidth - 16);
+  
+  return {
+    top: adjustedTop,
+    left: messageLeft,
+    right: messageRight,
+    width: messageWidth,
+    shiftY,
+  };
+};
+
 export function MessageActionOverlay({
   open,
   onClose,
@@ -88,15 +126,9 @@ export function MessageActionOverlay({
     onClose();
   };
 
-  // Calculate position to keep message in place, with edge case handling
-  const viewportHeight = window.innerHeight;
+  // Calculate smart position with WhatsApp-style shifting
+  const position = calculateSmartPosition(messageRect, isSender);
   const viewportWidth = window.innerWidth;
-  
-  // Ensure message doesn't go off screen
-  const messageTop = Math.max(80, Math.min(messageRect.top, viewportHeight - 300));
-  const messageLeft = isSender ? undefined : Math.max(8, messageRect.left);
-  const messageRight = isSender ? Math.max(8, window.innerWidth - messageRect.right) : undefined;
-  const messageWidth = Math.min(messageRect.width, viewportWidth - 16);
 
   // Animation variants with reduced motion support
   const fadeVariants = {
@@ -141,19 +173,19 @@ export function MessageActionOverlay({
             onClick={onClose}
           />
 
-          {/* Message clone in original position */}
+          {/* Message clone with smart positioning */}
           <motion.div
             variants={scaleVariants}
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={transitionFast}
+            transition={{ duration: prefersReducedMotion ? 0.1 : 0.3, ease: [0.4, 0, 0.2, 1] }}
             className="fixed z-[101]"
             style={{
-              top: messageTop,
-              left: messageLeft,
-              right: messageRight,
-              width: messageWidth,
+              top: position.top,
+              left: position.left,
+              right: position.right,
+              width: position.width,
               maxWidth: 'calc(100vw - 16px)',
             }}
             onClick={(e) => e.stopPropagation()}
@@ -166,7 +198,7 @@ export function MessageActionOverlay({
               transition={transitionDelayed}
               className={`flex items-center gap-1 mb-2 ${isSender ? 'justify-end' : 'justify-start'}`}
             >
-              <div className="bg-card/95 backdrop-blur-lg rounded-full px-3 py-2 flex items-center gap-1 shadow-lg border border-border/50">
+              <div className="bg-card/95 backdrop-blur-lg rounded-full px-2 py-1.5 flex items-center gap-0.5 shadow-lg border border-border/50">
                 {QUICK_REACTIONS.map((emoji, index) => (
                   <motion.button
                     key={emoji}
@@ -174,23 +206,23 @@ export function MessageActionOverlay({
                     animate={{ scale: 1, opacity: 1 }}
                     transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.1 + index * 0.03, type: "spring", stiffness: 400 }}
                     onClick={() => handleReact(emoji)}
-                    className="w-10 h-10 flex items-center justify-center text-2xl hover:scale-125 active:scale-95 transition-transform"
+                    className="w-8 h-8 flex items-center justify-center text-xl hover:scale-125 active:scale-95 transition-transform touch-manipulation"
                     whileHover={prefersReducedMotion ? {} : { scale: 1.2 }}
                     whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
                   >
                     {emoji}
                   </motion.button>
                 ))}
-                <div className="w-px h-6 bg-border mx-1" />
+                <div className="w-px h-5 bg-border mx-0.5" />
                 <button
                   onClick={() => {
                     haptics.light();
                     onOpenEmojiPicker();
                     onClose();
                   }}
-                  className="w-10 h-10 flex items-center justify-center hover:bg-accent rounded-full transition-colors"
+                  className="w-8 h-8 flex items-center justify-center hover:bg-accent rounded-full transition-colors touch-manipulation"
                 >
-                  <Plus className="h-5 w-5 text-muted-foreground" />
+                  <Plus className="h-4 w-4 text-muted-foreground" />
                 </button>
               </div>
             </motion.div>
@@ -202,7 +234,7 @@ export function MessageActionOverlay({
                   ? "bg-primary text-primary-foreground ml-auto"
                   : "bg-card text-card-foreground"
               }`}
-              style={{ maxWidth: messageWidth }}
+              style={{ maxWidth: position.width }}
             >
               {message.attachment_type === "image" && message.attachment_url && (
                 <img
@@ -226,9 +258,9 @@ export function MessageActionOverlay({
               animate="animate"
               transition={prefersReducedMotion ? { duration: 0.1 } : { delay: 0.15, duration: 0.2 }}
               className={`mt-2 ${isSender ? 'ml-auto' : ''}`}
-              style={{ width: 'fit-content', minWidth: '200px' }}
+              style={{ width: 'fit-content', minWidth: '180px', maxWidth: 'calc(100vw - 32px)' }}
             >
-              <div className="bg-card/95 backdrop-blur-lg rounded-2xl overflow-hidden shadow-lg border border-border/50">
+              <div className="bg-card/95 backdrop-blur-lg rounded-2xl overflow-hidden shadow-lg border border-border/50 max-h-[50vh] overflow-y-auto">
                 <ActionButton icon={Reply} label="Reply" onClick={() => handleAction(onReply)} index={0} reduced={prefersReducedMotion} />
                 <ActionButton icon={Forward} label="Forward" onClick={() => handleAction(onForward)} index={1} reduced={prefersReducedMotion} />
                 {message.body && (
@@ -254,7 +286,8 @@ export function MessageActionOverlay({
                   index={6}
                   reduced={prefersReducedMotion}
                 />
-                <ActionButton icon={Languages} label="Translate" onClick={() => handleAction(onTranslate)} index={7} reduced={prefersReducedMotion} />
+                {/* Translate button hidden for now - will implement later */}
+                {/* <ActionButton icon={Languages} label="Translate" onClick={() => handleAction(onTranslate)} index={7} reduced={prefersReducedMotion} /> */}
                 <ActionButton 
                   icon={Trash2} 
                   label="Delete" 
@@ -263,7 +296,7 @@ export function MessageActionOverlay({
                     setShowDeleteDrawer(true);
                   }} 
                   destructive
-                  index={8}
+                  index={7}
                   reduced={prefersReducedMotion}
                 />
               </div>
@@ -310,13 +343,13 @@ function ActionButton({ icon: Icon, label, onClick, destructive, index = 0, redu
       animate={{ opacity: 1, x: 0 }}
       transition={reduced ? { duration: 0 } : { delay: 0.2 + index * 0.02, duration: 0.15 }}
       onClick={onClick}
-      className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-accent/50 active:bg-accent transition-colors text-left border-t border-border/30 first:border-t-0 ${
+      className={`w-full px-4 py-2.5 flex items-center gap-3 hover:bg-accent/50 active:bg-accent transition-colors text-left border-t border-border/30 first:border-t-0 touch-manipulation ${
         destructive ? 'text-destructive' : ''
       }`}
       whileTap={reduced ? {} : { scale: 0.98 }}
     >
       <Icon className={`w-5 h-5 ${destructive ? '' : 'text-primary'}`} />
-      <span className="font-medium">{label}</span>
+      <span className="font-medium text-sm">{label}</span>
     </motion.button>
   );
 }
