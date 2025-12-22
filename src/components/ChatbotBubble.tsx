@@ -328,7 +328,7 @@ export const ChatbotBubble = () => {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed bottom-28 md:bottom-20 right-4 w-[calc(100vw-2rem)] max-w-96 h-[500px] glass rounded-2xl shadow-2xl flex flex-col z-50"
+            className="fixed bottom-[140px] md:bottom-20 right-4 w-[calc(100vw-2rem)] max-w-96 h-[500px] glass rounded-2xl shadow-2xl flex flex-col z-50"
             style={{
               paddingBottom: 'env(safe-area-inset-bottom)',
             }}
@@ -436,21 +436,26 @@ export const ChatbotBubble = () => {
         )}
       </AnimatePresence>
 
-      {/* Floating Chat Button */}
-      <motion.button
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-28 md:bottom-6 right-4 w-14 h-14 rounded-full bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition-shadow duration-300 flex items-center justify-center z-50"
-        style={{
-          marginBottom: 'env(safe-area-inset-bottom)',
-        }}
-        aria-label="Open Roomy AI Chat"
-      >
-        <MessageCircle className="w-6 h-6 text-white" />
-      </motion.button>
+      {/* Floating Chat Button - Only show when chat is closed */}
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.button
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setIsOpen(true)}
+            className="fixed bottom-[72px] md:bottom-6 right-4 w-14 h-14 rounded-full bg-gradient-to-r from-primary to-secondary shadow-lg hover:shadow-xl transition-shadow duration-300 flex items-center justify-center z-50"
+            style={{
+              marginBottom: 'env(safe-area-inset-bottom)',
+            }}
+            aria-label="Open Roomy AI Chat"
+          >
+            <MessageCircle className="w-6 h-6 text-white" />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </>
   );
 };
