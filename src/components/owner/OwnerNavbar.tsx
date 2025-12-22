@@ -1,4 +1,5 @@
-import { Menu, X, Bell, MessageSquare, Info, Phone, LogOut, User, Settings } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Menu, X, MessageSquare, Info, Phone, LogOut, User, Settings } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -12,6 +13,8 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { useAuth } from '@/contexts/AuthContext';
+import { NotificationBellPopover } from '@/components/shared/NotificationBellPopover';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OwnerNavbarProps {
   sidebarOpen: boolean;
@@ -22,6 +25,26 @@ export function OwnerNavbar({ sidebarOpen, onToggleSidebar }: OwnerNavbarProps) 
   const navigate = useNavigate();
   const { userId, role, signOut } = useAuth();
   const { count: unreadMessages } = useUnreadMessagesCount(userId, role);
+  const [ownerId, setOwnerId] = useState<string | null>(null);
+
+  // Fetch owner profile id for notifications
+  useEffect(() => {
+    const fetchOwnerId = async () => {
+      if (!userId) return;
+      
+      const { data } = await supabase
+        .from('owners')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+      
+      if (data) {
+        setOwnerId(data.id);
+      }
+    };
+
+    fetchOwnerId();
+  }, [userId]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -63,13 +86,13 @@ export function OwnerNavbar({ sidebarOpen, onToggleSidebar }: OwnerNavbarProps) 
         {/* Right side actions */}
         <div className="flex items-center gap-2">
           {/* Notification Bell */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full relative"
-          >
-            <Bell className="w-5 h-5" />
-          </Button>
+          {ownerId && (
+            <NotificationBellPopover 
+              userId={ownerId} 
+              tableType="owner" 
+              variant="owner"
+            />
+          )}
 
           {/* Profile Dropdown */}
           <DropdownMenu>

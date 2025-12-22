@@ -16,6 +16,7 @@ import RoomyLogo from '@/assets/roomy-logo.png';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { NotificationBellPopover } from '@/components/shared/NotificationBellPopover';
 
 export function RoomyNavbar() {
   const navigate = useNavigate();
@@ -146,6 +147,15 @@ export function RoomyNavbar() {
                     </span>
                   )}
                 </Button>
+              )}
+
+              {/* Notification Bell - only show when logged in (desktop) */}
+              {isAuthenticated && user?.id && (
+                <NotificationBellPopover 
+                  userId={user.id} 
+                  tableType="user" 
+                  variant="default"
+                />
               )}
 
               {/* Hamburger Menu */}
