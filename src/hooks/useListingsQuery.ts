@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { DormPublic } from '@/types/dorm';
+import { matchesRoomTypeFilter } from '@/data/roomTypes';
 
 interface DormListing extends DormPublic {
   deposit?: number;
@@ -212,8 +213,9 @@ export function useListingsQuery(filters: Filters) {
             if (room.capacity >= filters.capacity!) {
               // Filter by price
               if (room.price >= filters.priceRange[0] && room.price <= filters.priceRange[1]) {
-                // Filter by room type
-                if (filters.roomTypes.length === 0 || filters.roomTypes.includes(room.type)) {
+              // Filter by room type - use substring matching
+                if (filters.roomTypes.length === 0 || 
+                    filters.roomTypes.some(filterType => matchesRoomTypeFilter(room.type, filterType))) {
                   rooms.push({
                     dorm_id: dorm.id,
                     dorm_name: dorm.dorm_name,
@@ -252,12 +254,16 @@ export function useListingsQuery(filters: Filters) {
           priceMatch = true; // Include if no price info
         }
 
-        // Room type filter
+        // Room type filter - use substring matching
         let roomTypeMatch = filters.roomTypes.length === 0;
         if (!roomTypeMatch && roomTypesJson && Array.isArray(roomTypesJson)) {
-          roomTypeMatch = roomTypesJson.some(room => filters.roomTypes.includes(room.type));
+          roomTypeMatch = roomTypesJson.some(room => 
+            filters.roomTypes.some(filterType => matchesRoomTypeFilter(room.type, filterType))
+          );
         } else if (!roomTypeMatch && dorm.room_types) {
-          roomTypeMatch = filters.roomTypes.some(rt => dorm.room_types?.includes(rt));
+          roomTypeMatch = filters.roomTypes.some(rt => 
+            matchesRoomTypeFilter(dorm.room_types, rt)
+          );
         }
 
 

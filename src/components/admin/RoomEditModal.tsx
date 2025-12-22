@@ -18,7 +18,7 @@ interface RoomEditModalProps {
   onUpdate: () => void;
 }
 
-const ROOM_TYPES = ['Single', 'Double', 'Triple', 'Suite', 'Studio'];
+import { ownerRoomTypes } from '@/data/roomTypes';
 
 export default function RoomEditModal({ room, isOpen, onClose, onUpdate }: RoomEditModalProps) {
   const { toast } = useToast();
@@ -104,7 +104,7 @@ export default function RoomEditModal({ room, isOpen, onClose, onUpdate }: RoomE
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ROOM_TYPES.map((type) => (
+                    {ownerRoomTypes.map((type) => (
                       <SelectItem key={type} value={type}>
                         {type}
                       </SelectItem>

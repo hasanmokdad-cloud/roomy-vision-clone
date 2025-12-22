@@ -20,26 +20,7 @@ import { StudentReservationCard } from "@/components/owner/StudentReservationCar
 import { OwnerLayout } from "@/components/owner/OwnerLayout";
 import { motion } from "framer-motion";
 
-const ROOM_TYPES = [
-  'Single',
-  'Double',
-  'Triple',
-  'Apartment',
-  'Junior Suite',
-  'Royal Suite',
-  'Standard Single',
-  'High Standard Single',
-  'Standard Double',
-  'High Standard Double',
-  'Small Single',
-  'Medium Single',
-  'Large Single',
-  'Small Double',
-  'Medium Double',
-  'Large Double',
-  'Large Quadruple',
-  'Studio'
-];
+import { ownerRoomTypes } from '@/data/roomTypes';
 
 export default function RoomForm() {
   const { dormId } = useParams<{ dormId: string }>();
@@ -315,7 +296,7 @@ export default function RoomForm() {
                         <SelectValue placeholder="Select room type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {ROOM_TYPES.map((type) => (
+                        {ownerRoomTypes.map((type) => (
                           <SelectItem key={type} value={type}>
                             {type}
                           </SelectItem>

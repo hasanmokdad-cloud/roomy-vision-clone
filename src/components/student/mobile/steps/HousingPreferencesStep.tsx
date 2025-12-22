@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { roomTypes, isSingleRoom } from '@/data/roomTypes';
+import { studentRoomTypes, isSingleRoom } from '@/data/roomTypes';
 
 interface HousingPreferencesStepProps {
   data: {
@@ -195,7 +195,7 @@ const HousingPreferencesStep = ({ data, onChange }: HousingPreferencesStepProps)
               <SelectValue placeholder="Select room type" />
             </SelectTrigger>
             <SelectContent className="bg-background z-50 max-h-[300px]">
-              {roomTypes.map((type) => (
+              {studentRoomTypes.map((type) => (
                 <SelectItem key={type} value={type}>{type}</SelectItem>
               ))}
             </SelectContent>

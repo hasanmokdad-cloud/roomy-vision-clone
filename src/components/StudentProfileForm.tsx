@@ -25,7 +25,7 @@ import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
 import { residentialAreas, type Governorate, type District } from '@/data/residentialAreas';
 import { universities } from '@/data/universities';
 
-import { roomTypes, isSingleRoom } from '@/data/roomTypes';
+import { studentRoomTypes, isSingleRoom } from '@/data/roomTypes';
 
 const studentProfileSchema = z.object({
   // Personal Info
@@ -1651,7 +1651,7 @@ export const StudentProfileForm = ({ userId, onComplete }: StudentProfileFormPro
             <SelectValue placeholder="Select room type" />
           </SelectTrigger>
           <SelectContent>
-            {roomTypes.map((type) => (
+            {studentRoomTypes.map((type) => (
               <SelectItem key={type} value={type}>
                 {type}
               </SelectItem>

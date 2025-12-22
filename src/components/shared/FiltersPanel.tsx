@@ -104,26 +104,10 @@ const amenitiesOptions = [
   'Cleaning Service',
 ];
 
-// Whitelist of acceptable room types in order
-const acceptableRoomTypes = [
-  'Single',
-  'Double',
-  'Triple',
-  'Apartment',
-  'Junior Suite',
-  'Royal Suite',
-  'Standard Single',
-  'High Standard Single',
-  'Standard Double',
-  'High Standard Double',
-  'Small Single',
-  'Medium Single',
-  'Large Single',
-  'Small Double',
-  'Medium Double',
-  'Large Double',
-  'Large Quadruple'
-];
+import { studentRoomTypes, matchesRoomTypeFilter } from '@/data/roomTypes';
+
+// Student room types without "Any" for filter checkboxes
+const studentRoomTypesForFilters = studentRoomTypes.filter(t => t !== 'Any');
 
 export default function FiltersPanel({ filters, onFilterChange, dorms }: FiltersPanelProps) {
   const handleReset = () => {
@@ -371,9 +355,9 @@ export default function FiltersPanel({ filters, onFilterChange, dorms }: Filters
       {/* Room Types */}
       <div className="space-y-3">
         <Label className="text-base font-semibold">Room Type</Label>
-        <ScrollArea className="h-48 rounded-lg border border-white/10 p-2">
+        <ScrollArea className="h-32 rounded-lg border border-white/10 p-2">
           <div className="space-y-2">
-            {acceptableRoomTypes.map(type => (
+            {studentRoomTypesForFilters.map(type => (
               <div key={type} className="flex items-center space-x-2 hover:bg-white/5 p-1 rounded transition-colors">
                 <Checkbox
                   id={`room-${type}`}
