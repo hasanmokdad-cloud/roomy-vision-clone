@@ -1,69 +1,33 @@
 import { motion } from 'framer-motion';
-import { MapPin } from 'lucide-react';
+import { MapPin, Bus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { cities, areasByCity } from '@/data/dormLocations';
 
 interface LocationStepProps {
   city: string;
   area: string;
   address: string;
+  shuttle?: boolean;
   onCityChange: (value: string) => void;
   onAreaChange: (value: string) => void;
   onAddressChange: (value: string) => void;
+  onShuttleChange?: (value: boolean) => void;
 }
-
-const cities = [
-  { value: 'beirut', label: 'Beirut' },
-  { value: 'byblos', label: 'Byblos' },
-];
-
-const areasByCity: Record<string, string[]> = {
-  beirut: [
-    'Hamra',
-    'Manara',
-    'Ain El Mraisseh',
-    'Raoucheh',
-    'Ras Beirut',
-    'UNESCO',
-    'Geitawi',
-    'Dora',
-    'Badaro',
-    'Ashrafieh',
-    'Verdun',
-    'Sin El Fil',
-    'Dekwaneh',
-    'Jdeideh',
-    'Mar Elias',
-    'Borj Hammoud',
-    'Hazmieh',
-    'Furn El Chebbak',
-    'Tayouneh',
-    'Jnah',
-    "Ras Al Naba'a",
-    'Gemmayze',
-    'Clemenceau',
-    'Khalde',
-  ],
-  byblos: [
-    'Blat',
-    'Nahr Ibrahim',
-    'Halat',
-    'Jeddayel',
-    'Mastita',
-    'Fidar',
-    'Habboub',
-  ],
-};
 
 export function LocationStep({
   city,
   area,
   address,
+  shuttle = false,
   onCityChange,
   onAreaChange,
   onAddressChange,
+  onShuttleChange,
 }: LocationStepProps) {
   const availableAreas = city ? areasByCity[city] || [] : [];
+  const showShuttleToggle = city === 'byblos';
 
   return (
     <div className="px-6 pt-24 pb-32">
@@ -140,6 +104,33 @@ export function LocationStep({
                   </span>
                 </button>
               ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Shuttle Service Toggle - only show for Byblos */}
+        {showShuttleToggle && onShuttleChange && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="flex items-center justify-between p-4 border-2 rounded-xl bg-card">
+              <div className="flex items-center gap-3">
+                <Bus className="w-5 h-5 text-primary" />
+                <div>
+                  <Label htmlFor="shuttle-mobile" className="font-medium">
+                    Shuttle Service Available
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Transportation to nearby universities
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="shuttle-mobile"
+                checked={shuttle}
+                onCheckedChange={onShuttleChange}
+              />
             </div>
           </motion.div>
         )}

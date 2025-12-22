@@ -27,6 +27,7 @@ interface WizardFormData {
   city: string;
   area: string;
   address: string;
+  shuttle: boolean;
   capacity: number;
   amenities: string[];
   genderPreference: string;
@@ -77,6 +78,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     city: '',
     area: '',
     address: '',
+    shuttle: false,
     capacity: 1,
     amenities: [],
     genderPreference: '',
@@ -183,7 +185,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         location: formData.city || formData.area || formData.address,
         capacity: formData.capacity,
         amenities: formData.amenities,
-        shuttle: false,
+        shuttle: formData.shuttle,
         gender_preference: formData.genderPreference,
         gallery_images: formData.galleryImages,
         verification_status: 'Pending',
@@ -266,9 +268,11 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             city={formData.city}
             area={formData.area}
             address={formData.address}
-            onCityChange={(v) => setFormData({ ...formData, city: v, area: '' })}
+            shuttle={formData.shuttle}
+            onCityChange={(v) => setFormData({ ...formData, city: v, area: '', shuttle: false })}
             onAreaChange={(v) => setFormData({ ...formData, area: v })}
             onAddressChange={(v) => setFormData({ ...formData, address: v })}
+            onShuttleChange={(v) => setFormData({ ...formData, shuttle: v })}
           />
         );
       // Step 3: Capacity (was step 4)

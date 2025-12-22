@@ -1,0 +1,42 @@
+export const cities = [
+  { value: 'beirut', label: 'Beirut' },
+  { value: 'byblos', label: 'Byblos' },
+];
+
+export const areasByCity: Record<string, string[]> = {
+  beirut: [
+    'Hamra',
+    'Manara',
+    'Ain El Mraisseh',
+    'Raoucheh',
+    'Ras Beirut',
+    'UNESCO',
+    'Geitawi',
+    'Dora',
+    'Badaro',
+    'Ashrafieh',
+    'Verdun',
+    'Sin El Fil',
+    'Dekwaneh',
+    'Jdeideh',
+    'Mar Elias',
+    'Borj Hammoud',
+    'Hazmieh',
+    'Furn El Chebbak',
+    'Tayouneh',
+    'Jnah',
+    "Ras Al Naba'a",
+    'Gemmayze',
+    'Clemenceau',
+    'Khalde',
+  ],
+  byblos: [
+    'Blat',
+    'Nahr Ibrahim',
+    'Halat',
+    'Jeddayel',
+    'Mastita',
+    'Fidar',
+    'Habboub',
+  ],
+};
