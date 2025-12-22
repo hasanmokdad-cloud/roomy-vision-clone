@@ -27,13 +27,10 @@ export function AdminNavbar({ sidebarOpen, onToggleSidebar }: AdminNavbarProps) 
     await signOut();
   };
 
-  // Full site navigation items (same as main landing page, without Home)
+  // Top navbar items (Dorms and AI Match only)
   const navItems = [
     { icon: Building2, label: 'Dorms', href: '/listings' },
-    { icon: MessageSquare, label: 'Messages', href: '/messages', badge: unreadMessages },
     { icon: Brain, label: 'AI Match', href: '/ai-match' },
-    { icon: Info, label: 'About', href: '/about' },
-    { icon: Phone, label: 'Contact', href: '/contact' },
   ];
 
   return (
@@ -79,11 +76,6 @@ export function AdminNavbar({ sidebarOpen, onToggleSidebar }: AdminNavbarProps) 
             >
               <item.icon className="w-4 h-4" />
               <span>{item.label}</span>
-              {item.badge && item.badge > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-rose-500 to-purple-600 text-white text-xs rounded-full flex items-center justify-center">
-                  {item.badge > 9 ? '9+' : item.badge}
-                </span>
-              )}
             </Link>
           ))}
         </div>
@@ -116,23 +108,35 @@ export function AdminNavbar({ sidebarOpen, onToggleSidebar }: AdminNavbarProps) 
                 <User className="w-4 h-4 mr-2" />
                 My Profile
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/messages')}>
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Messages
+                {unreadMessages > 0 && (
+                  <span className="ml-auto w-5 h-5 bg-gradient-to-r from-rose-500 to-purple-600 text-white text-xs rounded-full flex items-center justify-center">
+                    {unreadMessages > 9 ? '9+' : unreadMessages}
+                  </span>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/about')}>
+                <Info className="w-4 h-4 mr-2" />
+                About
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/contact')}>
+                <Phone className="w-4 h-4 mr-2" />
+                Contact
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/settings')}>
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </DropdownMenuItem>
               
-              {/* Mobile-only nav items */}
+              {/* Mobile-only: Dorms and AI Match */}
               <div className="md:hidden">
                 <DropdownMenuSeparator />
                 {navItems.map((item) => (
                   <DropdownMenuItem key={item.label} onClick={() => navigate(item.href)}>
                     <item.icon className="w-4 h-4 mr-2" />
                     {item.label}
-                    {item.badge && item.badge > 0 && (
-                      <span className="ml-auto w-5 h-5 bg-gradient-to-r from-rose-500 to-purple-600 text-white text-xs rounded-full flex items-center justify-center">
-                        {item.badge}
-                      </span>
-                    )}
                   </DropdownMenuItem>
                 ))}
               </div>
