@@ -1493,16 +1493,19 @@ let otherUserName = 'User';
     }
   };
 
-  const handleVoiceButtonClick = (e?: React.MouseEvent | React.TouchEvent) => {
-    if (isMobile && e) {
-      // Mobile: Do nothing on click - will be handled by touch events
+  const handleVoiceButtonClick = async (e?: React.MouseEvent | React.TouchEvent) => {
+    // Check permission first for both mobile and desktop
+    if (permission === 'denied') {
+      setShowMicPermissionModal(true);
       return;
     }
     
-    // Desktop: Check permission first
-    if (permission !== 'granted') {
-      setShowMicPermissionModal(true);
-      return;
+    if (permission === 'prompt') {
+      const granted = await requestPermission();
+      if (!granted) {
+        setShowMicPermissionModal(true);
+        return;
+      }
     }
     
     // Toggle recording
@@ -2121,16 +2124,16 @@ let otherUserName = 'User';
                                 </span>
                               </div>
                               
-                              {/* Row 2: Message preview + time (Instagram style: "Message · 1d") */}
-                              <div className="flex items-center gap-1 mt-0.5 max-w-full">
+                            {/* Row 2: Message preview + time (Instagram style: "Message · 1d") */}
+                              <div className="flex items-center gap-1 mt-0.5">
                                 {conv.last_message_sender_id === userId && (
                                   <MessageStatusIcon status={conv.last_message_status} />
                                 )}
-                                <p className={`text-sm truncate flex-1 min-w-0 max-w-[150px] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                                <p className={`text-sm truncate min-w-0 flex-1 ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                                   {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
                                 </p>
                                 {timeAgo && (
-                                  <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">· {timeAgo}</span>
+                                  <span className="text-sm text-muted-foreground shrink-0 ml-1">· {timeAgo}</span>
                                 )}
                               </div>
                             </div>
@@ -2194,8 +2197,8 @@ let otherUserName = 'User';
         >
             {selectedConversation ? (
               <>
-                {/* Instagram-style conversation header */}
-                <div className={`${isMobile ? 'p-3' : 'p-4'} border-b border-border flex items-center gap-3 bg-background`}>
+              {/* Instagram-style conversation header - sticky on mobile */}
+                <div className={`${isMobile ? 'p-3 sticky top-0 z-20' : 'p-4'} border-b border-border flex items-center gap-3 bg-background`}>
                   {isMobile && (
                     <Button 
                       variant="ghost" 

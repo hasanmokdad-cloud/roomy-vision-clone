@@ -679,12 +679,12 @@ export function MessageBubble({
           attachmentDuration={message.attachment_duration}
         />
 
-        {/* Translate Modal */}
-        <TranslateModal
+        {/* Translate Modal - hidden for now, will implement later */}
+        {/* <TranslateModal
           open={showTranslateModal}
           onOpenChange={setShowTranslateModal}
           messageText={message.body}
-        />
+        /> */}
 
         {/* Forward Message Sheet */}
         <ForwardMessageSheet

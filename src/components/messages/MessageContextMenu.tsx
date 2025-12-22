@@ -86,7 +86,8 @@ export function MessageContextMenu({
     { icon: Info, label: "Info", onClick: onInfo, show: isSender },
     { icon: isStarred ? StarOff : Star, label: isStarred ? "Unstar" : "Star", onClick: onStar },
     { icon: Pin, label: isPinned ? "Unpin" : "Pin", onClick: onPin },
-    { icon: Languages, label: "Translate", onClick: onTranslate },
+    // Translate hidden for now - will implement later
+    // { icon: Languages, label: "Translate", onClick: onTranslate },
   ];
 
   if (isMobile) {
