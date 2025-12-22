@@ -2192,13 +2192,13 @@ let otherUserName = 'User';
 
         {/* Chat Window - Edge-to-edge, no Card wrapper */}
         <div 
-          className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} flex-col flex-1 bg-background ${isMobile ? 'h-screen' : 'h-[calc(100vh-80px)]'}`}
+          className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} flex-col flex-1 bg-background ${isMobile ? 'h-screen overflow-hidden' : 'h-[calc(100vh-80px)]'}`}
           onContextMenu={(e) => e.preventDefault()}
         >
             {selectedConversation ? (
               <>
-              {/* Instagram-style conversation header - sticky on mobile */}
-                <div className={`${isMobile ? 'p-3 sticky top-0 z-20' : 'p-4'} border-b border-border flex items-center gap-3 bg-background`}>
+              {/* Instagram-style conversation header - fixed on mobile */}
+                <div className={`${isMobile ? 'p-3 shrink-0 z-20' : 'p-4'} border-b border-border flex items-center gap-3 bg-background`}>
                   {isMobile && (
                     <Button 
                       variant="ghost" 
@@ -2296,7 +2296,7 @@ let otherUserName = 'User';
                 />
 
 
-                <ScrollArea className={`flex-1 p-4 ${isMobile ? 'pb-32' : ''}`}>
+                <ScrollArea className="flex-1 p-4">
                   <div className="space-y-4">
                     {/* Pinned Messages Banner */}
                     {pinnedMessages.length > 0 && (
@@ -2380,7 +2380,7 @@ let otherUserName = 'User';
                 </ScrollArea>
 
                 <div 
-                  className={`${isMobile ? 'p-3 fixed bottom-0 left-0 right-0 bg-background z-10' : 'p-4'} border-t border-border`}
+                  className={`${isMobile ? 'p-3 shrink-0 bg-background z-10' : 'p-4'} border-t border-border`}
                   style={isMobile ? { 
                     paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))'
                   } : undefined}
