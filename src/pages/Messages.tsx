@@ -681,8 +681,28 @@ export default function Messages() {
     };
   }, [selectedConversation, userId]);
 
+  // Scroll to bottom only on initial load or when sending new messages
+  const lastMessageCountRef = useRef(0);
+  const isInitialLoadRef = useRef(true);
+  
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length === 0) {
+      isInitialLoadRef.current = true;
+      lastMessageCountRef.current = 0;
+      return;
+    }
+    
+    // Only auto-scroll on initial load or when new messages are added (not on every render)
+    const isNewMessage = messages.length > lastMessageCountRef.current;
+    lastMessageCountRef.current = messages.length;
+    
+    if (isInitialLoadRef.current || isNewMessage) {
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: isInitialLoadRef.current ? 'auto' : 'smooth' });
+        isInitialLoadRef.current = false;
+      });
+    }
   }, [messages]);
 
   // Hide bottom nav when in conversation on mobile
@@ -2192,7 +2212,11 @@ let otherUserName = 'User';
 
         {/* Chat Window - Edge-to-edge, no Card wrapper */}
         <div 
-          className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} flex-col flex-1 bg-background ${isMobile ? 'h-screen overflow-hidden' : 'h-[calc(100vh-80px)]'}`}
+          className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} flex-col bg-background ${
+            isMobile 
+              ? 'fixed inset-0 z-30' 
+              : 'flex-1 h-[calc(100vh-80px)]'
+          }`}
           onContextMenu={(e) => e.preventDefault()}
         >
             {selectedConversation ? (
@@ -2380,10 +2404,7 @@ let otherUserName = 'User';
                 </ScrollArea>
 
                 <div 
-                  className={`${isMobile ? 'p-3 shrink-0 bg-background z-10' : 'p-4'} border-t border-border`}
-                  style={isMobile ? { 
-                    paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))'
-                  } : undefined}
+                  className={`${isMobile ? 'p-3 shrink-0 bg-background z-10 pb-safe' : 'p-4'} border-t border-border`}
                 >
                   {uploadProgress > 0 && uploadProgress < 100 && (
                     <div className="mb-2">
