@@ -52,34 +52,48 @@ interface MessageActionOverlayProps {
 
 const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "👏"];
 
-// WhatsApp-style smart positioning - shift message up if near bottom
+// WhatsApp-style smart positioning - ensure everything fits within viewport
 const calculateSmartPosition = (messageRect: DOMRect, isSender: boolean) => {
   const viewportHeight = window.innerHeight;
   const viewportWidth = window.innerWidth;
   
   const REACTION_BAR_HEIGHT = 56;
-  const MENU_HEIGHT = 400; // Approximate menu height
+  const MENU_MAX_HEIGHT = 280; // Reduced menu height
   const SAFE_MARGIN = 16;
-  const TOP_MARGIN = 80;
+  const TOP_MARGIN = 60; // Safe area from top
+  const BOTTOM_MARGIN = 40; // Safe area from bottom
   
-  // Calculate space available below message for menu
-  const spaceBelow = viewportHeight - messageRect.bottom;
-  const spaceAbove = messageRect.top;
+  // Calculate space available
+  const spaceBelow = viewportHeight - messageRect.bottom - BOTTOM_MARGIN;
+  const spaceAbove = messageRect.top - TOP_MARGIN;
   
   let shiftY = 0;
   
-  // If not enough space below for menu, shift everything up
-  if (spaceBelow < MENU_HEIGHT + SAFE_MARGIN) {
-    const neededShift = (MENU_HEIGHT + SAFE_MARGIN) - spaceBelow;
+  // Calculate total space needed
+  const totalNeeded = REACTION_BAR_HEIGHT + messageRect.height + MENU_MAX_HEIGHT + SAFE_MARGIN * 2;
+  
+  // If message is too close to bottom, shift up so menu fits
+  if (spaceBelow < MENU_MAX_HEIGHT + SAFE_MARGIN) {
+    const neededShift = (MENU_MAX_HEIGHT + SAFE_MARGIN) - spaceBelow;
     // But don't shift so much that reactions go off top
-    const maxShift = spaceAbove - REACTION_BAR_HEIGHT - TOP_MARGIN;
+    const maxShift = spaceAbove - REACTION_BAR_HEIGHT - SAFE_MARGIN;
     shiftY = Math.min(neededShift, Math.max(0, maxShift));
   }
   
-  const adjustedTop = Math.max(TOP_MARGIN + REACTION_BAR_HEIGHT, messageRect.top - shiftY);
-  const messageLeft = isSender ? undefined : Math.max(8, messageRect.left);
-  const messageRight = isSender ? Math.max(8, viewportWidth - messageRect.right) : undefined;
-  const messageWidth = Math.min(messageRect.width, viewportWidth - 16);
+  // Ensure reactions bar doesn't go above safe top margin
+  let adjustedTop = messageRect.top - shiftY;
+  if (adjustedTop - REACTION_BAR_HEIGHT < TOP_MARGIN) {
+    adjustedTop = TOP_MARGIN + REACTION_BAR_HEIGHT + SAFE_MARGIN;
+  }
+  
+  // Ensure we don't go too low either
+  const maxTop = viewportHeight - MENU_MAX_HEIGHT - messageRect.height - BOTTOM_MARGIN - SAFE_MARGIN;
+  adjustedTop = Math.min(adjustedTop, Math.max(TOP_MARGIN + REACTION_BAR_HEIGHT, maxTop));
+  
+  // Horizontal positioning with proper bounds
+  const messageWidth = Math.min(messageRect.width, viewportWidth - 32);
+  const messageLeft = isSender ? undefined : Math.max(16, messageRect.left);
+  const messageRight = isSender ? Math.max(16, viewportWidth - messageRect.right) : undefined;
   
   return {
     top: adjustedTop,
@@ -162,15 +176,21 @@ export function MessageActionOverlay({
     <AnimatePresence>
       {open && (
         <>
-          {/* Blur backdrop */}
+          {/* Blur backdrop - with proper touch handling for mobile */}
           <motion.div
             variants={fadeVariants}
             initial="initial"
             animate="animate"
             exit="exit"
             transition={transitionFast}
-            className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm touch-manipulation"
             onClick={onClose}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
+            style={{ pointerEvents: 'auto' }}
           />
 
           {/* Message clone with smart positioning */}
@@ -260,7 +280,7 @@ export function MessageActionOverlay({
               className={`mt-2 ${isSender ? 'ml-auto' : ''}`}
               style={{ width: 'fit-content', minWidth: '180px', maxWidth: 'calc(100vw - 32px)' }}
             >
-              <div className="bg-card/95 backdrop-blur-lg rounded-2xl overflow-hidden shadow-lg border border-border/50 max-h-[50vh] overflow-y-auto">
+              <div className="bg-card/95 backdrop-blur-lg rounded-2xl overflow-hidden shadow-lg border border-border/50 max-h-[260px] overflow-y-auto">
                 <ActionButton icon={Reply} label="Reply" onClick={() => handleAction(onReply)} index={0} reduced={prefersReducedMotion} />
                 <ActionButton icon={Forward} label="Forward" onClick={() => handleAction(onForward)} index={1} reduced={prefersReducedMotion} />
                 {message.body && (
