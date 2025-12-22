@@ -1,4 +1,4 @@
-import { Menu, X, Bell, MessageSquare, Info, Phone, LogOut, User, Settings, Building2, Brain } from 'lucide-react';
+import { Menu, X, MessageSquare, Info, Phone, LogOut, User, Settings, Building2, Brain } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { useAuth } from '@/contexts/AuthContext';
+import { NotificationBellPopover } from '@/components/shared/NotificationBellPopover';
 
 interface AdminNavbarProps {
   sidebarOpen: boolean;
@@ -26,12 +27,6 @@ export function AdminNavbar({ sidebarOpen, onToggleSidebar }: AdminNavbarProps) 
   const handleSignOut = async () => {
     await signOut();
   };
-
-  // Top navbar items (Dorms and AI Match only)
-  const navItems = [
-    { icon: Building2, label: 'Dorms', href: '/listings' },
-    { icon: Brain, label: 'AI Match', href: '/ai-match' },
-  ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 h-[70px] bg-background/95 backdrop-blur-md border-b border-border/40 z-50 px-6">
@@ -66,31 +61,16 @@ export function AdminNavbar({ sidebarOpen, onToggleSidebar }: AdminNavbarProps) 
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Navigation Links - Desktop */}
-        <div className="hidden md:flex items-center gap-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              to={item.href}
-              className="relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-            >
-              <item.icon className="w-4 h-4" />
-              <span>{item.label}</span>
-            </Link>
-          ))}
-        </div>
-
         {/* Right side actions */}
         <div className="flex items-center gap-2">
           {/* Notification Bell */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full relative"
-            onClick={() => navigate('/admin/notifications')}
-          >
-            <Bell className="w-5 h-5" />
-          </Button>
+          {userId && (
+            <NotificationBellPopover 
+              userId={userId} 
+              tableType="user" 
+              variant="admin"
+            />
+          )}
 
           {/* Profile Dropdown */}
           <DropdownMenu>
@@ -125,22 +105,18 @@ export function AdminNavbar({ sidebarOpen, onToggleSidebar }: AdminNavbarProps) 
                 <Phone className="w-4 h-4 mr-2" />
                 Contact
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/listings')}>
+                <Building2 className="w-4 h-4 mr-2" />
+                Dorms
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/ai-match')}>
+                <Brain className="w-4 h-4 mr-2" />
+                AI Match
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/settings')}>
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </DropdownMenuItem>
-              
-              {/* Mobile-only: Dorms and AI Match */}
-              <div className="md:hidden">
-                <DropdownMenuSeparator />
-                {navItems.map((item) => (
-                  <DropdownMenuItem key={item.label} onClick={() => navigate(item.href)}>
-                    <item.icon className="w-4 h-4 mr-2" />
-                    {item.label}
-                  </DropdownMenuItem>
-                ))}
-              </div>
-              
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                 <LogOut className="w-4 h-4 mr-2" />
