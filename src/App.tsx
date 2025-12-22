@@ -64,6 +64,7 @@ const ReservationSuccess = lazy(() => import("./pages/ReservationSuccess"));
 const ReservationFailed = lazy(() => import("./pages/ReservationFailed"));
 const BoostProfile = lazy(() => import("./pages/BoostProfile"));
 const OwnerEarnings = lazy(() => import("./pages/owner/OwnerEarnings"));
+const OwnerFinanceHub = lazy(() => import("./pages/owner/OwnerFinanceHub"));
 const BulkRoomOps = lazy(() => import("./pages/owner/BulkRoomOps"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 const AdminStudents = lazy(() => import("./pages/admin/AdminStudents"));
@@ -113,6 +114,9 @@ const AdminBilling = lazy(() => import("./pages/admin/AdminBilling"));
 const MockWhishAdminAddCard = lazy(() => import("./pages/admin/MockWhishAdminAddCard"));
 const AdminRefunds = lazy(() => import("./pages/admin/AdminRefunds"));
 const AdminEarnings = lazy(() => import("./pages/admin/AdminEarnings"));
+const AdminFinanceHub = lazy(() => import("./pages/admin/AdminFinanceHub"));
+const AdminMessagesHub = lazy(() => import("./pages/admin/AdminMessagesHub"));
+const AdminSystemHub = lazy(() => import("./pages/admin/AdminSystemHub"));
 const VerifyDevice = lazy(() => import("./pages/devices/VerifyDevice"));
 const SecureAccount = lazy(() => import("./pages/devices/SecureAccount"));
 const DevicesPage = lazy(() => import("./pages/settings/DevicesPage"));
@@ -322,6 +326,7 @@ const AppRoutes = () => {
           <Route path="/owner/bulk-operations" element={<ProtectedRoute element={<BulkRoomOps />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/reviews" element={<ProtectedRoute element={<ReviewManagement />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/calendar" element={<ProtectedRoute element={<OwnerCalendar />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/finance" element={<ProtectedRoute element={<OwnerFinanceHub />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/earnings" element={<ProtectedRoute element={<OwnerEarnings />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/refunds" element={<ProtectedRoute element={<OwnerRefundRequests />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/wallet" element={<ProtectedRoute element={<OwnerWallet />} allowedRoles={["owner", "admin"]} />} />
@@ -355,9 +360,12 @@ const AppRoutes = () => {
           <Route path="/mock-whish-admin-add-card" element={<ProtectedRoute element={<MockWhishAdminAddCard />} requiredRole="admin" />} />
           <Route path="/admin/refunds" element={<ProtectedRoute element={<AdminRefunds />} requiredRole="admin" />} />
           <Route path="/admin/earnings" element={<ProtectedRoute element={<AdminEarnings />} requiredRole="admin" />} />
+          <Route path="/admin/finance" element={<ProtectedRoute element={<AdminFinanceHub />} requiredRole="admin" />} />
+          <Route path="/admin/messages-hub" element={<ProtectedRoute element={<AdminMessagesHub />} requiredRole="admin" />} />
+          <Route path="/admin/system" element={<ProtectedRoute element={<AdminSystemHub />} requiredRole="admin" />} />
           <Route path="/admin/chats" element={<ProtectedRoute element={<AdminChats />} requiredRole="admin" />} />
           <Route path="/admin/chats/:conversationId" element={<ProtectedRoute element={<AdminChatView />} requiredRole="admin" />} />
-            <Route path="/admin/chats/analytics" element={<ProtectedRoute element={<AdminChatAnalytics />} requiredRole="admin" />} />
+          <Route path="/admin/chats/analytics" element={<ProtectedRoute element={<AdminChatAnalytics />} requiredRole="admin" />} />
 
           {/* 404 Fallback */}
           <Route path="*" element={<NotFound />} />

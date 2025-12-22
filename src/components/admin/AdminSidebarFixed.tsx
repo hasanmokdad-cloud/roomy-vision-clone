@@ -4,15 +4,10 @@ import {
   Users, 
   Building2, 
   Key, 
-  ShieldCheck, 
   MessageSquare, 
   BarChart3, 
   Activity, 
-  Wallet, 
-  RefreshCcw,
   Brain,
-  Bell,
-  FileStack,
   DollarSign
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -20,23 +15,16 @@ import { cn } from '@/lib/utils';
 
 const menuItems = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard, exact: true },
+  { title: 'Finance Hub', url: '/admin/finance', icon: DollarSign },
   { title: 'Review Forms', url: '/admin/pending-review', icon: FileText },
+  { title: 'Messages Hub', url: '/admin/messages-hub', icon: MessageSquare },
   { title: 'Manage Students', url: '/admin/students', icon: Users },
   { title: 'Manage Owners', url: '/admin/owners', icon: Building2 },
   { title: 'Manage Properties', url: '/admin/dorms', icon: Key },
-  { title: 'RLS Debugger', url: '/admin/rls-debugger', icon: ShieldCheck },
-  { title: 'Support Inbox', url: '/admin/messages', icon: MessageSquare },
-  { title: 'All Chats', url: '/admin/chats', icon: MessageSquare },
-  { title: 'Chat Analytics', url: '/admin/chats/analytics', icon: BarChart3 },
-  { title: 'AI Diagnostics', url: '/admin/ai-diagnostics', icon: Activity },
-  { title: 'Personality Insights', url: '/admin/personality-insights', icon: Brain },
-  { title: 'Earnings', url: '/admin/earnings', icon: DollarSign },
-  { title: 'Admin Payout Wallet', url: '/admin/wallet', icon: Wallet },
-  { title: 'Refund Center', url: '/admin/refunds', icon: RefreshCcw },
-  { title: 'Notifications', url: '/admin/notifications', icon: Bell },
   { title: 'Analytics', url: '/admin/analytics', icon: BarChart3 },
-  { title: 'System Monitor', url: '/admin/system-monitor', icon: Activity },
-  { title: 'System Logs', url: '/admin/logs', icon: FileStack },
+  { title: 'Personality Insights', url: '/admin/personality-insights', icon: Brain },
+  { title: 'AI Diagnostics', url: '/admin/ai-diagnostics', icon: Activity },
+  { title: 'System & Logs', url: '/admin/system', icon: Activity },
 ];
 
 interface AdminSidebarFixedProps {
@@ -61,7 +49,7 @@ export function AdminSidebarFixed({ isOpen, onClose, isMobile }: AdminSidebarFix
       <div className="p-4 border-b border-border/20">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center shadow-md">
-            <ShieldCheck className="w-5 h-5 text-white" />
+            <LayoutDashboard className="w-5 h-5 text-white" />
           </div>
           <span className="text-sm font-semibold bg-gradient-to-r from-rose-500 to-purple-600 bg-clip-text text-transparent">
             Admin Portal
@@ -81,7 +69,7 @@ export function AdminSidebarFixed({ isOpen, onClose, isMobile }: AdminSidebarFix
         {menuItems.map((item) => {
           const isActive = item.exact 
             ? location.pathname === item.url
-            : location.pathname === item.url || location.pathname.startsWith(item.url + '/');
+            : location.pathname === item.url || location.pathname.startsWith(item.url + '/') || location.pathname.startsWith(item.url + '?');
           
           return (
             <NavLink
