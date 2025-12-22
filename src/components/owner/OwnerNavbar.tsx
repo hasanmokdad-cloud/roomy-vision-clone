@@ -27,12 +27,6 @@ export function OwnerNavbar({ sidebarOpen, onToggleSidebar }: OwnerNavbarProps) 
     await signOut();
   };
 
-  const navItems = [
-    { icon: MessageSquare, label: 'Messages', href: '/messages', badge: unreadMessages },
-    { icon: Info, label: 'About', href: '/about' },
-    { icon: Phone, label: 'Contact', href: '/contact' },
-  ];
-
   return (
     <nav className="fixed top-0 left-0 right-0 h-[70px] bg-background/95 backdrop-blur-md border-b border-border/40 z-50 px-6">
       <div className="h-full flex items-center gap-4">
@@ -66,25 +60,6 @@ export function OwnerNavbar({ sidebarOpen, onToggleSidebar }: OwnerNavbarProps) 
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Navigation Links - Desktop */}
-        <div className="hidden md:flex items-center gap-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              to={item.href}
-              className="relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-foreground/70 hover:bg-[#f6f4ff] hover:text-foreground transition-all"
-            >
-              <item.icon className="w-4 h-4" />
-              <span>{item.label}</span>
-              {item.badge && item.badge > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white text-xs rounded-full flex items-center justify-center">
-                  {item.badge > 9 ? '9+' : item.badge}
-                </span>
-              )}
-            </Link>
-          ))}
-        </div>
-
         {/* Right side actions */}
         <div className="flex items-center gap-2">
           {/* Notification Bell */}
@@ -112,29 +87,29 @@ export function OwnerNavbar({ sidebarOpen, onToggleSidebar }: OwnerNavbarProps) 
                 <User className="w-4 h-4 mr-2" />
                 My Profile
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/messages')}>
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Messages
+                {unreadMessages > 0 && (
+                  <span className="ml-auto w-5 h-5 bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white text-xs rounded-full flex items-center justify-center">
+                    {unreadMessages > 9 ? '9+' : unreadMessages}
+                  </span>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/about')}>
+                <Info className="w-4 h-4 mr-2" />
+                About
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/contact')}>
+                <Phone className="w-4 h-4 mr-2" />
+                Contact
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/settings')}>
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </DropdownMenuItem>
-              
-              {/* Mobile-only nav items */}
-              <div className="md:hidden">
-                <DropdownMenuSeparator />
-                {navItems.map((item) => (
-                  <DropdownMenuItem key={item.label} onClick={() => navigate(item.href)}>
-                    <item.icon className="w-4 h-4 mr-2" />
-                    {item.label}
-                    {item.badge && item.badge > 0 && (
-                      <span className="ml-auto w-5 h-5 bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white text-xs rounded-full flex items-center justify-center">
-                        {item.badge}
-                      </span>
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </div>
-              
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="text-red-500">
+              <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
               </DropdownMenuItem>
