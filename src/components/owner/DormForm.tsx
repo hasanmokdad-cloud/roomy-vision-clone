@@ -9,12 +9,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, X, Upload, Eye, Images } from "lucide-react";
+import { Loader2, X, Upload, Eye, Images, MapPin, Bus } from "lucide-react";
 import { compressImage } from "@/utils/imageCompression";
 import { DormPreviewModal } from "./DormPreviewModal";
 import { validateEmail, validatePhone, validateUrl, sanitizeInput } from "@/utils/inputValidation";
 import { ImageDropzone } from "./ImageDropzone";
 import { DraggableImageList } from "./DraggableImageList";
+import { cities, areasByCity } from "@/data/dormLocations";
 
 const AMENITIES_OPTIONS = [
   "WiFi",
@@ -52,21 +53,44 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel, onBeforeSubmit, isS
   const [uploading, setUploading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
+  // Infer city from area when editing existing dorm
+  const inferCityFromArea = (area: string): string => {
+    if (!area) return '';
+    for (const [cityKey, areas] of Object.entries(areasByCity)) {
+      if (areas.includes(area)) {
+        return cityKey;
+      }
+    }
+    return '';
+  };
+
   const [formData, setFormData] = useState({
     name: dorm?.name || dorm?.dorm_name || "",
+    city: inferCityFromArea(dorm?.area || ""),
     address: dorm?.address || "",
     area: dorm?.area || "",
     description: dorm?.description || "",
     capacity: dorm?.capacity?.toString() || "",
     image_url: dorm?.image_url || dorm?.cover_image || "",
     amenities: (dorm?.amenities || []) as string[],
-    withinWalkingDistance: !dorm?.shuttle,
     shuttle: dorm?.shuttle || false,
     gender_preference: dorm?.gender_preference || "",
     gallery_images: (dorm?.gallery_images || []) as string[],
   });
 
   const [galleryUploading, setGalleryUploading] = useState(false);
+
+  const availableAreas = formData.city ? areasByCity[formData.city] || [] : [];
+  const showShuttleToggle = formData.city === 'byblos';
+
+  const handleCityChange = (cityValue: string) => {
+    setFormData(prev => ({
+      ...prev,
+      city: cityValue,
+      area: '', // Reset area when city changes
+      shuttle: cityValue === 'byblos' ? prev.shuttle : false, // Reset shuttle if not Byblos
+    }));
+  };
 
   const toggleAmenity = (amenity: string) => {
     setFormData(prev => ({
@@ -76,15 +100,6 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel, onBeforeSubmit, isS
         : [...prev.amenities, amenity]
     }));
   };
-
-  const handleWalkingDistanceChange = (checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      withinWalkingDistance: checked,
-      shuttle: checked ? false : prev.shuttle,
-    }));
-  };
-
 
   const handleGalleryUpload = async (files: File[]) => {
     const maxImages = 10;
@@ -274,6 +289,9 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel, onBeforeSubmit, isS
 
     setLoading(true);
     try {
+      // Get city label for location field
+      const cityLabel = cities.find(c => c.value === formData.city)?.label || formData.city;
+      
       const payload: any = {
         owner_id: effectiveOwnerId,
         name: formData.name,
@@ -283,7 +301,7 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel, onBeforeSubmit, isS
         description: formData.description || null,
         image_url: formData.image_url || null,
         cover_image: formData.image_url || null,
-        location: formData.area || formData.address,
+        location: cityLabel || formData.area || formData.address,
       };
 
       if (formData.capacity) {
@@ -294,7 +312,8 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel, onBeforeSubmit, isS
         payload.amenities = formData.amenities;
       }
 
-      payload.shuttle = formData.shuttle;
+      // Only set shuttle if city is Byblos
+      payload.shuttle = formData.city === 'byblos' ? formData.shuttle : false;
 
       if (formData.gender_preference) {
         payload.gender_preference = formData.gender_preference;
@@ -393,10 +412,10 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel, onBeforeSubmit, isS
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.address || !formData.area || !formData.capacity) {
+    if (!formData.name || !formData.city || !formData.area || !formData.capacity) {
       toast({
         title: "Error",
-        description: "Name, address, area, and room capacity are required",
+        description: "Name, city, area, and room capacity are required",
         variant: "destructive",
       });
       return;
@@ -422,10 +441,10 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel, onBeforeSubmit, isS
     e.preventDefault();
     
     // Basic validation before preview
-    if (!formData.name || !formData.address || !formData.area) {
+    if (!formData.name || !formData.city || !formData.area) {
       toast({
         title: "Missing Information",
-        description: "Please fill in name, address, and area to preview",
+        description: "Please fill in name, city, and area to preview",
         variant: "destructive",
       });
       return;
@@ -450,25 +469,69 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel, onBeforeSubmit, isS
             />
           </div>
 
+          {/* City Selection */}
           <div>
-            <Label htmlFor="address">Address *</Label>
+            <Label className="flex items-center gap-2 mb-3">
+              <MapPin className="w-4 h-4" />
+              City *
+            </Label>
+            <div className="grid grid-cols-2 gap-3">
+              {cities.map((cityOption) => (
+                <button
+                  key={cityOption.value}
+                  type="button"
+                  onClick={() => handleCityChange(cityOption.value)}
+                  className={`p-4 rounded-xl border-2 text-center transition-all ${
+                    formData.city === cityOption.value
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                >
+                  <span className={`font-medium text-lg ${
+                    formData.city === cityOption.value ? 'text-primary' : 'text-foreground'
+                  }`}>
+                    {cityOption.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Area Selection - only show after city is selected */}
+          {formData.city && (
+            <div>
+              <Label htmlFor="area">Area *</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 max-h-64 overflow-y-auto">
+                {availableAreas.map((areaOption) => (
+                  <button
+                    key={areaOption}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, area: areaOption })}
+                    className={`p-3 rounded-xl border-2 text-left transition-all ${
+                      formData.area === areaOption
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <span className={`font-medium ${
+                      formData.area === areaOption ? 'text-primary' : 'text-foreground'
+                    }`}>
+                      {areaOption}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Address */}
+          <div>
+            <Label htmlFor="address">Street Address</Label>
             <Input
               id="address"
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="Full street address"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="area">Area *</Label>
-            <Input
-              id="area"
-              value={formData.area}
-              onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-              placeholder="e.g., Hamra"
-              required
+              placeholder="Full street address (optional)"
             />
           </div>
 
@@ -516,28 +579,33 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel, onBeforeSubmit, isS
             </div>
           </div>
 
-          {/* Shuttle Service Section */}
-          <div className="space-y-4">
-            <Label>Transportation</Label>
-            
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="space-y-0.5">
-                <Label htmlFor="shuttle-service" className="text-base font-medium">
-                  Shuttle Service Available
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Provides transportation to nearby universities
-                </p>
+          {/* Shuttle Service Section - Only show for Byblos */}
+          {showShuttleToggle && (
+            <div className="space-y-4">
+              <Label className="flex items-center gap-2">
+                <Bus className="w-4 h-4" />
+                Transportation
+              </Label>
+              
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-0.5">
+                  <Label htmlFor="shuttle-service" className="text-base font-medium">
+                    Shuttle Service Available
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Provides transportation to nearby universities
+                  </p>
+                </div>
+                <Switch
+                  id="shuttle-service"
+                  checked={formData.shuttle}
+                  onCheckedChange={(checked) => 
+                    setFormData({ ...formData, shuttle: checked })
+                  }
+                />
               </div>
-              <Switch
-                id="shuttle-service"
-                checked={formData.shuttle}
-                onCheckedChange={(checked) => 
-                  setFormData({ ...formData, shuttle: checked })
-                }
-              />
             </div>
-          </div>
+          )}
 
           {/* Gender Preference Section */}
           <div className="space-y-4">

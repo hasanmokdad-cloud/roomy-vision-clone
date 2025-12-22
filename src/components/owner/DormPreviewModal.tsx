@@ -10,13 +10,13 @@ interface DormPreviewModalProps {
   onSubmit: () => void;
   formData: {
     name: string;
+    city?: string;
     address: string;
     area: string;
     description: string;
     capacity: string;
     image_url: string;
     amenities: string[];
-    withinWalkingDistance: boolean;
     shuttle: boolean;
     gender_preference: string;
     gallery_images: string[];

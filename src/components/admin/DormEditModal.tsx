@@ -10,8 +10,9 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, Upload, X, Images, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Upload, X, Images, Image as ImageIcon, MapPin, Bus } from 'lucide-react';
 import { EnhancedImageUploader } from '@/components/owner/EnhancedImageUploader';
+import { cities, areasByCity } from '@/data/dormLocations';
 
 interface DormEditModalProps {
   dorm: any;
@@ -27,12 +28,24 @@ const AMENITIES = [
   'Heating', 'Elevator', 'Furnished', 'Pet Friendly'
 ];
 
+// Infer city from area
+const inferCityFromArea = (area: string): string => {
+  if (!area) return '';
+  for (const [cityKey, areas] of Object.entries(areasByCity)) {
+    if (areas.includes(area)) {
+      return cityKey;
+    }
+  }
+  return '';
+};
+
 export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin = false }: DormEditModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: dorm.name || dorm.dorm_name || '',
     dorm_name: dorm.dorm_name || dorm.name || '',
+    city: inferCityFromArea(dorm.area || ''),
     address: dorm.address || '',
     area: dorm.area || '',
     description: dorm.description || '',
@@ -46,9 +59,24 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin
   const [galleryImages, setGalleryImages] = useState<string[]>(dorm.gallery_images || []);
   const [exteriorImage, setExteriorImage] = useState<string>(dorm.image_url || dorm.cover_image || '');
 
+  const availableAreas = formData.city ? areasByCity[formData.city] || [] : [];
+  const showShuttleToggle = formData.city === 'byblos';
+
+  const handleCityChange = (cityValue: string) => {
+    setFormData(prev => ({
+      ...prev,
+      city: cityValue,
+      area: '', // Reset area when city changes
+      shuttle: cityValue === 'byblos' ? prev.shuttle : false, // Reset shuttle if not Byblos
+    }));
+  };
+
   const handleSave = async () => {
     setLoading(true);
     try {
+      // Get city label for location field
+      const cityLabel = cities.find(c => c.value === formData.city)?.label || formData.city;
+      
       if (isAdmin) {
         // Use RPC function for admin updates (bypasses RLS)
         const { error } = await supabase.rpc('admin_update_dorm', {
@@ -60,7 +88,7 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin
           p_description: formData.description,
           p_capacity: formData.capacity,
           p_amenities: formData.amenities,
-          p_shuttle: formData.shuttle,
+          p_shuttle: showShuttleToggle ? formData.shuttle : false,
           p_gender_preference: formData.gender_preference,
           p_available: formData.available,
           p_verification_status: formData.verification_status,
@@ -76,10 +104,11 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin
           dorm_name: formData.dorm_name,
           address: formData.address,
           area: formData.area,
+          location: cityLabel || formData.area || formData.address,
           description: formData.description,
           capacity: formData.capacity,
           amenities: formData.amenities,
-          shuttle: formData.shuttle,
+          shuttle: showShuttleToggle ? formData.shuttle : false,
           gender_preference: formData.gender_preference,
           available: formData.available,
           gallery_images: galleryImages,
@@ -136,24 +165,69 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin
         <ScrollArea className="max-h-[60vh] pr-4">
           <div className="space-y-4">
             {/* Basic Info */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name">Dorm Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="area">Area</Label>
-                <Input
-                  id="area"
-                  value={formData.area}
-                  onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                />
+            <div>
+              <Label htmlFor="name">Dorm Name</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+
+            {/* City Selection */}
+            <div>
+              <Label className="flex items-center gap-2 mb-3">
+                <MapPin className="w-4 h-4" />
+                City
+              </Label>
+              <div className="grid grid-cols-2 gap-3">
+                {cities.map((cityOption) => (
+                  <button
+                    key={cityOption.value}
+                    type="button"
+                    onClick={() => handleCityChange(cityOption.value)}
+                    className={`p-3 rounded-lg border-2 text-center transition-all ${
+                      formData.city === cityOption.value
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <span className={`font-medium ${
+                      formData.city === cityOption.value ? 'text-primary' : 'text-foreground'
+                    }`}>
+                      {cityOption.label}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
+
+            {/* Area Selection - only show after city is selected */}
+            {formData.city && (
+              <div>
+                <Label>Area</Label>
+                <div className="grid grid-cols-3 gap-2 mt-2 max-h-48 overflow-y-auto">
+                  {availableAreas.map((areaOption) => (
+                    <button
+                      key={areaOption}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, area: areaOption })}
+                      className={`p-2 rounded-lg border text-left text-sm transition-all ${
+                        formData.area === areaOption
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <span className={`${
+                        formData.area === areaOption ? 'text-primary' : 'text-foreground'
+                      }`}>
+                        {areaOption}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="address">Address</Label>
@@ -240,24 +314,29 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin
               </div>
             </div>
 
-            {/* Transportation */}
-            <div className="space-y-4">
-              <Label>Transportation</Label>
-              
-              <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
-                <div className="flex-1">
-                  <Label htmlFor="shuttle-service" className="font-medium">Shuttle Service Available</Label>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Provides transportation to nearby universities
-                  </p>
+            {/* Transportation - Only show for Byblos */}
+            {showShuttleToggle && (
+              <div className="space-y-4">
+                <Label className="flex items-center gap-2">
+                  <Bus className="w-4 h-4" />
+                  Transportation
+                </Label>
+                
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
+                  <div className="flex-1">
+                    <Label htmlFor="shuttle-service" className="font-medium">Shuttle Service Available</Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Provides transportation to nearby universities
+                    </p>
+                  </div>
+                  <Switch
+                    id="shuttle-service"
+                    checked={formData.shuttle}
+                    onCheckedChange={(checked) => setFormData({ ...formData, shuttle: checked })}
+                  />
                 </div>
-                <Switch
-                  id="shuttle-service"
-                  checked={formData.shuttle}
-                  onCheckedChange={(checked) => setFormData({ ...formData, shuttle: checked })}
-                />
               </div>
-            </div>
+            )}
 
             {/* Gallery Images */}
             <div>
