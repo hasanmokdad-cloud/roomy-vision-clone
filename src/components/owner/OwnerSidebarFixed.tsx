@@ -1,17 +1,16 @@
-import { Home, Building2, BarChart3, Settings, DoorOpen, Calendar, LayoutDashboard, TrendingUp, PlusCircle, Star, Wallet } from 'lucide-react';
+import { Home, Building2, BarChart3, Settings, DoorOpen, Calendar, LayoutDashboard, TrendingUp, Star, DollarSign } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const menuItems = [
   { title: 'Dashboard', url: '/owner', icon: LayoutDashboard },
-  { title: 'My Listings', url: '/owner/listings', icon: Building2 },
-  { title: 'Add New Dorm', url: '/owner/add-dorm', icon: PlusCircle },
-  { title: 'Room Management', url: '/owner/rooms', icon: DoorOpen },
-  { title: 'Bulk Operations', url: '/owner/bulk-operations', icon: Settings },
+  { title: 'Finance Hub', url: '/owner/finance', icon: DollarSign },
   { title: 'Bookings', url: '/owner/bookings', icon: Calendar },
   { title: 'Tour Calendar', url: '/owner/calendar', icon: Calendar },
+  { title: 'Room Management', url: '/owner/rooms', icon: DoorOpen },
+  { title: 'Bulk Operations', url: '/owner/bulk-operations', icon: Settings },
   { title: 'Reviews', url: '/owner/reviews', icon: Star },
-  { title: 'Wallet & Payouts', url: '/owner/wallet', icon: Wallet },
+  { title: 'My Listings', url: '/owner/listings', icon: Building2 },
   { title: 'Statistics', url: '/owner/stats', icon: TrendingUp },
 ];
 
@@ -59,9 +58,14 @@ export function OwnerSidebarFixed({ isOpen, onClose, isMobile }: OwnerSidebarFix
           const isRoomManagementActive = item.url === '/owner/rooms' && 
             (location.pathname === '/owner/rooms' || /^\/owner\/dorms\/[^/]+\/rooms/.test(location.pathname));
           
+          // Special handling for Finance Hub to match /owner/finance with any query params
+          const isFinanceHubActive = item.url === '/owner/finance' && 
+            location.pathname === '/owner/finance';
+          
           const isActive = location.pathname === item.url || 
             (item.url === '/owner' && location.pathname === '/owner') ||
-            isRoomManagementActive;
+            isRoomManagementActive ||
+            isFinanceHubActive;
           
           return (
             <NavLink
