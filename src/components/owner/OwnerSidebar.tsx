@@ -1,4 +1,4 @@
-import { Home, Building2, Plus, BarChart3, Settings, DoorOpen, Calendar, Upload, LayoutDashboard, TrendingUp, PlusCircle, Star, Wallet } from 'lucide-react';
+import { Home, Building2, Plus, BarChart3, Settings, DoorOpen, Calendar, LayoutDashboard, TrendingUp, PlusCircle, Star, Wallet } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   Sidebar,
@@ -22,7 +22,6 @@ const menuItems = [
   { title: 'Reviews', url: '/owner/reviews', icon: Star, exact: true },
   { title: 'Wallet & Payouts', url: '/owner/wallet', icon: Wallet, exact: true },
   { title: 'Add New Dorm', url: '/owner/dorms/new', icon: PlusCircle, exact: true },
-  { title: 'Bulk Import', url: '/owner/bulk-import', icon: Upload, exact: true },
   { title: 'Statistics', url: '/owner/stats', icon: TrendingUp, exact: true },
 ];
 
