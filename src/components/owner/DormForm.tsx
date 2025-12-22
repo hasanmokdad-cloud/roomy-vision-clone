@@ -516,45 +516,27 @@ export function DormForm({ dorm, ownerId, onSaved, onCancel, onBeforeSubmit, isS
             </div>
           </div>
 
-          {/* Transportation Section */}
+          {/* Shuttle Service Section */}
           <div className="space-y-4">
             <Label>Transportation</Label>
             
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div className="space-y-0.5">
-                <Label htmlFor="walking-distance" className="text-base font-medium">
-                  Within Walking Distance
+                <Label htmlFor="shuttle-service" className="text-base font-medium">
+                  Shuttle Service Available
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  Dorm is within walking distance to nearby universities
+                  Provides transportation to nearby universities
                 </p>
               </div>
               <Switch
-                id="walking-distance"
-                checked={formData.withinWalkingDistance}
-                onCheckedChange={handleWalkingDistanceChange}
+                id="shuttle-service"
+                checked={formData.shuttle}
+                onCheckedChange={(checked) => 
+                  setFormData({ ...formData, shuttle: checked })
+                }
               />
             </div>
-
-            {!formData.withinWalkingDistance && (
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="space-y-0.5">
-                  <Label htmlFor="shuttle-service" className="text-base font-medium">
-                    Shuttle Service Available
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Provides transportation to nearby universities
-                  </p>
-                </div>
-                <Switch
-                  id="shuttle-service"
-                  checked={formData.shuttle}
-                  onCheckedChange={(checked) => 
-                    setFormData({ ...formData, shuttle: checked })
-                  }
-                />
-              </div>
-            )}
           </div>
 
           {/* Gender Preference Section */}
