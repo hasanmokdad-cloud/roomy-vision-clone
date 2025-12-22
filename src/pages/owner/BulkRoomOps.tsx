@@ -563,7 +563,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
     try {
       const roomIds = Array.from(selectedRooms);
       
-      // Compress and upload all images
+      // Compress and upload all images to dorm-uploads bucket
       const uploadedUrls: string[] = [];
       for (const file of Array.from(files)) {
         const compressed = await imageCompression(file, {
@@ -574,13 +574,13 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
 
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
         const { data, error } = await supabase.storage
-          .from("room-images")
-          .upload(fileName, compressed);
+          .from("dorm-uploads")
+          .upload(`room-images/${fileName}`, compressed);
 
         if (error) throw error;
         
         const { data: urlData } = supabase.storage
-          .from("room-images")
+          .from("dorm-uploads")
           .getPublicUrl(data.path);
         
         uploadedUrls.push(urlData.publicUrl);
@@ -619,10 +619,26 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
     }
   };
 
+  // Supported video file types
+  const SUPPORTED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+  const SUPPORTED_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov'];
+
   // Bulk video upload
   const handleBulkVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !hasSelection) return;
+
+    // Validate video file type
+    const fileExtension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+    if (!SUPPORTED_VIDEO_TYPES.includes(file.type) && !SUPPORTED_VIDEO_EXTENSIONS.includes(fileExtension)) {
+      toast({ 
+        title: "Unsupported video format", 
+        description: `Please upload a video in one of these formats: ${SUPPORTED_VIDEO_EXTENSIONS.join(', ')}`, 
+        variant: "destructive" 
+      });
+      if (videoInputRef.current) videoInputRef.current.value = "";
+      return;
+    }
 
     // Check file size (max 50MB for video)
     if (file.size > 50 * 1024 * 1024) {
