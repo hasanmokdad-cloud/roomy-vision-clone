@@ -246,33 +246,17 @@ export default function DormEditModal({ dorm, isOpen, onClose, onUpdate, isAdmin
               
               <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
                 <div className="flex-1">
-                  <Label htmlFor="walking-distance" className="font-medium">Within Walking Distance</Label>
+                  <Label htmlFor="shuttle-service" className="font-medium">Shuttle Service Available</Label>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Dorm is within walking distance to nearby universities
+                    Provides transportation to nearby universities
                   </p>
                 </div>
                 <Switch
-                  id="walking-distance"
-                  checked={!formData.shuttle}
-                  onCheckedChange={(checked) => setFormData({ ...formData, shuttle: !checked })}
+                  id="shuttle-service"
+                  checked={formData.shuttle}
+                  onCheckedChange={(checked) => setFormData({ ...formData, shuttle: checked })}
                 />
               </div>
-
-              {formData.shuttle && (
-                <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
-                  <div className="flex-1">
-                    <Label htmlFor="shuttle-service" className="font-medium">Shuttle Service Available</Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Provides transportation to nearby universities
-                    </p>
-                  </div>
-                  <Switch
-                    id="shuttle-service"
-                    checked={formData.shuttle}
-                    onCheckedChange={(checked) => setFormData({ ...formData, shuttle: checked })}
-                  />
-                </div>
-              )}
             </div>
 
             {/* Gallery Images */}

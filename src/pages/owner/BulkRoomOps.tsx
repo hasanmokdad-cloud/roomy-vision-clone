@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -6,13 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { OwnerLayout } from "@/components/owner/OwnerLayout";
 import { OwnerBreadcrumb } from "@/components/owner/OwnerBreadcrumb";
-import { ArrowLeft, Download, Upload, Building2, FileSpreadsheet, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Download, Upload, Building2, FileSpreadsheet, CheckCircle2, AlertCircle, Image, Video, Check, X, Zap, DollarSign, ToggleLeft, ToggleRight, CheckSquare, Square } from "lucide-react";
 import { OwnerTableSkeleton } from "@/components/skeletons/OwnerSkeletons";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import * as XLSX from "xlsx";
+import imageCompression from "browser-image-compression";
 
 interface DormWithRooms {
   id: string;
@@ -32,6 +37,8 @@ interface RoomData {
   capacity_occupied: number | null;
   area_m2: number | null;
   available: boolean;
+  images?: string[] | null;
+  video_url?: string | null;
 }
 
 interface ImportResult {
@@ -87,7 +94,7 @@ export default function BulkRoomOps() {
       for (const dorm of ownerDorms) {
         const { data: rooms, error: roomsError } = await supabase
           .from("rooms")
-          .select("id, name, price, deposit, type, capacity, capacity_occupied, area_m2, available")
+          .select("id, name, price, deposit, type, capacity, capacity_occupied, area_m2, available, images, video_url")
           .eq("dorm_id", dorm.id)
           .order("name", { ascending: true });
 
@@ -328,7 +335,7 @@ export default function BulkRoomOps() {
             <div>
               <h1 className="text-3xl font-semibold text-foreground">Bulk Room Operations</h1>
               <p className="text-muted-foreground text-sm mt-1">
-                Import and export rooms data via Excel/CSV for each dorm
+                Import, export, and bulk update rooms for each dorm
               </p>
             </div>
           </motion.div>
@@ -351,6 +358,7 @@ export default function BulkRoomOps() {
               onImport={handleFileImport}
               importing={importing[dorms[0].id]}
               triggerFileInput={triggerFileInput}
+              onRefresh={loadDormsWithRooms}
             />
           ) : (
             // Multiple dorms - use tabs
@@ -383,6 +391,7 @@ export default function BulkRoomOps() {
                     onImport={handleFileImport}
                     importing={importing[dorm.id]}
                     triggerFileInput={triggerFileInput}
+                    onRefresh={loadDormsWithRooms}
                   />
                 </TabsContent>
               ))}
@@ -401,10 +410,262 @@ interface DormBulkSectionProps {
   onImport: (dormId: string, file: File) => void;
   importing?: boolean;
   triggerFileInput: (dormId: string) => void;
+  onRefresh: () => Promise<void>;
 }
 
-function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInput }: DormBulkSectionProps) {
+function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInput, onRefresh }: DormBulkSectionProps) {
+  const { toast } = useToast();
   const dormDisplayName = dorm.dorm_name || dorm.name;
+  
+  // Selection state
+  const [selectedRooms, setSelectedRooms] = useState<Set<string>>(new Set());
+  
+  // Bulk update state
+  const [bulkPrice, setBulkPrice] = useState("");
+  const [bulkDeposit, setBulkDeposit] = useState("");
+  const [bulkUpdating, setBulkUpdating] = useState(false);
+  
+  // Image/Video upload state
+  const [imageUploadMode, setImageUploadMode] = useState<"replace" | "add">("add");
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // Selection helpers
+  const toggleRoomSelection = (roomId: string) => {
+    setSelectedRooms(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(roomId)) {
+        newSet.delete(roomId);
+      } else {
+        newSet.add(roomId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllRooms = () => {
+    setSelectedRooms(new Set(dorm.rooms.map(r => r.id)));
+  };
+
+  const deselectAllRooms = () => {
+    setSelectedRooms(new Set());
+  };
+
+  const selectedCount = selectedRooms.size;
+  const hasSelection = selectedCount > 0;
+
+  // Bulk availability update
+  const bulkSetAvailability = async (available: boolean) => {
+    if (!hasSelection) {
+      toast({ title: "No rooms selected", variant: "destructive" });
+      return;
+    }
+
+    setBulkUpdating(true);
+    try {
+      const roomIds = Array.from(selectedRooms);
+      const { error } = await supabase
+        .from("rooms")
+        .update({ available })
+        .in("id", roomIds);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `${roomIds.length} rooms set to ${available ? "available" : "unavailable"}`,
+      });
+      await onRefresh();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
+  // Bulk price update
+  const bulkUpdatePrice = async () => {
+    if (!hasSelection) {
+      toast({ title: "No rooms selected", variant: "destructive" });
+      return;
+    }
+    const priceValue = parseFloat(bulkPrice);
+    if (isNaN(priceValue) || priceValue < 0) {
+      toast({ title: "Invalid price", variant: "destructive" });
+      return;
+    }
+
+    setBulkUpdating(true);
+    try {
+      const roomIds = Array.from(selectedRooms);
+      const { error } = await supabase
+        .from("rooms")
+        .update({ price: priceValue })
+        .in("id", roomIds);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Price updated to $${priceValue} for ${roomIds.length} rooms`,
+      });
+      setBulkPrice("");
+      await onRefresh();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
+  // Bulk deposit update
+  const bulkUpdateDeposit = async () => {
+    if (!hasSelection) {
+      toast({ title: "No rooms selected", variant: "destructive" });
+      return;
+    }
+    const depositValue = parseFloat(bulkDeposit);
+    if (isNaN(depositValue) || depositValue < 0) {
+      toast({ title: "Invalid deposit", variant: "destructive" });
+      return;
+    }
+
+    setBulkUpdating(true);
+    try {
+      const roomIds = Array.from(selectedRooms);
+      const { error } = await supabase
+        .from("rooms")
+        .update({ deposit: depositValue })
+        .in("id", roomIds);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Deposit updated to $${depositValue} for ${roomIds.length} rooms`,
+      });
+      setBulkDeposit("");
+      await onRefresh();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
+  // Bulk image upload
+  const handleBulkImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !hasSelection) return;
+
+    setUploadingMedia(true);
+    try {
+      const roomIds = Array.from(selectedRooms);
+      
+      // Compress and upload all images
+      const uploadedUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        const compressed = await imageCompression(file, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+        });
+
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+        const { data, error } = await supabase.storage
+          .from("room-images")
+          .upload(fileName, compressed);
+
+        if (error) throw error;
+        
+        const { data: urlData } = supabase.storage
+          .from("room-images")
+          .getPublicUrl(data.path);
+        
+        uploadedUrls.push(urlData.publicUrl);
+      }
+
+      // Update all selected rooms with the images array
+      for (const roomId of roomIds) {
+        const currentRoom = dorm.rooms.find(r => r.id === roomId);
+        let newImages: string[];
+
+        if (imageUploadMode === "replace" || !currentRoom?.images || currentRoom.images.length === 0) {
+          newImages = uploadedUrls;
+        } else {
+          // Add mode - append to existing array
+          newImages = [...(currentRoom.images || []), ...uploadedUrls];
+        }
+
+        const { error } = await supabase
+          .from("rooms")
+          .update({ images: newImages })
+          .eq("id", roomId);
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: `${uploadedUrls.length} image(s) uploaded to ${roomIds.length} rooms`,
+      });
+      await onRefresh();
+    } catch (error: any) {
+      toast({ title: "Upload Error", description: error.message, variant: "destructive" });
+    } finally {
+      setUploadingMedia(false);
+      if (imageInputRef.current) imageInputRef.current.value = "";
+    }
+  };
+
+  // Bulk video upload
+  const handleBulkVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !hasSelection) return;
+
+    // Check file size (max 50MB for video)
+    if (file.size > 50 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max video size is 50MB", variant: "destructive" });
+      return;
+    }
+
+    setUploadingMedia(true);
+    try {
+      const roomIds = Array.from(selectedRooms);
+
+      // Upload video
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`;
+      const { data, error } = await supabase.storage
+        .from("room-images")
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from("room-images")
+        .getPublicUrl(data.path);
+
+      // Update all selected rooms with the video URL
+      const { error: updateError } = await supabase
+        .from("rooms")
+        .update({ video_url: urlData.publicUrl })
+        .in("id", roomIds);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Success",
+        description: `Video uploaded to ${roomIds.length} rooms`,
+      });
+      await onRefresh();
+    } catch (error: any) {
+      toast({ title: "Upload Error", description: error.message, variant: "destructive" });
+    } finally {
+      setUploadingMedia(false);
+      if (videoInputRef.current) videoInputRef.current.value = "";
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -435,6 +696,194 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
           </CardHeader>
         </Card>
       </motion.div>
+
+      {/* Quick Bulk Operations Section */}
+      {dorm.rooms.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+        >
+          <Card className="rounded-2xl shadow-md border-accent/20">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <Zap className="w-5 h-5 text-accent" />
+                Quick Bulk Operations
+              </CardTitle>
+              <CardDescription>
+                Select rooms below, then apply bulk updates here
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Selection Counter */}
+              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
+                <span className="text-sm font-medium">
+                  {selectedCount} of {dorm.rooms.length} rooms selected
+                </span>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={selectAllRooms} className="gap-1">
+                    <CheckSquare className="w-4 h-4" />
+                    Select All
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={deselectAllRooms} className="gap-1">
+                    <Square className="w-4 h-4" />
+                    Deselect All
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Availability Toggle */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Availability</Label>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="gap-2 flex-1"
+                    disabled={!hasSelection || bulkUpdating}
+                    onClick={() => bulkSetAvailability(true)}
+                  >
+                    <ToggleRight className="w-4 h-4 text-green-500" />
+                    Set as Available
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="gap-2 flex-1"
+                    disabled={!hasSelection || bulkUpdating}
+                    onClick={() => bulkSetAvailability(false)}
+                  >
+                    <ToggleLeft className="w-4 h-4 text-muted-foreground" />
+                    Set as Unavailable
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Price & Deposit Update */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-1">
+                    <DollarSign className="w-4 h-4" />
+                    Update Price
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Enter price..."
+                      value={bulkPrice}
+                      onChange={(e) => setBulkPrice(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={bulkUpdatePrice}
+                      disabled={!hasSelection || !bulkPrice || bulkUpdating}
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-1">
+                    <DollarSign className="w-4 h-4" />
+                    Update Deposit
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Enter deposit..."
+                      value={bulkDeposit}
+                      onChange={(e) => setBulkDeposit(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={bulkUpdateDeposit}
+                      disabled={!hasSelection || !bulkDeposit || bulkUpdating}
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Image Upload */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <Image className="w-4 h-4" />
+                  Bulk Image Upload
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Upload the same image(s) to all selected rooms. Useful when rooms of the same type look identical.
+                </p>
+                <RadioGroup
+                  value={imageUploadMode}
+                  onValueChange={(v) => setImageUploadMode(v as "replace" | "add")}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="replace" id="replace" />
+                    <Label htmlFor="replace" className="text-sm cursor-pointer">Replace existing</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="add" id="add" />
+                    <Label htmlFor="add" className="text-sm cursor-pointer">Add to existing</Label>
+                  </div>
+                </RadioGroup>
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleBulkImageUpload}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  className="gap-2 w-full"
+                  disabled={!hasSelection || uploadingMedia}
+                  onClick={() => imageInputRef.current?.click()}
+                >
+                  <Image className="w-4 h-4" />
+                  {uploadingMedia ? "Uploading..." : `Upload Images to ${selectedCount} Rooms`}
+                </Button>
+              </div>
+
+              <Separator />
+
+              {/* Video Upload */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <Video className="w-4 h-4" />
+                  Bulk Video Upload
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Upload the same video to all selected rooms. Max 50MB.
+                </p>
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/*"
+                  onChange={handleBulkVideoUpload}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  className="gap-2 w-full"
+                  disabled={!hasSelection || uploadingMedia}
+                  onClick={() => videoInputRef.current?.click()}
+                >
+                  <Video className="w-4 h-4" />
+                  {uploadingMedia ? "Uploading..." : `Upload Video to ${selectedCount} Rooms`}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Excel Import/Export Section */}
       <motion.div
@@ -541,7 +990,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
         </Card>
       </motion.div>
 
-      {/* Current Rooms Preview */}
+      {/* Current Rooms Preview with Selection */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -553,7 +1002,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
               Current Rooms ({dorm.rooms.length})
             </CardTitle>
             <CardDescription>
-              Preview of rooms in {dormDisplayName}
+              Select rooms to apply bulk operations
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -567,6 +1016,15 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b text-left">
+                      <th className="pb-3 pr-2 w-10">
+                        <Checkbox
+                          checked={selectedCount === dorm.rooms.length && dorm.rooms.length > 0}
+                          onCheckedChange={(checked) => {
+                            if (checked) selectAllRooms();
+                            else deselectAllRooms();
+                          }}
+                        />
+                      </th>
                       <th className="pb-3 font-medium text-muted-foreground">Room</th>
                       <th className="pb-3 font-medium text-muted-foreground">Type</th>
                       <th className="pb-3 font-medium text-muted-foreground">Price</th>
@@ -578,14 +1036,21 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                     </tr>
                   </thead>
                   <tbody>
-                    {dorm.rooms.slice(0, 10).map((room, index) => (
+                    {dorm.rooms.map((room, index) => (
                       <motion.tr 
                         key={room.id}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.03 }}
-                        className="border-b last:border-0"
+                        transition={{ delay: index * 0.02 }}
+                        className={`border-b last:border-0 cursor-pointer hover:bg-muted/30 ${selectedRooms.has(room.id) ? "bg-primary/5" : ""}`}
+                        onClick={() => toggleRoomSelection(room.id)}
                       >
+                        <td className="py-3 pr-2" onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedRooms.has(room.id)}
+                            onCheckedChange={() => toggleRoomSelection(room.id)}
+                          />
+                        </td>
                         <td className="py-3 font-medium">{room.name}</td>
                         <td className="py-3">{room.type}</td>
                         <td className="py-3">${room.price}</td>
@@ -611,11 +1076,6 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                     ))}
                   </tbody>
                 </table>
-                {dorm.rooms.length > 10 && (
-                  <p className="text-sm text-muted-foreground text-center mt-4">
-                    Showing 10 of {dorm.rooms.length} rooms. Download the template to see all.
-                  </p>
-                )}
               </div>
             )}
           </CardContent>
