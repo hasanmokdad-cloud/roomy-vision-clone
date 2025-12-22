@@ -55,12 +55,10 @@ const beirutAreas = [
 const byblosUniversities = ['LAU Byblos'];
 const beirutUniversities = ['LAU Beirut', 'AUB', 'NDU', 'USJ', 'BAU', 'LU Hadat', 'Balamand Dekwaneh', 'Balamand ALBA', 'Haigazian', 'USEK'];
 
-const roomTypesWithoutApartment = [
-  'Single', 'Double', 'Triple', 'Junior Suite', 'Royal Suite',
-  'Standard Single', 'High Standard Single', 'Standard Double', 'High Standard Double',
-  'Small Single', 'Medium Single', 'Large Single', 'Small Double', 'Medium Double',
-  'Large Double', 'Large Quadruple'
-];
+import { studentRoomTypes, matchesRoomTypeFilter } from '@/data/roomTypes';
+
+// Student room types without "Any" for filter checkboxes
+const studentRoomTypesForFilters = studentRoomTypes.filter(t => t !== 'Any');
 
 const budgetPresets = [
   { label: '<$300', min: 0, max: 300 },
@@ -185,9 +183,12 @@ export function AirbnbFiltersModal({
       const price = room.price || 0;
       if (price < localFilters.priceRange[0] || price > localFilters.priceRange[1]) return false;
       
-      // Room type filter
+      // Room type filter - use substring matching
       if (localFilters.roomTypes.length > 0) {
-        if (!localFilters.roomTypes.includes(room.type || '')) return false;
+        const roomTypeMatches = localFilters.roomTypes.some(filterType => 
+          matchesRoomTypeFilter(room.type, filterType)
+        );
+        if (!roomTypeMatches) return false;
       }
       
       // Capacity filter
@@ -511,7 +512,7 @@ export function AirbnbFiltersModal({
       <section className="space-y-4">
         <h3 className="text-base font-semibold">Room Type</h3>
         <div className="flex flex-wrap gap-2">
-          {roomTypesWithoutApartment.map((type) => (
+          {studentRoomTypesForFilters.map((type) => (
             <button
               key={type}
               onClick={() => toggleArrayFilter('roomTypes', type)}
