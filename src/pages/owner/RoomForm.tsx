@@ -566,7 +566,7 @@ export default function RoomForm() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => navigate(`/owner/dorms/${dormId}/rooms`)}
+                      onClick={() => navigate('/owner/rooms')}
                       className="flex-1 rounded-xl"
                     >
                       Cancel
