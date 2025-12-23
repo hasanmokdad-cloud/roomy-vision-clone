@@ -140,6 +140,22 @@
   html {
     scroll-behavior: smooth;
     transition: background-color 0.3s ease;
+    height: 100%;
+  }
+
+  /* Mobile viewport fix for Safari - prevent address bar issues */
+  @supports (-webkit-touch-callout: none) {
+    body {
+      min-height: -webkit-fill-available;
+    }
+  }
+
+  /* Messages page specific - prevent body scroll when chat is open */
+  body.messages-chat-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
   }
 
   /* Enhanced Focus Styles for Accessibility */
