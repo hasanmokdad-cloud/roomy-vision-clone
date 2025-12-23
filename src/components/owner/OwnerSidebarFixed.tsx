@@ -1,12 +1,11 @@
-import { Home, Building2, BarChart3, Settings, DoorOpen, Calendar, LayoutDashboard, TrendingUp, Star, DollarSign } from 'lucide-react';
+import { Building2, BarChart3, Settings, DoorOpen, Calendar, LayoutDashboard, TrendingUp, Star, DollarSign } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const menuItems = [
   { title: 'Dashboard', url: '/owner', icon: LayoutDashboard },
   { title: 'Finance Hub', url: '/owner/finance', icon: DollarSign },
-  { title: 'Bookings', url: '/owner/bookings', icon: Calendar },
-  { title: 'Tour Calendar', url: '/owner/calendar', icon: Calendar },
+  { title: 'Tour Management', url: '/owner/schedule', icon: Calendar },
   { title: 'Room Management', url: '/owner/rooms', icon: DoorOpen },
   { title: 'Bulk Operations', url: '/owner/bulk-operations', icon: Settings },
   { title: 'Reviews', url: '/owner/reviews', icon: Star },
@@ -58,14 +57,17 @@ export function OwnerSidebarFixed({ isOpen, onClose, isMobile }: OwnerSidebarFix
           const isRoomManagementActive = item.url === '/owner/rooms' && 
             (location.pathname === '/owner/rooms' || /^\/owner\/dorms\/[^/]+\/rooms/.test(location.pathname));
           
-          // Special handling for Finance Hub to match /owner/finance with any query params
           const isFinanceHubActive = item.url === '/owner/finance' && 
             location.pathname === '/owner/finance';
+          
+          const isTourManagementActive = item.url === '/owner/schedule' && 
+            location.pathname === '/owner/schedule';
           
           const isActive = location.pathname === item.url || 
             (item.url === '/owner' && location.pathname === '/owner') ||
             isRoomManagementActive ||
-            isFinanceHubActive;
+            isFinanceHubActive ||
+            isTourManagementActive;
           
           return (
             <NavLink

@@ -79,6 +79,7 @@ const AdminOwners = lazy(() => import("./pages/admin/AdminOwners"));
 const AdminSystemMonitor = lazy(() => import("./pages/admin/AdminSystemMonitor"));
 const AdminSecurityMonitor = lazy(() => import("./pages/admin/AdminSecurityMonitor"));
 const OwnerCalendar = lazy(() => import("./pages/owner/OwnerCalendar"));
+const OwnerScheduleHub = lazy(() => import("./pages/owner/OwnerScheduleHub"));
 const RoommateProfile = lazy(() => import("./pages/RoommateProfile"));
 const AdminHome = lazy(() => import("./pages/admin/AdminHome"));
 const SharedCollection = lazy(() => import("./pages/SharedCollection"));
@@ -326,6 +327,7 @@ const AppRoutes = () => {
           <Route path="/owner/bulk-operations" element={<ProtectedRoute element={<BulkRoomOps />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/reviews" element={<ProtectedRoute element={<ReviewManagement />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/calendar" element={<ProtectedRoute element={<OwnerCalendar />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/schedule" element={<ProtectedRoute element={<OwnerScheduleHub />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/finance" element={<ProtectedRoute element={<OwnerFinanceHub />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/earnings" element={<ProtectedRoute element={<OwnerEarnings />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/refunds" element={<ProtectedRoute element={<OwnerRefundRequests />} allowedRoles={["owner", "admin"]} />} />

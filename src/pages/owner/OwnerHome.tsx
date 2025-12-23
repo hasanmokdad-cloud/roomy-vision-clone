@@ -109,7 +109,7 @@ function UpcomingToursWidget({ ownerId }: { ownerId: string }) {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate('/owner/calendar')}
+              onClick={() => navigate('/owner/schedule')}
               className="text-[#6D5BFF] hover:bg-[#f6f4ff]"
             >
               View All
@@ -350,18 +350,18 @@ export default function OwnerHome() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
               {
-                title: 'Tour Calendar',
+                title: 'Tour Management',
                 description: 'View tour bookings and manage your availability',
                 icon: Clock,
-                action: () => navigate('/owner/calendar'),
-                buttonText: 'Open Calendar',
+                action: () => navigate('/owner/schedule'),
+                buttonText: 'Open Schedule',
                 variant: 'primary' as const,
               },
               {
                 title: 'Your Earnings',
                 description: 'Track reservations payouts and revenue',
                 icon: TrendingUp,
-                action: () => navigate('/owner/earnings'),
+                action: () => navigate('/owner/finance?tab=earnings'),
                 buttonText: 'View Earnings',
                 variant: 'outline' as const,
               },
@@ -369,7 +369,7 @@ export default function OwnerHome() {
                 title: 'Refund Requests',
                 description: 'Review and manage student refund requests',
                 icon: Clock,
-                action: () => navigate('/owner/refunds'),
+                action: () => navigate('/owner/finance?tab=refunds'),
                 buttonText: 'View Requests',
                 variant: 'outline' as const,
               },
@@ -377,7 +377,7 @@ export default function OwnerHome() {
                 title: 'Wallet & Payouts',
                 description: 'Manage your payout card and view transactions',
                 icon: Wallet,
-                action: () => navigate('/owner/wallet'),
+                action: () => navigate('/owner/finance?tab=wallet'),
                 buttonText: 'Open Wallet',
                 variant: 'primary' as const,
               },
