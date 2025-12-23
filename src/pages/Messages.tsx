@@ -194,7 +194,7 @@ export default function Messages() {
   const navigate = useNavigate();
   const location = useLocation();
   const { setHideBottomNav } = useBottomNav();
-  const { permission, requestPermission, syncToDatabase } = useMicPermission();
+  const { permission, requestPermission, syncToDatabase, loadFromDatabase, checkPermission } = useMicPermission();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -542,6 +542,26 @@ export default function Messages() {
       window.removeEventListener('orientationchange', setVH);
     };
   }, []);
+
+  // Proactively show mic setup modal when user first opens any conversation
+  // This ensures permission is granted BEFORE they try to record (preventing Safari popup interruption)
+  useEffect(() => {
+    // Only on mobile, when a conversation is selected, permission not yet granted, and we haven't shown it
+    if (isMobile && selectedConversation && permission === 'prompt' && !hasShownMicSetup) {
+      // Small delay to let the chat UI load first
+      const timer = setTimeout(() => {
+        setShowMicSetupModal(true);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isMobile, selectedConversation, permission, hasShownMicSetup]);
+
+  // Load mic permission from database on mount for existing users
+  useEffect(() => {
+    if (userId) {
+      loadFromDatabase(userId);
+    }
+  }, [userId, loadFromDatabase]);
 
   // Hide bottom nav when in conversation view on mobile (Instagram-style)
   // Also lock body scroll to prevent viewport shifting
@@ -1581,9 +1601,12 @@ let otherUserName = 'User';
   };
 
   // Callback when permission is granted via setup modal
-  const handleMicPermissionGranted = () => {
+  const handleMicPermissionGranted = async () => {
     setHasShownMicSetup(true);
     localStorage.setItem('roomyMicSetupShown', 'true');
+    
+    // Recheck permission to update context state
+    await checkPermission();
     
     // Sync to database
     if (userId) {
