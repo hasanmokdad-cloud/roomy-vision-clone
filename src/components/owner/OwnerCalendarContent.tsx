@@ -389,7 +389,14 @@ export function OwnerCalendarContent() {
         <AcceptBookingModal
           open={acceptModalOpen}
           onOpenChange={setAcceptModalOpen}
-          booking={selectedBooking}
+          booking={{
+            id: selectedBooking.id,
+            student_name: selectedBooking.students?.full_name || 'Unknown Student',
+            dorm_name: selectedBooking.dorms?.dorm_name || selectedBooking.dorms?.name || 'Unknown Dorm',
+            requested_date: selectedBooking.requested_date,
+            requested_time: selectedBooking.requested_time,
+            message: selectedBooking.message
+          }}
           onConfirm={handleAcceptBooking}
           loading={acceptLoading}
         />
