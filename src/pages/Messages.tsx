@@ -204,7 +204,7 @@ export default function Messages() {
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const [showArchived, setShowArchived] = useState(false);
+  const [showArchivedPage, setShowArchivedPage] = useState(false);
   const [isRecordingActive, setIsRecordingActive] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
   const shouldUploadVoiceRef = useRef(true);
@@ -803,7 +803,7 @@ export default function Messages() {
 
   useEffect(() => {
     loadConversations();
-  }, [showArchived]);
+  }, []);
 
   const markAsRead = async (messageId: string) => {
     if (!userId || !selectedConversation) return;
@@ -898,10 +898,7 @@ export default function Messages() {
       query = query.or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`);
     }
 
-    // Filter archived
-    if (!showArchived) {
-      query = query.or('is_archived.is.null,is_archived.eq.false');
-    }
+    // Load all conversations including archived - filtering happens in UI
 
     // Sort pinned first, then by updated_at
     query = query.order('is_pinned', { ascending: false }).order('updated_at', { ascending: false });
@@ -2007,6 +2004,124 @@ let otherUserName = 'User';
     <div className="min-h-screen flex flex-col bg-background">
       {/* Hide Navbar on mobile, show on desktop */}
       {!isMobile && <RoomyNavbar />}
+
+      {/* Archives Page Overlay - WhatsApp style */}
+      {showArchivedPage && isMobile && (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col animate-slide-in-right">
+          {/* Header */}
+          <div className="flex items-center gap-3 p-4 border-b border-border bg-background sticky top-0 z-10 pt-6">
+            <Button variant="ghost" size="icon" onClick={() => setShowArchivedPage(false)}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h2 className="text-xl font-semibold">Archived</h2>
+          </div>
+
+          {/* Archived conversations list */}
+          <ScrollArea className="flex-1">
+            {conversations.filter(c => c.is_archived).length === 0 ? (
+              <div className="p-8 text-center text-foreground/60">
+                <Archive className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No archived chats</p>
+              </div>
+            ) : (
+              conversations.filter(c => c.is_archived).map((conv) => {
+                const hasUnread = (conv.unreadCount || 0) > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date());
+                const timeAgo = conv.last_message_time 
+                  ? formatDistanceToNowStrict(new Date(conv.last_message_time), { addSuffix: false })
+                      .replace(' seconds', 's')
+                      .replace(' second', 's')
+                      .replace(' minutes', 'm')
+                      .replace(' minute', 'm')
+                      .replace(' hours', 'h')
+                      .replace(' hour', 'h')
+                      .replace(' days', 'd')
+                      .replace(' day', 'd')
+                      .replace(' weeks', 'w')
+                      .replace(' week', 'w')
+                      .replace(' months', 'mo')
+                      .replace(' month', 'mo')
+                      .replace(' years', 'y')
+                      .replace(' year', 'y')
+                  : '';
+
+                return (
+                  <SwipeableChatRow
+                    key={conv.id}
+                    conversationId={conv.id}
+                    isPinned={conv.is_pinned || false}
+                    isArchived={conv.is_archived || false}
+                    hasUnread={hasUnread}
+                    onPin={() => handlePinConversation(conv.id, conv.is_pinned || false)}
+                    onArchive={async () => {
+                      await handleArchiveConversation(conv.id, conv.is_archived || false);
+                      // If unarchiving, close the archives page after a brief delay
+                      if (conv.is_archived) {
+                        setTimeout(() => {
+                          if (conversations.filter(c => c.is_archived && c.id !== conv.id).length === 0) {
+                            setShowArchivedPage(false);
+                          }
+                        }, 300);
+                      }
+                    }}
+                    onMore={() => setMoreActionConversation(conv)}
+                    onMarkRead={() => handleMarkConversationRead(conv.id)}
+                  >
+                    <div 
+                      className={`relative group cursor-pointer hover:bg-muted/50 transition-colors ${hasUnread ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
+                      onClick={() => {
+                        setSelectedConversation(conv.id);
+                        loadMessages(conv.id);
+                        setShowArchivedPage(false);
+                      }}
+                    >
+                      <div className="flex items-center gap-3 px-4 py-3">
+                        <div className="relative shrink-0">
+                          <Avatar className="w-14 h-14">
+                            <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
+                            <AvatarFallback className="bg-primary/20 text-primary text-lg">
+                              {conv.other_user_name?.charAt(0) || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
+                        
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <div className="flex items-center gap-1.5">
+                            {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
+                            {conv.muted_until && new Date(conv.muted_until) > new Date() && (
+                              <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />
+                            )}
+                            <span className={`text-[14px] truncate ${hasUnread ? 'font-bold text-foreground' : 'font-normal text-foreground'}`}>
+                              {conv.other_user_name}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-1 mt-0.5">
+                            {conv.last_message_sender_id === userId && (
+                              <MessageStatusIcon status={conv.last_message_status} />
+                            )}
+                            <p className={`text-sm truncate min-w-0 flex-1 ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                              {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
+                            </p>
+                            {timeAgo && (
+                              <span className="text-sm text-muted-foreground shrink-0 ml-1">· {timeAgo}</span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          {hasUnread && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </SwipeableChatRow>
+                );
+              })
+            )}
+          </ScrollArea>
+        </div>
+      )}
       
       <main 
         className={`flex-1 flex ${isMobile ? 'pt-0' : 'mt-20'}`}
@@ -2022,16 +2137,6 @@ let otherUserName = 'User';
                   <MessageSquare className="w-6 h-6" />
                   Messages
                 </h2>
-                {activeTab === 'chats' && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowArchived(!showArchived)}
-                  >
-                    <Archive className="w-4 h-4 mr-2" />
-                    {showArchived ? 'Hide' : 'Archived'}
-                  </Button>
-                )}
               </div>
 
               {/* Search bar for ALL roles */}
@@ -2068,9 +2173,9 @@ let otherUserName = 'User';
                 ) : (
                   <>
                     {/* Archived section row - WhatsApp style */}
-                    {!showArchived && conversations.some(c => c.is_archived) && (
+                    {conversations.some(c => c.is_archived) && (
                       <button
-                        onClick={() => setShowArchived(true)}
+                        onClick={() => setShowArchivedPage(true)}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border"
                       >
                         <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
@@ -2085,10 +2190,12 @@ let otherUserName = 'User';
                       </button>
                     )}
                     
+                    {/* Main conversation list - exclude archived */}
                     {conversations.filter(c => 
-                      !searchQuery || 
+                      !c.is_archived &&
+                      (!searchQuery || 
                       c.other_user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      c.last_message?.toLowerCase().includes(searchQuery.toLowerCase())
+                      c.last_message?.toLowerCase().includes(searchQuery.toLowerCase()))
                     ).map((conv) => {
                       const hasUnread = (conv.unreadCount || 0) > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date());
                       const timeAgo = conv.last_message_time 
@@ -2779,17 +2886,18 @@ let otherUserName = 'User';
               <span>{moreActionConversation?.muted_until && new Date(moreActionConversation.muted_until) > new Date() ? 'Unmute' : 'Mute'}</span>
             </button>
 
-            {/* Pin/Unpin */}
+            {/* Details */}
             <button
-              onClick={async () => {
+              onClick={() => {
                 if (!moreActionConversation) return;
-                await handlePinConversation(moreActionConversation.id, moreActionConversation.is_pinned || false);
+                setSelectedConversation(moreActionConversation.id);
+                setShowContactInfo(true);
                 setMoreActionConversation(null);
               }}
               className="w-full flex items-center gap-4 px-4 py-3 hover:bg-muted rounded-lg transition-colors"
             >
-              <Pin className="w-5 h-5 text-muted-foreground" />
-              <span>{moreActionConversation?.is_pinned ? 'Unpin' : 'Pin'}</span>
+              <Info className="w-5 h-5 text-muted-foreground" />
+              <span>Details</span>
             </button>
 
             {/* Delete */}
