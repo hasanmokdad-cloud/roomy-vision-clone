@@ -521,6 +521,23 @@ export default function Messages() {
     }
   }, [userId, location.state]);
 
+  // Set accurate viewport height for mobile Safari
+  useEffect(() => {
+    const setVH = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    
+    setVH();
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', setVH);
+    
+    return () => {
+      window.removeEventListener('resize', setVH);
+      window.removeEventListener('orientationchange', setVH);
+    };
+  }, []);
+
   // Hide bottom nav when in conversation view on mobile (Instagram-style)
   // Also lock body scroll to prevent viewport shifting
   useEffect(() => {
@@ -2342,12 +2359,12 @@ let otherUserName = 'User';
         <div 
           className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} flex-col bg-background ${
             isMobile 
-              ? 'fixed top-0 left-0 right-0 bottom-0 z-30' 
+              ? 'fixed top-0 left-0 right-0 z-30' 
               : 'flex-1 h-[calc(100vh-80px)]'
           }`}
           style={isMobile ? {
-            height: '100dvh',
-            minHeight: '-webkit-fill-available',
+            height: 'calc(var(--vh, 1vh) * 100)',
+            maxHeight: 'calc(var(--vh, 1vh) * 100)',
             paddingTop: 'env(safe-area-inset-top)',
             paddingBottom: 'env(safe-area-inset-bottom)'
           } : undefined}
