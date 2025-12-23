@@ -91,6 +91,8 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
           // Don't call getUserMedia here as it may trigger Safari popup
           setPermission('granted');
           localStorage.setItem(STORAGE_KEY, 'granted');
+          // Set sessionStorage so Safari's session-verification passes
+          sessionStorage.setItem(SESSION_VERIFIED_KEY, 'true');
         } else if (dbPermission) {
           setPermission(dbPermission);
           localStorage.setItem(STORAGE_KEY, dbPermission);
