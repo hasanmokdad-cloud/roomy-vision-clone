@@ -13,7 +13,7 @@ import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
 import { LanguageModal } from '@/components/LanguageModal';
-import BottomNav from '@/components/BottomNav';
+
 import { MobileMenuRow } from '@/components/mobile/MobileMenuRow';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StudentOnboardingDrawer } from '@/components/student/mobile/StudentOnboardingDrawer';
@@ -221,7 +221,6 @@ export default function Profile() {
         </div>
         
         <LanguageModal open={showLanguageModal} onOpenChange={setShowLanguageModal} />
-        <BottomNav />
       </div>
     );
   }
@@ -273,7 +272,6 @@ export default function Profile() {
                 onComplete={() => setShowProfileForm(false)}
               />
             </div>
-            <BottomNav />
           </div>
         );
       }
@@ -443,7 +441,6 @@ export default function Profile() {
             onOpenChange={setShowOnboardingDrawer}
             onComplete={handleOnboardingComplete}
           />
-          <BottomNav />
         </div>
       );
     }
@@ -486,7 +483,6 @@ export default function Profile() {
               <AdminProfileForm userId={userId!} />
             )}
           </div>
-          <BottomNav />
         </div>
       );
     }
@@ -557,7 +553,7 @@ export default function Profile() {
         </div>
         
         <LanguageModal open={showLanguageModal} onOpenChange={setShowLanguageModal} />
-        <BottomNav />
+        
       </div>
     );
   }

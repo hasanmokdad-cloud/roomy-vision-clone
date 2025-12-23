@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Calendar, Clock, MapPin, XCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
-import BottomNav from '@/components/BottomNav';
+
 import { MeetingLinkButton } from '@/components/bookings/MeetingLinkButton';
 import { AddToCalendarDropdown } from '@/components/bookings/AddToCalendarDropdown';
 import { sendTourSystemMessage } from '@/lib/tourMessaging';
@@ -365,7 +365,7 @@ export default function StudentTours() {
           )}
         </div>
       </main>
-      {isMobile && <BottomNav />}
+      
     </div>
     </SwipeableSubPage>
   );

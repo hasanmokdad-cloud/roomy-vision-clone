@@ -11,7 +11,7 @@ import { PersonalityMatchingCard } from './PersonalityMatchingCard';
 import { MatchPlanSection } from './MatchPlanSection';
 import { AccountSettingsSection } from './AccountSettingsSection';
 import { PersonalitySurveyDrawer } from './PersonalitySurveyDrawer';
-import BottomNav from '@/components/BottomNav';
+
 import { useUnreadNotificationsCount } from '@/hooks/useUnreadNotificationsCount';
 import type { AiMatchPlan } from '@/utils/tierLogic';
 
@@ -211,7 +211,7 @@ export function ProfileHub({ userId, onSignOut }: ProfileHubProps) {
         existingAnswers={profile?.personality_test_completed ? profile : null}
       />
 
-      <BottomNav />
+      
     </div>
   );
 }
