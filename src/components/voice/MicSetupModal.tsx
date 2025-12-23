@@ -4,48 +4,34 @@ import { Button } from '@/components/ui/button';
 import { Mic } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMicPermission } from '@/contexts/MicPermissionContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 
-interface MicrophonePermissionDrawerProps {
+interface MicSetupModalProps {
   open: boolean;
-  onAllow: () => void;
-  onSkip: () => void;
+  onOpenChange: (open: boolean) => void;
+  onPermissionGranted?: () => void;
 }
 
-export function MicrophonePermissionDrawer({ open, onAllow, onSkip }: MicrophonePermissionDrawerProps) {
+export function MicSetupModal({ open, onOpenChange, onPermissionGranted }: MicSetupModalProps) {
   const isMobile = useIsMobile();
-  const { requestPermission, syncToDatabase } = useMicPermission();
-  const { user } = useAuth();
+  const { requestPermission } = useMicPermission();
   const [requesting, setRequesting] = useState(false);
 
-  const handleAllow = async () => {
+  const handleEnableVoice = async () => {
     setRequesting(true);
     try {
       const granted = await requestPermission();
-      
-      // Sync to database regardless of result
-      if (user?.id) {
-        await syncToDatabase(user.id);
-      }
-      
       if (granted) {
-        console.log('Microphone permission granted and synced');
+        onOpenChange(false);
+        onPermissionGranted?.();
       }
-    } catch (error) {
-      console.error('Error requesting microphone permission:', error);
     } finally {
       setRequesting(false);
-      onAllow();
     }
   };
 
-  const handleSkip = async () => {
-    // Still sync the 'prompt' status to database so we know to ask later
-    if (user?.id) {
-      await syncToDatabase(user.id);
-    }
-    onSkip();
+  const handleSkip = () => {
+    onOpenChange(false);
   };
 
   const content = (
@@ -58,10 +44,11 @@ export function MicrophonePermissionDrawer({ open, onAllow, onSkip }: Microphone
 
       <div className="text-center space-y-3">
         <h3 className="text-xl font-semibold text-foreground">
-          Enable voice messages
+          Enable Voice Messages
         </h3>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Send voice messages to hosts and roommates quickly and easily.
+          Send voice notes to hosts and roommates quickly and easily. 
+          Hold the mic button to record.
         </p>
       </div>
     </div>
@@ -70,11 +57,11 @@ export function MicrophonePermissionDrawer({ open, onAllow, onSkip }: Microphone
   const footer = (
     <div className="space-y-3 w-full">
       <Button
-        onClick={handleAllow}
+        onClick={handleEnableVoice}
         disabled={requesting}
         className="w-full bg-foreground text-background hover:bg-foreground/90 py-6 text-base font-semibold rounded-xl"
       >
-        {requesting ? 'Enabling...' : 'Yes, allow'}
+        {requesting ? 'Enabling...' : 'Enable Now'}
       </Button>
       <Button
         variant="ghost"
@@ -82,14 +69,14 @@ export function MicrophonePermissionDrawer({ open, onAllow, onSkip }: Microphone
         disabled={requesting}
         className="w-full py-6 text-base rounded-xl text-muted-foreground"
       >
-        Not now
+        Maybe Later
       </Button>
     </div>
   );
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={() => {}}>
+      <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[90vh]">
           <div className="px-4 overflow-y-auto">
             {content}
@@ -103,8 +90,8 @@ export function MicrophonePermissionDrawer({ open, onAllow, onSkip }: Microphone
   }
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md [&>button]:hidden">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="sr-only">Enable voice messages</DialogTitle>
           <DialogDescription className="sr-only">
