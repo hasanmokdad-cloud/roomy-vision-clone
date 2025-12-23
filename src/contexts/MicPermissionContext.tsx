@@ -16,6 +16,7 @@ interface MicPermissionContextType {
 const MicPermissionContext = createContext<MicPermissionContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'roomyMicPermission';
+const SESSION_VERIFIED_KEY = 'roomyMicPermissionSessionVerified';
 
 // Detect Safari browser - Safari's Permissions API is unreliable for microphone
 const isSafari = typeof navigator !== 'undefined' && 
@@ -24,6 +25,17 @@ const isSafari = typeof navigator !== 'undefined' &&
 export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [permission, setPermission] = useState<MicPermission>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
+    
+    // On Safari, only trust 'granted' if verified THIS session
+    if (isSafari) {
+      const sessionVerified = sessionStorage.getItem(SESSION_VERIFIED_KEY);
+      if (stored === 'granted' && sessionVerified === 'true') {
+        return 'granted';
+      }
+      // Safari: Start with 'prompt' until verified this session
+      return 'prompt';
+    }
+    
     return (stored as MicPermission) || 'prompt';
   });
   const [isRequesting, setIsRequesting] = useState(false);
@@ -160,11 +172,14 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
       
       setPermission('granted');
       localStorage.setItem(STORAGE_KEY, 'granted');
+      // Mark as verified THIS session (Safari-specific but harmless on other browsers)
+      sessionStorage.setItem(SESSION_VERIFIED_KEY, 'true');
       return true;
     } catch (error) {
       console.error('Microphone permission denied:', error);
       setPermission('denied');
       localStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem(SESSION_VERIFIED_KEY);
       return false;
     } finally {
       setIsRequesting(false);
@@ -177,10 +192,12 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
       stream.getTracks().forEach(track => track.stop());
       setPermission('granted');
       localStorage.setItem(STORAGE_KEY, 'granted');
+      sessionStorage.setItem(SESSION_VERIFIED_KEY, 'true');
       return true;
     } catch {
       setPermission('denied');
       localStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem(SESSION_VERIFIED_KEY);
       return false;
     }
   };

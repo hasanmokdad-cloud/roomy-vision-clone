@@ -545,18 +545,13 @@ export default function Messages() {
 
   // Proactively show mic setup modal when user first opens any conversation
   // This ensures permission is granted BEFORE they try to record (preventing Safari popup interruption)
-  // CRITICAL: For Safari compatibility, we show the modal until permission is ACTUALLY granted
-  // We ignore hasShownMicSetup if permission is still 'prompt' - keep showing until user grants
+  // CRITICAL: For Safari compatibility, we show the modal IMMEDIATELY when permission is 'prompt'
+  // No delay - Safari users need to see the modal before any getUserMedia call happens
   useEffect(() => {
     // Only on mobile, when a conversation is selected, and permission not yet granted
-    // IMPORTANT: Don't check hasShownMicSetup when permission is 'prompt' - we need to keep showing
-    // the modal until user actually grants permission (not just dismisses it)
+    // Show immediately - no delay to prevent Safari's popup from appearing first
     if (isMobile && selectedConversation && permission === 'prompt') {
-      // Small delay to let the chat UI load first
-      const timer = setTimeout(() => {
-        setShowMicSetupModal(true);
-      }, 800);
-      return () => clearTimeout(timer);
+      setShowMicSetupModal(true);
     }
   }, [isMobile, selectedConversation, permission]);
 
