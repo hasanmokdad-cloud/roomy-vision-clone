@@ -14,8 +14,8 @@ import {
   ShieldAlert,
   Home,
   DollarSign,
-  Wallet,
-  RefreshCcw,
+  MessageSquare,
+  Activity,
   ArrowRight,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -308,7 +308,7 @@ export default function AdminDashboard() {
                   <p className="text-xs text-muted-foreground">Pending Owner Payouts</p>
                 </div>
                 <Button
-                  onClick={() => navigate("/admin/earnings")}
+                  onClick={() => navigate("/admin/finance?tab=earnings")}
                   className="w-full mt-2"
                   variant="outline"
                 >
@@ -317,60 +317,60 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            {/* Wallet & Payouts */}
+            {/* All Chats */}
             <Card className="rounded-2xl shadow-md border-border/40 hover:shadow-lg transition-shadow">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <Wallet className="w-4 h-4 text-blue-500" /> Wallet & Payouts
+                  <MessageSquare className="w-4 h-4 text-blue-500" /> All Chats
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
                   <p className="text-2xl font-bold text-blue-500">
-                    ${earningsStats.walletBalance.toFixed(2)}
+                    Messages
                   </p>
-                  <p className="text-sm text-muted-foreground">Wallet Balance</p>
+                  <p className="text-sm text-muted-foreground">User Communications</p>
                 </div>
                 <div>
                   <p className="text-lg font-semibold text-muted-foreground">
-                    {earningsStats.pendingPayouts}
+                    View All
                   </p>
-                  <p className="text-xs text-muted-foreground">Pending Payouts</p>
+                  <p className="text-xs text-muted-foreground">Student & Owner Chats</p>
                 </div>
                 <Button
-                  onClick={() => navigate("/admin/wallet")}
+                  onClick={() => navigate("/admin/messages-hub?tab=chats")}
                   className="w-full mt-2"
                   variant="outline"
                 >
-                  Open Wallet <ArrowRight className="w-4 h-4 ml-2" />
+                  Open Chats <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Refund Requests */}
+            {/* System Monitor */}
             <Card className="rounded-2xl shadow-md border-border/40 hover:shadow-lg transition-shadow">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <RefreshCcw className="w-4 h-4 text-orange-500" /> Refund Requests
+                  <Activity className="w-4 h-4 text-orange-500" /> System Monitor
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
                   <p className="text-2xl font-bold text-orange-500">
-                    {earningsStats.pendingRefunds}
+                    Status
                   </p>
-                  <p className="text-sm text-muted-foreground">Pending Requests</p>
+                  <p className="text-sm text-muted-foreground">System Health</p>
                 </div>
                 <div>
-                  <p className="text-lg font-semibold text-muted-foreground">—</p>
-                  <p className="text-xs text-muted-foreground">Awaiting Review</p>
+                  <p className="text-lg font-semibold text-green-500">Online</p>
+                  <p className="text-xs text-muted-foreground">All Systems Operational</p>
                 </div>
                 <Button
-                  onClick={() => navigate("/admin/refunds")}
+                  onClick={() => navigate("/admin/system?tab=monitor")}
                   className="w-full mt-2"
                   variant="outline"
                 >
-                  View Requests <ArrowRight className="w-4 h-4 ml-2" />
+                  View Monitor <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </CardContent>
             </Card>
