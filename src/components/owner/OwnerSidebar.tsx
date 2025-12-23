@@ -1,4 +1,4 @@
-import { Home, Building2, Plus, BarChart3, Settings, DoorOpen, Calendar, LayoutDashboard, TrendingUp, PlusCircle, Star, Wallet } from 'lucide-react';
+import { Building2, Settings, DoorOpen, Calendar, LayoutDashboard, TrendingUp, Star, Wallet } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   Sidebar,
@@ -14,14 +14,12 @@ import {
 
 const menuItems = [
   { title: 'Dashboard', url: '/owner', icon: LayoutDashboard, exact: true },
-  { title: 'My Listings', url: '/owner/listings', icon: Building2, exact: true },
+  { title: 'Finance Hub', url: '/owner/finance', icon: Wallet, exact: false },
+  { title: 'Tour Management', url: '/owner/schedule', icon: Calendar, exact: false },
   { title: 'Room Management', url: '/owner/rooms', icon: DoorOpen, exact: false },
   { title: 'Bulk Operations', url: '/owner/bulk-operations', icon: Settings, exact: true },
-  { title: 'Bookings', url: '/owner/bookings', icon: Calendar, exact: true },
-  { title: 'Tour Calendar', url: '/owner/calendar', icon: Calendar, exact: true },
   { title: 'Reviews', url: '/owner/reviews', icon: Star, exact: true },
-  { title: 'Wallet & Payouts', url: '/owner/wallet', icon: Wallet, exact: true },
-  { title: 'Add New Dorm', url: '/owner/dorms/new', icon: PlusCircle, exact: true },
+  { title: 'My Listings', url: '/owner/listings', icon: Building2, exact: true },
   { title: 'Statistics', url: '/owner/stats', icon: TrendingUp, exact: true },
 ];
 
@@ -33,15 +31,23 @@ export function OwnerSidebar({ hiddenItems = [] }: OwnerSidebarProps) {
   const { state } = useSidebar();
   const location = useLocation();
 
-  // Check if Room Management should be active (matches /owner/rooms or /owner/dorms/*/rooms)
-  const isRoomManagementActive = (itemUrl: string): boolean => {
-    if (itemUrl !== '/owner/rooms') return false;
+  // Check if certain hub items should be active based on URL patterns
+  const isHubActive = (itemUrl: string): boolean => {
     const path = location.pathname;
-    return path === '/owner/rooms' || /^\/owner\/dorms\/[^/]+\/rooms$/.test(path);
+    if (itemUrl === '/owner/rooms') {
+      return path === '/owner/rooms' || /^\/owner\/dorms\/[^/]+\/rooms$/.test(path);
+    }
+    if (itemUrl === '/owner/finance') {
+      return path.startsWith('/owner/finance');
+    }
+    if (itemUrl === '/owner/schedule') {
+      return path.startsWith('/owner/schedule');
+    }
+    return false;
   };
 
   const getNavCls = (item: typeof menuItems[0]) => ({ isActive }: { isActive: boolean }) => {
-    const active = isActive || isRoomManagementActive(item.url);
+    const active = isActive || isHubActive(item.url);
     return active ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-white/5';
   };
 
