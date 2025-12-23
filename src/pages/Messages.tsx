@@ -227,6 +227,7 @@ export default function Messages() {
   const [pinnedMessages, setPinnedMessages] = useState<Message[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
+  const [detailsSource, setDetailsSource] = useState<'conversation' | 'menu'>('conversation');
   const [showMicPermissionModal, setShowMicPermissionModal] = useState(false);
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
   // In-conversation search state
@@ -521,15 +522,21 @@ export default function Messages() {
   }, [userId, location.state]);
 
   // Hide bottom nav when in conversation view on mobile (Instagram-style)
+  // Also lock body scroll to prevent viewport shifting
   useEffect(() => {
     if (isMobile && selectedConversation) {
       setHideBottomNav(true);
+      document.body.classList.add('messages-chat-open');
     } else {
       setHideBottomNav(false);
+      document.body.classList.remove('messages-chat-open');
     }
     
     // Cleanup when leaving the page
-    return () => setHideBottomNav(false);
+    return () => {
+      setHideBottomNav(false);
+      document.body.classList.remove('messages-chat-open');
+    };
   }, [isMobile, selectedConversation, setHideBottomNav]);
 
   // Mobile uses tap-to-start now (same as desktop), no need for native touch listeners
@@ -753,16 +760,30 @@ export default function Messages() {
   };
 
   const handleArchiveConversation = async (conversationId: string, isArchived: boolean) => {
+    // Optimistic update - immediately update local state
+    setConversations(prev => prev.map(conv => 
+      conv.id === conversationId 
+        ? { ...conv, is_archived: !isArchived }
+        : conv
+    ));
+    
+    // Show toast immediately
+    toast({ title: isArchived ? 'Chat unarchived' : 'Chat archived' });
+
+    // Update database in background
     const { error } = await supabase
       .from('conversations')
       .update({ is_archived: !isArchived })
       .eq('id', conversationId);
 
     if (error) {
+      // Revert on error
+      setConversations(prev => prev.map(conv => 
+        conv.id === conversationId 
+          ? { ...conv, is_archived: isArchived }
+          : conv
+      ));
       toast({ title: 'Error', description: 'Failed to archive chat', variant: 'destructive' });
-    } else {
-      toast({ title: isArchived ? 'Chat unarchived' : 'Chat archived' });
-      loadConversations();
     }
   };
 
@@ -2321,9 +2342,15 @@ let otherUserName = 'User';
         <div 
           className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} flex-col bg-background ${
             isMobile 
-              ? 'fixed inset-0 z-30' 
+              ? 'fixed top-0 left-0 right-0 bottom-0 z-30' 
               : 'flex-1 h-[calc(100vh-80px)]'
           }`}
+          style={isMobile ? {
+            height: '100dvh',
+            minHeight: '-webkit-fill-available',
+            paddingTop: 'env(safe-area-inset-top)',
+            paddingBottom: 'env(safe-area-inset-bottom)'
+          } : undefined}
           onContextMenu={(e) => e.preventDefault()}
         >
             {selectedConversation ? (
@@ -2392,7 +2419,10 @@ let otherUserName = 'User';
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setShowContactInfo(!showContactInfo)}
+                    onClick={() => {
+                      setDetailsSource('conversation');
+                      setShowContactInfo(!showContactInfo);
+                    }}
                     className="shrink-0"
                   >
                     <Info className="w-5 h-5" />
@@ -2427,7 +2457,7 @@ let otherUserName = 'User';
                 />
 
 
-                <ScrollArea className="flex-1 p-4">
+                <ScrollArea className="flex-1 overflow-hidden p-4">
                   <div className="space-y-4">
                     {/* Pinned Messages Banner */}
                     {pinnedMessages.length > 0 && (
@@ -2511,7 +2541,8 @@ let otherUserName = 'User';
                 </ScrollArea>
 
                 <div 
-                  className={`${isMobile ? 'p-3 shrink-0 bg-background z-10 pb-safe' : 'p-4'} border-t border-border`}
+                  className={`${isMobile ? 'p-3 shrink-0 bg-background z-20 border-t border-border' : 'p-4 border-t border-border'}`}
+                  style={isMobile ? { paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' } : undefined}
                 >
                   {uploadProgress > 0 && uploadProgress < 100 && (
                     <div className="mb-2">
@@ -2782,7 +2813,14 @@ let otherUserName = 'User';
         {/* Contact Info Panel */}
         {showContactInfo && selectedConversation && (
           <ContactInfoPanel
-            onClose={() => setShowContactInfo(false)}
+            onClose={() => {
+              setShowContactInfo(false);
+              if (detailsSource === 'menu') {
+                // If accessed from menu, go back to general messages list
+                setSelectedConversation(null);
+              }
+              // If from conversation, just close the panel (stay in the chat)
+            }}
             contactName={conversations.find(c => c.id === selectedConversation)?.other_user_name || 'User'}
             contactAvatar={conversations.find(c => c.id === selectedConversation)?.other_user_photo || undefined}
             conversationId={selectedConversation}
@@ -2890,6 +2928,7 @@ let otherUserName = 'User';
             <button
               onClick={() => {
                 if (!moreActionConversation) return;
+                setDetailsSource('menu');
                 setSelectedConversation(moreActionConversation.id);
                 setShowContactInfo(true);
                 setMoreActionConversation(null);
