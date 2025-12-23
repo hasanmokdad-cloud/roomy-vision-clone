@@ -17,6 +17,10 @@ const MicPermissionContext = createContext<MicPermissionContextType | undefined>
 
 const STORAGE_KEY = 'roomyMicPermission';
 
+// Detect Safari browser - Safari's Permissions API is unreliable for microphone
+const isSafari = typeof navigator !== 'undefined' && 
+  /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
 export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [permission, setPermission] = useState<MicPermission>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -98,12 +102,22 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const checkPermission = async () => {
     try {
+      // First, check our own stored state (most reliable source of truth)
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === 'granted') {
         setPermission('granted');
         return;
       }
 
+      // On Safari, DON'T trust the Permissions API - it's unreliable for microphone
+      // Keep as 'prompt' until user explicitly grants via getUserMedia
+      if (isSafari) {
+        console.log('[MicPermission] Safari detected - skipping Permissions API, keeping as prompt');
+        setPermission('prompt');
+        return;
+      }
+
+      // On other browsers, try Permissions API as supplementary check
       if ('permissions' in navigator && 'query' in navigator.permissions) {
         try {
           const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
