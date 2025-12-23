@@ -54,6 +54,8 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [permission]);
 
   // Load permission status from database
+  // IMPORTANT: On Safari, we NEVER call getUserMedia here to avoid triggering the popup prematurely
+  // We only trust our stored state until user explicitly grants permission via the modal
   const loadFromDatabase = useCallback(async (userId: string) => {
     if (!userId) return;
     
@@ -69,16 +71,10 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
         const dbPermission = prefs.microphonePermission as MicPermission;
         
         if (dbPermission === 'granted') {
-          // Verify the permission is still valid with the browser
-          const stillGranted = await recheckBrowserPermission();
-          if (stillGranted) {
-            setPermission('granted');
-            localStorage.setItem(STORAGE_KEY, 'granted');
-          } else {
-            // Browser permission was revoked, update our state
-            setPermission('prompt');
-            localStorage.setItem(STORAGE_KEY, 'prompt');
-          }
+          // Trust the database - user previously granted permission
+          // Don't call getUserMedia here as it may trigger Safari popup
+          setPermission('granted');
+          localStorage.setItem(STORAGE_KEY, 'granted');
         } else if (dbPermission) {
           setPermission(dbPermission);
           localStorage.setItem(STORAGE_KEY, dbPermission);

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Heart, Building2, DoorOpen } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import BottomNav from '@/components/BottomNav';
+
 import { motion } from 'framer-motion';
 import { PullToRefresh } from '@/components/mobile/PullToRefresh';
 import { useScrollPreservation } from '@/hooks/useScrollPreservation';
@@ -127,7 +127,6 @@ export default function Wishlists() {
           </motion.div>
         </div>
         
-        <BottomNav />
       </div>
     );
   }
@@ -195,7 +194,7 @@ export default function Wishlists() {
         </div>
       </PullToRefresh>
       
-      <BottomNav />
+      
     </div>
   );
 }

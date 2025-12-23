@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, User, ChevronRight, Camera, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import BottomNav from '@/components/BottomNav';
+
 import { AboutProfileDrawer } from '@/components/profile/AboutProfileDrawer';
 import { EditProfileDrawer } from '@/components/profile/EditProfileDrawer';
 
@@ -205,7 +205,7 @@ export default function CompleteProfile() {
         initialSection={activeSection}
       />
 
-      <BottomNav />
+      
     </div>
   );
 }
