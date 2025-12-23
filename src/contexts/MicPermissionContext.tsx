@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 type MicPermission = 'granted' | 'prompt' | 'denied';
 
@@ -8,28 +9,105 @@ interface MicPermissionContextType {
   checkPermission: () => Promise<void>;
   requestPermission: () => Promise<boolean>;
   recheckPermission: () => Promise<boolean>;
+  syncToDatabase: (userId: string) => Promise<void>;
+  loadFromDatabase: (userId: string) => Promise<void>;
 }
 
 const MicPermissionContext = createContext<MicPermissionContextType | undefined>(undefined);
 
+const STORAGE_KEY = 'roomyMicPermission';
+
 export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [permission, setPermission] = useState<MicPermission>(() => {
-    // Check localStorage first
-    const stored = localStorage.getItem('roomyMicPermission');
+    const stored = localStorage.getItem(STORAGE_KEY);
     return (stored as MicPermission) || 'prompt';
   });
   const [isRequesting, setIsRequesting] = useState(false);
 
+  // Sync permission status to database
+  const syncToDatabase = useCallback(async (userId: string) => {
+    if (!userId) return;
+    
+    try {
+      const { data: existing } = await supabase
+        .from('user_settings')
+        .select('preferences')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      const currentPrefs = (existing?.preferences as Record<string, unknown>) || {};
+      const updatedPrefs = { ...currentPrefs, microphonePermission: permission };
+
+      if (existing) {
+        await supabase
+          .from('user_settings')
+          .update({ preferences: updatedPrefs, updated_at: new Date().toISOString() })
+          .eq('user_id', userId);
+      } else {
+        await supabase
+          .from('user_settings')
+          .insert({ user_id: userId, preferences: updatedPrefs });
+      }
+    } catch (error) {
+      console.error('Error syncing mic permission to database:', error);
+    }
+  }, [permission]);
+
+  // Load permission status from database
+  const loadFromDatabase = useCallback(async (userId: string) => {
+    if (!userId) return;
+    
+    try {
+      const { data } = await supabase
+        .from('user_settings')
+        .select('preferences')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (data?.preferences) {
+        const prefs = data.preferences as Record<string, unknown>;
+        const dbPermission = prefs.microphonePermission as MicPermission;
+        
+        if (dbPermission === 'granted') {
+          // Verify the permission is still valid with the browser
+          const stillGranted = await recheckBrowserPermission();
+          if (stillGranted) {
+            setPermission('granted');
+            localStorage.setItem(STORAGE_KEY, 'granted');
+          } else {
+            // Browser permission was revoked, update our state
+            setPermission('prompt');
+            localStorage.setItem(STORAGE_KEY, 'prompt');
+          }
+        } else if (dbPermission) {
+          setPermission(dbPermission);
+          localStorage.setItem(STORAGE_KEY, dbPermission);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading mic permission from database:', error);
+    }
+  }, []);
+
+  // Check browser permission without requesting
+  const recheckBrowserPermission = async (): Promise<boolean> => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const checkPermission = async () => {
     try {
-      // Check localStorage first
-      const stored = localStorage.getItem('roomyMicPermission');
+      const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === 'granted') {
         setPermission('granted');
         return;
       }
 
-      // Use Permissions API if available (note: iOS Safari doesn't support microphone query)
       if ('permissions' in navigator && 'query' in navigator.permissions) {
         try {
           const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
@@ -38,27 +116,22 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
           setPermission(state);
           
           if (state === 'granted') {
-            localStorage.setItem('roomyMicPermission', 'granted');
+            localStorage.setItem(STORAGE_KEY, 'granted');
           }
 
-          // Listen for permission changes
           result.onchange = () => {
             const newState = result.state as MicPermission;
             setPermission(newState);
             if (newState === 'granted') {
-              localStorage.setItem('roomyMicPermission', 'granted');
+              localStorage.setItem(STORAGE_KEY, 'granted');
             } else {
-              localStorage.removeItem('roomyMicPermission');
+              localStorage.removeItem(STORAGE_KEY);
             }
           };
         } catch {
-          // iOS Safari throws on microphone query - fall back to 'prompt'
-          // Permission will be requested inline when user tries to record
           setPermission('prompt');
         }
       } else {
-        // Fallback for browsers without Permissions API (e.g., iOS Safari)
-        // Permission will be requested inline when user tries to record
         setPermission('prompt');
       }
     } catch (error) {
@@ -68,22 +141,20 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const requestPermission = async (): Promise<boolean> => {
-    if (isRequesting) return false; // Prevent duplicate requests
+    if (isRequesting) return false;
     
     setIsRequesting(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      
-      // Permission granted - stop the stream immediately
       stream.getTracks().forEach(track => track.stop());
       
       setPermission('granted');
-      localStorage.setItem('roomyMicPermission', 'granted');
+      localStorage.setItem(STORAGE_KEY, 'granted');
       return true;
     } catch (error) {
       console.error('Microphone permission denied:', error);
       setPermission('denied');
-      localStorage.removeItem('roomyMicPermission');
+      localStorage.removeItem(STORAGE_KEY);
       return false;
     } finally {
       setIsRequesting(false);
@@ -91,16 +162,15 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const recheckPermission = async (): Promise<boolean> => {
-    // Force re-check from browser, not localStorage
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach(track => track.stop());
       setPermission('granted');
-      localStorage.setItem('roomyMicPermission', 'granted');
+      localStorage.setItem(STORAGE_KEY, 'granted');
       return true;
     } catch {
       setPermission('denied');
-      localStorage.removeItem('roomyMicPermission');
+      localStorage.removeItem(STORAGE_KEY);
       return false;
     }
   };
@@ -110,7 +180,15 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   return (
-    <MicPermissionContext.Provider value={{ permission, isRequesting, checkPermission, requestPermission, recheckPermission }}>
+    <MicPermissionContext.Provider value={{ 
+      permission, 
+      isRequesting, 
+      checkPermission, 
+      requestPermission, 
+      recheckPermission,
+      syncToDatabase,
+      loadFromDatabase
+    }}>
       {children}
     </MicPermissionContext.Provider>
   );

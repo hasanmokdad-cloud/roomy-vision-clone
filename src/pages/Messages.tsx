@@ -32,6 +32,7 @@ import { ContactInfoPanel } from '@/components/messages/ContactInfoPanel';
 import { FriendsTab } from '@/components/friends/FriendsTab';
 import { FriendSearchBar } from '@/components/friends/FriendSearchBar';
 import { MicPermissionModal } from '@/components/voice/MicPermissionModal';
+import { MicSetupModal } from '@/components/voice/MicSetupModal';
 import { useMicPermission } from '@/contexts/MicPermissionContext';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
@@ -193,7 +194,7 @@ export default function Messages() {
   const navigate = useNavigate();
   const location = useLocation();
   const { setHideBottomNav } = useBottomNav();
-  const { permission, requestPermission } = useMicPermission();
+  const { permission, requestPermission, syncToDatabase } = useMicPermission();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -229,6 +230,10 @@ export default function Messages() {
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [detailsSource, setDetailsSource] = useState<'conversation' | 'menu'>('conversation');
   const [showMicPermissionModal, setShowMicPermissionModal] = useState(false);
+  const [showMicSetupModal, setShowMicSetupModal] = useState(false);
+  const [hasShownMicSetup, setHasShownMicSetup] = useState(() => {
+    return localStorage.getItem('roomyMicSetupShown') === 'true';
+  });
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
   // In-conversation search state
   const [showConversationSearch, setShowConversationSearch] = useState(false);
@@ -1447,8 +1452,13 @@ let otherUserName = 'User';
     }
 
     // Double-check permission before recording (defensive)
-    if (permission !== 'granted') {
+    if (permission === 'denied') {
       setShowMicPermissionModal(true);
+      return;
+    }
+    
+    if (permission === 'prompt') {
+      setShowMicSetupModal(true);
       return;
     }
 
@@ -1549,26 +1559,41 @@ let otherUserName = 'User';
   };
 
   const handleVoiceButtonClick = async (e?: React.MouseEvent | React.TouchEvent) => {
-    // Check permission first for both mobile and desktop
+    // If permission is denied, show modal with instructions
     if (permission === 'denied') {
       setShowMicPermissionModal(true);
       return;
     }
     
+    // If permission not yet granted, show setup modal on TAP (not hold)
+    // This prevents the browser popup from interrupting the hold gesture
     if (permission === 'prompt') {
-      const granted = await requestPermission();
-      if (!granted) {
-        setShowMicPermissionModal(true);
-        return;
-      }
+      setShowMicSetupModal(true);
+      return;
     }
     
-    // Toggle recording
+    // Permission is granted - toggle recording
     if (recording) {
       stopRecording();
     } else {
       startRecording();
     }
+  };
+
+  // Callback when permission is granted via setup modal
+  const handleMicPermissionGranted = () => {
+    setHasShownMicSetup(true);
+    localStorage.setItem('roomyMicSetupShown', 'true');
+    
+    // Sync to database
+    if (userId) {
+      syncToDatabase(userId);
+    }
+    
+    toast({ 
+      title: 'Voice messages enabled!', 
+      description: 'Hold the mic button to record' 
+    });
   };
 
   // Mobile long-press recording with native event listeners
@@ -1579,29 +1604,27 @@ let otherUserName = 'User';
     let pressTimer: NodeJS.Timeout;
     
     const handleTouchStart = async (e: TouchEvent) => {
-      e.preventDefault(); // Now works because { passive: false }
+      e.preventDefault();
       e.stopPropagation();
       
-      // If permission is explicitly denied, show modal and exit
+      // If permission is denied, show modal with instructions
       if (permission === 'denied') {
         setShowMicPermissionModal(true);
         return;
       }
       
+      // If permission not yet granted, show setup modal on TAP (not hold)
+      // This prevents the browser popup from interrupting the hold gesture
+      if (permission === 'prompt') {
+        setShowMicSetupModal(true);
+        return; // Don't start recording timer - user needs to grant permission first
+      }
+      
+      // Permission is granted - proceed with hold-to-record
       touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       
       // Start recording after 220ms hold
-      // For iOS Safari and other browsers that don't support Permissions API,
-      // permission will be 'prompt' - we request inline when starting recording
-      pressTimer = setTimeout(async () => {
-        if (permission === 'prompt') {
-          // Request permission inline (iOS Safari needs this approach)
-          const granted = await requestPermission();
-          if (!granted) {
-            setShowMicPermissionModal(true);
-            return;
-          }
-        }
+      pressTimer = setTimeout(() => {
         startRecording();
       }, 220);
     };
@@ -2905,10 +2928,17 @@ let otherUserName = 'User';
         />
       )}
       
-      {/* Mic Permission Modal */}
+      {/* Mic Permission Modal (for denied state) */}
       <MicPermissionModal
         open={showMicPermissionModal}
         onOpenChange={setShowMicPermissionModal}
+      />
+
+      {/* Mic Setup Modal (for first-time permission request) */}
+      <MicSetupModal
+        open={showMicSetupModal}
+        onOpenChange={setShowMicSetupModal}
+        onPermissionGranted={handleMicPermissionGranted}
       />
 
       {/* "More" Action Sheet for mobile swipe */}
