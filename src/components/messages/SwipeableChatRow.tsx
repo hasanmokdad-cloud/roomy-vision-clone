@@ -33,8 +33,8 @@ export function SwipeableChatRow({
   const prefersReducedMotion = useReducedMotion();
   
   const swipeThreshold = 80;
-  const actionWidth = 160; // Width for action buttons (2 buttons × 80px each)
-  const pinActionWidth = 80; // Width for pin button
+  const leftActionWidth = 160; // Width for left actions (2 buttons × 80px each) - Read/Unread + Pin
+  const rightActionWidth = 160; // Width for right actions (2 buttons × 80px each) - More + Archive
 
   const springTransition = prefersReducedMotion 
     ? { duration: 0.15 } 
@@ -43,22 +43,22 @@ export function SwipeableChatRow({
   const handleDragEnd = async (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const { offset, velocity } = info;
     
-    // Right swipe (reveal left actions: More + Archive/Unarchive)
+    // Right swipe (reveal left actions: Read/Unread + Pin)
     if (offset.x > swipeThreshold || velocity.x > 500) {
       haptics.medium();
       await controls.start({ 
-        x: actionWidth, 
+        x: leftActionWidth, 
         transition: springTransition 
       });
       setIsRevealed('left');
       return;
     }
     
-    // Left swipe (reveal right action: Pin)
+    // Left swipe (reveal right actions: More + Archive)
     if (offset.x < -swipeThreshold || velocity.x < -500) {
       haptics.medium();
       await controls.start({ 
-        x: -pinActionWidth, 
+        x: -rightActionWidth, 
         transition: springTransition 
       });
       setIsRevealed('right');
@@ -95,84 +95,42 @@ export function SwipeableChatRow({
 
   return (
     <div className="relative overflow-hidden">
-      {/* Left action buttons (revealed on right swipe) */}
+      {/* Left action buttons (revealed on right swipe): Read/Unread + Pin */}
       <div className="absolute left-0 inset-y-0 flex items-stretch">
-        {/* More button */}
-        <button
-          onClick={() => handleAction('more', onMore)}
-          disabled={loadingAction !== null}
-          className="w-20 flex flex-col items-center justify-center gap-1 bg-muted-foreground/80 text-white disabled:opacity-50 transition-opacity"
-        >
-          {loadingAction === 'more' ? (
-            <Loader2 className="w-6 h-6 animate-spin" />
-          ) : (
-            <>
-              <MoreHorizontal className="w-6 h-6" />
-              <span className="text-xs font-medium">More</span>
-            </>
-          )}
-        </button>
-        
-        {/* Archive/Unarchive OR Unread/Unpin based on state */}
-        {isPinned ? (
-          <>
-            {hasUnread && onMarkRead ? (
-              <button
-                onClick={() => handleAction('read', onMarkRead)}
-                disabled={loadingAction !== null}
-                className="w-20 flex flex-col items-center justify-center gap-1 bg-blue-500 text-white disabled:opacity-50 transition-opacity"
-              >
-                {loadingAction === 'read' ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                ) : (
-                  <>
-                    <Mail className="w-6 h-6" />
-                    <span className="text-xs font-medium">Read</span>
-                  </>
-                )}
-              </button>
+        {/* Mark Read/Unread button */}
+        {hasUnread && onMarkRead ? (
+          <button
+            onClick={() => handleAction('read', onMarkRead)}
+            disabled={loadingAction !== null}
+            className="w-20 flex flex-col items-center justify-center gap-1 bg-blue-500 text-white disabled:opacity-50 transition-opacity"
+          >
+            {loadingAction === 'read' ? (
+              <Loader2 className="w-6 h-6 animate-spin" />
             ) : (
-              <button
-                onClick={() => handleAction('unpin', onPin)}
-                disabled={loadingAction !== null}
-                className="w-20 flex flex-col items-center justify-center gap-1 bg-amber-500 text-white disabled:opacity-50 transition-opacity"
-              >
-                {loadingAction === 'unpin' ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                ) : (
-                  <>
-                    <PinOff className="w-6 h-6" />
-                    <span className="text-xs font-medium">Unpin</span>
-                  </>
-                )}
-              </button>
+              <>
+                <Mail className="w-6 h-6" />
+                <span className="text-xs font-medium">Read</span>
+              </>
             )}
-          </>
+          </button>
         ) : (
           <button
-            onClick={() => handleAction('archive', onArchive)}
+            onClick={() => handleAction('unread', () => Promise.resolve())}
             disabled={loadingAction !== null}
-            className="w-20 flex flex-col items-center justify-center gap-1 bg-emerald-500 text-white disabled:opacity-50 transition-opacity"
+            className="w-20 flex flex-col items-center justify-center gap-1 bg-blue-500 text-white disabled:opacity-50 transition-opacity"
           >
-            {loadingAction === 'archive' ? (
+            {loadingAction === 'unread' ? (
               <Loader2 className="w-6 h-6 animate-spin" />
-            ) : isArchived ? (
-              <>
-                <ArchiveRestore className="w-6 h-6" />
-                <span className="text-xs font-medium">Unarchive</span>
-              </>
             ) : (
               <>
-                <Archive className="w-6 h-6" />
-                <span className="text-xs font-medium">Archive</span>
+                <Mail className="w-6 h-6" />
+                <span className="text-xs font-medium">Unread</span>
               </>
             )}
           </button>
         )}
-      </div>
-      
-      {/* Right action button (revealed on left swipe) */}
-      <div className="absolute right-0 inset-y-0 flex items-stretch">
+        
+        {/* Pin/Unpin button */}
         <button
           onClick={() => handleAction('pin', onPin)}
           disabled={loadingAction !== null}
@@ -194,10 +152,50 @@ export function SwipeableChatRow({
         </button>
       </div>
       
+      {/* Right action buttons (revealed on left swipe): More + Archive */}
+      <div className="absolute right-0 inset-y-0 flex items-stretch">
+        {/* More button */}
+        <button
+          onClick={() => handleAction('more', onMore)}
+          disabled={loadingAction !== null}
+          className="w-20 flex flex-col items-center justify-center gap-1 bg-muted-foreground/80 text-white disabled:opacity-50 transition-opacity"
+        >
+          {loadingAction === 'more' ? (
+            <Loader2 className="w-6 h-6 animate-spin" />
+          ) : (
+            <>
+              <MoreHorizontal className="w-6 h-6" />
+              <span className="text-xs font-medium">More</span>
+            </>
+          )}
+        </button>
+        
+        {/* Archive/Unarchive button */}
+        <button
+          onClick={() => handleAction('archive', onArchive)}
+          disabled={loadingAction !== null}
+          className="w-20 flex flex-col items-center justify-center gap-1 bg-emerald-500 text-white disabled:opacity-50 transition-opacity"
+        >
+          {loadingAction === 'archive' ? (
+            <Loader2 className="w-6 h-6 animate-spin" />
+          ) : isArchived ? (
+            <>
+              <ArchiveRestore className="w-6 h-6" />
+              <span className="text-xs font-medium">Unarchive</span>
+            </>
+          ) : (
+            <>
+              <Archive className="w-6 h-6" />
+              <span className="text-xs font-medium">Archive</span>
+            </>
+          )}
+        </button>
+      </div>
+      
       {/* Main content (slides) */}
       <motion.div
         drag="x"
-        dragConstraints={{ left: -pinActionWidth, right: actionWidth }}
+        dragConstraints={{ left: -rightActionWidth, right: leftActionWidth }}
         dragElastic={0.1}
         onDragEnd={handleDragEnd}
         animate={controls}

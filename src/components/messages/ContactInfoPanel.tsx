@@ -268,7 +268,7 @@ export function ContactInfoPanel({
           <Button variant="ghost" size="icon" onClick={onClose}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h2 className="text-lg font-semibold">Contact Info</h2>
+          <h2 className="text-lg font-semibold">Details</h2>
         </div>
 
         {/* Scrollable content */}
