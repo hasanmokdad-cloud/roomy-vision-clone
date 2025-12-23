@@ -532,13 +532,15 @@ export function OwnerBookingsContent() {
         </div>
       </section>
 
-      <AcceptBookingModal
-        open={acceptModalOpen}
-        onOpenChange={setAcceptModalOpen}
-        onConfirm={handleApprove}
-        loading={acceptLoading}
-        booking={bookingToAccept}
-      />
+      {bookingToAccept && (
+        <AcceptBookingModal
+          open={acceptModalOpen}
+          onOpenChange={setAcceptModalOpen}
+          onConfirm={handleApprove}
+          loading={acceptLoading}
+          booking={bookingToAccept}
+        />
+      )}
     </div>
   );
 }
