@@ -550,10 +550,17 @@ export default function Messages() {
   // No delay - Safari users need to see the modal before any getUserMedia call happens
   // Load mic permission from database on mount for existing users
   // IMPORTANT: Must complete BEFORE checking if modal should show
+  // Also: If DB says 'granted', immediately mark hasShownMicSetup to prevent modal
   useEffect(() => {
     if (userId) {
-      loadFromDatabase(userId).then(() => {
+      loadFromDatabase(userId).then((dbPermission) => {
         setMicPermissionLoaded(true);
+        // If database says 'granted', user already has permission - don't show modal
+        if (dbPermission === 'granted') {
+          setHasShownMicSetup(true);
+          localStorage.setItem('roomyMicSetupShown', 'true');
+          console.log('[Messages] DB permission is granted, skipping mic setup modal');
+        }
       });
     }
   }, [userId, loadFromDatabase]);

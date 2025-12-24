@@ -51,6 +51,12 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
   const currentIndex = getCurrentIndex();
 
   const handleSwipe = useCallback((offsetX: number, velocity: number) => {
+    // Check at swipe time (most reliable - avoids stale render-time state)
+    if (document.body.hasAttribute('data-chat-open') || 
+        document.body.hasAttribute('data-recording')) {
+      return;
+    }
+    
     const swipeThreshold = 50;
     const velocityThreshold = 300;
 
@@ -109,6 +115,11 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
           right: canSwipeRight ? 50 : 0 
         }}
         onDragStart={(_, info) => {
+          // Check at drag start time (most reliable)
+          if (document.body.hasAttribute('data-chat-open') || 
+              document.body.hasAttribute('data-recording')) {
+            return;
+          }
           isDragging.current = true;
           startX.current = info.point.x;
           hasTriggeredHaptic.current = false;

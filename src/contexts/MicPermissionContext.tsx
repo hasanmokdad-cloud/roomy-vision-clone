@@ -10,7 +10,7 @@ interface MicPermissionContextType {
   requestPermission: () => Promise<boolean>;
   recheckPermission: () => Promise<boolean>;
   syncToDatabase: (userId: string, permissionValue?: MicPermission) => Promise<void>;
-  loadFromDatabase: (userId: string) => Promise<boolean>;
+  loadFromDatabase: (userId: string) => Promise<MicPermission | null>;
 }
 
 const MicPermissionContext = createContext<MicPermissionContextType | undefined>(undefined);
@@ -78,9 +78,9 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
   // Load permission status from database
   // IMPORTANT: On Safari, we NEVER call getUserMedia here to avoid triggering the popup prematurely
   // We only trust our stored state until user explicitly grants permission via the modal
-  // Returns true when loading is complete (for callers to know when to check permission)
-  const loadFromDatabase = useCallback(async (userId: string): Promise<boolean> => {
-    if (!userId) return false;
+  // Returns the loaded permission value so caller can use it directly (avoids stale state issues)
+  const loadFromDatabase = useCallback(async (userId: string): Promise<MicPermission | null> => {
+    if (!userId) return null;
     
     try {
       const { data } = await supabase
@@ -93,22 +93,26 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
         const prefs = data.preferences as Record<string, unknown>;
         const dbPermission = prefs.microphonePermission as MicPermission;
         
+        console.log('[MicPermission] Loaded from database:', dbPermission);
+        
         if (dbPermission === 'granted') {
           // Trust the database - user previously granted permission
-          // Don't call getUserMedia here as it may trigger Safari popup
+          // This OVERRIDES Safari's session-based 'prompt' reset
           setPermission('granted');
           localStorage.setItem(STORAGE_KEY, 'granted');
           // Set sessionStorage so Safari's session-verification passes
           sessionStorage.setItem(SESSION_VERIFIED_KEY, 'true');
+          return 'granted';
         } else if (dbPermission) {
           setPermission(dbPermission);
           localStorage.setItem(STORAGE_KEY, dbPermission);
+          return dbPermission;
         }
       }
-      return true;
+      return null; // No preference stored in DB
     } catch (error) {
       console.error('Error loading mic permission from database:', error);
-      return true; // Still return true so caller knows loading attempted
+      return null;
     }
   }, []);
 

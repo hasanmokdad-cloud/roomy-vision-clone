@@ -113,9 +113,13 @@ export function VoiceRecordingOverlay({
 
   // State A: Active Recording (Not Locked) - User holding mic button
   // WhatsApp style: [Trash] [< Slide to cancel] [Timer] [Waveform] [Lock icon ↑]
+  // Position accounts for Safari bottom URL bar using safe-area-inset-bottom
   if (recordingState === 'active') {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-card border-t border-border touch-none">
+      <div 
+        className="fixed left-0 right-0 z-[60] bg-card border-t border-border touch-none"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
+      >
         <div className="flex items-center h-14 px-3 gap-2">
           {/* Cancel zone indicator (left) */}
           <motion.div 
@@ -207,7 +211,8 @@ export function VoiceRecordingOverlay({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }}
         transition={prefersReducedMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 400, damping: 30 }}
-        className="fixed bottom-0 left-0 right-0 z-[60] bg-card border-t border-border touch-none"
+        className="fixed left-0 right-0 z-[60] bg-card border-t border-border touch-none"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
       >
         <div className="flex items-center h-14 px-3 gap-2">
           {/* Trash button (red circle) */}
