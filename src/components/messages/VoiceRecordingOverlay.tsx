@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Lock, Trash2, Pause, Play, Send, ChevronLeft, LockOpen } from 'lucide-react';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { Mic, Lock, Trash2, Pause, Play, Send, ChevronLeft, ChevronUp } from 'lucide-react';
 import { VoiceWaveformLive } from './VoiceWaveformLive';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { haptics } from '@/utils/haptics';
@@ -111,88 +111,102 @@ export function VoiceRecordingOverlay({
     onPreviewPause();
   };
 
+  // Handle drag for swipe gestures
+  const handleDrag = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    onSlideChange({ x: info.offset.x, y: info.offset.y });
+  };
+
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (info.offset.x < -100) {
+      // Swiped left - cancel
+      haptics.error();
+      onCancel();
+    } else if (info.offset.y < -80) {
+      // Swiped up - lock
+      haptics.success();
+      onLock();
+    } else {
+      // Reset position
+      onSlideChange({ x: 0, y: 0 });
+    }
+  };
+
   // State A: Active Recording (Not Locked) - User holding mic button
-  // WhatsApp style: horizontal bar that overlays the input area
-  // Rendered inline within the input container (no fixed positioning)
+  // WhatsApp style: Red mic + timer on LEFT, "slide to cancel" in CENTER, mic icon on RIGHT
+  // Lock icon floats ABOVE the bar
   if (recordingState === 'active') {
     return (
-      <div className="touch-none">
-        <div className="flex items-center h-12 px-2 gap-1.5">
-          {/* Cancel zone indicator (left) - smaller */}
+      <div className="relative touch-none">
+        {/* Floating Lock indicator ABOVE the bar - WhatsApp style */}
+        <motion.div 
+          className="absolute -top-20 right-2 flex flex-col items-center pointer-events-none"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ 
+            opacity: showLockZone ? 1 : 0.6,
+            y: showLockZone ? -5 : 0,
+            scale: showLockZone ? 1.15 : 1
+          }}
+          transition={springTransition}
+        >
           <motion.div 
-            animate={{
-              scale: showCancelZone ? 1.15 : 1,
-              backgroundColor: showCancelZone ? 'hsl(var(--destructive))' : 'transparent'
-            }}
-            transition={springTransition}
-            className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
+            className={`w-12 h-12 rounded-full flex items-center justify-center mb-1 ${
+              showLockZone ? 'bg-primary' : 'bg-muted'
+            }`}
           >
-            <Trash2 className={`w-4 h-4 transition-colors duration-200 ${showCancelZone ? 'text-destructive-foreground' : 'text-muted-foreground'}`} />
+            <Lock className={`w-5 h-5 ${showLockZone ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
           </motion.div>
-
-          {/* Main content area - slide to cancel + timer + waveform */}
-          <motion.div 
-            className="flex-1 flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1.5 overflow-hidden"
-            animate={{ x: Math.max(slideOffset.x * 0.3, -40) }}
-            transition={{ duration: 0.05 }}
+          <motion.div
+            animate={prefersReducedMotion ? {} : { y: [0, -3, 0] }}
+            transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 0.8 }}
           >
-            {/* Recording dot */}
+            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+          </motion.div>
+        </motion.div>
+
+        {/* Draggable recording bar - WhatsApp layout */}
+        <motion.div
+          drag
+          dragConstraints={{ left: -150, right: 0, top: -120, bottom: 0 }}
+          dragElastic={0.15}
+          onDrag={handleDrag}
+          onDragEnd={handleDragEnd}
+          className="flex items-center h-12 px-3 gap-3 cursor-grab active:cursor-grabbing"
+        >
+          {/* Left: Red mic icon + timer */}
+          <div className="flex items-center gap-2 shrink-0">
             <motion.div 
-              animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
+              animate={prefersReducedMotion ? {} : { scale: [1, 1.15, 1] }}
               transition={prefersReducedMotion ? { duration: 0 } : { repeat: Infinity, duration: 1 }}
-              className="w-2 h-2 bg-destructive rounded-full shrink-0"
-            />
-            
-            {/* Timer */}
-            <span className="text-sm font-medium tabular-nums text-foreground shrink-0">{timeString}</span>
-
-            {/* Live waveform - takes remaining space */}
-            <div className="flex-1 min-w-0">
-              <VoiceWaveformLive 
-                stream={mediaStream} 
-                isActive={!isPaused} 
-                barCount={16}
-                className="h-5"
-              />
-            </div>
-
-            {/* Slide to cancel indicator */}
-            <motion.div 
-              className="flex items-center gap-0.5 text-muted-foreground shrink-0"
-              animate={{ opacity: showCancelZone ? 0 : 1 }}
             >
-              <ChevronLeft className="w-3 h-3" />
-              <span className="text-xs whitespace-nowrap">Slide</span>
+              <Mic className="w-5 h-5 text-destructive" />
             </motion.div>
+            <span className="text-sm font-medium tabular-nums text-destructive">{timeString}</span>
+          </div>
+
+          {/* Center: "slide to cancel <" */}
+          <motion.div 
+            className="flex-1 flex items-center justify-center gap-1"
+            animate={{ opacity: showCancelZone ? 0.3 : 1 }}
+          >
+            <motion.div
+              animate={prefersReducedMotion ? {} : { x: [0, -4, 0] }}
+              transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 1.2 }}
+            >
+              <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+            </motion.div>
+            <span className="text-sm text-muted-foreground">Slide to cancel</span>
           </motion.div>
 
-          {/* Lock zone (right) - smaller */}
+          {/* Right: Mic icon (finger position indicator) - WhatsApp green circle */}
           <motion.div 
-            animate={{
-              y: prefersReducedMotion ? 0 : (showLockZone ? -3 : 0),
-              scale: showLockZone ? 1.1 : 1
-            }}
-            transition={springTransition}
-            className="flex items-center justify-center w-8 shrink-0"
+            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
+            style={{ backgroundColor: 'hsl(142, 70%, 45%)' }}
+            animate={prefersReducedMotion ? {} : { scale: [1, 1.05, 1] }}
+            transition={prefersReducedMotion ? { duration: 0 } : { repeat: Infinity, duration: 1.5 }}
           >
-            {showLockZone ? (
-              <motion.div
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                className="w-8 h-8 bg-primary rounded-full flex items-center justify-center"
-              >
-                <Lock className="w-4 h-4 text-primary-foreground" />
-              </motion.div>
-            ) : (
-              <motion.div
-                animate={prefersReducedMotion ? {} : { y: [0, -2, 0] }}
-                transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 1.5 }}
-              >
-                <LockOpen className="w-4 h-4 text-muted-foreground" />
-              </motion.div>
-            )}
+            <Mic className="w-5 h-5 text-white" />
           </motion.div>
-        </div>
+        </motion.div>
       </div>
     );
   }
