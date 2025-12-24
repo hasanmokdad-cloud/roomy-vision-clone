@@ -34,10 +34,13 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
   const pages = getPages();
 
   const getCurrentIndex = () => {
-    return pages.findIndex(
-      (page) => location.pathname === page || 
-      (page !== '/' && location.pathname.startsWith(page) && !location.pathname.includes('/wallet'))
-    );
+    // Disable swipe when in a chat conversation (attribute set by Messages page)
+    if (document.body.hasAttribute('data-chat-open')) {
+      return -1;
+    }
+    
+    // Only allow swipe on exact main page matches (not subpages)
+    return pages.findIndex((page) => location.pathname === page);
   };
 
   const currentIndex = getCurrentIndex();

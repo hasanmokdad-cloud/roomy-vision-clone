@@ -10,9 +10,11 @@ interface MicSetupModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onPermissionGranted?: () => void;
+  userId?: string;
+  syncToDatabase?: (userId: string) => Promise<void>;
 }
 
-export function MicSetupModal({ open, onOpenChange, onPermissionGranted }: MicSetupModalProps) {
+export function MicSetupModal({ open, onOpenChange, onPermissionGranted, userId, syncToDatabase }: MicSetupModalProps) {
   const isMobile = useIsMobile();
   const { requestPermission } = useMicPermission();
   const [requesting, setRequesting] = useState(false);
@@ -22,6 +24,10 @@ export function MicSetupModal({ open, onOpenChange, onPermissionGranted }: MicSe
     try {
       const granted = await requestPermission();
       if (granted) {
+        // Sync to database immediately after granting permission
+        if (syncToDatabase && userId) {
+          await syncToDatabase(userId);
+        }
         onOpenChange(false);
         onPermissionGranted?.();
       }

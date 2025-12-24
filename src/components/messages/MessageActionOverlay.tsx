@@ -183,14 +183,21 @@ export function MessageActionOverlay({
             animate="animate"
             exit="exit"
             transition={transitionFast}
-            className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm touch-manipulation"
-            onClick={onClose}
+            className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
+            onTouchStart={(e) => {
+              e.stopPropagation();
+            }}
             onTouchEnd={(e) => {
               e.preventDefault();
               e.stopPropagation();
               onClose();
             }}
-            style={{ pointerEvents: 'auto' }}
+            style={{ pointerEvents: 'auto', touchAction: 'none' }}
           />
 
           {/* Message clone with smart positioning */}
@@ -209,6 +216,8 @@ export function MessageActionOverlay({
               maxWidth: 'calc(100vw - 16px)',
             }}
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
           >
             {/* Reaction bar - ABOVE message */}
             <motion.div
@@ -225,8 +234,17 @@ export function MessageActionOverlay({
                     initial={prefersReducedMotion ? {} : { scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.1 + index * 0.03, type: "spring", stiffness: 400 }}
-                    onClick={() => handleReact(emoji)}
-                    className="w-8 h-8 flex items-center justify-center text-xl hover:scale-125 active:scale-95 transition-transform touch-manipulation"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleReact(emoji);
+                    }}
+                    onTouchEnd={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      handleReact(emoji);
+                    }}
+                    className="w-8 h-8 flex items-center justify-center text-xl hover:scale-125 active:scale-95 transition-transform"
+                    style={{ touchAction: 'manipulation', pointerEvents: 'auto' }}
                     whileHover={prefersReducedMotion ? {} : { scale: 1.2 }}
                     whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
                   >
@@ -235,12 +253,21 @@ export function MessageActionOverlay({
                 ))}
                 <div className="w-px h-5 bg-border mx-0.5" />
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     haptics.light();
                     onOpenEmojiPicker();
                     onClose();
                   }}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-accent rounded-full transition-colors touch-manipulation"
+                  onTouchEnd={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    haptics.light();
+                    onOpenEmojiPicker();
+                    onClose();
+                  }}
+                  className="w-8 h-8 flex items-center justify-center hover:bg-accent rounded-full transition-colors"
+                  style={{ touchAction: 'manipulation', pointerEvents: 'auto' }}
                 >
                   <Plus className="h-4 w-4 text-muted-foreground" />
                 </button>
