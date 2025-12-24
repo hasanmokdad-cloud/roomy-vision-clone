@@ -2455,11 +2455,14 @@ let otherUserName = 'User';
                   {isMobile && (
                     <Button 
                       variant="ghost" 
-                      size="icon" 
+                      size="sm" 
                       onClick={() => setSelectedConversation(null)}
-                      className="shrink-0"
+                      className="shrink-0 flex items-center gap-1 px-2"
                     >
                       <ArrowLeft className="w-5 h-5" />
+                      {totalUnreadCount > 0 && (
+                        <span className="text-primary font-semibold text-sm">{totalUnreadCount}</span>
+                      )}
                     </Button>
                   )}
                   <div className="relative">
@@ -2674,7 +2677,7 @@ let otherUserName = 'User';
 
                   
                   {/* WhatsApp-style input layout: [+] [Input] [Camera] [Mic/Send] */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     {/* Hidden file inputs */}
                     <input
                       ref={fileInputRef}
@@ -2701,7 +2704,7 @@ let otherUserName = 'User';
                         onClick={() => setShowAttachmentModal(!showAttachmentModal)}
                         disabled={uploading || recording}
                         aria-label={showAttachmentModal ? "Close attachments" : "Add attachment"}
-                        className="shrink-0"
+                        className="shrink-0 h-8 w-8"
                       >
                         {uploading ? (
                           <Loader2 className="w-5 h-5 animate-spin" />
@@ -2719,7 +2722,7 @@ let otherUserName = 'User';
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading || recording}
                         aria-label="Attach file"
-                        className="shrink-0"
+                        className="shrink-0 h-8 w-8"
                       >
                         {uploading ? (
                           <Loader2 className="w-5 h-5 animate-spin" />
@@ -2775,7 +2778,7 @@ let otherUserName = 'User';
                         onClick={() => cameraInputRef.current?.click()}
                         disabled={uploading || recording}
                         aria-label="Take photo"
-                        className="shrink-0"
+                        className="shrink-0 h-8 w-8"
                       >
                         <Camera className="w-5 h-5" />
                       </Button>
@@ -2788,7 +2791,7 @@ let otherUserName = 'User';
                         disabled={sending} 
                         size="icon"
                         aria-label="Send message"
-                        className="shrink-0 rounded-full bg-primary text-primary-foreground"
+                        className="shrink-0 h-9 w-9 rounded-full bg-primary text-primary-foreground"
                       >
                         <Send className="w-4 h-4" />
                       </Button>
@@ -2799,7 +2802,7 @@ let otherUserName = 'User';
                         size="icon"
                         ref={micButtonRef}
                         onClick={handleVoiceButtonClick}
-                        className="shrink-0 voice-record-button"
+                        className="shrink-0 h-8 w-8 voice-record-button"
                         aria-label="Record voice message"
                         title={isMobile ? 'Hold to record voice message' : 'Click to record voice message'}
                       >
