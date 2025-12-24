@@ -88,8 +88,8 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
     hasTriggeredHaptic.current = false;
   }, [location.pathname, x]);
 
-  // Don't apply swipe layout on desktop or non-swipeable pages or when drag is disabled
-  if (!isMobile || currentIndex === -1 || dragDisabled) {
+  // Don't apply swipe layout on desktop or non-swipeable pages
+  if (!isMobile || currentIndex === -1) {
     return <>{children}</>;
   }
 
@@ -115,7 +115,7 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
       )}
 
       <motion.div
-        drag="x"
+        drag={dragDisabled ? false : "x"}
         dragDirectionLock
         dragElastic={0.05}
         dragConstraints={{ 
