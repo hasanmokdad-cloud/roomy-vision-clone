@@ -113,13 +113,10 @@ export function VoiceRecordingOverlay({
 
   // State A: Active Recording (Not Locked) - User holding mic button
   // WhatsApp style: horizontal bar that overlays the input area
-  // Position at bottom with safe area inset for Safari
+  // Rendered inline within the input container (no fixed positioning)
   if (recordingState === 'active') {
     return (
-      <div 
-        className="fixed left-0 right-0 z-[60] bg-card border-t border-border touch-none"
-        style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
-      >
+      <div className="touch-none">
         <div className="flex items-center h-12 px-2 gap-1.5">
           {/* Cancel zone indicator (left) - smaller */}
           <motion.div 
@@ -209,8 +206,7 @@ export function VoiceRecordingOverlay({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }}
         transition={prefersReducedMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 400, damping: 30 }}
-        className="fixed left-0 right-0 z-[60] bg-card border-t border-border touch-none"
-        style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
+        className="touch-none"
       >
         <div className="flex items-center h-12 px-2 gap-1.5">
           {/* Trash button (red circle) - smaller */}
