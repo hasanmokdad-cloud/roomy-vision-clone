@@ -560,11 +560,14 @@ export default function Messages() {
 
   // Show mic setup modal only AFTER loading from database completes
   // This prevents the race condition where modal shows before DB says 'granted'
+  // Also only show once per device (controlled by hasShownMicSetup)
   useEffect(() => {
-    if (isMobile && selectedConversation && permission === 'prompt' && micPermissionLoaded) {
+    if (isMobile && selectedConversation && permission === 'prompt' && micPermissionLoaded && !hasShownMicSetup) {
       setShowMicSetupModal(true);
+      setHasShownMicSetup(true);
+      localStorage.setItem('roomyMicSetupShown', 'true');
     }
-  }, [isMobile, selectedConversation, permission, micPermissionLoaded]);
+  }, [isMobile, selectedConversation, permission, micPermissionLoaded, hasShownMicSetup]);
 
   // Hide bottom nav when in conversation view on mobile (Instagram-style)
   // Also lock body scroll to prevent viewport shifting
@@ -1518,6 +1521,8 @@ let otherUserName = 'User';
         setRecording(false); // Ensure recording flag is reset
         setIsLocked(false); // Reset locked state so button works again
         setSlideOffset({ x: 0, y: 0 }); // Reset slide offset
+        // Remove recording attribute to re-enable swipe
+        document.body.removeAttribute('data-recording');
         
         // Only upload if not cancelled
         if (shouldUploadVoiceRef.current && audioChunksRef.current.length > 0) {
@@ -1525,8 +1530,17 @@ let otherUserName = 'User';
           const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
           
           if (audioBlob.size > 0) {
-            // Calculate duration from actual recording time
-            const duration = Math.max(1, Math.ceil((Date.now() - recordingStartTime) / 1000));
+            // Calculate duration from actual recording time with safety bounds
+            // Fallback to recordingDuration state if recordingStartTime wasn't set
+            let duration: number;
+            if (recordingStartTime > 0) {
+              duration = Math.max(1, Math.ceil((Date.now() - recordingStartTime) / 1000));
+            } else {
+              // Fallback to the timer-based duration if start time is invalid
+              duration = Math.max(1, recordingDuration);
+            }
+            // Safety cap: voice messages shouldn't exceed 15 minutes (900 seconds)
+            duration = Math.min(duration, 900);
             await uploadVoiceMessage(audioBlob, duration);
           } else {
             toast({
@@ -1554,6 +1568,8 @@ let otherUserName = 'User';
       setRecordingStartTime(Date.now());
       setRecordingDuration(0);
       handleRecordingPresence(true);
+      // Add attribute to disable swipe during recording
+      document.body.setAttribute('data-recording', 'true');
       
       recordingTimerRef.current = setInterval(() => {
         setRecordingDuration((prev) => prev + 1);
