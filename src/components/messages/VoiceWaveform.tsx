@@ -15,7 +15,9 @@ export function VoiceWaveform({ audioUrl, duration, isSender = false, messageId,
   const hasTriggeredPlayRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [audioDuration, setAudioDuration] = useState(duration || 0);
+  // Validate initial duration - cap at 900 seconds (15 min), default to 0 if invalid
+  const validDuration = duration && isFinite(duration) && duration > 0 && duration <= 900 ? duration : 0;
+  const [audioDuration, setAudioDuration] = useState(validDuration);
   const [audioError, setAudioError] = useState(false);
 
   useEffect(() => {

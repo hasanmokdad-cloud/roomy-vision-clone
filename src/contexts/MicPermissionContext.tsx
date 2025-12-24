@@ -9,7 +9,7 @@ interface MicPermissionContextType {
   checkPermission: () => Promise<void>;
   requestPermission: () => Promise<boolean>;
   recheckPermission: () => Promise<boolean>;
-  syncToDatabase: (userId: string) => Promise<void>;
+  syncToDatabase: (userId: string, permissionValue?: MicPermission) => Promise<void>;
   loadFromDatabase: (userId: string) => Promise<boolean>;
 }
 
@@ -41,8 +41,12 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isRequesting, setIsRequesting] = useState(false);
 
   // Sync permission status to database
-  const syncToDatabase = useCallback(async (userId: string) => {
+  // IMPORTANT: Pass explicit permissionValue to avoid stale closure issues
+  const syncToDatabase = useCallback(async (userId: string, permissionValue?: MicPermission) => {
     if (!userId) return;
+    
+    // Use explicit value if provided, otherwise use current state
+    const valueToSync = permissionValue ?? permission;
     
     try {
       const { data: existing } = await supabase
@@ -52,7 +56,7 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
         .maybeSingle();
 
       const currentPrefs = (existing?.preferences as Record<string, unknown>) || {};
-      const updatedPrefs = { ...currentPrefs, microphonePermission: permission };
+      const updatedPrefs = { ...currentPrefs, microphonePermission: valueToSync };
 
       if (existing) {
         await supabase
@@ -64,6 +68,8 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
           .from('user_settings')
           .insert({ user_id: userId, preferences: updatedPrefs });
       }
+      
+      console.log('[MicPermission] Synced to database:', valueToSync);
     } catch (error) {
       console.error('Error syncing mic permission to database:', error);
     }

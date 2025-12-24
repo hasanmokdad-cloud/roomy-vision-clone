@@ -39,6 +39,11 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
       return -1;
     }
     
+    // Disable swipe when recording voice message
+    if (document.body.hasAttribute('data-recording')) {
+      return -1;
+    }
+    
     // Only allow swipe on exact main page matches (not subpages)
     return pages.findIndex((page) => location.pathname === page);
   };

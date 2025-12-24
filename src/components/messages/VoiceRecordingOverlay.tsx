@@ -115,7 +115,7 @@ export function VoiceRecordingOverlay({
   // WhatsApp style: [Trash] [< Slide to cancel] [Timer] [Waveform] [Lock icon ↑]
   if (recordingState === 'active') {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border">
+      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-card border-t border-border touch-none">
         <div className="flex items-center h-14 px-3 gap-2">
           {/* Cancel zone indicator (left) */}
           <motion.div 
@@ -207,7 +207,7 @@ export function VoiceRecordingOverlay({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }}
         transition={prefersReducedMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 400, damping: 30 }}
-        className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border"
+        className="fixed bottom-0 left-0 right-0 z-[60] bg-card border-t border-border touch-none"
       >
         <div className="flex items-center h-14 px-3 gap-2">
           {/* Trash button (red circle) */}

@@ -11,7 +11,7 @@ interface MicSetupModalProps {
   onOpenChange: (open: boolean) => void;
   onPermissionGranted?: () => void;
   userId?: string;
-  syncToDatabase?: (userId: string) => Promise<void>;
+  syncToDatabase?: (userId: string, permissionValue?: 'granted' | 'prompt' | 'denied') => Promise<void>;
 }
 
 export function MicSetupModal({ open, onOpenChange, onPermissionGranted, userId, syncToDatabase }: MicSetupModalProps) {
@@ -24,10 +24,12 @@ export function MicSetupModal({ open, onOpenChange, onPermissionGranted, userId,
     try {
       const granted = await requestPermission();
       if (granted) {
-        // Sync to database immediately after granting permission
+        // Sync 'granted' explicitly to database to avoid stale closure
         if (syncToDatabase && userId) {
-          await syncToDatabase(userId);
+          await syncToDatabase(userId, 'granted');
         }
+        // Also mark as shown so it doesn't appear again
+        localStorage.setItem('roomyMicSetupShown', 'true');
         onOpenChange(false);
         onPermissionGranted?.();
       }
