@@ -23,10 +23,10 @@ export function SwipeableRoutes({ children }: SwipeableRoutesProps) {
     '/profile',
   ];
 
-  // Get current tab index
+  // Get current tab index - only match EXACT main tab routes, not subpages
   const getCurrentTabIndex = () => {
     const currentPath = location.pathname;
-    const index = tabs.findIndex(path => currentPath === path || currentPath.startsWith(path));
+    const index = tabs.findIndex(path => currentPath === path);
     return index >= 0 ? index : -1;
   };
 

@@ -10,7 +10,7 @@ interface MicPermissionContextType {
   requestPermission: () => Promise<boolean>;
   recheckPermission: () => Promise<boolean>;
   syncToDatabase: (userId: string) => Promise<void>;
-  loadFromDatabase: (userId: string) => Promise<void>;
+  loadFromDatabase: (userId: string) => Promise<boolean>;
 }
 
 const MicPermissionContext = createContext<MicPermissionContextType | undefined>(undefined);
@@ -72,8 +72,9 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
   // Load permission status from database
   // IMPORTANT: On Safari, we NEVER call getUserMedia here to avoid triggering the popup prematurely
   // We only trust our stored state until user explicitly grants permission via the modal
-  const loadFromDatabase = useCallback(async (userId: string) => {
-    if (!userId) return;
+  // Returns true when loading is complete (for callers to know when to check permission)
+  const loadFromDatabase = useCallback(async (userId: string): Promise<boolean> => {
+    if (!userId) return false;
     
     try {
       const { data } = await supabase
@@ -98,8 +99,10 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
           localStorage.setItem(STORAGE_KEY, dbPermission);
         }
       }
+      return true;
     } catch (error) {
       console.error('Error loading mic permission from database:', error);
+      return true; // Still return true so caller knows loading attempted
     }
   }, []);
 
@@ -204,9 +207,10 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  useEffect(() => {
-    checkPermission();
-  }, []);
+  // REMOVED: Auto-run of checkPermission on mount
+  // This was causing a race condition on Safari where checkPermission() would run
+  // before loadFromDatabase() could load the 'granted' status, incorrectly resetting to 'prompt'
+  // Now the caller (Messages.tsx) explicitly controls when to check/load permission
 
   return (
     <MicPermissionContext.Provider value={{ 
