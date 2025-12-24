@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef, useCallback } from 'react';
+import { ReactNode, useEffect, useRef, useCallback, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, PanInfo, useMotionValue, animate } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -23,6 +23,7 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
   const isDragging = useRef(false);
   const startX = useRef(0);
   const hasTriggeredHaptic = useRef(false);
+  const [dragDisabled, setDragDisabled] = useState(false);
 
   // Get pages based on role
   const getPages = () => {
@@ -33,17 +34,25 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
 
   const pages = getPages();
 
+  // Check if drag should be disabled (chat open or recording)
+  const checkDragDisabled = useCallback(() => {
+    return document.body.hasAttribute('data-chat-open') || 
+           document.body.hasAttribute('data-recording');
+  }, []);
+
+  // Update drag disabled state on mount and when relevant
+  useEffect(() => {
+    const checkAndUpdate = () => setDragDisabled(checkDragDisabled());
+    checkAndUpdate();
+    
+    // Use MutationObserver to watch for attribute changes on body
+    const observer = new MutationObserver(checkAndUpdate);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-chat-open', 'data-recording'] });
+    
+    return () => observer.disconnect();
+  }, [checkDragDisabled]);
+
   const getCurrentIndex = () => {
-    // Disable swipe when in a chat conversation (attribute set by Messages page)
-    if (document.body.hasAttribute('data-chat-open')) {
-      return -1;
-    }
-    
-    // Disable swipe when recording voice message
-    if (document.body.hasAttribute('data-recording')) {
-      return -1;
-    }
-    
     // Only allow swipe on exact main page matches (not subpages)
     return pages.findIndex((page) => location.pathname === page);
   };
@@ -51,9 +60,8 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
   const currentIndex = getCurrentIndex();
 
   const handleSwipe = useCallback((offsetX: number, velocity: number) => {
-    // Check at swipe time (most reliable - avoids stale render-time state)
-    if (document.body.hasAttribute('data-chat-open') || 
-        document.body.hasAttribute('data-recording')) {
+    // Double-check at swipe time
+    if (checkDragDisabled()) {
       return;
     }
     
@@ -72,7 +80,7 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
       haptics.pageChange();
       navigate(pages[currentIndex - 1]);
     }
-  }, [currentIndex, navigate, pages]);
+  }, [currentIndex, navigate, pages, checkDragDisabled]);
 
   // Reset position on route change - instant, no animation
   useEffect(() => {
@@ -80,8 +88,8 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
     hasTriggeredHaptic.current = false;
   }, [location.pathname, x]);
 
-  // Don't apply swipe layout on desktop or non-swipeable pages
-  if (!isMobile || currentIndex === -1) {
+  // Don't apply swipe layout on desktop or non-swipeable pages or when drag is disabled
+  if (!isMobile || currentIndex === -1 || dragDisabled) {
     return <>{children}</>;
   }
 
@@ -115,11 +123,6 @@ export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
           right: canSwipeRight ? 50 : 0 
         }}
         onDragStart={(_, info) => {
-          // Check at drag start time (most reliable)
-          if (document.body.hasAttribute('data-chat-open') || 
-              document.body.hasAttribute('data-recording')) {
-            return;
-          }
           isDragging.current = true;
           startX.current = info.point.x;
           hasTriggeredHaptic.current = false;

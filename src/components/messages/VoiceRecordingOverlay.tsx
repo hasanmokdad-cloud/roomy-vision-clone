@@ -112,89 +112,87 @@ export function VoiceRecordingOverlay({
   };
 
   // State A: Active Recording (Not Locked) - User holding mic button
-  // WhatsApp style: [Trash] [< Slide to cancel] [Timer] [Waveform] [Lock icon ↑]
-  // Position accounts for Safari bottom URL bar using safe-area-inset-bottom
+  // WhatsApp style: horizontal bar that overlays the input area
+  // Position at bottom with safe area inset for Safari
   if (recordingState === 'active') {
     return (
       <div 
         className="fixed left-0 right-0 z-[60] bg-card border-t border-border touch-none"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
+        style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <div className="flex items-center h-14 px-3 gap-2">
-          {/* Cancel zone indicator (left) */}
+        <div className="flex items-center h-12 px-2 gap-1.5">
+          {/* Cancel zone indicator (left) - smaller */}
           <motion.div 
             animate={{
-              scale: showCancelZone ? 1.2 : 1,
+              scale: showCancelZone ? 1.15 : 1,
               backgroundColor: showCancelZone ? 'hsl(var(--destructive))' : 'transparent'
             }}
             transition={springTransition}
-            className="flex items-center justify-center w-10 h-10 rounded-full shrink-0"
+            className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
           >
-            <Trash2 className={`w-5 h-5 transition-colors duration-200 ${showCancelZone ? 'text-destructive-foreground' : 'text-muted-foreground'}`} />
+            <Trash2 className={`w-4 h-4 transition-colors duration-200 ${showCancelZone ? 'text-destructive-foreground' : 'text-muted-foreground'}`} />
           </motion.div>
 
-          {/* Slide to cancel text + Timer + Waveform */}
+          {/* Main content area - slide to cancel + timer + waveform */}
           <motion.div 
-            className="flex-1 flex items-center gap-3 overflow-hidden"
-            animate={{ x: Math.max(slideOffset.x * 0.3, -50) }}
+            className="flex-1 flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1.5 overflow-hidden"
+            animate={{ x: Math.max(slideOffset.x * 0.3, -40) }}
             transition={{ duration: 0.05 }}
           >
-            {/* Slide to cancel indicator */}
+            {/* Recording dot */}
             <motion.div 
-              className="flex items-center gap-1 text-muted-foreground shrink-0"
-              animate={{ opacity: showCancelZone ? 0 : 1 }}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span className="text-xs whitespace-nowrap">Slide to cancel</span>
-            </motion.div>
+              animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
+              transition={prefersReducedMotion ? { duration: 0 } : { repeat: Infinity, duration: 1 }}
+              className="w-2 h-2 bg-destructive rounded-full shrink-0"
+            />
+            
+            {/* Timer */}
+            <span className="text-sm font-medium tabular-nums text-foreground shrink-0">{timeString}</span>
 
-            {/* Recording dot + Timer */}
-            <div className="flex items-center gap-2 shrink-0">
-              <motion.div 
-                animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
-                transition={prefersReducedMotion ? { duration: 0 } : { repeat: Infinity, duration: 1 }}
-                className="w-2 h-2 bg-destructive rounded-full"
-              />
-              <span className="text-sm font-medium tabular-nums text-foreground">{timeString}</span>
-            </div>
-
-            {/* Live waveform */}
+            {/* Live waveform - takes remaining space */}
             <div className="flex-1 min-w-0">
               <VoiceWaveformLive 
                 stream={mediaStream} 
                 isActive={!isPaused} 
-                barCount={20}
-                className="h-6"
+                barCount={16}
+                className="h-5"
               />
             </div>
+
+            {/* Slide to cancel indicator */}
+            <motion.div 
+              className="flex items-center gap-0.5 text-muted-foreground shrink-0"
+              animate={{ opacity: showCancelZone ? 0 : 1 }}
+            >
+              <ChevronLeft className="w-3 h-3" />
+              <span className="text-xs whitespace-nowrap">Slide</span>
+            </motion.div>
           </motion.div>
 
-          {/* Lock zone (right) */}
+          {/* Lock zone (right) - smaller */}
           <motion.div 
             animate={{
-              y: prefersReducedMotion ? 0 : (showLockZone ? -5 : 0),
-              scale: showLockZone ? 1.15 : 1
+              y: prefersReducedMotion ? 0 : (showLockZone ? -3 : 0),
+              scale: showLockZone ? 1.1 : 1
             }}
             transition={springTransition}
-            className="flex flex-col items-center justify-center w-10 shrink-0"
+            className="flex items-center justify-center w-8 shrink-0"
           >
             {showLockZone ? (
               <motion.div
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
-                className="w-10 h-10 bg-primary rounded-full flex items-center justify-center"
+                className="w-8 h-8 bg-primary rounded-full flex items-center justify-center"
               >
-                <Lock className="w-5 h-5 text-primary-foreground" />
+                <Lock className="w-4 h-4 text-primary-foreground" />
               </motion.div>
             ) : (
-              <div className="flex flex-col items-center">
-                <motion.div
-                  animate={prefersReducedMotion ? {} : { y: [0, -3, 0] }}
-                  transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 1.5 }}
-                >
-                  <LockOpen className="w-5 h-5 text-muted-foreground" />
-                </motion.div>
-              </div>
+              <motion.div
+                animate={prefersReducedMotion ? {} : { y: [0, -2, 0] }}
+                transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 1.5 }}
+              >
+                <LockOpen className="w-4 h-4 text-muted-foreground" />
+              </motion.div>
             )}
           </motion.div>
         </div>
@@ -212,38 +210,38 @@ export function VoiceRecordingOverlay({
         exit={{ y: 20, opacity: 0 }}
         transition={prefersReducedMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 400, damping: 30 }}
         className="fixed left-0 right-0 z-[60] bg-card border-t border-border touch-none"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
+        style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <div className="flex items-center h-14 px-3 gap-2">
-          {/* Trash button (red circle) */}
+        <div className="flex items-center h-12 px-2 gap-1.5">
+          {/* Trash button (red circle) - smaller */}
           <motion.button
             whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
             onClick={handleCancel}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-destructive shrink-0"
+            className="flex items-center justify-center w-9 h-9 rounded-full bg-destructive shrink-0"
           >
-            <Trash2 className="w-5 h-5 text-destructive-foreground" />
+            <Trash2 className="w-4 h-4 text-destructive-foreground" />
           </motion.button>
 
-          {/* Pause/Resume button */}
+          {/* Pause/Resume button - smaller */}
           {recordingState === 'locked' ? (
             <motion.button
               whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
               onClick={handlePause}
-              className="flex items-center justify-center w-10 h-10 rounded-full bg-muted shrink-0"
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-muted shrink-0"
             >
-              <Pause className="w-5 h-5 text-foreground" />
+              <Pause className="w-4 h-4 text-foreground" />
             </motion.button>
           ) : (
             <motion.button
               whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
               onClick={handleResume}
-              className="flex items-center justify-center w-10 h-10 rounded-full bg-muted shrink-0"
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-muted shrink-0"
             >
-              <Mic className="w-5 h-5 text-foreground" />
+              <Mic className="w-4 h-4 text-foreground" />
             </motion.button>
           )}
 
-          {/* Preview Play/Pause button (only in paused/preview states) */}
+          {/* Preview Play/Pause button (only in paused/preview states) - smaller */}
           {(recordingState === 'paused' || recordingState === 'preview') && (
             <motion.button
               initial={prefersReducedMotion ? {} : { scale: 0, opacity: 0 }}
@@ -251,18 +249,18 @@ export function VoiceRecordingOverlay({
               transition={prefersReducedMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 400, damping: 20 }}
               whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
               onClick={isPreviewPlaying ? handlePreviewPause : handlePreviewPlay}
-              className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/20 shrink-0"
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/20 shrink-0"
             >
               {isPreviewPlaying ? (
-                <Pause className="w-5 h-5 text-primary" />
+                <Pause className="w-4 h-4 text-primary" />
               ) : (
-                <Play className="w-5 h-5 text-primary ml-0.5" />
+                <Play className="w-4 h-4 text-primary ml-0.5" />
               )}
             </motion.button>
           )}
 
-          {/* Waveform + timer */}
-          <div className="flex-1 flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1.5 min-w-0 overflow-hidden">
+          {/* Waveform + timer - wider bar */}
+          <div className="flex-1 flex items-center gap-1.5 bg-muted/50 rounded-full px-3 py-1.5 min-w-0 overflow-hidden">
             {/* Recording indicator or static dot */}
             {recordingState === 'locked' ? (
               <motion.div 
@@ -279,19 +277,19 @@ export function VoiceRecordingOverlay({
               <VoiceWaveformLive 
                 stream={mediaStream} 
                 isActive={true} 
-                barCount={16}
+                barCount={20}
                 className="flex-1"
               />
             ) : (
-              <div className="flex-1 flex items-center gap-0.5 h-6 relative">
-                {Array.from({ length: 16 }).map((_, i) => (
+              <div className="flex-1 flex items-center gap-0.5 h-5 relative">
+                {Array.from({ length: 20 }).map((_, i) => (
                   <motion.div
                     key={i}
                     initial={prefersReducedMotion ? {} : { scaleY: 0 }}
                     animate={{ scaleY: 1 }}
-                    transition={prefersReducedMotion ? { duration: 0 } : { delay: i * 0.02, duration: 0.2 }}
+                    transition={prefersReducedMotion ? { duration: 0 } : { delay: i * 0.015, duration: 0.15 }}
                     className={`flex-1 rounded-full transition-colors duration-150 ${
-                      (recordingState === 'preview' || recordingState === 'paused') && (i / 16) < previewProgress
+                      (recordingState === 'preview' || recordingState === 'paused') && (i / 20) < previewProgress
                         ? 'bg-primary'
                         : 'bg-muted-foreground/30'
                     }`}
@@ -304,7 +302,7 @@ export function VoiceRecordingOverlay({
             )}
 
             {/* Timer */}
-            <span className="text-sm font-medium tabular-nums shrink-0 text-foreground">
+            <span className="text-xs font-medium tabular-nums shrink-0 text-foreground">
               {getPreviewTimeDisplay()}
               {(recordingState === 'paused' || recordingState === 'preview') && (
                 <span className="text-muted-foreground">/{timeString}</span>
@@ -312,15 +310,15 @@ export function VoiceRecordingOverlay({
             </span>
           </div>
 
-          {/* Send button (green circle) */}
+          {/* Send button (green circle) - slightly smaller */}
           <motion.button
             whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
             whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
             onClick={handleSend}
-            className="flex items-center justify-center w-12 h-12 rounded-full shrink-0"
+            className="flex items-center justify-center w-10 h-10 rounded-full shrink-0"
             style={{ backgroundColor: 'hsl(142, 70%, 45%)' }}
           >
-            <Send className="w-5 h-5 text-white" />
+            <Send className="w-4 h-4 text-white" />
           </motion.button>
         </div>
       </motion.div>
