@@ -231,6 +231,7 @@ export default function Messages() {
   const [detailsSource, setDetailsSource] = useState<'conversation' | 'menu'>('conversation');
   const [showMicPermissionModal, setShowMicPermissionModal] = useState(false);
   const [showMicSetupModal, setShowMicSetupModal] = useState(false);
+  const [micPermissionLoaded, setMicPermissionLoaded] = useState(false);
   const [hasShownMicSetup, setHasShownMicSetup] = useState(() => {
     return localStorage.getItem('roomyMicSetupShown') === 'true';
   });
@@ -547,20 +548,23 @@ export default function Messages() {
   // This ensures permission is granted BEFORE they try to record (preventing Safari popup interruption)
   // CRITICAL: For Safari compatibility, we show the modal IMMEDIATELY when permission is 'prompt'
   // No delay - Safari users need to see the modal before any getUserMedia call happens
-  useEffect(() => {
-    // Only on mobile, when a conversation is selected, and permission not yet granted
-    // Show immediately - no delay to prevent Safari's popup from appearing first
-    if (isMobile && selectedConversation && permission === 'prompt') {
-      setShowMicSetupModal(true);
-    }
-  }, [isMobile, selectedConversation, permission]);
-
   // Load mic permission from database on mount for existing users
+  // IMPORTANT: Must complete BEFORE checking if modal should show
   useEffect(() => {
     if (userId) {
-      loadFromDatabase(userId);
+      loadFromDatabase(userId).then(() => {
+        setMicPermissionLoaded(true);
+      });
     }
   }, [userId, loadFromDatabase]);
+
+  // Show mic setup modal only AFTER loading from database completes
+  // This prevents the race condition where modal shows before DB says 'granted'
+  useEffect(() => {
+    if (isMobile && selectedConversation && permission === 'prompt' && micPermissionLoaded) {
+      setShowMicSetupModal(true);
+    }
+  }, [isMobile, selectedConversation, permission, micPermissionLoaded]);
 
   // Hide bottom nav when in conversation view on mobile (Instagram-style)
   // Also lock body scroll to prevent viewport shifting
