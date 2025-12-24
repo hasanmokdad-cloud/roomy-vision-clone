@@ -3,34 +3,43 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Mic } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useMicPermission } from '@/contexts/MicPermissionContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 
 interface MicrophonePermissionDrawerProps {
   open: boolean;
   onAllow: () => void;
   onSkip: () => void;
+  /** Optional: provide these if MicPermissionProvider is available */
+  requestPermission?: () => Promise<boolean>;
+  syncToDatabase?: (userId: string) => Promise<void>;
+  userId?: string;
 }
 
-export function MicrophonePermissionDrawer({ open, onAllow, onSkip }: MicrophonePermissionDrawerProps) {
+export function MicrophonePermissionDrawer({ 
+  open, 
+  onAllow, 
+  onSkip,
+  requestPermission,
+  syncToDatabase,
+  userId
+}: MicrophonePermissionDrawerProps) {
   const isMobile = useIsMobile();
-  const { requestPermission, syncToDatabase } = useMicPermission();
-  const { user } = useAuth();
   const [requesting, setRequesting] = useState(false);
 
   const handleAllow = async () => {
     setRequesting(true);
     try {
-      const granted = await requestPermission();
-      
-      // Sync to database regardless of result
-      if (user?.id) {
-        await syncToDatabase(user.id);
-      }
-      
-      if (granted) {
-        console.log('Microphone permission granted and synced');
+      if (requestPermission) {
+        const granted = await requestPermission();
+        
+        // Sync to database regardless of result
+        if (syncToDatabase && userId) {
+          await syncToDatabase(userId);
+        }
+        
+        if (granted) {
+          console.log('Microphone permission granted and synced');
+        }
       }
     } catch (error) {
       console.error('Error requesting microphone permission:', error);
@@ -42,8 +51,8 @@ export function MicrophonePermissionDrawer({ open, onAllow, onSkip }: Microphone
 
   const handleSkip = async () => {
     // Still sync the 'prompt' status to database so we know to ask later
-    if (user?.id) {
-      await syncToDatabase(user.id);
+    if (syncToDatabase && userId) {
+      await syncToDatabase(userId);
     }
     onSkip();
   };
