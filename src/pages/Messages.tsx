@@ -2642,6 +2642,32 @@ let otherUserName = 'User';
                   className={`${isMobile ? 'p-3 shrink-0 bg-background z-20 border-t border-border' : 'p-4 border-t border-border'}`}
                   style={isMobile ? { paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' } : undefined}
                 >
+                  {/* Voice Recording Overlay - rendered inline to inherit safe area positioning */}
+                  {isMobile && recording ? (
+                    <VoiceRecordingOverlay
+                      isRecording={recording}
+                      isPaused={isPaused}
+                      isLocked={isLocked}
+                      isPreviewPlaying={isPreviewPlaying}
+                      duration={recordingDuration}
+                      previewProgress={previewProgress}
+                      slideOffset={slideOffset}
+                      mediaStream={mediaStream}
+                      onCancel={cancelRecording}
+                      onSend={sendRecording}
+                      onPause={pauseRecording}
+                      onResume={resumeRecording}
+                      onPreviewPlay={playPreview}
+                      onPreviewPause={pausePreview}
+                      onSlideChange={setSlideOffset}
+                      onLock={() => {
+                        setIsLocked(true);
+                        setSlideOffset({ x: 0, y: 0 });
+                        toast({ title: 'Recording locked', description: 'Tap send when done' });
+                      }}
+                    />
+                  ) : (
+                    <>
                   {uploadProgress > 0 && uploadProgress < 100 && (
                     <div className="mb-2">
                       <div className="h-1 bg-muted rounded-full overflow-hidden">
@@ -2822,35 +2848,9 @@ let otherUserName = 'User';
                       uploading={uploading}
                     />
                   )}
+                    </>
+                  )}
                 </div>
-
-                {/* Voice Recording Overlay (Mobile Only) */}
-                {isMobile && (
-                  <VoiceRecordingOverlay
-                    isRecording={recording}
-                    isPaused={isPaused}
-                    isLocked={isLocked}
-                    isPreviewPlaying={isPreviewPlaying}
-                    duration={recordingDuration}
-                    previewProgress={previewProgress}
-                    slideOffset={slideOffset}
-                    mediaStream={mediaStream}
-                    onCancel={cancelRecording}
-                    onSend={sendRecording}
-                    onPause={pauseRecording}
-                    onResume={resumeRecording}
-                    onPreviewPlay={playPreview}
-                    onPreviewPause={pausePreview}
-                    onSlideChange={setSlideOffset}
-                    onLock={() => {
-                      setIsLocked(true);
-                      setSlideOffset({ x: 0, y: 0 });
-                      toast({ title: 'Recording locked', description: 'Tap send when done' });
-                    }}
-                  />
-                )}
-
-                {/* Desktop Recording UI with Waveform */}
                 {!isMobile && recording && (
                   <div className="fixed bottom-24 right-8 z-50 bg-card border border-border rounded-lg shadow-lg p-4 flex items-center gap-4">
                     <div className="flex items-center gap-3">
