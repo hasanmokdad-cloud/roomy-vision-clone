@@ -757,16 +757,19 @@ export default function Messages() {
     }
   }, [messages]);
 
-  // Hide bottom nav when in conversation on mobile
+  // Hide bottom nav and disable swipe when in conversation on mobile
   useEffect(() => {
     if (isMobile && selectedConversation) {
       setHideBottomNav(true);
+      document.body.setAttribute('data-chat-open', 'true');
     } else {
       setHideBottomNav(false);
+      document.body.removeAttribute('data-chat-open');
     }
     
     return () => {
       setHideBottomNav(false);
+      document.body.removeAttribute('data-chat-open');
     };
   }, [selectedConversation, isMobile, setHideBottomNav]);
 
@@ -1512,6 +1515,9 @@ let otherUserName = 'User';
       mediaRecorder.onstop = async () => {
         setIsRecordingActive(false);
         setMediaStream(null);
+        setRecording(false); // Ensure recording flag is reset
+        setIsLocked(false); // Reset locked state so button works again
+        setSlideOffset({ x: 0, y: 0 }); // Reset slide offset
         
         // Only upload if not cancelled
         if (shouldUploadVoiceRef.current && audioChunksRef.current.length > 0) {
@@ -2965,6 +2971,8 @@ let otherUserName = 'User';
         open={showMicSetupModal}
         onOpenChange={setShowMicSetupModal}
         onPermissionGranted={handleMicPermissionGranted}
+        userId={userId}
+        syncToDatabase={syncToDatabase}
       />
 
       {/* "More" Action Sheet for mobile swipe */}

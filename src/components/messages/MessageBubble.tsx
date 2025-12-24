@@ -296,6 +296,9 @@ export function MessageBubble({
 
   // Long press detection for mobile - opens new overlay
   const handleTouchStart = (e: React.TouchEvent) => {
+    // Don't start another long-press if overlay is already showing
+    if (showActionOverlay) return;
+    
     e.preventDefault();  // Block Safari text selection
     e.stopPropagation();
     
@@ -316,6 +319,9 @@ export function MessageBubble({
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    // Don't process if overlay is showing
+    if (showActionOverlay) return;
+    
     const touch = e.touches[0];
     const deltaX = Math.abs(touch.clientX - touchStartPosRef.current.x);
     const deltaY = Math.abs(touch.clientY - touchStartPosRef.current.y);
@@ -329,6 +335,9 @@ export function MessageBubble({
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    // Don't interfere if overlay is showing - let overlay handle its own events
+    if (showActionOverlay) return;
+    
     e.preventDefault();
     e.stopPropagation();
     if (longPressTimerRef.current) {
