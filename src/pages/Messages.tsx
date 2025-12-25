@@ -950,39 +950,26 @@ export default function Messages() {
     console.log('🔄 Loading conversations for user:', userId);
 
     // Get user role - check admin first
-    const { data: admin } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    const { data: student } = await supabase
-      .from('students')
-      .select('id')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    const { data: owner } = await supabase
-      .from('owners')
-      .select('id')
-      .eq('user_id', userId)
-      .maybeSingle();
+    const [adminResult, studentResult, ownerResult] = await Promise.all([
+      supabase.from('admins').select('id').eq('user_id', userId).maybeSingle(),
+      supabase.from('students').select('id').eq('user_id', userId).maybeSingle(),
+      supabase.from('owners').select('id').eq('user_id', userId).maybeSingle()
+    ]);
+    
+    const admin = adminResult.data;
+    const student = studentResult.data;
+    const owner = ownerResult.data;
 
     console.log('👤 User role:', { admin: !!admin, student: !!student, owner: !!owner });
 
     let query = supabase.from('conversations').select('*');
 
     if (admin) {
-      // Admins see all support conversations
       query = query.eq('conversation_type', 'support');
     } else {
-      // For students and owners: find conversations where user is a participant
       query = query.or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`);
     }
 
-    // Load all conversations including archived - filtering happens in UI
-
-    // Sort pinned first, then by updated_at
     query = query.order('is_pinned', { ascending: false }).order('updated_at', { ascending: false });
 
     const { data, error } = await query;
@@ -994,243 +981,259 @@ export default function Messages() {
     
     console.log(`✅ Loaded ${data?.length || 0} conversations`);
     
-    if (data) {
-      // Enrich with dorm and user names
-      const enriched = await Promise.all(data.map(async (conv) => {
-        // Phase 1: Explicit dorm query protection - never executes for support conversations
-        let dorm = null;
-        if (conv.dorm_id && conv.conversation_type !== 'support') {
-          const { data: dormData } = await supabase
-            .from('dorms')
-            .select('dorm_name, name')
-            .eq('id', conv.dorm_id)
-            .maybeSingle();
-          dorm = dormData;
-        }
-
-let otherUserName = 'User';
-        let otherUserPhoto: string | null = null;
-        let otherStudentId: string | null = null;
-        let otherUserRole: 'Student' | 'Owner' | 'Admin' = 'Student';
-        let ownerDormName: string | null = null;
-
-        // Handle support conversations differently
-        if (conv.conversation_type === 'support') {
-          if (admin) {
-            // Admin sees the other participant (non-admin user)
-            const otherUserId = conv.user_a_id === userId ? conv.user_b_id : conv.user_a_id;
-            
-            // Try to find in students first
-            const { data: studentData } = await supabase
-              .from('students')
-              .select('full_name, profile_photo_url')
-              .eq('user_id', otherUserId)
-              .maybeSingle();
-            
-          if (studentData) {
-              otherUserName = studentData.full_name || 'Student';
-              otherUserPhoto = studentData.profile_photo_url;
-              otherUserRole = 'Student';
-            } else {
-              // Try owners
-              const { data: ownerData } = await supabase
-                .from('owners')
-                .select('id, full_name, profile_photo_url')
-                .eq('user_id', otherUserId)
-                .maybeSingle();
-              if (ownerData) {
-                otherUserName = ownerData.full_name || 'Owner';
-                otherUserPhoto = ownerData.profile_photo_url;
-                otherUserRole = 'Owner';
-                // Fetch owner's first verified dorm
-                const { data: ownerDorm } = await supabase
-                  .from('dorms')
-                  .select('name, dorm_name')
-                  .eq('owner_id', ownerData.id)
-                  .eq('verification_status', 'approved')
-                  .limit(1)
-                  .maybeSingle();
-                if (ownerDorm) {
-                  ownerDormName = ownerDorm.dorm_name || ownerDorm.name;
-                }
-              } else {
-                // Check if admin
-                const { data: adminData } = await supabase
-                  .from('admins')
-                  .select('full_name, profile_photo_url')
-                  .eq('user_id', otherUserId)
-                  .maybeSingle();
-                if (adminData) {
-                  otherUserName = adminData.full_name || 'Admin';
-                  otherUserPhoto = adminData.profile_photo_url;
-                  otherUserRole = 'Admin';
-                }
-              }
-            }
-          } else {
-            // User viewing: show "Roomy Support"
-            otherUserName = 'Roomy Support';
+    if (!data || data.length === 0) {
+      setConversations([]);
+      return;
+    }
+    
+    // OPTIMIZED: Show conversations immediately with basic info
+    // Then enrich in background
+    const conversationIds = data.map(c => c.id);
+    const otherUserIds = new Set<string>();
+    const ownerIds = new Set<string>();
+    const studentIds = new Set<string>();
+    const dormIds = new Set<string>();
+    
+    // Collect all IDs we need to look up
+    data.forEach(conv => {
+      if (conv.user_a_id && conv.user_a_id !== userId) otherUserIds.add(conv.user_a_id);
+      if (conv.user_b_id && conv.user_b_id !== userId) otherUserIds.add(conv.user_b_id);
+      if (conv.owner_id) ownerIds.add(conv.owner_id);
+      if (conv.student_id) studentIds.add(conv.student_id);
+      if (conv.dorm_id && conv.conversation_type !== 'support') dormIds.add(conv.dorm_id);
+    });
+    
+    // Batch fetch all related data in parallel
+    const [studentsResult, ownersResult, adminsResult, dormsResult, threadStatesResult] = await Promise.all([
+      // Fetch students by user_id
+      otherUserIds.size > 0 
+        ? supabase.from('students').select('id, user_id, full_name, profile_photo_url').in('user_id', Array.from(otherUserIds))
+        : Promise.resolve({ data: [] }),
+      // Fetch owners by user_id AND by id (for old-style conversations)
+      Promise.all([
+        otherUserIds.size > 0 
+          ? supabase.from('owners').select('id, user_id, full_name, profile_photo_url').in('user_id', Array.from(otherUserIds))
+          : Promise.resolve({ data: [] }),
+        ownerIds.size > 0
+          ? supabase.from('owners').select('id, user_id, full_name, profile_photo_url').in('id', Array.from(ownerIds))
+          : Promise.resolve({ data: [] })
+      ]),
+      // Fetch admins by user_id
+      otherUserIds.size > 0 
+        ? supabase.from('admins').select('user_id, full_name, profile_photo_url').in('user_id', Array.from(otherUserIds))
+        : Promise.resolve({ data: [] }),
+      // Fetch dorms
+      dormIds.size > 0 
+        ? supabase.from('dorms').select('id, name, dorm_name, owner_id').in('id', Array.from(dormIds))
+        : Promise.resolve({ data: [] }),
+      // Fetch thread states for unread counts
+      supabase.from('user_thread_state').select('thread_id, last_read_at').eq('user_id', userId).in('thread_id', conversationIds)
+    ]);
+    
+    // Fetch last messages in parallel (small number of parallel queries is fine)
+    const lastMessagesResults = await Promise.all(conversationIds.map(id => 
+      supabase.from('messages')
+        .select('body, attachment_type, sender_id, created_at, conversation_id')
+        .eq('conversation_id', id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    ));
+    
+    // Build lookup maps
+    const studentsByUserId = new Map<string, any>();
+    const studentsByProfileId = new Map<string, any>();
+    (studentsResult.data || []).forEach((s: any) => {
+      studentsByUserId.set(s.user_id, s);
+      studentsByProfileId.set(s.id, s);
+    });
+    
+    const ownersByUserId = new Map<string, any>();
+    const ownersByProfileId = new Map<string, any>();
+    const [ownersByUserIdResult, ownersByProfileIdResult] = ownersResult;
+    (ownersByUserIdResult.data || []).forEach((o: any) => ownersByUserId.set(o.user_id, o));
+    (ownersByProfileIdResult.data || []).forEach((o: any) => ownersByProfileId.set(o.id, o));
+    
+    const adminsByUserId = new Map<string, any>();
+    (adminsResult.data || []).forEach((a: any) => adminsByUserId.set(a.user_id, a));
+    
+    const dormsById = new Map<string, any>();
+    (dormsResult.data || []).forEach((d: any) => dormsById.set(d.id, d));
+    
+    const lastMessagesByConvId = new Map<string, any>();
+    lastMessagesResults.forEach((result) => {
+      if (result.data?.conversation_id) {
+        lastMessagesByConvId.set(result.data.conversation_id, result.data);
+      }
+    });
+    
+    const threadStatesByConvId = new Map<string, string>();
+    (threadStatesResult.data || []).forEach((ts: any) => threadStatesByConvId.set(ts.thread_id, ts.last_read_at));
+    
+    // Fetch owner dorm names (for showing dorm name next to owner)
+    const ownerProfileIds = new Set<string>();
+    ownersByUserId.forEach(o => ownerProfileIds.add(o.id));
+    ownersByProfileId.forEach(o => ownerProfileIds.add(o.id));
+    
+    let ownerDormsMap = new Map<string, string>();
+    if (ownerProfileIds.size > 0) {
+      const { data: ownerDorms } = await supabase
+        .from('dorms')
+        .select('owner_id, name, dorm_name')
+        .in('owner_id', Array.from(ownerProfileIds))
+        .eq('verification_status', 'approved');
+      if (ownerDorms) {
+        ownerDorms.forEach((d: any) => {
+          if (!ownerDormsMap.has(d.owner_id)) {
+            ownerDormsMap.set(d.owner_id, d.dorm_name || d.name);
           }
-        } else if (conv.user_a_id && conv.user_b_id) {
-          // Peer-to-peer conversation - look up the OTHER user
+        });
+      }
+    }
+    
+    // Now enrich conversations synchronously using our lookup maps
+    const enrichedPromises = data.map(async (conv) => {
+      let dorm = conv.dorm_id ? dormsById.get(conv.dorm_id) : null;
+      let otherUserName = 'User';
+      let otherUserPhoto: string | null = null;
+      let otherStudentId: string | null = null;
+      let otherUserRole: 'Student' | 'Owner' | 'Admin' = 'Student';
+      let ownerDormName: string | null = null;
+
+      // Handle support conversations
+      if (conv.conversation_type === 'support') {
+        if (admin) {
           const otherUserId = conv.user_a_id === userId ? conv.user_b_id : conv.user_a_id;
           
-          // Try student first
-          const { data: otherStudentData } = await supabase
-            .from('students')
-            .select('id, full_name, profile_photo_url')
-            .eq('user_id', otherUserId)
-            .maybeSingle();
-          
-          if (otherStudentData) {
-            otherUserName = otherStudentData.full_name || 'Student';
-            otherUserPhoto = otherStudentData.profile_photo_url;
-            otherStudentId = otherStudentData.id;
+          const studentData = studentsByUserId.get(otherUserId);
+          if (studentData) {
+            otherUserName = studentData.full_name || 'Student';
+            otherUserPhoto = studentData.profile_photo_url;
             otherUserRole = 'Student';
           } else {
-            // Try owner
-            const { data: otherOwnerData } = await supabase
-              .from('owners')
-              .select('id, full_name, profile_photo_url')
-              .eq('user_id', otherUserId)
-              .maybeSingle();
-            
-            if (otherOwnerData) {
-              otherUserName = otherOwnerData.full_name || 'Owner';
-              otherUserPhoto = otherOwnerData.profile_photo_url;
+            const ownerData = ownersByUserId.get(otherUserId);
+            if (ownerData) {
+              otherUserName = ownerData.full_name || 'Owner';
+              otherUserPhoto = ownerData.profile_photo_url;
               otherUserRole = 'Owner';
-              // Fetch owner's first verified dorm
-              const { data: ownerDorm } = await supabase
-                .from('dorms')
-                .select('name, dorm_name')
-                .eq('owner_id', otherOwnerData.id)
-                .eq('verification_status', 'approved')
-                .limit(1)
-                .maybeSingle();
-              if (ownerDorm) {
-                ownerDormName = ownerDorm.dorm_name || ownerDorm.name;
-              }
+              ownerDormName = ownerDormsMap.get(ownerData.id) || null;
             } else {
-              // Try admin
-              const { data: otherAdminData } = await supabase
-                .from('admins')
-                .select('full_name, profile_photo_url')
-                .eq('user_id', otherUserId)
-                .maybeSingle();
-              
-              if (otherAdminData) {
-                otherUserName = otherAdminData.full_name || 'Admin';
-                otherUserPhoto = otherAdminData.profile_photo_url;
+              const adminData = adminsByUserId.get(otherUserId);
+              if (adminData) {
+                otherUserName = adminData.full_name || 'Admin';
+                otherUserPhoto = adminData.profile_photo_url;
                 otherUserRole = 'Admin';
               }
             }
           }
         } else {
-          // Regular dorm conversations
-          if (student) {
-            if (conv.owner_id) {
-              const { data: ownerData } = await supabase
-                .from('owners')
-                .select('id, full_name, profile_photo_url')
-                .eq('id', conv.owner_id)
-                .maybeSingle();
-              if (ownerData) {
-                otherUserName = ownerData.full_name || 'Owner';
-                otherUserPhoto = ownerData.profile_photo_url;
-                otherUserRole = 'Owner';
-                // Fetch owner's first verified dorm
-                const { data: ownerDorm } = await supabase
-                  .from('dorms')
-                  .select('name, dorm_name')
-                  .eq('owner_id', ownerData.id)
-                  .eq('verification_status', 'approved')
-                  .limit(1)
-                  .maybeSingle();
-                if (ownerDorm) {
-                  ownerDormName = ownerDorm.dorm_name || ownerDorm.name;
-                }
-              }
-            } else {
-              otherUserName = 'Support';
+          otherUserName = 'Roomy Support';
+        }
+      } else if (conv.user_a_id && conv.user_b_id) {
+        // Peer-to-peer conversation
+        const otherUserId = conv.user_a_id === userId ? conv.user_b_id : conv.user_a_id;
+        
+        const studentData = studentsByUserId.get(otherUserId);
+        if (studentData) {
+          otherUserName = studentData.full_name || 'Student';
+          otherUserPhoto = studentData.profile_photo_url;
+          otherStudentId = studentData.id;
+          otherUserRole = 'Student';
+        } else {
+          const ownerData = ownersByUserId.get(otherUserId);
+          if (ownerData) {
+            otherUserName = ownerData.full_name || 'Owner';
+            otherUserPhoto = ownerData.profile_photo_url;
+            otherUserRole = 'Owner';
+            ownerDormName = ownerDormsMap.get(ownerData.id) || null;
+          } else {
+            const adminData = adminsByUserId.get(otherUserId);
+            if (adminData) {
+              otherUserName = adminData.full_name || 'Admin';
+              otherUserPhoto = adminData.profile_photo_url;
               otherUserRole = 'Admin';
             }
+          }
+        }
+      } else {
+        // Regular dorm conversations
+        if (student) {
+          if (conv.owner_id) {
+            const ownerData = ownersByProfileId.get(conv.owner_id);
+            if (ownerData) {
+              otherUserName = ownerData.full_name || 'Owner';
+              otherUserPhoto = ownerData.profile_photo_url;
+              otherUserRole = 'Owner';
+              ownerDormName = ownerDormsMap.get(ownerData.id) || null;
+            }
           } else {
-            const { data: studentData } = await supabase
-              .from('students')
-              .select('id, full_name, profile_photo_url')
-              .eq('id', conv.student_id)
-              .maybeSingle();
-            otherUserName = studentData?.full_name || 'Student';
-            otherUserPhoto = studentData?.profile_photo_url || null;
-            otherStudentId = studentData?.id || null;
+            otherUserName = 'Support';
+            otherUserRole = 'Admin';
+          }
+        } else if (conv.student_id) {
+          const studentData = studentsByProfileId.get(conv.student_id);
+          if (studentData) {
+            otherUserName = studentData.full_name || 'Student';
+            otherUserPhoto = studentData.profile_photo_url;
+            otherStudentId = studentData.id;
             otherUserRole = 'Student';
           }
         }
+      }
 
-        // Get last message with sender info and timestamp
-        const { data: lastMsg } = await supabase
+      // Get last message from map
+      const lastMsg = lastMessagesByConvId.get(conv.id);
+      
+      // Calculate unread count
+      let unreadCount = 0;
+      const lastReadAt = threadStatesByConvId.get(conv.id);
+      if (lastReadAt) {
+        const { count } = await supabase
           .from('messages')
-          .select('body, attachment_type, sender_id, created_at')
+          .select('*', { count: 'exact', head: true })
           .eq('conversation_id', conv.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .neq('sender_id', userId!)
+          .gt('created_at', lastReadAt);
+        unreadCount = count || 0;
+      } else {
+        const { count } = await supabase
+          .from('messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('conversation_id', conv.id)
+          .neq('sender_id', userId!);
+        unreadCount = count || 0;
+      }
 
-        // Get unread count from user_thread_state
-        const { data: threadState } = await supabase
-          .from('user_thread_state')
-          .select('last_read_at')
-          .eq('thread_id', conv.id)
-          .eq('user_id', userId!)
-          .maybeSingle();
-
-        let unreadCount = 0;
-        if (threadState?.last_read_at) {
-          const { count } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('conversation_id', conv.id)
-            .neq('sender_id', userId!)
-            .gt('created_at', threadState.last_read_at);
-          unreadCount = count || 0;
+      // Format last message preview
+      let lastMessage = '';
+      if (lastMsg) {
+        if (lastMsg.attachment_type === 'audio') {
+          lastMessage = '🎤 Voice message';
+        } else if (lastMsg.attachment_type === 'image') {
+          lastMessage = '📷 Photo';
+        } else if (lastMsg.attachment_type === 'video') {
+          lastMessage = '🎥 Video';
         } else {
-          const { count } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('conversation_id', conv.id)
-            .neq('sender_id', userId!);
-          unreadCount = count || 0;
+          lastMessage = lastMsg.body?.substring(0, 50) || '';
         }
+      }
 
-        // Format last message preview with emojis
-        let lastMessage = '';
-        if (lastMsg) {
-          if (lastMsg.attachment_type === 'audio') {
-            lastMessage = '🎤 Voice message';
-          } else if (lastMsg.attachment_type === 'image') {
-            lastMessage = '📷 Photo';
-          } else if (lastMsg.attachment_type === 'video') {
-            lastMessage = '🎥 Video';
-          } else {
-            lastMessage = lastMsg.body?.substring(0, 50) || '';
-          }
-        }
-
-        return {
-          ...conv,
-          other_user_name: otherUserName,
-          other_user_photo: otherUserPhoto,
-          other_student_id: otherStudentId,
-          other_user_role: otherUserRole,
-          owner_dorm_name: ownerDormName,
-          last_message: lastMessage,
-          last_message_sender_id: lastMsg?.sender_id || null,
-          last_message_time: lastMsg?.created_at || conv.updated_at,
-          unreadCount
-        };
-      }));
-      setConversations(enriched);
-    }
+      return {
+        ...conv,
+        other_user_name: otherUserName,
+        other_user_photo: otherUserPhoto,
+        other_student_id: otherStudentId,
+        other_user_role: otherUserRole,
+        owner_dorm_name: ownerDormName,
+        last_message: lastMessage,
+        last_message_sender_id: lastMsg?.sender_id || null,
+        last_message_time: lastMsg?.created_at || conv.updated_at,
+        unreadCount
+      };
+    });
+    
+    const enriched = await Promise.all(enrichedPromises);
+    setConversations(enriched);
   };
 
   const loadMessages = async (conversationId: string) => {
@@ -1653,10 +1656,12 @@ let otherUserName = 'User';
   const isTrackingRef = useRef(false);
   const recordingRef = useRef(recording);
   const isLockedRef = useRef(isLocked);
+  const recordingStartedRef = useRef(false); // Track if recording actually started (after 220ms hold)
   
   // Keep refs in sync with state
   useEffect(() => { recordingRef.current = recording; }, [recording]);
   useEffect(() => { isLockedRef.current = isLocked; }, [isLocked]);
+  useEffect(() => { recordingStartedRef.current = recording; }, [recording]);
 
   // Mobile long-press recording with native event listeners
   // IMPORTANT: touchmove/touchend are attached to document because the mic button
@@ -1689,7 +1694,8 @@ let otherUserName = 'User';
       // Use refs to get current values (avoid stale closures)
       const currentSlideOffset = slideOffsetRef.current;
       
-      if (recordingRef.current && !isLockedRef.current) {
+      // ONLY process gestures if recording actually started (held for 220ms+)
+      if (recordingStartedRef.current && recordingRef.current && !isLockedRef.current) {
         // Check slide gestures - use the final slideOffset values
         if (currentSlideOffset.x < -100) {
           cancelRecording();
@@ -2847,7 +2853,7 @@ let otherUserName = 'User';
                         variant="ghost"
                         size="icon"
                         ref={micButtonRef}
-                        onClick={handleVoiceButtonClick}
+                        onClick={isMobile ? undefined : handleVoiceButtonClick}
                         className="shrink-0 h-8 w-8 voice-record-button"
                         aria-label="Record voice message"
                         title={isMobile ? 'Hold to record voice message' : 'Click to record voice message'}
