@@ -45,7 +45,7 @@ export default function MobileTabs() {
 
     if (role === 'owner') {
       return [
-        { path: "/owner/wallet", icon: Wallet, label: "Wallet" },
+        { path: "/owner/finance", icon: Wallet, label: "Finance" },
         { path: "/owner/bookings", icon: CalendarDays, label: "Bookings" },
         { path: "/owner", icon: Home, label: "Owner" },
         { path: "/messages", icon: MessageSquare, label: "Messages", badge: unreadCount },
@@ -55,7 +55,7 @@ export default function MobileTabs() {
 
     if (role === 'admin') {
       return [
-        { path: "/admin/wallet", icon: Wallet, label: "Wallet" },
+        { path: "/admin/finance", icon: Wallet, label: "Finance" },
         { path: "/admin/chats", icon: MessageCircle, label: "Chats" },
         { path: "/admin", icon: Home, label: "Admin" },
         { path: "/messages", icon: MessageSquare, label: "Messages", badge: unreadCount },
@@ -107,8 +107,8 @@ export default function MobileTabs() {
   // Hide on certain routes
   if (hideBottomNav) return null;
   if (shouldHideNav) return null;
-  if (location.pathname.startsWith("/owner/") && !location.pathname.match(/^\/owner\/(wallet|bookings)$/)) return null;
-  if (location.pathname.startsWith("/admin/") && !location.pathname.match(/^\/admin\/(wallet|chats)$/)) return null;
+  if (location.pathname.startsWith("/owner/") && !location.pathname.match(/^\/owner\/(finance|bookings)$/)) return null;
+  if (location.pathname.startsWith("/admin/") && !location.pathname.match(/^\/admin\/(finance|chats)$/)) return null;
   if (location.pathname === "/owner" || location.pathname === "/admin") return null;
 
   return (

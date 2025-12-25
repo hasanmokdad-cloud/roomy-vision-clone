@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, DollarSign, Wallet, CreditCard, RefreshCw, Plus, Trash2, Eye, TrendingUp } from 'lucide-react';
+import { ArrowLeft, DollarSign, CreditCard, RefreshCw, Plus, Trash2, Eye, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -69,8 +69,6 @@ export default function OwnerFinanceHub() {
   const totalEarnings = payoutHistory
     .filter(p => p.status === 'paid')
     .reduce((sum, p) => sum + p.owner_receives, 0);
-
-  const currentBalance = payoutCard?.balance || 0;
 
   useEffect(() => {
     if (userId) {
@@ -237,38 +235,21 @@ export default function OwnerFinanceHub() {
             </Button>
           </div>
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="glass-hover">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Wallet className="w-4 h-4" />
-                  Current Balance
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-primary">
-                  ${currentBalance.toFixed(2)}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Available for withdrawal</p>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-hover">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  Total Earnings
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-green-600">
-                  ${totalEarnings.toFixed(2)}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">All time completed payouts</p>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Summary Card */}
+          <Card className="glass-hover">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                Total Earnings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-600">
+                ${totalEarnings.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">All time completed payouts</p>
+            </CardContent>
+          </Card>
 
           {/* Payout Method Section */}
           <Card className="glass-hover">
@@ -338,10 +319,12 @@ export default function OwnerFinanceHub() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Room</TableHead>
                         <TableHead>Student</TableHead>
-                        <TableHead>Amount</TableHead>
+                        <TableHead>Dorm</TableHead>
+                        <TableHead>Room</TableHead>
+                        <TableHead>Deposit</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Time</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead></TableHead>
                       </TableRow>
@@ -349,12 +332,14 @@ export default function OwnerFinanceHub() {
                     <TableBody>
                       {payoutHistory.map((payout) => (
                         <TableRow key={payout.id}>
-                          <TableCell>{format(new Date(payout.created_at), 'MMM d, yyyy')}</TableCell>
+                          <TableCell className="font-medium">{payout.student?.full_name || 'N/A'}</TableCell>
+                          <TableCell>{payout.dorm?.name || 'N/A'}</TableCell>
                           <TableCell>{payout.room?.name || 'N/A'}</TableCell>
-                          <TableCell>{payout.student?.full_name || 'N/A'}</TableCell>
                           <TableCell className="font-semibold text-green-600">
                             ${payout.owner_receives.toFixed(2)}
                           </TableCell>
+                          <TableCell>{format(new Date(payout.created_at), 'MMM d, yyyy')}</TableCell>
+                          <TableCell className="text-muted-foreground">{format(new Date(payout.created_at), 'h:mm a')}</TableCell>
                           <TableCell>{getStatusBadge(payout.status)}</TableCell>
                           <TableCell>
                             <Button

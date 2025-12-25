@@ -148,7 +148,7 @@ export default function MockWhishOwnerAddCard() {
 
       // Redirect after short delay
       setTimeout(() => {
-        navigate('/owner/wallet?status=payout_card_added');
+        navigate('/owner/finance?status=payout_card_added');
       }, 1500);
     } catch (error) {
       console.error('Error adding card:', error);
@@ -163,7 +163,7 @@ export default function MockWhishOwnerAddCard() {
   };
 
   const handleCancel = () => {
-    navigate('/owner/wallet');
+    navigate('/owner/finance');
   };
 
   if (!ownerId) {
@@ -176,8 +176,8 @@ export default function MockWhishOwnerAddCard() {
             <p className="text-muted-foreground mb-4">
               Missing owner ID. Please try again from the wallet page.
             </p>
-            <Button onClick={() => navigate('/owner/wallet')}>
-              Return to Wallet
+            <Button onClick={() => navigate('/owner/finance')}>
+              Return to Finance
             </Button>
           </CardContent>
         </Card>
@@ -204,7 +204,7 @@ export default function MockWhishOwnerAddCard() {
               </motion.div>
               <h2 className="text-xl font-semibold mb-2">Card Added Successfully!</h2>
               <p className="text-muted-foreground">
-                Redirecting to your wallet...
+                Redirecting to your finance page...
               </p>
             </CardContent>
           </Card>

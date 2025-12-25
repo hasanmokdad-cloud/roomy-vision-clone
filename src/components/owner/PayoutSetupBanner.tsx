@@ -51,8 +51,8 @@ export function PayoutSetupBanner({ ownerId }: PayoutSetupBannerProps) {
       // No card - go directly to add card flow
       navigate(`/mock-whish-owner-add-card?ownerId=${ownerId}`);
     } else {
-      // Has card - go to wallet
-      navigate('/owner/wallet');
+      // Has card - go to finance
+      navigate('/owner/finance');
     }
   };
 
