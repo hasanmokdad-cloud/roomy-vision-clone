@@ -1826,10 +1826,12 @@ export default function Messages() {
       
       // Permission is granted - proceed with hold-to-record
       touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      isTrackingRef.current = true;
       
-      // Clean up any existing document listeners first
+      // Clean up any existing document listeners first (this resets isTrackingRef to false)
       cleanupDocumentListeners();
+      
+      // NOW set tracking to true AFTER cleanup - this is critical!
+      isTrackingRef.current = true;
       
       // Store references to handlers so they can be cleaned up later
       documentListenersRef.current = { move: handleTouchMove, end: handleTouchEnd };
