@@ -143,6 +143,14 @@ export function VoiceRecordingOverlay({
     onSlideChange({ x: 0, y: 0 });
   }, [onSlideChange, onLock]);
 
+  // Watch slideOffset.x from parent touch tracking to trigger cancel
+  useEffect(() => {
+    if (slideOffset.x < -100 && recordingState === 'active' && !showCancelAnimation) {
+      haptics.error();
+      setShowCancelAnimation(true);
+    }
+  }, [slideOffset.x, recordingState, showCancelAnimation]);
+
   // Cancel animation completion handler
   useEffect(() => {
     if (showCancelAnimation) {
@@ -292,25 +300,16 @@ export function VoiceRecordingOverlay({
             </motion.span>
           </motion.div>
 
-          {/* Center: "slide to cancel <" - ONLY this element is draggable horizontally */}
+          {/* Center: "slide to cancel" - moves with slideOffset.x from parent touch tracking */}
           <motion.div 
-            className="flex-1 flex items-center justify-center"
+            className="flex-1 flex items-center justify-center overflow-hidden"
             initial={{ x: 100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ ...springTransition, delay: 0.1 }}
           >
             <motion.div
-              drag="x"
-              dragConstraints={{ left: -150, right: 0 }}
-              dragElastic={0.1}
-              dragSnapToOrigin
-              onDragEnd={(_, info) => {
-                if (info.offset.x < -80 || info.velocity.x < -400) {
-                  haptics.error();
-                  setShowCancelAnimation(true);
-                }
-              }}
-              className="relative flex items-center gap-1 cursor-grab active:cursor-grabbing touch-none select-none overflow-hidden"
+              className="relative flex items-center gap-1 select-none overflow-hidden"
+              style={{ x: slideOffset.x }}
             >
               <motion.div
                 animate={prefersReducedMotion ? {} : { x: [0, -4, 0] }}
