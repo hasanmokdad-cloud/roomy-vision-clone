@@ -36,7 +36,6 @@ export default function AdminHome() {
   });
   const [earningsStats, setEarningsStats] = useState({
     totalCommission: 0,
-    pendingPayouts: 0,
     walletBalance: 0,
   });
 
@@ -79,14 +78,6 @@ export default function AdminHome() {
       
       const totalCommission = commissionData?.reduce((sum, r) => sum + Number(r.commission_amount || 0), 0) || 0;
 
-      // Pending payouts to owners
-      const { data: pendingPayoutsData } = await supabase
-        .from('reservations')
-        .select('owner_payout_amount')
-        .eq('owner_payout_status', 'pending');
-      
-      const pendingPayouts = pendingPayoutsData?.reduce((sum, r) => sum + Number(r.owner_payout_amount || 0), 0) || 0;
-
       // Admin wallet balance
       const { data: walletData } = await supabase
         .from('admin_wallet')
@@ -95,7 +86,6 @@ export default function AdminHome() {
 
       setEarningsStats({
         totalCommission,
-        pendingPayouts,
         walletBalance: walletData?.balance || 0,
       });
     } catch (error) {
@@ -184,27 +174,23 @@ export default function AdminHome() {
               <p className="text-sm text-foreground/60">Total Commission</p>
               <p className="text-2xl font-bold text-green-500">${earningsStats.totalCommission.toFixed(2)}</p>
             </div>
-            <div>
-              <p className="text-sm text-foreground/60">Pending Owner Payouts</p>
-              <p className="text-xl font-semibold text-yellow-500">${earningsStats.pendingPayouts.toFixed(2)}</p>
-            </div>
             <Button 
-              onClick={() => navigate('/admin/finance?tab=earnings')} 
+              onClick={() => navigate('/admin/finance')} 
               className="w-full gap-2"
               variant="outline"
             >
-              View Earnings
+              View Finance
               <ArrowRight className="w-4 h-4" />
             </Button>
           </CardContent>
         </Card>
 
-        {/* Wallet & Payouts Section */}
+        {/* Wallet Section */}
         <Card className="glass-hover">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Wallet className="w-5 h-5 text-blue-500" />
-              Wallet & Payouts
+              Wallet
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -212,12 +198,8 @@ export default function AdminHome() {
               <p className="text-sm text-foreground/60">Wallet Balance</p>
               <p className="text-2xl font-bold text-blue-500">${earningsStats.walletBalance.toFixed(2)}</p>
             </div>
-            <div>
-              <p className="text-sm text-foreground/60">Pending Payouts</p>
-              <p className="text-xl font-semibold">${earningsStats.pendingPayouts.toFixed(2)}</p>
-            </div>
             <Button 
-              onClick={() => navigate('/admin/finance?tab=wallet')} 
+              onClick={() => navigate('/admin/finance')} 
               className="w-full gap-2"
               variant="outline"
             >

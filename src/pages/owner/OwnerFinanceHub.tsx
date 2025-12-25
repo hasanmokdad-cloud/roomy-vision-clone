@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, DollarSign, Wallet, CreditCard, RefreshCw, Plus, Trash2, Eye, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import { ArrowLeft, DollarSign, Wallet, CreditCard, RefreshCw, Plus, Trash2, Eye, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -68,10 +68,6 @@ export default function OwnerFinanceHub() {
   // Computed values
   const totalEarnings = payoutHistory
     .filter(p => p.status === 'paid')
-    .reduce((sum, p) => sum + p.owner_receives, 0);
-  
-  const pendingPayouts = payoutHistory
-    .filter(p => p.status === 'pending')
     .reduce((sum, p) => sum + p.owner_receives, 0);
 
   const currentBalance = payoutCard?.balance || 0;
@@ -242,7 +238,7 @@ export default function OwnerFinanceHub() {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card className="glass-hover">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -270,21 +266,6 @@ export default function OwnerFinanceHub() {
                   ${totalEarnings.toFixed(2)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">All time completed payouts</p>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-hover">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  Pending Payouts
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-amber-600">
-                  ${pendingPayouts.toFixed(2)}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Scheduled for payout</p>
               </CardContent>
             </Card>
           </div>
