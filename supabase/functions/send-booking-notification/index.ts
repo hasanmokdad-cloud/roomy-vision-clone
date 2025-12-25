@@ -258,7 +258,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Get owner details
     const { data: owner, error: ownerError } = await supabase
       .from("owners")
-      .select("email, full_name, notify_email")
+      .select("email, full_name, notify_email, user_id")
       .eq("id", ownerId)
       .single();
 
@@ -318,6 +318,23 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailResult = await emailResponse.json();
     console.log("[send-booking-notification] Email sent successfully:", emailResult);
+
+    // Also send push notification to owner
+    try {
+      await supabase.functions.invoke('send-push-notification', {
+        body: {
+          user_id: owner.user_id || ownerId, // Try user_id first, fall back to ownerId
+          title: '📅 New Viewing Request!',
+          body: `${studentName} wants to view ${dormName} on ${new Date(requestedDate).toLocaleDateString()}.`,
+          url: '/owner/bookings',
+          icon: '/favicon.ico'
+        }
+      });
+      console.log("[send-booking-notification] Push notification sent");
+    } catch (pushError) {
+      console.error("[send-booking-notification] Push notification failed:", pushError);
+      // Don't fail the request if push fails
+    }
 
     return new Response(JSON.stringify(emailResult), {
       status: 200,
