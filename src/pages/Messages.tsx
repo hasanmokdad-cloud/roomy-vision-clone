@@ -1,4 +1,4 @@
-// Messages.tsx v3.0 - Updated 2025-12-25 - Force deployment with debug indicator
+// Messages.tsx v4.0 - Updated 2025-12-25 - Aggressive debug build with banner + logging
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -297,6 +297,17 @@ export default function Messages() {
       </div>
     );
   }
+
+  // DEBUG: Service Worker check - DELETE AFTER DEBUGGING
+  useEffect(() => {
+    console.log('🔧 [v4] Messages component mounted, role:', role, 'isMobile:', isMobile);
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        console.log('📦 [v4] Service Workers:', registrations.length);
+        registrations.forEach(r => console.log('  - SW scope:', r.scope, 'state:', r.active?.state));
+      });
+    }
+  }, []);
 
   // Get student ID for friends functionality
   useEffect(() => {
@@ -2411,6 +2422,11 @@ export default function Messages() {
       >
         {/* Conversations List - Edge-to-edge, no Card wrapper */}
         <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-[350px] border-r border-border bg-background ${isMobile ? 'h-screen' : 'h-[calc(100vh-80px)]'}`}>
+            {/* TEMP DEBUG BANNER - DELETE AFTER DEBUGGING */}
+            <div className="bg-red-500 text-white p-2 text-center text-xs font-bold">
+              BUILD: Dec-25-2025-v4 | {role} | Convs: {conversations.length}
+            </div>
+            
             <div className={`p-4 border-b border-border ${isMobile ? 'pt-6' : ''} space-y-3`}>
               <div className="flex items-center justify-between w-full">
                 <div className="flex flex-col">
@@ -2419,7 +2435,7 @@ export default function Messages() {
                     Messages
                   </h2>
                   {/* DEBUG: Version indicator - Remove after verifying deployment */}
-                  <span className="text-[10px] text-muted-foreground/50 mt-0.5">v3.0 | Role: {role || 'unknown'}</span>
+                  <span className="text-[10px] text-muted-foreground/50 mt-0.5">v4.0 | Role: {role || 'unknown'}</span>
                 </div>
               </div>
 
@@ -2497,6 +2513,9 @@ export default function Messages() {
                           .replace(' years', 'y')
                           .replace(' year', 'y')
                         : '';
+                      
+                      // DEBUG: Log each conversation render - DELETE AFTER DEBUGGING
+                      console.log('🎯 [v4] Rendering conv:', conv.id, 'name:', conv.other_user_name, 'timeAgo:', timeAgo, 'isMobile:', isMobile);
                       
                       const chatRowContent = (
                         <div 
