@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Mail, Phone, MapPin, Clock, Instagram, Linkedin, Youtube, Facebook, Music, Pin } from 'lucide-react';
+import { Mail, Phone, MapPin, Instagram, Linkedin, Youtube, Facebook, Music, Pin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { validateEmail, sanitizeInput, validateMessage } from '@/utils/inputValidation';
 import { supabase } from '@/integrations/supabase/client';
@@ -200,7 +200,7 @@ export default function Contact() {
                         value={formData.fullName}
                         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                         className={errors.fullName ? 'border-destructive' : ''}
-                        placeholder="John Doe"
+                        placeholder="Your full name"
                       />
                       {errors.fullName && <p className="text-sm text-destructive">{errors.fullName}</p>}
                     </div>
@@ -213,7 +213,7 @@ export default function Contact() {
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         className={errors.email ? 'border-destructive' : ''}
-                        placeholder="john@example.com"
+                        placeholder="your.email@example.com"
                       />
                       {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                     </div>
@@ -245,7 +245,7 @@ export default function Contact() {
                         value={formData.subject}
                         onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                         className={errors.subject ? 'border-destructive' : ''}
-                        placeholder="How can we help?"
+                        placeholder="Brief subject of your message"
                       />
                       {errors.subject && <p className="text-sm text-destructive">{errors.subject}</p>}
                     </div>
@@ -307,15 +307,6 @@ export default function Contact() {
                     <div>
                       <p className="font-medium text-foreground">Location</p>
                       <p className="text-sm text-muted-foreground">Beirut, Lebanon</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Clock className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">Business Hours</p>
-                      <p className="text-sm text-muted-foreground">Mon - Fri: 9:00 AM - 6:00 PM</p>
                     </div>
                   </div>
                 </div>
