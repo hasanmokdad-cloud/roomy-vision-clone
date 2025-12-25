@@ -1710,37 +1710,36 @@ export default function Messages() {
   const isRecordingActiveRef = useRef(isRecordingActive); // Track pending recording state (getUserMedia in progress)
   const permissionRef = useRef(permission); // Track mic permission for touch handlers
   
-  // Store document listener cleanup separately - these must persist when mic button unmounts
-  const documentListenersRef = useRef<{
-    move: ((e: TouchEvent) => void) | null;
-    end: ((e: TouchEvent) => void) | null;
-  }>({ move: null, end: null });
-  
   // Keep refs in sync with state
   useEffect(() => { recordingRef.current = recording; }, [recording]);
   useEffect(() => { isLockedRef.current = isLocked; }, [isLocked]);
   useEffect(() => { isRecordingActiveRef.current = isRecordingActive; }, [isRecordingActive]);
   useEffect(() => { permissionRef.current = permission; }, [permission]);
 
-  // Cleanup document listeners helper
-  const cleanupDocumentListeners = useCallback(() => {
-    if (documentListenersRef.current.move) {
-      document.removeEventListener('touchmove', documentListenersRef.current.move);
-    }
-    if (documentListenersRef.current.end) {
-      document.removeEventListener('touchend', documentListenersRef.current.end);
-    }
-    documentListenersRef.current = { move: null, end: null };
-    isTrackingRef.current = false;
+  // Refs for the actual handler logic - these get updated with latest values
+  const touchMoveLogicRef = useRef<(e: TouchEvent) => void>(() => {});
+  const touchEndLogicRef = useRef<(e: TouchEvent) => void>(() => {});
+  
+  // Stable wrapper functions that delegate to refs - these never change identity
+  const stableTouchMove = useCallback((e: TouchEvent) => {
+    touchMoveLogicRef.current(e);
+  }, []);
+  
+  const stableTouchEnd = useCallback((e: TouchEvent) => {
+    touchEndLogicRef.current(e);
   }, []);
 
-  // Function to attach touch handlers to mic button - extracted so it can be called from callback ref
-  const attachMicTouchHandlers = useCallback((micButton: HTMLButtonElement | null) => {
-    if (!isMobile || !micButton) return () => {};
-    
-    let pressTimer: NodeJS.Timeout;
-    
-    const handleTouchMove = (e: TouchEvent) => {
+  // Cleanup document listeners helper - uses stable wrapper functions
+  const cleanupDocumentListeners = useCallback(() => {
+    document.removeEventListener('touchmove', stableTouchMove);
+    document.removeEventListener('touchend', stableTouchEnd);
+    isTrackingRef.current = false;
+  }, [stableTouchMove, stableTouchEnd]);
+
+  // Update the handler logic refs with latest closure values
+  // This runs on every render to ensure handlers always have fresh state
+  useEffect(() => {
+    touchMoveLogicRef.current = (e: TouchEvent) => {
       if (!isTrackingRef.current) return;
       e.preventDefault();
       
@@ -1765,20 +1764,17 @@ export default function Messages() {
       setSlideOffset(newOffset);
     };
     
-    const handleTouchEnd = (e: TouchEvent) => {
+    touchEndLogicRef.current = (e: TouchEvent) => {
       if (!isTrackingRef.current) return;
       e.preventDefault();
-      clearTimeout(pressTimer);
       
       // Clean up document listeners AFTER processing
-      // Use the cleanup helper which reads from the ref
       setTimeout(() => cleanupDocumentListeners(), 0);
       
       // Use refs to get current values (avoid stale closures)
       const currentSlideOffset = slideOffsetRef.current;
       
       // Process gestures if recording was TRIGGERED (held 220ms+)
-      // Check recordingStartedRef (set immediately) OR actual recording/pending state
       const recordingWasTriggered = recordingStartedRef.current;
       const recordingIsActive = recordingRef.current || isRecordingActiveRef.current;
       
@@ -1805,6 +1801,13 @@ export default function Messages() {
       slideOffsetRef.current = { x: 0, y: 0 };
       setSlideOffset({ x: 0, y: 0 });
     };
+  }); // No deps - runs every render to capture latest values
+
+  // Function to attach touch handlers to mic button - extracted so it can be called from callback ref
+  const attachMicTouchHandlers = useCallback((micButton: HTMLButtonElement | null) => {
+    if (!isMobile || !micButton) return () => {};
+    
+    let pressTimer: NodeJS.Timeout;
     
     const handleTouchStart = (e: TouchEvent) => {
       e.preventDefault();
@@ -1835,13 +1838,10 @@ export default function Messages() {
       // NOW set tracking to true AFTER cleanup - this is critical!
       isTrackingRef.current = true;
       
-      // Store references to handlers so they can be cleaned up later
-      documentListenersRef.current = { move: handleTouchMove, end: handleTouchEnd };
-      
-      // Attach document-level listeners for move and end
-      // This allows tracking even after mic button is removed from DOM by overlay
-      document.addEventListener('touchmove', handleTouchMove, { passive: false });
-      document.addEventListener('touchend', handleTouchEnd, { passive: false });
+      // Attach STABLE wrapper functions to document
+      // These never change identity, but delegate to refs with latest logic
+      document.addEventListener('touchmove', stableTouchMove, { passive: false });
+      document.addEventListener('touchend', stableTouchEnd, { passive: false });
       
       // Start recording after 220ms hold
       pressTimer = setTimeout(() => {
@@ -1863,7 +1863,7 @@ export default function Messages() {
       micButton.removeEventListener('touchstart', handleTouchStart);
       // Do NOT clean up document listeners here - they need to persist during recording
     };
-  }, [isMobile, cleanupDocumentListeners]);
+  }, [isMobile, cleanupDocumentListeners, stableTouchMove, stableTouchEnd]);
   // Store cleanup function for mic button touch handlers
   const micCleanupRef = useRef<(() => void) | null>(null);
   
