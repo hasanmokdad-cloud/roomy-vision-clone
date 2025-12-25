@@ -1,8 +1,9 @@
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { Mic, Lock, Trash2, Pause, Play, Send, ChevronLeft, ChevronUp } from 'lucide-react';
+import { motion, AnimatePresence, PanInfo, useAnimation } from 'framer-motion';
+import { Mic, Lock, LockOpen, Trash2, Pause, Play, Send, ChevronLeft, ChevronUp } from 'lucide-react';
 import { VoiceWaveformLive } from './VoiceWaveformLive';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { haptics } from '@/utils/haptics';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 type RecordingState = 'active' | 'locked' | 'paused' | 'preview';
 
@@ -44,15 +45,16 @@ export function VoiceRecordingOverlay({
   onLock,
 }: VoiceRecordingOverlayProps) {
   const prefersReducedMotion = useReducedMotion();
+  const [showCancelAnimation, setShowCancelAnimation] = useState(false);
+  const [micPulseActive, setMicPulseActive] = useState(true);
+  const cancelTextControls = useAnimation();
+  const lockPanelRef = useRef<HTMLDivElement>(null);
   
   if (!isRecording) return null;
 
   const minutes = Math.floor(duration / 60);
   const seconds = duration % 60;
   const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-  const showCancelZone = slideOffset.x < -80;
-  const showLockZone = slideOffset.y < -60;
 
   // Determine recording state
   const getRecordingState = (): RecordingState => {
@@ -75,134 +77,272 @@ export function VoiceRecordingOverlay({
     return timeString;
   };
 
-  // Animation settings based on reduced motion preference
-  const springTransition = prefersReducedMotion 
-    ? { duration: 0.1 } 
-    : { type: 'spring', stiffness: 300, damping: 20 };
-
   // Handlers with haptics
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     haptics.error();
-    onCancel();
-  };
+    setShowCancelAnimation(true);
+  }, []);
 
-  const handleSend = () => {
+  const handleSend = useCallback(() => {
     haptics.success();
     onSend();
-  };
+  }, [onSend]);
 
-  const handlePause = () => {
+  const handlePause = useCallback(() => {
     haptics.medium();
     onPause();
-  };
+  }, [onPause]);
 
-  const handleResume = () => {
+  const handleResume = useCallback(() => {
     haptics.medium();
     onResume();
-  };
+  }, [onResume]);
 
-  const handlePreviewPlay = () => {
+  const handlePreviewPlay = useCallback(() => {
     haptics.light();
     onPreviewPlay();
-  };
+  }, [onPreviewPlay]);
 
-  const handlePreviewPause = () => {
+  const handlePreviewPause = useCallback(() => {
     haptics.light();
     onPreviewPause();
-  };
+  }, [onPreviewPause]);
 
-  // Handle drag for swipe gestures
-  const handleDrag = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    onSlideChange({ x: info.offset.x, y: info.offset.y });
-  };
+  // Handle horizontal pan for "slide to cancel" text only
+  const handleCancelTextPan = useCallback((_: any, info: PanInfo) => {
+    // Only track horizontal movement, clamp to reasonable range
+    const x = Math.min(0, Math.max(-150, info.offset.x));
+    onSlideChange({ x, y: slideOffset.y });
+  }, [onSlideChange, slideOffset.y]);
 
-  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+  const handleCancelTextPanEnd = useCallback((_: any, info: PanInfo) => {
     if (info.offset.x < -100) {
-      // Swiped left - cancel
+      // Threshold reached - trigger cancel animation
       haptics.error();
-      onCancel();
-    } else if (info.offset.y < -80) {
-      // Swiped up - lock
-      haptics.success();
-      onLock();
+      setShowCancelAnimation(true);
     } else {
       // Reset position
-      onSlideChange({ x: 0, y: 0 });
+      onSlideChange({ x: 0, y: slideOffset.y });
     }
-  };
+  }, [onSlideChange, slideOffset.y]);
 
-  // State A: Active Recording (Not Locked) - User holding mic button
-  // WhatsApp style: Red mic + timer on LEFT, "slide to cancel" in CENTER, mic icon on RIGHT
-  // Lock icon floats ABOVE the bar
+  // Handle vertical drag for lock
+  const handleLockPan = useCallback((_: any, info: PanInfo) => {
+    // Only track vertical movement upward
+    const y = Math.min(0, Math.max(-120, info.offset.y));
+    onSlideChange({ x: slideOffset.x, y });
+  }, [onSlideChange, slideOffset.x]);
+
+  const handleLockPanEnd = useCallback((_: any, info: PanInfo) => {
+    if (info.offset.y < -60) {
+      // Threshold reached - lock recording
+      haptics.success();
+      onLock();
+    }
+    // Reset position (either locked or not)
+    onSlideChange({ x: 0, y: 0 });
+  }, [onSlideChange, onLock]);
+
+  // Cancel animation completion handler
+  useEffect(() => {
+    if (showCancelAnimation) {
+      const timer = setTimeout(() => {
+        onCancel();
+        setShowCancelAnimation(false);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [showCancelAnimation, onCancel]);
+
+  // Mic pulse animation
+  useEffect(() => {
+    if (recordingState === 'active' && !prefersReducedMotion) {
+      const interval = setInterval(() => {
+        setMicPulseActive(prev => !prev);
+      }, 600);
+      return () => clearInterval(interval);
+    }
+  }, [recordingState, prefersReducedMotion]);
+
+  const showCancelZone = slideOffset.x < -80;
+  const showLockZone = slideOffset.y < -40;
+  const lockProgress = Math.min(1, Math.abs(slideOffset.y) / 60);
+
+  // Animation variants
+  const springTransition = prefersReducedMotion 
+    ? { duration: 0.1 } 
+    : { type: 'spring', stiffness: 400, damping: 30 };
+
+  // Cancel Animation State
+  if (showCancelAnimation) {
+    return (
+      <motion.div className="relative h-12 flex items-center justify-center overflow-hidden">
+        {/* Trash bin animation */}
+        <motion.div
+          className="absolute left-4 flex flex-col items-center"
+          initial={{ y: 60, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+        >
+          <motion.div
+            initial={{ y: -40, rotate: 0, opacity: 1 }}
+            animate={{ y: 0, rotate: -90, opacity: 0 }}
+            transition={{ duration: 0.5, delay: 0.2, ease: 'easeIn' }}
+            className="absolute -top-8"
+          >
+            <Mic className="w-5 h-5 text-destructive" />
+          </motion.div>
+          <motion.div
+            initial={{ scale: 1 }}
+            animate={{ scale: [1, 1.1, 0.9], y: 60, opacity: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            <Trash2 className="w-6 h-6 text-destructive" />
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    );
+  }
+
+  // ============= ACTIVE RECORDING STATE =============
   if (recordingState === 'active') {
     return (
       <div className="relative touch-none">
-        {/* Floating Lock indicator ABOVE the bar - WhatsApp style */}
+        {/* Floating Lock Panel - WhatsApp style */}
         <motion.div 
-          className="absolute -top-20 right-2 flex flex-col items-center pointer-events-none"
-          initial={{ opacity: 0, y: 10 }}
+          ref={lockPanelRef}
+          className="absolute -top-24 right-1 flex flex-col items-center pointer-events-none z-10"
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
           animate={{ 
-            opacity: showLockZone ? 1 : 0.6,
-            y: showLockZone ? -5 : 0,
-            scale: showLockZone ? 1.15 : 1
+            opacity: 1, 
+            scale: 1, 
+            y: 0,
           }}
-          transition={springTransition}
+          transition={{ ...springTransition, delay: 0.1 }}
         >
-          <motion.div 
-            className={`w-12 h-12 rounded-full flex items-center justify-center mb-1 ${
-              showLockZone ? 'bg-primary' : 'bg-muted'
-            }`}
-          >
-            <Lock className={`w-5 h-5 ${showLockZone ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
-          </motion.div>
+          {/* Lock container bar */}
           <motion.div
-            animate={prefersReducedMotion ? {} : { y: [0, -3, 0] }}
-            transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 0.8 }}
+            className="bg-muted/90 backdrop-blur-sm rounded-full px-2 py-2 flex flex-col items-center gap-1"
+            animate={{
+              height: showLockZone ? 80 : 100 - Math.abs(slideOffset.y) * 0.3,
+            }}
+            transition={springTransition}
           >
-            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+            {/* Lock icon */}
+            <motion.div
+              animate={{
+                y: prefersReducedMotion ? 0 : [0, -3, 0],
+                scale: showLockZone ? 1.1 : 1,
+              }}
+              transition={
+                prefersReducedMotion 
+                  ? {} 
+                  : showLockZone 
+                    ? springTransition 
+                    : { repeat: Infinity, duration: 1.2, ease: 'easeInOut' }
+              }
+            >
+              {showLockZone || lockProgress > 0.8 ? (
+                <Lock className="w-5 h-5 text-foreground" />
+              ) : (
+                <LockOpen className="w-5 h-5 text-muted-foreground" />
+              )}
+            </motion.div>
+            
+            {/* Up arrow */}
+            <motion.div
+              animate={prefersReducedMotion ? {} : { y: [0, -2, 0] }}
+              transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 1, ease: 'easeInOut', delay: 0.2 }}
+            >
+              <ChevronUp className="w-4 h-4 text-muted-foreground" />
+            </motion.div>
           </motion.div>
         </motion.div>
 
-        {/* Draggable recording bar - WhatsApp layout */}
+        {/* Recording bar - FIXED, not draggable */}
         <motion.div
-          drag
-          dragConstraints={{ left: -150, right: 0, top: -120, bottom: 0 }}
-          dragElastic={0.15}
-          onDrag={handleDrag}
-          onDragEnd={handleDragEnd}
-          className="flex items-center h-12 px-3 gap-3 cursor-grab active:cursor-grabbing"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center h-12 gap-2"
         >
-          {/* Left: Red mic icon + timer */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Left: Red mic icon (pulsing) + timer */}
+          <motion.div 
+            className="flex items-center gap-2 shrink-0"
+            initial={{ x: 100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ ...springTransition, delay: 0.05 }}
+          >
             <motion.div 
-              animate={prefersReducedMotion ? {} : { scale: [1, 1.15, 1] }}
-              transition={prefersReducedMotion ? { duration: 0 } : { repeat: Infinity, duration: 1 }}
+              animate={{ 
+                opacity: micPulseActive ? 1 : 0.4,
+                scale: micPulseActive && !prefersReducedMotion ? 1.1 : 1,
+              }}
+              transition={{ duration: 0.3 }}
+              className="flex items-center justify-center"
             >
               <Mic className="w-5 h-5 text-destructive" />
             </motion.div>
-            <span className="text-sm font-medium tabular-nums text-destructive">{timeString}</span>
-          </div>
-
-          {/* Center: "slide to cancel <" */}
-          <motion.div 
-            className="flex-1 flex items-center justify-center gap-1"
-            animate={{ opacity: showCancelZone ? 0.3 : 1 }}
-          >
-            <motion.div
-              animate={prefersReducedMotion ? {} : { x: [0, -4, 0] }}
-              transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 1.2 }}
+            <motion.span 
+              className="text-sm font-medium tabular-nums text-foreground"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
             >
-              <ChevronLeft className="w-4 h-4 text-muted-foreground" />
-            </motion.div>
-            <span className="text-sm text-muted-foreground">Slide to cancel</span>
+              {timeString}
+            </motion.span>
           </motion.div>
 
-          {/* Right: Mic icon (finger position indicator) - WhatsApp green circle */}
+          {/* Center: "slide to cancel <" - ONLY this element is draggable horizontally */}
           <motion.div 
-            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
+            className="flex-1 flex items-center justify-center relative overflow-hidden"
+            initial={{ x: 100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ ...springTransition, delay: 0.1 }}
+          >
+            <motion.div
+              drag="x"
+              dragConstraints={{ left: -150, right: 0 }}
+              dragElastic={0.1}
+              onPan={handleCancelTextPan}
+              onPanEnd={handleCancelTextPanEnd}
+              style={{ x: slideOffset.x }}
+              className="flex items-center gap-1 cursor-grab active:cursor-grabbing touch-none select-none"
+            >
+              <motion.div
+                animate={prefersReducedMotion ? {} : { x: [0, -4, 0] }}
+                transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 1.5 }}
+              >
+                <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+              </motion.div>
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                Slide to cancel
+              </span>
+              
+              {/* Shimmer effect */}
+              {!prefersReducedMotion && (
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"
+                  initial={{ x: '-100%' }}
+                  animate={{ x: '100%' }}
+                  transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
+                />
+              )}
+            </motion.div>
+          </motion.div>
+
+          {/* Right: Green mic button with lock drag zone */}
+          <motion.div
+            drag="y"
+            dragConstraints={{ top: -120, bottom: 0 }}
+            dragElastic={0.1}
+            onPan={handleLockPan}
+            onPanEnd={handleLockPanEnd}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1, filter: `blur(${Math.min(slideOffset.y * -0.03, 4)}px)` }}
+            transition={{ ...springTransition }}
+            whileTap={{ scale: 0.95 }}
+            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 cursor-grab active:cursor-grabbing touch-none"
             style={{ backgroundColor: 'hsl(142, 70%, 45%)' }}
-            animate={prefersReducedMotion ? {} : { scale: [1, 1.05, 1] }}
-            transition={prefersReducedMotion ? { duration: 0 } : { repeat: Infinity, duration: 1.5 }}
           >
             <Mic className="w-5 h-5 text-white" />
           </motion.div>
@@ -211,55 +351,31 @@ export function VoiceRecordingOverlay({
     );
   }
 
-  // States B, C, D: Locked, Paused, or Preview
-  // WhatsApp style: [Trash(red)] [Pause/Resume] [Play(if paused)] [Waveform+Timer] [Send(green)]
+  // ============= LOCKED, PAUSED, or PREVIEW STATE =============
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div 
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 20, opacity: 0 }}
-        transition={prefersReducedMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 400, damping: 30 }}
-        className="touch-none"
+        initial={{ opacity: 0, height: 48 }}
+        animate={{ opacity: 1, height: recordingState === 'locked' ? 100 : 100 }}
+        exit={{ opacity: 0, height: 48 }}
+        transition={prefersReducedMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 400, damping: 35 }}
+        className="touch-none flex flex-col justify-between"
       >
-        <div className="flex items-center h-12 px-2 gap-1.5">
-          {/* Trash button (red circle) - smaller */}
-          <motion.button
-            whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
-            onClick={handleCancel}
-            className="flex items-center justify-center w-9 h-9 rounded-full bg-destructive shrink-0"
-          >
-            <Trash2 className="w-4 h-4 text-destructive-foreground" />
-          </motion.button>
-
-          {/* Pause/Resume button - smaller */}
-          {recordingState === 'locked' ? (
-            <motion.button
-              whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
-              onClick={handlePause}
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-muted shrink-0"
-            >
-              <Pause className="w-4 h-4 text-foreground" />
-            </motion.button>
-          ) : (
-            <motion.button
-              whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
-              onClick={handleResume}
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-muted shrink-0"
-            >
-              <Mic className="w-4 h-4 text-foreground" />
-            </motion.button>
-          )}
-
-          {/* Preview Play/Pause button (only in paused/preview states) - smaller */}
+        {/* Top Row: Waveform + Timer */}
+        <motion.div 
+          className="flex items-center gap-2 px-1"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          {/* Play/Pause for preview (only in paused/preview states) */}
           {(recordingState === 'paused' || recordingState === 'preview') && (
             <motion.button
-              initial={prefersReducedMotion ? {} : { scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={prefersReducedMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 400, damping: 20 }}
-              whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={springTransition}
               onClick={isPreviewPlaying ? handlePreviewPause : handlePreviewPlay}
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/20 shrink-0"
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 shrink-0"
             >
               {isPreviewPlaying ? (
                 <Pause className="w-4 h-4 text-primary" />
@@ -269,42 +385,40 @@ export function VoiceRecordingOverlay({
             </motion.button>
           )}
 
-          {/* Waveform + timer - wider bar */}
-          <div className="flex-1 flex items-center gap-1.5 bg-muted/50 rounded-full px-3 py-1.5 min-w-0 overflow-hidden">
-            {/* Recording indicator or static dot */}
-            {recordingState === 'locked' ? (
+          {/* Waveform bar container */}
+          <div className="flex-1 flex items-center gap-1.5 bg-muted/50 rounded-full px-3 py-2 min-w-0 overflow-hidden">
+            {/* Recording pulse indicator */}
+            {recordingState === 'locked' && (
               <motion.div 
-                animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
-                transition={prefersReducedMotion ? { duration: 0 } : { repeat: Infinity, duration: 1 }}
+                animate={prefersReducedMotion ? {} : { scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
+                transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 1 }}
                 className="w-2 h-2 bg-destructive rounded-full shrink-0"
               />
-            ) : (
-              <div className="w-2 h-2 bg-muted-foreground/50 rounded-full shrink-0" />
             )}
             
-            {/* Waveform - live when locked, static/progress otherwise */}
+            {/* Waveform */}
             {recordingState === 'locked' ? (
               <VoiceWaveformLive 
                 stream={mediaStream} 
                 isActive={true} 
-                barCount={20}
+                barCount={24}
                 className="flex-1"
               />
             ) : (
-              <div className="flex-1 flex items-center gap-0.5 h-5 relative">
-                {Array.from({ length: 20 }).map((_, i) => (
+              <div className="flex-1 flex items-center gap-0.5 h-6 relative">
+                {Array.from({ length: 24 }).map((_, i) => (
                   <motion.div
                     key={i}
                     initial={prefersReducedMotion ? {} : { scaleY: 0 }}
                     animate={{ scaleY: 1 }}
-                    transition={prefersReducedMotion ? { duration: 0 } : { delay: i * 0.015, duration: 0.15 }}
+                    transition={prefersReducedMotion ? {} : { delay: i * 0.012, duration: 0.15 }}
                     className={`flex-1 rounded-full transition-colors duration-150 ${
-                      (recordingState === 'preview' || recordingState === 'paused') && (i / 20) < previewProgress
+                      (recordingState === 'preview' || recordingState === 'paused') && (i / 24) < previewProgress
                         ? 'bg-primary'
                         : 'bg-muted-foreground/30'
                     }`}
                     style={{
-                      height: `${30 + Math.sin(i * 0.8) * 50}%`,
+                      height: `${30 + Math.sin(i * 0.7) * 50}%`,
                     }}
                   />
                 ))}
@@ -315,22 +429,69 @@ export function VoiceRecordingOverlay({
             <span className="text-xs font-medium tabular-nums shrink-0 text-foreground">
               {getPreviewTimeDisplay()}
               {(recordingState === 'paused' || recordingState === 'preview') && (
-                <span className="text-muted-foreground">/{timeString}</span>
+                <span className="text-muted-foreground"> / {timeString}</span>
               )}
             </span>
           </div>
+        </motion.div>
 
-          {/* Send button (green circle) - slightly smaller */}
+        {/* Bottom Row: Action buttons */}
+        <motion.div 
+          className="flex items-center justify-between px-2 py-1"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          {/* Trash button */}
           <motion.button
             whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
-            whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
+            onClick={handleCancel}
+            className="flex items-center justify-center w-11 h-11 rounded-full border-2 border-destructive shrink-0"
+          >
+            <Trash2 className="w-5 h-5 text-destructive" />
+          </motion.button>
+
+          {/* Center: Pause/Resume button */}
+          {recordingState === 'locked' ? (
+            <motion.button
+              whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
+              onClick={handlePause}
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-destructive shrink-0"
+            >
+              <Pause className="w-5 h-5 text-destructive-foreground" />
+            </motion.button>
+          ) : (
+            <motion.button
+              whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
+              onClick={handleResume}
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-destructive shrink-0"
+            >
+              <Mic className="w-5 h-5 text-destructive-foreground" />
+            </motion.button>
+          )}
+
+          {/* Send button */}
+          <motion.button
+            whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
             onClick={handleSend}
-            className="flex items-center justify-center w-10 h-10 rounded-full shrink-0"
+            className="flex items-center justify-center w-11 h-11 rounded-full shrink-0"
             style={{ backgroundColor: 'hsl(142, 70%, 45%)' }}
           >
-            <Send className="w-4 h-4 text-white" />
+            <Send className="w-5 h-5 text-white" />
           </motion.button>
-        </div>
+        </motion.div>
+
+        {/* Lock indicator animation on entry */}
+        {recordingState === 'locked' && (
+          <motion.div
+            className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full pointer-events-none"
+            initial={{ opacity: 1, scale: 1.5, y: 10 }}
+            animate={{ opacity: 0, scale: 1, y: -20 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+          >
+            <Lock className="w-6 h-6 text-primary" />
+          </motion.div>
+        )}
       </motion.div>
     </AnimatePresence>
   );
