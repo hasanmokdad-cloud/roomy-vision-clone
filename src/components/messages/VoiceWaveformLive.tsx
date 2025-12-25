@@ -63,8 +63,8 @@ export function VoiceWaveformLive({
       audioContextRef.current = audioContext;
 
       const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 64;
-      analyser.smoothingTimeConstant = 0.4;
+      analyser.fftSize = 128; // Increased for more frequency detail (64 bins)
+      analyser.smoothingTimeConstant = 0.3; // Lower for more responsive bars
       analyserRef.current = analyser;
 
       const source = audioContext.createMediaStreamSource(stream);
@@ -96,8 +96,10 @@ export function VoiceWaveformLive({
             sum += dataArray[i * step + j] || 0;
           }
           const avg = sum / step;
-          // Map 0-255 to 15-100 (percentage height)
-          const height = Math.max(15, Math.min(100, (avg / 255) * 100 + 15));
+          // More dynamic height mapping with slight jitter for organic feel
+          const baseHeight = Math.max(8, Math.min(100, (avg / 255) * 120));
+          const jitter = Math.random() * 3 - 1.5;
+          const height = Math.max(8, Math.min(100, baseHeight + jitter));
           newBars.push(height);
         }
 
@@ -119,10 +121,11 @@ export function VoiceWaveformLive({
       {bars.map((height, i) => (
         <div
           key={i}
-          className="w-0.5 bg-primary rounded-full"
+          className="flex-1 bg-primary rounded-full min-w-[2px] max-w-[3px]"
           style={{ 
             height: `${height}%`,
-            transition: prefersReducedMotion ? 'none' : 'height 75ms ease-out'
+            opacity: 0.7 + (height / 100) * 0.3, // Brighter when higher
+            transition: prefersReducedMotion ? 'none' : 'height 50ms ease-out' // Faster transitions
           }}
         />
       ))}

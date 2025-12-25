@@ -45,6 +45,7 @@ import { useBottomNav } from '@/contexts/BottomNavContext';
 import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { extractMeetingUrl } from '@/lib/meetingUtils';
+import { haptics } from '@/utils/haptics';
 
 type Conversation = {
   id: string;
@@ -1751,11 +1752,11 @@ export default function Messages() {
       
       // Entering cancel zone (slide left past -50px)
       if (deltaX < -50 && prevOffset.x >= -50 && recordingStartedRef.current) {
-        if ('vibrate' in navigator) navigator.vibrate(15);
+        haptics.voiceCancelNear();
       }
       // Entering lock zone (slide up past -40px)
       if (deltaY < -40 && prevOffset.y >= -40 && recordingStartedRef.current) {
-        if ('vibrate' in navigator) navigator.vibrate(15);
+        haptics.voiceLockNear();
       }
       
       // Update BOTH state and ref directly for immediate access in handleTouchEnd
@@ -1784,16 +1785,17 @@ export default function Messages() {
       if (recordingWasTriggered && !isLockedRef.current) {
         // Check slide gestures
         if (currentSlideOffset.x < -80) {
-          if ('vibrate' in navigator) navigator.vibrate([15, 30, 15]); // Cancel haptic
+          haptics.voiceCancelled();
           cancelRecording();
         } else if (currentSlideOffset.y < -60) {
-          if ('vibrate' in navigator) navigator.vibrate([10, 20, 10]); // Lock haptic
+          haptics.voiceLocked();
           setIsLocked(true);
           slideOffsetRef.current = { x: 0, y: 0 };
           setSlideOffset({ x: 0, y: 0 });
           toast({ title: 'Recording locked', description: 'Tap send when done' });
         } else if (recordingIsActive) {
           // Auto-send on release (only if recording actually started or is pending)
+          haptics.voiceSent();
           stopRecording();
         }
       }
@@ -1846,6 +1848,7 @@ export default function Messages() {
         // Set recordingStartedRef IMMEDIATELY before async startRecording
         // This ensures touch handlers know recording was triggered
         recordingStartedRef.current = true;
+        haptics.voiceStart();
         startRecording();
       }, 220);
     };

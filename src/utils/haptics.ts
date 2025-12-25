@@ -69,6 +69,43 @@ export const haptics = {
   boundary: () => {
     if (canVibrate()) navigator.vibrate([8, 20, 8]);
   },
+  
+  // ===== Voice Recording Haptics (WhatsApp-style) =====
+  
+  /** Voice recording started - short confirmation */
+  voiceStart: () => {
+    if (canVibrate()) navigator.vibrate(20);
+  },
+  
+  /** Approaching cancel threshold - warning pulse */
+  voiceCancelNear: () => {
+    if (canVibrate()) navigator.vibrate([8, 15, 8]);
+  },
+  
+  /** Cancel threshold reached - preparing to cancel */
+  voiceCancelReady: () => {
+    if (canVibrate()) navigator.vibrate(25);
+  },
+  
+  /** Voice message cancelled - distinctive error pattern */
+  voiceCancelled: () => {
+    if (canVibrate()) navigator.vibrate([40, 30, 40]);
+  },
+  
+  /** Approaching lock threshold */
+  voiceLockNear: () => {
+    if (canVibrate()) navigator.vibrate(12);
+  },
+  
+  /** Lock threshold reached - lock engaged */
+  voiceLocked: () => {
+    if (canVibrate()) navigator.vibrate([15, 40, 15]);
+  },
+  
+  /** Voice message sent - satisfying confirmation */
+  voiceSent: () => {
+    if (canVibrate()) navigator.vibrate([20, 40, 20]);
+  },
 };
 
 export type HapticType = keyof typeof haptics;
