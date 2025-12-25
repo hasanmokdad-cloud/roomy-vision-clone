@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-const VAPID_PUBLIC_KEY = 'BNxQvZrYvWnBzVXmQzlNLKvFJ8ZFXwqTJKzTmN8VjXZ9K7LmNpQrStUvWxYz0A1BcDeFgHiJkLmNoPqRsTuVwXy';
+// VAPID public key - safe to expose in frontend code
+// This must match the VAPID_PUBLIC_KEY secret in the backend
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BNxQvZrYvWnBzVXmQzlNLKvFJ8ZFXwqTJKzTmN8VjXZ9K7LmNpQrStUvWxYz0A1BcDeFgHiJkLmNoPqRsTuVwXy';
 
 // Detect iOS
 const isIOS = () => {
@@ -56,7 +58,6 @@ export function usePushNotifications() {
 
   const requestPermission = async () => {
     if (!('Notification' in window)) {
-      // iOS-specific guidance
       if (isIOSDevice) {
         toast({
           title: 'iOS Notifications',
@@ -98,7 +99,6 @@ export function usePushNotifications() {
 
   const subscribe = async () => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      // iOS-specific guidance
       if (isIOSDevice) {
         if (!isInstalledPWA) {
           toast({
