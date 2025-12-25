@@ -320,8 +320,7 @@ export default function Contact() {
                     </div>
                     <div>
                       <p className="font-semibold">Phone</p>
-                      <p className="text-sm text-foreground/70">+961 81 858 026</p>
-                      <p className="text-sm text-foreground/70">+961 76 977 539</p>
+                      <p className="text-sm text-foreground/70 italic">Coming Soon</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
