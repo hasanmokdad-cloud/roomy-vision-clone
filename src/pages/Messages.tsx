@@ -1636,23 +1636,27 @@ let otherUserName = 'User';
   };
 
   // Callback when permission is granted via setup modal
-  const handleMicPermissionGranted = async () => {
+  const handleMicPermissionGranted = () => {
     setHasShownMicSetup(true);
     localStorage.setItem('roomyMicSetupShown', 'true');
     
-    // Recheck permission to update context state
-    await checkPermission();
-    
-    // Sync to database
-    if (userId) {
-      syncToDatabase(userId);
-    }
+    // Note: MicSetupModal already synced 'granted' to database before calling this
+    // Do NOT call checkPermission() here as it resets Safari's state to 'prompt'
     
     toast({ 
       title: 'Voice messages enabled!', 
       description: 'Hold the mic button to record' 
     });
   };
+
+  // Refs to track current state values for touch handlers (avoid stale closures)
+  const isTrackingRef = useRef(false);
+  const recordingRef = useRef(recording);
+  const isLockedRef = useRef(isLocked);
+  
+  // Keep refs in sync with state
+  useEffect(() => { recordingRef.current = recording; }, [recording]);
+  useEffect(() => { isLockedRef.current = isLocked; }, [isLocked]);
 
   // Mobile long-press recording with native event listeners
   // IMPORTANT: touchmove/touchend are attached to document because the mic button
@@ -1662,10 +1666,9 @@ let otherUserName = 'User';
     
     const micButton = micButtonRef.current;
     let pressTimer: NodeJS.Timeout;
-    let isTracking = false;
     
     const handleTouchMove = (e: TouchEvent) => {
-      if (!isTracking) return;
+      if (!isTrackingRef.current) return;
       e.preventDefault();
       
       const deltaX = e.touches[0].clientX - touchStartPosRef.current.x;
@@ -1674,19 +1677,19 @@ let otherUserName = 'User';
     };
     
     const handleTouchEnd = (e: TouchEvent) => {
-      if (!isTracking) return;
+      if (!isTrackingRef.current) return;
       e.preventDefault();
       clearTimeout(pressTimer);
       
       // Remove document listeners
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
-      isTracking = false;
+      isTrackingRef.current = false;
       
-      // Use ref to get current values (avoid stale closures)
+      // Use refs to get current values (avoid stale closures)
       const currentSlideOffset = slideOffsetRef.current;
       
-      if (recording && !isLocked) {
+      if (recordingRef.current && !isLockedRef.current) {
         // Check slide gestures - use the final slideOffset values
         if (currentSlideOffset.x < -100) {
           cancelRecording();
@@ -1695,13 +1698,13 @@ let otherUserName = 'User';
           setSlideOffset({ x: 0, y: 0 });
           toast({ title: 'Recording locked', description: 'Tap send when done' });
         } else {
-          stopRecording();
+          stopRecording(); // Auto-sends on release in unlocked state
         }
       }
       setSlideOffset({ x: 0, y: 0 });
     };
     
-    const handleTouchStart = async (e: TouchEvent) => {
+    const handleTouchStart = (e: TouchEvent) => {
       e.preventDefault();
       e.stopPropagation();
       
@@ -1719,7 +1722,7 @@ let otherUserName = 'User';
       
       // Permission is granted - proceed with hold-to-record
       touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      isTracking = true;
+      isTrackingRef.current = true;
       
       // Attach document-level listeners for move and end
       // This allows tracking even after mic button is removed from DOM by overlay
@@ -1741,7 +1744,7 @@ let otherUserName = 'User';
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isMobile, permission, recording, isLocked]);
+  }, [isMobile, permission]); // Removed recording, isLocked - use refs instead to avoid re-attaching listeners
 
   const cancelRecording = () => {
     shouldUploadVoiceRef.current = false;
