@@ -2531,7 +2531,7 @@ export default function Messages() {
                               </div>
                               
                             {/* Row 2: Message preview + time (Instagram style: "Message · 1d") */}
-                              <div className="flex items-center gap-1 mt-0.5">
+                              <div className="flex items-center gap-1 mt-0.5 overflow-hidden min-w-0">
                                 {conv.last_message_sender_id === userId && (
                                   <MessageStatusIcon status={conv.last_message_status} />
                                 )}

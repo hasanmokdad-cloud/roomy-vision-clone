@@ -36,6 +36,7 @@ interface Device {
 export default function DevicesPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -137,7 +138,6 @@ export default function DevicesPage() {
     );
   }
 
-  const isMobile = useIsMobile();
   
   return (
     <SwipeableSubPage enabled={isMobile}>
