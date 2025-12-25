@@ -2582,11 +2582,11 @@ export default function Messages() {
                                 {conv.last_message_sender_id === userId && (
                                   <MessageStatusIcon status={conv.last_message_status} />
                                 )}
-                                <p className={`text-sm truncate flex-1 min-w-0 ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                                <p className={`text-sm truncate max-w-[65%] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                                   {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
                                 </p>
                                 {timeAgo && (
-                                  <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">· {timeAgo}</span>
+                                  <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap ml-1">· {timeAgo}</span>
                                 )}
                               </div>
                             </div>
