@@ -1,4 +1,4 @@
-// Messages.tsx v4.0 - Updated 2025-12-25 - Aggressive debug build with banner + logging
+// Messages.tsx - Production build
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -298,16 +298,6 @@ export default function Messages() {
     );
   }
 
-  // DEBUG: Service Worker check - DELETE AFTER DEBUGGING
-  useEffect(() => {
-    console.log('🔧 [v4] Messages component mounted, role:', role, 'isMobile:', isMobile);
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        console.log('📦 [v4] Service Workers:', registrations.length);
-        registrations.forEach(r => console.log('  - SW scope:', r.scope, 'state:', r.active?.state));
-      });
-    }
-  }, []);
 
   // Get student ID for friends functionality
   useEffect(() => {
@@ -2375,7 +2365,7 @@ export default function Messages() {
                           </Avatar>
                         </div>
                         
-                        <div className="flex-1 min-w-0 overflow-hidden">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
                             {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
                             {conv.muted_until && new Date(conv.muted_until) > new Date() && (
@@ -2386,15 +2376,15 @@ export default function Messages() {
                             </span>
                           </div>
                           
-                          <div className="flex items-center gap-1 mt-0.5">
+                          <div className="flex items-center gap-1 mt-0.5 min-w-0">
                             {conv.last_message_sender_id === userId && (
                               <MessageStatusIcon status={conv.last_message_status} />
                             )}
-                            <p className={`text-sm truncate min-w-0 flex-1 ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                            <p className={`text-sm truncate max-w-[65%] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                               {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
                             </p>
                             {timeAgo && (
-                              <span className="text-sm text-muted-foreground shrink-0 ml-1">· {timeAgo}</span>
+                              <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap ml-1">· {timeAgo}</span>
                             )}
                           </div>
                         </div>
@@ -2422,10 +2412,6 @@ export default function Messages() {
       >
         {/* Conversations List - Edge-to-edge, no Card wrapper */}
         <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-[350px] border-r border-border bg-background ${isMobile ? 'h-screen' : 'h-[calc(100vh-80px)]'}`}>
-            {/* TEMP DEBUG BANNER - DELETE AFTER DEBUGGING */}
-            <div className="bg-red-500 text-white p-2 text-center text-xs font-bold">
-              BUILD: Dec-25-2025-v4 | {role} | Convs: {conversations.length}
-            </div>
             
             <div className={`p-4 border-b border-border ${isMobile ? 'pt-6' : ''} space-y-3`}>
               <div className="flex items-center justify-between w-full">
@@ -2434,8 +2420,6 @@ export default function Messages() {
                     <MessageSquare className="w-6 h-6" />
                     Messages
                   </h2>
-                  {/* DEBUG: Version indicator - Remove after verifying deployment */}
-                  <span className="text-[10px] text-muted-foreground/50 mt-0.5">v4.0 | Role: {role || 'unknown'}</span>
                 </div>
               </div>
 
@@ -2514,8 +2498,6 @@ export default function Messages() {
                           .replace(' year', 'y')
                         : '';
                       
-                      // DEBUG: Log each conversation render - DELETE AFTER DEBUGGING
-                      console.log('🎯 [v4] Rendering conv:', conv.id, 'name:', conv.other_user_name, 'timeAgo:', timeAgo, 'isMobile:', isMobile);
                       
                       const chatRowContent = (
                         <div 
@@ -2540,7 +2522,7 @@ export default function Messages() {
                             </div>
                             
                             {/* Content - Instagram style: name on top, message + time on bottom */}
-                            <div className="flex-1 min-w-0 overflow-hidden">
+                            <div className="flex-1 min-w-0">
                               {/* Row 1: Name with icons */}
                               <div className="flex items-center gap-1.5">
                                 {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
@@ -2552,16 +2534,16 @@ export default function Messages() {
                                 </span>
                               </div>
                               
-                            {/* Row 2: Message preview + time (Instagram style: "Message · 1d") */}
-                              <div className="flex items-center gap-1 mt-0.5 overflow-hidden min-w-0">
+                              {/* Row 2: Message preview + time (Instagram style: "Message · 1d") */}
+                              <div className="flex items-center gap-1 mt-0.5 min-w-0">
                                 {conv.last_message_sender_id === userId && (
                                   <MessageStatusIcon status={conv.last_message_status} />
                                 )}
-                                <p className={`text-sm truncate min-w-0 flex-1 ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                                <p className={`text-sm truncate max-w-[65%] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                                   {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
                                 </p>
                                 {timeAgo && (
-                                  <span className="text-sm text-muted-foreground shrink-0 ml-1">· {timeAgo}</span>
+                                  <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap ml-1">· {timeAgo}</span>
                                 )}
                               </div>
                             </div>
