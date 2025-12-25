@@ -210,6 +210,9 @@ export default function Messages() {
   const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
   const shouldUploadVoiceRef = useRef(true);
   const [slideOffset, setSlideOffset] = useState({ x: 0, y: 0 });
+  const slideOffsetRef = useRef(slideOffset);
+  // Keep ref in sync with state for use in touch event closures
+  useEffect(() => { slideOffsetRef.current = slideOffset; }, [slideOffset]);
   const [isLocked, setIsLocked] = useState(false);
   // Phase 3: Voice recording enhancements
   const [isPaused, setIsPaused] = useState(false);
@@ -1652,11 +1655,51 @@ let otherUserName = 'User';
   };
 
   // Mobile long-press recording with native event listeners
+  // IMPORTANT: touchmove/touchend are attached to document because the mic button
+  // gets removed from DOM when the recording overlay appears
   useEffect(() => {
     if (!isMobile || !micButtonRef.current) return;
     
     const micButton = micButtonRef.current;
     let pressTimer: NodeJS.Timeout;
+    let isTracking = false;
+    
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isTracking) return;
+      e.preventDefault();
+      
+      const deltaX = e.touches[0].clientX - touchStartPosRef.current.x;
+      const deltaY = e.touches[0].clientY - touchStartPosRef.current.y;
+      setSlideOffset({ x: deltaX, y: deltaY });
+    };
+    
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!isTracking) return;
+      e.preventDefault();
+      clearTimeout(pressTimer);
+      
+      // Remove document listeners
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+      isTracking = false;
+      
+      // Use ref to get current values (avoid stale closures)
+      const currentSlideOffset = slideOffsetRef.current;
+      
+      if (recording && !isLocked) {
+        // Check slide gestures - use the final slideOffset values
+        if (currentSlideOffset.x < -100) {
+          cancelRecording();
+        } else if (currentSlideOffset.y < -80) {
+          setIsLocked(true);
+          setSlideOffset({ x: 0, y: 0 });
+          toast({ title: 'Recording locked', description: 'Tap send when done' });
+        } else {
+          stopRecording();
+        }
+      }
+      setSlideOffset({ x: 0, y: 0 });
+    };
     
     const handleTouchStart = async (e: TouchEvent) => {
       e.preventDefault();
@@ -1669,14 +1712,19 @@ let otherUserName = 'User';
       }
       
       // If permission not yet granted, show setup modal on TAP (not hold)
-      // This prevents the browser popup from interrupting the hold gesture
       if (permission === 'prompt') {
         setShowMicSetupModal(true);
-        return; // Don't start recording timer - user needs to grant permission first
+        return;
       }
       
       // Permission is granted - proceed with hold-to-record
       touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      isTracking = true;
+      
+      // Attach document-level listeners for move and end
+      // This allows tracking even after mic button is removed from DOM by overlay
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd, { passive: false });
       
       // Start recording after 220ms hold
       pressTimer = setTimeout(() => {
@@ -1684,47 +1732,16 @@ let otherUserName = 'User';
       }, 220);
     };
     
-    const handleTouchEnd = (e: TouchEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      clearTimeout(pressTimer);
-      
-      if (recording && !isLocked) {
-        // Check slide gestures
-        if (slideOffset.x < -100) {
-          cancelRecording();
-        } else if (slideOffset.y < -80) {
-          setIsLocked(true);
-          setSlideOffset({ x: 0, y: 0 });
-          toast({ title: 'Recording locked', description: 'Tap send when done' });
-        } else {
-          stopRecording();
-        }
-      }
-      setSlideOffset({ x: 0, y: 0 });
-    };
-    
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!recording) return;
-      e.preventDefault();
-      e.stopPropagation();
-      
-      const deltaX = e.touches[0].clientX - touchStartPosRef.current.x;
-      const deltaY = e.touches[0].clientY - touchStartPosRef.current.y;
-      setSlideOffset({ x: deltaX, y: deltaY });
-    };
-    
-    // Attach with { passive: false } to allow preventDefault
+    // Only attach touchstart to mic button
     micButton.addEventListener('touchstart', handleTouchStart, { passive: false });
-    micButton.addEventListener('touchend', handleTouchEnd, { passive: false });
-    micButton.addEventListener('touchmove', handleTouchMove, { passive: false });
     
     return () => {
       micButton.removeEventListener('touchstart', handleTouchStart);
-      micButton.removeEventListener('touchend', handleTouchEnd);
-      micButton.removeEventListener('touchmove', handleTouchMove);
+      // Clean up any lingering document listeners
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isMobile, permission, recording, isLocked, slideOffset.x, slideOffset.y]);
+  }, [isMobile, permission, recording, isLocked]);
 
   const cancelRecording = () => {
     shouldUploadVoiceRef.current = false;
