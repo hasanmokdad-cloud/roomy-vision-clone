@@ -238,6 +238,10 @@ export default function Messages() {
   const [hasShownMicSetup, setHasShownMicSetup] = useState(() => {
     return localStorage.getItem('roomyMicSetupShown') === 'true';
   });
+  // Track if user was trying to record when permission modal appeared
+  const pendingRecordingRef = useRef(false);
+  // Safety timeout ref to reset stuck states
+  const stuckResetTimeoutRef = useRef<NodeJS.Timeout>();
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
   // In-conversation search state
   const [showConversationSearch, setShowConversationSearch] = useState(false);
@@ -1493,13 +1497,16 @@ export default function Messages() {
       return;
     }
 
+    // Use ref for permission to avoid stale closure issues
+    const currentPermission = permissionRef.current;
+
     // Double-check permission before recording (defensive)
-    if (permission === 'denied') {
+    if (currentPermission === 'denied') {
       setShowMicPermissionModal(true);
       return;
     }
     
-    if (permission === 'prompt') {
+    if (currentPermission === 'prompt') {
       setShowMicSetupModal(true);
       return;
     }
@@ -1510,6 +1517,11 @@ export default function Messages() {
       setIsPaused(false);
       setIsPreviewPlaying(false);
       setPreviewProgress(0);
+      
+      // Clear any existing safety timeout
+      if (stuckResetTimeoutRef.current) {
+        clearTimeout(stuckResetTimeoutRef.current);
+      }
       
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       setMediaStream(stream); // Store for live waveform
@@ -1529,30 +1541,43 @@ export default function Messages() {
       };
 
       mediaRecorder.onstop = async () => {
+        // CRITICAL: Reset all recording states FIRST before any async work
+        // This ensures mic button is immediately responsive
         setIsRecordingActive(false);
         setMediaStream(null);
-        setRecording(false); // Ensure recording flag is reset
-        setIsLocked(false); // Reset locked state so button works again
-        setSlideOffset({ x: 0, y: 0 }); // Reset slide offset
+        setRecording(false);
+        setIsLocked(false);
+        setSlideOffset({ x: 0, y: 0 });
+        setIsPaused(false);
+        setIsPreviewPlaying(false);
+        setPreviewProgress(0);
+        
         // Remove recording attribute to re-enable swipe
         document.body.removeAttribute('data-recording');
         
-        // Only upload if not cancelled
+        // Clear safety timeout since we're stopping normally
+        if (stuckResetTimeoutRef.current) {
+          clearTimeout(stuckResetTimeoutRef.current);
+        }
+        
+        // Stop timer
+        if (recordingTimerRef.current) {
+          clearInterval(recordingTimerRef.current);
+        }
+        setRecordingDuration(0);
+        
+        // Only upload if not cancelled (async work after state reset)
         if (shouldUploadVoiceRef.current && audioChunksRef.current.length > 0) {
           const actualMimeType = mimeType || mediaRecorder.mimeType;
           const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
           
           if (audioBlob.size > 0) {
-            // Calculate duration from actual recording time with safety bounds
-            // Fallback to recordingDuration state if recordingStartTime wasn't set
             let duration: number;
             if (recordingStartTime > 0) {
               duration = Math.max(1, Math.ceil((Date.now() - recordingStartTime) / 1000));
             } else {
-              // Fallback to the timer-based duration if start time is invalid
               duration = Math.max(1, recordingDuration);
             }
-            // Safety cap: voice messages shouldn't exceed 15 minutes (900 seconds)
             duration = Math.min(duration, 900);
             await uploadVoiceMessage(audioBlob, duration);
           } else {
@@ -1566,14 +1591,6 @@ export default function Messages() {
         
         stream.getTracks().forEach((track) => track.stop());
         audioChunksRef.current = [];
-        
-        if (recordingTimerRef.current) {
-          clearInterval(recordingTimerRef.current);
-        }
-        setRecordingDuration(0);
-        setIsPaused(false);
-        setIsPreviewPlaying(false);
-        setPreviewProgress(0);
       };
 
       mediaRecorder.start(100);
@@ -1646,10 +1663,26 @@ export default function Messages() {
     // Note: MicSetupModal already synced 'granted' to database before calling this
     // Do NOT call checkPermission() here as it resets Safari's state to 'prompt'
     
-    toast({ 
-      title: 'Voice messages enabled!', 
-      description: 'Hold the mic button to record' 
-    });
+    // Update ref immediately so startRecording sees 'granted'
+    permissionRef.current = 'granted';
+    
+    // If user was trying to record when modal appeared, auto-start now
+    if (pendingRecordingRef.current) {
+      pendingRecordingRef.current = false;
+      // Small delay to ensure modal is fully closed
+      setTimeout(() => {
+        startRecording();
+      }, 100);
+      toast({ 
+        title: 'Recording started!', 
+        description: 'Hold or lock to continue recording' 
+      });
+    } else {
+      toast({ 
+        title: 'Voice messages enabled!', 
+        description: 'Hold the mic button to record' 
+      });
+    }
   };
 
   // Refs to track current state values for touch handlers (avoid stale closures)
@@ -1680,6 +1713,19 @@ export default function Messages() {
       
       const deltaX = e.touches[0].clientX - touchStartPosRef.current.x;
       const deltaY = e.touches[0].clientY - touchStartPosRef.current.y;
+      
+      // Haptic feedback when crossing thresholds
+      const prevOffset = slideOffsetRef.current;
+      
+      // Entering cancel zone (slide left past -50px)
+      if (deltaX < -50 && prevOffset.x >= -50 && recordingStartedRef.current) {
+        if ('vibrate' in navigator) navigator.vibrate(15);
+      }
+      // Entering lock zone (slide up past -40px)
+      if (deltaY < -40 && prevOffset.y >= -40 && recordingStartedRef.current) {
+        if ('vibrate' in navigator) navigator.vibrate(15);
+      }
+      
       setSlideOffset({ x: deltaX, y: deltaY });
     };
     
@@ -1698,10 +1744,12 @@ export default function Messages() {
       
       // ONLY process gestures if recording actually started (held for 220ms+)
       if (recordingStartedRef.current && recordingRef.current && !isLockedRef.current) {
-        // Check slide gestures - use the final slideOffset values
-        if (currentSlideOffset.x < -100) {
+        // Check slide gestures - reduced thresholds for easier triggering
+        if (currentSlideOffset.x < -80) { // Reduced from -100
+          if ('vibrate' in navigator) navigator.vibrate([15, 30, 15]); // Cancel haptic
           cancelRecording();
-        } else if (currentSlideOffset.y < -80) {
+        } else if (currentSlideOffset.y < -60) { // Reduced from -80
+          if ('vibrate' in navigator) navigator.vibrate([10, 20, 10]); // Lock haptic
           setIsLocked(true);
           setSlideOffset({ x: 0, y: 0 });
           toast({ title: 'Recording locked', description: 'Tap send when done' });
@@ -1727,6 +1775,7 @@ export default function Messages() {
       
       // If permission not yet granted, show setup modal on TAP (not hold)
       if (currentPermission === 'prompt') {
+        pendingRecordingRef.current = true; // Mark that user wants to record
         setShowMicSetupModal(true);
         return;
       }

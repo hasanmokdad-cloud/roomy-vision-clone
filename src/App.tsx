@@ -21,6 +21,7 @@ import { ScrollPositionProvider } from "@/contexts/ScrollPositionContext";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { useIsMobile } from "@/hooks/use-mobile";
 import OnboardingGuard from "@/components/guards/OnboardingGuard";
+import { NativePermissionsProvider } from "@/providers/NativePermissionsProvider";
 
 // Lazy load route components
 const CheckEmail = lazy(() => import("./pages/auth/CheckEmail"));
@@ -398,9 +399,11 @@ const App = () => (
                       <Toaster />
                       <Sonner />
                       <BrowserRouter>
-                        <GlobalAuthModal />
-                        <OnboardingFlow />
-                        <AppRoutes />
+                        <NativePermissionsProvider>
+                          <GlobalAuthModal />
+                          <OnboardingFlow />
+                          <AppRoutes />
+                        </NativePermissionsProvider>
                       </BrowserRouter>
                     </div>
                   </ScrollPositionProvider>
