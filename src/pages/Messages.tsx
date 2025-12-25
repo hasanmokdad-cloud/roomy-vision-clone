@@ -2543,8 +2543,8 @@ export default function Messages() {
                       
                       
                       const chatRowContent = (
-                        <div 
-                          className={`relative cursor-pointer hover:bg-muted/50 transition-colors ${
+                          <div 
+                            className={`relative group cursor-pointer hover:bg-muted/50 transition-colors ${
                             selectedConversation === conv.id ? 'bg-muted' : ''
                           } ${hasUnread ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
                           onClick={() => {
