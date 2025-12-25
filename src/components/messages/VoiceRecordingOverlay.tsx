@@ -294,7 +294,7 @@ export function VoiceRecordingOverlay({
 
           {/* Center: "slide to cancel <" - ONLY this element is draggable horizontally */}
           <motion.div 
-            className="flex-1 flex items-center justify-center relative overflow-hidden"
+            className="flex-1 flex items-center justify-center"
             initial={{ x: 100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ ...springTransition, delay: 0.1 }}
@@ -303,10 +303,14 @@ export function VoiceRecordingOverlay({
               drag="x"
               dragConstraints={{ left: -150, right: 0 }}
               dragElastic={0.1}
-              onPan={handleCancelTextPan}
-              onPanEnd={handleCancelTextPanEnd}
-              style={{ x: slideOffset.x }}
-              className="flex items-center gap-1 cursor-grab active:cursor-grabbing touch-none select-none"
+              dragSnapToOrigin
+              onDragEnd={(_, info) => {
+                if (info.offset.x < -80 || info.velocity.x < -400) {
+                  haptics.error();
+                  setShowCancelAnimation(true);
+                }
+              }}
+              className="relative flex items-center gap-1 cursor-grab active:cursor-grabbing touch-none select-none overflow-hidden"
             >
               <motion.div
                 animate={prefersReducedMotion ? {} : { x: [0, -4, 0] }}
@@ -318,30 +322,28 @@ export function VoiceRecordingOverlay({
                 Slide to cancel
               </span>
               
-              {/* Shimmer effect */}
+              {/* Shimmer effect - RIGHT TO LEFT, constrained to text only */}
               {!prefersReducedMotion && (
                 <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"
-                  initial={{ x: '-100%' }}
-                  animate={{ x: '100%' }}
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(to left, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%)',
+                    width: '100%',
+                  }}
+                  initial={{ x: '100%' }}
+                  animate={{ x: '-100%' }}
                   transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
                 />
               )}
             </motion.div>
           </motion.div>
 
-          {/* Right: Green mic button with lock drag zone */}
+          {/* Right: Green mic button - NOT draggable, fixed position */}
           <motion.div
-            drag="y"
-            dragConstraints={{ top: -120, bottom: 0 }}
-            dragElastic={0.1}
-            onPan={handleLockPan}
-            onPanEnd={handleLockPanEnd}
             initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1, filter: `blur(${Math.min(slideOffset.y * -0.03, 4)}px)` }}
+            animate={{ scale: 1, opacity: 1 }}
             transition={{ ...springTransition }}
-            whileTap={{ scale: 0.95 }}
-            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 cursor-grab active:cursor-grabbing touch-none"
+            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
             style={{ backgroundColor: 'hsl(142, 70%, 45%)' }}
           >
             <Mic className="w-5 h-5 text-white" />
