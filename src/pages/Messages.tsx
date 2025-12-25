@@ -2932,13 +2932,17 @@ export default function Messages() {
 
                   {/* Reply Preview */}
                   {replyToMessage && (
-                    <div className="mb-2 bg-muted rounded-lg p-3 flex items-start gap-2">
+                    <div className="mb-2 bg-muted rounded-lg p-3 flex items-start gap-2 overflow-hidden">
                       <div className="flex-1 min-w-0 overflow-hidden">
                         <p className="text-xs font-semibold text-primary truncate">
                           Replying to {replyToMessage.sender_id === userId ? 'yourself' : conversations.find(c => c.id === selectedConversation)?.other_user_name}
                         </p>
                         <p className="text-sm text-muted-foreground truncate">
-                          {replyToMessage.body || 'Media message'}
+                          {replyToMessage.body 
+                            ? replyToMessage.body.length > 100 
+                              ? `${replyToMessage.body.slice(0, 100)}...` 
+                              : replyToMessage.body 
+                            : 'Media message'}
                         </p>
                       </div>
                       <Button
