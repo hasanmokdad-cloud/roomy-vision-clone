@@ -237,7 +237,7 @@ export default function Messages() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [activeTab, setActiveTab] = useState<'chats' | 'friends'>('chats');
   const [searchQuery, setSearchQuery] = useState('');
-  const [hoveredConversation, setHoveredConversation] = useState<string | null>(null);
+  // Removed hoveredConversation state - three-dot menu is now always visible on desktop
   const [studentId, setStudentId] = useState<string | null>(null);
   const [pinnedMessages, setPinnedMessages] = useState<Message[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -2551,8 +2551,6 @@ export default function Messages() {
                             setSelectedConversation(conv.id);
                             loadMessages(conv.id);
                           }}
-                          onMouseEnter={() => setHoveredConversation(conv.id)}
-                          onMouseLeave={() => setHoveredConversation(null)}
                         >
                           <div className="flex items-center gap-3 px-4 py-3">
                             {/* Avatar - 56px like Instagram */}
@@ -2584,11 +2582,11 @@ export default function Messages() {
                                 {conv.last_message_sender_id === userId && (
                                   <MessageStatusIcon status={conv.last_message_status} />
                                 )}
-                                <p className={`text-sm truncate max-w-[65%] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                                <p className={`text-sm truncate flex-1 min-w-0 ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                                   {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
                                 </p>
                                 {timeAgo && (
-                                  <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap ml-1">· {timeAgo}</span>
+                                  <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">· {timeAgo}</span>
                                 )}
                               </div>
                             </div>
@@ -2600,12 +2598,9 @@ export default function Messages() {
                                 <div className="w-2.5 h-2.5 rounded-full bg-primary" />
                               )}
                               
-                              {/* Three-dots context menu - DESKTOP ONLY, appears on hover (state-based for reliability) */}
-                              {!isMobile && hoveredConversation === conv.id && (
-                                <div 
-                                  className="animate-in fade-in duration-150"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
+                              {/* Three-dots context menu - DESKTOP ONLY, always visible */}
+                              {!isMobile && (
+                                <div onClick={(e) => e.stopPropagation()}>
                                   <ConversationContextMenu
                                     conversationId={conv.id}
                                     isPinned={conv.is_pinned || false}
