@@ -407,10 +407,27 @@ async function handleReservationPayment(supabaseClient: any, payload: any, metad
     console.log('Admin in-app notifications sent to', admins.length, 'admins');
   }
 
-  // ========== SEND EMAIL NOTIFICATIONS ==========
+  // ========== SEND EMAIL & WHATSAPP NOTIFICATIONS ==========
 
-  // Queue owner email notification via notifications_log (triggers send-owner-notification)
+  // Queue owner email + WhatsApp notification via notifications_log (triggers send-owner-notification)
   if (owner && ownerId) {
+    // Check if owner has WhatsApp notifications enabled
+    const { data: ownerPrefs } = await supabaseClient
+      .from('owners')
+      .select('notify_whatsapp, notify_email, phone_number')
+      .eq('id', ownerId)
+      .single();
+
+    // Determine notification channel based on owner preferences
+    let notificationChannel = 'email';
+    if (ownerPrefs?.notify_whatsapp && ownerPrefs?.phone_number) {
+      if (ownerPrefs?.notify_email !== false) {
+        notificationChannel = 'both'; // Send both email and WhatsApp
+      } else {
+        notificationChannel = 'whatsapp'; // Only WhatsApp
+      }
+    }
+
     const { data: notifLog } = await supabaseClient
       .from('notifications_log')
       .insert({
@@ -419,7 +436,8 @@ async function handleReservationPayment(supabaseClient: any, payload: any, metad
         event_type: 'new_reservation',
         sent_to: owner.email,
         status: 'pending',
-        channel: 'email',
+        channel: notificationChannel,
+        language: ownerPrefs?.phone_number?.startsWith('+961') ? 'AR' : 'EN',
         fields_changed: {
           student_name: studentFullName,
           room_name: roomName,
@@ -432,12 +450,42 @@ async function handleReservationPayment(supabaseClient: any, payload: any, metad
       .select()
       .single();
 
-    // Invoke the send-owner-notification function
+    // Invoke the send-owner-notification function (handles both email and WhatsApp)
     if (notifLog) {
       await supabaseClient.functions.invoke('send-owner-notification', {
         body: { notificationId: notifLog.id }
-      }).catch((err: any) => console.error('Error sending owner payout email:', err));
+      }).catch((err: any) => console.error('Error sending owner payout notification:', err));
     }
+
+    console.log('Owner notification queued:', { channel: notificationChannel, ownerId });
+  }
+
+  // ========== SEND PUSH NOTIFICATIONS ==========
+
+  // Send push notification to student's registered devices
+  if (student?.user_id) {
+    await supabaseClient.functions.invoke('send-push-notification', {
+      body: {
+        user_id: student.user_id,
+        title: 'Payment Confirmed!',
+        body: `Your room "${roomName}" at ${dormName} is now reserved.`,
+        url: '/my-reservations',
+        icon: '/favicon.ico'
+      }
+    }).catch((err: any) => console.error('Error sending student push notification:', err));
+  }
+
+  // Send push notification to owner's registered devices
+  if (owner?.user_id) {
+    await supabaseClient.functions.invoke('send-push-notification', {
+      body: {
+        user_id: owner.user_id,
+        title: 'New Reservation Payment!',
+        body: `${studentFullName} reserved "${roomName}" in ${dormName}. You received $${ownerPayout.toFixed(2)}.`,
+        url: '/owner/finance',
+        icon: '/favicon.ico'
+      }
+    }).catch((err: any) => console.error('Error sending owner push notification:', err));
   }
 
   // Send student receipt email
