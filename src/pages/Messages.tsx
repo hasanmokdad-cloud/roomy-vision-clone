@@ -562,11 +562,15 @@ export default function Messages() {
     if (userId) {
       loadFromDatabase(userId).then((dbPermission) => {
         setMicPermissionLoaded(true);
-        // If database says 'granted', user already has permission - don't show modal
+        // Only skip modal if ACTUALLY granted (not if Safari returned 'prompt' for re-verification)
+        // Safari will return 'prompt' even when DB says granted - that means modal must show
         if (dbPermission === 'granted') {
           setHasShownMicSetup(true);
           localStorage.setItem('roomyMicSetupShown', 'true');
-          console.log('[Messages] DB permission is granted, skipping mic setup modal');
+          console.log('[Messages] DB permission is granted AND verified, skipping mic setup modal');
+        } else if (dbPermission === 'prompt') {
+          // Safari returned 'prompt' - modal will show via next useEffect
+          console.log('[Messages] Safari needs re-verification this session, modal will show');
         }
       });
     }
