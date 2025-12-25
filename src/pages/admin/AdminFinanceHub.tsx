@@ -285,21 +285,9 @@ export default function AdminFinanceHub() {
                       <span className="font-medium">Admin Wallet</span>
                     </div>
                     <div className="text-5xl font-black bg-gradient-to-r from-primary to-teal-500 bg-clip-text text-transparent">
-                      ${balance.toFixed(2)}
+                      ${totalCommissions.toFixed(2)}
                     </div>
-                    <p className="text-sm text-foreground/60">Current Balance</p>
-                  </div>
-                  
-                  <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 rounded-xl bg-green-500/10">
-                        <TrendingUp className="w-5 h-5 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-foreground/60">Total Commissions Earned</p>
-                        <p className="text-xl font-bold text-green-600">${totalCommissions.toFixed(2)}</p>
-                      </div>
-                    </div>
+                    <p className="text-sm text-foreground/60">Total Commissions Earned</p>
                   </div>
                 </div>
               </div>

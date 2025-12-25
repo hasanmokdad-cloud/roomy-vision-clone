@@ -11,8 +11,8 @@ interface MobileSwipeLayoutProps {
 
 // Student pages in correct order matching bottom nav
 const studentPages = ['/wishlists', '/ai-match', '/listings', '/messages', '/profile'];
-const ownerPages = ['/owner/wallet', '/owner/bookings', '/owner', '/messages', '/profile'];
-const adminPages = ['/admin/wallet', '/admin/chats', '/admin', '/messages', '/profile'];
+const ownerPages = ['/owner/finance', '/owner/bookings', '/owner', '/messages', '/profile'];
+const adminPages = ['/admin/finance', '/admin/chats', '/admin', '/messages', '/profile'];
 
 export function MobileSwipeLayout({ children }: MobileSwipeLayoutProps) {
   const isMobile = useIsMobile();
