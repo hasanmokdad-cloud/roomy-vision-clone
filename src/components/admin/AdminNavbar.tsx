@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, MessageSquare, Info, Phone, LogOut, User, Settings, Building2 } from 'lucide-react';
+import { Menu, X, MessageSquare, Info, Phone, LogOut, User, Settings, Building2, Globe } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,7 @@ import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminNotificationBell } from '@/components/admin/AdminNotificationBell';
 import { supabase } from '@/integrations/supabase/client';
+import { LanguageModal } from '@/components/LanguageModal';
 
 interface AdminNavbarProps {
   sidebarOpen: boolean;
@@ -26,6 +27,7 @@ export function AdminNavbar({ sidebarOpen, onToggleSidebar }: AdminNavbarProps) 
   const { userId, role, signOut } = useAuth();
   const { count: unreadMessages } = useUnreadMessagesCount(userId, role);
   const [adminId, setAdminId] = useState<string | null>(null);
+  const [languageModalOpen, setLanguageModalOpen] = useState(false);
 
   // Fetch admin record ID for notifications
   useEffect(() => {
@@ -131,6 +133,10 @@ export function AdminNavbar({ sidebarOpen, onToggleSidebar }: AdminNavbarProps) 
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLanguageModalOpen(true)}>
+                <Globe className="w-4 h-4 mr-2" />
+                Language
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                 <LogOut className="w-4 h-4 mr-2" />
@@ -140,6 +146,8 @@ export function AdminNavbar({ sidebarOpen, onToggleSidebar }: AdminNavbarProps) 
           </DropdownMenu>
         </div>
       </div>
+
+      <LanguageModal open={languageModalOpen} onOpenChange={setLanguageModalOpen} />
     </nav>
   );
 }

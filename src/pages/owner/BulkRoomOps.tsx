@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { OwnerLayout } from "@/components/owner/OwnerLayout";
 import { OwnerBreadcrumb } from "@/components/owner/OwnerBreadcrumb";
-import { ArrowLeft, Download, Upload, Building2, FileSpreadsheet, CheckCircle2, AlertCircle, Image, Video, Check, X, Zap, DollarSign, ToggleLeft, ToggleRight, CheckSquare, Square } from "lucide-react";
+import { ArrowLeft, Download, Upload, Building2, FileSpreadsheet, CheckCircle2, AlertCircle, Image, Video, DollarSign, ToggleLeft, ToggleRight, CheckSquare, Square, Layers, Filter } from "lucide-react";
 import { OwnerTableSkeleton } from "@/components/skeletons/OwnerSkeletons";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as XLSX from "xlsx";
 import imageCompression from "browser-image-compression";
 
@@ -75,7 +76,6 @@ export default function BulkRoomOps() {
       if (!owner) return;
       setOwnerId(owner.id);
 
-      // Fetch all dorms for this owner
       const { data: ownerDorms, error: dormsError } = await supabase
         .from("dorms")
         .select("id, name, dorm_name, verification_status")
@@ -89,7 +89,6 @@ export default function BulkRoomOps() {
         return;
       }
 
-      // Fetch rooms for each dorm
       const dormsWithRooms: DormWithRooms[] = [];
       for (const dorm of ownerDorms) {
         const { data: rooms, error: roomsError } = await supabase
@@ -121,15 +120,10 @@ export default function BulkRoomOps() {
     }
   };
 
-  // Download Excel template for a specific dorm
   const downloadTemplate = (dorm: DormWithRooms) => {
-    // Create workbook with template headers
     const wb = XLSX.utils.book_new();
-    
-    // Template columns (no dorm_id, no room_id - matched by Room name)
     const headers = ["Room", "Monthly Price", "Deposit", "Type", "Capacity", "Capacity Occupied", "Area (m²)"];
     
-    // If dorm has existing rooms, pre-populate them
     let data: any[][] = [headers];
     
     if (dorm.rooms.length > 0) {
@@ -144,23 +138,14 @@ export default function BulkRoomOps() {
       ]);
       data = [headers, ...roomRows];
     } else {
-      // Add sample row for new dorms
       data.push(["1", "500", "200", "Single", "1", "0", "15"]);
       data.push(["2", "700", "300", "Double", "2", "0", "20"]);
       data.push(["B1", "900", "400", "Triple", "3", "0", "30"]);
     }
 
     const ws = XLSX.utils.aoa_to_sheet(data);
-    
-    // Set column widths
     ws['!cols'] = [
-      { wch: 12 }, // Room
-      { wch: 15 }, // Monthly Price
-      { wch: 12 }, // Deposit
-      { wch: 15 }, // Type
-      { wch: 12 }, // Capacity
-      { wch: 18 }, // Capacity Occupied
-      { wch: 12 }, // Area
+      { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 12 },
     ];
 
     XLSX.utils.book_append_sheet(wb, ws, "Rooms");
@@ -175,7 +160,6 @@ export default function BulkRoomOps() {
     });
   };
 
-  // Import Excel/CSV file for a specific dorm
   const handleFileImport = async (dormId: string, file: File) => {
     const dorm = dorms.find(d => d.id === dormId);
     if (!dorm) return;
@@ -188,7 +172,6 @@ export default function BulkRoomOps() {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json<any>(ws, { header: 1 });
 
-      // Skip header row
       const rows = jsonData.slice(1).filter((row: any[]) => row.length > 0 && row[0]);
 
       const result: ImportResult = {
@@ -200,7 +183,7 @@ export default function BulkRoomOps() {
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i] as any[];
-        const rowNum = i + 2; // Account for header and 0-index
+        const rowNum = i + 2;
 
         try {
           const roomName = String(row[0]).trim();
@@ -216,13 +199,11 @@ export default function BulkRoomOps() {
             continue;
           }
 
-          // Check if room exists in this dorm (match by name)
           const existingRoom = dorm.rooms.find(
             r => r.name.toLowerCase() === roomName.toLowerCase()
           );
 
           if (existingRoom) {
-            // Update existing room
             const updateData: any = {};
             if (monthlyPrice !== null) updateData.price = monthlyPrice;
             if (deposit !== null) updateData.deposit = deposit;
@@ -231,7 +212,6 @@ export default function BulkRoomOps() {
             updateData.capacity_occupied = capacityOccupied;
             if (areaM2 !== null) updateData.area_m2 = areaM2;
             
-            // Auto-set availability based on capacity
             if (capacity !== null && capacityOccupied >= capacity) {
               updateData.available = false;
             }
@@ -245,7 +225,6 @@ export default function BulkRoomOps() {
             result.updated++;
             result.success++;
           } else {
-            // Create new room
             const insertData: any = {
               dorm_id: dormId,
               name: roomName,
@@ -271,7 +250,6 @@ export default function BulkRoomOps() {
         }
       }
 
-      // Show result
       if (result.success > 0) {
         toast({
           title: "Import Successful",
@@ -285,7 +263,6 @@ export default function BulkRoomOps() {
         });
       }
 
-      // Reload data
       await loadDormsWithRooms();
 
     } catch (error: any) {
@@ -351,7 +328,6 @@ export default function BulkRoomOps() {
               </CardContent>
             </Card>
           ) : dorms.length === 1 ? (
-            // Single dorm - no tabs needed
             <DormBulkSection 
               dorm={dorms[0]} 
               onDownload={downloadTemplate}
@@ -361,7 +337,6 @@ export default function BulkRoomOps() {
               onRefresh={loadDormsWithRooms}
             />
           ) : (
-            // Multiple dorms - use tabs
             <Tabs value={activeDormId || undefined} onValueChange={setActiveDormId} className="w-full">
               <TabsList className="w-full flex-wrap h-auto gap-1 mb-6 p-1 bg-muted/50 rounded-xl">
                 {dorms.map(dorm => (
@@ -403,7 +378,6 @@ export default function BulkRoomOps() {
   );
 }
 
-// Component for each dorm's bulk operations section
 interface DormBulkSectionProps {
   dorm: DormWithRooms;
   onDownload: (dorm: DormWithRooms) => void;
@@ -419,6 +393,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
   
   // Selection state
   const [selectedRooms, setSelectedRooms] = useState<Set<string>>(new Set());
+  const [selectedRoomType, setSelectedRoomType] = useState<string>("");
   
   // Bulk update state
   const [bulkPrice, setBulkPrice] = useState("");
@@ -430,6 +405,15 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // Active operations tab
+  const [activeTab, setActiveTab] = useState("selection");
+
+  // Extract unique room types (real-time updated when dorm.rooms changes)
+  const uniqueRoomTypes = useMemo(() => {
+    const types = dorm.rooms.map(r => r.type).filter(Boolean);
+    return [...new Set(types)].sort();
+  }, [dorm.rooms]);
 
   // Selection helpers
   const toggleRoomSelection = (roomId: string) => {
@@ -450,6 +434,16 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
 
   const deselectAllRooms = () => {
     setSelectedRooms(new Set());
+    setSelectedRoomType("");
+  };
+
+  const selectByRoomType = (type: string) => {
+    setSelectedRoomType(type);
+    if (!type) {
+      return;
+    }
+    const roomsOfType = dorm.rooms.filter(r => r.type === type);
+    setSelectedRooms(new Set(roomsOfType.map(r => r.id)));
   };
 
   const selectedCount = selectedRooms.size;
@@ -563,7 +557,6 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
     try {
       const roomIds = Array.from(selectedRooms);
       
-      // Compress and upload all images to dorm-uploads bucket
       const uploadedUrls: string[] = [];
       for (const file of Array.from(files)) {
         const compressed = await imageCompression(file, {
@@ -586,7 +579,6 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
         uploadedUrls.push(urlData.publicUrl);
       }
 
-      // Update all selected rooms with the images array
       for (const roomId of roomIds) {
         const currentRoom = dorm.rooms.find(r => r.id === roomId);
         let newImages: string[];
@@ -594,7 +586,6 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
         if (imageUploadMode === "replace" || !currentRoom?.images || currentRoom.images.length === 0) {
           newImages = uploadedUrls;
         } else {
-          // Add mode - append to existing array
           newImages = [...(currentRoom.images || []), ...uploadedUrls];
         }
 
@@ -619,7 +610,6 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
     }
   };
 
-  // Supported video file types
   const SUPPORTED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
   const SUPPORTED_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov'];
 
@@ -628,7 +618,6 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
     const file = e.target.files?.[0];
     if (!file || !hasSelection) return;
 
-    // Validate video file type
     const fileExtension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
     if (!SUPPORTED_VIDEO_TYPES.includes(file.type) && !SUPPORTED_VIDEO_EXTENSIONS.includes(fileExtension)) {
       toast({ 
@@ -640,7 +629,6 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
       return;
     }
 
-    // Check file size (max 50MB for video)
     if (file.size > 50 * 1024 * 1024) {
       toast({ title: "File too large", description: "Max video size is 50MB", variant: "destructive" });
       return;
@@ -650,7 +638,6 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
     try {
       const roomIds = Array.from(selectedRooms);
 
-      // Upload video to dorm-uploads bucket (supports video MIME types)
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`;
       const { data, error } = await supabase.storage
         .from("dorm-uploads")
@@ -662,7 +649,6 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
         .from("dorm-uploads")
         .getPublicUrl(data.path);
 
-      // Update all selected rooms with the video URL
       const { error: updateError } = await supabase
         .from("rooms")
         .update({ video_url: urlData.publicUrl })
@@ -701,7 +687,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                 <div>
                   <CardTitle className="text-xl font-semibold">{dormDisplayName}</CardTitle>
                   <CardDescription>
-                    {dorm.rooms.length} room{dorm.rooms.length !== 1 ? "s" : ""} in database
+                    {dorm.rooms.length} room{dorm.rooms.length !== 1 ? "s" : ""} • {uniqueRoomTypes.length} type{uniqueRoomTypes.length !== 1 ? "s" : ""}
                   </CardDescription>
                 </div>
               </div>
@@ -713,390 +699,435 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
         </Card>
       </motion.div>
 
-      {/* Quick Bulk Operations Section */}
-      {dorm.rooms.length > 0 && (
+      {dorm.rooms.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12 }}
+          transition={{ delay: 0.15 }}
         >
-          <Card className="rounded-2xl shadow-md border-accent/20">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Zap className="w-5 h-5 text-accent" />
-                Quick Bulk Operations
-              </CardTitle>
-              <CardDescription>
-                Select rooms below, then apply bulk updates here
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Selection Counter */}
-              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
-                <span className="text-sm font-medium">
-                  {selectedCount} of {dorm.rooms.length} rooms selected
-                </span>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={selectAllRooms} className="gap-1">
-                    <CheckSquare className="w-4 h-4" />
-                    Select All
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={deselectAllRooms} className="gap-1">
-                    <Square className="w-4 h-4" />
-                    Deselect All
-                  </Button>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Availability Toggle */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Availability</Label>
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    className="gap-2 flex-1"
-                    disabled={!hasSelection || bulkUpdating}
-                    onClick={() => bulkSetAvailability(true)}
-                  >
-                    <ToggleRight className="w-4 h-4 text-green-500" />
-                    Set as Available
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="gap-2 flex-1"
-                    disabled={!hasSelection || bulkUpdating}
-                    onClick={() => bulkSetAvailability(false)}
-                  >
-                    <ToggleLeft className="w-4 h-4 text-muted-foreground" />
-                    Set as Unavailable
-                  </Button>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Price & Deposit Update */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center gap-1">
-                    <DollarSign className="w-4 h-4" />
-                    Update Price
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Enter price..."
-                      value={bulkPrice}
-                      onChange={(e) => setBulkPrice(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button 
-                      onClick={bulkUpdatePrice}
-                      disabled={!hasSelection || !bulkPrice || bulkUpdating}
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center gap-1">
-                    <DollarSign className="w-4 h-4" />
-                    Update Deposit
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Enter deposit..."
-                      value={bulkDeposit}
-                      onChange={(e) => setBulkDeposit(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button 
-                      onClick={bulkUpdateDeposit}
-                      disabled={!hasSelection || !bulkDeposit || bulkUpdating}
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Image Upload */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium flex items-center gap-1">
-                  <Image className="w-4 h-4" />
-                  Bulk Image Upload
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Upload the same image(s) to all selected rooms. Useful when rooms of the same type look identical.
-                </p>
-                <RadioGroup
-                  value={imageUploadMode}
-                  onValueChange={(v) => setImageUploadMode(v as "replace" | "add")}
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="replace" id="replace" />
-                    <Label htmlFor="replace" className="text-sm cursor-pointer">Replace existing</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="add" id="add" />
-                    <Label htmlFor="add" className="text-sm cursor-pointer">Add to existing</Label>
-                  </div>
-                </RadioGroup>
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleBulkImageUpload}
-                  className="hidden"
-                />
-                <Button
-                  variant="outline"
-                  className="gap-2 w-full"
-                  disabled={!hasSelection || uploadingMedia}
-                  onClick={() => imageInputRef.current?.click()}
-                >
-                  <Image className="w-4 h-4" />
-                  {uploadingMedia ? "Uploading..." : `Upload Images to ${selectedCount} Rooms`}
+          <Card className="rounded-2xl shadow-md">
+            <CardContent className="p-8 text-center">
+              <FileSpreadsheet className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground mb-4">No rooms yet. Download the template and upload your rooms data.</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button onClick={() => onDownload(dorm)} variant="outline" className="gap-2">
+                  <Download className="w-4 h-4" />
+                  Download Template
                 </Button>
-              </div>
-
-              <Separator />
-
-              {/* Video Upload */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium flex items-center gap-1">
-                  <Video className="w-4 h-4" />
-                  Bulk Video Upload
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Upload the same video to all selected rooms. Max 50MB.
-                </p>
                 <input
-                  ref={videoInputRef}
                   type="file"
-                  accept="video/*"
-                  onChange={handleBulkVideoUpload}
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) onImport(dorm.id, file);
+                    e.target.value = "";
+                  }}
                   className="hidden"
+                  id={`file-import-${dorm.id}`}
                 />
-                <Button
-                  variant="outline"
-                  className="gap-2 w-full"
-                  disabled={!hasSelection || uploadingMedia}
-                  onClick={() => videoInputRef.current?.click()}
-                >
-                  <Video className="w-4 h-4" />
-                  {uploadingMedia ? "Uploading..." : `Upload Video to ${selectedCount} Rooms`}
+                <Button onClick={() => triggerFileInput(dorm.id)} disabled={importing} className="gap-2">
+                  <Upload className="w-4 h-4" />
+                  {importing ? "Importing..." : "Upload Excel/CSV"}
                 </Button>
               </div>
             </CardContent>
           </Card>
         </motion.div>
-      )}
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+        >
+          <Card className="rounded-2xl shadow-md">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <CardHeader className="pb-0">
+                <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/50">
+                  <TabsTrigger value="selection" className="gap-2 py-2.5">
+                    <Layers className="w-4 h-4" />
+                    <span className="hidden sm:inline">Selection & Actions</span>
+                    <span className="sm:hidden">Actions</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="media" className="gap-2 py-2.5">
+                    <Image className="w-4 h-4" />
+                    <span className="hidden sm:inline">Media Upload</span>
+                    <span className="sm:hidden">Media</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="import" className="gap-2 py-2.5">
+                    <FileSpreadsheet className="w-4 h-4" />
+                    <span className="hidden sm:inline">Excel Import</span>
+                    <span className="sm:hidden">Import</span>
+                  </TabsTrigger>
+                </TabsList>
+              </CardHeader>
 
-      {/* Excel Import/Export Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-      >
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5 text-primary" />
-              Excel/CSV Import & Export
-            </CardTitle>
-            <CardDescription>
-              Download a template, fill in your room data, and upload to create or update rooms in bulk
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Instructions */}
-            <div className="bg-muted/50 rounded-xl p-4 space-y-3">
-              <h4 className="font-medium text-foreground">How it works:</h4>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <strong>Download the template</strong> - Get an Excel file with the correct columns
-                  {dorm.rooms.length > 0 && " (pre-filled with your existing rooms)"}
-                </li>
-                <li>
-                  <strong>Fill in room data</strong> - Add or modify room information in Excel
-                </li>
-                <li>
-                  <strong>Upload the file</strong> - Import your updated data back to Roomy
-                </li>
-              </ol>
+              <CardContent className="pt-6">
+                {/* Tab 1: Selection & Quick Actions */}
+                <TabsContent value="selection" className="mt-0 space-y-6">
+                  {/* Selection Tools */}
+                  <div className="p-4 bg-muted/30 rounded-xl space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Filter className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Room Selection</span>
+                      </div>
+                      <Badge variant={hasSelection ? "default" : "secondary"}>
+                        {selectedCount} of {dorm.rooms.length} selected
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-3">
+                      <Button variant="outline" size="sm" onClick={selectAllRooms} className="gap-1.5">
+                        <CheckSquare className="w-4 h-4" />
+                        Select All
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={deselectAllRooms} className="gap-1.5">
+                        <Square className="w-4 h-4" />
+                        Deselect All
+                      </Button>
+                      
+                      {uniqueRoomTypes.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">or</span>
+                          <Select value={selectedRoomType} onValueChange={selectByRoomType}>
+                            <SelectTrigger className="w-[180px] h-9">
+                              <SelectValue placeholder="Select by type..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {uniqueRoomTypes.map(type => (
+                                <SelectItem key={type} value={type}>
+                                  {type} ({dorm.rooms.filter(r => r.type === type).length})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-              <Separator className="my-3" />
-              
-              <div className="space-y-2">
-                <h5 className="text-sm font-medium text-foreground">Template Columns:</h5>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                  <Badge variant="outline" className="justify-start">Room (1, B1, etc.)</Badge>
-                  <Badge variant="outline" className="justify-start">Monthly Price</Badge>
-                  <Badge variant="outline" className="justify-start">Deposit</Badge>
-                  <Badge variant="outline" className="justify-start">Type</Badge>
-                  <Badge variant="outline" className="justify-start">Capacity</Badge>
-                  <Badge variant="outline" className="justify-start">Capacity Occupied</Badge>
-                  <Badge variant="outline" className="justify-start">Area (m²)</Badge>
-                </div>
-              </div>
+                  <Separator />
 
-              <p className="text-xs text-muted-foreground mt-2">
-                <AlertCircle className="w-3 h-3 inline mr-1" />
-                The "Room" column is used to match existing rooms. If a room name already exists, it will be updated. 
-                New room names will create new rooms.
-              </p>
-            </div>
+                  {/* Quick Actions */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Availability */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Bulk Availability</Label>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          className="gap-2 flex-1"
+                          disabled={!hasSelection || bulkUpdating}
+                          onClick={() => bulkSetAvailability(true)}
+                        >
+                          <ToggleRight className="w-4 h-4 text-green-500" />
+                          Available
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="gap-2 flex-1"
+                          disabled={!hasSelection || bulkUpdating}
+                          onClick={() => bulkSetAvailability(false)}
+                        >
+                          <ToggleLeft className="w-4 h-4 text-muted-foreground" />
+                          Unavailable
+                        </Button>
+                      </div>
+                    </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                onClick={() => onDownload(dorm)}
-                variant="outline"
-                className="gap-2 rounded-xl flex-1"
-              >
-                <Download className="w-4 h-4" />
-                Download Template
-                {dorm.rooms.length > 0 && (
-                  <Badge variant="secondary" className="ml-2">
-                    {dorm.rooms.length} rooms
-                  </Badge>
-                )}
-              </Button>
-
-              <input
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) onImport(dorm.id, file);
-                  e.target.value = "";
-                }}
-                className="hidden"
-                id={`file-import-${dorm.id}`}
-              />
-              
-              <Button
-                onClick={() => triggerFileInput(dorm.id)}
-                disabled={importing}
-                className="gap-2 rounded-xl flex-1 bg-gradient-to-r from-primary to-primary/80"
-              >
-                {importing ? (
-                  <>
-                    <span className="animate-spin mr-2">⏳</span>
-                    Importing...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4" />
-                    Upload Excel/CSV
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Current Rooms Preview with Selection */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold">
-              Current Rooms ({dorm.rooms.length})
-            </CardTitle>
-            <CardDescription>
-              Select rooms to apply bulk operations
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {dorm.rooms.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <FileSpreadsheet className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No rooms yet. Download the template and upload your rooms data.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-left">
-                      <th className="pb-3 pr-2 w-10">
-                        <Checkbox
-                          checked={selectedCount === dorm.rooms.length && dorm.rooms.length > 0}
-                          onCheckedChange={(checked) => {
-                            if (checked) selectAllRooms();
-                            else deselectAllRooms();
-                          }}
+                    {/* Price Update */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium flex items-center gap-1">
+                        <DollarSign className="w-4 h-4" />
+                        Bulk Price Update
+                      </Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          placeholder="Enter price..."
+                          value={bulkPrice}
+                          onChange={(e) => setBulkPrice(e.target.value)}
+                          className="flex-1"
                         />
-                      </th>
-                      <th className="pb-3 font-medium text-muted-foreground">Room</th>
-                      <th className="pb-3 font-medium text-muted-foreground">Type</th>
-                      <th className="pb-3 font-medium text-muted-foreground">Price</th>
-                      <th className="pb-3 font-medium text-muted-foreground">Deposit</th>
-                      <th className="pb-3 font-medium text-muted-foreground">Capacity</th>
-                      <th className="pb-3 font-medium text-muted-foreground">Occupied</th>
-                      <th className="pb-3 font-medium text-muted-foreground">Area</th>
-                      <th className="pb-3 font-medium text-muted-foreground">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dorm.rooms.map((room, index) => (
-                      <motion.tr 
-                        key={room.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.02 }}
-                        className={`border-b last:border-0 cursor-pointer hover:bg-muted/30 ${selectedRooms.has(room.id) ? "bg-primary/5" : ""}`}
-                        onClick={() => toggleRoomSelection(room.id)}
-                      >
-                        <td className="py-3 pr-2" onClick={(e) => e.stopPropagation()}>
-                          <Checkbox
-                            checked={selectedRooms.has(room.id)}
-                            onCheckedChange={() => toggleRoomSelection(room.id)}
-                          />
-                        </td>
-                        <td className="py-3 font-medium">{room.name}</td>
-                        <td className="py-3">{room.type}</td>
-                        <td className="py-3">${room.price}</td>
-                        <td className="py-3">{room.deposit ? `$${room.deposit}` : "-"}</td>
-                        <td className="py-3">{room.capacity || "-"}</td>
-                        <td className="py-3">
-                          <span className={room.capacity && room.capacity_occupied && room.capacity_occupied >= room.capacity ? "text-destructive font-medium" : ""}>
-                            {room.capacity_occupied || 0}
-                          </span>
-                        </td>
-                        <td className="py-3">{room.area_m2 ? `${room.area_m2}m²` : "-"}</td>
-                        <td className="py-3">
-                          {room.available ? (
-                            <Badge variant="default" className="gap-1">
-                              <CheckCircle2 className="w-3 h-3" />
-                              Available
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">Unavailable</Badge>
-                          )}
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
+                        <Button 
+                          onClick={bulkUpdatePrice}
+                          disabled={!hasSelection || !bulkPrice || bulkUpdating}
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Deposit Update */}
+                    <div className="space-y-3 lg:col-span-2">
+                      <Label className="text-sm font-medium flex items-center gap-1">
+                        <DollarSign className="w-4 h-4" />
+                        Bulk Deposit Update
+                      </Label>
+                      <div className="flex gap-2 max-w-md">
+                        <Input
+                          type="number"
+                          placeholder="Enter deposit..."
+                          value={bulkDeposit}
+                          onChange={(e) => setBulkDeposit(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button 
+                          onClick={bulkUpdateDeposit}
+                          disabled={!hasSelection || !bulkDeposit || bulkUpdating}
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Rooms Table */}
+                  <div>
+                    <h4 className="text-sm font-medium mb-3">Rooms</h4>
+                    <div className="overflow-x-auto border rounded-xl">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted/50">
+                          <tr className="border-b text-left">
+                            <th className="p-3 w-10">
+                              <Checkbox
+                                checked={selectedCount === dorm.rooms.length && dorm.rooms.length > 0}
+                                onCheckedChange={(checked) => {
+                                  if (checked) selectAllRooms();
+                                  else deselectAllRooms();
+                                }}
+                              />
+                            </th>
+                            <th className="p-3 font-medium text-muted-foreground">Room</th>
+                            <th className="p-3 font-medium text-muted-foreground">Type</th>
+                            <th className="p-3 font-medium text-muted-foreground">Price</th>
+                            <th className="p-3 font-medium text-muted-foreground">Deposit</th>
+                            <th className="p-3 font-medium text-muted-foreground">Capacity</th>
+                            <th className="p-3 font-medium text-muted-foreground">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dorm.rooms.map((room) => (
+                            <tr 
+                              key={room.id}
+                              className={`border-b last:border-0 cursor-pointer hover:bg-muted/30 transition-colors ${selectedRooms.has(room.id) ? "bg-primary/5" : ""}`}
+                              onClick={() => toggleRoomSelection(room.id)}
+                            >
+                              <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                  checked={selectedRooms.has(room.id)}
+                                  onCheckedChange={() => toggleRoomSelection(room.id)}
+                                />
+                              </td>
+                              <td className="p-3 font-medium">{room.name}</td>
+                              <td className="p-3">{room.type}</td>
+                              <td className="p-3">${room.price}</td>
+                              <td className="p-3">{room.deposit ? `$${room.deposit}` : "-"}</td>
+                              <td className="p-3">{room.capacity_occupied || 0}/{room.capacity || "-"}</td>
+                              <td className="p-3">
+                                {room.available ? (
+                                  <Badge variant="default" className="gap-1">
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    Available
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary">Unavailable</Badge>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* Tab 2: Media Upload */}
+                <TabsContent value="media" className="mt-0 space-y-6">
+                  <div className="p-4 bg-muted/30 rounded-xl">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Filter className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Selected Rooms</span>
+                      <Badge variant={hasSelection ? "default" : "secondary"}>
+                        {selectedCount} selected
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Go to "Selection & Actions" tab to select rooms for media upload
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Image Upload */}
+                    <Card className="border-dashed">
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Image className="w-5 h-5 text-primary" />
+                          Bulk Image Upload
+                        </CardTitle>
+                        <CardDescription>
+                          Upload the same images to all selected rooms
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <RadioGroup
+                          value={imageUploadMode}
+                          onValueChange={(v) => setImageUploadMode(v as "replace" | "add")}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="replace" id="replace" />
+                            <Label htmlFor="replace" className="text-sm cursor-pointer">Replace existing</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="add" id="add" />
+                            <Label htmlFor="add" className="text-sm cursor-pointer">Add to existing</Label>
+                          </div>
+                        </RadioGroup>
+                        <input
+                          ref={imageInputRef}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleBulkImageUpload}
+                          className="hidden"
+                        />
+                        <Button
+                          variant="outline"
+                          className="gap-2 w-full"
+                          disabled={!hasSelection || uploadingMedia}
+                          onClick={() => imageInputRef.current?.click()}
+                        >
+                          <Image className="w-4 h-4" />
+                          {uploadingMedia ? "Uploading..." : `Upload Images`}
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Video Upload */}
+                    <Card className="border-dashed">
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Video className="w-5 h-5 text-primary" />
+                          Bulk Video Upload
+                        </CardTitle>
+                        <CardDescription>
+                          Upload the same video to all selected rooms (max 50MB)
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <p className="text-xs text-muted-foreground">
+                          Supported formats: MP4, WebM, MOV
+                        </p>
+                        <input
+                          ref={videoInputRef}
+                          type="file"
+                          accept="video/*"
+                          onChange={handleBulkVideoUpload}
+                          className="hidden"
+                        />
+                        <Button
+                          variant="outline"
+                          className="gap-2 w-full"
+                          disabled={!hasSelection || uploadingMedia}
+                          onClick={() => videoInputRef.current?.click()}
+                        >
+                          <Video className="w-4 h-4" />
+                          {uploadingMedia ? "Uploading..." : `Upload Video`}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+
+                {/* Tab 3: Excel Import/Export */}
+                <TabsContent value="import" className="mt-0 space-y-6">
+                  <div className="bg-muted/30 rounded-xl p-4 space-y-4">
+                    <h4 className="font-medium">How it works:</h4>
+                    <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                      <li>
+                        <strong>Download the template</strong> - Get an Excel file pre-filled with your existing rooms
+                      </li>
+                      <li>
+                        <strong>Fill in room data</strong> - Add or modify room information in Excel
+                      </li>
+                      <li>
+                        <strong>Upload the file</strong> - Import your updated data back to Roomy
+                      </li>
+                    </ol>
+
+                    <Separator />
+                    
+                    <div>
+                      <h5 className="text-sm font-medium mb-2">Template Columns:</h5>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        <Badge variant="outline">Room</Badge>
+                        <Badge variant="outline">Monthly Price</Badge>
+                        <Badge variant="outline">Deposit</Badge>
+                        <Badge variant="outline">Type</Badge>
+                        <Badge variant="outline">Capacity</Badge>
+                        <Badge variant="outline">Capacity Occupied</Badge>
+                        <Badge variant="outline">Area (m²)</Badge>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground flex items-start gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                      The "Room" column matches existing rooms. Matching names update; new names create new rooms.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      onClick={() => onDownload(dorm)}
+                      variant="outline"
+                      className="gap-2 flex-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download Template
+                      <Badge variant="secondary" className="ml-1">
+                        {dorm.rooms.length} rooms
+                      </Badge>
+                    </Button>
+
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) onImport(dorm.id, file);
+                        e.target.value = "";
+                      }}
+                      className="hidden"
+                      id={`file-import-${dorm.id}`}
+                    />
+                    
+                    <Button
+                      onClick={() => triggerFileInput(dorm.id)}
+                      disabled={importing}
+                      className="gap-2 flex-1"
+                    >
+                      {importing ? (
+                        <>
+                          <span className="animate-spin">⏳</span>
+                          Importing...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          Upload Excel/CSV
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </TabsContent>
+              </CardContent>
+            </Tabs>
+          </Card>
+        </motion.div>
+      )}
     </div>
   );
 }

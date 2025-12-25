@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, MessageSquare, Info, Phone, LogOut, User, Settings } from 'lucide-react';
+import { Menu, X, MessageSquare, Info, Phone, LogOut, User, Settings, Globe } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -15,7 +15,7 @@ import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { useAuth } from '@/contexts/AuthContext';
 import { NotificationBellPopover } from '@/components/shared/NotificationBellPopover';
 import { supabase } from '@/integrations/supabase/client';
-
+import { LanguageModal } from '@/components/LanguageModal';
 interface OwnerNavbarProps {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
@@ -26,6 +26,7 @@ export function OwnerNavbar({ sidebarOpen, onToggleSidebar }: OwnerNavbarProps) 
   const { userId, role, signOut } = useAuth();
   const { count: unreadMessages } = useUnreadMessagesCount(userId, role);
   const [ownerId, setOwnerId] = useState<string | null>(null);
+  const [languageModalOpen, setLanguageModalOpen] = useState(false);
 
   // Fetch owner profile id for notifications
   useEffect(() => {
@@ -131,6 +132,10 @@ export function OwnerNavbar({ sidebarOpen, onToggleSidebar }: OwnerNavbarProps) 
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLanguageModalOpen(true)}>
+                <Globe className="w-4 h-4 mr-2" />
+                Language
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                 <LogOut className="w-4 h-4 mr-2" />
@@ -140,6 +145,8 @@ export function OwnerNavbar({ sidebarOpen, onToggleSidebar }: OwnerNavbarProps) 
           </DropdownMenu>
         </div>
       </div>
+
+      <LanguageModal open={languageModalOpen} onOpenChange={setLanguageModalOpen} />
     </nav>
   );
 }
