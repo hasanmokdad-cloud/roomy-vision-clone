@@ -247,10 +247,10 @@ export function VoiceRecordingOverlay({
           </motion.div>
         </motion.div>
 
-        {/* Floating Lock Panel - WhatsApp style */}
+        {/* Floating Lock Panel - WhatsApp style - positioned above with proper overflow */}
         <motion.div 
           ref={lockPanelRef}
-          className="absolute -top-24 right-1 flex flex-col items-center pointer-events-none z-10"
+          className="absolute -top-20 right-2 flex flex-col items-center pointer-events-none z-10"
           initial={{ opacity: 0, scale: 0.8, y: 20 }}
           animate={{ 
             opacity: 1, 
