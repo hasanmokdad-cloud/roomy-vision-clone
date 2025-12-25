@@ -2577,22 +2577,23 @@ export default function Messages() {
                                 </span>
                               </div>
                               
-                              {/* Row 2: Message preview + time (Instagram style: "Message · 1d") */}
+                              {/* Row 2: Message preview */}
                               <div className="flex items-center gap-1 mt-0.5 min-w-0">
                                 {conv.last_message_sender_id === userId && (
                                   <MessageStatusIcon status={conv.last_message_status} />
                                 )}
-                                <p className={`text-sm truncate max-w-[65%] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                                <p className={`text-sm truncate ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                                   {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
                                 </p>
-                                {timeAgo && (
-                                  <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap ml-1">· {timeAgo}</span>
-                                )}
                               </div>
                             </div>
                             
                             {/* Right side controls */}
                             <div className="flex items-center gap-2 shrink-0 ml-2 z-10 overflow-visible">
+                              {/* Timestamp */}
+                              {timeAgo && (
+                                <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">{timeAgo}</span>
+                              )}
                               {/* Blue dot for unread */}
                               {hasUnread && (
                                 <div className="w-2.5 h-2.5 rounded-full bg-primary" />
