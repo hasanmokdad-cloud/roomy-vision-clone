@@ -103,11 +103,22 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
         console.log('[MicPermission] Loaded from database:', dbPermission);
         
         if (dbPermission === 'granted') {
-          // Trust the database - user previously granted permission
-          // This OVERRIDES Safari's session-based 'prompt' reset
-          setPermission('granted');
+          // Store that DB says granted
           localStorage.setItem(STORAGE_KEY, 'granted');
-          // Set sessionStorage so Safari's session-verification passes
+          
+          // SAFARI FIX: Safari resets browser permission each session
+          // Even if DB says 'granted', we need user to re-consent via modal this session
+          // Only trust 'granted' if already verified THIS session
+          const sessionVerified = sessionStorage.getItem(SESSION_VERIFIED_KEY);
+          if (isSafari && sessionVerified !== 'true') {
+            console.log('[MicPermission] Safari new session - DB says granted but need browser re-verification');
+            // Keep permission as 'prompt' to trigger MicSetupModal
+            setPermission('prompt');
+            return 'prompt'; // Return 'prompt' so caller knows modal is needed
+          }
+          
+          // Non-Safari OR already verified this session
+          setPermission('granted');
           sessionStorage.setItem(SESSION_VERIFIED_KEY, 'true');
           return 'granted';
         } else if (dbPermission) {
