@@ -1,3 +1,4 @@
+// Messages.tsx v2.0 - Updated 2025-01-06 - Instagram-style layout
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
