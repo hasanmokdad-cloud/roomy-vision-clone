@@ -188,7 +188,7 @@ const RoomPreviewCard = ({ metadata }: { metadata: Message['attachment_metadata'
 
 export default function Messages() {
   const { role } = useRoleGuard();
-  const { isAuthenticated, isAuthReady, openAuthModal, userId } = useAuth();
+  const { isAuthenticated, isAuthReady, openAuthModal, userId, isSigningOut } = useAuth();
   const isMobile = useIsMobile();
   // Skip auth guard loading for mobile unauthenticated - they see login prompt
   const authLoading = !isAuthReady;
@@ -197,6 +197,14 @@ export default function Messages() {
   const location = useLocation();
   const { setHideBottomNav } = useBottomNav();
   const { permission, requestPermission, syncToDatabase, loadFromDatabase, checkPermission } = useMicPermission();
+  
+  // Track component mount state to prevent state updates after unmount (React Error #300)
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+  
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -229,6 +237,7 @@ export default function Messages() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [activeTab, setActiveTab] = useState<'chats' | 'friends'>('chats');
   const [searchQuery, setSearchQuery] = useState('');
+  const [hoveredConversation, setHoveredConversation] = useState<string | null>(null);
   const [studentId, setStudentId] = useState<string | null>(null);
   const [pinnedMessages, setPinnedMessages] = useState<Message[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -621,11 +630,14 @@ export default function Messages() {
   // Mobile uses tap-to-start now (same as desktop), no need for native touch listeners
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || isSigningOut) return;
     loadConversations();
 
     // Subscribe to new messages using realtime utility
     const messagesChannel = subscribeTo("messages", async (payload) => {
+      // Guard against updates during sign-out or after unmount
+      if (!isMountedRef.current || isSigningOut) return;
+      
       const newMessage = payload.new as Message;
       
       if (newMessage.conversation_id === selectedConversation) {
@@ -638,16 +650,18 @@ export default function Messages() {
           });
           
           // Automatically mark as delivered when received
-          await supabase
-            .from('messages')
-            .update({ 
-              status: 'delivered',
-              delivered_at: new Date().toISOString()
-            })
-            .eq('id', newMessage.id);
-          
-          // Mark as seen since conversation is open
-          markAsRead(newMessage.id);
+          if (isMountedRef.current && !isSigningOut) {
+            await supabase
+              .from('messages')
+              .update({ 
+                status: 'delivered',
+                delivered_at: new Date().toISOString()
+              })
+              .eq('id', newMessage.id);
+            
+            // Mark as seen since conversation is open
+            markAsRead(newMessage.id);
+          }
         } else {
           // Update the sender's own message status if it was updated
           setMessages(prev =>
@@ -656,7 +670,7 @@ export default function Messages() {
         }
       } else {
         // Message in different conversation, just mark as delivered
-        if (newMessage.sender_id !== userId && newMessage.status === 'sent') {
+        if (newMessage.sender_id !== userId && newMessage.status === 'sent' && isMountedRef.current && !isSigningOut) {
           await supabase
             .from('messages')
             .update({ 
@@ -668,7 +682,9 @@ export default function Messages() {
       }
       
       // Reload conversations to update last message & unread counts
-      loadConversations();
+      if (isMountedRef.current && !isSigningOut) {
+        loadConversations();
+      }
     });
 
     // Subscribe to message updates - only update status fields to prevent flickering
@@ -967,6 +983,8 @@ export default function Messages() {
 
   const loadConversations = async () => {
     if (!userId) return;
+    // Guard against updates during sign-out or after unmount
+    if (isSigningOut || !isMountedRef.current) return;
     
     console.log('🔄 Loading conversations for user:', userId);
 
@@ -976,6 +994,9 @@ export default function Messages() {
       supabase.from('students').select('id').eq('user_id', userId).maybeSingle(),
       supabase.from('owners').select('id').eq('user_id', userId).maybeSingle()
     ]);
+    
+    // Early return if unmounted during fetch
+    if (!isMountedRef.current || isSigningOut) return;
     
     const admin = adminResult.data;
     const student = studentResult.data;
@@ -994,6 +1015,9 @@ export default function Messages() {
     query = query.order('is_pinned', { ascending: false }).order('updated_at', { ascending: false });
 
     const { data, error } = await query;
+    
+    // Early return if unmounted during fetch
+    if (!isMountedRef.current || isSigningOut) return;
     
     if (error) {
       console.error('❌ Error loading conversations:', error);
@@ -1112,8 +1136,34 @@ export default function Messages() {
       }
     }
     
-    // Now enrich conversations synchronously using our lookup maps
-    const enrichedPromises = data.map(async (conv) => {
+    // OPTIMIZED: Batch fetch unread counts in ONE query instead of N queries
+    // Fetch messages from all conversations where sender is NOT the current user
+    const { data: allUnreadMessages } = await supabase
+      .from('messages')
+      .select('conversation_id, created_at, sender_id')
+      .in('conversation_id', conversationIds)
+      .neq('sender_id', userId!);
+    
+    // Early return if unmounted during fetch
+    if (!isMountedRef.current || isSigningOut) return;
+    
+    // Build unread counts map - calculate on client side
+    const unreadCountsByConvId = new Map<string, number>();
+    conversationIds.forEach(id => unreadCountsByConvId.set(id, 0));
+    
+    if (allUnreadMessages) {
+      allUnreadMessages.forEach((msg: any) => {
+        const convId = msg.conversation_id;
+        const lastReadAt = threadStatesByConvId.get(convId);
+        // Count as unread if no last_read_at OR message is newer than last_read_at
+        if (!lastReadAt || new Date(msg.created_at) > new Date(lastReadAt)) {
+          unreadCountsByConvId.set(convId, (unreadCountsByConvId.get(convId) || 0) + 1);
+        }
+      });
+    }
+    
+    // Now enrich conversations SYNCHRONOUSLY using our lookup maps (no more async)
+    const enriched = data.map((conv) => {
       let dorm = conv.dorm_id ? dormsById.get(conv.dorm_id) : null;
       let otherUserName = 'User';
       let otherUserPhoto: string | null = null;
@@ -1205,25 +1255,8 @@ export default function Messages() {
       // Get last message from map
       const lastMsg = lastMessagesByConvId.get(conv.id);
       
-      // Calculate unread count
-      let unreadCount = 0;
-      const lastReadAt = threadStatesByConvId.get(conv.id);
-      if (lastReadAt) {
-        const { count } = await supabase
-          .from('messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('conversation_id', conv.id)
-          .neq('sender_id', userId!)
-          .gt('created_at', lastReadAt);
-        unreadCount = count || 0;
-      } else {
-        const { count } = await supabase
-          .from('messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('conversation_id', conv.id)
-          .neq('sender_id', userId!);
-        unreadCount = count || 0;
-      }
+      // Get unread count from pre-calculated batch map (INSTANT - no await!)
+      const unreadCount = unreadCountsByConvId.get(conv.id) || 0;
 
       // Format last message preview
       let lastMessage = '';
@@ -1253,11 +1286,16 @@ export default function Messages() {
       };
     });
     
-    const enriched = await Promise.all(enrichedPromises);
+    // Early return if unmounted during processing
+    if (!isMountedRef.current || isSigningOut) return;
+    
     setConversations(enriched);
   };
 
   const loadMessages = async (conversationId: string) => {
+    // Guard against updates during sign-out or after unmount
+    if (isSigningOut || !isMountedRef.current) return;
+    
     console.log('🔄 Loading messages for conversation:', conversationId, 'userId:', userId);
     
     // Reset search state when changing conversations
@@ -1272,6 +1310,9 @@ export default function Messages() {
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
 
+    // Early return if unmounted during fetch
+    if (!isMountedRef.current || isSigningOut) return;
+
     console.log('📨 Messages loaded:', data?.length || 0, 'Error:', error);
 
     if (data) {
@@ -1283,7 +1324,7 @@ export default function Messages() {
       
       // Mark all unseen messages as seen
       const unseenIds = data.filter(m => m.sender_id !== userId && m.status !== 'seen').map(m => m.id);
-      if (unseenIds.length > 0) {
+      if (unseenIds.length > 0 && isMountedRef.current && !isSigningOut) {
         await supabase
           .from('messages')
           .update({ 
@@ -1295,7 +1336,7 @@ export default function Messages() {
       }
 
       // Update user_thread_state
-      if (userId) {
+      if (userId && isMountedRef.current && !isSigningOut) {
         await supabase.from('user_thread_state').upsert(
           {
             thread_id: conversationId,
@@ -1304,7 +1345,9 @@ export default function Messages() {
           },
           { onConflict: 'thread_id,user_id' }
         );
-        loadConversations();
+        if (isMountedRef.current && !isSigningOut) {
+          loadConversations();
+        }
       }
     }
   };
@@ -2501,13 +2544,15 @@ export default function Messages() {
                       
                       const chatRowContent = (
                         <div 
-                          className={`relative group cursor-pointer hover:bg-muted/50 transition-colors ${
+                          className={`relative cursor-pointer hover:bg-muted/50 transition-colors ${
                             selectedConversation === conv.id ? 'bg-muted' : ''
                           } ${hasUnread ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
                           onClick={() => {
                             setSelectedConversation(conv.id);
                             loadMessages(conv.id);
                           }}
+                          onMouseEnter={() => setHoveredConversation(conv.id)}
+                          onMouseLeave={() => setHoveredConversation(null)}
                         >
                           <div className="flex items-center gap-3 px-4 py-3">
                             {/* Avatar - 56px like Instagram */}
@@ -2555,10 +2600,10 @@ export default function Messages() {
                                 <div className="w-2.5 h-2.5 rounded-full bg-primary" />
                               )}
                               
-                              {/* Three-dots context menu - DESKTOP ONLY, appears on hover */}
-                              {!isMobile && (
+                              {/* Three-dots context menu - DESKTOP ONLY, appears on hover (state-based for reliability) */}
+                              {!isMobile && hoveredConversation === conv.id && (
                                 <div 
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                                  className="animate-in fade-in duration-150"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <ConversationContextMenu
