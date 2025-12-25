@@ -358,28 +358,11 @@ export default function OwnerHome() {
                 variant: 'primary' as const,
               },
               {
-                title: 'Your Earnings',
-                description: 'Track reservations payouts and revenue',
-                icon: TrendingUp,
-                action: () => navigate('/owner/finance?tab=earnings'),
-                buttonText: 'View Earnings',
-                variant: 'outline' as const,
-              },
-              {
-                title: 'Refund Requests',
-                description: 'Review and manage student refund requests',
-                icon: Clock,
-                action: () => navigate('/owner/finance?tab=refunds'),
-                buttonText: 'View Requests',
-                variant: 'outline' as const,
-              },
-              {
-                title: 'Wallet & Payouts',
-                description: 'Manage your payout card and view transactions',
+                title: 'Finance',
+                description: 'Track earnings, manage payouts, and view transactions',
                 icon: Wallet,
-                action: () => navigate('/owner/finance?tab=wallet'),
-                buttonText: 'Open Wallet',
-                variant: 'primary' as const,
+                action: () => navigate('/owner/finance'),
+                buttonText: 'Open Finance',
               },
             ].map((card, index) => (
               <motion.div
@@ -398,13 +381,11 @@ export default function OwnerHome() {
                       </div>
                       <Button
                         onClick={card.action}
-                        variant={card.variant === 'outline' ? 'outline' : 'default'}
-                        className={`w-full md:w-auto gap-2 ${
-                          card.variant === 'primary' 
-                            ? 'bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white rounded-xl hover:opacity-90' 
-                            : 'rounded-xl'
-                        }`}
+                        className="w-full md:w-auto gap-2 bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white rounded-xl hover:opacity-90"
                       >
+                        <card.icon className="w-4 h-4" />
+                        {card.buttonText}
+                      </Button>
                         <card.icon className="w-4 h-4" />
                         {card.buttonText}
                       </Button>

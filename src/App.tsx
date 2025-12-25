@@ -100,7 +100,7 @@ const AdminPersonalityInsights = lazy(() => import("./pages/admin/AdminPersonali
 const AdminAiDiagnostics = lazy(() => import("./pages/admin/AdminAiDiagnostics"));
 const StudentPayments = lazy(() => import("./pages/student/StudentPayments"));
 const AdminPaymentsDashboard = lazy(() => import("./pages/admin/AdminPaymentsDashboard"));
-const OwnerRefundRequests = lazy(() => import("./pages/owner/OwnerRefundRequests"));
+
 const Legal = lazy(() => import("./pages/Legal"));
 const MockWhishCheckout = lazy(() => import("./pages/MockWhishCheckout"));
 const PaymentCallback = lazy(() => import("./pages/PaymentCallback"));
@@ -114,7 +114,7 @@ const OwnerStats = lazy(() => import("./pages/owner/OwnerStats"));
 const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
 const AdminBilling = lazy(() => import("./pages/admin/AdminBilling"));
 const MockWhishAdminAddCard = lazy(() => import("./pages/admin/MockWhishAdminAddCard"));
-const AdminRefunds = lazy(() => import("./pages/admin/AdminRefunds"));
+
 const AdminEarnings = lazy(() => import("./pages/admin/AdminEarnings"));
 const AdminFinanceHub = lazy(() => import("./pages/admin/AdminFinanceHub"));
 const AdminMessagesHub = lazy(() => import("./pages/admin/AdminMessagesHub"));
@@ -331,7 +331,7 @@ const AppRoutes = () => {
           <Route path="/owner/schedule" element={<ProtectedRoute element={<OwnerScheduleHub />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/finance" element={<ProtectedRoute element={<OwnerFinanceHub />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/earnings" element={<ProtectedRoute element={<OwnerEarnings />} allowedRoles={["owner", "admin"]} />} />
-          <Route path="/owner/refunds" element={<ProtectedRoute element={<OwnerRefundRequests />} allowedRoles={["owner", "admin"]} />} />
+          
           <Route path="/owner/wallet" element={<ProtectedRoute element={<OwnerWallet />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/owner/stats" element={<ProtectedRoute element={<OwnerStats />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/mock-whish-owner-add-card" element={<ProtectedRoute element={<MockWhishOwnerAddCard />} allowedRoles={["owner", "admin"]} />} />
@@ -361,7 +361,7 @@ const AppRoutes = () => {
           <Route path="/admin/wallet" element={<ProtectedRoute element={<AdminWallet />} requiredRole="admin" />} />
           <Route path="/admin/billing" element={<ProtectedRoute element={<AdminBilling />} requiredRole="admin" />} />
           <Route path="/mock-whish-admin-add-card" element={<ProtectedRoute element={<MockWhishAdminAddCard />} requiredRole="admin" />} />
-          <Route path="/admin/refunds" element={<ProtectedRoute element={<AdminRefunds />} requiredRole="admin" />} />
+          
           <Route path="/admin/earnings" element={<ProtectedRoute element={<AdminEarnings />} requiredRole="admin" />} />
           <Route path="/admin/finance" element={<ProtectedRoute element={<AdminFinanceHub />} requiredRole="admin" />} />
           <Route path="/admin/messages-hub" element={<ProtectedRoute element={<AdminMessagesHub />} requiredRole="admin" />} />

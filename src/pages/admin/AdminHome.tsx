@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Users, TrendingUp, CheckCircle, Upload, Wallet, DollarSign, RefreshCcw, ArrowRight } from 'lucide-react';
+import { Building2, Users, TrendingUp, CheckCircle, Upload, Wallet, DollarSign, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { dormDataFromExcel } from '@/utils/excelParser';
 import { useAdminDormsQuery } from '@/hooks/useAdminDormsQuery';
@@ -37,7 +37,6 @@ export default function AdminHome() {
   const [earningsStats, setEarningsStats] = useState({
     totalCommission: 0,
     pendingPayouts: 0,
-    pendingRefunds: 0,
     walletBalance: 0,
   });
 
@@ -88,12 +87,6 @@ export default function AdminHome() {
       
       const pendingPayouts = pendingPayoutsData?.reduce((sum, r) => sum + Number(r.owner_payout_amount || 0), 0) || 0;
 
-      // Pending refund requests
-      const { count: pendingRefunds } = await supabase
-        .from('reservations')
-        .select('*', { count: 'exact', head: true })
-        .eq('latest_refund_status', 'pending_admin');
-
       // Admin wallet balance
       const { data: walletData } = await supabase
         .from('admin_wallet')
@@ -103,7 +96,6 @@ export default function AdminHome() {
       setEarningsStats({
         totalCommission,
         pendingPayouts,
-        pendingRefunds: pendingRefunds || 0,
         walletBalance: walletData?.balance || 0,
       });
     } catch (error) {
@@ -178,7 +170,7 @@ export default function AdminHome() {
       </div>
 
       {/* Financial Overview Sections */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Your Earnings Section */}
         <Card className="glass-hover">
           <CardHeader className="pb-3">
@@ -197,7 +189,7 @@ export default function AdminHome() {
               <p className="text-xl font-semibold text-yellow-500">${earningsStats.pendingPayouts.toFixed(2)}</p>
             </div>
             <Button 
-              onClick={() => navigate('/admin/earnings')} 
+              onClick={() => navigate('/admin/finance?tab=earnings')} 
               className="w-full gap-2"
               variant="outline"
             >
@@ -225,39 +217,11 @@ export default function AdminHome() {
               <p className="text-xl font-semibold">${earningsStats.pendingPayouts.toFixed(2)}</p>
             </div>
             <Button 
-              onClick={() => navigate('/admin/wallet')} 
+              onClick={() => navigate('/admin/finance?tab=wallet')} 
               className="w-full gap-2"
               variant="outline"
             >
               Open Wallet
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Refund Requests Section */}
-        <Card className="glass-hover">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <RefreshCcw className="w-5 h-5 text-orange-500" />
-              Refund Requests
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm text-foreground/60">Pending Requests</p>
-              <p className="text-2xl font-bold text-orange-500">{earningsStats.pendingRefunds}</p>
-            </div>
-            <div>
-              <p className="text-sm text-foreground/60">Awaiting Review</p>
-              <p className="text-xl font-semibold">{earningsStats.pendingRefunds} request{earningsStats.pendingRefunds !== 1 ? 's' : ''}</p>
-            </div>
-            <Button 
-              onClick={() => navigate('/admin/refunds')} 
-              className="w-full gap-2"
-              variant="outline"
-            >
-              View Requests
               <ArrowRight className="w-4 h-4" />
             </Button>
           </CardContent>
