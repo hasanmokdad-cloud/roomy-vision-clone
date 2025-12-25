@@ -165,6 +165,16 @@ export function usePushNotifications() {
 
       if (error) throw error;
 
+      // Also update notification_preferences to enable push
+      await supabase
+        .from('notification_preferences')
+        .upsert({
+          user_id: user.id,
+          push_enabled: true
+        }, {
+          onConflict: 'user_id'
+        });
+
       toast({
         title: 'Subscribed',
         description: 'You will now receive push notifications'
@@ -190,10 +200,24 @@ export function usePushNotifications() {
       
       // Remove from database
       const subscriptionData = subscription.toJSON();
+      const { data: { user } } = await supabase.auth.getUser();
+      
       await supabase
         .from('push_subscriptions')
         .delete()
         .eq('endpoint', subscriptionData.endpoint!);
+
+      // Also update notification_preferences to disable push
+      if (user) {
+        await supabase
+          .from('notification_preferences')
+          .upsert({
+            user_id: user.id,
+            push_enabled: false
+          }, {
+            onConflict: 'user_id'
+          });
+      }
 
       setSubscription(null);
       

@@ -12,6 +12,7 @@ interface PushPayload {
   url?: string;
   icon?: string;
   actions?: Array<{ action: string; title: string }>;
+  notification_type?: 'tours' | 'messages' | 'reservations' | 'social' | 'promotions' | 'admin';
 }
 
 // Rate limiting: 20 requests per minute per IP
@@ -332,9 +333,48 @@ Deno.serve(async (req) => {
     );
 
     const payload: PushPayload = await req.json();
-    const { user_id, title, body, url, icon, actions } = payload;
+    const { user_id, title, body, url, icon, actions, notification_type } = payload;
 
-    console.log('[send-push-notification] Sending to user:', user_id);
+    console.log('[send-push-notification] Sending to user:', user_id, 'type:', notification_type);
+
+    // Check user's notification preferences if notification_type is provided
+    if (notification_type) {
+      const { data: prefs, error: prefsError } = await supabase
+        .from('notification_preferences')
+        .select('*')
+        .eq('user_id', user_id)
+        .maybeSingle();
+
+      if (!prefsError && prefs) {
+        // Check if push is enabled and specific notification type is allowed
+        if (!prefs.push_enabled) {
+          console.log('[send-push-notification] Push notifications disabled for user');
+          return new Response(
+            JSON.stringify({ success: true, sent: 0, message: 'Push disabled by user' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Map notification_type to preference field
+        const prefMap: Record<string, keyof typeof prefs> = {
+          'tours': 'notify_tours',
+          'messages': 'notify_messages',
+          'reservations': 'notify_reservations',
+          'social': 'notify_social',
+          'promotions': 'notify_promotions',
+          'admin': 'push_enabled' // Admin notifications always go through if push is enabled
+        };
+
+        const prefKey = prefMap[notification_type];
+        if (prefKey && prefs[prefKey] === false) {
+          console.log(`[send-push-notification] ${notification_type} notifications disabled for user`);
+          return new Response(
+            JSON.stringify({ success: true, sent: 0, message: `${notification_type} notifications disabled` }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+    }
 
     // Fetch user's push subscriptions
     const { data: subscriptions, error: subError } = await supabase
