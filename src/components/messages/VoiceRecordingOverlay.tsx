@@ -212,10 +212,41 @@ export function VoiceRecordingOverlay({
     );
   }
 
+  // Calculate visual feedback intensities
+  const cancelIntensity = Math.min(1, Math.abs(slideOffset.x) / 100);
+  const lockIntensity = Math.min(1, Math.abs(slideOffset.y) / 60);
+  const isNearCancel = slideOffset.x < -50;
+  const isNearLock = slideOffset.y < -40;
+
   // ============= ACTIVE RECORDING STATE =============
   if (recordingState === 'active') {
     return (
-      <div className="relative touch-none">
+      <div className="relative touch-none overflow-hidden">
+        {/* Trash icon - appears on left when swiping left */}
+        <motion.div
+          className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center z-20"
+          initial={{ opacity: 0, scale: 0.5, x: -20 }}
+          animate={{ 
+            opacity: isNearCancel ? 1 : cancelIntensity * 0.6,
+            scale: isNearCancel ? 1.2 : 0.8 + cancelIntensity * 0.2,
+            x: 0,
+          }}
+          transition={springTransition}
+        >
+          <motion.div
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{
+              backgroundColor: `hsl(0, ${60 + cancelIntensity * 20}%, ${50 + cancelIntensity * 10}%)`,
+            }}
+            animate={{
+              scale: isNearCancel ? [1, 1.1, 1] : 1,
+            }}
+            transition={isNearCancel ? { repeat: Infinity, duration: 0.6 } : {}}
+          >
+            <Trash2 className="w-5 h-5 text-white" />
+          </motion.div>
+        </motion.div>
+
         {/* Floating Lock Panel - WhatsApp style */}
         <motion.div 
           ref={lockPanelRef}
@@ -223,7 +254,7 @@ export function VoiceRecordingOverlay({
           initial={{ opacity: 0, scale: 0.8, y: 20 }}
           animate={{ 
             opacity: 1, 
-            scale: 1, 
+            scale: 1 + lockIntensity * 0.1, 
             y: 0,
           }}
           transition={{ ...springTransition, delay: 0.1 }}
@@ -232,34 +263,38 @@ export function VoiceRecordingOverlay({
           <motion.div
             className="bg-muted/90 backdrop-blur-sm rounded-full px-2 py-2 flex flex-col items-center gap-1"
             animate={{
-              height: showLockZone ? 80 : 100 - Math.abs(slideOffset.y) * 0.3,
+              height: isNearLock ? 70 : 100 - lockIntensity * 30,
+              backgroundColor: isNearLock ? 'hsl(142, 70%, 45%)' : undefined,
             }}
             transition={springTransition}
           >
             {/* Lock icon */}
             <motion.div
               animate={{
-                y: prefersReducedMotion ? 0 : [0, -3, 0],
-                scale: showLockZone ? 1.1 : 1,
+                y: prefersReducedMotion ? 0 : isNearLock ? 0 : [0, -3, 0],
+                scale: isNearLock ? 1.2 : 1,
               }}
               transition={
                 prefersReducedMotion 
                   ? {} 
-                  : showLockZone 
+                  : isNearLock 
                     ? springTransition 
                     : { repeat: Infinity, duration: 1.2, ease: 'easeInOut' }
               }
             >
-              {showLockZone || lockProgress > 0.8 ? (
-                <Lock className="w-5 h-5 text-foreground" />
+              {isNearLock ? (
+                <Lock className="w-5 h-5 text-white" />
               ) : (
                 <LockOpen className="w-5 h-5 text-muted-foreground" />
               )}
             </motion.div>
             
-            {/* Up arrow */}
+            {/* Up arrow - hides when near lock */}
             <motion.div
-              animate={prefersReducedMotion ? {} : { y: [0, -2, 0] }}
+              animate={{ 
+                opacity: isNearLock ? 0 : 1,
+                y: prefersReducedMotion ? 0 : [0, -2, 0] 
+              }}
               transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 1, ease: 'easeInOut', delay: 0.2 }}
             >
               <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -267,17 +302,24 @@ export function VoiceRecordingOverlay({
           </motion.div>
         </motion.div>
 
-        {/* Recording bar - FIXED, not draggable */}
+        {/* Recording bar - ENTIRE bar slides with finger */}
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          animate={{ 
+            opacity: 1,
+            x: slideOffset.x, // Entire bar moves left with swipe
+          }}
+          transition={{ x: { type: 'tween', duration: 0 } }} // Instant x movement
           className="flex items-center h-12 gap-2"
         >
           {/* Left: Red mic icon (pulsing) + timer */}
           <motion.div 
             className="flex items-center gap-2 shrink-0"
             initial={{ x: 100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
+            animate={{ 
+              x: 0, 
+              opacity: isNearCancel ? 0.3 : 1, // Fade when near cancel
+            }}
             transition={{ ...springTransition, delay: 0.05 }}
           >
             <motion.div 
@@ -300,16 +342,18 @@ export function VoiceRecordingOverlay({
             </motion.span>
           </motion.div>
 
-          {/* Center: "slide to cancel" - moves with slideOffset.x from parent touch tracking */}
+          {/* Center: "slide to cancel" text */}
           <motion.div 
             className="flex-1 flex items-center justify-center overflow-hidden"
             initial={{ x: 100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
+            animate={{ 
+              x: 0, 
+              opacity: isNearCancel ? 0.3 : 1, // Fade when near cancel
+            }}
             transition={{ ...springTransition, delay: 0.1 }}
           >
             <motion.div
               className="relative flex items-center gap-1 select-none overflow-hidden"
-              style={{ x: slideOffset.x }}
             >
               <motion.div
                 animate={prefersReducedMotion ? {} : { x: [0, -4, 0] }}
@@ -321,7 +365,7 @@ export function VoiceRecordingOverlay({
                 Slide to cancel
               </span>
               
-              {/* Shimmer effect - RIGHT TO LEFT, constrained to text only */}
+              {/* Shimmer effect */}
               {!prefersReducedMotion && (
                 <motion.div
                   className="absolute inset-0 pointer-events-none"
@@ -337,11 +381,18 @@ export function VoiceRecordingOverlay({
             </motion.div>
           </motion.div>
 
-          {/* Right: Green mic button - NOT draggable, fixed position */}
+          {/* Right: Green mic button - moves UP when swiping toward lock */}
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ ...springTransition }}
+            animate={{ 
+              scale: isNearLock ? 1.15 : 1, 
+              opacity: 1,
+              y: slideOffset.y < 0 ? slideOffset.y * 0.7 : 0, // Moves up with swipe
+            }}
+            transition={{ 
+              ...springTransition,
+              y: { type: 'tween', duration: 0 }, // Instant y movement
+            }}
             className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
             style={{ backgroundColor: 'hsl(142, 70%, 45%)' }}
           >
