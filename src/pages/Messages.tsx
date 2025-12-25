@@ -1557,10 +1557,12 @@ export default function Messages() {
       mediaRecorder.onstop = async () => {
         // CRITICAL: Reset all recording states FIRST before any async work
         // This ensures mic button is immediately responsive
+        recordingStartedRef.current = false;
         setIsRecordingActive(false);
         setMediaStream(null);
         setRecording(false);
         setIsLocked(false);
+        slideOffsetRef.current = { x: 0, y: 0 };
         setSlideOffset({ x: 0, y: 0 });
         setIsPaused(false);
         setIsPreviewPlaying(false);
@@ -1703,13 +1705,14 @@ export default function Messages() {
   const isTrackingRef = useRef(false);
   const recordingRef = useRef(recording);
   const isLockedRef = useRef(isLocked);
-  const recordingStartedRef = useRef(false); // Track if recording actually started (after 220ms hold)
+  const recordingStartedRef = useRef(false); // Track if recording was TRIGGERED (after 220ms hold) - set immediately, not tied to state
+  const isRecordingActiveRef = useRef(isRecordingActive); // Track pending recording state (getUserMedia in progress)
   const permissionRef = useRef(permission); // Track mic permission for touch handlers
   
   // Keep refs in sync with state
   useEffect(() => { recordingRef.current = recording; }, [recording]);
   useEffect(() => { isLockedRef.current = isLocked; }, [isLocked]);
-  useEffect(() => { recordingStartedRef.current = recording; }, [recording]);
+  useEffect(() => { isRecordingActiveRef.current = isRecordingActive; }, [isRecordingActive]);
   useEffect(() => { permissionRef.current = permission; }, [permission]);
 
   // Function to attach touch handlers to mic button - extracted so it can be called from callback ref
@@ -1737,7 +1740,10 @@ export default function Messages() {
         if ('vibrate' in navigator) navigator.vibrate(15);
       }
       
-      setSlideOffset({ x: deltaX, y: deltaY });
+      // Update BOTH state and ref directly for immediate access in handleTouchEnd
+      const newOffset = { x: deltaX, y: deltaY };
+      slideOffsetRef.current = newOffset;
+      setSlideOffset(newOffset);
     };
     
     const handleTouchEnd = (e: TouchEvent) => {
@@ -1753,21 +1759,31 @@ export default function Messages() {
       // Use refs to get current values (avoid stale closures)
       const currentSlideOffset = slideOffsetRef.current;
       
-      // ONLY process gestures if recording actually started (held for 220ms+)
-      if (recordingStartedRef.current && recordingRef.current && !isLockedRef.current) {
-        // Check slide gestures - reduced thresholds for easier triggering
-        if (currentSlideOffset.x < -80) { // Reduced from -100
+      // Process gestures if recording was TRIGGERED (held 220ms+)
+      // Check recordingStartedRef (set immediately) OR actual recording/pending state
+      const recordingWasTriggered = recordingStartedRef.current;
+      const recordingIsActive = recordingRef.current || isRecordingActiveRef.current;
+      
+      if (recordingWasTriggered && !isLockedRef.current) {
+        // Check slide gestures
+        if (currentSlideOffset.x < -80) {
           if ('vibrate' in navigator) navigator.vibrate([15, 30, 15]); // Cancel haptic
           cancelRecording();
-        } else if (currentSlideOffset.y < -60) { // Reduced from -80
+        } else if (currentSlideOffset.y < -60) {
           if ('vibrate' in navigator) navigator.vibrate([10, 20, 10]); // Lock haptic
           setIsLocked(true);
+          slideOffsetRef.current = { x: 0, y: 0 };
           setSlideOffset({ x: 0, y: 0 });
           toast({ title: 'Recording locked', description: 'Tap send when done' });
-        } else {
-          stopRecording(); // Auto-sends on release in unlocked state
+        } else if (recordingIsActive) {
+          // Auto-send on release (only if recording actually started or is pending)
+          stopRecording();
         }
       }
+      
+      // Reset refs
+      recordingStartedRef.current = false;
+      slideOffsetRef.current = { x: 0, y: 0 };
       setSlideOffset({ x: 0, y: 0 });
     };
     
@@ -1802,6 +1818,9 @@ export default function Messages() {
       
       // Start recording after 220ms hold
       pressTimer = setTimeout(() => {
+        // Set recordingStartedRef IMMEDIATELY before async startRecording
+        // This ensures touch handlers know recording was triggered
+        recordingStartedRef.current = true;
         startRecording();
       }, 220);
     };
@@ -1839,6 +1858,7 @@ export default function Messages() {
 
   const cancelRecording = () => {
     shouldUploadVoiceRef.current = false;
+    recordingStartedRef.current = false; // Reset triggered flag
     
     // Stop preview if playing
     if (previewAudioRef.current) {
@@ -1855,6 +1875,7 @@ export default function Messages() {
     setRecording(false);
     setIsRecordingActive(false);
     setIsLocked(false);
+    slideOffsetRef.current = { x: 0, y: 0 };
     setSlideOffset({ x: 0, y: 0 });
     setIsPaused(false);
     setIsPreviewPlaying(false);
