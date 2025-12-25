@@ -25,10 +25,20 @@ const isSafari = typeof navigator !== 'undefined' &&
 export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [permission, setPermission] = useState<MicPermission>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
+    const sessionVerified = sessionStorage.getItem(SESSION_VERIFIED_KEY);
     
-    // FIXED: Trust localStorage immediately on ALL browsers including Safari
-    // The database is the source of truth - if user granted permission before,
-    // we should trust it. Session verification was causing the popup to reappear.
+    // SAFARI FIX: Safari resets browser mic permission each session
+    // Even if localStorage says 'granted', we must re-verify with getUserMedia each session
+    // Only trust 'granted' if ALSO verified this session via sessionStorage
+    if (isSafari) {
+      if (stored === 'granted' && sessionVerified === 'true') {
+        return 'granted'; // Previously granted AND verified this session
+      }
+      // Safari needs re-consent this session - show modal
+      return 'prompt';
+    }
+    
+    // On other browsers, trust localStorage
     if (stored === 'granted') {
       return 'granted';
     }
