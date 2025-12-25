@@ -1,4 +1,4 @@
-import { Menu, X, MessageSquare, Info, Phone, LogOut, User, Settings, Building2, Brain } from 'lucide-react';
+import { Menu, X, MessageSquare, Info, Phone, LogOut, User, Settings, Building2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -108,10 +108,6 @@ export function AdminNavbar({ sidebarOpen, onToggleSidebar }: AdminNavbarProps) 
               <DropdownMenuItem onClick={() => navigate('/listings')}>
                 <Building2 className="w-4 h-4 mr-2" />
                 Dorms
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/ai-match')}>
-                <Brain className="w-4 h-4 mr-2" />
-                AI Match
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/settings')}>
                 <Settings className="w-4 h-4 mr-2" />
