@@ -174,6 +174,8 @@ async function handleReservationPayment(supabaseClient: any, payload: any, metad
   const roomyFee = baseDeposit * 0.10;
   const ownerPayout = baseDeposit; // Owner gets full deposit amount
   const ownerId = reservation.rooms?.dorms?.owner_id;
+  const dormName = reservation.rooms?.dorms?.dorm_name || reservation.rooms?.dorms?.name || 'Dorm';
+  const roomName = reservation.rooms?.name || 'Room';
 
   // Update reservation status with payout details
   await supabaseClient
@@ -329,51 +331,131 @@ async function handleReservationPayment(supabaseClient: any, payload: any, metad
     claimCreated: true
   });
 
-  // Get room and dorm details for notifications
-  const { data: room } = await supabaseClient
-    .from('rooms')
-    .select('name, price, dorms!inner(dorm_name, name, owner_id)')
-    .eq('id', reservation.room_id)
+  // Fetch student details with user_id for notifications
+  const { data: student } = await supabaseClient
+    .from('students')
+    .select('id, user_id, full_name, email')
+    .eq('id', reservation.student_id)
     .single();
 
-  if (room) {
-    // Get student details
-    const { data: student } = await supabaseClient
-      .from('students')
-      .select('full_name')
-      .eq('id', reservation.student_id)
+  // Fetch owner details for notifications
+  const { data: owner } = await supabaseClient
+    .from('owners')
+    .select('id, user_id, full_name, email')
+    .eq('id', ownerId)
+    .single();
+
+  const studentFullName = student?.full_name || 'A student';
+  const ownerFullName = owner?.full_name || 'Owner';
+  const totalAmount = reservation.total_amount || (baseDeposit + roomyFee);
+
+  // ========== SEND IN-APP NOTIFICATIONS ==========
+
+  // 1. Student in-app notification
+  if (student?.user_id) {
+    await supabaseClient.from('notifications').insert({
+      user_id: student.user_id,
+      title: 'Payment Confirmed!',
+      message: `Your room "${roomName}" at ${dormName} is now reserved. You paid $${totalAmount.toFixed(2)} deposit.`,
+      lang: 'en',
+      metadata: {
+        type: 'reservation_payment',
+        reservation_id: reservationId,
+        room_name: roomName,
+        dorm_name: dormName,
+        amount: totalAmount
+      }
+    });
+    console.log('Student in-app notification sent:', student.user_id);
+  }
+
+  // 2. Owner in-app notification (enhanced with student, room, dorm details)
+  if (ownerId) {
+    await supabaseClient.from('owner_notifications').insert({
+      owner_id: ownerId,
+      dorm_id: reservation.dorm_id,
+      title: 'New Reservation Payment!',
+      body: `${studentFullName} has reserved "${roomName}" in ${dormName}. You received $${ownerPayout.toFixed(2)}.`
+    });
+    console.log('Owner in-app notification sent:', ownerId);
+  }
+
+  // 3. Admin in-app notifications (notify all admins)
+  const { data: admins } = await supabaseClient
+    .from('admins')
+    .select('id');
+
+  if (admins && admins.length > 0) {
+    const adminNotifications = admins.map((admin: { id: string }) => ({
+      admin_id: admin.id,
+      title: 'New Reservation Payment',
+      body: `${studentFullName} reserved "${roomName}" in ${dormName} (owned by ${ownerFullName}). Roomy earned $${roomyFee.toFixed(2)} commission.`,
+      type: 'payment',
+      metadata: {
+        reservation_id: reservationId,
+        student_name: studentFullName,
+        owner_name: ownerFullName,
+        room_name: roomName,
+        dorm_name: dormName,
+        commission: roomyFee,
+        owner_payout: ownerPayout,
+        total_amount: totalAmount
+      }
+    }));
+
+    await supabaseClient.from('admin_notifications').insert(adminNotifications);
+    console.log('Admin in-app notifications sent to', admins.length, 'admins');
+  }
+
+  // ========== SEND EMAIL NOTIFICATIONS ==========
+
+  // Queue owner email notification via notifications_log (triggers send-owner-notification)
+  if (owner && ownerId) {
+    const { data: notifLog } = await supabaseClient
+      .from('notifications_log')
+      .insert({
+        owner_id: ownerId,
+        dorm_id: reservation.dorm_id,
+        event_type: 'new_reservation',
+        sent_to: owner.email,
+        status: 'pending',
+        channel: 'email',
+        fields_changed: {
+          student_name: studentFullName,
+          room_name: roomName,
+          dorm_name: dormName,
+          deposit_amount: ownerPayout,
+          total_amount: totalAmount,
+          reservation_id: reservationId
+        }
+      })
+      .select()
       .single();
 
-    // Send owner notification
-    if (room.dorms.owner_id && student) {
+    // Invoke the send-owner-notification function
+    if (notifLog) {
       await supabaseClient.functions.invoke('send-owner-notification', {
-        body: {
-          owner_id: room.dorms.owner_id,
-          event_type: 'new_reservation',
-          dorm_id: reservation.dorm_id,
-          room_name: room.name,
-          student_name: student.full_name,
-          deposit_amount: reservation.deposit_amount,
-          commission_amount: reservation.commission_amount,
-        }
-      }).catch((err: any) => console.error('Error sending owner notification:', err));
+        body: { notificationId: notifLog.id }
+      }).catch((err: any) => console.error('Error sending owner payout email:', err));
     }
-
-    // Send student receipt email
-    await supabaseClient.functions.invoke('send-student-receipt', {
-      body: {
-        student_id: reservation.student_id,
-        reservation_id: reservationId,
-        room_name: room.name,
-        dorm_name: room.dorms.dorm_name || room.dorms.name,
-        deposit: reservation.deposit_amount,
-        fee: reservation.commission_amount,
-        total: reservation.total_amount,
-        whish_payment_id: payload.id,
-        timestamp: new Date().toISOString(),
-      }
-    }).catch((err: any) => console.error('Error sending student receipt:', err));
   }
+
+  // Send student receipt email
+  await supabaseClient.functions.invoke('send-student-receipt', {
+    body: {
+      student_id: reservation.student_id,
+      reservation_id: reservationId,
+      room_name: roomName,
+      dorm_name: dormName,
+      deposit: reservation.deposit_amount,
+      fee: reservation.commission_amount || roomyFee,
+      total: totalAmount,
+      whish_payment_id: payload.id,
+      timestamp: new Date().toISOString(),
+    }
+  }).catch((err: any) => console.error('Error sending student receipt:', err));
+
+  console.log('All payment notifications sent successfully');
 }
 
 async function handleMatchPlanPayment(supabaseClient: any, payload: any, metadata: any) {
@@ -438,6 +520,29 @@ async function handleMatchPlanPayment(supabaseClient: any, payload: any, metadat
     })
     .eq('id', studentId);
 
+  // Get student details for notification
+  const { data: student } = await supabaseClient
+    .from('students')
+    .select('user_id, full_name')
+    .eq('id', studentId)
+    .single();
+
+  // Send student in-app notification for match plan
+  if (student?.user_id) {
+    await supabaseClient.from('notifications').insert({
+      user_id: student.user_id,
+      title: 'AI Match Plan Activated!',
+      message: `Your ${planType} plan is now active. Enjoy enhanced AI matching for 30 days!`,
+      lang: 'en',
+      metadata: {
+        type: 'match_plan_payment',
+        plan_type: planType,
+        expires_at: expiresAt.toISOString()
+      }
+    });
+    console.log('Student match plan notification sent');
+  }
+
   console.log('Match plan activated:', {
     studentId,
     planType,
@@ -467,6 +572,27 @@ async function handlePaymentFailure(supabaseClient: any, payload: any) {
         status: 'failed',
         raw_payload: payload,
       });
+
+    // Get student for notification
+    const { data: student } = await supabaseClient
+      .from('students')
+      .select('user_id')
+      .eq('id', metadata.student_id)
+      .single();
+
+    // Send student notification about failed payment
+    if (student?.user_id) {
+      await supabaseClient.from('notifications').insert({
+        user_id: student.user_id,
+        title: 'Payment Failed',
+        message: 'Your payment could not be processed. Please try again or use a different payment method.',
+        lang: 'en',
+        metadata: {
+          type: 'payment_failed',
+          payment_type: paymentType
+        }
+      });
+    }
   }
 
   // Update reservation if applicable

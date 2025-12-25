@@ -95,6 +95,20 @@ Open your dashboard to read and reply:
 افتح لوحة التحكم لقراءة الرسالة والرد عليها:
 {{owner_dashboard_url}}
 — مساعد Roomy الذكي 🤖`
+  },
+  new_reservation: {
+    EN: `Hi {{owner_name}}! 💰
+Great news! {{student_name}} just reserved "{{room_name}}" in {{dorm_name}}.
+You will receive \${{deposit_amount}} for this reservation.
+View your finance hub:
+{{owner_dashboard_url}}
+— Roomy Team`,
+    AR: `مرحباً {{owner_name}}! 💰
+أخبار رائعة! {{student_name}} قام بحجز "{{room_name}}" في {{dorm_name}}.
+ستتلقى \${{deposit_amount}} لهذا الحجز.
+شاهد مركز التمويل الخاص بك:
+{{owner_dashboard_url}}
+— فريق Roomy`
   }
 };
 
@@ -515,6 +529,86 @@ serve(async (req) => {
                 <p style="color: #8B5CF6; margin: 8px 0 0 0; font-size: 12px;">Roomy — AI-Powered Student Housing Platform</p>
               </div>
             </div>
+        </body>
+        </html>
+      `;
+    } else if (notification.event_type === "new_reservation") {
+      // New reservation payout notification
+      const reservationData = notification.fields_changed || {};
+      const studentName = reservationData.student_name || "A student";
+      const roomName = reservationData.room_name || "a room";
+      const depositAmount = reservationData.deposit_amount || 0;
+      const totalAmount = reservationData.total_amount || depositAmount;
+      
+      subject = "💰 New Reservation Payment Received!";
+      
+      whatsappMessage = generateWhatsAppMessage('new_reservation', language, {
+        owner_name: ownerName,
+        student_name: studentName,
+        room_name: roomName,
+        dorm_name: dormName,
+        deposit_amount: depositAmount.toFixed(2),
+        owner_dashboard_url: 'https://roomylb.com/owner/finance'
+      });
+      
+      html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>New Reservation Payment - Roomy</title>
+          <style>${styles}</style>
+        </head>
+        <body>
+          <div style="display: none; max-height: 0px; overflow: hidden;">
+            You received a new reservation payment! &nbsp;‌&nbsp;‌&nbsp;‌
+          </div>
+          <div class="wrapper">
+            <div class="container">
+              <div class="header">
+                <img src="https://roomylb.com/roomy-logo.png" alt="Roomy" width="80" height="80" style="border-radius: 16px; margin-bottom: 12px;" />
+                <p class="tagline">AI-Powered Student Housing</p>
+              </div>
+              <div class="card">
+                <div class="icon">💰</div>
+                <h1 class="heading">New Reservation!</h1>
+                <p class="subheading">You have a new confirmed booking</p>
+                <p class="greeting">Hi ${ownerName},</p>
+                <p class="text">Great news! <strong>${studentName}</strong> has just reserved a room in your property.</p>
+                <div class="highlight">
+                  <p class="highlight-title">Reservation Details</p>
+                  <ul class="list">
+                    <li><strong>Student:</strong> ${studentName}</li>
+                    <li><strong>Room:</strong> ${roomName}</li>
+                    <li><strong>Dorm:</strong> ${dormName}</li>
+                    <li><strong>Amount You Receive:</strong> $${depositAmount.toFixed(2)}</li>
+                  </ul>
+                </div>
+                <p class="text">The payment has been processed securely via Whish and will be transferred to your registered payout card.</p>
+                <div class="button-container">
+                  <a href="https://roomylb.com/owner/finance" class="button">View Finance Hub</a>
+                </div>
+              </div>
+              <div class="footer">
+                <div class="footer-links">
+                  <a href="https://roomylb.com/contact" class="footer-link">Support</a>
+                  <span style="color: #475569;">•</span>
+                  <a href="https://roomylb.com/legal#privacy" class="footer-link">Privacy</a>
+                  <span style="color: #475569;">•</span>
+                  <a href="https://roomylb.com/legal#terms" class="footer-link">Terms</a>
+                </div>
+                <!-- Signature -->
+                <div style="border-top: 1px solid #475569; margin-top: 16px; padding-top: 16px;">
+                  <p style="font-weight: 600; color: #F8FAFC; margin: 0; font-size: 14px;">Roomy Support Team</p>
+                  <p style="color: #94A3B8; margin: 4px 0; font-size: 13px;"><a href="mailto:support@roomylb.com" style="color: #A78BFA; text-decoration: none;">support@roomylb.com</a></p>
+                  <p style="color: #94A3B8; margin: 4px 0; font-size: 13px;"><a href="https://roomylb.com" style="color: #A78BFA; text-decoration: none;">roomylb.com</a> • Lebanon</p>
+                  <p style="color: #A78BFA; margin: 8px 0 0 0; font-size: 12px;">Roomy — AI-Powered Student Housing Platform</p>
+                </div>
+                <p class="unsubscribe">Don't want these emails? <a href="https://roomylb.com/owner/account">Update preferences</a></p>
+              </div>
+            </div>
+          </div>
         </body>
         </html>
       `;
