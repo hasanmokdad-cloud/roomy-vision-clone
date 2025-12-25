@@ -1709,11 +1709,29 @@ export default function Messages() {
   const isRecordingActiveRef = useRef(isRecordingActive); // Track pending recording state (getUserMedia in progress)
   const permissionRef = useRef(permission); // Track mic permission for touch handlers
   
+  // Store document listener cleanup separately - these must persist when mic button unmounts
+  const documentListenersRef = useRef<{
+    move: ((e: TouchEvent) => void) | null;
+    end: ((e: TouchEvent) => void) | null;
+  }>({ move: null, end: null });
+  
   // Keep refs in sync with state
   useEffect(() => { recordingRef.current = recording; }, [recording]);
   useEffect(() => { isLockedRef.current = isLocked; }, [isLocked]);
   useEffect(() => { isRecordingActiveRef.current = isRecordingActive; }, [isRecordingActive]);
   useEffect(() => { permissionRef.current = permission; }, [permission]);
+
+  // Cleanup document listeners helper
+  const cleanupDocumentListeners = useCallback(() => {
+    if (documentListenersRef.current.move) {
+      document.removeEventListener('touchmove', documentListenersRef.current.move);
+    }
+    if (documentListenersRef.current.end) {
+      document.removeEventListener('touchend', documentListenersRef.current.end);
+    }
+    documentListenersRef.current = { move: null, end: null };
+    isTrackingRef.current = false;
+  }, []);
 
   // Function to attach touch handlers to mic button - extracted so it can be called from callback ref
   const attachMicTouchHandlers = useCallback((micButton: HTMLButtonElement | null) => {
@@ -1751,10 +1769,9 @@ export default function Messages() {
       e.preventDefault();
       clearTimeout(pressTimer);
       
-      // Remove document listeners
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
-      isTrackingRef.current = false;
+      // Clean up document listeners AFTER processing
+      // Use the cleanup helper which reads from the ref
+      setTimeout(() => cleanupDocumentListeners(), 0);
       
       // Use refs to get current values (avoid stale closures)
       const currentSlideOffset = slideOffsetRef.current;
@@ -1811,6 +1828,12 @@ export default function Messages() {
       touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       isTrackingRef.current = true;
       
+      // Clean up any existing document listeners first
+      cleanupDocumentListeners();
+      
+      // Store references to handlers so they can be cleaned up later
+      documentListenersRef.current = { move: handleTouchMove, end: handleTouchEnd };
+      
       // Attach document-level listeners for move and end
       // This allows tracking even after mic button is removed from DOM by overlay
       document.addEventListener('touchmove', handleTouchMove, { passive: false });
@@ -1828,14 +1851,14 @@ export default function Messages() {
     // Only attach touchstart to mic button
     micButton.addEventListener('touchstart', handleTouchStart, { passive: false });
     
-    // Return cleanup function
+    // Return cleanup function - ONLY removes touchstart from mic button
+    // Document listeners are managed separately and persist during recording
     return () => {
+      clearTimeout(pressTimer);
       micButton.removeEventListener('touchstart', handleTouchStart);
-      // Clean up any lingering document listeners
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
+      // Do NOT clean up document listeners here - they need to persist during recording
     };
-  }, [isMobile]);
+  }, [isMobile, cleanupDocumentListeners]);
   // Store cleanup function for mic button touch handlers
   const micCleanupRef = useRef<(() => void) | null>(null);
   
@@ -1859,6 +1882,9 @@ export default function Messages() {
   const cancelRecording = () => {
     shouldUploadVoiceRef.current = false;
     recordingStartedRef.current = false; // Reset triggered flag
+    
+    // Clean up document listeners (in case cancel is called while still tracking)
+    cleanupDocumentListeners();
     
     // Stop preview if playing
     if (previewAudioRef.current) {
