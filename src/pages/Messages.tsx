@@ -2565,7 +2565,7 @@ export default function Messages() {
                             </div>
                             
                             {/* Content - Instagram style: name on top, message + time on bottom */}
-                            <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 max-w-[calc(100%-120px)]">
                               {/* Row 1: Name with icons */}
                               <div className="flex items-center gap-1.5">
                                 {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
