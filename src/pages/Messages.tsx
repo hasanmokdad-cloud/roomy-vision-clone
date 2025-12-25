@@ -1712,13 +1712,10 @@ export default function Messages() {
   useEffect(() => { recordingStartedRef.current = recording; }, [recording]);
   useEffect(() => { permissionRef.current = permission; }, [permission]);
 
-  // Mobile long-press recording with native event listeners
-  // IMPORTANT: touchmove/touchend are attached to document because the mic button
-  // gets removed from DOM when the recording overlay appears
-  useEffect(() => {
-    if (!isMobile || !micButtonRef.current) return;
+  // Function to attach touch handlers to mic button - extracted so it can be called from callback ref
+  const attachMicTouchHandlers = useCallback((micButton: HTMLButtonElement | null) => {
+    if (!isMobile || !micButton) return () => {};
     
-    const micButton = micButtonRef.current;
     let pressTimer: NodeJS.Timeout;
     
     const handleTouchMove = (e: TouchEvent) => {
@@ -1812,13 +1809,33 @@ export default function Messages() {
     // Only attach touchstart to mic button
     micButton.addEventListener('touchstart', handleTouchStart, { passive: false });
     
+    // Return cleanup function
     return () => {
       micButton.removeEventListener('touchstart', handleTouchStart);
       // Clean up any lingering document listeners
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isMobile]); // Use refs for all state values to avoid re-attaching listeners
+  }, [isMobile]);
+  // Store cleanup function for mic button touch handlers
+  const micCleanupRef = useRef<(() => void) | null>(null);
+  
+  // Callback ref for mic button - re-attaches handlers whenever button mounts
+  const micButtonCallbackRef = useCallback((node: HTMLButtonElement | null) => {
+    // Cleanup previous handlers
+    if (micCleanupRef.current) {
+      micCleanupRef.current();
+      micCleanupRef.current = null;
+    }
+    
+    // Update the regular ref
+    micButtonRef.current = node;
+    
+    // Attach new handlers if node exists
+    if (node && isMobile) {
+      micCleanupRef.current = attachMicTouchHandlers(node);
+    }
+  }, [isMobile, attachMicTouchHandlers]);
 
   const cancelRecording = () => {
     shouldUploadVoiceRef.current = false;
@@ -2648,89 +2665,177 @@ export default function Messages() {
                   setSearchQuery={setConversationSearchQuery}
                 />
 
-
-                <ScrollArea className="flex-1 overflow-hidden p-4">
-                  <div className="space-y-4">
-                    {/* Pinned Messages Banner */}
-                    {pinnedMessages.length > 0 && (
-                      <div 
-                        className="sticky top-0 z-10 bg-primary/10 backdrop-blur-sm border border-primary/20 rounded-lg p-3 cursor-pointer flex items-center gap-3 hover:bg-primary/20 transition-colors"
-                        onClick={() => {
-                          const firstPinned = pinnedMessages[0];
-                          if (firstPinned) {
-                            scrollToMessage(firstPinned.id);
-                          }
-                        }}
-                      >
-                        <Pin className="w-4 h-4 text-primary shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-primary">
-                            {pinnedMessages.length === 1 ? 'Pinned message' : `${pinnedMessages.length} pinned messages`}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {pinnedMessages[0].body?.substring(0, 50) || 'Media'}
-                            {pinnedMessages[0].body && pinnedMessages[0].body.length > 50 ? '...' : ''}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {messages.map((msg) => {
-                      const currentConversation = conversations.find(c => c.id === selectedConversation);
-                      const isSender = msg.sender_id === userId;
-                      const senderName = isSender ? 'You' : currentConversation?.other_user_name || 'User';
-                      const senderAvatar = isSender ? undefined : currentConversation?.other_user_avatar;
-
-                      return (
-                        <SwipeableMessage
-                          key={msg.id}
-                          onSwipeReply={() => setReplyToMessage(msg)}
-                          disabled={false}
+                {/* Chat Messages - Native scroll on mobile for smooth touch scrolling */}
+                {isMobile ? (
+                  <div 
+                    className="flex-1 overflow-y-auto overscroll-contain p-4"
+                    style={{ WebkitOverflowScrolling: 'touch' }}
+                  >
+                    <div className="space-y-4">
+                      {/* Pinned Messages Banner */}
+                      {pinnedMessages.length > 0 && (
+                        <div 
+                          className="sticky top-0 z-10 bg-primary/10 backdrop-blur-sm border border-primary/20 rounded-lg p-3 cursor-pointer flex items-center gap-3 hover:bg-primary/20 transition-colors"
+                          onClick={() => {
+                            const firstPinned = pinnedMessages[0];
+                            if (firstPinned) {
+                              scrollToMessage(firstPinned.id);
+                            }
+                          }}
                         >
-                          <div id={`message-${msg.id}`}>
-                            <MessageBubble
-                              message={msg}
-                              isSender={isSender}
-                              userId={userId}
-                              senderName={senderName}
-                              senderAvatar={senderAvatar}
-                              onReply={() => setReplyToMessage(msg)}
-                              onEdit={() => {
-                                setEditingMessage(msg);
-                                setShowEditModal(true);
-                              }}
-                              renderContent={() => renderMessageContent(msg, matchingMessageIds[currentSearchMatchIndex] === msg.id)}
-                              showAvatar={!isSender}
-                              allMessages={messages}
-                              onScrollToMessage={scrollToMessage}
-                              onPinChange={handlePinChange}
-                              searchQuery={conversationSearchQuery}
-                              isCurrentSearchMatch={matchingMessageIds[currentSearchMatchIndex] === msg.id}
-                            />
+                          <Pin className="w-4 h-4 text-primary shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-primary">
+                              {pinnedMessages.length === 1 ? 'Pinned message' : `${pinnedMessages.length} pinned messages`}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {pinnedMessages[0].body?.substring(0, 50) || 'Media'}
+                              {pinnedMessages[0].body && pinnedMessages[0].body.length > 50 ? '...' : ''}
+                            </p>
                           </div>
-                        </SwipeableMessage>
-                      );
-                    })}
-                    
-                    {/* Typing and Recording indicators */}
-                    <AnimatePresence mode="wait">
-                      {recordingUsers.size > 0 && (
-                        <RecordingIndicator 
-                          userName={conversations.find(c => c.id === selectedConversation)?.other_user_name}
-                          avatarUrl={conversations.find(c => c.id === selectedConversation)?.other_user_photo}
-                        />
+                        </div>
                       )}
-                      {recordingUsers.size === 0 && typingUsers.size > 0 && (
-                        <TypingIndicator 
-                          userName={conversations.find(c => c.id === selectedConversation)?.other_user_name}
-                          avatarUrl={conversations.find(c => c.id === selectedConversation)?.other_user_photo}
-                        />
-                      )}
-                    </AnimatePresence>
-                    
-                    <div ref={messagesEndRef} />
+
+                      {messages.map((msg) => {
+                        const currentConversation = conversations.find(c => c.id === selectedConversation);
+                        const isSender = msg.sender_id === userId;
+                        const senderName = isSender ? 'You' : currentConversation?.other_user_name || 'User';
+                        const senderAvatar = isSender ? undefined : currentConversation?.other_user_avatar;
+
+                        return (
+                          <SwipeableMessage
+                            key={msg.id}
+                            onSwipeReply={() => setReplyToMessage(msg)}
+                            disabled={false}
+                          >
+                            <div id={`message-${msg.id}`}>
+                              <MessageBubble
+                                message={msg}
+                                isSender={isSender}
+                                userId={userId}
+                                senderName={senderName}
+                                senderAvatar={senderAvatar}
+                                onReply={() => setReplyToMessage(msg)}
+                                onEdit={() => {
+                                  setEditingMessage(msg);
+                                  setShowEditModal(true);
+                                }}
+                                renderContent={() => renderMessageContent(msg, matchingMessageIds[currentSearchMatchIndex] === msg.id)}
+                                showAvatar={!isSender}
+                                allMessages={messages}
+                                onScrollToMessage={scrollToMessage}
+                                onPinChange={handlePinChange}
+                                searchQuery={conversationSearchQuery}
+                                isCurrentSearchMatch={matchingMessageIds[currentSearchMatchIndex] === msg.id}
+                              />
+                            </div>
+                          </SwipeableMessage>
+                        );
+                      })}
+                      
+                      {/* Typing and Recording indicators */}
+                      <AnimatePresence mode="wait">
+                        {recordingUsers.size > 0 && (
+                          <RecordingIndicator 
+                            userName={conversations.find(c => c.id === selectedConversation)?.other_user_name}
+                            avatarUrl={conversations.find(c => c.id === selectedConversation)?.other_user_photo}
+                          />
+                        )}
+                        {recordingUsers.size === 0 && typingUsers.size > 0 && (
+                          <TypingIndicator 
+                            userName={conversations.find(c => c.id === selectedConversation)?.other_user_name}
+                            avatarUrl={conversations.find(c => c.id === selectedConversation)?.other_user_photo}
+                          />
+                        )}
+                      </AnimatePresence>
+                      
+                      <div ref={messagesEndRef} />
+                    </div>
                   </div>
-                </ScrollArea>
+                ) : (
+                  <ScrollArea className="flex-1 overflow-hidden p-4">
+                    <div className="space-y-4">
+                      {/* Pinned Messages Banner */}
+                      {pinnedMessages.length > 0 && (
+                        <div 
+                          className="sticky top-0 z-10 bg-primary/10 backdrop-blur-sm border border-primary/20 rounded-lg p-3 cursor-pointer flex items-center gap-3 hover:bg-primary/20 transition-colors"
+                          onClick={() => {
+                            const firstPinned = pinnedMessages[0];
+                            if (firstPinned) {
+                              scrollToMessage(firstPinned.id);
+                            }
+                          }}
+                        >
+                          <Pin className="w-4 h-4 text-primary shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-primary">
+                              {pinnedMessages.length === 1 ? 'Pinned message' : `${pinnedMessages.length} pinned messages`}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {pinnedMessages[0].body?.substring(0, 50) || 'Media'}
+                              {pinnedMessages[0].body && pinnedMessages[0].body.length > 50 ? '...' : ''}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {messages.map((msg) => {
+                        const currentConversation = conversations.find(c => c.id === selectedConversation);
+                        const isSender = msg.sender_id === userId;
+                        const senderName = isSender ? 'You' : currentConversation?.other_user_name || 'User';
+                        const senderAvatar = isSender ? undefined : currentConversation?.other_user_avatar;
+
+                        return (
+                          <SwipeableMessage
+                            key={msg.id}
+                            onSwipeReply={() => setReplyToMessage(msg)}
+                            disabled={false}
+                          >
+                            <div id={`message-${msg.id}`}>
+                              <MessageBubble
+                                message={msg}
+                                isSender={isSender}
+                                userId={userId}
+                                senderName={senderName}
+                                senderAvatar={senderAvatar}
+                                onReply={() => setReplyToMessage(msg)}
+                                onEdit={() => {
+                                  setEditingMessage(msg);
+                                  setShowEditModal(true);
+                                }}
+                                renderContent={() => renderMessageContent(msg, matchingMessageIds[currentSearchMatchIndex] === msg.id)}
+                                showAvatar={!isSender}
+                                allMessages={messages}
+                                onScrollToMessage={scrollToMessage}
+                                onPinChange={handlePinChange}
+                                searchQuery={conversationSearchQuery}
+                                isCurrentSearchMatch={matchingMessageIds[currentSearchMatchIndex] === msg.id}
+                              />
+                            </div>
+                          </SwipeableMessage>
+                        );
+                      })}
+                      
+                      {/* Typing and Recording indicators */}
+                      <AnimatePresence mode="wait">
+                        {recordingUsers.size > 0 && (
+                          <RecordingIndicator 
+                            userName={conversations.find(c => c.id === selectedConversation)?.other_user_name}
+                            avatarUrl={conversations.find(c => c.id === selectedConversation)?.other_user_photo}
+                          />
+                        )}
+                        {recordingUsers.size === 0 && typingUsers.size > 0 && (
+                          <TypingIndicator 
+                            userName={conversations.find(c => c.id === selectedConversation)?.other_user_name}
+                            avatarUrl={conversations.find(c => c.id === selectedConversation)?.other_user_photo}
+                          />
+                        )}
+                      </AnimatePresence>
+                      
+                      <div ref={messagesEndRef} />
+                    </div>
+                  </ScrollArea>
+                )}
 
                 <div 
                   className={`${isMobile ? 'p-3 shrink-0 bg-background z-20 border-t border-border' : 'p-4 border-t border-border'}`}
@@ -2920,7 +3025,7 @@ export default function Messages() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        ref={micButtonRef}
+                        ref={micButtonCallbackRef}
                         onClick={isMobile ? undefined : handleVoiceButtonClick}
                         className="shrink-0 h-8 w-8 voice-record-button"
                         aria-label="Record voice message"
