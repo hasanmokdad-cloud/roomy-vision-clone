@@ -1,4 +1,4 @@
-// Messages.tsx v2.0 - Updated 2025-01-06 - Instagram-style layout
+// Messages.tsx v3.0 - Updated 2025-12-25 - Force deployment with debug indicator
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -2413,10 +2413,14 @@ export default function Messages() {
         <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-[350px] border-r border-border bg-background ${isMobile ? 'h-screen' : 'h-[calc(100vh-80px)]'}`}>
             <div className={`p-4 border-b border-border ${isMobile ? 'pt-6' : ''} space-y-3`}>
               <div className="flex items-center justify-between w-full">
-                <h2 className={`${isMobile ? 'text-3xl' : 'text-2xl'} font-bold flex items-center gap-2`}>
-                  <MessageSquare className="w-6 h-6" />
-                  Messages
-                </h2>
+                <div className="flex flex-col">
+                  <h2 className={`${isMobile ? 'text-3xl' : 'text-2xl'} font-bold flex items-center gap-2`}>
+                    <MessageSquare className="w-6 h-6" />
+                    Messages
+                  </h2>
+                  {/* DEBUG: Version indicator - Remove after verifying deployment */}
+                  <span className="text-[10px] text-muted-foreground/50 mt-0.5">v3.0 | Role: {role || 'unknown'}</span>
+                </div>
               </div>
 
               {/* Search bar for ALL roles */}
