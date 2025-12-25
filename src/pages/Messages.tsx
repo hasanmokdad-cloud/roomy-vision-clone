@@ -2582,7 +2582,7 @@ export default function Messages() {
                                 {conv.last_message_sender_id === userId && (
                                   <MessageStatusIcon status={conv.last_message_status} />
                                 )}
-                                <p className={`text-sm truncate ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                                <p className={`text-sm truncate max-w-[65%] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                                   {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
                                 </p>
                               </div>
