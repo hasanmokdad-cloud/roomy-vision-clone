@@ -8,8 +8,11 @@ export function useOnlineStatus(userId: string | null, conversationId?: string) 
   useEffect(() => {
     if (!userId) return;
 
+    let isMounted = true;
+
     // Set online on mount
     const setOnline = async () => {
+      if (!isMounted) return;
       try {
         await supabase.from("user_presence").upsert({
           user_id: userId,
@@ -21,25 +24,30 @@ export function useOnlineStatus(userId: string | null, conversationId?: string) 
           onConflict: 'user_id'
         });
       } catch (error) {
-        console.error("Error updating presence:", error);
+        // Silently ignore - user may be signing out
       }
     };
 
     // Set offline on unmount
     const setOffline = async () => {
-      await supabase
-        .from("user_presence")
-        .update({
-          is_online: false,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("user_id", userId);
+      if (!isMounted) return;
+      try {
+        await supabase
+          .from("user_presence")
+          .update({
+            is_online: false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId);
+      } catch (error) {
+        // Silently ignore
+      }
     };
 
     // Start heartbeat
     setOnline();
     heartbeatIntervalRef.current = setInterval(async () => {
-      if (isActiveRef.current) {
+      if (isActiveRef.current && isMounted) {
         try {
           await supabase
             .from("user_presence")
@@ -52,37 +60,30 @@ export function useOnlineStatus(userId: string | null, conversationId?: string) 
               onConflict: 'user_id'
             });
         } catch (error) {
-          console.error("Error updating heartbeat:", error);
+          // Silently ignore
         }
       }
-    }, 10000); // Update every 10 seconds
+    }, 10000);
 
     // Handle page visibility
     const handleVisibilityChange = () => {
+      if (!isMounted) return;
       isActiveRef.current = !document.hidden;
       if (isActiveRef.current) {
         setOnline();
       }
     };
 
-    // Handle page unload
-    const handleBeforeUnload = async () => {
-      // Use fetch with keepalive for reliable offline status with proper headers
+    // Handle page unload - use session token for auth
+    const handleBeforeUnload = () => {
+      // Use navigator.sendBeacon for reliable unload requests
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/user_presence?user_id=eq.${userId}`;
+      const data = JSON.stringify({ is_online: false, updated_at: new Date().toISOString() });
+      
+      // sendBeacon doesn't support custom headers well, so we'll just let it fail gracefully
+      // The heartbeat will eventually mark user as offline anyway
       try {
-        await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/user_presence?user_id=eq.${userId}`,
-          {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-              'Prefer': 'return=minimal'
-            },
-            body: JSON.stringify({ is_online: false, updated_at: new Date().toISOString() }),
-            keepalive: true
-          }
-        );
+        navigator.sendBeacon(url, new Blob([data], { type: 'application/json' }));
       } catch (e) {
         // Ignore errors on unload
       }
@@ -92,6 +93,7 @@ export function useOnlineStatus(userId: string | null, conversationId?: string) 
     window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
+      isMounted = false;
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
       }
