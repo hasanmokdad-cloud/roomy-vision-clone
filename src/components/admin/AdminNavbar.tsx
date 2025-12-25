@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Menu, X, MessageSquare, Info, Phone, LogOut, User, Settings, Building2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,8 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { useAuth } from '@/contexts/AuthContext';
-import { NotificationBellPopover } from '@/components/shared/NotificationBellPopover';
+import { AdminNotificationBell } from '@/components/admin/AdminNotificationBell';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdminNavbarProps {
   sidebarOpen: boolean;
@@ -23,6 +25,26 @@ export function AdminNavbar({ sidebarOpen, onToggleSidebar }: AdminNavbarProps) 
   const navigate = useNavigate();
   const { userId, role, signOut } = useAuth();
   const { count: unreadMessages } = useUnreadMessagesCount(userId, role);
+  const [adminId, setAdminId] = useState<string | null>(null);
+
+  // Fetch admin record ID for notifications
+  useEffect(() => {
+    const fetchAdminId = async () => {
+      if (!userId) return;
+      
+      const { data } = await supabase
+        .from('admins')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+      
+      if (data) {
+        setAdminId(data.id);
+      }
+    };
+
+    fetchAdminId();
+  }, [userId]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -63,13 +85,9 @@ export function AdminNavbar({ sidebarOpen, onToggleSidebar }: AdminNavbarProps) 
 
         {/* Right side actions */}
         <div className="flex items-center gap-2">
-          {/* Notification Bell */}
-          {userId && (
-            <NotificationBellPopover 
-              userId={userId} 
-              tableType="user" 
-              variant="admin"
-            />
+          {/* Admin Notification Bell (admin-specific notifications) */}
+          {adminId && (
+            <AdminNotificationBell adminId={adminId} />
           )}
 
           {/* Profile Dropdown */}
