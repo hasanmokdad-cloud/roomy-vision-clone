@@ -386,9 +386,6 @@ export default function OwnerHome() {
                         <card.icon className="w-4 h-4" />
                         {card.buttonText}
                       </Button>
-                        <card.icon className="w-4 h-4" />
-                        {card.buttonText}
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
