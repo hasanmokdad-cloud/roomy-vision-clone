@@ -1657,11 +1657,13 @@ export default function Messages() {
   const recordingRef = useRef(recording);
   const isLockedRef = useRef(isLocked);
   const recordingStartedRef = useRef(false); // Track if recording actually started (after 220ms hold)
+  const permissionRef = useRef(permission); // Track mic permission for touch handlers
   
   // Keep refs in sync with state
   useEffect(() => { recordingRef.current = recording; }, [recording]);
   useEffect(() => { isLockedRef.current = isLocked; }, [isLocked]);
   useEffect(() => { recordingStartedRef.current = recording; }, [recording]);
+  useEffect(() => { permissionRef.current = permission; }, [permission]);
 
   // Mobile long-press recording with native event listeners
   // IMPORTANT: touchmove/touchend are attached to document because the mic button
@@ -1714,14 +1716,17 @@ export default function Messages() {
       e.preventDefault();
       e.stopPropagation();
       
+      // Use ref to get CURRENT permission value (not stale closure value)
+      const currentPermission = permissionRef.current;
+      
       // If permission is denied, show modal with instructions
-      if (permission === 'denied') {
+      if (currentPermission === 'denied') {
         setShowMicPermissionModal(true);
         return;
       }
       
       // If permission not yet granted, show setup modal on TAP (not hold)
-      if (permission === 'prompt') {
+      if (currentPermission === 'prompt') {
         setShowMicSetupModal(true);
         return;
       }
@@ -1750,7 +1755,7 @@ export default function Messages() {
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isMobile, permission]); // Removed recording, isLocked - use refs instead to avoid re-attaching listeners
+  }, [isMobile]); // Use refs for all state values to avoid re-attaching listeners
 
   const cancelRecording = () => {
     shouldUploadVoiceRef.current = false;
