@@ -130,16 +130,13 @@ export function ConversationContextMenu({
 
   const isMuted = mutedUntil && new Date(mutedUntil) > new Date();
 
-  // Debug logging to verify component renders
-  console.log('ConversationContextMenu rendered for conversation:', conversationId);
-
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button 
             type="button"
-            className="h-9 w-9 rounded-md flex items-center justify-center bg-muted/50 text-foreground hover:bg-accent hover:text-foreground transition-colors border border-border/50" 
+            className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" 
             onClick={(e) => e.stopPropagation()}
           >
             <MoreVertical className="w-5 h-5" />

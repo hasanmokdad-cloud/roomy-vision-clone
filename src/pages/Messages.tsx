@@ -2461,8 +2461,8 @@ export default function Messages() {
                       onClick={() => setShowArchivedPage(true)}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border"
                     >
-                      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Archive className="w-6 h-6 text-primary" />
+                      <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+                        <Archive className="w-6 h-6 text-muted-foreground" />
                       </div>
                       <div className="flex-1 text-left">
                         <span className="font-medium text-foreground">Archived</span>
@@ -2555,9 +2555,12 @@ export default function Messages() {
                                 <div className="w-2.5 h-2.5 rounded-full bg-primary" />
                               )}
                               
-                              {/* Three-dots context menu - DESKTOP ONLY */}
+                              {/* Three-dots context menu - DESKTOP ONLY, appears on hover */}
                               {!isMobile && (
-                                <div onClick={(e) => e.stopPropagation()}>
+                                <div 
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   <ConversationContextMenu
                                     conversationId={conv.id}
                                     isPinned={conv.is_pinned || false}
