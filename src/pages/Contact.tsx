@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import { UnderwaterScene } from '@/components/UnderwaterScene';
@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Mail, Phone, MapPin, Instagram, Linkedin, Youtube, Facebook, Music, Pin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { validateName, validateEmail, sanitizeInput, validateMessage } from '@/utils/inputValidation';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,45 +18,25 @@ import { triggerContactEmailNotification } from '@/lib/contactNotifications';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Dynamic field component that shows "University" for students or "Dorm Name" for owners
-function UniversityOrDormField({ value, onChange, error }: { value: string; onChange: (v: string) => void; error?: string }) {
-  const [label, setLabel] = useState('University / Dorm Name');
-
-  useEffect(() => {
-    const getUserRole = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.id) {
-        const { data: roleData } = await supabase.rpc('get_user_role', { p_user_id: user.id });
-        setLabel(roleData === 'owner' ? 'Dorm Name' : 'University');
-      }
-    };
-    getUserRole();
-  }, []);
-
-  return (
-    <div>
-      <Label>{label}</Label>
-      <Input
-        required
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`bg-black/20 border-white/10 ${error ? 'border-destructive' : ''}`}
-        placeholder={label === 'Dorm Name' ? 'Enter your dorm name' : 'Enter your university'}
-      />
-      {error && <p className="text-sm text-destructive mt-1">{error}</p>}
-    </div>
-  );
-}
+const CONTACT_CATEGORIES = [
+  'General Inquiry',
+  'Customer Support',
+  'Business Partnership',
+  'Press & Media',
+  'Careers',
+  'Feedback',
+  'Technical Issue'
+];
 
 export default function Contact() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const { isAuthenticated, openAuthModal } = useAuth();
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    fullName: '',
     email: '',
-    university: '',
+    category: '',
+    subject: '',
     message: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -103,17 +84,17 @@ export default function Contact() {
     const newErrors: Record<string, string> = {};
     
     // Validate fields
-    if (!validateName(formData.firstName)) {
-      newErrors.firstName = 'Please enter a valid first name (2-100 characters, letters only)';
-    }
-    if (!validateName(formData.lastName)) {
-      newErrors.lastName = 'Please enter a valid last name (2-100 characters, letters only)';
+    if (!formData.fullName.trim() || formData.fullName.trim().length < 2) {
+      newErrors.fullName = 'Please enter your full name (at least 2 characters)';
     }
     if (!validateEmail(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-    if (!formData.university.trim()) {
-      newErrors.university = 'University or Dorm Name is required';
+    if (!formData.category) {
+      newErrors.category = 'Please select a category';
+    }
+    if (!formData.subject.trim() || formData.subject.trim().length < 3) {
+      newErrors.subject = 'Please enter a subject (at least 3 characters)';
     }
     
     const messageValidation = validateMessage(formData.message);
@@ -134,20 +115,18 @@ export default function Contact() {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Get user role to determine field label
-      let userRole = null;
-      if (user?.id) {
-        const { data: roleData } = await supabase.rpc('get_user_role', { p_user_id: user.id });
-        userRole = roleData;
-      }
+      // Parse full name into first and last name for database
+      const nameParts = formData.fullName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
       
       // 1. Insert into contact_messages
       const { error: contactError } = await supabase.from('contact_messages').insert({
         user_id: user?.id || null,
-        first_name: sanitizeInput(formData.firstName),
-        last_name: sanitizeInput(formData.lastName),
+        first_name: sanitizeInput(firstName),
+        last_name: sanitizeInput(lastName),
         email: formData.email,
-        university: sanitizeInput(formData.university),
+        university: `[${formData.category}] ${sanitizeInput(formData.subject)}`,
         message: sanitizeInput(formData.message),
         status: 'new'
       });
@@ -169,10 +148,10 @@ export default function Contact() {
 
       // 3. Send email notification
       await triggerContactEmailNotification({
-        first_name: sanitizeInput(formData.firstName),
-        last_name: sanitizeInput(formData.lastName),
+        first_name: sanitizeInput(firstName),
+        last_name: sanitizeInput(lastName),
         email: formData.email,
-        university: sanitizeInput(formData.university) || null,
+        university: `[${formData.category}] ${sanitizeInput(formData.subject)}`,
         message: sanitizeInput(formData.message),
       });
 
@@ -191,10 +170,10 @@ export default function Contact() {
       }
 
       setFormData({
-        firstName: '',
-        lastName: '',
+        fullName: '',
         email: '',
-        university: '',
+        category: '',
+        subject: '',
         message: ''
       });
     } catch (error) {
@@ -239,44 +218,61 @@ export default function Contact() {
             >
               <h2 className="text-3xl font-black mb-8 gradient-text">Contact Form</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
-                 <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>First Name</Label>
+                    <Label>Full Name</Label>
                     <Input
                       required
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className={`bg-black/20 border-white/10 ${errors.firstName ? 'border-destructive' : ''}`}
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      className={`bg-black/20 border-white/10 ${errors.fullName ? 'border-destructive' : ''}`}
+                      placeholder="Your full name"
                     />
-                    {errors.firstName && <p className="text-sm text-destructive mt-1">{errors.firstName}</p>}
+                    {errors.fullName && <p className="text-sm text-destructive mt-1">{errors.fullName}</p>}
                   </div>
                   <div>
-                    <Label>Last Name</Label>
+                    <Label>Email Address</Label>
                     <Input
+                      type="email"
                       required
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className={`bg-black/20 border-white/10 ${errors.lastName ? 'border-destructive' : ''}`}
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className={`bg-black/20 border-white/10 ${errors.email ? 'border-destructive' : ''}`}
+                      placeholder="your.email@example.com"
                     />
-                    {errors.lastName && <p className="text-sm text-destructive mt-1">{errors.lastName}</p>}
+                    {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
                   </div>
                 </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className={`bg-black/20 border-white/10 ${errors.email ? 'border-destructive' : ''}`}
-                  />
-                  {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Category</Label>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => setFormData({ ...formData, category: value })}
+                    >
+                      <SelectTrigger className={`bg-black/20 border-white/10 ${errors.category ? 'border-destructive' : ''}`}>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CONTACT_CATEGORIES.map((cat) => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.category && <p className="text-sm text-destructive mt-1">{errors.category}</p>}
+                  </div>
+                  <div>
+                    <Label>Subject</Label>
+                    <Input
+                      required
+                      value={formData.subject}
+                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                      className={`bg-black/20 border-white/10 ${errors.subject ? 'border-destructive' : ''}`}
+                      placeholder="Brief subject of your message"
+                    />
+                    {errors.subject && <p className="text-sm text-destructive mt-1">{errors.subject}</p>}
+                  </div>
                 </div>
-                <UniversityOrDormField
-                  value={formData.university}
-                  onChange={(value) => setFormData({ ...formData, university: value })}
-                  error={errors.university}
-                />
                 <div>
                   <Label>Message</Label>
                   <Textarea
@@ -286,6 +282,7 @@ export default function Contact() {
                     rows={6}
                     className={`bg-black/20 border-white/10 resize-none ${errors.message ? 'border-destructive' : ''}`}
                     maxLength={500}
+                    placeholder="Tell us more about your inquiry..."
                   />
                   {errors.message && <p className="text-sm text-destructive mt-1">{errors.message}</p>}
                   <p className="text-xs text-muted-foreground mt-1">{formData.message.length}/500</p>
@@ -348,6 +345,48 @@ export default function Contact() {
                   </p>
                 </div>
                 <WhatsAppDropdown />
+              </motion.div>
+
+              {/* Follow Us Section */}
+              <motion.div 
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="glass-hover rounded-3xl p-10 neon-border"
+              >
+                <h3 className="text-xl font-bold mb-2">Follow Us</h3>
+                <p className="text-foreground/70 mb-4">We're more fun on social media!</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Instagram - FUNCTIONAL */}
+                  <a 
+                    href="https://www.instagram.com/roomy.lebanon/" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors text-foreground"
+                  >
+                    <Instagram className="w-5 h-5 text-primary" /> Instagram
+                  </a>
+                  {/* LinkedIn - placeholder */}
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 text-muted-foreground cursor-not-allowed opacity-60">
+                    <Linkedin className="w-5 h-5" /> LinkedIn
+                  </div>
+                  {/* YouTube - placeholder */}
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 text-muted-foreground cursor-not-allowed opacity-60">
+                    <Youtube className="w-5 h-5" /> YouTube
+                  </div>
+                  {/* TikTok - placeholder */}
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 text-muted-foreground cursor-not-allowed opacity-60">
+                    <Music className="w-5 h-5" /> TikTok
+                  </div>
+                  {/* Facebook - placeholder */}
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 text-muted-foreground cursor-not-allowed opacity-60">
+                    <Facebook className="w-5 h-5" /> Facebook
+                  </div>
+                  {/* Pinterest - placeholder */}
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 text-muted-foreground cursor-not-allowed opacity-60">
+                    <Pin className="w-5 h-5" /> Pinterest
+                  </div>
+                </div>
               </motion.div>
             </div>
           </div>

@@ -2284,8 +2284,8 @@ export default function Messages() {
       {/* Hide Navbar on mobile, show on desktop */}
       {!isMobile && <RoomyNavbar />}
 
-      {/* Archives Page Overlay - WhatsApp style */}
-      {showArchivedPage && isMobile && (
+      {/* Archives Page Overlay - WhatsApp style (mobile and desktop) */}
+      {showArchivedPage && (
         <div className="fixed inset-0 z-50 bg-background flex flex-col animate-slide-in-right">
           {/* Header */}
           <div className="flex items-center gap-3 p-4 border-b border-border bg-background sticky top-0 z-10 pt-6">
@@ -2451,23 +2451,21 @@ export default function Messages() {
                   </div>
                 ) : (
                   <>
-                    {/* Archived section row - WhatsApp style */}
-                    {conversations.some(c => c.is_archived) && (
-                      <button
-                        onClick={() => setShowArchivedPage(true)}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border"
-                      >
-                        <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Archive className="w-6 h-6 text-primary" />
-                        </div>
-                        <div className="flex-1 text-left">
-                          <span className="font-medium text-foreground">Archived</span>
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {conversations.filter(c => c.is_archived).length}
-                        </span>
-                      </button>
-                    )}
+                    {/* Archived section row - WhatsApp style - ALWAYS visible */}
+                    <button
+                      onClick={() => setShowArchivedPage(true)}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border"
+                    >
+                      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Archive className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <span className="font-medium text-foreground">Archived</span>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {conversations.filter(c => c.is_archived).length}
+                      </span>
+                    </button>
                     
                     {/* Main conversation list - exclude archived */}
                     {conversations.filter(c => 
