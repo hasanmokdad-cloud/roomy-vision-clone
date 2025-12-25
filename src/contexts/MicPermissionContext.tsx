@@ -26,14 +26,11 @@ export const MicPermissionProvider: React.FC<{ children: React.ReactNode }> = ({
   const [permission, setPermission] = useState<MicPermission>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     
-    // On Safari, only trust 'granted' if verified THIS session
-    if (isSafari) {
-      const sessionVerified = sessionStorage.getItem(SESSION_VERIFIED_KEY);
-      if (stored === 'granted' && sessionVerified === 'true') {
-        return 'granted';
-      }
-      // Safari: Start with 'prompt' until verified this session
-      return 'prompt';
+    // FIXED: Trust localStorage immediately on ALL browsers including Safari
+    // The database is the source of truth - if user granted permission before,
+    // we should trust it. Session verification was causing the popup to reappear.
+    if (stored === 'granted') {
+      return 'granted';
     }
     
     return (stored as MicPermission) || 'prompt';
