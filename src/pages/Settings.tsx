@@ -530,25 +530,41 @@ export default function Settings() {
                 <div className="flex items-center gap-4">
                   <Bell className="w-6 h-6 text-primary" />
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground">Notifications</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Push Notifications</h3>
                     <p className="text-sm text-foreground/60">
-                      {role === 'owner' 
+                      {role === 'admin' 
                         ? (currentLang === 'ar' 
-                            ? 'استقبل إشعارات عن الحجوزات الجديدة' 
-                            : 'Receive updates about new bookings')
-                        : (currentLang === 'ar'
-                            ? 'استقبل إشعارات عن السكن الجديد'
-                            : 'Receive updates about new dorms')}
+                            ? 'استقبل إشعارات عن جميع أنشطة المنصة' 
+                            : 'Receive updates about all platform activity')
+                        : role === 'owner' 
+                          ? (currentLang === 'ar' 
+                              ? 'استقبل إشعارات عن الحجوزات والرسائل والجولات' 
+                              : 'Receive updates about bookings, tours, and messages')
+                          : (currentLang === 'ar'
+                              ? 'استقبل إشعارات عن الجولات والرسائل وزملاء السكن'
+                              : 'Receive updates about tours, messages, and roommate matches')}
                     </p>
                   </div>
                 </div>
                 <Switch
-                  checked={settings.notifications}
-                  onCheckedChange={(checked) =>
-                    setSettings((prev) => ({ ...prev, notifications: checked }))
-                  }
+                  checked={isSubscribed}
+                  disabled={pushLoading}
+                  onCheckedChange={async (checked) => {
+                    if (checked) {
+                      await subscribe();
+                    } else {
+                      await unsubscribe();
+                    }
+                  }}
                 />
               </div>
+              <Button 
+                variant="link" 
+                className="mt-2 px-0 text-primary h-auto"
+                onClick={() => navigate('/settings/notifications')}
+              >
+                Advanced notification settings →
+              </Button>
             </Card>
 
             {/* Payment Settings - Only for students */}
