@@ -574,12 +574,22 @@ export default function Messages() {
 
   // Show mic setup modal only AFTER loading from database completes
   // This prevents the race condition where modal shows before DB says 'granted'
-  // Also only show once per device (controlled by hasShownMicSetup)
+  // SAFARI: Show modal every session since Safari resets permissions
+  // Other browsers: Only show once per device
   useEffect(() => {
-    if (isMobile && selectedConversation && permission === 'prompt' && micPermissionLoaded && !hasShownMicSetup) {
-      setShowMicSetupModal(true);
-      setHasShownMicSetup(true);
-      localStorage.setItem('roomyMicSetupShown', 'true');
+    if (isMobile && selectedConversation && permission === 'prompt' && micPermissionLoaded) {
+      // Detect Safari
+      const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      
+      // On Safari: always show when permission is 'prompt' (each session)
+      // On other browsers: only show once (controlled by hasShownMicSetup)
+      if (isSafariBrowser || !hasShownMicSetup) {
+        setShowMicSetupModal(true);
+        if (!isSafariBrowser) {
+          setHasShownMicSetup(true);
+          localStorage.setItem('roomyMicSetupShown', 'true');
+        }
+      }
     }
   }, [isMobile, selectedConversation, permission, micPermissionLoaded, hasShownMicSetup]);
 
