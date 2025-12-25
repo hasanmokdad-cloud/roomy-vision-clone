@@ -33,8 +33,6 @@ export default function AdminDashboard() {
   const [pendingList, setPendingList] = useState<any[]>([]);
   const [earningsStats, setEarningsStats] = useState({
     totalCommission: 0,
-    pendingPayouts: 0,
-    pendingRefunds: 0,
     walletBalance: 0,
   });
 
@@ -120,18 +118,6 @@ export default function AdminDashboard() {
       (sum, row) => sum + (row.commission_amount || 0), 0
     ) || 0;
 
-    // Get pending owner payouts count
-    const { count: pendingPayoutsCount } = await supabase
-      .from("reservations")
-      .select("id", { count: "exact", head: true })
-      .match({ status: "paid", owner_payout_status: "pending" });
-
-    // Get pending refund requests count
-    const { count: pendingRefundsCount } = await supabase
-      .from("reservations")
-      .select("id", { count: "exact", head: true })
-      .match({ latest_refund_status: "pending_admin" });
-
     // Get admin wallet balance
     const { data: walletData } = await supabase
       .from("admin_wallet")
@@ -141,8 +127,6 @@ export default function AdminDashboard() {
 
     setEarningsStats({
       totalCommission,
-      pendingPayouts: pendingPayoutsCount || 0,
-      pendingRefunds: pendingRefundsCount || 0,
       walletBalance: walletData?.balance || 0,
     });
   };
@@ -302,13 +286,13 @@ export default function AdminDashboard() {
                   <p className="text-sm text-muted-foreground">Total Commission</p>
                 </div>
                 <div>
-                  <p className="text-lg font-semibold text-yellow-500">
-                    {earningsStats.pendingPayouts}
+                  <p className="text-lg font-semibold text-muted-foreground">
+                    ${earningsStats.walletBalance.toFixed(2)}
                   </p>
-                  <p className="text-xs text-muted-foreground">Pending Owner Payouts</p>
+                  <p className="text-xs text-muted-foreground">Current Balance</p>
                 </div>
                 <Button
-                  onClick={() => navigate("/admin/finance?tab=earnings")}
+                  onClick={() => navigate("/admin/finance")}
                   className="w-full mt-2"
                   variant="outline"
                 >
