@@ -325,12 +325,7 @@ export default function Settings() {
                     subtitle={isSubscribed ? 'Enabled' : 'Manage'}
                     onClick={() => navigate('/settings/notifications')}
                   />
-                  <MobileMenuRow
-                    icon={<Globe className="w-6 h-6" />}
-                    label="Translation"
-                    subtitle={settings.language.toUpperCase()}
-                    onClick={() => setShowLanguageModal(true)}
-                  />
+                  {/* Language removed - use profile dropdown */}
                   <MobileMenuRow
                     icon={<Palette className="w-6 h-6" />}
                     label="Appearance"
@@ -764,33 +759,7 @@ export default function Settings() {
                 </div>
               </Card>
             )}
-            <Card className="glass p-6 border border-border/40">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Globe className="w-6 h-6 text-primary" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">Language</h3>
-                    <p className="text-sm text-foreground/60">
-                      Current: {settings.language.toUpperCase()}
-                    </p>
-                  </div>
-                </div>
-                <select
-                  value={settings.language}
-                  onChange={(e) =>
-                    setSettings((prev) => ({
-                      ...prev,
-                      language: e.target.value as 'en' | 'ar' | 'fr',
-                    }))
-                  }
-                  className="bg-muted/10 border border-border/40 rounded-lg px-4 py-2 text-foreground backdrop-blur-md"
-                >
-                  <option value="en">English</option>
-                  <option value="ar">العربية</option>
-                  <option value="fr">Français</option>
-                </select>
-              </div>
-            </Card>
+            {/* Language section removed - use profile dropdown */}
 
             {/* AI Memory - Only for students and admins */}
             {role !== 'owner' && (
