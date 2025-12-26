@@ -87,8 +87,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Get session with retry
       const { data: { session: currentSession }, error } = await supabase.auth.getSession();
       
+      // Handle corrupted session errors (e.g., "Refresh Token Not Found")
       if (error) {
         console.warn('AuthContext: getSession error:', error);
+        
+        // Check for corrupted token errors
+        const errorMessage = error.message?.toLowerCase() || '';
+        if (errorMessage.includes('refresh token') || errorMessage.includes('invalid') || errorMessage.includes('not found')) {
+          console.log('🔧 AuthContext: Detected corrupted session, clearing...');
+          try {
+            await supabase.auth.signOut({ scope: 'local' });
+          } catch (signOutErr) {
+            console.warn('AuthContext: Error during cleanup signOut:', signOutErr);
+          }
+          // Clear any stale flags
+          sessionStorage.removeItem('roomy_signing_out');
+          setSession(null);
+          setUser(null);
+          setRole(null);
+          setIsRoleReady(true);
+          setIsAuthReady(true);
+          console.log('✅ AuthContext: Corrupted session cleared, ready');
+          return;
+        }
       }
 
       if (currentSession?.user) {
@@ -110,6 +131,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (err) {
       console.error('AuthContext: Init error:', err);
+      
+      // On any unexpected error, try to clear corrupted state
+      try {
+        await supabase.auth.signOut({ scope: 'local' });
+        sessionStorage.removeItem('roomy_signing_out');
+      } catch (cleanupErr) {
+        console.warn('AuthContext: Cleanup error:', cleanupErr);
+      }
+      
+      setSession(null);
+      setUser(null);
+      setRole(null);
       setIsRoleReady(true);
     } finally {
       setIsAuthReady(true);
