@@ -1,4 +1,3 @@
-import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface WizardFooterProps {
@@ -40,19 +39,16 @@ export function WizardFooter({
   
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
-      {/* Progress bar */}
-      <div className="flex gap-1 px-4 pt-2">
+      {/* Progress bar - 3 segments */}
+      <div className="flex gap-1 px-4 pt-3">
         {[phase1Fill, phase2Fill, phase3Fill].map((fill, index) => (
           <div
             key={index}
             className="h-1 flex-1 rounded-full bg-muted overflow-hidden"
           >
             <div
-              className="h-full rounded-full transition-all duration-300"
-              style={{
-                width: `${fill * 100}%`,
-                background: 'linear-gradient(to right, hsl(var(--primary)), hsl(var(--secondary)))'
-              }}
+              className="h-full rounded-full bg-foreground transition-all duration-300"
+              style={{ width: `${fill * 100}%` }}
             />
           </div>
         ))}
@@ -63,20 +59,22 @@ export function WizardFooter({
         <Button
           variant="ghost"
           onClick={onBack}
-          disabled={currentStep === 0}
-          className="text-foreground underline font-medium"
+          disabled={currentStep <= 1}
+          className="text-foreground underline underline-offset-4 hover:bg-transparent disabled:opacity-30 font-medium"
         >
-          <ChevronLeft className="w-4 h-4 mr-1" />
           Back
         </Button>
         
         <Button
           onClick={onNext}
           disabled={isNextDisabled || isSubmitting}
-          className="bg-foreground text-background hover:bg-foreground/90 rounded-lg px-8 py-6 font-semibold"
+          className="bg-foreground text-background hover:bg-foreground/90 rounded-lg px-6 py-3 font-semibold"
         >
           {isSubmitting ? (
-            'Submitting...'
+            <span className="flex items-center gap-2">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+              Submitting...
+            </span>
           ) : isLastStep ? (
             'Submit for verification'
           ) : (
