@@ -5,6 +5,7 @@ import { DormRoomAnimation } from './DormRoomAnimation';
 
 interface AirbnbIntroStepProps {
   onGetStarted: () => void;
+  onClearProgress?: () => void;
 }
 
 // Mini isometric illustration component for the step list
@@ -67,7 +68,7 @@ function LoadingDots() {
   );
 }
 
-export function AirbnbIntroStep({ onGetStarted }: AirbnbIntroStepProps) {
+export function AirbnbIntroStep({ onGetStarted, onClearProgress }: AirbnbIntroStepProps) {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -91,6 +92,10 @@ export function AirbnbIntroStep({ onGetStarted }: AirbnbIntroStepProps) {
 
   const handleGetStarted = () => {
     setIsLoading(true);
+    // Clear any saved progress first to start fresh
+    if (onClearProgress) {
+      onClearProgress();
+    }
     // Simulate loading and then proceed
     setTimeout(() => {
       onGetStarted();
