@@ -30,7 +30,9 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   handleReset = () => {
+    // Force a full page reload to clear any stale JS state
     this.setState({ hasError: false, error: null });
+    window.location.reload();
   };
 
   handleReload = () => {
@@ -41,26 +43,17 @@ class ErrorBoundary extends Component<Props, State> {
     this.setState({ isRedirecting: true });
     
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        const { data } = await supabase.rpc('get_user_role', { 
-          p_user_id: session.user.id 
-        });
-        
-        if (data === 'owner') {
-          window.location.href = '/owner';
-          return;
-        } else if (data === 'admin') {
-          window.location.href = '/admin';
-          return;
-        }
-      }
-      
-      window.location.href = '/listings';
-    } catch {
-      window.location.href = '/listings';
+      // Force clear any corrupted auth state first
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (e) {
+      console.error('ErrorBoundary: Error clearing session:', e);
     }
+    
+    // Clear any signing out flags
+    sessionStorage.removeItem('roomy_signing_out');
+    
+    // Always redirect directly to listings without checking roles
+    window.location.href = '/listings';
   };
 
   render() {
