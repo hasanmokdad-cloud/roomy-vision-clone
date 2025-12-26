@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { WizardTopBar } from './WizardTopBar';
+import { AirbnbWizardTopBar } from './AirbnbWizardTopBar';
 import { WizardFooter } from './WizardFooter';
-import { IntroStep } from './steps/IntroStep';
-import { StepOverview } from './steps/StepOverview';
+import { AirbnbIntroStep } from './AirbnbIntroStep';
+import { AirbnbStepTransition } from './AirbnbStepTransition';
 import { LocationStep } from './steps/LocationStep';
 import { CapacityStep } from './steps/CapacityStep';
 import { AmenitiesStep } from './steps/AmenitiesStep';
@@ -258,9 +258,9 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <IntroStep onGetStarted={handleNext} />;
+        return <AirbnbIntroStep onGetStarted={handleNext} />;
       case 1:
-        return <StepOverview phase={1} />;
+        return <AirbnbStepTransition phase={1} />;
       // Step 2: Location (was step 3, PropertyType step removed)
       case 2:
         return (
@@ -284,7 +284,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           />
         );
       case 4:
-        return <StepOverview phase={2} />;
+        return <AirbnbStepTransition phase={2} />;
       case 5:
         return (
           <AmenitiesStep
@@ -362,7 +362,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           />
         );
       case 13:
-        return <StepOverview phase={3} />;
+        return <AirbnbStepTransition phase={3} />;
       case 14:
         return (
           <ReviewStep
@@ -377,10 +377,11 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
   const isLastStep = currentStep === TOTAL_STEPS - 1;
   const showFooter = currentStep > 0;
+  const showTopBar = currentStep > 0; // Don't show top bar on intro (it has its own)
 
   return (
     <div className="min-h-screen bg-background">
-      <WizardTopBar onSaveExit={handleSaveExit} />
+      {showTopBar && <AirbnbWizardTopBar onSaveExit={handleSaveExit} />}
 
       <AnimatePresence mode="wait">
         <motion.div
