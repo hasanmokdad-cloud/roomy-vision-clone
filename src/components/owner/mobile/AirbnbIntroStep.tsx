@@ -1,48 +1,14 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { DormRoomAnimation } from './DormRoomAnimation';
+import RoomyLogo from '@/assets/roomy-logo.png';
+import Step1Graphic from '@/assets/wizard/step-1-graphic.avif';
+import Step2Graphic from '@/assets/wizard/step-2-graphic.avif';
+import Step3Graphic from '@/assets/wizard/step-3-graphic.avif';
 
 interface AirbnbIntroStepProps {
   onGetStarted: () => void;
   onClearProgress?: () => void;
-}
-
-// Mini isometric illustration component for the step list
-function MiniIllustration({ phase }: { phase: 1 | 2 | 3 }) {
-  const illustrations = {
-    1: (
-      <div className="w-12 h-12 relative">
-        {/* Basic room shape */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-8 h-6 bg-muted border border-border rounded-sm transform -skew-x-6" />
-          <div className="absolute w-3 h-4 bg-primary/30 rounded-sm right-2 bottom-1" />
-        </div>
-      </div>
-    ),
-    2: (
-      <div className="w-12 h-12 relative">
-        {/* Room with decorations */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-8 h-6 bg-muted border border-border rounded-sm transform -skew-x-6" />
-          <div className="absolute w-2 h-2 bg-green-500 rounded-full right-1 top-2" />
-          <div className="absolute w-3 h-3 bg-orange-400 rounded-sm left-2 bottom-1" />
-        </div>
-      </div>
-    ),
-    3: (
-      <div className="w-12 h-12 relative">
-        {/* Complete house */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-9 h-7 bg-muted border border-border rounded-sm transform -skew-x-6" />
-          <div className="absolute w-10 h-3 bg-foreground/80 rounded-t-lg -top-1 transform -skew-x-6" />
-          <div className="absolute w-2 h-2 bg-green-600 rounded-full right-0 bottom-0" />
-        </div>
-      </div>
-    ),
-  };
-
-  return illustrations[phase];
 }
 
 // Loading dots animation component
@@ -67,6 +33,12 @@ function LoadingDots() {
     </div>
   );
 }
+
+const stepGraphics = {
+  1: Step1Graphic,
+  2: Step2Graphic,
+  3: Step3Graphic,
+};
 
 export function AirbnbIntroStep({ onGetStarted, onClearProgress }: AirbnbIntroStepProps) {
   const navigate = useNavigate();
@@ -107,15 +79,19 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress }: AirbnbIntroSt
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Top bar with R logo and Exit button */}
-      <div className="flex items-center justify-between px-6 py-4">
+    <div className="min-h-screen flex flex-col bg-white">
+      {/* Top bar with Roomy logo and Exit button */}
+      <div className="flex items-center justify-between px-6 py-4 lg:px-12">
         <button onClick={handleExit} className="focus:outline-none">
-          <span className="text-2xl font-bold text-primary">R</span>
+          <img 
+            src={RoomyLogo} 
+            alt="Roomy" 
+            className="w-8 h-8 rounded-lg object-contain"
+          />
         </button>
         <button
           onClick={handleExit}
-          className="px-4 py-2 text-sm font-medium text-foreground border border-border rounded-full hover:bg-muted transition-colors"
+          className="px-4 py-2 text-sm font-medium text-[#222222] border border-[#222222] rounded-full hover:bg-[#F7F7F7] transition-colors"
         >
           Exit
         </button>
@@ -124,62 +100,66 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress }: AirbnbIntroSt
       {/* Main content - split layout */}
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* Left side - heading */}
-        <div className="lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
+        <div className="lg:w-1/2 flex items-start lg:items-center justify-start lg:justify-center px-6 py-8 lg:p-12 lg:pr-16">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-4xl lg:text-5xl xl:text-6xl font-semibold text-foreground leading-tight"
+            className="text-[32px] lg:text-[48px] font-medium text-[#222222] leading-tight tracking-tight max-w-md"
           >
             It's easy to get started on Roomy
           </motion.h1>
         </div>
 
         {/* Right side - steps list */}
-        <div className="lg:w-1/2 flex flex-col justify-center p-6 lg:p-12">
-          <div className="space-y-8">
+        <div className="lg:w-1/2 flex flex-col justify-center px-6 lg:px-12 lg:pl-8">
+          <div className="divide-y divide-[#EBEBEB]">
             {steps.map((step, index) => (
               <motion.div
                 key={step.number}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 + index * 0.15, duration: 0.4 }}
-                className="flex items-start gap-4"
+                className="flex items-center gap-4 py-8 first:pt-0 lg:first:pt-8"
               >
-                <span className="text-2xl font-semibold text-foreground shrink-0">
+                <span className="text-[22px] font-medium text-[#222222] shrink-0 self-start mt-1">
                   {step.number}
                 </span>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-foreground mb-1">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-[18px] lg:text-[19px] font-semibold text-[#222222] mb-1">
                     {step.title}
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-[15px] lg:text-[16px] text-[#717171] leading-relaxed">
                     {step.description}
                   </p>
                 </div>
-                <div className="shrink-0 hidden lg:block">
-                  <MiniIllustration phase={step.number as 1 | 2 | 3} />
-                </div>
+                <img 
+                  src={stepGraphics[step.number as 1 | 2 | 3]} 
+                  alt={step.title}
+                  className="w-[100px] h-[80px] lg:w-[140px] lg:h-[110px] object-contain shrink-0"
+                />
               </motion.div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Footer with Get started button */}
+      {/* Footer with thick separator and Get started button */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8 }}
-        className="p-6 flex justify-end"
+        className="border-t border-[#DDDDDD]"
       >
-        <button
-          onClick={handleGetStarted}
-          disabled={isLoading}
-          className="px-6 py-3 bg-foreground text-background font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-70 min-w-[140px]"
-        >
-          {isLoading ? <LoadingDots /> : 'Get started'}
-        </button>
+        <div className="px-6 lg:px-12 py-6 flex justify-end">
+          <button
+            onClick={handleGetStarted}
+            disabled={isLoading}
+            className="px-6 py-3 bg-[#222222] text-white font-semibold text-[16px] rounded-lg hover:bg-[#000000] transition-colors disabled:opacity-70 min-w-[140px]"
+          >
+            {isLoading ? <LoadingDots /> : 'Get started'}
+          </button>
+        </div>
       </motion.div>
     </div>
   );

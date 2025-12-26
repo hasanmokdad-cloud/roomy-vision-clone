@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import RoomyLogo from '@/assets/roomy-logo.png';
 
 interface AirbnbWizardTopBarProps {
   onSaveExit: () => void;
@@ -17,16 +18,20 @@ export function AirbnbWizardTopBar({ onSaveExit, isIntro = false }: AirbnbWizard
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-background px-6 py-4 flex items-center justify-between">
-      {/* R Logo */}
+    <div className="fixed top-0 left-0 right-0 z-50 bg-white px-6 py-4 flex items-center justify-between">
+      {/* Roomy Logo */}
       <button onClick={handleLogoClick} className="focus:outline-none">
-        <span className="text-2xl font-bold text-primary">R</span>
+        <img 
+          src={RoomyLogo} 
+          alt="Roomy" 
+          className="w-8 h-8 rounded-lg object-contain"
+        />
       </button>
       
       {/* Save & exit or Exit pill button */}
       <button
         onClick={onSaveExit}
-        className="px-4 py-2 text-sm font-medium text-foreground border border-border rounded-full hover:bg-muted transition-colors"
+        className="px-4 py-2 text-sm font-medium text-[#222222] border border-[#222222] rounded-full hover:bg-[#F7F7F7] transition-colors"
       >
         {isIntro ? 'Exit' : 'Save & exit'}
       </button>
