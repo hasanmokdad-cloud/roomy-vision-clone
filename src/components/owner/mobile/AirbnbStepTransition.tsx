@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { DormRoomAnimation } from './DormRoomAnimation';
 
 interface AirbnbStepTransitionProps {
   phase: 1 | 2 | 3;
+  onComplete?: () => void;
 }
 
 const phaseContent = {
@@ -23,8 +25,18 @@ const phaseContent = {
   },
 };
 
-export function AirbnbStepTransition({ phase }: AirbnbStepTransitionProps) {
+export function AirbnbStepTransition({ phase, onComplete }: AirbnbStepTransitionProps) {
   const content = phaseContent[phase];
+
+  // Auto-advance after 3 seconds
+  useEffect(() => {
+    if (onComplete) {
+      const timer = setTimeout(() => {
+        onComplete();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [onComplete]);
 
   return (
     <div className="min-h-screen pt-20 pb-32 px-6">
