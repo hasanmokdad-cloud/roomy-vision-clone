@@ -10,6 +10,13 @@ interface WizardFooterProps {
   isSubmitting?: boolean;
 }
 
+// Filler/transition steps and their progress bar positions (at segment intersections)
+const FILLER_STEP_PROGRESS: Record<number, number> = {
+  1: 0,      // Step 1 filler: 0% (start of segment 1)
+  4: 0.333,  // Step 2 filler: 33% (intersection of segments 1 & 2)
+  13: 0.666, // Step 3 filler: 66% (intersection of segments 2 & 3)
+};
+
 export function WizardFooter({
   currentStep,
   totalSteps,
@@ -23,14 +30,24 @@ export function WizardFooter({
   const contentSteps = [2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 14];
   const totalContentSteps = contentSteps.length; // 11 steps
 
-  // Find current position in content steps
-  const currentContentIndex = contentSteps.findIndex(s => s === currentStep);
-  const actualProgress = currentContentIndex === -1 
-    ? contentSteps.filter(s => s < currentStep).length
-    : currentContentIndex + 1;
+  // Check if current step is a filler/transition step
+  const isFillerStep = currentStep in FILLER_STEP_PROGRESS;
 
-  // Calculate progress as percentage
-  const progressPercentage = actualProgress / totalContentSteps;
+  let progressPercentage: number;
+  
+  if (isFillerStep) {
+    // Use fixed positions for filler steps
+    progressPercentage = FILLER_STEP_PROGRESS[currentStep];
+  } else {
+    // Find current position in content steps
+    const currentContentIndex = contentSteps.findIndex(s => s === currentStep);
+    const actualProgress = currentContentIndex === -1 
+      ? contentSteps.filter(s => s < currentStep).length
+      : currentContentIndex + 1;
+
+    // Calculate progress as percentage
+    progressPercentage = actualProgress / totalContentSteps;
+  }
 
   // Distribute across 3 phases
   const phase1Fill = Math.min(1, progressPercentage * 3);
