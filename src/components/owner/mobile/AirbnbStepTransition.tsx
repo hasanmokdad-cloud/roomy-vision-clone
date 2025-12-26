@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { DormRoomAnimation } from './DormRoomAnimation';
+import Step1Video from '@/assets/wizard/step1-animation.mp4';
 
 interface AirbnbStepTransitionProps {
   phase: 1 | 2 | 3;
@@ -55,7 +56,18 @@ export function AirbnbStepTransition({ phase }: AirbnbStepTransitionProps) {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="lg:w-3/5 flex items-center justify-center"
         >
-          <DormRoomAnimation phase={phase} />
+          {phase === 1 ? (
+            <video
+              src={Step1Video}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-80 h-72 lg:w-96 lg:h-80 object-contain"
+            />
+          ) : (
+            <DormRoomAnimation phase={phase} />
+          )}
         </motion.div>
       </div>
     </div>
