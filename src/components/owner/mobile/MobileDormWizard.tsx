@@ -43,7 +43,7 @@ const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 // Reduced from 16 to 15 steps (removed PropertyType step)
 const TOTAL_STEPS = 15;
 
-// Transition steps that auto-advance and don't show footer
+// Transition/filler steps (show footer but don't count in regular progress)
 const TRANSITION_STEPS = [1, 4, 13];
 
 // Description generation based on highlights
@@ -263,7 +263,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       case 0:
         return <AirbnbIntroStep onGetStarted={handleNext} onClearProgress={clearSavedProgress} />;
       case 1:
-        return <AirbnbStepTransition phase={1} onComplete={handleNext} />;
+        return <AirbnbStepTransition phase={1} />;
       // Step 2: Location (was step 3, PropertyType step removed)
       case 2:
         return (
@@ -287,7 +287,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           />
         );
       case 4:
-        return <AirbnbStepTransition phase={2} onComplete={handleNext} />;
+        return <AirbnbStepTransition phase={2} />;
       case 5:
         return (
           <AmenitiesStep
@@ -365,7 +365,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           />
         );
       case 13:
-        return <AirbnbStepTransition phase={3} onComplete={handleNext} />;
+        return <AirbnbStepTransition phase={3} />;
       case 14:
         return (
           <ReviewStep
@@ -380,8 +380,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
   const isLastStep = currentStep === TOTAL_STEPS - 1;
   const isTransitionStep = TRANSITION_STEPS.includes(currentStep);
-  const showFooter = currentStep > 0 && !isTransitionStep;
-  const showTopBar = currentStep > 0 && !isTransitionStep; // Don't show top bar on intro or transitions
+  const showFooter = currentStep > 0; // Show footer on ALL steps after intro (including transitions)
+  const showTopBar = currentStep > 0; // Show top bar on ALL steps after intro
 
   return (
     <div className="min-h-screen bg-background">

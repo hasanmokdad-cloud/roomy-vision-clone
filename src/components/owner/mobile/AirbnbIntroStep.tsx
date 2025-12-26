@@ -105,7 +105,7 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress }: AirbnbIntroSt
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-[32px] lg:text-[48px] font-medium text-[#222222] leading-tight tracking-tight max-w-md"
+            className="text-[32px] lg:text-[48px] xl:text-[56px] font-semibold text-[#222222] leading-tight tracking-tight max-w-md"
           >
             It's easy to get started on Roomy
           </motion.h1>
@@ -122,14 +122,14 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress }: AirbnbIntroSt
                 transition={{ delay: 0.3 + index * 0.15, duration: 0.4 }}
                 className="flex items-center gap-4 py-8 first:pt-0 lg:first:pt-8"
               >
-                <span className="text-[22px] font-medium text-[#222222] shrink-0 self-start mt-1">
+                <span className="text-[28px] lg:text-[32px] font-light text-[#222222] shrink-0">
                   {step.number}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-[18px] lg:text-[19px] font-semibold text-[#222222] mb-1">
+                  <h3 className="text-[20px] lg:text-[22px] font-semibold text-[#222222] mb-2">
                     {step.title}
                   </h3>
-                  <p className="text-[15px] lg:text-[16px] text-[#717171] leading-relaxed">
+                  <p className="text-[16px] lg:text-[17px] text-[#717171] leading-relaxed">
                     {step.description}
                   </p>
                 </div>
@@ -149,13 +149,14 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress }: AirbnbIntroSt
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8 }}
-        className="border-t border-[#DDDDDD]"
       >
+        {/* Thicker separator bar */}
+        <div className="h-[2px] bg-[#DDDDDD] w-full" />
         <div className="px-6 lg:px-12 py-6 flex justify-end">
           <button
             onClick={handleGetStarted}
             disabled={isLoading}
-            className="px-6 py-3 bg-[#222222] text-white font-semibold text-[16px] rounded-lg hover:bg-[#000000] transition-colors disabled:opacity-70 min-w-[140px]"
+            className="px-6 py-3 bg-gradient-to-r from-[#E61E4D] via-[#E31C5F] to-[#D70466] text-white font-semibold text-[16px] rounded-lg hover:opacity-90 transition-opacity disabled:opacity-70 min-w-[140px]"
           >
             {isLoading ? <LoadingDots /> : 'Get started'}
           </button>
