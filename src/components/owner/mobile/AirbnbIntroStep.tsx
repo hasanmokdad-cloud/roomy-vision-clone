@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import RoomyLogo from '@/assets/roomy-logo.png';
 import Step1Graphic from '@/assets/wizard/step-1-graphic.avif';
 import Step2Graphic from '@/assets/wizard/step-2-graphic.avif';
 import Step3Graphic from '@/assets/wizard/step-3-graphic.avif';
+import Step1Video from '@/assets/wizard/step1-animation.mp4';
 
 interface AirbnbIntroStepProps {
   onGetStarted: () => void;
@@ -44,6 +45,14 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress }: AirbnbIntroSt
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Preload the Step 1 video in background so it plays immediately
+  useEffect(() => {
+    const video = document.createElement('video');
+    video.src = Step1Video;
+    video.preload = 'auto';
+    video.load();
+  }, []);
+
   const steps = [
     {
       number: 1,
@@ -68,10 +77,10 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress }: AirbnbIntroSt
     if (onClearProgress) {
       onClearProgress();
     }
-    // Simulate loading and then proceed
+    // Allow more time for video to fully preload before proceeding
     setTimeout(() => {
       onGetStarted();
-    }, 800);
+    }, 1500);
   };
 
   const handleExit = () => {

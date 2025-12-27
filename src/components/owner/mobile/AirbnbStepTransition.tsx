@@ -28,15 +28,15 @@ export function AirbnbStepTransition({ phase }: AirbnbStepTransitionProps) {
   const content = phaseContent[phase];
 
   return (
-    <div className="min-h-screen pt-20 pb-32 px-6 lg:px-16 bg-white">
-      {/* Mobile: Stack vertically */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between lg:gap-16 min-h-[calc(100vh-12rem)]">
-        {/* Text content - left side on desktop, vertically centered */}
+    <div className="min-h-screen pt-20 pb-32 px-6 lg:px-24 xl:px-32 2xl:px-40 bg-white">
+      {/* Mobile: Stack vertically, Desktop: Side by side centered */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center lg:gap-8 xl:gap-12 min-h-[calc(100vh-12rem)]">
+        {/* Text content - left side on desktop, centered and closer to animation */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="lg:w-2/5 mb-8 lg:mb-0 flex flex-col justify-center"
+          className="lg:w-[45%] xl:w-[40%] mb-8 lg:mb-0 flex flex-col justify-center lg:pl-8 xl:pl-12"
         >
           <p className="text-base font-semibold text-[#222222] mb-4">
             {content.title}
@@ -49,12 +49,12 @@ export function AirbnbStepTransition({ phase }: AirbnbStepTransitionProps) {
           </p>
         </motion.div>
 
-        {/* Animation - right side on desktop */}
+        {/* Animation - right side on desktop, larger and centered */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="lg:w-3/5 flex items-center justify-center"
+          className="lg:w-[55%] xl:w-[60%] flex items-center justify-center"
         >
           {phase === 1 ? (
             <video
@@ -62,7 +62,14 @@ export function AirbnbStepTransition({ phase }: AirbnbStepTransitionProps) {
               autoPlay
               muted
               playsInline
-              className="w-[400px] h-[360px] lg:w-[500px] lg:h-[450px] object-contain"
+              preload="auto"
+              onEnded={(e) => {
+                // Pause on last frame to prevent lag/glitch
+                const video = e.currentTarget;
+                video.currentTime = video.duration;
+                video.pause();
+              }}
+              className="w-[320px] h-[320px] md:w-[450px] md:h-[450px] lg:w-[550px] lg:h-[550px] xl:w-[600px] xl:h-[600px] object-contain"
             />
           ) : (
             <DormRoomAnimation phase={phase} />
