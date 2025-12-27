@@ -152,7 +152,7 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress, hasSavedProgres
         transition={{ delay: 0.8 }}
       >
         {/* Separator bar */}
-        <div className="h-[1px] bg-[#DDDDDD] w-full" />
+        <div className="h-[6px] bg-[#DDDDDD] w-full" />
         <div className="px-6 lg:px-12 py-6 flex justify-end gap-3">
           {hasSavedProgress && onResume && (
             <button
