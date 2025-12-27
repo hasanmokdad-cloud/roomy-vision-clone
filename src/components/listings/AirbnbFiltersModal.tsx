@@ -234,7 +234,7 @@ export function AirbnbFiltersModal({
 
 
   const handleClearAll = () => {
-    setLocalFilters({
+    const defaultFilters: Filters = {
       priceRange: [0, 2000],
       universities: [],
       areas: [],
@@ -244,7 +244,10 @@ export function AirbnbFiltersModal({
       shuttle: 'all',
       genderPreference: [],
       amenities: []
-    });
+    };
+    setLocalFilters(defaultFilters);
+    onFilterChange(defaultFilters);  // Apply to parent immediately
+    onOpenChange(false);              // Close modal
   };
 
   const handleApply = () => {

@@ -71,12 +71,29 @@ interface RoomModeResult {
 
 type ListingsResult = DormModeResult | RoomModeResult;
 
-// Check if room-specific filters are active
-function hasRoomFilters(filters: Filters): boolean {
-  const hasPrice = filters.priceRange[0] > 0 || filters.priceRange[1] < 2000;
-  const hasRoomType = filters.roomTypes.length > 0;
-  const hasCapacity = filters.capacity !== undefined && filters.capacity > 0;
-  return hasPrice || hasRoomType || hasCapacity;
+// Area mappings for city filtering
+const byblosAreas = ['Blat', 'Nahr Ibrahim', 'Halat', 'Jeddayel', 'Mastita', 'Fidar', 'Habboub'];
+const beirutAreas = [
+  'Hamra', 'Manara', 'Ain El Mraisseh', 'Raoucheh', 'Ras Beirut', 'UNESCO',
+  'Geitawi', 'Dora', 'Badaro', 'Ashrafieh', 'Verdun', 'Sin El Fil', 'Dekwaneh',
+  'Jdeideh', 'Mar Elias', 'Borj Hammoud', 'Hazmieh', 'Furn El Chebbak',
+  'Tayouneh', 'Jnah', "Ras Al Naba'a", 'Gemmayze', 'Clemenceau', 'Khalde'
+];
+
+// Check if ANY filters are active (always use room mode when filtering)
+function hasAnyFilters(filters: Filters): boolean {
+  return (
+    filters.priceRange[0] > 0 ||
+    filters.priceRange[1] < 2000 ||
+    filters.roomTypes.length > 0 ||
+    (filters.capacity !== undefined && filters.capacity > 0) ||
+    filters.universities.length > 0 ||
+    filters.areas.length > 0 ||
+    (filters.cities && filters.cities.length > 0) ||
+    (filters.genderPreference && filters.genderPreference.length > 0) ||
+    (filters.shuttle && filters.shuttle !== 'all') ||
+    (filters.amenities && filters.amenities.length > 0)
+  );
 }
 
 export function useListingsQuery(filters: Filters) {
@@ -169,8 +186,8 @@ export function useListingsQuery(filters: Filters) {
     const { data: { session } } = await supabase.auth.getSession();
     console.log('Current session:', session?.user?.id ? 'Authenticated' : 'Anonymous');
 
-    // Check if we need room-level display
-    const needsRoomDisplay = hasRoomFilters(filters);
+    // Check if we need room-level display (any filter is active)
+    const needsRoomDisplay = hasAnyFilters(filters);
     
     if (needsRoomDisplay) {
       // ROOM MODE: Query rooms with their parent dorm info
@@ -182,7 +199,7 @@ export function useListingsQuery(filters: Filters) {
           id, name, type, price, deposit, capacity, capacity_occupied, available, 
           images, video_url, description, area_m2,
           dorms!inner (
-            id, dorm_name, area, university, cover_image, owner_id, verification_status, available
+            id, dorm_name, area, university, cover_image, owner_id, verification_status, available, gender_preference, shuttle, amenities
           )
         `)
         .eq('available', true)
@@ -230,6 +247,52 @@ export function useListingsQuery(filters: Filters) {
         filteredRooms = filteredRooms.filter(room => 
           filters.areas.includes((room.dorms as any).area)
         );
+      }
+      
+      // Apply city filter by matching dorm area to city regions
+      if (filters.cities && filters.cities.length > 0) {
+        filteredRooms = filteredRooms.filter(room => {
+          const dormArea = (room.dorms as any).area || '';
+          
+          for (const city of filters.cities!) {
+            if (city === 'Byblos') {
+              if (byblosAreas.some(a => dormArea.toLowerCase().includes(a.toLowerCase()))) {
+                return true;
+              }
+            }
+            if (city === 'Beirut') {
+              if (beirutAreas.some(a => dormArea.toLowerCase().includes(a.toLowerCase()))) {
+                return true;
+              }
+            }
+          }
+          return false;
+        });
+      }
+      
+      // Apply gender preference filter
+      if (filters.genderPreference && filters.genderPreference.length > 0) {
+        filteredRooms = filteredRooms.filter(room => 
+          filters.genderPreference!.includes((room.dorms as any).gender_preference)
+        );
+      }
+      
+      // Apply shuttle filter
+      if (filters.shuttle && filters.shuttle !== 'all') {
+        const shuttleValue = filters.shuttle === 'available';
+        filteredRooms = filteredRooms.filter(room => 
+          (room.dorms as any).shuttle === shuttleValue
+        );
+      }
+      
+      // Apply amenities filter
+      if (filters.amenities && filters.amenities.length > 0) {
+        filteredRooms = filteredRooms.filter(room => {
+          const dormAmenities = (room.dorms as any).amenities || [];
+          return filters.amenities!.every(amenity => 
+            dormAmenities.some((da: string) => da.toLowerCase().includes(amenity.toLowerCase()))
+          );
+        });
       }
       
       // Transform to RoomListingItem format
