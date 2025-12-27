@@ -50,6 +50,12 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress }: AirbnbIntroSt
     const video = document.createElement('video');
     video.src = Step1Video;
     video.preload = 'auto';
+    
+    // Use canplaythrough event to ensure video is fully loaded
+    video.addEventListener('canplaythrough', () => {
+      console.log('Step 1 video fully preloaded');
+    });
+    
     video.load();
   }, []);
 
@@ -77,10 +83,10 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress }: AirbnbIntroSt
     if (onClearProgress) {
       onClearProgress();
     }
-    // Allow more time for video to fully preload before proceeding
+    // Reduced delay since video is preloaded with canplaythrough
     setTimeout(() => {
       onGetStarted();
-    }, 1500);
+    }, 800);
   };
 
   const handleExit = () => {

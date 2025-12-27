@@ -58,15 +58,16 @@ export function AirbnbStepTransition({ phase }: AirbnbStepTransitionProps) {
         >
           {phase === 1 ? (
             <video
+              key="step1-video"
               src={Step1Video}
               autoPlay
               muted
               playsInline
               preload="auto"
               onEnded={(e) => {
-                // Pause on last frame to prevent lag/glitch
+                // Pause slightly before end to prevent lag/glitch and stay on final frame
                 const video = e.currentTarget;
-                video.currentTime = video.duration;
+                video.currentTime = video.duration - 0.1;
                 video.pause();
               }}
               className="w-[320px] h-[320px] md:w-[450px] md:h-[450px] lg:w-[550px] lg:h-[550px] xl:w-[600px] xl:h-[600px] object-contain"
