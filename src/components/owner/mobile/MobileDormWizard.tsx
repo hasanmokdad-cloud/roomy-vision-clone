@@ -15,6 +15,7 @@ import { PhotosStep } from './steps/PhotosStep';
 import { DescriptionStep } from './steps/DescriptionStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { ResponsiveAlertModal } from '@/components/ui/responsive-alert-modal';
+import Step1Video from '@/assets/wizard/step1-animation.mp4';
 import Step2Video from '@/assets/wizard/step2-animation.mp4';
 
 interface MobileDormWizardProps {
@@ -41,11 +42,25 @@ interface WizardFormData {
 
 const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 
-// Reduced from 16 to 15 steps (removed PropertyType step)
+// Total steps: 0-14 (15 steps)
+// Step order:
+// 0: Intro
+// 1: Filler Phase 1
+// 2: Location
+// 3: Capacity
+// 4: Filler Phase 2
+// 5-7: Amenities (essentials, shared, safety)
+// 8: Gender preference
+// 9: Photos
+// 10: Filler Phase 3 (moved here from step 13)
+// 11: Highlights
+// 12: Title
+// 13: Description
+// 14: Review
 const TOTAL_STEPS = 15;
 
-// Transition/filler steps (show footer but don't count in regular progress)
-const TRANSITION_STEPS = [1, 4, 13];
+// Transition/filler steps
+const TRANSITION_STEPS = [1, 4, 10];
 
 // Description generation based on highlights
 const highlightDescriptions: Record<string, string> = {
@@ -77,10 +92,11 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [videoPreloading, setVideoPreloading] = useState(false);
+  const step1VideoRef = useRef<HTMLVideoElement>(null);
   const step2VideoRef = useRef<HTMLVideoElement>(null);
 
   const [formData, setFormData] = useState<WizardFormData>({
-    propertyType: 'dorm', // Default to 'dorm' since we removed the selection step
+    propertyType: 'dorm',
     city: '',
     area: '',
     address: '',
@@ -95,11 +111,10 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     description: '',
   });
 
-  // Track saved progress without auto-navigating
   const [hasSavedProgress, setHasSavedProgress] = useState(false);
   const [savedStep, setSavedStep] = useState(0);
 
-  // Check for saved progress (but don't auto-navigate)
+  // Check for saved progress
   useEffect(() => {
     const checkSavedProgress = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -109,10 +124,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       if (saved) {
         try {
           const { step, formData: savedData } = JSON.parse(saved);
-          // Don't auto-navigate - just mark that we have saved progress
           setHasSavedProgress(true);
           setSavedStep(step);
-          // Pre-load the form data but stay on step 0 (intro)
           setFormData(prev => ({ ...prev, ...savedData, propertyType: 'dorm' }));
         } catch (e) {
           console.error('Failed to parse saved wizard data');
@@ -159,6 +172,27 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
   };
 
   const handleNext = async () => {
+    // Special handling for intro → step 1 (preload step 1 video)
+    if (currentStep === 0) {
+      setVideoPreloading(true);
+      
+      const video = step1VideoRef.current;
+      if (video) {
+        await new Promise<void>((resolve) => {
+          if (video.readyState >= 3) {
+            resolve();
+          } else {
+            video.oncanplaythrough = () => resolve();
+            video.load();
+          }
+        });
+      }
+      
+      setVideoPreloading(false);
+      setCurrentStep(1);
+      return;
+    }
+
     // Special handling for step 3 → step 4 (preload step 2 video)
     if (currentStep === 3) {
       setVideoPreloading(true);
@@ -180,9 +214,9 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       return;
     }
 
-    // When moving from highlights step (step 10) to title step (step 11),
+    // When moving from highlights step (step 11) to title step (step 12),
     // generate description if not already set
-    if (currentStep === 10 && formData.highlights.length > 0 && !formData.description) {
+    if (currentStep === 11 && formData.highlights.length > 0 && !formData.description) {
       const generatedDesc = generateDescriptionFromHighlights(formData.highlights);
       setFormData(prev => ({ ...prev, description: generatedDesc }));
     }
@@ -206,7 +240,6 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         effectiveOwnerId = newOwnerId;
       }
 
-      // Build payload
       const payload = {
         owner_id: effectiveOwnerId,
         name: formData.title || `Dorm in ${formData.area}`,
@@ -271,11 +304,11 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
   const isNextDisabled = () => {
     switch (currentStep) {
-      case 2: return !formData.city || !formData.area; // Location step now requires city and area
-      case 3: return formData.capacity < 1 || formData.capacity > 2000; // Capacity step
-      case 8: return !formData.genderPreference; // Gender preference step
-      case 9: return !formData.coverImage; // Photos step - only cover is required now
-      case 14: return !formData.title || !formData.area; // Review step
+      case 2: return !formData.city || !formData.area;
+      case 3: return formData.capacity < 1 || formData.capacity > 2000;
+      case 8: return !formData.genderPreference;
+      case 9: return !formData.coverImage;
+      case 14: return !formData.title || !formData.area;
       default: return false;
     }
   };
@@ -302,7 +335,6 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         );
       case 1:
         return <AirbnbStepTransition phase={1} />;
-      // Step 2: Location (was step 3, PropertyType step removed)
       case 2:
         return (
           <LocationStep
@@ -316,7 +348,6 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onShuttleChange={(v) => setFormData({ ...formData, shuttle: v })}
           />
         );
-      // Step 3: Capacity (was step 4)
       case 3:
         return (
           <CapacityStep
@@ -367,6 +398,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           />
         );
       case 10:
+        return <AirbnbStepTransition phase={3} />;
+      case 11:
         return (
           <DescriptionStep
             mode="highlights"
@@ -378,7 +411,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onDescriptionChange={(v) => setFormData({ ...formData, description: v })}
           />
         );
-      case 11:
+      case 12:
         return (
           <DescriptionStep
             mode="title"
@@ -390,7 +423,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onDescriptionChange={(v) => setFormData({ ...formData, description: v })}
           />
         );
-      case 12:
+      case 13:
         return (
           <DescriptionStep
             mode="description"
@@ -402,8 +435,6 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onDescriptionChange={(v) => setFormData({ ...formData, description: v })}
           />
         );
-      case 13:
-        return <AirbnbStepTransition phase={3} />;
       case 14:
         return (
           <ReviewStep
@@ -417,9 +448,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
   };
 
   const isLastStep = currentStep === TOTAL_STEPS - 1;
-  const isTransitionStep = TRANSITION_STEPS.includes(currentStep);
-  const showFooter = currentStep > 0; // Show footer on ALL steps after intro (including transitions)
-  const showTopBar = currentStep > 0; // Show top bar on ALL steps after intro
+  const showFooter = currentStep > 0;
+  const showTopBar = currentStep > 0;
 
   return (
     <div className="min-h-screen bg-white">
@@ -437,8 +467,20 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         </motion.div>
       </AnimatePresence>
 
+      {/* Hidden preload video for step 1 */}
+      {currentStep === 0 && (
+        <video
+          ref={step1VideoRef}
+          src={Step1Video}
+          preload="auto"
+          muted
+          playsInline
+          style={{ display: 'none' }}
+        />
+      )}
+
       {/* Hidden preload video for step 2 */}
-      {currentStep >= 2 && currentStep <= 3 && (
+      {currentStep >= 1 && currentStep <= 3 && (
         <video
           ref={step2VideoRef}
           src={Step2Video}
@@ -462,7 +504,6 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         />
       )}
 
-      {/* Exit confirmation dialog */}
       <ResponsiveAlertModal
         open={showExitDialog}
         onOpenChange={setShowExitDialog}
