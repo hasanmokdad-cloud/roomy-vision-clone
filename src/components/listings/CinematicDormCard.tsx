@@ -362,18 +362,13 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
                   </div>
                 )}
 
-                {/* Transportation - Show either shuttle or walking distance */}
-                {dorm.shuttle ? (
+                {/* Transportation - Only show if shuttle is available */}
+                {dorm.shuttle && (
                   <Badge variant="secondary" className="w-fit">
                     <Zap className="w-3 h-3 mr-1" />
                     Shuttle Available
                   </Badge>
-                ) : dorm.shuttle === false ? (
-                  <Badge variant="secondary" className="w-fit">
-                    <MapPin className="w-3 h-3 mr-1" />
-                    Within Walking Distance
-                  </Badge>
-                ) : null}
+                )}
 
                 {dorm.address && (
                   <div className="text-sm text-foreground">
