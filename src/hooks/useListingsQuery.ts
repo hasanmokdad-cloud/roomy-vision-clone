@@ -6,8 +6,8 @@ import { matchesRoomTypeFilter } from '@/data/roomTypes';
 interface DormListing extends DormPublic {
   deposit?: number;
   city?: string;
-  // walking_distance?: string; // TODO: Re-enable after distance algorithm implementation
   services_amenities?: string;
+  matchingRoomCount?: number;
 }
 
 interface RoomType {
@@ -22,6 +22,7 @@ type Dorm = DormPublic & {
   room_types_json?: RoomType[];
   services_amenities?: string;
   room_types?: string;
+  matchingRoomCount?: number;
 }
 
 interface Filters {
@@ -59,6 +60,14 @@ interface RoomModeResult {
 }
 
 type ListingsResult = DormModeResult | RoomModeResult;
+
+// Check if room-specific filters are active
+function hasRoomFilters(filters: Filters): boolean {
+  const hasPrice = filters.priceRange[0] > 0 || filters.priceRange[1] < 2000;
+  const hasRoomType = filters.roomTypes.length > 0;
+  const hasCapacity = filters.capacity !== undefined && filters.capacity > 0;
+  return hasPrice || hasRoomType || hasCapacity;
+}
 
 export function useListingsQuery(filters: Filters) {
   const [data, setData] = useState<ListingsResult>({ mode: 'dorm', dorms: [] });
@@ -158,7 +167,7 @@ export function useListingsQuery(filters: Filters) {
       .eq('verification_status', 'Verified')
       .order('dorm_name', { ascending: true });
 
-    // Apply server-side filters
+    // Apply server-side dorm-level filters
     if (filters.universities.length > 0) {
       query = query.in('university', filters.universities);
     }
@@ -197,87 +206,91 @@ export function useListingsQuery(filters: Filters) {
       return;
     }
 
-    // Client-side filtering and mode determination
-    const hasCapacityFilter = filters.capacity !== undefined && filters.capacity > 0;
-
-    if (hasCapacityFilter) {
-      // ROOM MODE: Flatten to individual rooms
-      const rooms: RoomModeResult['rooms'] = [];
-
-      dorms.forEach(dorm => {
-        const roomTypesJson = dorm.room_types_json as unknown as RoomType[] | null;
-        
-        if (roomTypesJson && Array.isArray(roomTypesJson)) {
-          roomTypesJson.forEach(room => {
-            // Filter by capacity
-            if (room.capacity >= filters.capacity!) {
-              // Filter by price
-              if (room.price >= filters.priceRange[0] && room.price <= filters.priceRange[1]) {
-              // Filter by room type - use substring matching
-                if (filters.roomTypes.length === 0 || 
-                    filters.roomTypes.some(filterType => matchesRoomTypeFilter(room.type, filterType))) {
-                  rooms.push({
-                    dorm_id: dorm.id,
-                    dorm_name: dorm.dorm_name,
-                    area: dorm.area,
-                    university: dorm.university,
-                    type: room.type,
-                    capacity: room.capacity,
-                    price: room.price,
-                    amenities: room.amenities || [],
-                    images: room.images || [],
-                    cover_image: dorm.cover_image || dorm.image_url,
-                    verification_status: dorm.verification_status,
-                  });
-                }
-              }
-            }
-          });
-        }
+    // Check if we need to filter by rooms table
+    const needsRoomFiltering = hasRoomFilters(filters);
+    
+    if (needsRoomFiltering) {
+      // Query the rooms table to find matching rooms
+      let roomsQuery = supabase
+        .from('rooms')
+        .select('id, dorm_id, name, type, price, capacity, available')
+        .eq('available', true);
+      
+      // Apply price filter
+      if (filters.priceRange[0] > 0) {
+        roomsQuery = roomsQuery.gte('price', filters.priceRange[0]);
+      }
+      if (filters.priceRange[1] < 2000) {
+        roomsQuery = roomsQuery.lte('price', filters.priceRange[1]);
+      }
+      
+      // Apply capacity filter
+      if (filters.capacity && filters.capacity > 0) {
+        roomsQuery = roomsQuery.gte('capacity', filters.capacity);
+      }
+      
+      const { data: rooms, error: roomsError } = await roomsQuery;
+      
+      if (roomsError) {
+        console.error('Error fetching rooms:', roomsError);
+        setError('Unable to load listings. Please try again shortly.');
+        setLoading(false);
+        return;
+      }
+      
+      // Filter rooms by room type (needs client-side matching)
+      let filteredRooms = rooms || [];
+      if (filters.roomTypes.length > 0) {
+        filteredRooms = filteredRooms.filter(room => 
+          filters.roomTypes.some(filterType => matchesRoomTypeFilter(room.type, filterType))
+        );
+      }
+      
+      // Create a map of dorm_id -> matching room count
+      const dormRoomCounts = new Map<string, number>();
+      filteredRooms.forEach(room => {
+        const current = dormRoomCounts.get(room.dorm_id) || 0;
+        dormRoomCounts.set(room.dorm_id, current + 1);
       });
-
-      setData({ mode: 'room', rooms });
-    } else {
-      // DORM MODE: Show dorm cards
-      let filteredDorms = dorms.filter(dorm => {
-        // Price filter (check if any room is in range OR use monthly_price fallback)
-        const roomTypesJson = dorm.room_types_json as unknown as RoomType[] | null;
-        let priceMatch = false;
-
-        if (roomTypesJson && Array.isArray(roomTypesJson)) {
-          priceMatch = roomTypesJson.some(room => 
-            room.price >= filters.priceRange[0] && room.price <= filters.priceRange[1]
-          );
-        } else if (dorm.monthly_price) {
-          priceMatch = dorm.monthly_price >= filters.priceRange[0] && dorm.monthly_price <= filters.priceRange[1];
-        } else {
-          priceMatch = true; // Include if no price info
-        }
-
-        // Room type filter - use substring matching
-        let roomTypeMatch = filters.roomTypes.length === 0;
-        if (!roomTypeMatch && roomTypesJson && Array.isArray(roomTypesJson)) {
-          roomTypeMatch = roomTypesJson.some(room => 
-            filters.roomTypes.some(filterType => matchesRoomTypeFilter(room.type, filterType))
-          );
-        } else if (!roomTypeMatch && dorm.room_types) {
-          roomTypeMatch = filters.roomTypes.some(rt => 
-            matchesRoomTypeFilter(dorm.room_types, rt)
-          );
-        }
-
-
-        // Amenities filter
-        let amenitiesMatch = true;
-        if (filters.amenities && filters.amenities.length > 0) {
+      
+      // Get the set of dorm IDs that have matching rooms
+      const dormsWithMatchingRooms = new Set(dormRoomCounts.keys());
+      
+      // Filter dorms to only include those with matching rooms
+      let filteredDorms = dorms.filter(dorm => dormsWithMatchingRooms.has(dorm.id));
+      
+      // Apply amenities filter on dorms
+      if (filters.amenities && filters.amenities.length > 0) {
+        filteredDorms = filteredDorms.filter(dorm => {
           const dormAmenities = dorm.amenities || [];
-          amenitiesMatch = filters.amenities.every(amenity => 
+          return filters.amenities!.every(amenity => 
             dormAmenities.some((da: string) => da.toLowerCase() === amenity.toLowerCase())
           );
-        }
+        });
+      }
+      
+      // Add matching room count to each dorm
+      const dormsWithCounts = filteredDorms.map(dorm => ({
+        ...dorm,
+        matchingRoomCount: dormRoomCounts.get(dorm.id) || 0
+      }));
+      
+      console.log(`Found ${filteredRooms.length} matching rooms across ${dormsWithCounts.length} dorms`);
+      
+      setData({ mode: 'dorm', dorms: dormsWithCounts as unknown as Dorm[] });
+    } else {
+      // No room-specific filters - apply only dorm-level filters
+      let filteredDorms = dorms;
 
-        return priceMatch && roomTypeMatch && amenitiesMatch;
-      });
+      // Amenities filter
+      if (filters.amenities && filters.amenities.length > 0) {
+        filteredDorms = filteredDorms.filter(dorm => {
+          const dormAmenities = dorm.amenities || [];
+          return filters.amenities!.every(amenity => 
+            dormAmenities.some((da: string) => da.toLowerCase() === amenity.toLowerCase())
+          );
+        });
+      }
 
       setData({ mode: 'dorm', dorms: filteredDorms as unknown as Dorm[] });
     }

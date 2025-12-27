@@ -111,6 +111,14 @@ export default function Listings() {
     return [];
   }, [data]);
 
+  // Check if room-specific filters are active
+  const hasRoomFiltersActive = useMemo(() => {
+    const hasPrice = filters.priceRange[0] > 0 || filters.priceRange[1] < 2000;
+    const hasRoomType = filters.roomTypes.length > 0;
+    const hasCapacity = filters.capacity !== undefined && filters.capacity > 0;
+    return hasPrice || hasRoomType || hasCapacity;
+  }, [filters]);
+
   // Filter dorms by search query
   const filteredDorms = useMemo(() => {
     if (!searchQuery.trim()) return dorms;
@@ -325,6 +333,7 @@ export default function Listings() {
                         <CinematicDormCard 
                           dorm={dorm} 
                           index={index}
+                          showMatchingRooms={hasRoomFiltersActive}
                         />
                       </div>
                     ))}

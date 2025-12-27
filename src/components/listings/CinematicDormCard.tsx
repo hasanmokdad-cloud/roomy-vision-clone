@@ -36,11 +36,13 @@ interface CinematicDormCardProps {
     address?: string;
     university?: string;
     gender_preference?: string;
+    matchingRoomCount?: number;
   };
   index: number;
+  showMatchingRooms?: boolean;
 }
 
-const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => {
+const CinematicDormCardComponent = ({ dorm, index, showMatchingRooms = false }: CinematicDormCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -254,7 +256,13 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
               <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
 
               {/* Badges */}
-              <div className="absolute top-4 left-4 flex gap-2">
+              <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[calc(100%-2rem)]">
+                {/* Show matching rooms badge when filters are active */}
+                {showMatchingRooms && dorm.matchingRoomCount && dorm.matchingRoomCount > 0 && (
+                  <Badge className="bg-primary text-primary-foreground backdrop-blur-sm">
+                    {dorm.matchingRoomCount} {dorm.matchingRoomCount === 1 ? 'Room' : 'Rooms'} Match
+                  </Badge>
+                )}
                 {averageRating && (
                   <Badge variant="secondary" className="backdrop-blur-sm">
                     <Star className="w-3 h-3 mr-1 fill-primary text-primary" />
@@ -267,7 +275,7 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
                     Verified
                   </Badge>
                 )}
-                {hasMultipleRooms && (
+                {hasMultipleRooms && !showMatchingRooms && (
                   <Badge variant="secondary" className="backdrop-blur-sm">
                     {roomTypes.length} Room Types
                   </Badge>
