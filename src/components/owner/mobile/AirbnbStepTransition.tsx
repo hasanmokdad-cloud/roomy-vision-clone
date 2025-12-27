@@ -81,6 +81,10 @@ export function AirbnbStepTransition({ phase }: AirbnbStepTransitionProps) {
               muted
               playsInline
               preload="auto"
+              onLoadedData={(e) => {
+                const video = e.currentTarget;
+                video.play().catch(() => {});
+              }}
               onTimeUpdate={(e) => {
                 const video = e.currentTarget;
                 if (video.duration - video.currentTime < 0.1) {
