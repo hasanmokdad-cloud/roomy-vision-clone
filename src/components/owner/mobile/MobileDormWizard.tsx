@@ -92,9 +92,13 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     description: '',
   });
 
-  // Load saved progress
+  // Track saved progress without auto-navigating
+  const [hasSavedProgress, setHasSavedProgress] = useState(false);
+  const [savedStep, setSavedStep] = useState(0);
+
+  // Check for saved progress (but don't auto-navigate)
   useEffect(() => {
-    const loadSavedProgress = async () => {
+    const checkSavedProgress = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -102,14 +106,17 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       if (saved) {
         try {
           const { step, formData: savedData } = JSON.parse(saved);
-          setCurrentStep(step);
-          setFormData({ ...formData, ...savedData, propertyType: 'dorm' });
+          // Don't auto-navigate - just mark that we have saved progress
+          setHasSavedProgress(true);
+          setSavedStep(step);
+          // Pre-load the form data but stay on step 0 (intro)
+          setFormData(prev => ({ ...prev, ...savedData, propertyType: 'dorm' }));
         } catch (e) {
           console.error('Failed to parse saved wizard data');
         }
       }
     };
-    loadSavedProgress();
+    checkSavedProgress();
   }, []);
 
   // Save progress on changes
@@ -261,7 +268,14 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <AirbnbIntroStep onGetStarted={handleNext} onClearProgress={clearSavedProgress} />;
+        return (
+          <AirbnbIntroStep 
+            onGetStarted={handleNext} 
+            onClearProgress={clearSavedProgress}
+            hasSavedProgress={hasSavedProgress}
+            onResume={() => setCurrentStep(savedStep)}
+          />
+        );
       case 1:
         return <AirbnbStepTransition phase={1} />;
       // Step 2: Location (was step 3, PropertyType step removed)
