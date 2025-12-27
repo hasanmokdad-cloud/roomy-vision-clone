@@ -398,7 +398,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
   const showTopBar = currentStep > 0; // Show top bar on ALL steps after intro
 
   return (
-    <div className="min-h-screen bg-[#F8E8DD]">
+    <div className="min-h-screen bg-white">
       {showTopBar && <AirbnbWizardTopBar onSaveExit={handleSaveExit} />}
 
       <AnimatePresence mode="wait">

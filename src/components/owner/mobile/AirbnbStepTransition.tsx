@@ -29,7 +29,7 @@ export function AirbnbStepTransition({ phase }: AirbnbStepTransitionProps) {
   const content = phaseContent[phase];
 
   return (
-    <div className="min-h-screen pt-20 pb-32 px-6 lg:px-12 xl:px-20 2xl:px-28 bg-[#F8E8DD]">
+    <div className="min-h-screen pt-20 pb-32 px-6 lg:px-12 xl:px-20 2xl:px-28 bg-white">
       {/* Mobile: Stack vertically, Desktop: Side by side centered */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center lg:gap-8 xl:gap-12 min-h-[calc(100vh-12rem)]">
         {/* Text content - left side on desktop, pushed more to the right */}
@@ -42,7 +42,7 @@ export function AirbnbStepTransition({ phase }: AirbnbStepTransitionProps) {
           <p className="text-base font-semibold text-[#222222] mb-4">
             {content.title}
           </p>
-          <h1 className="text-[32px] lg:text-[42px] xl:text-[48px] font-bold text-[#222222] mb-6 leading-[1.2] whitespace-nowrap">
+          <h1 className="text-[32px] lg:text-[42px] xl:text-[48px] font-bold text-[#222222] mb-6 leading-[1.2]">
             {content.heading}
           </h1>
           <p className="text-[18px] lg:text-[20px] text-[#484848] leading-relaxed font-normal max-w-[520px]">
