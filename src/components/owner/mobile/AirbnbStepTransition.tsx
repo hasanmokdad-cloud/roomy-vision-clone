@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
-import { DormRoomAnimation } from './DormRoomAnimation';
 import Step1Video from '@/assets/wizard/step1-animation.mp4';
 import Step2Video from '@/assets/wizard/step2-animation.mp4';
+import Step3Animation from '@/assets/wizard/step3-animation.gif';
 
 interface AirbnbStepTransitionProps {
   phase: 1 | 2 | 3;
@@ -98,7 +98,16 @@ export function AirbnbStepTransition({ phase }: AirbnbStepTransitionProps) {
               className="w-[320px] h-[320px] md:w-[420px] md:h-[420px] lg:w-[550px] lg:h-[550px] xl:w-[600px] xl:h-[600px] object-contain"
             />
           ) : (
-            <DormRoomAnimation phase={phase} />
+            <img
+              key="step3-animation"
+              src={Step3Animation}
+              alt="Step 3 Animation"
+              className="w-[320px] h-[320px] md:w-[420px] md:h-[420px] lg:w-[550px] lg:h-[550px] xl:w-[600px] xl:h-[600px] object-contain"
+              style={{ 
+                backgroundColor: 'transparent',
+                mixBlendMode: 'multiply'
+              }}
+            />
           )}
         </motion.div>
       </div>
