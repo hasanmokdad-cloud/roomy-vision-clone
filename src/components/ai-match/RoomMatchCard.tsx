@@ -69,7 +69,7 @@ export const RoomMatchCard = ({ room, index }: RoomMatchCardProps) => {
           <div className="p-4 space-y-3">
             <div>
               <h3 className="font-bold text-lg line-clamp-1">
-                {room.room_type} Room
+                {room.name || room.room_type || 'Room'}
               </h3>
               <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                 <MapPin className="w-3 h-3" />

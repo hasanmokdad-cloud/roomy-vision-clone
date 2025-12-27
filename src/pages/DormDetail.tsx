@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useEffect, useState, useRef } from 'react';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
@@ -28,6 +28,8 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function DormDetail() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const highlightedRoomId = searchParams.get('room');
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -41,6 +43,23 @@ export default function DormDetail() {
   const [tourModalOpen, setTourModalOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [dormInsight, setDormInsight] = useState<string | null>(null);
+  const roomRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Scroll to highlighted room when navigating from AI Match
+  useEffect(() => {
+    if (highlightedRoomId && !loading && rooms.length > 0) {
+      setTimeout(() => {
+        const roomElement = roomRefs.current.get(highlightedRoomId);
+        if (roomElement) {
+          roomElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          roomElement.classList.add('ring-4', 'ring-primary', 'ring-offset-2', 'ring-offset-background');
+          setTimeout(() => {
+            roomElement.classList.remove('ring-4', 'ring-primary', 'ring-offset-2', 'ring-offset-background');
+          }, 3000);
+        }
+      }, 500);
+    }
+  }, [highlightedRoomId, loading, rooms]);
 
   useEffect(() => {
     loadDorm();
@@ -423,17 +442,22 @@ export default function DormDetail() {
                 <CardContent className="p-6">
                   <h2 className="text-2xl font-bold mb-4">Available Room Options</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-8">
-                      {/* Database Rooms */}
+                    {/* Database Rooms */}
                       {rooms.map((room, idx) => (
-                        <EnhancedRoomCard
+                        <div
                           key={`db-${room.id}`}
-                          room={room}
-                          dormId={dorm.id}
-                          dormName={displayName}
-                          ownerId={dorm.owner_id}
-                          isLegacy={false}
-                          index={idx}
-                        />
+                          ref={(el) => el && room.id && roomRefs.current.set(room.id, el)}
+                          className="transition-all duration-500 rounded-xl"
+                        >
+                          <EnhancedRoomCard
+                            room={room}
+                            dormId={dorm.id}
+                            dormName={displayName}
+                            ownerId={dorm.owner_id}
+                            isLegacy={false}
+                            index={idx}
+                          />
+                        </div>
                       ))}
                       
                       {/* Legacy room_types_json Rooms */}
