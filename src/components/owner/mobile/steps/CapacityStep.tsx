@@ -61,9 +61,6 @@ export function CapacityStep({ value, onChange }: CapacityStepProps) {
           placeholder="Enter number of rooms"
           className="h-16 text-3xl font-bold text-center"
         />
-        <p className="text-center text-sm text-muted-foreground mt-3">
-          Enter a number between 1 and 2000
-        </p>
       </motion.div>
 
       <motion.p

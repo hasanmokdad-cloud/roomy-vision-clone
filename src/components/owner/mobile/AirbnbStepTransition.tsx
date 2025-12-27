@@ -29,9 +29,9 @@ export function AirbnbStepTransition({ phase }: AirbnbStepTransitionProps) {
   const content = phaseContent[phase];
 
   return (
-    <div className="min-h-screen pt-20 pb-32 px-6 lg:px-12 xl:px-20 2xl:px-28 bg-white">
+    <div className="h-screen overflow-hidden pt-16 pb-28 px-6 lg:px-12 xl:px-20 2xl:px-28 bg-white">
       {/* Mobile: Stack vertically, Desktop: Side by side centered */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center lg:gap-8 xl:gap-12 min-h-[calc(100vh-12rem)]">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center lg:gap-8 xl:gap-12 h-full">
         {/* Text content - left side on desktop, pushed more to the right */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -65,13 +65,17 @@ export function AirbnbStepTransition({ phase }: AirbnbStepTransitionProps) {
               muted
               playsInline
               preload="auto"
+              onLoadedData={(e) => {
+                const video = e.currentTarget;
+                video.play().catch(() => {});
+              }}
               onTimeUpdate={(e) => {
                 const video = e.currentTarget;
                 if (video.duration - video.currentTime < 0.1) {
                   video.pause();
                 }
               }}
-              className="w-[380px] h-[380px] md:w-[500px] md:h-[500px] lg:w-[650px] lg:h-[650px] xl:w-[700px] xl:h-[700px] object-contain"
+              className="w-[320px] h-[320px] md:w-[420px] md:h-[420px] lg:w-[550px] lg:h-[550px] xl:w-[600px] xl:h-[600px] object-contain"
             />
           ) : phase === 2 ? (
             <video
@@ -91,7 +95,7 @@ export function AirbnbStepTransition({ phase }: AirbnbStepTransitionProps) {
                   video.pause();
                 }
               }}
-              className="w-[380px] h-[380px] md:w-[500px] md:h-[500px] lg:w-[650px] lg:h-[650px] xl:w-[700px] xl:h-[700px] object-contain"
+              className="w-[320px] h-[320px] md:w-[420px] md:h-[420px] lg:w-[550px] lg:h-[550px] xl:w-[600px] xl:h-[600px] object-contain"
             />
           ) : (
             <DormRoomAnimation phase={phase} />

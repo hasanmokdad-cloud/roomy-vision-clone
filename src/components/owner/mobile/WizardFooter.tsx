@@ -11,12 +11,13 @@ interface WizardFooterProps {
   isVideoPreloading?: boolean;
 }
 
-// Filler/transition steps and their progress bar positions (at segment intersections)
-const FILLER_STEP_PROGRESS: Record<number, number> = {
-  1: 0,      // Step 1 filler: 0% (start of segment 1)
-  4: 0.333,  // Step 2 filler: 33% (intersection of segments 1 & 2)
-  13: 0.666, // Step 3 filler: 66% (intersection of segments 2 & 3)
-};
+// Phase definitions for progress calculation
+// Phase 1: Steps 1-4 (filler at 1, content at 2,3, ends at 4 filler)
+// Phase 2: Steps 4-10 (filler at 4, content at 5,6,7,8,9, ends at 10 filler - now step 10 is the phase 3 filler)
+// Phase 3: Steps 10-14 (filler at 10, content at 11,12,13,14)
+
+// Updated step order: Step 3 filler (phase 3) now comes AFTER photos (step 9), before highlights
+// New order: 0(intro), 1(filler1), 2(location), 3(capacity), 4(filler2), 5-7(amenities), 8(gender), 9(photos), 10(filler3), 11(highlights), 12(title), 13(desc), 14(review)
 
 export function WizardFooter({
   currentStep,
@@ -28,42 +29,61 @@ export function WizardFooter({
   isSubmitting = false,
   isVideoPreloading = false,
 }: WizardFooterProps) {
-  // Content steps (excluding transition pages 0, 1, 4, 13)
-  const contentSteps = [2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 14];
-  const totalContentSteps = contentSteps.length; // 11 steps
-
-  // Check if current step is a filler/transition step
-  const isFillerStep = currentStep in FILLER_STEP_PROGRESS;
-
+  // Phase 1 content steps: 2, 3 (location, capacity)
+  // Phase 2 content steps: 5, 6, 7, 8, 9 (amenities x3, gender, photos)
+  // Phase 3 content steps: 11, 12, 13, 14 (highlights, title, description, review)
+  
+  // Filler steps and their positions:
+  // Step 1: 0% (start of phase 1)
+  // Step 4: 33.3% (end of phase 1, start of phase 2)
+  // Step 10: 66.6% (end of phase 2, start of phase 3)
+  
+  const FILLER_STEPS: Record<number, number> = {
+    1: 0,       // Phase 1 filler at 0%
+    4: 1/3,     // Phase 2 filler at 33%
+    10: 2/3,    // Phase 3 filler at 66%
+  };
+  
+  const phase1Steps = [2, 3];
+  const phase2Steps = [5, 6, 7, 8, 9];
+  const phase3Steps = [11, 12, 13, 14];
+  
   let progressPercentage: number;
   
-  if (isFillerStep) {
-    // Use fixed positions for filler steps
-    progressPercentage = FILLER_STEP_PROGRESS[currentStep];
+  if (currentStep in FILLER_STEPS) {
+    progressPercentage = FILLER_STEPS[currentStep];
+  } else if (phase1Steps.includes(currentStep)) {
+    // Phase 1: 0% to 33%
+    const idx = phase1Steps.indexOf(currentStep);
+    const phaseProgress = (idx + 1) / phase1Steps.length;
+    progressPercentage = phaseProgress * (1/3);
+  } else if (phase2Steps.includes(currentStep)) {
+    // Phase 2: 33% to 66%
+    const idx = phase2Steps.indexOf(currentStep);
+    const phaseProgress = (idx + 1) / phase2Steps.length;
+    progressPercentage = (1/3) + phaseProgress * (1/3);
+  } else if (phase3Steps.includes(currentStep)) {
+    // Phase 3: 66% to 100%
+    const idx = phase3Steps.indexOf(currentStep);
+    const phaseProgress = (idx + 1) / phase3Steps.length;
+    progressPercentage = (2/3) + phaseProgress * (1/3);
   } else {
-    // Find current position in content steps
-    const currentContentIndex = contentSteps.findIndex(s => s === currentStep);
-    const actualProgress = currentContentIndex === -1 
-      ? contentSteps.filter(s => s < currentStep).length
-      : currentContentIndex + 1;
-
-    // Calculate progress as percentage
-    progressPercentage = actualProgress / totalContentSteps;
+    progressPercentage = 0;
   }
 
-  // Distribute across 3 phases
+  // Distribute across 3 segments
   const phase1Fill = Math.min(1, progressPercentage * 3);
   const phase2Fill = Math.min(1, Math.max(0, (progressPercentage * 3) - 1));
   const phase3Fill = Math.min(1, Math.max(0, (progressPercentage * 3) - 2));
   
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-white">
-      {/* Progress bar - 3 segments, full width */}
+      {/* Progress bar - 3 segments */}
       <div className="flex gap-1 pt-3">
         {[phase1Fill, phase2Fill, phase3Fill].map((fill, index) => (
           <div
             key={index}
-            className="h-1 flex-1 rounded-full bg-muted overflow-hidden"
+            className="h-[2px] flex-1 rounded-full bg-muted overflow-hidden"
           >
             <div
               className="h-full rounded-full bg-foreground transition-all duration-300"
@@ -87,7 +107,7 @@ export function WizardFooter({
         <Button
           onClick={onNext}
           disabled={isNextDisabled || isSubmitting || isVideoPreloading}
-          className="bg-[#222222] text-white hover:bg-[#000000] rounded-lg px-8 py-4 font-semibold text-base min-w-[120px]"
+          className="bg-[#222222] text-white hover:bg-[#000000] rounded-lg px-6 py-3 font-semibold text-base h-12 min-w-[100px]"
         >
           {isVideoPreloading ? (
             <span className="flex items-center gap-1 text-lg tracking-widest">

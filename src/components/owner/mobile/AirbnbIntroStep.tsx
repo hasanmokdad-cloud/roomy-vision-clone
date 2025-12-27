@@ -119,23 +119,25 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress, hasSavedProgres
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 + index * 0.15, duration: 0.4 }}
-                className="flex items-center gap-4 py-8 first:pt-0 lg:first:pt-8"
+                className="flex items-start gap-4 py-6 lg:py-8 first:pt-0 lg:first:pt-8"
               >
-                <span className="text-[28px] lg:text-[32px] font-light text-[#222222] shrink-0">
-                  {step.number}
-                </span>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-[20px] lg:text-[22px] font-semibold text-[#222222] mb-2">
-                    {step.title}
-                  </h3>
-                  <p className="text-[16px] lg:text-[17px] text-[#717171] leading-relaxed">
+                  <div className="flex items-baseline gap-2 mb-1">
+                    <span className="text-[18px] lg:text-[19px] font-semibold text-[#222222]">
+                      {step.number}
+                    </span>
+                    <h3 className="text-[18px] lg:text-[19px] font-semibold text-[#222222]">
+                      {step.title}
+                    </h3>
+                  </div>
+                  <p className="text-[14px] lg:text-[15px] text-[#717171] leading-relaxed">
                     {step.description}
                   </p>
                 </div>
                 <img 
                   src={stepGraphics[step.number as 1 | 2 | 3]} 
                   alt={step.title}
-                  className="w-[100px] h-[80px] lg:w-[140px] lg:h-[110px] object-contain shrink-0"
+                  className="w-[100px] h-[80px] lg:w-[120px] lg:h-[100px] object-contain shrink-0"
                 />
               </motion.div>
             ))}
@@ -149,8 +151,8 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress, hasSavedProgres
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8 }}
       >
-        {/* Thicker separator bar */}
-        <div className="h-[2px] bg-[#DDDDDD] w-full" />
+        {/* Separator bar */}
+        <div className="h-[1px] bg-[#DDDDDD] w-full" />
         <div className="px-6 lg:px-12 py-6 flex justify-end gap-3">
           {hasSavedProgress && onResume && (
             <button
