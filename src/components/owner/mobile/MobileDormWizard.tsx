@@ -331,6 +331,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onClearProgress={clearSavedProgress}
             hasSavedProgress={hasSavedProgress}
             onResume={() => setCurrentStep(savedStep)}
+            isVideoPreloading={videoPreloading}
           />
         );
       case 1:

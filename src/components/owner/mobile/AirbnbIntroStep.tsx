@@ -12,6 +12,7 @@ interface AirbnbIntroStepProps {
   onClearProgress?: () => void;
   hasSavedProgress?: boolean;
   onResume?: () => void;
+  isVideoPreloading?: boolean;
 }
 
 // Loading dots animation component
@@ -43,7 +44,7 @@ const stepGraphics = {
   3: Step3Graphic,
 };
 
-export function AirbnbIntroStep({ onGetStarted, onClearProgress, hasSavedProgress, onResume }: AirbnbIntroStepProps) {
+export function AirbnbIntroStep({ onGetStarted, onClearProgress, hasSavedProgress, onResume, isVideoPreloading }: AirbnbIntroStepProps) {
   const navigate = useNavigate();
 
   const steps = [
@@ -164,9 +165,10 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress, hasSavedProgres
           )}
           <button
             onClick={handleGetStarted}
-            className="px-6 py-3 bg-gradient-to-r from-[#E61E4D] via-[#E31C5F] to-[#D70466] text-white font-semibold text-[16px] rounded-lg hover:opacity-90 transition-opacity min-w-[140px]"
+            disabled={isVideoPreloading}
+            className="px-6 py-3 bg-gradient-to-r from-[#E61E4D] via-[#E31C5F] to-[#D70466] text-white font-semibold text-[16px] rounded-lg hover:opacity-90 transition-opacity min-w-[140px] disabled:opacity-80"
           >
-            Get started
+            {isVideoPreloading ? <LoadingDots /> : 'Get started'}
           </button>
         </div>
       </motion.div>
