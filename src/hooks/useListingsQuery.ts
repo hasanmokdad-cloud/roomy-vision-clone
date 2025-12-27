@@ -7,7 +7,6 @@ interface DormListing extends DormPublic {
   deposit?: number;
   city?: string;
   services_amenities?: string;
-  matchingRoomCount?: number;
 }
 
 interface RoomType {
@@ -22,7 +21,6 @@ type Dorm = DormPublic & {
   room_types_json?: RoomType[];
   services_amenities?: string;
   room_types?: string;
-  matchingRoomCount?: number;
 }
 
 interface Filters {
@@ -37,6 +35,30 @@ interface Filters {
   amenities?: string[];
 }
 
+export interface RoomListingItem {
+  id: string;
+  name: string;
+  type: string;
+  price: number;
+  deposit?: number;
+  capacity?: number;
+  capacity_occupied?: number;
+  available: boolean;
+  images?: string[];
+  video_url?: string;
+  description?: string;
+  area_m2?: number;
+  dorm: {
+    id: string;
+    dorm_name: string;
+    area?: string;
+    university?: string;
+    cover_image?: string;
+    owner_id: string;
+    verification_status?: string;
+  };
+}
+
 interface DormModeResult {
   mode: 'dorm';
   dorms: Dorm[];
@@ -44,19 +66,7 @@ interface DormModeResult {
 
 interface RoomModeResult {
   mode: 'room';
-  rooms: Array<{
-    dorm_id: string;
-    dorm_name: string;
-    area?: string;
-    university?: string;
-    type: string;
-    capacity: number;
-    price: number;
-    amenities: string[];
-    images?: string[];
-    cover_image?: string;
-    verification_status?: string;
-  }>;
+  rooms: RoomListingItem[];
 }
 
 type ListingsResult = DormModeResult | RoomModeResult;
@@ -159,7 +169,103 @@ export function useListingsQuery(filters: Filters) {
     const { data: { session } } = await supabase.auth.getSession();
     console.log('Current session:', session?.user?.id ? 'Authenticated' : 'Anonymous');
 
-    // Build base query with specific columns
+    // Check if we need room-level display
+    const needsRoomDisplay = hasRoomFilters(filters);
+    
+    if (needsRoomDisplay) {
+      // ROOM MODE: Query rooms with their parent dorm info
+      console.log('Room mode: querying rooms table with filters');
+      
+      let roomsQuery = supabase
+        .from('rooms')
+        .select(`
+          id, name, type, price, deposit, capacity, capacity_occupied, available, 
+          images, video_url, description, area_m2,
+          dorms!inner (
+            id, dorm_name, area, university, cover_image, owner_id, verification_status, available
+          )
+        `)
+        .eq('available', true)
+        .eq('dorms.verification_status', 'Verified')
+        .eq('dorms.available', true);
+      
+      // Apply price filter
+      if (filters.priceRange[0] > 0) {
+        roomsQuery = roomsQuery.gte('price', filters.priceRange[0]);
+      }
+      if (filters.priceRange[1] < 2000) {
+        roomsQuery = roomsQuery.lte('price', filters.priceRange[1]);
+      }
+      
+      // Apply capacity filter
+      if (filters.capacity && filters.capacity > 0) {
+        roomsQuery = roomsQuery.gte('capacity', filters.capacity);
+      }
+      
+      const { data: rooms, error: roomsError } = await roomsQuery;
+      
+      if (roomsError) {
+        console.error('Error fetching rooms:', roomsError);
+        setError('Unable to load listings. Please try again shortly.');
+        setLoading(false);
+        return;
+      }
+      
+      // Filter rooms by room type (needs client-side matching)
+      let filteredRooms = rooms || [];
+      if (filters.roomTypes.length > 0) {
+        filteredRooms = filteredRooms.filter(room => 
+          filters.roomTypes.some(filterType => matchesRoomTypeFilter(room.type, filterType))
+        );
+      }
+      
+      // Apply dorm-level filters (university, area)
+      if (filters.universities.length > 0) {
+        filteredRooms = filteredRooms.filter(room => 
+          filters.universities.includes((room.dorms as any).university)
+        );
+      }
+      
+      if (filters.areas.length > 0) {
+        filteredRooms = filteredRooms.filter(room => 
+          filters.areas.includes((room.dorms as any).area)
+        );
+      }
+      
+      // Transform to RoomListingItem format
+      const transformedRooms: RoomListingItem[] = filteredRooms.map(room => ({
+        id: room.id,
+        name: room.name,
+        type: room.type,
+        price: room.price,
+        deposit: room.deposit,
+        capacity: room.capacity,
+        capacity_occupied: room.capacity_occupied,
+        available: room.available,
+        images: room.images,
+        video_url: room.video_url,
+        description: room.description,
+        area_m2: room.area_m2,
+        dorm: {
+          id: (room.dorms as any).id,
+          dorm_name: (room.dorms as any).dorm_name,
+          area: (room.dorms as any).area,
+          university: (room.dorms as any).university,
+          cover_image: (room.dorms as any).cover_image,
+          owner_id: (room.dorms as any).owner_id,
+          verification_status: (room.dorms as any).verification_status,
+        }
+      }));
+      
+      console.log(`Found ${transformedRooms.length} matching rooms`);
+      
+      setData({ mode: 'room', rooms: transformedRooms });
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
+    // DORM MODE: Standard dorm-level query
     let query = supabase
       .from('dorms')
       .select('id, dorm_name, monthly_price, area, university, verification_status, cover_image, image_url, room_types, room_types_json, capacity, amenities, gender_preference, shuttle, available, created_at, updated_at, type, description, address, phone_number, email, website')
@@ -206,95 +312,18 @@ export function useListingsQuery(filters: Filters) {
       return;
     }
 
-    // Check if we need to filter by rooms table
-    const needsRoomFiltering = hasRoomFilters(filters);
-    
-    if (needsRoomFiltering) {
-      // Query the rooms table to find matching rooms
-      let roomsQuery = supabase
-        .from('rooms')
-        .select('id, dorm_id, name, type, price, capacity, available')
-        .eq('available', true);
-      
-      // Apply price filter
-      if (filters.priceRange[0] > 0) {
-        roomsQuery = roomsQuery.gte('price', filters.priceRange[0]);
-      }
-      if (filters.priceRange[1] < 2000) {
-        roomsQuery = roomsQuery.lte('price', filters.priceRange[1]);
-      }
-      
-      // Apply capacity filter
-      if (filters.capacity && filters.capacity > 0) {
-        roomsQuery = roomsQuery.gte('capacity', filters.capacity);
-      }
-      
-      const { data: rooms, error: roomsError } = await roomsQuery;
-      
-      if (roomsError) {
-        console.error('Error fetching rooms:', roomsError);
-        setError('Unable to load listings. Please try again shortly.');
-        setLoading(false);
-        return;
-      }
-      
-      // Filter rooms by room type (needs client-side matching)
-      let filteredRooms = rooms || [];
-      if (filters.roomTypes.length > 0) {
-        filteredRooms = filteredRooms.filter(room => 
-          filters.roomTypes.some(filterType => matchesRoomTypeFilter(room.type, filterType))
+    // Apply amenities filter
+    let filteredDorms = dorms;
+    if (filters.amenities && filters.amenities.length > 0) {
+      filteredDorms = filteredDorms.filter(dorm => {
+        const dormAmenities = dorm.amenities || [];
+        return filters.amenities!.every(amenity => 
+          dormAmenities.some((da: string) => da.toLowerCase() === amenity.toLowerCase())
         );
-      }
-      
-      // Create a map of dorm_id -> matching room count
-      const dormRoomCounts = new Map<string, number>();
-      filteredRooms.forEach(room => {
-        const current = dormRoomCounts.get(room.dorm_id) || 0;
-        dormRoomCounts.set(room.dorm_id, current + 1);
       });
-      
-      // Get the set of dorm IDs that have matching rooms
-      const dormsWithMatchingRooms = new Set(dormRoomCounts.keys());
-      
-      // Filter dorms to only include those with matching rooms
-      let filteredDorms = dorms.filter(dorm => dormsWithMatchingRooms.has(dorm.id));
-      
-      // Apply amenities filter on dorms
-      if (filters.amenities && filters.amenities.length > 0) {
-        filteredDorms = filteredDorms.filter(dorm => {
-          const dormAmenities = dorm.amenities || [];
-          return filters.amenities!.every(amenity => 
-            dormAmenities.some((da: string) => da.toLowerCase() === amenity.toLowerCase())
-          );
-        });
-      }
-      
-      // Add matching room count to each dorm
-      const dormsWithCounts = filteredDorms.map(dorm => ({
-        ...dorm,
-        matchingRoomCount: dormRoomCounts.get(dorm.id) || 0
-      }));
-      
-      console.log(`Found ${filteredRooms.length} matching rooms across ${dormsWithCounts.length} dorms`);
-      
-      setData({ mode: 'dorm', dorms: dormsWithCounts as unknown as Dorm[] });
-    } else {
-      // No room-specific filters - apply only dorm-level filters
-      let filteredDorms = dorms;
-
-      // Amenities filter
-      if (filters.amenities && filters.amenities.length > 0) {
-        filteredDorms = filteredDorms.filter(dorm => {
-          const dormAmenities = dorm.amenities || [];
-          return filters.amenities!.every(amenity => 
-            dormAmenities.some((da: string) => da.toLowerCase() === amenity.toLowerCase())
-          );
-        });
-      }
-
-      setData({ mode: 'dorm', dorms: filteredDorms as unknown as Dorm[] });
     }
 
+    setData({ mode: 'dorm', dorms: filteredDorms as unknown as Dorm[] });
     setError(null);
     setLoading(false);
   };
