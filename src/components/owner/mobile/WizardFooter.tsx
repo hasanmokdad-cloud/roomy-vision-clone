@@ -76,7 +76,7 @@ export function WizardFooter({
         <Button
           variant="ghost"
           onClick={onBack}
-          disabled={currentStep <= 1}
+          disabled={currentStep <= 0}
           className="text-foreground underline underline-offset-4 hover:bg-transparent disabled:opacity-30 font-medium"
         >
           Back
