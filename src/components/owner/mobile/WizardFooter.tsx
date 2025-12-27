@@ -83,7 +83,7 @@ export function WizardFooter({
         {[phase1Fill, phase2Fill, phase3Fill].map((fill, index) => (
           <div
             key={index}
-            className="h-[2px] flex-1 rounded-full bg-muted overflow-hidden"
+            className="h-[6px] flex-1 rounded-full bg-muted overflow-hidden"
           >
             <div
               className="h-full rounded-full bg-foreground transition-all duration-300"
