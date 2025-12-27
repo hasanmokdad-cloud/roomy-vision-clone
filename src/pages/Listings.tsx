@@ -11,9 +11,10 @@ import { Badge } from '@/components/ui/badge';
 import { AISmartFilter } from '@/components/listings/AISmartFilter';
 import { DormComparison, DormComparisonCheckbox } from '@/components/listings/DormComparison';
 import { AirbnbFiltersModal } from '@/components/listings/AirbnbFiltersModal';
-import { useListingsQuery } from '@/hooks/useListingsQuery';
+import { useListingsQuery, type RoomListingItem } from '@/hooks/useListingsQuery';
 import { sanitizeInput } from '@/utils/inputValidation';
 import { CinematicDormCard } from '@/components/listings/CinematicDormCard';
+import { EnhancedRoomCard } from '@/components/listings/EnhancedRoomCard';
 import { ScrollImmersion } from '@/components/listings/ScrollImmersion';
 import { ScrollToTopButton } from '@/components/listings/ScrollToTopButton';
 import { DormCardSkeleton } from '@/components/skeletons/DormCardSkeleton';
@@ -103,7 +104,7 @@ export default function Listings() {
     });
   }, []);
 
-  // Get real dorms from Supabase
+  // Get data based on mode
   const dorms = useMemo(() => {
     if (data.mode === 'dorm') {
       return data.dorms;
@@ -111,15 +112,16 @@ export default function Listings() {
     return [];
   }, [data]);
 
-  // Check if room-specific filters are active
-  const hasRoomFiltersActive = useMemo(() => {
-    const hasPrice = filters.priceRange[0] > 0 || filters.priceRange[1] < 2000;
-    const hasRoomType = filters.roomTypes.length > 0;
-    const hasCapacity = filters.capacity !== undefined && filters.capacity > 0;
-    return hasPrice || hasRoomType || hasCapacity;
-  }, [filters]);
+  const rooms = useMemo(() => {
+    if (data.mode === 'room') {
+      return data.rooms;
+    }
+    return [];
+  }, [data]);
 
-  // Filter dorms by search query
+  const isRoomMode = data.mode === 'room';
+
+  // Filter dorms by search query (only in dorm mode)
   const filteredDorms = useMemo(() => {
     if (!searchQuery.trim()) return dorms;
 
@@ -134,17 +136,43 @@ export default function Listings() {
     );
   }, [dorms, searchQuery]);
 
+  // Filter rooms by search query (only in room mode)
+  const filteredRooms = useMemo(() => {
+    if (!searchQuery.trim()) return rooms;
+
+    const sanitized = sanitizeInput(searchQuery);
+    const query = sanitized.substring(0, 120).toLowerCase();
+    
+    return rooms.filter(room =>
+      room.name?.toLowerCase().includes(query) ||
+      room.type?.toLowerCase().includes(query) ||
+      room.dorm.dorm_name?.toLowerCase().includes(query) ||
+      room.dorm.area?.toLowerCase().includes(query) ||
+      room.dorm.university?.toLowerCase().includes(query)
+    );
+  }, [rooms, searchQuery]);
+
   // Paginate results
   const paginatedDorms = useMemo(() => {
-    const startIndex = 0;
     const endIndex = currentPage * itemsPerPage;
-    return filteredDorms.slice(startIndex, endIndex);
+    return filteredDorms.slice(0, endIndex);
   }, [filteredDorms, currentPage]);
 
-  const hasMore = filteredDorms.length > paginatedDorms.length;
+  const paginatedRooms = useMemo(() => {
+    const endIndex = currentPage * itemsPerPage;
+    return filteredRooms.slice(0, endIndex);
+  }, [filteredRooms, currentPage]);
+
+  const hasMore = isRoomMode 
+    ? filteredRooms.length > paginatedRooms.length
+    : filteredDorms.length > paginatedDorms.length;
+
+  const totalCount = isRoomMode ? filteredRooms.length : filteredDorms.length;
+  const currentCount = isRoomMode ? paginatedRooms.length : paginatedDorms.length;
 
   const handleFilterChange = useCallback((newFilters: typeof filters) => {
     setFilters(newFilters);
+    setCurrentPage(1); // Reset pagination when filters change
   }, []);
 
   const handleRemoveFilter = useCallback((category: 'universities' | 'areas' | 'roomTypes' | 'capacity' | 'cities' | 'genderPreference' | 'amenities', value?: string) => {
@@ -159,6 +187,7 @@ export default function Listings() {
       }
       return prev;
     });
+    setCurrentPage(1);
   }, []);
 
   const handleLoadMore = useCallback(() => {
@@ -167,6 +196,7 @@ export default function Listings() {
 
   const handleResetPrice = useCallback(() => {
     setFilters(prev => ({ ...prev, priceRange: [0, 2000] }));
+    setCurrentPage(1);
   }, []);
 
   const handleAIFilters = useCallback((aiFilters: any) => {
@@ -180,6 +210,7 @@ export default function Listings() {
     if (aiFilters.searchQuery) {
       setSearchQuery(aiFilters.searchQuery);
     }
+    setCurrentPage(1);
   }, []);
 
   const toggleComparisonSelection = useCallback((dormId: string) => {
@@ -210,13 +241,22 @@ export default function Listings() {
         >
           <Badge variant="secondary" className="mb-4 neon-glow">
             <Sparkles className="w-4 h-4 mr-2" />
-            {t('listings.browseVerified', 'Browse Verified Dorms')}
+            {isRoomMode 
+              ? t('listings.browseRooms', 'Browse Available Rooms')
+              : t('listings.browseVerified', 'Browse Verified Dorms')
+            }
           </Badge>
           <h1 className="text-5xl md:text-6xl font-black gradient-text mb-6">
-            {t('listings.title', 'Available Dorms in Lebanon')}
+            {isRoomMode
+              ? t('listings.roomsTitle', 'Available Rooms in Lebanon')
+              : t('listings.title', 'Available Dorms in Lebanon')
+            }
           </h1>
           <p className="text-xl text-foreground/80">
-            {t('listings.subtitle', 'Explore verified dorms and find your perfect stay near campus.')}
+            {isRoomMode
+              ? t('listings.roomsSubtitle', 'Showing rooms that match your criteria.')
+              : t('listings.subtitle', 'Explore verified dorms and find your perfect stay near campus.')
+            }
           </p>
         </motion.div>
 
@@ -231,7 +271,10 @@ export default function Listings() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/50" aria-hidden="true" />
             <Input
               type="text"
-              placeholder={t('listings.searchPlaceholder', "Search by name, location, or features (e.g., 'single room near AUB')")}
+              placeholder={isRoomMode
+                ? t('listings.searchRoomsPlaceholder', "Search rooms by name, type, or dorm...")
+                : t('listings.searchPlaceholder', "Search by name, location, or features (e.g., 'single room near AUB')")
+              }
               value={searchQuery}
               onChange={(e) => {
                 const sanitized = sanitizeInput(e.target.value);
@@ -239,7 +282,7 @@ export default function Listings() {
                 setSearchQuery(limited);
               }}
               className="pl-12 h-14 text-lg bg-background/30 backdrop-blur-xl border border-white/10 rounded-2xl placeholder:text-foreground/50"
-              aria-label="Search dorms by name, location, or features"
+              aria-label="Search listings"
             />
           </div>
           <Button
@@ -282,8 +325,8 @@ export default function Listings() {
               onResetPrice={handleResetPrice}
             />
 
-            {/* Dorm Comparison */}
-            {filteredDorms.length > 0 && (
+            {/* Dorm Comparison - only show in dorm mode */}
+            {!isRoomMode && filteredDorms.length > 0 && (
               <DormComparison dorms={filteredDorms} userId={userId} />
             )}
 
@@ -304,45 +347,76 @@ export default function Listings() {
                   {error}
                 </p>
               </motion.div>
-            ) : filteredDorms.length === 0 ? (
+            ) : (isRoomMode ? filteredRooms.length === 0 : filteredDorms.length === 0) ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center py-16 glass-hover rounded-3xl p-12"
               >
-                <h3 className="text-2xl font-black gradient-text mb-4">{t('listings.noDorms', 'No dorms available yet')}</h3>
+                <h3 className="text-2xl font-black gradient-text mb-4">
+                  {isRoomMode 
+                    ? t('listings.noRooms', 'No rooms match your criteria')
+                    : t('listings.noDorms', 'No dorms available yet')
+                  }
+                </h3>
                 <p className="text-foreground/70">
-                  {t('listings.checkBack', 'Check back soon!')}
+                  {isRoomMode
+                    ? t('listings.adjustFilters', 'Try adjusting your filters to see more results.')
+                    : t('listings.checkBack', 'Check back soon!')
+                  }
                 </p>
               </motion.div>
             ) : (
               <>
                 <ErrorBoundary>
-                  <div 
-                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
-                    role="list"
-                    aria-label="Dorm listings"
-                  >
-                    {paginatedDorms.map((dorm, index) => (
-                      <div key={dorm.id} className="relative">
-                        <DormComparisonCheckbox
-                          dormId={dorm.id}
-                          isSelected={selectedForComparison.includes(dorm.id)}
-                          onToggle={toggleComparisonSelection}
-                        />
-                        <CinematicDormCard 
-                          dorm={dorm} 
+                  {isRoomMode ? (
+                    // Room-level display
+                    <div 
+                      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
+                      role="list"
+                      aria-label="Room listings"
+                    >
+                      {paginatedRooms.map((room, index) => (
+                        <EnhancedRoomCard
+                          key={room.id}
+                          room={room}
+                          dormId={room.dorm.id}
+                          dormName={room.dorm.dorm_name}
+                          ownerId={room.dorm.owner_id}
                           index={index}
-                          showMatchingRooms={hasRoomFiltersActive}
                         />
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    // Dorm-level display
+                    <div 
+                      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
+                      role="list"
+                      aria-label="Dorm listings"
+                    >
+                      {paginatedDorms.map((dorm, index) => (
+                        <div key={dorm.id} className="relative">
+                          <DormComparisonCheckbox
+                            dormId={dorm.id}
+                            isSelected={selectedForComparison.includes(dorm.id)}
+                            onToggle={toggleComparisonSelection}
+                          />
+                          <CinematicDormCard 
+                            dorm={dorm} 
+                            index={index}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </ErrorBoundary>
-                {paginatedDorms.length > 0 && (
+                {currentCount > 0 && (
                   <div className="text-center mt-8 space-y-4" role="status" aria-live="polite">
                     <p className="text-sm text-foreground/60">
-                      {t('listings.showing', 'Showing {{current}} of {{total}} verified dorms', { current: paginatedDorms.length, total: filteredDorms.length })}
+                      {isRoomMode
+                        ? t('listings.showingRooms', 'Showing {{current}} of {{total}} matching rooms', { current: currentCount, total: totalCount })
+                        : t('listings.showing', 'Showing {{current}} of {{total}} verified dorms', { current: currentCount, total: totalCount })
+                      }
                     </p>
                     {hasMore && (
                       <Button 
@@ -350,7 +424,7 @@ export default function Listings() {
                         variant="outline" 
                         size="lg" 
                         className="px-8"
-                        aria-label={`Load more dorms. Currently showing ${paginatedDorms.length} of ${filteredDorms.length}`}
+                        aria-label={`Load more. Currently showing ${currentCount} of ${totalCount}`}
                       >
                         {t('buttons.loadMore', 'Load More')}
                       </Button>
