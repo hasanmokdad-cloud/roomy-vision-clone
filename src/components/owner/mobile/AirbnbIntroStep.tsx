@@ -45,21 +45,6 @@ const stepGraphics = {
 
 export function AirbnbIntroStep({ onGetStarted, onClearProgress, hasSavedProgress, onResume }: AirbnbIntroStepProps) {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Preload the Step 1 video in background so it plays immediately
-  useEffect(() => {
-    const video = document.createElement('video');
-    video.src = Step1Video;
-    video.preload = 'auto';
-    
-    // Use canplaythrough event to ensure video is fully loaded
-    video.addEventListener('canplaythrough', () => {
-      console.log('Step 1 video fully preloaded');
-    });
-    
-    video.load();
-  }, []);
 
   const steps = [
     {
@@ -80,15 +65,12 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress, hasSavedProgres
   ];
 
   const handleGetStarted = () => {
-    setIsLoading(true);
     // Clear any saved progress first to start fresh
     if (onClearProgress) {
       onClearProgress();
     }
-    // Reduced delay since video is preloaded with canplaythrough
-    setTimeout(() => {
-      onGetStarted();
-    }, 800);
+    // No delay - proceed immediately
+    onGetStarted();
   };
 
   const handleExit = () => {
@@ -180,10 +162,9 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress, hasSavedProgres
           )}
           <button
             onClick={handleGetStarted}
-            disabled={isLoading}
-            className="px-6 py-3 bg-gradient-to-r from-[#E61E4D] via-[#E31C5F] to-[#D70466] text-white font-semibold text-[16px] rounded-lg hover:opacity-90 transition-opacity disabled:opacity-70 min-w-[140px]"
+            className="px-6 py-3 bg-gradient-to-r from-[#E61E4D] via-[#E31C5F] to-[#D70466] text-white font-semibold text-[16px] rounded-lg hover:opacity-90 transition-opacity min-w-[140px]"
           >
-            {isLoading ? <LoadingDots /> : 'Get started'}
+            Get started
           </button>
         </div>
       </motion.div>

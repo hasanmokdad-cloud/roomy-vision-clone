@@ -56,6 +56,9 @@ export function WizardFooter({
   
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-white">
+      {/* Full-width grey separator line */}
+      <div className="h-[2px] bg-[#DDDDDD] w-full" />
+      
       {/* Progress bar - 3 segments */}
       <div className="flex gap-1 px-8 lg:px-16 xl:px-24 pt-3">
         {[phase1Fill, phase2Fill, phase3Fill].map((fill, index) => (

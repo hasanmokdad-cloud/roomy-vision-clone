@@ -64,11 +64,12 @@ export function AirbnbStepTransition({ phase }: AirbnbStepTransitionProps) {
               muted
               playsInline
               preload="auto"
-              onEnded={(e) => {
-                // Pause slightly before end to prevent lag/glitch and stay on final frame
+              onTimeUpdate={(e) => {
                 const video = e.currentTarget;
-                video.currentTime = video.duration - 0.1;
-                video.pause();
+                // When within 0.1 seconds of the end, pause to stay on final frame
+                if (video.duration - video.currentTime < 0.1) {
+                  video.pause();
+                }
               }}
               className="w-[320px] h-[320px] md:w-[450px] md:h-[450px] lg:w-[550px] lg:h-[550px] xl:w-[600px] xl:h-[600px] object-contain"
             />
