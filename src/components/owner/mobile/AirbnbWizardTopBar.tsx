@@ -18,7 +18,7 @@ export function AirbnbWizardTopBar({ onSaveExit, isIntro = false }: AirbnbWizard
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex items-center justify-between">
+    <div className="fixed top-0 left-0 right-0 z-50 px-8 lg:px-16 xl:px-24 py-4 flex items-center justify-between bg-white">
       {/* Roomy Logo */}
       <button onClick={handleLogoClick} className="focus:outline-none">
         <img 

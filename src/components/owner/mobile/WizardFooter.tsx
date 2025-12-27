@@ -55,9 +55,9 @@ export function WizardFooter({
   const phase3Fill = Math.min(1, Math.max(0, (progressPercentage * 3) - 2));
   
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white">
       {/* Progress bar - 3 segments */}
-      <div className="flex gap-1 px-4 pt-3">
+      <div className="flex gap-1 px-8 lg:px-16 xl:px-24 pt-3">
         {[phase1Fill, phase2Fill, phase3Fill].map((fill, index) => (
           <div
             key={index}
@@ -72,12 +72,12 @@ export function WizardFooter({
       </div>
       
       {/* Navigation buttons */}
-      <div className="flex items-center justify-between px-4 py-4">
+      <div className="flex items-center justify-between px-8 lg:px-16 xl:px-24 py-6">
         <Button
           variant="ghost"
           onClick={onBack}
           disabled={currentStep <= 0}
-          className="text-foreground underline underline-offset-4 hover:bg-transparent disabled:opacity-30 font-medium"
+          className="text-[#222222] underline underline-offset-4 hover:bg-transparent disabled:opacity-30 font-semibold text-base"
         >
           Back
         </Button>
@@ -85,7 +85,7 @@ export function WizardFooter({
         <Button
           onClick={onNext}
           disabled={isNextDisabled || isSubmitting}
-          className="bg-foreground text-background hover:bg-foreground/90 rounded-lg px-6 py-3 font-semibold"
+          className="bg-[#222222] text-white hover:bg-[#000000] rounded-lg px-8 py-4 font-semibold text-base min-w-[120px]"
         >
           {isSubmitting ? (
             <span className="flex items-center gap-2">
