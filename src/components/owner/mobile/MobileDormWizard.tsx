@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,7 @@ import { PhotosStep } from './steps/PhotosStep';
 import { DescriptionStep } from './steps/DescriptionStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { ResponsiveAlertModal } from '@/components/ui/responsive-alert-modal';
+import Step2Video from '@/assets/wizard/step2-animation.mp4';
 
 interface MobileDormWizardProps {
   onBeforeSubmit?: () => Promise<string | null>;
@@ -75,6 +76,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
   const [currentStep, setCurrentStep] = useState(0);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [videoPreloading, setVideoPreloading] = useState(false);
+  const step2VideoRef = useRef<HTMLVideoElement>(null);
 
   const [formData, setFormData] = useState<WizardFormData>({
     propertyType: 'dorm', // Default to 'dorm' since we removed the selection step
@@ -155,7 +158,28 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    // Special handling for step 3 → step 4 (preload step 2 video)
+    if (currentStep === 3) {
+      setVideoPreloading(true);
+      
+      const video = step2VideoRef.current;
+      if (video) {
+        await new Promise<void>((resolve) => {
+          if (video.readyState >= 3) {
+            resolve();
+          } else {
+            video.oncanplaythrough = () => resolve();
+            video.load();
+          }
+        });
+      }
+      
+      setVideoPreloading(false);
+      setCurrentStep(4);
+      return;
+    }
+
     // When moving from highlights step (step 10) to title step (step 11),
     // generate description if not already set
     if (currentStep === 10 && formData.highlights.length > 0 && !formData.description) {
@@ -413,6 +437,18 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         </motion.div>
       </AnimatePresence>
 
+      {/* Hidden preload video for step 2 */}
+      {currentStep >= 2 && currentStep <= 3 && (
+        <video
+          ref={step2VideoRef}
+          src={Step2Video}
+          preload="auto"
+          muted
+          playsInline
+          style={{ display: 'none' }}
+        />
+      )}
+
       {showFooter && (
         <WizardFooter
           currentStep={currentStep}
@@ -422,6 +458,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           isNextDisabled={isNextDisabled()}
           isLastStep={isLastStep}
           isSubmitting={submitting || isSubmitting}
+          isVideoPreloading={videoPreloading}
         />
       )}
 

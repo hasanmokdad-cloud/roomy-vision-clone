@@ -8,6 +8,7 @@ interface WizardFooterProps {
   isNextDisabled?: boolean;
   isLastStep?: boolean;
   isSubmitting?: boolean;
+  isVideoPreloading?: boolean;
 }
 
 // Filler/transition steps and their progress bar positions (at segment intersections)
@@ -25,6 +26,7 @@ export function WizardFooter({
   isNextDisabled = false,
   isLastStep = false,
   isSubmitting = false,
+  isVideoPreloading = false,
 }: WizardFooterProps) {
   // Content steps (excluding transition pages 0, 1, 4, 13)
   const contentSteps = [2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 14];
@@ -84,10 +86,16 @@ export function WizardFooter({
         
         <Button
           onClick={onNext}
-          disabled={isNextDisabled || isSubmitting}
+          disabled={isNextDisabled || isSubmitting || isVideoPreloading}
           className="bg-[#222222] text-white hover:bg-[#000000] rounded-lg px-8 py-4 font-semibold text-base min-w-[120px]"
         >
-          {isSubmitting ? (
+          {isVideoPreloading ? (
+            <span className="flex items-center gap-1 text-lg tracking-widest">
+              <span className="animate-bounce" style={{ animationDelay: '0ms', animationDuration: '600ms' }}>.</span>
+              <span className="animate-bounce" style={{ animationDelay: '150ms', animationDuration: '600ms' }}>.</span>
+              <span className="animate-bounce" style={{ animationDelay: '300ms', animationDuration: '600ms' }}>.</span>
+            </span>
+          ) : isSubmitting ? (
             <span className="flex items-center gap-2">
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
               Submitting...
