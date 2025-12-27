@@ -55,7 +55,7 @@ export function WizardFooter({
   const phase3Fill = Math.min(1, Math.max(0, (progressPercentage * 3) - 2));
   
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#F8E8DD]">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white">
       {/* Progress bar - 3 segments, full width */}
       <div className="flex gap-1 pt-3">
         {[phase1Fill, phase2Fill, phase3Fill].map((fill, index) => (
