@@ -10,6 +10,8 @@ import Step1Video from '@/assets/wizard/step1-animation.mp4';
 interface AirbnbIntroStepProps {
   onGetStarted: () => void;
   onClearProgress?: () => void;
+  hasSavedProgress?: boolean;
+  onResume?: () => void;
 }
 
 // Loading dots animation component
@@ -41,7 +43,7 @@ const stepGraphics = {
   3: Step3Graphic,
 };
 
-export function AirbnbIntroStep({ onGetStarted, onClearProgress }: AirbnbIntroStepProps) {
+export function AirbnbIntroStep({ onGetStarted, onClearProgress, hasSavedProgress, onResume }: AirbnbIntroStepProps) {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -167,7 +169,15 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress }: AirbnbIntroSt
       >
         {/* Thicker separator bar */}
         <div className="h-[2px] bg-[#DDDDDD] w-full" />
-        <div className="px-6 lg:px-12 py-6 flex justify-end">
+        <div className="px-6 lg:px-12 py-6 flex justify-end gap-3">
+          {hasSavedProgress && onResume && (
+            <button
+              onClick={onResume}
+              className="px-6 py-3 border border-[#222222] text-[#222222] font-semibold text-[16px] rounded-lg hover:bg-[#F7F7F7] transition-colors"
+            >
+              Resume
+            </button>
+          )}
           <button
             onClick={handleGetStarted}
             disabled={isLoading}
