@@ -17,7 +17,7 @@ import { TypingIndicator } from '@/components/messages/TypingIndicator';
 import { RecordingIndicator } from '@/components/messages/RecordingIndicator';
 import { AnimatePresence } from 'framer-motion';
 import { AttachmentModal } from '@/components/messages/AttachmentModal';
-import { formatDistanceToNowStrict } from 'date-fns';
+import { formatDistanceToNowStrict, isSameDay } from 'date-fns';
 import { VoiceWaveform } from '@/components/messages/VoiceWaveform';
 import { ConversationContextMenu } from '@/components/messages/ConversationContextMenu';
 import { VoiceRecordingOverlay } from '@/components/messages/VoiceRecordingOverlay';
@@ -34,6 +34,8 @@ import { FriendsTab } from '@/components/friends/FriendsTab';
 import { FriendSearchBar } from '@/components/friends/FriendSearchBar';
 import { MicPermissionModal } from '@/components/voice/MicPermissionModal';
 import { MicSetupModal } from '@/components/voice/MicSetupModal';
+import { DateSeparator } from '@/components/messages/DateSeparator';
+import { ScrollToBottomButton } from '@/components/messages/ScrollToBottomButton';
 import { useMicPermission } from '@/contexts/MicPermissionContext';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
@@ -272,6 +274,7 @@ export default function Messages() {
   const [currentSearchMatchIndex, setCurrentSearchMatchIndex] = useState(-1);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -281,6 +284,9 @@ export default function Messages() {
   const touchStartTimeRef = useRef<number>(0);
   const touchStartPosRef = useRef({ x: 0, y: 0 });
   const micButtonRef = useRef<HTMLButtonElement>(null);
+  
+  // Scroll-to-bottom button state
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
   // Unauthenticated state - Airbnb style (both mobile and desktop)
   if (isAuthReady && !isAuthenticated) {
@@ -335,6 +341,41 @@ export default function Messages() {
 
   // Start heartbeat for online status
   useOnlineStatus(userId, selectedConversation || undefined);
+
+  // Helper function to check if date separator is needed
+  const needsDateSeparator = useCallback((msg: Message, prevMsg?: Message): boolean => {
+    if (!prevMsg) return true;
+    return !isSameDay(new Date(msg.created_at), new Date(prevMsg.created_at));
+  }, []);
+
+  // Helper function to check if message is first in group (same sender, within 5 minutes)
+  const isFirstInGroup = useCallback((msg: Message, prevMsg?: Message): boolean => {
+    if (!prevMsg) return true;
+    if (prevMsg.sender_id !== msg.sender_id) return true;
+    const timeDiff = new Date(msg.created_at).getTime() - new Date(prevMsg.created_at).getTime();
+    return timeDiff > 5 * 60 * 1000;
+  }, []);
+
+  // Helper function to check if message is last in group
+  const isLastInGroup = useCallback((msg: Message, nextMsg?: Message): boolean => {
+    if (!nextMsg) return true;
+    if (nextMsg.sender_id !== msg.sender_id) return true;
+    const timeDiff = new Date(nextMsg.created_at).getTime() - new Date(msg.created_at).getTime();
+    return timeDiff > 5 * 60 * 1000;
+  }, []);
+
+  // Scroll detection for scroll-to-bottom button
+  const handleChatScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 200;
+    setShowScrollToBottom(!isNearBottom);
+  }, []);
+
+  // Scroll to bottom function
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
 
   // Handle conversation from URL query parameter
   useEffect(() => {
@@ -3154,17 +3195,19 @@ export default function Messages() {
                 {/* Chat Messages - Native scroll on mobile for smooth touch scrolling */}
                 {isMobile ? (
                   <div 
+                    ref={chatContainerRef}
                     className="flex-1 overflow-y-auto overscroll-contain py-4 chat-background-container relative"
                     style={{ 
                       WebkitOverflowScrolling: 'touch'
                     }}
+                    onScroll={handleChatScroll}
                   >
                     {/* Pattern overlay handled by CSS ::before pseudo-element */}
-                    <div className="relative z-[1] space-y-1">
+                    <div className="relative z-[1]">
                       {/* Pinned Messages Banner */}
                       {pinnedMessages.length > 0 && (
                         <div 
-                          className="sticky top-0 z-10 bg-primary/10 backdrop-blur-sm border border-primary/20 rounded-lg p-3 cursor-pointer flex items-center gap-3 hover:bg-primary/20 transition-colors"
+                          className="sticky top-0 z-10 bg-primary/10 backdrop-blur-sm border border-primary/20 rounded-lg p-3 cursor-pointer flex items-center gap-3 hover:bg-primary/20 transition-colors mx-4 mb-2"
                           onClick={() => {
                             const firstPinned = pinnedMessages[0];
                             if (firstPinned) {
@@ -3185,40 +3228,51 @@ export default function Messages() {
                         </div>
                       )}
 
-                      {messages.map((msg) => {
+                      {messages.map((msg, index) => {
+                        const prevMsg = messages[index - 1];
+                        const nextMsg = messages[index + 1];
                         const currentConversation = conversations.find(c => c.id === selectedConversation);
                         const isSender = msg.sender_id === userId;
                         const senderName = isSender ? 'You' : currentConversation?.other_user_name || 'User';
                         const senderAvatar = isSender ? undefined : currentConversation?.other_user_avatar;
+                        const showDateSeparator = needsDateSeparator(msg, prevMsg);
+                        const firstInGroup = isFirstInGroup(msg, prevMsg) || showDateSeparator;
+                        const lastInGroup = isLastInGroup(msg, nextMsg);
 
                         return (
-                          <SwipeableMessage
-                            key={msg.id}
-                            onSwipeReply={() => setReplyToMessage(msg)}
-                            disabled={false}
-                          >
-                            <div id={`message-${msg.id}`}>
-                              <MessageBubble
-                                message={msg}
-                                isSender={isSender}
-                                userId={userId}
-                                senderName={senderName}
-                                senderAvatar={senderAvatar}
-                                onReply={() => setReplyToMessage(msg)}
-                                onEdit={() => {
-                                  setEditingMessage(msg);
-                                  setShowEditModal(true);
-                                }}
-                                renderContent={() => renderMessageContent(msg, matchingMessageIds[currentSearchMatchIndex] === msg.id)}
-                                showAvatar={!isSender}
-                                allMessages={messages}
-                                onScrollToMessage={scrollToMessage}
-                                onPinChange={handlePinChange}
-                                searchQuery={conversationSearchQuery}
-                                isCurrentSearchMatch={matchingMessageIds[currentSearchMatchIndex] === msg.id}
-                              />
-                            </div>
-                          </SwipeableMessage>
+                          <div key={msg.id}>
+                            {showDateSeparator && (
+                              <DateSeparator date={new Date(msg.created_at)} />
+                            )}
+                            <SwipeableMessage
+                              onSwipeReply={() => setReplyToMessage(msg)}
+                              disabled={false}
+                            >
+                              <div id={`message-${msg.id}`}>
+                                <MessageBubble
+                                  message={msg}
+                                  isSender={isSender}
+                                  userId={userId}
+                                  senderName={senderName}
+                                  senderAvatar={senderAvatar}
+                                  onReply={() => setReplyToMessage(msg)}
+                                  onEdit={() => {
+                                    setEditingMessage(msg);
+                                    setShowEditModal(true);
+                                  }}
+                                  renderContent={() => renderMessageContent(msg, matchingMessageIds[currentSearchMatchIndex] === msg.id)}
+                                  showAvatar={!isSender}
+                                  allMessages={messages}
+                                  onScrollToMessage={scrollToMessage}
+                                  onPinChange={handlePinChange}
+                                  searchQuery={conversationSearchQuery}
+                                  isCurrentSearchMatch={matchingMessageIds[currentSearchMatchIndex] === msg.id}
+                                  isFirstInGroup={firstInGroup}
+                                  isLastInGroup={lastInGroup}
+                                />
+                              </div>
+                            </SwipeableMessage>
+                          </div>
                         );
                       })}
                       
@@ -3240,17 +3294,27 @@ export default function Messages() {
                       
                       <div ref={messagesEndRef} />
                     </div>
+                    
+                    {/* Scroll to bottom button */}
+                    <AnimatePresence>
+                      {showScrollToBottom && (
+                        <div className="absolute bottom-4 left-4 z-20">
+                          <ScrollToBottomButton onClick={scrollToBottom} />
+                        </div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 ) : (
                   <ScrollArea 
                     className="flex-1 overflow-hidden py-4 chat-background-container relative whatsapp-scrollbar"
+                    onScrollCapture={handleChatScroll as any}
                   >
                     {/* Pattern overlay handled by CSS ::before pseudo-element */}
-                    <div className="relative z-[1] space-y-1">
+                    <div className="relative z-[1]">
                       {/* Pinned Messages Banner */}
                       {pinnedMessages.length > 0 && (
                         <div 
-                          className="sticky top-0 z-10 bg-primary/10 backdrop-blur-sm border border-primary/20 rounded-lg p-3 cursor-pointer flex items-center gap-3 hover:bg-primary/20 transition-colors"
+                          className="sticky top-0 z-10 bg-primary/10 backdrop-blur-sm border border-primary/20 rounded-lg p-3 cursor-pointer flex items-center gap-3 hover:bg-primary/20 transition-colors mx-4 mb-2"
                           onClick={() => {
                             const firstPinned = pinnedMessages[0];
                             if (firstPinned) {
@@ -3271,40 +3335,51 @@ export default function Messages() {
                         </div>
                       )}
 
-                      {messages.map((msg) => {
+                      {messages.map((msg, index) => {
+                        const prevMsg = messages[index - 1];
+                        const nextMsg = messages[index + 1];
                         const currentConversation = conversations.find(c => c.id === selectedConversation);
                         const isSender = msg.sender_id === userId;
                         const senderName = isSender ? 'You' : currentConversation?.other_user_name || 'User';
                         const senderAvatar = isSender ? undefined : currentConversation?.other_user_avatar;
+                        const showDateSeparator = needsDateSeparator(msg, prevMsg);
+                        const firstInGroup = isFirstInGroup(msg, prevMsg) || showDateSeparator;
+                        const lastInGroup = isLastInGroup(msg, nextMsg);
 
                         return (
-                          <SwipeableMessage
-                            key={msg.id}
-                            onSwipeReply={() => setReplyToMessage(msg)}
-                            disabled={false}
-                          >
-                            <div id={`message-${msg.id}`}>
-                              <MessageBubble
-                                message={msg}
-                                isSender={isSender}
-                                userId={userId}
-                                senderName={senderName}
-                                senderAvatar={senderAvatar}
-                                onReply={() => setReplyToMessage(msg)}
-                                onEdit={() => {
-                                  setEditingMessage(msg);
-                                  setShowEditModal(true);
-                                }}
-                                renderContent={() => renderMessageContent(msg, matchingMessageIds[currentSearchMatchIndex] === msg.id)}
-                                showAvatar={!isSender}
-                                allMessages={messages}
-                                onScrollToMessage={scrollToMessage}
-                                onPinChange={handlePinChange}
-                                searchQuery={conversationSearchQuery}
-                                isCurrentSearchMatch={matchingMessageIds[currentSearchMatchIndex] === msg.id}
-                              />
-                            </div>
-                          </SwipeableMessage>
+                          <div key={msg.id}>
+                            {showDateSeparator && (
+                              <DateSeparator date={new Date(msg.created_at)} />
+                            )}
+                            <SwipeableMessage
+                              onSwipeReply={() => setReplyToMessage(msg)}
+                              disabled={false}
+                            >
+                              <div id={`message-${msg.id}`}>
+                                <MessageBubble
+                                  message={msg}
+                                  isSender={isSender}
+                                  userId={userId}
+                                  senderName={senderName}
+                                  senderAvatar={senderAvatar}
+                                  onReply={() => setReplyToMessage(msg)}
+                                  onEdit={() => {
+                                    setEditingMessage(msg);
+                                    setShowEditModal(true);
+                                  }}
+                                  renderContent={() => renderMessageContent(msg, matchingMessageIds[currentSearchMatchIndex] === msg.id)}
+                                  showAvatar={!isSender}
+                                  allMessages={messages}
+                                  onScrollToMessage={scrollToMessage}
+                                  onPinChange={handlePinChange}
+                                  searchQuery={conversationSearchQuery}
+                                  isCurrentSearchMatch={matchingMessageIds[currentSearchMatchIndex] === msg.id}
+                                  isFirstInGroup={firstInGroup}
+                                  isLastInGroup={lastInGroup}
+                                />
+                              </div>
+                            </SwipeableMessage>
+                          </div>
                         );
                       })}
                       
@@ -3326,6 +3401,15 @@ export default function Messages() {
                       
                       <div ref={messagesEndRef} />
                     </div>
+                    
+                    {/* Scroll to bottom button */}
+                    <AnimatePresence>
+                      {showScrollToBottom && (
+                        <div className="absolute bottom-4 left-4 z-20">
+                          <ScrollToBottomButton onClick={scrollToBottom} />
+                        </div>
+                      )}
+                    </AnimatePresence>
                   </ScrollArea>
                 )}
 
