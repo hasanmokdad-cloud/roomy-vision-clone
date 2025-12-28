@@ -10,6 +10,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface StarredMessage {
   id: string;
@@ -21,17 +22,42 @@ interface StarredMessage {
 interface StarredMessagesPanelProps {
   conversationId: string;
   onBack: () => void;
+  onMessageClick?: (messageId: string) => void;
 }
 
 export function StarredMessagesPanel({
   conversationId,
   onBack,
+  onMessageClick,
 }: StarredMessagesPanelProps) {
+  const isMobile = useIsMobile();
   const [starredMessages, setStarredMessages] = useState<StarredMessage[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadStarredMessages();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel(`starred-messages-${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          // Reload when starred status changes
+          loadStarredMessages();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [conversationId]);
 
   const loadStarredMessages = async () => {
@@ -71,7 +97,8 @@ export function StarredMessagesPanel({
     }
   };
 
-  const handleUnstar = async (messageId: string) => {
+  const handleUnstar = async (messageId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     try {
       const { error } = await supabase
         .from("messages")
@@ -88,15 +115,32 @@ export function StarredMessagesPanel({
     }
   };
 
-  return (
-    <div className="w-96 border-l border-border bg-background h-full flex flex-col">
+  const handleMessageClick = (messageId: string) => {
+    if (onMessageClick) {
+      onBack(); // Close panel first
+      // Small delay to allow panel to close before scrolling
+      setTimeout(() => {
+        onMessageClick(messageId);
+      }, 100);
+    }
+  };
+
+  const content = (
+    <>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h2 className="text-lg font-semibold">Starred messages</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold">Starred messages</h2>
+            {starredMessages.length > 0 && (
+              <span className="px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                {starredMessages.length}
+              </span>
+            )}
+          </div>
         </div>
         
         {starredMessages.length > 0 && (
@@ -134,7 +178,8 @@ export function StarredMessagesPanel({
             {starredMessages.map((message) => (
               <div
                 key={message.id}
-                className="p-4 hover:bg-accent/50 transition-colors group"
+                className={`p-4 hover:bg-accent/50 transition-colors group ${onMessageClick ? 'cursor-pointer' : ''}`}
+                onClick={() => handleMessageClick(message.id)}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
@@ -147,7 +192,7 @@ export function StarredMessagesPanel({
                     variant="ghost"
                     size="icon"
                     className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                    onClick={() => handleUnstar(message.id)}
+                    onClick={(e) => handleUnstar(message.id, e)}
                   >
                     <Star className="h-4 w-4 fill-current" />
                   </Button>
@@ -157,6 +202,22 @@ export function StarredMessagesPanel({
           </div>
         )}
       </div>
+    </>
+  );
+
+  // Mobile: Full screen view
+  if (isMobile) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background flex flex-col animate-slide-in-right">
+        {content}
+      </div>
+    );
+  }
+
+  // Desktop: Side panel
+  return (
+    <div className="w-96 border-l border-border bg-background h-full flex flex-col">
+      {content}
     </div>
   );
 }

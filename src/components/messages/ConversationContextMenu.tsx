@@ -23,7 +23,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Pin, Archive, BellOff, Trash2, MoreVertical } from 'lucide-react';
+import { Pin, Archive, Bell, BellOff, Trash2, MoreVertical } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -75,19 +75,19 @@ export function ConversationContextMenu({
   };
 
   const handleMute = async (duration: '8hours' | '1week' | 'always') => {
-    let mutedUntil: string | null = null;
+    let mutedUntilValue: string | null = null;
     
     if (duration === '8hours') {
-      mutedUntil = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
+      mutedUntilValue = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
     } else if (duration === '1week') {
-      mutedUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      mutedUntilValue = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     } else {
-      mutedUntil = new Date('2099-12-31').toISOString();
+      mutedUntilValue = new Date('2099-12-31').toISOString();
     }
 
     const { error } = await supabase
       .from('conversations')
-      .update({ muted_until: mutedUntil })
+      .update({ muted_until: mutedUntilValue })
       .eq('id', conversationId);
 
     if (error) {
@@ -155,7 +155,7 @@ export function ConversationContextMenu({
             </DropdownMenuItem>
           ) : (
             <DropdownMenuItem onClick={() => setShowMuteDialog(true)}>
-              <BellOff className="w-4 h-4 mr-2" />
+              <Bell className="w-4 h-4 mr-2" />
               Mute notifications
             </DropdownMenuItem>
           )}

@@ -7,18 +7,30 @@ interface ReactionBarProps {
   onOpenFullPicker: () => void;
   selectedEmojis?: string[];
   isSender?: boolean;
+  position?: 'top' | 'bottom';
 }
 
 const WHATSAPP_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "👏"];
 
-export function ReactionBar({ onReactionSelect, onOpenFullPicker, selectedEmojis = [], isSender = false }: ReactionBarProps) {
+export function ReactionBar({ 
+  onReactionSelect, 
+  onOpenFullPicker, 
+  selectedEmojis = [], 
+  isSender = false,
+  position = 'top'
+}: ReactionBarProps) {
+  // Position classes based on whether reaction bar should appear above or below message
+  const positionClasses = position === 'top' 
+    ? `-top-14 ${isSender ? 'right-0' : 'left-0'}`
+    : `-bottom-14 ${isSender ? 'right-0' : 'left-0'}`;
+
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.8, y: 10 }}
+      initial={{ opacity: 0, scale: 0.8, y: position === 'top' ? 10 : -10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.8, y: 10 }}
+      exit={{ opacity: 0, scale: 0.8, y: position === 'top' ? 10 : -10 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
-      className={`absolute -top-14 z-50 ${isSender ? 'right-0' : 'left-0'}`}
+      className={`absolute z-50 ${positionClasses}`}
     >
       <div className="bg-popover border border-border rounded-full shadow-lg px-2 py-2 flex items-center gap-1">
         {WHATSAPP_REACTIONS.map((emoji, index) => (

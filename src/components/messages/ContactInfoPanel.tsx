@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, ChevronRight, Image, FileText, Link as LinkIcon, Bell, BellOff, Star, UserPlus, UserMinus, Check, Ban, Flag, ArrowLeft } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -6,11 +6,18 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { StarredMessagesPanel } from "./StarredMessagesPanel";
 import { MediaLinksDocsPanel } from "./MediaLinksDocsPanel";
 import { useFriendshipStatus } from "@/hooks/useFriendshipStatus";
 import { useFriendships } from "@/hooks/useFriendships";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface ContactInfoPanelProps {
@@ -22,6 +29,7 @@ interface ContactInfoPanelProps {
   onMuteToggle: (muted: boolean) => void;
   currentStudentId?: string | null;
   otherStudentId?: string | null;
+  onScrollToMessage?: (messageId: string) => void;
 }
 
 export function ContactInfoPanel({
@@ -33,11 +41,15 @@ export function ContactInfoPanel({
   onMuteToggle,
   currentStudentId,
   otherStudentId,
+  onScrollToMessage,
 }: ContactInfoPanelProps) {
   const isMobile = useIsMobile();
   const [showStarredMessages, setShowStarredMessages] = useState(false);
   const [showMediaPanel, setShowMediaPanel] = useState(false);
   const [mediaCount, setMediaCount] = useState(0);
+  const [starredCount, setStarredCount] = useState(0);
+  const [showMuteDialog, setShowMuteDialog] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
 
   // Get friendship status if both are students
   const { status: friendshipStatus, friendshipId, refresh } = useFriendshipStatus(
@@ -45,6 +57,73 @@ export function ContactInfoPanel({
     otherStudentId || null
   );
   const { sendRequest, acceptRequest, removeFriend, blockUser } = useFriendships(currentStudentId || null);
+
+  // Load counts on mount
+  useEffect(() => {
+    loadCounts();
+    checkBlockStatus();
+
+    // Subscribe to real-time changes for starred messages
+    const channel = supabase
+      .channel(`contact-info-${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        () => {
+          loadCounts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId]);
+
+  // Check block status on friendship status changes
+  useEffect(() => {
+    checkBlockStatus();
+  }, [friendshipStatus]);
+
+  const loadCounts = async () => {
+    // Load starred count
+    const { count: starredCount } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('conversation_id', conversationId)
+      .eq('is_starred', true);
+    
+    setStarredCount(starredCount || 0);
+
+    // Load media count
+    const { count: mediaCount } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('conversation_id', conversationId)
+      .not('attachment_url', 'is', null);
+
+    setMediaCount(mediaCount || 0);
+  };
+
+  const checkBlockStatus = async () => {
+    if (!currentStudentId || !otherStudentId) return;
+    
+    const { data } = await supabase
+      .from('friendships')
+      .select('status, blocker_id')
+      .or(`and(requester_id.eq.${currentStudentId},receiver_id.eq.${otherStudentId}),and(requester_id.eq.${otherStudentId},receiver_id.eq.${currentStudentId})`)
+      .eq('status', 'blocked')
+      .maybeSingle();
+
+    if (data && data.blocker_id === currentStudentId) {
+      setIsBlocked(true);
+    }
+  };
 
   const handleAddFriend = async () => {
     if (!otherStudentId) return;
@@ -64,13 +143,56 @@ export function ContactInfoPanel({
     refresh();
   };
 
-  const handleBlock = async () => {
-    if (!friendshipId || !otherStudentId) {
+  const handleBlockToggle = async () => {
+    if (!otherStudentId) {
       toast.error("Cannot block user - user information not available");
       return;
     }
-    await blockUser(friendshipId, otherStudentId);
-    onClose();
+
+    if (isBlocked) {
+      // Unblock - delete the friendship/block record
+      if (friendshipId) {
+        const { error } = await supabase
+          .from('friendships')
+          .delete()
+          .eq('id', friendshipId);
+        
+        if (!error) {
+          setIsBlocked(false);
+          refresh();
+          toast.success(`${contactName} has been unblocked`);
+        } else {
+          toast.error("Failed to unblock user");
+        }
+      }
+    } else {
+      // Block
+      if (friendshipId) {
+        await blockUser(friendshipId, otherStudentId);
+        setIsBlocked(true);
+        refresh();
+        toast.success(`${contactName} has been blocked`);
+      } else {
+        // Create friendship record with blocked status
+        const { error } = await supabase
+          .from('friendships')
+          .insert({
+            requester_id: currentStudentId,
+            receiver_id: otherStudentId,
+            status: 'blocked',
+            blocker_id: currentStudentId,
+            blocked_at: new Date().toISOString(),
+          });
+        
+        if (error) {
+          toast.error("Failed to block user");
+          return;
+        }
+      }
+      setIsBlocked(true);
+      refresh();
+      toast.success(`${contactName} has been blocked`);
+    }
   };
 
   const handleReport = async () => {
@@ -81,12 +203,54 @@ export function ContactInfoPanel({
     }
   };
 
+  const handleMuteSwitch = (checked: boolean) => {
+    if (checked) {
+      // Show mute duration dialog
+      setShowMuteDialog(true);
+    } else {
+      // Unmute directly
+      onMuteToggle(false);
+    }
+  };
+
+  const handleMute = async (duration: '8hours' | '1week' | 'always') => {
+    let mutedUntil: string | null = null;
+    
+    if (duration === '8hours') {
+      mutedUntil = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
+    } else if (duration === '1week') {
+      mutedUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    } else {
+      mutedUntil = new Date('2099-12-31').toISOString();
+    }
+
+    const { error } = await supabase
+      .from('conversations')
+      .update({ muted_until: mutedUntil })
+      .eq('id', conversationId);
+
+    if (error) {
+      toast.error('Failed to mute chat');
+    } else {
+      toast.success('Notifications muted');
+      onMuteToggle(true);
+    }
+    setShowMuteDialog(false);
+  };
+
+  const handleMessageClick = (messageId: string) => {
+    setShowStarredMessages(false);
+    if (onScrollToMessage) {
+      onScrollToMessage(messageId);
+    }
+  };
 
   if (showStarredMessages) {
     return (
       <StarredMessagesPanel
         conversationId={conversationId}
         onBack={() => setShowStarredMessages(false)}
+        onMessageClick={handleMessageClick}
       />
     );
   }
@@ -170,7 +334,7 @@ export function ContactInfoPanel({
                 </div>
               </div>
             )}
-            {friendshipStatus === 'none' && (
+            {friendshipStatus === 'none' && !isBlocked && (
               <Button
                 variant="default"
                 size="sm"
@@ -216,7 +380,14 @@ export function ContactInfoPanel({
           <Star className="h-5 w-5 text-muted-foreground" />
           <p className="font-medium">Starred messages</p>
         </div>
-        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        <div className="flex items-center gap-2">
+          {starredCount > 0 && (
+            <span className="px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
+              {starredCount}
+            </span>
+          )}
+          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        </div>
       </button>
 
       <Separator />
@@ -231,7 +402,7 @@ export function ContactInfoPanel({
           )}
           <p className="font-medium">Mute notifications</p>
         </div>
-        <Switch checked={isMuted} onCheckedChange={onMuteToggle} />
+        <Switch checked={isMuted} onCheckedChange={handleMuteSwitch} />
       </div>
 
       <Separator />
@@ -240,11 +411,11 @@ export function ContactInfoPanel({
       <div className="p-4 space-y-2">
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3 text-destructive hover:bg-destructive/10"
-          onClick={handleBlock}
+          className={`w-full justify-start gap-3 ${isBlocked ? 'text-foreground hover:bg-accent' : 'text-destructive hover:bg-destructive/10'}`}
+          onClick={handleBlockToggle}
         >
           <Ban className="h-5 w-5" />
-          Block {contactName}
+          {isBlocked ? `Unblock ${contactName}` : `Block ${contactName}`}
         </Button>
 
         <Button
@@ -256,6 +427,46 @@ export function ContactInfoPanel({
           Report {contactName}
         </Button>
       </div>
+
+      {/* Mute Duration Dialog */}
+      <Dialog open={showMuteDialog} onOpenChange={setShowMuteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mute message notifications</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              Other members will not see that you muted this chat. You will still be notified if you are mentioned.
+            </p>
+          </DialogHeader>
+          <div className="space-y-2 pt-4">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleMute('8hours')}
+            >
+              8 hours
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleMute('1week')}
+            >
+              1 week
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleMute('always')}
+            >
+              Always
+            </Button>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="ghost" onClick={() => setShowMuteDialog(false)}>
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 
