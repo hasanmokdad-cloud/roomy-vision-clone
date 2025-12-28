@@ -100,12 +100,13 @@ export function ContactInfoPanel({
     
     setStarredCount(starredCount || 0);
 
-    // Load media count
+    // Load media count - only images and videos, not audio/voice messages
     const { count: mediaCount } = await supabase
       .from('messages')
       .select('*', { count: 'exact', head: true })
       .eq('conversation_id', conversationId)
-      .not('attachment_url', 'is', null);
+      .not('attachment_url', 'is', null)
+      .or('attachment_type.eq.image,attachment_type.eq.video,attachment_type.ilike.image/%,attachment_type.ilike.video/%');
 
     setMediaCount(mediaCount || 0);
   };
