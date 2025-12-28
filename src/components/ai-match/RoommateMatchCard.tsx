@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,16 @@ export const RoommateMatchCard = ({
 }: RoommateMatchCardProps) => {
   const navigate = useNavigate();
   const [showBreakdown, setShowBreakdown] = useState(false);
+
+  // Debug logging for missing data
+  useEffect(() => {
+    if (!roommate.id) {
+      console.warn('[RoommateMatchCard] Missing roommate.id:', roommate);
+    }
+    if (!roommate.full_name) {
+      console.warn('[RoommateMatchCard] Missing roommate.full_name:', roommate);
+    }
+  }, [roommate]);
   
   const matchScore = roommate.matchScore || roommate.scores?.overallScore || 70;
   const hasPersonalityMatch = roommate.hasPersonalityMatch || roommate.scores !== undefined;
@@ -289,7 +299,7 @@ export const RoommateMatchCard = ({
                   Breakdown
                 </Button>
               )}
-              {currentStudentId && roommate.id && (
+              {currentStudentId && roommate.id && roommate.id !== currentStudentId && (
                 <AddFriendButton 
                   currentStudentId={currentStudentId}
                   targetStudentId={roommate.id}

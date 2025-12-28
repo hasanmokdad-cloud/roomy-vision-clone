@@ -3,7 +3,8 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageSquare, MapPin, GraduationCap, DollarSign, Home, Users, Calendar, Loader2 } from "lucide-react";
+import { MessageSquare, MapPin, GraduationCap, DollarSign, Home, Users, Calendar, Loader2, ArrowLeft } from "lucide-react";
+import { AddFriendButton } from "@/components/friends/AddFriendButton";
 import { RoomyNavbar } from "@/components/RoomyNavbar";
 import Footer from "@/components/shared/Footer";
 import { useToast } from "@/hooks/use-toast";
@@ -20,7 +21,26 @@ export default function StudentProfile() {
   const [student, setStudent] = useState<any>(null);
   const [preferences, setPreferences] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [currentStudentId, setCurrentStudentId] = useState<string | null>(null);
   const matchScore = location.state?.matchScore;
+
+  // Fetch current user's student ID
+  useEffect(() => {
+    const fetchCurrentStudent = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: currentStudent } = await supabase
+          .from('students')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (currentStudent) {
+          setCurrentStudentId(currentStudent.id);
+        }
+      }
+    };
+    fetchCurrentStudent();
+  }, []);
 
   useEffect(() => {
     loadStudentProfile();
@@ -153,6 +173,25 @@ export default function StudentProfile() {
             <Button onClick={handleMessage} className="mt-6 w-full max-w-[200px]">
               <MessageSquare className="w-4 h-4 mr-2" />
               Message
+            </Button>
+            
+            {/* Add Friend Button */}
+            {currentStudentId && student.id && currentStudentId !== student.id && (
+              <AddFriendButton 
+                currentStudentId={currentStudentId}
+                targetStudentId={student.id}
+                className="mt-2 w-full max-w-[200px]"
+              />
+            )}
+
+            {/* Back Button */}
+            <Button 
+              onClick={() => navigate(-1)} 
+              variant="outline" 
+              className="mt-2 w-full max-w-[200px]"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Go Back
             </Button>
           </div>
 
