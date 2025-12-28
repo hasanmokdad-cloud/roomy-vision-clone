@@ -354,16 +354,21 @@ export default function Messages() {
   // Handle auto-open from navigation state
   useEffect(() => {
     if (!userId) return;
+    
+    console.log('[Messages] location.state:', location.state);
 
     // Handle friend notification navigation (activeTab + highlightStudentId)
     if (location.state?.activeTab === 'friends') {
+      console.log('[Messages] Switching to friends tab');
       setActiveTab('friends');
       
       if (location.state?.highlightStudentId) {
+        console.log('[Messages] Setting highlightStudentId:', location.state.highlightStudentId);
         setHighlightStudentId(location.state.highlightStudentId);
         
         // Auto-clear highlight after 5 seconds
         const timer = setTimeout(() => {
+          console.log('[Messages] Clearing highlightStudentId');
           setHighlightStudentId(null);
         }, 5000);
         
