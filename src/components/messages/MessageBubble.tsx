@@ -69,6 +69,8 @@ interface MessageBubbleProps {
   onPinChange?: (messageId: string, isPinned: boolean) => void;
   searchQuery?: string;
   isCurrentSearchMatch?: boolean;
+  isFirstInGroup?: boolean;
+  isLastInGroup?: boolean;
 }
 
 export function MessageBubble({
@@ -86,6 +88,8 @@ export function MessageBubble({
   onPinChange,
   searchQuery = "",
   isCurrentSearchMatch = false,
+  isFirstInGroup = true,
+  isLastInGroup = true,
 }: MessageBubbleProps) {
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -535,10 +539,16 @@ export function MessageBubble({
     );
   }
 
+  // Determine spacing based on grouping
+  const marginBottom = isLastInGroup ? 'mb-2' : 'mb-[2px]';
+  
+  // Only show avatar on first message in group for received messages
+  const shouldShowAvatar = !isSender && showAvatar && isFirstInGroup;
+
   return (
     <div
       ref={messageRef}
-      className={`flex ${isSender ? "justify-end" : "justify-start"} mb-1 group relative chat-message-bubble`}
+      className={`flex ${isSender ? "justify-end" : "justify-start"} ${marginBottom} group relative chat-message-bubble`}
       onTouchStart={isMobile ? handleTouchStart : undefined}
       onTouchMove={isMobile ? handleTouchMove : undefined}
       onTouchEnd={isMobile ? handleTouchEnd : undefined}
@@ -549,12 +559,14 @@ export function MessageBubble({
         }
       }}
     >
-      {!isSender && showAvatar && (
+      {shouldShowAvatar ? (
         <Avatar className="h-8 w-8 mr-2">
           <AvatarImage src={senderAvatar} />
           <AvatarFallback>{senderName[0]}</AvatarFallback>
         </Avatar>
-      )}
+      ) : !isSender && showAvatar ? (
+        <div className="w-8 mr-2" /> /* Spacer to maintain alignment when avatar is hidden */
+      ) : null}
 
       <div className="relative max-w-[65%]">
         {/* Backdrop for click-outside on reaction bar */}
@@ -645,7 +657,7 @@ export function MessageBubble({
               />
             )}
 
-            {!isSender && showAvatar && (
+            {shouldShowAvatar && (
               <p className="text-xs font-semibold mb-1">{senderName}</p>
             )}
 
