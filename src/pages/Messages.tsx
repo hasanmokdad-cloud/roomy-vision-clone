@@ -2700,7 +2700,7 @@ export default function Messages() {
         } : undefined}
       >
         {/* Conversations List - Edge-to-edge, no Card wrapper */}
-        <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-[420px] border-r border-border bg-background ${isMobile ? 'h-screen' : 'h-[calc(100vh-80px)]'}`}>
+        <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-[420px] border-r border-border bg-white ${isMobile ? 'h-screen' : 'h-[calc(100vh-80px)]'}`}>
           
           {/* DESKTOP ARCHIVED VIEW - In-sidebar like WhatsApp */}
           {showArchivedPage && !isMobile ? (
@@ -2756,7 +2756,7 @@ export default function Messages() {
                         onClick={() => {
                           setSelectedConversation(conv.id);
                           loadMessages(conv.id);
-                          setShowArchivedPage(false);
+                          // Keep archived tab open - don't close it
                         }}
                       >
                         <div className="flex items-center gap-3 px-4 py-3">
@@ -2819,7 +2819,7 @@ export default function Messages() {
           ) : (
             <>
               {/* NORMAL VIEW - Messages header + tabs + chats */}
-              <div className={`p-4 border-b border-border ${isMobile ? 'pt-6' : ''} space-y-3`}>
+              <div className={`p-4 ${isMobile ? 'pt-6' : ''} space-y-3`}>
                 <div className="flex items-center justify-between w-full">
                   <div className="flex flex-col">
                     <h2 className={`${isMobile ? 'text-3xl' : 'text-2xl'} font-bold flex items-center gap-2`}>
@@ -2887,10 +2887,10 @@ export default function Messages() {
                     </div>
                   ) : (
                     <>
-                      {/* Archived section row - WhatsApp style minimal */}
+                      {/* Archived section row - WhatsApp style minimal - no top border */}
                       <button
                         onClick={() => setShowArchivedPage(true)}
-                        className="w-full flex items-center gap-4 px-4 py-2.5 hover:bg-muted/50 transition-colors"
+                        className="w-full flex items-center gap-4 px-4 py-2.5 hover:bg-muted/50 transition-colors border-b border-border/30"
                       >
                         <Archive className="w-[18px] h-[18px] text-primary" />
                         <span className="flex-1 text-left text-[15px] text-foreground">Archived</span>
@@ -3154,8 +3154,14 @@ export default function Messages() {
                 {/* Chat Messages - Native scroll on mobile for smooth touch scrolling */}
                 {isMobile ? (
                   <div 
-                    className="flex-1 overflow-y-auto overscroll-contain p-4"
-                    style={{ WebkitOverflowScrolling: 'touch' }}
+                    className="flex-1 overflow-y-auto overscroll-contain p-4 bg-[#efeae2]"
+                    style={{ 
+                      WebkitOverflowScrolling: 'touch',
+                      backgroundImage: 'url(/images/chat-bg-mobile.jpg)',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    }}
                   >
                     <div className="space-y-4">
                       {/* Pinned Messages Banner */}
@@ -3239,7 +3245,15 @@ export default function Messages() {
                     </div>
                   </div>
                 ) : (
-                  <ScrollArea className="flex-1 overflow-hidden p-4">
+                  <ScrollArea 
+                    className="flex-1 overflow-hidden p-4 bg-[#efeae2]"
+                    style={{ 
+                      backgroundImage: 'url(/images/chat-bg-desktop.jpg)',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    }}
+                  >
                     <div className="space-y-4">
                       {/* Pinned Messages Banner */}
                       {pinnedMessages.length > 0 && (
@@ -3324,7 +3338,7 @@ export default function Messages() {
                 )}
 
                 <div 
-                  className={`${isMobile ? 'p-3 shrink-0 bg-background z-20 border-t border-border' : 'p-4 border-t border-border'}`}
+                  className={`${isMobile ? 'p-3 shrink-0 bg-background z-20' : 'p-4 bg-[#f0f2f5]'}`}
                   style={isMobile ? { paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' } : undefined}
                 >
                   {/* Voice Recording Overlay - rendered inline to inherit safe area positioning */}
@@ -3584,19 +3598,19 @@ export default function Messages() {
                   ) : (
                     /* Desktop: WhatsApp-style unified rounded container */
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 flex items-center bg-muted/60 rounded-lg border border-border/50 px-2 py-1">
+                      <div className="flex-1 flex items-center bg-white rounded-lg px-2 py-1">
                         {/* Plus button inside container */}
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
                           disabled={uploading || recording}
                           aria-label="Attach file"
-                          className="p-2 hover:bg-background/50 rounded-full transition-colors shrink-0"
+                          className="p-2 hover:bg-muted/50 rounded-full transition-colors shrink-0"
                         >
                           {uploading ? (
-                            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                            <Loader2 className="w-5 h-5 animate-spin text-foreground" />
                           ) : (
-                            <Plus className="w-5 h-5 text-muted-foreground" />
+                            <Plus className="w-6 h-6 text-foreground" />
                           )}
                         </button>
 
@@ -3630,7 +3644,7 @@ export default function Messages() {
                           }}
                           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                           disabled={sending || recording}
-                          className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 h-9 text-[15px]"
+                          className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none h-9 text-[15px]"
                           aria-label="Message input"
                         />
 
@@ -3640,11 +3654,11 @@ export default function Messages() {
                             type="button"
                             ref={micButtonCallbackRef}
                             onClick={handleVoiceButtonClick}
-                            className="p-2 hover:bg-background/50 rounded-full transition-colors shrink-0 voice-record-button"
+                            className="p-2 hover:bg-muted/50 rounded-full transition-colors shrink-0 voice-record-button"
                             aria-label="Record voice message"
                             title="Click to record voice message"
                           >
-                            <Mic className="w-5 h-5 text-muted-foreground" />
+                            <Mic className="w-6 h-6 text-foreground" />
                           </button>
                         )}
                       </div>
