@@ -234,11 +234,16 @@ export default function Messages() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
-  const [pendingAttachment, setPendingAttachment] = useState<{
+  const [pendingAttachments, setPendingAttachments] = useState<{
+    id: string;
     file: File;
     previewUrl: string;
     type: 'image' | 'video' | 'document';
-  } | null>(null);
+    uploadProgress: number;
+    uploadedUrl: string | null;
+    isUploading: boolean;
+    error?: string;
+  }[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [activeTab, setActiveTab] = useState<'chats' | 'friends'>('chats');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1487,23 +1492,55 @@ export default function Messages() {
     }
   };
 
+  // File size limits in bytes
+  const FILE_SIZE_LIMITS = {
+    image: 10 * 1024 * 1024,  // 10MB for images
+    video: 50 * 1024 * 1024,  // 50MB for videos
+    document: 25 * 1024 * 1024, // 25MB for documents
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !selectedConversation || !userId) return;
+    const files = e.target.files;
+    if (!files || files.length === 0 || !selectedConversation || !userId) return;
 
-    // Create preview instead of auto-uploading
-    const attachmentType = file.type.startsWith('image/')
-      ? 'image'
-      : file.type.startsWith('video/')
-      ? 'video'
-      : 'document';
+    const newAttachments: typeof pendingAttachments = [];
 
-    const previewUrl = URL.createObjectURL(file);
-    setPendingAttachment({
-      file,
-      previewUrl,
-      type: attachmentType
-    });
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const attachmentType = file.type.startsWith('image/')
+        ? 'image'
+        : file.type.startsWith('video/')
+        ? 'video'
+        : 'document';
+
+      // Check file size
+      const sizeLimit = FILE_SIZE_LIMITS[attachmentType];
+      if (file.size > sizeLimit) {
+        const limitMB = sizeLimit / 1024 / 1024;
+        toast({
+          title: 'File too large',
+          description: `${file.name} exceeds the ${limitMB}MB limit for ${attachmentType}s`,
+          variant: 'destructive',
+        });
+        continue;
+      }
+
+      const previewUrl = URL.createObjectURL(file);
+      const attachmentId = crypto.randomUUID();
+      
+      newAttachments.push({
+        id: attachmentId,
+        file,
+        previewUrl,
+        type: attachmentType,
+        uploadProgress: 0,
+        uploadedUrl: null,
+        isUploading: true,
+      });
+    }
+
+    // Add to pending attachments
+    setPendingAttachments(prev => [...prev, ...newAttachments]);
 
     // Reset file input
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -1511,17 +1548,27 @@ export default function Messages() {
     
     // Close attachment modal on mobile
     setShowAttachmentModal(false);
+
+    // Start uploading each file immediately in background
+    for (const attachment of newAttachments) {
+      uploadAttachmentInBackground(attachment.id, attachment.file, attachment.type);
+    }
   };
 
-  const uploadAndSendAttachment = async () => {
-    if (!pendingAttachment || !selectedConversation || !userId) return;
-
-    setUploading(true);
+  const uploadAttachmentInBackground = async (
+    attachmentId: string, 
+    file: File, 
+    type: 'image' | 'video' | 'document'
+  ) => {
     try {
-      const file = pendingAttachment.file;
       const fileExt = file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `${userId}/${fileName}`;
+
+      // Update progress to 30%
+      setPendingAttachments(prev => 
+        prev.map(a => a.id === attachmentId ? { ...a, uploadProgress: 30 } : a)
+      );
 
       const { error: uploadError } = await supabase.storage
         .from('message-media')
@@ -1529,44 +1576,97 @@ export default function Messages() {
 
       if (uploadError) throw uploadError;
 
+      // Update progress to 80%
+      setPendingAttachments(prev => 
+        prev.map(a => a.id === attachmentId ? { ...a, uploadProgress: 80 } : a)
+      );
+
       const { data: { publicUrl } } = supabase.storage
         .from('message-media')
         .getPublicUrl(filePath);
 
-      const attachmentType = pendingAttachment.type === 'document' ? null : pendingAttachment.type;
+      // Mark as complete
+      setPendingAttachments(prev => 
+        prev.map(a => a.id === attachmentId ? { 
+          ...a, 
+          uploadProgress: 100, 
+          uploadedUrl: publicUrl, 
+          isUploading: false 
+        } : a)
+      );
+    } catch (error: any) {
+      console.error('Background upload error:', error);
+      setPendingAttachments(prev => 
+        prev.map(a => a.id === attachmentId ? { 
+          ...a, 
+          isUploading: false, 
+          error: error.message || 'Upload failed' 
+        } : a)
+      );
+      toast({
+        title: 'Upload failed',
+        description: `Failed to upload ${file.name}`,
+        variant: 'destructive',
+      });
+    }
+  };
 
-      // Insert message with attachment
-      const { data: newMessage, error: insertError } = await supabase.from('messages').insert({
-        conversation_id: selectedConversation,
-        sender_id: userId,
-        body: messageInput.trim() || '',
-        attachment_type: attachmentType,
-        attachment_url: publicUrl,
-        status: 'sent',
-        reply_to_message_id: replyToMessage?.id || null
-      }).select().single();
+  const uploadAndSendAttachments = async () => {
+    if (pendingAttachments.length === 0 || !selectedConversation || !userId) return;
 
-      if (insertError) throw insertError;
+    // Check if all attachments are uploaded
+    const allUploaded = pendingAttachments.every(a => a.uploadedUrl !== null && !a.error);
+    const anyUploading = pendingAttachments.some(a => a.isUploading);
 
-      // Clean up preview URL
-      URL.revokeObjectURL(pendingAttachment.previewUrl);
-      setPendingAttachment(null);
+    if (anyUploading) {
+      toast({ title: 'Please wait', description: 'Files are still uploading...' });
+      return;
+    }
+
+    if (!allUploaded) {
+      toast({ 
+        title: 'Upload incomplete', 
+        description: 'Some files failed to upload. Please remove them and try again.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Send each attachment as a separate message
+      for (const attachment of pendingAttachments) {
+        if (!attachment.uploadedUrl) continue;
+
+        const attachmentType = attachment.type === 'document' ? null : attachment.type;
+
+        const { error: insertError } = await supabase.from('messages').insert({
+          conversation_id: selectedConversation,
+          sender_id: userId,
+          body: pendingAttachments.length === 1 ? messageInput.trim() : '', // Only add text to first/single attachment
+          attachment_type: attachmentType,
+          attachment_url: attachment.uploadedUrl,
+          status: 'sent',
+          reply_to_message_id: replyToMessage?.id || null
+        });
+
+        if (insertError) throw insertError;
+      }
+
+      // Clean up preview URLs
+      pendingAttachments.forEach(a => URL.revokeObjectURL(a.previewUrl));
+      setPendingAttachments([]);
       setMessageInput('');
       setReplyToMessage(null);
-
-      // Add message to local state immediately
-      if (newMessage) {
-        setMessages(prev => [...prev, newMessage as Message]);
-      }
 
       // Reload messages to ensure sync
       await loadMessages(selectedConversation);
       await loadConversations();
 
-      toast({ title: 'Message sent' });
+      toast({ title: pendingAttachments.length > 1 ? 'Messages sent' : 'Message sent' });
     } catch (error: any) {
       toast({
-        title: 'Upload failed',
+        title: 'Failed to send',
         description: error.message,
         variant: 'destructive',
       });
@@ -1575,11 +1675,19 @@ export default function Messages() {
     }
   };
 
-  const cancelPendingAttachment = () => {
-    if (pendingAttachment) {
-      URL.revokeObjectURL(pendingAttachment.previewUrl);
-      setPendingAttachment(null);
-    }
+  const removePendingAttachment = (attachmentId: string) => {
+    setPendingAttachments(prev => {
+      const attachment = prev.find(a => a.id === attachmentId);
+      if (attachment) {
+        URL.revokeObjectURL(attachment.previewUrl);
+      }
+      return prev.filter(a => a.id !== attachmentId);
+    });
+  };
+
+  const cancelAllPendingAttachments = () => {
+    pendingAttachments.forEach(a => URL.revokeObjectURL(a.previewUrl));
+    setPendingAttachments([]);
   };
 
   // Detect iOS Safari
@@ -2353,17 +2461,31 @@ export default function Messages() {
 
     if (msg.attachment_type === 'image') {
       return (
-        <img
-          src={msg.attachment_url || ''}
-          alt="Shared image"
-          className="max-w-xs rounded-lg cursor-pointer"
-          onClick={() => window.open(msg.attachment_url, '_blank')}
-        />
+        <div>
+          <img
+            src={msg.attachment_url || ''}
+            alt="Shared image"
+            className="max-w-xs rounded-lg cursor-pointer"
+            onClick={() => window.open(msg.attachment_url, '_blank')}
+          />
+          {/* Show text message with image if present */}
+          {msg.body && msg.body.trim() && (
+            <p className="text-sm whitespace-pre-wrap break-words mt-2">{wrapWithHighlight(msg.body)}</p>
+          )}
+        </div>
       );
     }
 
     if (msg.attachment_type === 'video') {
-      return <video src={msg.attachment_url || ''} controls className="max-w-xs rounded-lg" />;
+      return (
+        <div>
+          <video src={msg.attachment_url || ''} controls className="max-w-xs rounded-lg" />
+          {/* Show text message with video if present */}
+          {msg.body && msg.body.trim() && (
+            <p className="text-sm whitespace-pre-wrap break-words mt-2">{wrapWithHighlight(msg.body)}</p>
+          )}
+        </div>
+      );
     }
 
     if (msg.attachment_type === 'audio') {
@@ -3058,47 +3180,75 @@ export default function Messages() {
                     </div>
                   )}
 
-                  {/* Attachment Preview */}
-                  {pendingAttachment && (
-                    <div className="mb-2 bg-muted rounded-lg p-3 flex items-start gap-3 overflow-hidden">
-                      {pendingAttachment.type === 'image' && (
-                        <img 
-                          src={pendingAttachment.previewUrl} 
-                          alt="Attachment preview"
-                          className="h-16 w-16 object-cover rounded-lg shrink-0" 
-                        />
-                      )}
-                      {pendingAttachment.type === 'video' && (
-                        <video 
-                          src={pendingAttachment.previewUrl} 
-                          className="h-16 w-16 object-cover rounded-lg shrink-0" 
-                        />
-                      )}
-                      {pendingAttachment.type === 'document' && (
-                        <div className="h-16 w-16 bg-background rounded-lg flex items-center justify-center shrink-0">
-                          <Camera className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{pendingAttachment.file.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {(pendingAttachment.file.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                        {uploading && (
-                          <div className="mt-2 h-1 bg-background rounded-full overflow-hidden">
-                            <div className="h-full bg-primary animate-pulse w-full" />
+                  {/* Attachment Previews - Multiple files with individual progress */}
+                  {pendingAttachments.length > 0 && (
+                    <div className="mb-2 space-y-2">
+                      {pendingAttachments.map((attachment) => (
+                        <div key={attachment.id} className="bg-muted rounded-lg p-3 flex items-start gap-3 overflow-hidden">
+                          {attachment.type === 'image' && (
+                            <div className="relative h-16 w-16 shrink-0">
+                              <img 
+                                src={attachment.previewUrl} 
+                                alt="Attachment preview"
+                                className="h-16 w-16 object-cover rounded-lg" 
+                              />
+                              {attachment.isUploading && (
+                                <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
+                                  <Loader2 className="w-6 h-6 text-white animate-spin" />
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {attachment.type === 'video' && (
+                            <div className="relative h-16 w-16 shrink-0">
+                              <video 
+                                src={attachment.previewUrl} 
+                                className="h-16 w-16 object-cover rounded-lg" 
+                              />
+                              {attachment.isUploading && (
+                                <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
+                                  <Loader2 className="w-6 h-6 text-white animate-spin" />
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {attachment.type === 'document' && (
+                            <div className="relative h-16 w-16 bg-background rounded-lg flex items-center justify-center shrink-0">
+                              <Camera className="h-8 w-8 text-muted-foreground" />
+                              {attachment.isUploading && (
+                                <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
+                                  <Loader2 className="w-6 h-6 text-white animate-spin" />
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{attachment.file.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(attachment.file.size / 1024 / 1024).toFixed(2)} MB
+                              {attachment.uploadedUrl && <span className="text-green-500 ml-2">✓ Ready</span>}
+                              {attachment.error && <span className="text-destructive ml-2">Failed</span>}
+                            </p>
+                            {attachment.isUploading && (
+                              <div className="mt-2 h-1 bg-background rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-primary transition-all duration-300"
+                                  style={{ width: `${attachment.uploadProgress}%` }}
+                                />
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 shrink-0"
-                        onClick={cancelPendingAttachment}
-                        disabled={uploading}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0"
+                            onClick={() => removePendingAttachment(attachment.id)}
+                            disabled={attachment.isUploading}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   )}
 
@@ -3136,6 +3286,7 @@ export default function Messages() {
                       ref={fileInputRef}
                       type="file"
                       accept="image/*,video/*"
+                      multiple
                       className="hidden"
                       onChange={handleFileUpload}
                     />
@@ -3222,8 +3373,8 @@ export default function Messages() {
                       </div>
                     </div>
 
-                    {/* Camera button - only show when no text and no pending attachment (mobile only) */}
-                    {isMobile && !messageInput.trim() && !pendingAttachment && (
+                    {/* Camera button - only show when no text and no pending attachments (mobile only) */}
+                    {isMobile && !messageInput.trim() && pendingAttachments.length === 0 && (
                       <Button
                         type="button"
                         variant="ghost"
@@ -3237,16 +3388,16 @@ export default function Messages() {
                       </Button>
                     )}
 
-                    {/* Dynamic button: Send when typing or has attachment, Mic when empty */}
-                    {(messageInput.trim() || pendingAttachment) ? (
+                    {/* Dynamic button: Send when typing or has attachments, Mic when empty */}
+                    {(messageInput.trim() || pendingAttachments.length > 0) ? (
                       <Button 
-                        onClick={pendingAttachment ? uploadAndSendAttachment : sendMessage} 
-                        disabled={sending || uploading} 
+                        onClick={pendingAttachments.length > 0 ? uploadAndSendAttachments : sendMessage} 
+                        disabled={sending || uploading || pendingAttachments.some(a => a.isUploading)} 
                         size="icon"
                         aria-label="Send message"
                         className="shrink-0 h-9 w-9 rounded-full bg-primary text-primary-foreground"
                       >
-                        {uploading ? (
+                        {uploading || pendingAttachments.some(a => a.isUploading) ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <Send className="w-4 h-4" />
