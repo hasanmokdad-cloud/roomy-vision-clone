@@ -234,6 +234,11 @@ export default function Messages() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
+  const [pendingAttachment, setPendingAttachment] = useState<{
+    file: File;
+    previewUrl: string;
+    type: 'image' | 'video' | 'document';
+  } | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [activeTab, setActiveTab] = useState<'chats' | 'friends'>('chats');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1322,6 +1327,21 @@ export default function Messages() {
       const pinned = data.filter(m => m.is_pinned);
       setPinnedMessages(pinned as Message[]);
       
+      // Mark undelivered incoming messages as delivered first
+      const undeliveredIds = data.filter(m => 
+        m.sender_id !== userId && !m.delivered_at
+      ).map(m => m.id);
+      if (undeliveredIds.length > 0 && isMountedRef.current && !isSigningOut) {
+        await supabase
+          .from('messages')
+          .update({ 
+            delivered_at: new Date().toISOString(),
+            status: 'delivered'
+          })
+          .in('id', undeliveredIds)
+          .is('delivered_at', null);
+      }
+      
       // Mark all unseen messages as seen
       const unseenIds = data.filter(m => m.sender_id !== userId && m.status !== 'seen').map(m => m.id);
       if (unseenIds.length > 0 && isMountedRef.current && !isSigningOut) {
@@ -1471,8 +1491,34 @@ export default function Messages() {
     const file = e.target.files?.[0];
     if (!file || !selectedConversation || !userId) return;
 
+    // Create preview instead of auto-uploading
+    const attachmentType = file.type.startsWith('image/')
+      ? 'image'
+      : file.type.startsWith('video/')
+      ? 'video'
+      : 'document';
+
+    const previewUrl = URL.createObjectURL(file);
+    setPendingAttachment({
+      file,
+      previewUrl,
+      type: attachmentType
+    });
+
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+    
+    // Close attachment modal on mobile
+    setShowAttachmentModal(false);
+  };
+
+  const uploadAndSendAttachment = async () => {
+    if (!pendingAttachment || !selectedConversation || !userId) return;
+
     setUploading(true);
     try {
+      const file = pendingAttachment.file;
       const fileExt = file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `${userId}/${fileName}`;
@@ -1487,22 +1533,37 @@ export default function Messages() {
         .from('message-media')
         .getPublicUrl(filePath);
 
-      const attachmentType = file.type.startsWith('image/')
-        ? 'image'
-        : file.type.startsWith('video/')
-        ? 'video'
-        : null;
+      const attachmentType = pendingAttachment.type === 'document' ? null : pendingAttachment.type;
 
-      await supabase.from('messages').insert({
+      // Insert message with attachment
+      const { data: newMessage, error: insertError } = await supabase.from('messages').insert({
         conversation_id: selectedConversation,
         sender_id: userId,
-        body: '',
+        body: messageInput.trim() || '',
         attachment_type: attachmentType,
         attachment_url: publicUrl,
         status: 'sent',
-      });
+        reply_to_message_id: replyToMessage?.id || null
+      }).select().single();
 
-      toast({ title: 'File sent successfully' });
+      if (insertError) throw insertError;
+
+      // Clean up preview URL
+      URL.revokeObjectURL(pendingAttachment.previewUrl);
+      setPendingAttachment(null);
+      setMessageInput('');
+      setReplyToMessage(null);
+
+      // Add message to local state immediately
+      if (newMessage) {
+        setMessages(prev => [...prev, newMessage as Message]);
+      }
+
+      // Reload messages to ensure sync
+      await loadMessages(selectedConversation);
+      await loadConversations();
+
+      toast({ title: 'Message sent' });
     } catch (error: any) {
       toast({
         title: 'Upload failed',
@@ -1511,7 +1572,13 @@ export default function Messages() {
       });
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const cancelPendingAttachment = () => {
+    if (pendingAttachment) {
+      URL.revokeObjectURL(pendingAttachment.previewUrl);
+      setPendingAttachment(null);
     }
   };
 
@@ -2991,6 +3058,50 @@ export default function Messages() {
                     </div>
                   )}
 
+                  {/* Attachment Preview */}
+                  {pendingAttachment && (
+                    <div className="mb-2 bg-muted rounded-lg p-3 flex items-start gap-3 overflow-hidden">
+                      {pendingAttachment.type === 'image' && (
+                        <img 
+                          src={pendingAttachment.previewUrl} 
+                          alt="Attachment preview"
+                          className="h-16 w-16 object-cover rounded-lg shrink-0" 
+                        />
+                      )}
+                      {pendingAttachment.type === 'video' && (
+                        <video 
+                          src={pendingAttachment.previewUrl} 
+                          className="h-16 w-16 object-cover rounded-lg shrink-0" 
+                        />
+                      )}
+                      {pendingAttachment.type === 'document' && (
+                        <div className="h-16 w-16 bg-background rounded-lg flex items-center justify-center shrink-0">
+                          <Camera className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{pendingAttachment.file.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(pendingAttachment.file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                        {uploading && (
+                          <div className="mt-2 h-1 bg-background rounded-full overflow-hidden">
+                            <div className="h-full bg-primary animate-pulse w-full" />
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 shrink-0"
+                        onClick={cancelPendingAttachment}
+                        disabled={uploading}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
                   {/* Reply Preview */}
                   {replyToMessage && (
                     <div className="mb-2 bg-muted rounded-lg p-3 flex items-start gap-2 overflow-hidden">
@@ -3111,8 +3222,8 @@ export default function Messages() {
                       </div>
                     </div>
 
-                    {/* Camera button - only show when no text (mobile only) */}
-                    {isMobile && !messageInput.trim() && (
+                    {/* Camera button - only show when no text and no pending attachment (mobile only) */}
+                    {isMobile && !messageInput.trim() && !pendingAttachment && (
                       <Button
                         type="button"
                         variant="ghost"
@@ -3126,16 +3237,20 @@ export default function Messages() {
                       </Button>
                     )}
 
-                    {/* Dynamic button: Mic when empty, Send when typing */}
-                    {messageInput.trim() ? (
+                    {/* Dynamic button: Send when typing or has attachment, Mic when empty */}
+                    {(messageInput.trim() || pendingAttachment) ? (
                       <Button 
-                        onClick={sendMessage} 
-                        disabled={sending} 
+                        onClick={pendingAttachment ? uploadAndSendAttachment : sendMessage} 
+                        disabled={sending || uploading} 
                         size="icon"
                         aria-label="Send message"
                         className="shrink-0 h-9 w-9 rounded-full bg-primary text-primary-foreground"
                       >
-                        <Send className="w-4 h-4" />
+                        {uploading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
                       </Button>
                     ) : (
                       <Button
