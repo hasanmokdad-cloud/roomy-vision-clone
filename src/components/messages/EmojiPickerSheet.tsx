@@ -1,5 +1,5 @@
 import { useIsMobile } from "@/hooks/use-mobile";
-import EmojiPicker, { Theme, SuggestionMode, Categories } from "emoji-picker-react";
+import EmojiPicker, { Theme, EmojiStyle } from "emoji-picker-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Drawer,
@@ -8,20 +8,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useEffect, useState, useCallback } from "react";
-
-// Category configuration with 'suggested' (recent) first
-const emojiCategories = [
-  { category: Categories.SUGGESTED, name: 'Recently Used' },
-  { category: Categories.SMILEYS_PEOPLE, name: 'Smileys & People' },
-  { category: Categories.ANIMALS_NATURE, name: 'Animals & Nature' },
-  { category: Categories.FOOD_DRINK, name: 'Food & Drink' },
-  { category: Categories.TRAVEL_PLACES, name: 'Travel & Places' },
-  { category: Categories.ACTIVITIES, name: 'Activities' },
-  { category: Categories.OBJECTS, name: 'Objects' },
-  { category: Categories.SYMBOLS, name: 'Symbols' },
-  { category: Categories.FLAGS, name: 'Flags' },
-];
+import { useCallback } from "react";
 
 interface EmojiPickerSheetProps {
   open: boolean;
@@ -31,31 +18,6 @@ interface EmojiPickerSheetProps {
   mode?: "reaction" | "input";
   anchorPosition?: { x: number; y: number };
 }
-
-// Storage key for recent emojis
-const RECENT_EMOJIS_KEY = 'roomy_recent_emojis';
-
-// Get recent emojis from localStorage
-const getRecentEmojis = (): string[] => {
-  try {
-    const stored = localStorage.getItem(RECENT_EMOJIS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-};
-
-// Store emoji to recent list
-const storeRecentEmoji = (emoji: string) => {
-  try {
-    const stored = getRecentEmojis();
-    const filtered = stored.filter((e: string) => e !== emoji);
-    const updated = [emoji, ...filtered].slice(0, 30); // Keep max 30 recent
-    localStorage.setItem(RECENT_EMOJIS_KEY, JSON.stringify(updated));
-  } catch (e) {
-    console.error('Error storing recent emoji:', e);
-  }
-};
 
 export function EmojiPickerSheet({
   open,
@@ -67,19 +29,9 @@ export function EmojiPickerSheet({
 }: EmojiPickerSheetProps) {
   const isMobile = useIsMobile();
   const { theme } = useTheme();
-  const [recentEmojis, setRecentEmojis] = useState<string[]>([]);
-
-  // Load recent emojis when opening
-  useEffect(() => {
-    if (open) {
-      setRecentEmojis(getRecentEmojis());
-    }
-  }, [open]);
 
   const handleEmojiClick = useCallback((emojiData: any) => {
     const emoji = emojiData.emoji;
-    // Store to recent emojis
-    storeRecentEmoji(emoji);
     onEmojiSelect(emoji);
     onOpenChange(false);
   }, [onEmojiSelect, onOpenChange]);
@@ -144,9 +96,8 @@ export function EmojiPickerSheet({
               height={400}
               searchPlaceHolder="Search emoji..."
               previewConfig={{ showPreview: false }}
-              skinTonesDisabled={true}
-              suggestedEmojisMode={SuggestionMode.RECENT}
-              categories={emojiCategories}
+              skinTonesDisabled={false}
+              emojiStyle={EmojiStyle.NATIVE}
             />
           </motion.div>
         </DrawerContent>
@@ -192,9 +143,8 @@ export function EmojiPickerSheet({
                 height={400}
                 searchPlaceHolder="Search emoji..."
                 previewConfig={{ showPreview: false }}
-                skinTonesDisabled={true}
-                suggestedEmojisMode={SuggestionMode.RECENT}
-                categories={emojiCategories}
+                skinTonesDisabled={false}
+                emojiStyle={EmojiStyle.NATIVE}
               />
             </motion.div>
           </>

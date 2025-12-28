@@ -144,9 +144,26 @@ export function ContactInfoPanel({
     refresh();
   };
 
+  // Check if this is a blockable conversation (student to student only)
+  const canBlock = Boolean(currentStudentId && otherStudentId);
+  const isNonStudentConversation = !otherStudentId;
+
   const handleBlockToggle = async () => {
+    // Check if this is a non-student conversation (support, admin, owner, etc.)
     if (!otherStudentId) {
-      toast.error("Cannot block user - user information not available");
+      // Check for common non-blockable account types
+      if (contactName.toLowerCase().includes('support') || contactName.toLowerCase().includes('roomy')) {
+        toast.error("Support accounts cannot be blocked");
+      } else if (contactName.toLowerCase().includes('admin')) {
+        toast.error("Admin accounts cannot be blocked");
+      } else {
+        toast.error("This user cannot be blocked");
+      }
+      return;
+    }
+
+    if (!currentStudentId) {
+      toast.error("Cannot block user - please try again later");
       return;
     }
 

@@ -382,17 +382,19 @@ export function MessageBubble({
     handleShowReactionBar();
   };
 
-  // Show reaction bar with smart positioning
+  // Show reaction bar with smart positioning based on viewport
   const handleShowReactionBar = () => {
     if (bubbleRef.current) {
       const rect = bubbleRef.current.getBoundingClientRect();
-      // Get the chat container's top position (accounting for header)
-      const chatContainer = bubbleRef.current.closest('.overflow-y-auto');
-      const containerTop = chatContainer?.getBoundingClientRect().top || 0;
+      const viewportHeight = window.innerHeight;
       
-      // If message is within 120px of the chat container top, show below
-      const distanceFromContainerTop = rect.top - containerTop;
-      setReactionPosition(distanceFromContainerTop < 120 ? 'bottom' : 'top');
+      // Reaction bar is approximately 56px tall + 16px margin = 72px needed
+      const spaceAbove = rect.top;
+      const spaceBelow = viewportHeight - rect.bottom;
+      
+      // If not enough space above (less than 80px), show below
+      // Also check if we're near the top of the viewport
+      setReactionPosition(spaceAbove < 80 ? 'bottom' : 'top');
       
       // Store anchor for emoji picker
       setEmojiPickerAnchor({
@@ -497,10 +499,12 @@ export function MessageBubble({
     }
   };
 
-  // Can edit within 15 minutes
+  // Can edit within 15 minutes - only for text messages without attachments
   const canEdit =
     isSender &&
     onEdit &&
+    !message.attachment_url && // No attachment
+    message.body && // Has text content
     Date.now() - new Date(message.created_at).getTime() < 15 * 60 * 1000;
 
   // Group reactions by emoji
