@@ -5,6 +5,17 @@
 :root {
   --gradient-hero: linear-gradient(135deg, hsl(270 91% 65%) 0%, hsl(217 91% 60%) 50%, hsl(158 64% 52%) 100%);
   --vh: 1vh; /* Fallback, will be set by JS for accurate mobile viewport */
+  
+  /* WhatsApp-style chat background pattern */
+  --chat-bg-pattern: url('/images/whatsapp-bg-light.svg');
+  --chat-bg-color: 39 24% 91%; /* #efeae2 as HSL */
+  --chat-bg-overlay: 39 24% 91% / 0.4;
+}
+
+.dark {
+  --chat-bg-pattern: url('/images/whatsapp-bg-dark.svg');
+  --chat-bg-color: 200 35% 5%; /* #0b141a as HSL */
+  --chat-bg-overlay: 200 35% 5% / 0.5;
 }
 
 @keyframes fluid {
@@ -490,5 +501,32 @@
   
   .pt-safe {
     padding-top: env(safe-area-inset-top, 0);
+  }
+
+  /* WhatsApp-style chat background container */
+  .chat-background-container {
+    background-color: hsl(var(--chat-bg-color));
+    background-image: var(--chat-bg-pattern);
+    background-repeat: repeat;
+    background-size: 420px auto;
+    background-position: center;
+    transition: background-color 0.3s ease-in-out;
+  }
+
+  .chat-background-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: hsl(var(--chat-bg-overlay));
+    pointer-events: none;
+    transition: background-color 0.3s ease-in-out;
+  }
+
+  /* Smooth theme transitions for chat elements */
+  .chat-theme-transition,
+  .chat-theme-transition * {
+    transition: background-color 0.3s ease-in-out, 
+                border-color 0.3s ease-in-out,
+                color 0.2s ease-in-out;
   }
 }
