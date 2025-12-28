@@ -188,7 +188,7 @@ export function useFriendships(studentId: string | null) {
             },
           },
           'en',
-          { type: 'friend_request' }
+          { type: 'friend_request', student_id: studentId }
         );
       }
 
@@ -261,7 +261,7 @@ export function useFriendships(studentId: string | null) {
               },
             },
             'en',
-            { type: 'friend_accepted' }
+            { type: 'friend_accepted', student_id: studentId }
           );
         }
       }

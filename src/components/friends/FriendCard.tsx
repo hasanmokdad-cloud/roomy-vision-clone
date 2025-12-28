@@ -20,6 +20,7 @@ interface FriendCardProps {
   onBlock: (friendshipId: string, userToBlock: string) => void;
   onViewProfile: (studentId: string) => void;
   onMutualFriendsClick: (studentId: string, otherStudentId: string) => void;
+  highlightStudentId?: string | null;
 }
 
 export function FriendCard({
@@ -30,6 +31,7 @@ export function FriendCard({
   onBlock,
   onViewProfile,
   onMutualFriendsClick,
+  highlightStudentId,
 }: FriendCardProps) {
   const friend =
     friendship.requester_id === currentStudentId
@@ -40,11 +42,13 @@ export function FriendCard({
     currentStudentId,
     friend?.id || null
   );
+  
+  const isHighlighted = highlightStudentId === friend?.id;
 
   if (!friend) return null;
 
   return (
-    <Card className="p-4 hover:shadow-md transition-shadow">
+    <Card className={`p-4 hover:shadow-md transition-all ${isHighlighted ? 'ring-2 ring-primary ring-offset-2 animate-pulse' : ''}`}>
       <div className="flex items-start gap-3">
         <Avatar className="h-12 w-12">
           <AvatarImage src={friend.profile_photo_url || undefined} />

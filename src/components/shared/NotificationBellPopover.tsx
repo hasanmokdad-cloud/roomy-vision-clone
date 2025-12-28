@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -9,6 +10,12 @@ import {
 } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 
+interface NotificationMetadata {
+  type?: string;
+  student_id?: string;
+  [key: string]: unknown;
+}
+
 interface Notification {
   id: string;
   title: string;
@@ -16,6 +23,7 @@ interface Notification {
   body?: string;
   read: boolean;
   created_at: string;
+  metadata?: NotificationMetadata;
 }
 
 interface NotificationBellPopoverProps {
@@ -29,6 +37,7 @@ export function NotificationBellPopover({
   tableType,
   variant = 'default'
 }: NotificationBellPopoverProps) {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -43,7 +52,7 @@ export function NotificationBellPopover({
       if (tableType === 'user') {
         const result = await supabase
           .from('notifications')
-          .select('id, title, message, read, created_at')
+          .select('id, title, message, read, created_at, metadata')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(20);
@@ -141,6 +150,29 @@ export function NotificationBellPopover({
     }
   };
 
+  const handleNotificationClick = (notification: Notification) => {
+    markAsRead(notification.id);
+    setOpen(false);
+    
+    const metadata = notification.metadata;
+    if (!metadata?.type) return;
+    
+    switch (metadata.type) {
+      case 'friend_request':
+      case 'friend_accepted':
+        // Navigate to Messages → Friends tab → highlight the student
+        navigate('/messages', { 
+          state: { 
+            activeTab: 'friends',
+            highlightStudentId: metadata.student_id 
+          }
+        });
+        break;
+      default:
+        break;
+    }
+  };
+
   const markAllAsRead = async () => {
     if (tableType === 'user') {
       await supabase
@@ -207,7 +239,7 @@ export function NotificationBellPopover({
                     ? 'bg-background border-border hover:bg-muted/50'
                     : 'bg-primary/5 border-primary/20 hover:bg-primary/10'
                 }`}
-                onClick={() => !notification.read && markAsRead(notification.id)}
+                onClick={() => handleNotificationClick(notification)}
               >
                 <h4 className="font-medium text-sm">{notification.title}</h4>
                 <p className="text-xs text-muted-foreground mt-1">

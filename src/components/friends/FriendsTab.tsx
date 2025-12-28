@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface FriendsTabProps {
   studentId: string;
   searchQuery?: string;
+  highlightStudentId?: string | null;
 }
 
 interface StudentDirectory {
@@ -30,7 +31,7 @@ interface StudentDirectory {
   match_reason: 'same_dorm' | 'same_university' | 'same_major';
 }
 
-export function FriendsTab({ studentId, searchQuery = '' }: FriendsTabProps) {
+export function FriendsTab({ studentId, searchQuery = '', highlightStudentId }: FriendsTabProps) {
   const navigate = useNavigate();
   const {
     friends,
@@ -239,6 +240,7 @@ export function FriendsTab({ studentId, searchQuery = '' }: FriendsTabProps) {
                     onAccept={handleAccept}
                     onReject={rejectRequest}
                     onMutualFriendsClick={handleMutualFriendsClick}
+                    highlightStudentId={highlightStudentId}
                   />
                 ))}
               </div>
@@ -266,6 +268,7 @@ export function FriendsTab({ studentId, searchQuery = '' }: FriendsTabProps) {
                     onBlock={blockUser}
                     onViewProfile={handleViewProfile}
                     onMutualFriendsClick={handleMutualFriendsClick}
+                    highlightStudentId={highlightStudentId}
                   />
                 ))}
               </div>
