@@ -497,7 +497,7 @@ export function MessageBubble({
       case 'delivered':
         return <CheckCheck className="w-[15px] h-[15px] text-[#8696a0]" />;
       case 'seen':
-        return <CheckCheck className="w-[15px] h-[15px] text-[#53bdeb]" />;
+        return <CheckCheck className="w-4 h-4 text-[#53bdeb]" />;
       default:
         return null;
     }
@@ -597,17 +597,15 @@ export function MessageBubble({
         )}
 
         {/* Main message row with emoji button + bubble */}
-        <div className="flex items-start gap-1">
-          {/* Emoji button - LEFT side for SENT messages */}
+        <div className="flex items-center gap-1">
+          {/* Emoji button - LEFT side for SENT messages - WhatsApp style white circle */}
           {!isMobile && isSender && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="opacity-0 group-hover:opacity-100 h-6 w-6 mt-1 transition-opacity flex-shrink-0"
+            <button
+              className="opacity-0 group-hover:opacity-100 h-8 w-8 rounded-full bg-white dark:bg-[#2a3942] shadow-sm flex items-center justify-center transition-opacity flex-shrink-0 hover:shadow-md"
               onClick={() => showReactionBar ? setShowReactionBar(false) : handleShowReactionBar()}
             >
-              <Smile className="h-4 w-4" />
-            </Button>
+              <Smile className="h-5 w-5 text-[#8696a0]" />
+            </button>
           )}
 
           {/* Message Bubble - WhatsApp style */}
@@ -696,16 +694,14 @@ export function MessageBubble({
             </div>
           </div>
 
-          {/* Emoji button - RIGHT side for RECEIVED messages */}
+          {/* Emoji button - RIGHT side for RECEIVED messages - WhatsApp style white circle */}
           {!isMobile && !isSender && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="opacity-0 group-hover:opacity-100 h-6 w-6 mt-1 transition-opacity flex-shrink-0"
+            <button
+              className="opacity-0 group-hover:opacity-100 h-8 w-8 rounded-full bg-white dark:bg-[#2a3942] shadow-sm flex items-center justify-center transition-opacity flex-shrink-0 hover:shadow-md"
               onClick={() => setShowReactionBar(!showReactionBar)}
             >
-              <Smile className="h-4 w-4" />
-            </Button>
+              <Smile className="h-5 w-5 text-[#8696a0]" />
+            </button>
           )}
         </div>
 

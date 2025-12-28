@@ -14,7 +14,7 @@ export function ScrollToBottomButton({ onClick, unreadCount = 0 }: ScrollToBotto
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ duration: 0.15 }}
       onClick={onClick}
-      className="w-10 h-10 rounded-full bg-white dark:bg-[#2a3942] shadow-md flex items-center justify-center hover:bg-gray-50 dark:hover:bg-[#3b4a54] transition-colors"
+      className="relative w-10 h-10 rounded-full bg-white dark:bg-[#2a3942] shadow-lg flex items-center justify-center hover:bg-gray-50 dark:hover:bg-[#3b4a54] transition-colors border border-[#e9edef] dark:border-[#3b4a54]"
       aria-label="Scroll to bottom"
     >
       {unreadCount > 0 && (

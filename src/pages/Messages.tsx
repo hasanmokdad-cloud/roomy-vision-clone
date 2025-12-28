@@ -368,9 +368,27 @@ export default function Messages() {
   const handleChatScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const container = e.currentTarget;
     const { scrollTop, scrollHeight, clientHeight } = container;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 200;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
     setShowScrollToBottom(!isNearBottom);
   }, []);
+
+  // Additional scroll detection using ref for ScrollArea component
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (!container || !selectedConversation) return;
+    
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+      setShowScrollToBottom(!isNearBottom);
+    };
+    
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    // Initial check
+    handleScroll();
+    
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [selectedConversation]);
 
   // Scroll to bottom function
   const scrollToBottom = useCallback(() => {
@@ -3305,9 +3323,10 @@ export default function Messages() {
                     </AnimatePresence>
                   </div>
                 ) : (
-                  <ScrollArea 
-                    className="flex-1 overflow-hidden py-4 chat-background-container relative whatsapp-scrollbar"
-                    onScrollCapture={handleChatScroll as any}
+                  <div 
+                    ref={chatContainerRef}
+                    className="flex-1 overflow-y-auto py-4 chat-background-container relative whatsapp-scrollbar"
+                    onScroll={handleChatScroll}
                   >
                     {/* Pattern overlay handled by CSS ::before pseudo-element */}
                     <div className="relative z-[1]">
@@ -3410,12 +3429,13 @@ export default function Messages() {
                         </div>
                       )}
                     </AnimatePresence>
-                  </ScrollArea>
+                  </div>
                 )}
 
+                {/* Input container - WhatsApp style: no borders, floating */}
                 <div 
-                  className={`${isMobile ? 'p-3 shrink-0 bg-background dark:bg-[#202c33] z-20' : 'p-4 bg-[#f0f2f5] dark:bg-[#202c33]'}`}
-                  style={isMobile ? { paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' } : undefined}
+                  className={`${isMobile ? 'px-2 py-2 shrink-0 z-20' : 'px-4 py-3'}`}
+                  style={isMobile ? { paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' } : undefined}
                 >
                   {/* Voice Recording Overlay - rendered inline to inherit safe area positioning */}
                   {isMobile && recording ? (
@@ -3593,7 +3613,7 @@ export default function Messages() {
                         )}
                       </Button>
 
-                      <div className="flex-1 relative flex items-center bg-muted rounded-full">
+                      <div className="flex-1 relative flex items-center bg-white dark:bg-[#2a3942] rounded-[25px] px-1">
                         <Input
                           placeholder="Type a message"
                           value={messageInput}
@@ -3672,9 +3692,9 @@ export default function Messages() {
                       )}
                     </div>
                   ) : (
-                    /* Desktop: WhatsApp-style unified rounded container */
+                    /* Desktop: WhatsApp-style unified rounded container - no border */
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 flex items-center bg-white dark:bg-[#2a3942] rounded-lg px-2 py-1">
+                      <div className="flex-1 flex items-center bg-white dark:bg-[#2a3942] rounded-[25px] px-3 py-1.5">
                         {/* Plus button inside container */}
                         <button
                           type="button"
