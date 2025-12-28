@@ -40,6 +40,10 @@ interface RoomData {
   available: boolean;
   images?: string[] | null;
   video_url?: string | null;
+  price_1_student?: number | null;
+  price_2_students?: number | null;
+  deposit_1_student?: number | null;
+  deposit_2_students?: number | null;
 }
 
 interface ImportResult {
@@ -48,6 +52,21 @@ interface ImportResult {
   updated: number;
   errors: string[];
 }
+
+// Helper to check room type
+const isDoubleRoom = (type: string) => type?.toLowerCase().includes('double');
+const isTripleRoom = (type: string) => type?.toLowerCase().includes('triple');
+const isTieredRoom = (type: string) => isDoubleRoom(type) || isTripleRoom(type);
+
+// Get display price (starting from)
+const getDisplayPrice = (room: RoomData): { minPrice: number; hasTiers: boolean } => {
+  const prices = [room.price];
+  if (room.price_1_student) prices.push(room.price_1_student);
+  if (room.price_2_students) prices.push(room.price_2_students);
+  const validPrices = prices.filter(p => p != null && p > 0) as number[];
+  const minPrice = validPrices.length > 0 ? Math.min(...validPrices) : room.price;
+  return { minPrice, hasTiers: validPrices.length > 1 };
+};
 
 export default function BulkRoomOps() {
   const navigate = useNavigate();
@@ -93,7 +112,7 @@ export default function BulkRoomOps() {
       for (const dorm of ownerDorms) {
         const { data: rooms, error: roomsError } = await supabase
           .from("rooms")
-          .select("id, name, price, deposit, type, capacity, capacity_occupied, area_m2, available, images, video_url")
+          .select("id, name, price, deposit, type, capacity, capacity_occupied, area_m2, available, images, video_url, price_1_student, price_2_students, deposit_1_student, deposit_2_students")
           .eq("dorm_id", dorm.id)
           .order("name", { ascending: true });
 
@@ -122,30 +141,47 @@ export default function BulkRoomOps() {
 
   const downloadTemplate = (dorm: DormWithRooms) => {
     const wb = XLSX.utils.book_new();
-    const headers = ["Room", "Monthly Price", "Deposit", "Type", "Capacity", "Capacity Occupied", "Area (m²)"];
+    const headers = [
+      "Room", 
+      "Type", 
+      "Monthly Price", 
+      "Price (2 students)", 
+      "Price (1 student)", 
+      "Deposit", 
+      "Deposit (2 students)", 
+      "Deposit (1 student)", 
+      "Capacity", 
+      "Capacity Occupied", 
+      "Area (m²)"
+    ];
     
     let data: any[][] = [headers];
     
     if (dorm.rooms.length > 0) {
       const roomRows = dorm.rooms.map(room => [
         room.name,
-        room.price || "",
-        room.deposit || "",
         room.type || "",
+        room.price || "",
+        room.price_2_students || "",
+        room.price_1_student || "",
+        room.deposit || "",
+        room.deposit_2_students || "",
+        room.deposit_1_student || "",
         room.capacity || "",
         room.capacity_occupied || 0,
         room.area_m2 || ""
       ]);
       data = [headers, ...roomRows];
     } else {
-      data.push(["1", "500", "200", "Single", "1", "0", "15"]);
-      data.push(["2", "700", "300", "Double", "2", "0", "20"]);
-      data.push(["B1", "900", "400", "Triple", "3", "0", "30"]);
+      data.push(["1", "Single", "500", "", "", "200", "", "", "1", "0", "15"]);
+      data.push(["2", "Double", "700", "", "400", "300", "", "150", "2", "0", "20"]);
+      data.push(["B1", "Triple", "900", "700", "450", "400", "300", "180", "3", "0", "30"]);
     }
 
     const ws = XLSX.utils.aoa_to_sheet(data);
     ws['!cols'] = [
-      { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 12 },
+      { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 18 }, { wch: 18 }, 
+      { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 12 }, { wch: 18 }, { wch: 12 },
     ];
 
     XLSX.utils.book_append_sheet(wb, ws, "Rooms");
@@ -186,13 +222,18 @@ export default function BulkRoomOps() {
         const rowNum = i + 2;
 
         try {
+          // Parse columns in new order
           const roomName = String(row[0]).trim();
-          const monthlyPrice = parseFloat(row[1]) || null;
-          const deposit = parseFloat(row[2]) || null;
-          const type = String(row[3] || "").trim();
-          const capacity = parseInt(row[4]) || null;
-          const capacityOccupied = parseInt(row[5]) || 0;
-          const areaM2 = parseFloat(row[6]) || null;
+          const type = String(row[1] || "").trim();
+          const monthlyPrice = parseFloat(row[2]) || null;
+          const price2Students = parseFloat(row[3]) || null;
+          const price1Student = parseFloat(row[4]) || null;
+          const deposit = parseFloat(row[5]) || null;
+          const deposit2Students = parseFloat(row[6]) || null;
+          const deposit1Student = parseFloat(row[7]) || null;
+          const capacity = parseInt(row[8]) || null;
+          const capacityOccupied = parseInt(row[9]) || 0;
+          const areaM2 = parseFloat(row[10]) || null;
 
           if (!roomName) {
             result.errors.push(`Row ${rowNum}: Room name is required`);
@@ -211,6 +252,12 @@ export default function BulkRoomOps() {
             if (capacity !== null) updateData.capacity = capacity;
             updateData.capacity_occupied = capacityOccupied;
             if (areaM2 !== null) updateData.area_m2 = areaM2;
+            
+            // Tiered pricing fields
+            updateData.price_1_student = price1Student;
+            updateData.price_2_students = price2Students;
+            updateData.deposit_1_student = deposit1Student;
+            updateData.deposit_2_students = deposit2Students;
             
             if (capacity !== null && capacityOccupied >= capacity) {
               updateData.available = false;
@@ -236,6 +283,12 @@ export default function BulkRoomOps() {
             };
             if (deposit !== null) insertData.deposit = deposit;
             if (areaM2 !== null) insertData.area_m2 = areaM2;
+            
+            // Tiered pricing fields
+            if (price1Student !== null) insertData.price_1_student = price1Student;
+            if (price2Students !== null) insertData.price_2_students = price2Students;
+            if (deposit1Student !== null) insertData.deposit_1_student = deposit1Student;
+            if (deposit2Students !== null) insertData.deposit_2_students = deposit2Students;
 
             const { error } = await supabase
               .from("rooms")
@@ -400,6 +453,12 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
   const [bulkDeposit, setBulkDeposit] = useState("");
   const [bulkUpdating, setBulkUpdating] = useState(false);
   
+  // Tiered pricing bulk update state
+  const [bulkPrice1Student, setBulkPrice1Student] = useState("");
+  const [bulkPrice2Students, setBulkPrice2Students] = useState("");
+  const [bulkDeposit1Student, setBulkDeposit1Student] = useState("");
+  const [bulkDeposit2Students, setBulkDeposit2Students] = useState("");
+  
   // Image/Video upload state
   const [imageUploadMode, setImageUploadMode] = useState<"replace" | "add">("add");
   const [uploadingMedia, setUploadingMedia] = useState(false);
@@ -414,6 +473,21 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
     const types = dorm.rooms.map(r => r.type).filter(Boolean);
     return [...new Set(types)].sort();
   }, [dorm.rooms]);
+
+  // Check if selection includes tiered rooms
+  const selectedRoomsList = useMemo(() => {
+    return dorm.rooms.filter(r => selectedRooms.has(r.id));
+  }, [dorm.rooms, selectedRooms]);
+
+  const hasDoubleRoomsSelected = useMemo(() => {
+    return selectedRoomsList.some(r => isDoubleRoom(r.type));
+  }, [selectedRoomsList]);
+
+  const hasTripleRoomsSelected = useMemo(() => {
+    return selectedRoomsList.some(r => isTripleRoom(r.type));
+  }, [selectedRoomsList]);
+
+  const hasTieredRoomsSelected = hasDoubleRoomsSelected || hasTripleRoomsSelected;
 
   // Selection helpers
   const toggleRoomSelection = (roomId: string) => {
@@ -540,6 +614,81 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
         description: `Deposit updated to $${depositValue} for ${roomIds.length} rooms`,
       });
       setBulkDeposit("");
+      await onRefresh();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
+  // Bulk tiered pricing update
+  const bulkUpdateTieredPricing = async () => {
+    if (!hasSelection) {
+      toast({ title: "No rooms selected", variant: "destructive" });
+      return;
+    }
+
+    const price1 = bulkPrice1Student ? parseFloat(bulkPrice1Student) : null;
+    const price2 = bulkPrice2Students ? parseFloat(bulkPrice2Students) : null;
+    const deposit1 = bulkDeposit1Student ? parseFloat(bulkDeposit1Student) : null;
+    const deposit2 = bulkDeposit2Students ? parseFloat(bulkDeposit2Students) : null;
+
+    if (price1 === null && price2 === null && deposit1 === null && deposit2 === null) {
+      toast({ title: "Enter at least one tiered value", variant: "destructive" });
+      return;
+    }
+
+    setBulkUpdating(true);
+    try {
+      // Update double rooms (only price_1_student and deposit_1_student)
+      if (hasDoubleRoomsSelected && (price1 !== null || deposit1 !== null)) {
+        const doubleRoomIds = selectedRoomsList
+          .filter(r => isDoubleRoom(r.type))
+          .map(r => r.id);
+        
+        if (doubleRoomIds.length > 0) {
+          const updateData: any = {};
+          if (price1 !== null) updateData.price_1_student = price1;
+          if (deposit1 !== null) updateData.deposit_1_student = deposit1;
+          
+          const { error } = await supabase
+            .from("rooms")
+            .update(updateData)
+            .in("id", doubleRoomIds);
+          if (error) throw error;
+        }
+      }
+
+      // Update triple rooms (all tiered fields)
+      if (hasTripleRoomsSelected) {
+        const tripleRoomIds = selectedRoomsList
+          .filter(r => isTripleRoom(r.type))
+          .map(r => r.id);
+        
+        if (tripleRoomIds.length > 0) {
+          const updateData: any = {};
+          if (price1 !== null) updateData.price_1_student = price1;
+          if (price2 !== null) updateData.price_2_students = price2;
+          if (deposit1 !== null) updateData.deposit_1_student = deposit1;
+          if (deposit2 !== null) updateData.deposit_2_students = deposit2;
+          
+          const { error } = await supabase
+            .from("rooms")
+            .update(updateData)
+            .in("id", tripleRoomIds);
+          if (error) throw error;
+        }
+      }
+
+      toast({
+        title: "Success",
+        description: "Tiered pricing updated for selected rooms",
+      });
+      setBulkPrice1Student("");
+      setBulkPrice2Students("");
+      setBulkDeposit1Student("");
+      setBulkDeposit2Students("");
       await onRefresh();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -859,12 +1008,12 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                     </div>
 
                     {/* Deposit Update */}
-                    <div className="space-y-3 lg:col-span-2">
+                    <div className="space-y-3">
                       <Label className="text-sm font-medium flex items-center gap-1">
                         <DollarSign className="w-4 h-4" />
                         Bulk Deposit Update
                       </Label>
-                      <div className="flex gap-2 max-w-md">
+                      <div className="flex gap-2">
                         <Input
                           type="number"
                           placeholder="Enter deposit..."
@@ -881,6 +1030,88 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                       </div>
                     </div>
                   </div>
+
+                  {/* Tiered Pricing Section - Only show when tiered rooms are selected */}
+                  {hasTieredRoomsSelected && (
+                    <>
+                      <Separator />
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-primary" />
+                          <Label className="text-sm font-medium">Tiered Pricing (Double/Triple Rooms)</Label>
+                          <Badge variant="outline" className="text-xs">
+                            {hasDoubleRoomsSelected && hasTripleRoomsSelected 
+                              ? "Double & Triple" 
+                              : hasDoubleRoomsSelected 
+                                ? "Double" 
+                                : "Triple"}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Update pricing tiers for selected double/triple rooms. Only applicable fields will be updated.
+                        </p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          {/* Price (1 student) - For Double & Triple */}
+                          <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">Price (1 student)</Label>
+                            <Input
+                              type="number"
+                              placeholder="e.g. 300"
+                              value={bulkPrice1Student}
+                              onChange={(e) => setBulkPrice1Student(e.target.value)}
+                            />
+                          </div>
+
+                          {/* Price (2 students) - Only for Triple */}
+                          {hasTripleRoomsSelected && (
+                            <div className="space-y-2">
+                              <Label className="text-xs text-muted-foreground">Price (2 students)</Label>
+                              <Input
+                                type="number"
+                                placeholder="e.g. 500"
+                                value={bulkPrice2Students}
+                                onChange={(e) => setBulkPrice2Students(e.target.value)}
+                              />
+                            </div>
+                          )}
+
+                          {/* Deposit (1 student) - For Double & Triple */}
+                          <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">Deposit (1 student)</Label>
+                            <Input
+                              type="number"
+                              placeholder="e.g. 150"
+                              value={bulkDeposit1Student}
+                              onChange={(e) => setBulkDeposit1Student(e.target.value)}
+                            />
+                          </div>
+
+                          {/* Deposit (2 students) - Only for Triple */}
+                          {hasTripleRoomsSelected && (
+                            <div className="space-y-2">
+                              <Label className="text-xs text-muted-foreground">Deposit (2 students)</Label>
+                              <Input
+                                type="number"
+                                placeholder="e.g. 250"
+                                value={bulkDeposit2Students}
+                                onChange={(e) => setBulkDeposit2Students(e.target.value)}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        <Button 
+                          onClick={bulkUpdateTieredPricing}
+                          disabled={!hasSelection || bulkUpdating || (!bulkPrice1Student && !bulkPrice2Students && !bulkDeposit1Student && !bulkDeposit2Students)}
+                          className="gap-2"
+                        >
+                          <DollarSign className="w-4 h-4" />
+                          Apply Tiered Pricing
+                        </Button>
+                      </div>
+                    </>
+                  )}
 
                   <Separator />
 
@@ -909,35 +1140,57 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                           </tr>
                         </thead>
                         <tbody>
-                          {dorm.rooms.map((room) => (
-                            <tr 
-                              key={room.id}
-                              className={`border-b last:border-0 cursor-pointer hover:bg-muted/30 transition-colors ${selectedRooms.has(room.id) ? "bg-primary/5" : ""}`}
-                              onClick={() => toggleRoomSelection(room.id)}
-                            >
-                              <td className="p-3" onClick={(e) => e.stopPropagation()}>
-                                <Checkbox
-                                  checked={selectedRooms.has(room.id)}
-                                  onCheckedChange={() => toggleRoomSelection(room.id)}
-                                />
-                              </td>
-                              <td className="p-3 font-medium">{room.name}</td>
-                              <td className="p-3">{room.type}</td>
-                              <td className="p-3">${room.price}</td>
-                              <td className="p-3">{room.deposit ? `$${room.deposit}` : "-"}</td>
-                              <td className="p-3">{room.capacity_occupied || 0}/{room.capacity || "-"}</td>
-                              <td className="p-3">
-                                {room.available ? (
-                                  <Badge variant="default" className="gap-1">
-                                    <CheckCircle2 className="w-3 h-3" />
-                                    Available
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="secondary">Unavailable</Badge>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
+                          {dorm.rooms.map((room) => {
+                            const { minPrice, hasTiers } = getDisplayPrice(room);
+                            const roomIsTiered = isTieredRoom(room.type);
+                            
+                            return (
+                              <tr 
+                                key={room.id}
+                                className={`border-b last:border-0 cursor-pointer hover:bg-muted/30 transition-colors ${selectedRooms.has(room.id) ? "bg-primary/5" : ""}`}
+                                onClick={() => toggleRoomSelection(room.id)}
+                              >
+                                <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                                  <Checkbox
+                                    checked={selectedRooms.has(room.id)}
+                                    onCheckedChange={() => toggleRoomSelection(room.id)}
+                                  />
+                                </td>
+                                <td className="p-3 font-medium">{room.name}</td>
+                                <td className="p-3">
+                                  <div className="flex items-center gap-1">
+                                    {room.type}
+                                    {roomIsTiered && (
+                                      <Badge variant="outline" className="text-[10px] px-1">
+                                        Tiered
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-3">
+                                  {hasTiers ? (
+                                    <span className="text-primary">
+                                      From ${minPrice}
+                                    </span>
+                                  ) : (
+                                    `$${room.price}`
+                                  )}
+                                </td>
+                                <td className="p-3">{room.deposit ? `$${room.deposit}` : "-"}</td>
+                                <td className="p-3">{room.capacity_occupied || 0}/{room.capacity || "-"}</td>
+                                <td className="p-3">
+                                  {room.available ? (
+                                    <Badge variant="default" className="gap-1">
+                                      <CheckCircle2 className="w-3 h-3" />
+                                      Available
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="secondary">Unavailable</Badge>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -1064,13 +1317,21 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                       <h5 className="text-sm font-medium mb-2">Template Columns:</h5>
                       <div className="flex flex-wrap gap-2 text-xs">
                         <Badge variant="outline">Room</Badge>
-                        <Badge variant="outline">Monthly Price</Badge>
-                        <Badge variant="outline">Deposit</Badge>
                         <Badge variant="outline">Type</Badge>
+                        <Badge variant="outline">Monthly Price</Badge>
+                        <Badge variant="outline" className="bg-primary/5">Price (2 students)</Badge>
+                        <Badge variant="outline" className="bg-primary/5">Price (1 student)</Badge>
+                        <Badge variant="outline">Deposit</Badge>
+                        <Badge variant="outline" className="bg-primary/5">Deposit (2 students)</Badge>
+                        <Badge variant="outline" className="bg-primary/5">Deposit (1 student)</Badge>
                         <Badge variant="outline">Capacity</Badge>
                         <Badge variant="outline">Capacity Occupied</Badge>
                         <Badge variant="outline">Area (m²)</Badge>
                       </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        <span className="inline-block w-2 h-2 bg-primary/20 rounded mr-1"></span>
+                        Tiered pricing columns are optional and only apply to Double/Triple rooms
+                      </p>
                     </div>
 
                     <p className="text-xs text-muted-foreground flex items-start gap-1.5">
