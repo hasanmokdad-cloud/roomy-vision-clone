@@ -249,6 +249,7 @@ export default function Messages() {
   const [searchQuery, setSearchQuery] = useState('');
   // Removed hoveredConversation state - three-dot menu is now always visible on desktop
   const [studentId, setStudentId] = useState<string | null>(null);
+  const [highlightStudentId, setHighlightStudentId] = useState<string | null>(null);
   const [pinnedMessages, setPinnedMessages] = useState<Message[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
@@ -353,6 +354,29 @@ export default function Messages() {
   // Handle auto-open from navigation state
   useEffect(() => {
     if (!userId) return;
+
+    // Handle friend notification navigation (activeTab + highlightStudentId)
+    if (location.state?.activeTab === 'friends') {
+      setActiveTab('friends');
+      
+      if (location.state?.highlightStudentId) {
+        setHighlightStudentId(location.state.highlightStudentId);
+        
+        // Auto-clear highlight after 5 seconds
+        const timer = setTimeout(() => {
+          setHighlightStudentId(null);
+        }, 5000);
+        
+        // Clear location state
+        navigate(location.pathname, { replace: true, state: {} });
+        
+        return () => clearTimeout(timer);
+      }
+      
+      // Clear location state
+      navigate(location.pathname, { replace: true, state: {} });
+      return;
+    }
 
     // Check for pre-selected conversation from navigation state (e.g., from admin inbox)
     if (location.state?.selectedConversationId) {
@@ -2701,7 +2725,7 @@ export default function Messages() {
               )}
             </div>
             {activeTab === 'friends' && role === 'student' && studentId ? (
-              <FriendsTab studentId={studentId} searchQuery={searchQuery} />
+              <FriendsTab studentId={studentId} searchQuery={searchQuery} highlightStudentId={highlightStudentId} />
             ) : (
               <ScrollArea className="flex-1 [&>div>div]:!overflow-visible">
                 {conversations.filter(c => 
