@@ -1229,7 +1229,7 @@ ONLY use names from the matches above. NEVER invent or fabricate names.`;
         messages: [
           { 
             role: "system", 
-            content: "You are Roomy AI, a friendly Lebanese housing assistant. Be warm, concise, and specific. CRITICAL: NEVER invent or fabricate names. ONLY mention data explicitly provided. If no matches provided, say 'Looking for options...' Do not create fictional people." 
+            content: "You are Roomy AI, a friendly Lebanese housing assistant. Be warm, concise, and specific. CRITICAL: NEVER invent or fabricate names. ONLY mention data explicitly provided. If data is incomplete or no matches are provided, provide a brief helpful general tip about finding housing in Lebanon. Do not create fictional people or say 'Looking for options'." 
           },
           { role: "user", content: prompt }
         ],
@@ -1242,7 +1242,24 @@ ONLY use names from the matches above. NEVER invent or fabricate names.`;
     }
 
     const data = await response.json();
-    const insights = data.choices?.[0]?.message?.content || "Great matches found based on your preferences!";
+    let insights = data.choices?.[0]?.message?.content || "";
+    
+    // Filter out placeholder responses that shouldn't be displayed
+    const placeholderPhrases = [
+      'looking for options',
+      'searching for',
+      'no data',
+      'no matches',
+      'still searching',
+      'checking availability'
+    ];
+    
+    const insightsLower = insights.toLowerCase();
+    const isPlaceholder = placeholderPhrases.some(phrase => insightsLower.includes(phrase));
+    
+    if (isPlaceholder || insights.trim().length < 10) {
+      insights = ''; // Return empty string, let frontend handle gracefully
+    }
 
     // Add detailed reasoning to each match
     const rankedMatches = topMatches.map((match) => {

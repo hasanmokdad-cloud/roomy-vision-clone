@@ -51,6 +51,28 @@ const AiMatch = () => {
   const [hasPendingClaim, setHasPendingClaim] = useState(false);
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   const [lastMatchMode, setLastMatchMode] = useState<MatchMode | null>(null);
+  
+  // Race condition prevention: track current request ID
+  const requestIdRef = useRef(0);
+  
+  // Loading safety timeout - prevent infinite loading states
+  useEffect(() => {
+    if (loading) {
+      const safetyTimeout = setTimeout(() => {
+        console.warn('[AiMatch] Safety timeout: forcing loading state to false after 35s');
+        setLoading(false);
+        if (matches.length === 0) {
+          toast({
+            title: "Request Timeout",
+            description: "AI matching is taking too long. Please try again.",
+            variant: "destructive"
+          });
+        }
+      }, 35000); // 35 second max
+      
+      return () => clearTimeout(safetyTimeout);
+    }
+  }, [loading, matches.length, toast]);
 
   // Check authentication - show Airbnb-style login prompt for unauthenticated users
   useEffect(() => {
@@ -296,8 +318,12 @@ const AiMatch = () => {
     return 'roommate';
   };
 
-  // Fetch matches using AI Core with timeout and retry
+  // Fetch matches using AI Core with timeout, retry, and race condition prevention
   const fetchMatches = async (excludeIds?: string[], retryCount = 0) => {
+    // Increment request ID to track this specific request
+    const currentRequestId = ++requestIdRef.current;
+    console.log(`[AiMatch] Starting fetch request #${currentRequestId} for mode: ${matchMode}`);
+    
     setLoading(true);
     if (retryCount === 0) {
       setAiInsights(''); // Clear stale insights on first attempt only
@@ -328,6 +354,12 @@ const AiMatch = () => {
         timeoutPromise
       ]);
 
+      // Check if this request is still current (race condition prevention)
+      if (requestIdRef.current !== currentRequestId) {
+        console.log(`[AiMatch] Stale request #${currentRequestId} ignored (current: #${requestIdRef.current})`);
+        return;
+      }
+
       if (error) {
         // Retry once on transient errors
         if (retryCount < 1 && (error.message?.includes('FunctionsFetchError') || error.message?.includes('network'))) {
@@ -343,7 +375,16 @@ const AiMatch = () => {
         const expectedType = matchMode === 'rooms' ? 'room' : 'roommate';
         const filteredMatches = data.matches.filter((m: any) => m.type === expectedType);
         setMatches(filteredMatches);
-        setAiInsights(data.insights_banner || '');
+        
+        // Filter out placeholder insights text
+        let insights = data.insights_banner || '';
+        if (insights.toLowerCase().includes('looking for options') || 
+            insights.toLowerCase().includes('searching for') ||
+            insights.toLowerCase().includes('no data') ||
+            insights.toLowerCase().includes('no matches')) {
+          insights = '';
+        }
+        setAiInsights(insights);
       } else {
         setMatches([]);
         setAiInsights('');
@@ -351,6 +392,12 @@ const AiMatch = () => {
 
     } catch (error: any) {
       console.error('[AiMatch] Error fetching matches:', error);
+      
+      // Check if this request is still current before updating state
+      if (requestIdRef.current !== currentRequestId) {
+        console.log(`[AiMatch] Stale error for request #${currentRequestId} ignored`);
+        return;
+      }
       
       // Retry once on timeout if not already retried
       if (retryCount < 1 && error?.message?.includes('timeout')) {
@@ -376,7 +423,10 @@ const AiMatch = () => {
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      // Only update loading state if this is still the current request
+      if (requestIdRef.current === currentRequestId) {
+        setLoading(false);
+      }
     }
   };
 
@@ -439,9 +489,13 @@ const AiMatch = () => {
     matchesSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Handle mode toggle
+  // Handle mode toggle - clear state when switching tabs
   const handleModeChange = (value: string) => {
-    if (value) {
+    if (value && value !== matchMode) {
+      console.log(`[AiMatch] Mode change: ${matchMode} -> ${value}`);
+      // Clear current state when switching tabs to prevent stale data
+      setMatches([]);
+      setAiInsights('');
       setMatchMode(value as MatchMode);
     }
   };
@@ -579,10 +633,8 @@ const AiMatch = () => {
         {/* Results */}
         {!loading && matches.length > 0 && (
           <>
-            {/* AI Insights */}
-            {aiInsights && (
-              <AIInsightsCard insights={aiInsights} />
-            )}
+            {/* AI Insights - Show skeleton when loading, hide when empty */}
+            <AIInsightsCard insights={aiInsights} isLoading={loading} />
 
             {/* Roommate Comparison (only show for roommate mode) */}
             {matchMode === 'roommates' && matches.length > 0 && (
