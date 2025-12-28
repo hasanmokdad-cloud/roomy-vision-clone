@@ -34,8 +34,8 @@ export default function StudentProfile() {
       const { data: studentData } = await supabase
         .from("students")
         .select("*")
-        .eq("id", id)
-        .single();
+        .eq("user_id", id)
+        .maybeSingle();
 
       if (studentData) {
         setStudent(studentData);

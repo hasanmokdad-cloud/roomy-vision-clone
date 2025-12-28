@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign, BarChart2, Crown, Lock, X, UserPlus, Home } from "lucide-react";
+import { MessageCircle, TrendingUp, GraduationCap, MapPin, DollarSign, BarChart2, Crown, Lock, X, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MatchBreakdownModal } from "./MatchBreakdownModal";
@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { EnhancedCompatibilityRing } from "./EnhancedCompatibilityRing";
 import { CategoryBreakdownBars } from "./CategoryBreakdownBars";
 import { WhyThisMatch } from "./WhyThisMatch";
+import { AddFriendButton } from "@/components/friends/AddFriendButton";
 
 interface RoommateMatchCardProps {
   roommate: any;
@@ -21,6 +22,7 @@ interface RoommateMatchCardProps {
   isVip?: boolean;
   matchTier?: 'basic' | 'advanced' | 'vip';
   onDismiss?: (roommateId: string) => void;
+  currentStudentId?: string | null;
 }
 
 export const RoommateMatchCard = ({ 
@@ -29,7 +31,8 @@ export const RoommateMatchCard = ({
   showCompatibilityScore = true,
   isVip = false,
   matchTier = 'basic',
-  onDismiss
+  onDismiss,
+  currentStudentId
 }: RoommateMatchCardProps) => {
   const navigate = useNavigate();
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -282,14 +285,15 @@ export const RoommateMatchCard = ({
                 <BarChart2 className="w-4 h-4" />
               </Button>
             )}
-            <Button 
-              onClick={() => {/* Add friend logic */}}
-              variant="outline"
-              size="icon"
-              className="flex-shrink-0"
-            >
-              <UserPlus className="w-4 h-4" />
-            </Button>
+            {currentStudentId && roommate.student_id && (
+              <AddFriendButton 
+                currentStudentId={currentStudentId}
+                targetStudentId={roommate.student_id}
+                variant="outline"
+                size="icon"
+                className="flex-shrink-0"
+              />
+            )}
           </div>
         </CardContent>
       </Card>

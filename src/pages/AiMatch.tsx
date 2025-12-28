@@ -598,6 +598,7 @@ const AiMatch = () => {
                         index={index}
                         showCompatibilityScore={shouldShowCompatibilityScore(userPlan)}
                         isVip={isVipPlan(userPlan)}
+                        currentStudentId={studentProfile?.id}
                       />
                     ))}
                   </div>
@@ -631,6 +632,7 @@ const AiMatch = () => {
                       isVip={isVipPlan(userPlan)}
                       matchTier={selectedPlan}
                       onDismiss={(id) => handleDismissMatch(id, 'roommate')}
+                      currentStudentId={studentProfile?.id}
                     />
                   )
                 ))}
