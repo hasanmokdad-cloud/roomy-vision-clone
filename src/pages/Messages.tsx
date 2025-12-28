@@ -3257,7 +3257,19 @@ export default function Messages() {
               }
             }}
             currentStudentId={studentId}
-            otherStudentId={conversations.find(c => c.id === selectedConversation)?.other_student_id || null}
+            otherStudentId={(() => {
+              const conv = conversations.find(c => c.id === selectedConversation);
+              if (!conv) return null;
+              // Try other_student_id first
+              if (conv.other_student_id) return conv.other_student_id;
+              // For student-to-student, derive from user_a_id/user_b_id
+              if (conv.conversation_type === 'student_to_student') {
+                return conv.user_a_id === studentId ? conv.user_b_id : conv.user_a_id;
+              }
+              // For other conversation types, use student_id
+              return conv.student_id || null;
+            })()}
+            onScrollToMessage={scrollToMessage}
           />
         )}
       </main>

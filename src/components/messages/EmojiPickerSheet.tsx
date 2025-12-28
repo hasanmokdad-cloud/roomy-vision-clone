@@ -1,5 +1,5 @@
 import { useIsMobile } from "@/hooks/use-mobile";
-import EmojiPicker, { Theme, SuggestionMode } from "emoji-picker-react";
+import EmojiPicker, { Theme, SuggestionMode, Categories } from "emoji-picker-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Drawer,
@@ -9,6 +9,19 @@ import {
 } from "@/components/ui/drawer";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useEffect, useState, useCallback } from "react";
+
+// Category configuration with 'suggested' (recent) first
+const emojiCategories = [
+  { category: Categories.SUGGESTED, name: 'Recently Used' },
+  { category: Categories.SMILEYS_PEOPLE, name: 'Smileys & People' },
+  { category: Categories.ANIMALS_NATURE, name: 'Animals & Nature' },
+  { category: Categories.FOOD_DRINK, name: 'Food & Drink' },
+  { category: Categories.TRAVEL_PLACES, name: 'Travel & Places' },
+  { category: Categories.ACTIVITIES, name: 'Activities' },
+  { category: Categories.OBJECTS, name: 'Objects' },
+  { category: Categories.SYMBOLS, name: 'Symbols' },
+  { category: Categories.FLAGS, name: 'Flags' },
+];
 
 interface EmojiPickerSheetProps {
   open: boolean;
@@ -133,12 +146,7 @@ export function EmojiPickerSheet({
               previewConfig={{ showPreview: false }}
               skinTonesDisabled={true}
               suggestedEmojisMode={SuggestionMode.RECENT}
-              customEmojis={recentEmojis.map((emoji, idx) => ({
-                id: `recent-${idx}`,
-                names: [`Recent ${idx + 1}`],
-                imgUrl: '',
-                unified: emoji,
-              }))}
+              categories={emojiCategories}
             />
           </motion.div>
         </DrawerContent>
@@ -186,6 +194,7 @@ export function EmojiPickerSheet({
                 previewConfig={{ showPreview: false }}
                 skinTonesDisabled={true}
                 suggestedEmojisMode={SuggestionMode.RECENT}
+                categories={emojiCategories}
               />
             </motion.div>
           </>
