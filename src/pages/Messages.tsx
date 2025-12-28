@@ -2700,7 +2700,7 @@ export default function Messages() {
         } : undefined}
       >
         {/* Conversations List - Edge-to-edge, no Card wrapper */}
-        <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-[350px] border-r border-border bg-background ${isMobile ? 'h-screen' : 'h-[calc(100vh-80px)]'}`}>
+        <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-[420px] border-r border-border bg-background ${isMobile ? 'h-screen' : 'h-[calc(100vh-80px)]'}`}>
             
             <div className={`p-4 border-b border-border ${isMobile ? 'pt-6' : ''} space-y-3`}>
               <div className="flex items-center justify-between w-full">
@@ -2719,15 +2719,40 @@ export default function Messages() {
                 placeholder={activeTab === 'chats' || role !== 'student' ? 'Search messages...' : 'Search students...'}
               />
               
-              {/* Chats/Friends tabs - STUDENT ONLY */}
-              {role === 'student' && studentId && (
-                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'chats' | 'friends')}>
-                  <TabsList className="w-full">
-                    <TabsTrigger value="chats" className="flex-1">Chats</TabsTrigger>
-                    <TabsTrigger value="friends" className="flex-1">Friends</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              )}
+              {/* WhatsApp-style small pill filter tabs */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveTab('chats')}
+                  className={`px-3 py-1 text-[13px] rounded-full transition-colors ${
+                    activeTab === 'chats' 
+                      ? 'bg-primary/15 text-primary font-medium' 
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => {
+                    // Filter to show only unread - for now just stays on chats tab
+                    setActiveTab('chats');
+                  }}
+                  className="px-3 py-1 text-[13px] rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                >
+                  Unread
+                </button>
+                {role === 'student' && studentId && (
+                  <button
+                    onClick={() => setActiveTab('friends')}
+                    className={`px-3 py-1 text-[13px] rounded-full transition-colors ${
+                      activeTab === 'friends' 
+                        ? 'bg-primary/15 text-primary font-medium' 
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    Friends
+                  </button>
+                )}
+              </div>
             </div>
             {activeTab === 'friends' && role === 'student' && studentId ? (
               <FriendsTab studentId={studentId} searchQuery={searchQuery} highlightStudentId={highlightStudentId} />
@@ -2745,18 +2770,14 @@ export default function Messages() {
                   </div>
                 ) : (
                   <>
-                    {/* Archived section row - WhatsApp style - ALWAYS visible */}
+                    {/* Archived section row - WhatsApp style minimal */}
                     <button
                       onClick={() => setShowArchivedPage(true)}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border"
+                      className="w-full flex items-center gap-4 px-4 py-2.5 hover:bg-muted/50 transition-colors"
                     >
-                      <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
-                        <Archive className="w-6 h-6 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <span className="font-medium text-foreground">Archived</span>
-                      </div>
-                      <span className="text-sm text-muted-foreground">
+                      <Archive className="w-[18px] h-[18px] text-primary" />
+                      <span className="flex-1 text-left text-[15px] text-foreground">Archived</span>
+                      <span className="text-[13px] text-muted-foreground">
                         {conversations.filter(c => c.is_archived).length}
                       </span>
                     </button>
@@ -3323,28 +3344,28 @@ export default function Messages() {
                   )}
 
                   
-                  {/* WhatsApp-style input layout: [+] [Input] [Camera] [Mic/Send] */}
-                  <div className="flex items-center gap-1.5">
-                    {/* Hidden file inputs */}
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*,video/*"
-                      multiple
-                      className="hidden"
-                      onChange={handleFileUpload}
-                    />
-                    <input
-                      ref={cameraInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                      onChange={handleFileUpload}
-                    />
+                  {/* Hidden file inputs */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,video/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
 
-                    {/* [+] Button - opens attachment modal on mobile, shows keyboard icon when modal open */}
-                    {isMobile ? (
+                  {/* WhatsApp-style unified input container */}
+                  {isMobile ? (
+                    /* Mobile: Keep existing layout */
+                    <div className="flex items-center gap-1.5">
                       <Button
                         type="button"
                         variant="ghost"
@@ -3362,40 +3383,105 @@ export default function Messages() {
                           <Plus className="w-5 h-5" />
                         )}
                       </Button>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploading || recording}
-                        aria-label="Attach file"
-                        className="shrink-0 h-8 w-8"
-                      >
-                        {uploading ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                          <Plus className="w-5 h-5" />
-                        )}
-                      </Button>
-                    )}
 
-                    {/* Input field with emoji picker inside */}
-                    <div className="flex-1 relative flex items-center bg-muted rounded-full">
-                      <Input
-                        placeholder="Message"
-                        value={messageInput}
-                        onChange={(e) => {
-                          setMessageInput(e.target.value);
-                          handleTyping();
-                        }}
-                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                        disabled={sending || recording}
-                        className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 pr-10"
-                        aria-label="Message input"
-                      />
-                      {/* Emoji picker inside input */}
-                      <div className="absolute right-2">
+                      <div className="flex-1 relative flex items-center bg-muted rounded-full">
+                        <Input
+                          placeholder="Type a message"
+                          value={messageInput}
+                          onChange={(e) => {
+                            setMessageInput(e.target.value);
+                            handleTyping();
+                          }}
+                          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                          disabled={sending || recording}
+                          className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 pr-10"
+                          aria-label="Message input"
+                        />
+                        <div className="absolute right-2">
+                          <EmojiPickerSheet
+                            open={showEmojiPicker}
+                            onOpenChange={setShowEmojiPicker}
+                            onEmojiSelect={(emoji) => {
+                              setMessageInput(prev => prev + emoji);
+                            }}
+                            mode="input"
+                            trigger={
+                              <button
+                                type="button"
+                                disabled={recording}
+                                aria-label="Add emoji"
+                                className="p-1 hover:bg-background/50 rounded-full transition-colors"
+                              >
+                                <Smile className="w-5 h-5 text-muted-foreground" />
+                              </button>
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      {!messageInput.trim() && pendingAttachments.length === 0 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => cameraInputRef.current?.click()}
+                          disabled={uploading || recording}
+                          aria-label="Take photo"
+                          className="shrink-0 h-8 w-8"
+                        >
+                          <Camera className="w-5 h-5" />
+                        </Button>
+                      )}
+
+                      {(messageInput.trim() || pendingAttachments.length > 0) ? (
+                        <Button 
+                          onClick={pendingAttachments.length > 0 ? uploadAndSendAttachments : sendMessage} 
+                          disabled={sending || uploading || pendingAttachments.some(a => a.isUploading)} 
+                          size="icon"
+                          aria-label="Send message"
+                          className="shrink-0 h-9 w-9 rounded-full bg-primary text-primary-foreground"
+                        >
+                          {uploading || pendingAttachments.some(a => a.isUploading) ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Send className="w-4 h-4" />
+                          )}
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          ref={micButtonCallbackRef}
+                          onClick={undefined}
+                          className="shrink-0 h-8 w-8 voice-record-button"
+                          aria-label="Record voice message"
+                          title="Hold to record voice message"
+                        >
+                          <Mic className="w-5 h-5" />
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    /* Desktop: WhatsApp-style unified rounded container */
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 flex items-center bg-muted/60 rounded-lg border border-border/50 px-2 py-1">
+                        {/* Plus button inside container */}
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploading || recording}
+                          aria-label="Attach file"
+                          className="p-2 hover:bg-background/50 rounded-full transition-colors shrink-0"
+                        >
+                          {uploading ? (
+                            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                          ) : (
+                            <Plus className="w-5 h-5 text-muted-foreground" />
+                          )}
+                        </button>
+
+                        {/* Emoji picker */}
                         <EmojiPickerSheet
                           open={showEmojiPicker}
                           onOpenChange={setShowEmojiPicker}
@@ -3408,60 +3494,60 @@ export default function Messages() {
                               type="button"
                               disabled={recording}
                               aria-label="Add emoji"
-                              className="p-1 hover:bg-background/50 rounded-full transition-colors"
+                              className="p-2 hover:bg-background/50 rounded-full transition-colors shrink-0"
                             >
                               <Smile className="w-5 h-5 text-muted-foreground" />
                             </button>
                           }
                         />
-                      </div>
-                    </div>
 
-                    {/* Camera button - only show when no text and no pending attachments (mobile only) */}
-                    {isMobile && !messageInput.trim() && pendingAttachments.length === 0 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => cameraInputRef.current?.click()}
-                        disabled={uploading || recording}
-                        aria-label="Take photo"
-                        className="shrink-0 h-8 w-8"
-                      >
-                        <Camera className="w-5 h-5" />
-                      </Button>
-                    )}
+                        {/* Input field */}
+                        <Input
+                          placeholder="Type a message"
+                          value={messageInput}
+                          onChange={(e) => {
+                            setMessageInput(e.target.value);
+                            handleTyping();
+                          }}
+                          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                          disabled={sending || recording}
+                          className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 h-9 text-[15px]"
+                          aria-label="Message input"
+                        />
 
-                    {/* Dynamic button: Send when typing or has attachments, Mic when empty */}
-                    {(messageInput.trim() || pendingAttachments.length > 0) ? (
-                      <Button 
-                        onClick={pendingAttachments.length > 0 ? uploadAndSendAttachments : sendMessage} 
-                        disabled={sending || uploading || pendingAttachments.some(a => a.isUploading)} 
-                        size="icon"
-                        aria-label="Send message"
-                        className="shrink-0 h-9 w-9 rounded-full bg-primary text-primary-foreground"
-                      >
-                        {uploading || pendingAttachments.some(a => a.isUploading) ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Send className="w-4 h-4" />
+                        {/* Mic button inside container */}
+                        {!messageInput.trim() && pendingAttachments.length === 0 && (
+                          <button
+                            type="button"
+                            ref={micButtonCallbackRef}
+                            onClick={handleVoiceButtonClick}
+                            className="p-2 hover:bg-background/50 rounded-full transition-colors shrink-0 voice-record-button"
+                            aria-label="Record voice message"
+                            title="Click to record voice message"
+                          >
+                            <Mic className="w-5 h-5 text-muted-foreground" />
+                          </button>
                         )}
-                      </Button>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        ref={micButtonCallbackRef}
-                        onClick={isMobile ? undefined : handleVoiceButtonClick}
-                        className="shrink-0 h-8 w-8 voice-record-button"
-                        aria-label="Record voice message"
-                        title={isMobile ? 'Hold to record voice message' : 'Click to record voice message'}
-                      >
-                        <Mic className="w-5 h-5" />
-                      </Button>
-                    )}
-                  </div>
+                      </div>
+
+                      {/* Send button - outside but adjacent */}
+                      {(messageInput.trim() || pendingAttachments.length > 0) && (
+                        <Button 
+                          onClick={pendingAttachments.length > 0 ? uploadAndSendAttachments : sendMessage} 
+                          disabled={sending || uploading || pendingAttachments.some(a => a.isUploading)} 
+                          size="icon"
+                          aria-label="Send message"
+                          className="shrink-0 h-10 w-10 rounded-full bg-primary text-primary-foreground"
+                        >
+                          {uploading || pendingAttachments.some(a => a.isUploading) ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <Send className="w-5 h-5" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  )}
 
                   {/* Attachment Modal (Mobile Only) */}
                   {isMobile && (
