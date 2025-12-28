@@ -133,6 +133,35 @@ export function MessageBubble({
     setLocalIsPinned(message.is_pinned);
   }, [message.is_starred, message.is_pinned]);
 
+  // Subscribe to real-time changes for starred/pinned status
+  useEffect(() => {
+    const channel = supabase
+      .channel(`message-status-${message.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `id=eq.${message.id}`,
+        },
+        (payload) => {
+          const updated = payload.new as any;
+          if (typeof updated.is_starred === 'boolean') {
+            setLocalIsStarred(updated.is_starred);
+          }
+          if (typeof updated.is_pinned === 'boolean') {
+            setLocalIsPinned(updated.is_pinned);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [message.id]);
+
   // Load reactions for this message
   useEffect(() => {
     loadReactions();
@@ -357,8 +386,14 @@ export function MessageBubble({
   const handleShowReactionBar = () => {
     if (bubbleRef.current) {
       const rect = bubbleRef.current.getBoundingClientRect();
-      // If less than 80px from top of viewport, show below the message
-      setReactionPosition(rect.top < 80 ? 'bottom' : 'top');
+      // Get the chat container's top position (accounting for header)
+      const chatContainer = bubbleRef.current.closest('.overflow-y-auto');
+      const containerTop = chatContainer?.getBoundingClientRect().top || 0;
+      
+      // If message is within 120px of the chat container top, show below
+      const distanceFromContainerTop = rect.top - containerTop;
+      setReactionPosition(distanceFromContainerTop < 120 ? 'bottom' : 'top');
+      
       // Store anchor for emoji picker
       setEmojiPickerAnchor({
         x: isSender ? rect.left : rect.right,
