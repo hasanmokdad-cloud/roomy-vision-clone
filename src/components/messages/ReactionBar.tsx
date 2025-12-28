@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface ReactionBarProps {
   onReactionSelect: (emoji: string) => void;
@@ -10,7 +9,7 @@ interface ReactionBarProps {
   position?: 'top' | 'bottom';
 }
 
-const WHATSAPP_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "👏"];
+const WHATSAPP_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
 export function ReactionBar({ 
   onReactionSelect, 
@@ -32,7 +31,7 @@ export function ReactionBar({
       transition={{ duration: 0.2, ease: "easeOut" }}
       className={`absolute z-50 ${positionClasses}`}
     >
-      <div className="bg-popover border border-border rounded-full shadow-lg px-2 py-2 flex items-center gap-1">
+      <div className="bg-white dark:bg-[#233138] rounded-full shadow-lg px-1.5 py-1.5 flex items-center gap-0.5">
         {WHATSAPP_REACTIONS.map((emoji, index) => (
           <motion.div
             key={emoji}
@@ -45,11 +44,9 @@ export function ReactionBar({
               damping: 25
             }}
           >
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`h-10 w-10 p-0 text-2xl hover:scale-125 active:scale-90 transition-transform ${
-                selectedEmojis.includes(emoji) ? 'bg-accent' : ''
+            <button
+              className={`h-9 w-9 flex items-center justify-center text-[22px] hover:scale-125 active:scale-90 transition-transform rounded-full ${
+                selectedEmojis.includes(emoji) ? 'bg-[#e7e7e7] dark:bg-[#374248]' : 'hover:bg-[#f0f2f5] dark:hover:bg-[#374248]'
               }`}
               onClick={() => onReactionSelect(emoji)}
             >
@@ -59,34 +56,26 @@ export function ReactionBar({
               >
                 {emoji}
               </motion.span>
-            </Button>
+            </button>
           </motion.div>
         ))}
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: WHATSAPP_REACTIONS.length * 0.03 + 0.05 }}
-        >
-          <div className="w-px h-6 bg-border mx-1" />
-        </motion.div>
+        {/* Plus button - WhatsApp style with round background, no separator */}
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ 
-            delay: WHATSAPP_REACTIONS.length * 0.03 + 0.08,
+            delay: WHATSAPP_REACTIONS.length * 0.03 + 0.05,
             type: "spring",
             stiffness: 500,
             damping: 25
           }}
         >
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-10 w-10 p-0 hover:scale-110 active:scale-90 transition-transform"
+          <button
+            className="h-9 w-9 rounded-full bg-[#e7e7e7] dark:bg-[#374248] flex items-center justify-center hover:scale-110 active:scale-90 transition-transform ml-0.5"
             onClick={onOpenFullPicker}
           >
-            <Plus className="h-5 w-5" />
-          </Button>
+            <Plus className="h-5 w-5 text-[#8696a0]" />
+          </button>
         </motion.div>
       </div>
     </motion.div>

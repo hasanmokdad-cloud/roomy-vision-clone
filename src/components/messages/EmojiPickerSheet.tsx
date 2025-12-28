@@ -38,7 +38,7 @@ export function EmojiPickerSheet({
 
   const emojiPickerTheme = theme === "dark" ? Theme.DARK : Theme.LIGHT;
 
-  // Calculate smart position for desktop picker
+  // Calculate smart position for desktop picker - ensures fully visible
   const getPickerPosition = () => {
     if (!anchorPosition) {
       return { left: '50%', top: '50%', transform: 'translate(-50%, -50%)' };
@@ -51,11 +51,24 @@ export function EmojiPickerSheet({
     const viewportHeight = window.innerHeight;
 
     let left = anchorPosition.x;
-    let top = anchorPosition.y - pickerHeight - padding;
-
-    // If not enough space above, position below
-    if (top < padding) {
-      top = anchorPosition.y + padding;
+    
+    // Calculate space above and below the anchor
+    const spaceAbove = anchorPosition.y - padding;
+    const spaceBelow = viewportHeight - anchorPosition.y - padding;
+    
+    let top: number;
+    
+    // If enough space above, position above (preferred)
+    if (spaceAbove >= pickerHeight) {
+      top = anchorPosition.y - pickerHeight - padding;
+    } 
+    // If enough space below, position below
+    else if (spaceBelow >= pickerHeight) {
+      top = anchorPosition.y + padding + 50; // 50px offset for the message bubble height
+    }
+    // If neither has enough space, position at top of viewport
+    else {
+      top = padding;
     }
 
     // Keep within horizontal bounds
@@ -66,9 +79,12 @@ export function EmojiPickerSheet({
       left = padding;
     }
 
-    // Keep within vertical bounds
+    // Final vertical bounds check
     if (top + pickerHeight > viewportHeight - padding) {
       top = viewportHeight - pickerHeight - padding;
+    }
+    if (top < padding) {
+      top = padding;
     }
 
     return { left: `${left}px`, top: `${top}px`, transform: 'none' };

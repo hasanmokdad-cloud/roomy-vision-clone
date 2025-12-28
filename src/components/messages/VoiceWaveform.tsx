@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Play, Pause } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface VoiceWaveformProps {
   audioUrl: string;
@@ -8,9 +8,19 @@ interface VoiceWaveformProps {
   isSender?: boolean;
   messageId?: string;
   onPlay?: (messageId: string) => void;
+  senderAvatar?: string;
+  senderName?: string;
 }
 
-export function VoiceWaveform({ audioUrl, duration, isSender = false, messageId, onPlay }: VoiceWaveformProps) {
+export function VoiceWaveform({ 
+  audioUrl, 
+  duration, 
+  isSender = false, 
+  messageId, 
+  onPlay,
+  senderAvatar,
+  senderName = 'User'
+}: VoiceWaveformProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasTriggeredPlayRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -90,54 +100,72 @@ export function VoiceWaveform({ audioUrl, duration, isSender = false, messageId,
     );
   }
 
-  // Generate stable waveform bars (seeded by audioUrl hash)
-  const waveformBars = Array.from({ length: 40 }).map((_, i) => {
+  // Generate stable waveform bars (seeded by audioUrl hash) - reduced count for compact layout
+  const waveformBars = Array.from({ length: 28 }).map((_, i) => {
     const seed = (i * 7 + audioUrl.length) % 100;
     return 20 + Math.sin(i * 0.4 + seed * 0.1) * 15 + (seed % 20);
   });
 
+  // Calculate blue dot position
+  const dotPosition = progress;
+
   return (
-    <div className={`flex items-center gap-3 min-w-[200px] ${isSender ? 'text-[#111b21] dark:text-[#e9edef]' : 'text-[#111b21] dark:text-[#e9edef]'}`}>
-      {/* WhatsApp-style circular play button */}
+    <div className="flex items-center gap-2 min-w-[160px] max-w-[220px]">
+      {/* Sender's profile picture - WhatsApp style */}
+      <Avatar className="h-10 w-10 shrink-0">
+        <AvatarImage src={senderAvatar} />
+        <AvatarFallback className="text-xs bg-[#dfe5e7] dark:bg-[#3b4a54] text-[#8696a0]">
+          {senderName[0]?.toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+
+      {/* WhatsApp-style play button - no circular background, just filled icon */}
       <button
         onClick={togglePlayPause}
-        className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-          isSender 
-            ? 'bg-[#25d366] hover:bg-[#1fbc5a] text-white' 
-            : 'bg-[#00a884] hover:bg-[#008f72] text-white'
-        }`}
+        className="shrink-0 text-[#8696a0] hover:text-[#667781] dark:hover:text-[#aebac1] transition-colors"
+        aria-label={isPlaying ? 'Pause' : 'Play'}
       >
         {isPlaying ? (
-          <Pause className="h-5 w-5" fill="currentColor" />
+          <Pause className="h-7 w-7" fill="currentColor" strokeWidth={0} />
         ) : (
-          <Play className="h-5 w-5 ml-0.5" fill="currentColor" />
+          <Play className="h-7 w-7 ml-0.5" fill="currentColor" strokeWidth={0} />
         )}
       </button>
 
-      {/* Horizontal waveform visualization */}
-      <div className="flex-1 flex items-center gap-[2px] h-6">
-        {waveformBars.map((height, i) => {
-          const isPast = (i / 40) * 100 <= progress;
-          return (
-            <div
-              key={i}
-              className={`w-[3px] rounded-full transition-colors duration-100 ${
-                isPast 
-                  ? 'bg-[#25d366] dark:bg-[#25d366]'
-                  : isSender 
-                    ? 'bg-[#8696a0]/50 dark:bg-[#8696a0]/40' 
-                    : 'bg-[#8696a0]/50 dark:bg-[#8696a0]/40'
-              }`}
-              style={{ height: `${height}%` }}
-            />
-          );
-        })}
-      </div>
+      {/* Waveform container */}
+      <div className="flex-1 flex flex-col gap-1">
+        {/* Waveform with blue progress dot */}
+        <div className="relative flex items-center gap-[1px] h-5">
+          {waveformBars.map((height, i) => {
+            const barProgress = (i / waveformBars.length) * 100;
+            const isPast = barProgress <= progress;
+            return (
+              <div
+                key={i}
+                className={`w-[2px] rounded-full transition-colors duration-100 ${
+                  isPast 
+                    ? 'bg-[#53bdeb]'
+                    : 'bg-[#8696a0]/40 dark:bg-[#8696a0]/30'
+                }`}
+                style={{ height: `${height}%` }}
+              />
+            );
+          })}
+          
+          {/* Blue progress dot - WhatsApp style */}
+          <div 
+            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[#53bdeb] shadow-sm transition-all duration-100"
+            style={{ 
+              left: `calc(${Math.min(Math.max(dotPosition, 0), 100)}% - 6px)`,
+            }}
+          />
+        </div>
 
-      {/* Duration - WhatsApp style */}
-      <span className="text-[11px] text-[#667781] dark:text-[#8696a0] tabular-nums shrink-0">
-        {formatTime(isPlaying ? currentTime : audioDuration)}
-      </span>
+        {/* Duration - at start, WhatsApp style */}
+        <span className="text-[11px] text-[#667781] dark:text-[#8696a0] tabular-nums">
+          {formatTime(isPlaying ? currentTime : audioDuration)}
+        </span>
+      </div>
     </div>
   );
 }
