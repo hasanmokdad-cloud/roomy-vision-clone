@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import { OwnerFormSkeleton } from "@/components/skeletons/OwnerSkeletons";
 import { VirtualTourGallery } from "@/components/rooms/VirtualTourGallery";
+import { TieredPricingFields } from "@/components/rooms/TieredPricingFields";
 import { EnhancedImageUploader } from "@/components/owner/EnhancedImageUploader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { StudentReservationCard } from "@/components/owner/StudentReservationCard";
@@ -37,6 +38,10 @@ export default function RoomForm() {
     type: "",
     price: "",
     deposit: "",
+    price_1_student: "",
+    price_2_students: "",
+    deposit_1_student: "",
+    deposit_2_students: "",
     capacity: "",
     capacity_occupied: "0",
     area_m2: "",
@@ -124,6 +129,10 @@ export default function RoomForm() {
         type: data.type,
         price: data.price.toString(),
         deposit: data.deposit?.toString() || "",
+        price_1_student: data.price_1_student?.toString() || "",
+        price_2_students: data.price_2_students?.toString() || "",
+        deposit_1_student: data.deposit_1_student?.toString() || "",
+        deposit_2_students: data.deposit_2_students?.toString() || "",
         capacity: data.capacity?.toString() || "",
         capacity_occupied: data.capacity_occupied?.toString() || "0",
         area_m2: data.area_m2?.toString() || "",
@@ -168,6 +177,10 @@ export default function RoomForm() {
         type: formData.type,
         price: parseFloat(formData.price),
         deposit: formData.deposit ? parseFloat(formData.deposit) : null,
+        price_1_student: formData.price_1_student ? parseFloat(formData.price_1_student) : null,
+        price_2_students: formData.price_2_students ? parseFloat(formData.price_2_students) : null,
+        deposit_1_student: formData.deposit_1_student ? parseFloat(formData.deposit_1_student) : null,
+        deposit_2_students: formData.deposit_2_students ? parseFloat(formData.deposit_2_students) : null,
         capacity: formData.capacity ? parseInt(formData.capacity) : null,
         capacity_occupied: formData.capacity_occupied ? parseInt(formData.capacity_occupied) : 0,
         area_m2: formData.area_m2 ? parseFloat(formData.area_m2) : null,
@@ -305,39 +318,16 @@ export default function RoomForm() {
                     </Select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="price">Monthly Price ($) *</Label>
-                      <Input
-                        id="price"
-                        type="number"
-                        step="0.01"
-                        value={formData.price}
-                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                        placeholder="500"
-                        required
-                        className="rounded-xl"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="deposit">Deposit ($)</Label>
-                      <Input
-                        id="deposit"
-                        type="number"
-                        step="0.01"
-                        value={formData.deposit}
-                        onChange={(e) => setFormData({ ...formData, deposit: e.target.value })}
-                        placeholder="200"
-                        className="rounded-xl"
-                      />
-                      {formData.deposit && parseFloat(formData.deposit) > 0 && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Students pay: ${(parseFloat(formData.deposit) * 1.1).toFixed(2)} total
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                  <TieredPricingFields
+                    roomType={formData.type}
+                    price={formData.price}
+                    price1Student={formData.price_1_student}
+                    price2Students={formData.price_2_students}
+                    deposit={formData.deposit}
+                    deposit1Student={formData.deposit_1_student}
+                    deposit2Students={formData.deposit_2_students}
+                    onChange={(field, value) => setFormData({ ...formData, [field]: value })}
+                  />
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>

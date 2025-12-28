@@ -22,6 +22,10 @@ interface EnhancedRoomCardProps {
     type: string;
     price: number;
     deposit?: number;
+    price_1_student?: number;
+    price_2_students?: number;
+    deposit_1_student?: number;
+    deposit_2_students?: number;
     capacity?: number;
     capacity_occupied?: number;
     available?: boolean;
@@ -502,8 +506,36 @@ export function EnhancedRoomCard({
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold gradient-text">${room.price}</div>
-                <div className="text-xs text-foreground/60">per month</div>
+                {/* Show tiered pricing for double/triple rooms */}
+                {(() => {
+                  const lowerType = room.type.toLowerCase();
+                  const isDouble = lowerType.includes('double');
+                  const isTriple = lowerType.includes('triple');
+                  const hasTieredPricing = (isDouble || isTriple) && (room.price_1_student || room.price_2_students);
+                  
+                  if (hasTieredPricing) {
+                    // Find the lowest price to show "Starting from"
+                    const prices = [room.price];
+                    if (room.price_1_student) prices.push(room.price_1_student);
+                    if (room.price_2_students) prices.push(room.price_2_students);
+                    const minPrice = Math.min(...prices);
+                    
+                    return (
+                      <>
+                        <div className="text-xs text-foreground/60">Starting from</div>
+                        <div className="text-2xl font-bold gradient-text">${minPrice}</div>
+                        <div className="text-xs text-foreground/60">per month</div>
+                      </>
+                    );
+                  }
+                  
+                  return (
+                    <>
+                      <div className="text-2xl font-bold gradient-text">${room.price}</div>
+                      <div className="text-xs text-foreground/60">per month</div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
