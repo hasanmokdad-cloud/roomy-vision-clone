@@ -2562,8 +2562,8 @@ export default function Messages() {
       {/* Hide Navbar on mobile, show on desktop */}
       {!isMobile && <RoomyNavbar />}
 
-      {/* Archives Page Overlay - WhatsApp style (mobile and desktop) */}
-      {showArchivedPage && (
+      {/* Archives Page Overlay - Full screen for MOBILE ONLY */}
+      {showArchivedPage && isMobile && (
         <div className="fixed inset-0 z-50 bg-background flex flex-col animate-slide-in-right">
           {/* Header */}
           <div className="flex items-center gap-3 p-4 border-b border-border bg-background sticky top-0 z-10 pt-6">
@@ -2701,97 +2701,38 @@ export default function Messages() {
       >
         {/* Conversations List - Edge-to-edge, no Card wrapper */}
         <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-[420px] border-r border-border bg-background ${isMobile ? 'h-screen' : 'h-[calc(100vh-80px)]'}`}>
-            
-            <div className={`p-4 border-b border-border ${isMobile ? 'pt-6' : ''} space-y-3`}>
-              <div className="flex items-center justify-between w-full">
-                <div className="flex flex-col">
-                  <h2 className={`${isMobile ? 'text-3xl' : 'text-2xl'} font-bold flex items-center gap-2`}>
-                    <MessageSquare className="w-6 h-6" />
-                    Messages
-                  </h2>
-                </div>
+          
+          {/* DESKTOP ARCHIVED VIEW - In-sidebar like WhatsApp */}
+          {showArchivedPage && !isMobile ? (
+            <>
+              {/* Archived header with back arrow */}
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-background">
+                <button 
+                  onClick={() => setShowArchivedPage(false)}
+                  className="p-1 hover:bg-muted/50 rounded-full transition-colors"
+                >
+                  <ArrowLeft className="h-5 w-5 text-foreground" />
+                </button>
+                <span className="text-[17px] font-normal text-foreground">Archived</span>
               </div>
-
-              {/* Search bar for ALL roles */}
-              <FriendSearchBar
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder={activeTab === 'chats' || role !== 'student' ? 'Search messages...' : 'Search students...'}
-              />
               
-              {/* WhatsApp-style small pill filter tabs */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setActiveTab('chats')}
-                  className={`px-3 py-1 text-[13px] rounded-full transition-colors ${
-                    activeTab === 'chats' 
-                      ? 'bg-primary/15 text-primary font-medium' 
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  }`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => {
-                    // Filter to show only unread - for now just stays on chats tab
-                    setActiveTab('chats');
-                  }}
-                  className="px-3 py-1 text-[13px] rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
-                >
-                  Unread
-                </button>
-                {role === 'student' && studentId && (
-                  <button
-                    onClick={() => setActiveTab('friends')}
-                    className={`px-3 py-1 text-[13px] rounded-full transition-colors ${
-                      activeTab === 'friends' 
-                        ? 'bg-primary/15 text-primary font-medium' 
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    }`}
-                  >
-                    Friends
-                  </button>
-                )}
+              {/* Info text like WhatsApp */}
+              <div className="px-4 py-3 text-[13px] text-muted-foreground border-b border-border/50 bg-muted/20">
+                These chats stay archived when new messages are received.
               </div>
-            </div>
-            {activeTab === 'friends' && role === 'student' && studentId ? (
-              <FriendsTab studentId={studentId} searchQuery={searchQuery} highlightStudentId={highlightStudentId} />
-            ) : (
-              <ScrollArea className="flex-1 [&>div>div]:!overflow-visible">
-                {conversations.filter(c => 
-                  !searchQuery || 
-                  c.other_user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  c.last_message?.toLowerCase().includes(searchQuery.toLowerCase())
-                ).length === 0 ? (
+              
+              {/* Scrollable archived chats list */}
+              <ScrollArea className="flex-1">
+                {conversations.filter(c => c.is_archived).length === 0 ? (
                   <div className="p-8 text-center text-foreground/60">
-                    <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No conversations yet</p>
-                    <p className="text-sm mt-2">Start chatting about dorms to see conversations here</p>
+                    <Archive className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No archived chats</p>
                   </div>
                 ) : (
-                  <>
-                    {/* Archived section row - WhatsApp style minimal */}
-                    <button
-                      onClick={() => setShowArchivedPage(true)}
-                      className="w-full flex items-center gap-4 px-4 py-2.5 hover:bg-muted/50 transition-colors"
-                    >
-                      <Archive className="w-[18px] h-[18px] text-primary" />
-                      <span className="flex-1 text-left text-[15px] text-foreground">Archived</span>
-                      <span className="text-[13px] text-muted-foreground">
-                        {conversations.filter(c => c.is_archived).length}
-                      </span>
-                    </button>
-                    
-                    {/* Main conversation list - exclude archived */}
-                    {conversations.filter(c => 
-                      !c.is_archived &&
-                      (!searchQuery || 
-                      c.other_user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      c.last_message?.toLowerCase().includes(searchQuery.toLowerCase()))
-                    ).map((conv) => {
-                      const hasUnread = (conv.unreadCount || 0) > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date());
-                      const timeAgo = conv.last_message_time 
-                        ? formatDistanceToNowStrict(new Date(conv.last_message_time), { addSuffix: false })
+                  conversations.filter(c => c.is_archived).map((conv) => {
+                    const hasUnread = (conv.unreadCount || 0) > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date());
+                    const timeAgo = conv.last_message_time 
+                      ? formatDistanceToNowStrict(new Date(conv.last_message_time), { addSuffix: false })
                           .replace(' seconds', 's')
                           .replace(' second', 's')
                           .replace(' minutes', 'm')
@@ -2806,109 +2747,287 @@ export default function Messages() {
                           .replace(' month', 'mo')
                           .replace(' years', 'y')
                           .replace(' year', 'y')
-                        : '';
-                      
-                      
-                      const chatRowContent = (
-                          <div 
-                            className={`relative group cursor-pointer hover:bg-muted/50 transition-colors ${
-                            selectedConversation === conv.id ? 'bg-muted' : ''
-                          } ${hasUnread ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
-                          onClick={() => {
-                            setSelectedConversation(conv.id);
-                            loadMessages(conv.id);
-                          }}
-                        >
-                          <div className="flex items-center gap-3 px-4 py-3">
-                            {/* Avatar - 56px like Instagram */}
-                            <div className="relative shrink-0">
-                              <Avatar className="w-14 h-14">
-                                <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
-                                <AvatarFallback className="bg-primary/20 text-primary text-lg">
-                                  {conv.other_user_name?.charAt(0) || 'U'}
-                                </AvatarFallback>
-                              </Avatar>
-                              {conv.student_id && <OnlineIndicator userId={conv.student_id} />}
+                      : '';
+
+                    return (
+                      <div 
+                        key={conv.id}
+                        className={`relative group cursor-pointer hover:bg-muted/50 transition-colors ${hasUnread ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
+                        onClick={() => {
+                          setSelectedConversation(conv.id);
+                          loadMessages(conv.id);
+                          setShowArchivedPage(false);
+                        }}
+                      >
+                        <div className="flex items-center gap-3 px-4 py-3">
+                          <div className="relative shrink-0">
+                            <Avatar className="w-14 h-14">
+                              <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
+                              <AvatarFallback className="bg-primary/20 text-primary text-lg">
+                                {conv.other_user_name?.charAt(0) || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
+                              {conv.muted_until && new Date(conv.muted_until) > new Date() && (
+                                <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />
+                              )}
+                              <span className={`text-[14px] truncate ${hasUnread ? 'font-bold text-foreground' : 'font-normal text-foreground'}`}>
+                                {conv.other_user_name}
+                              </span>
                             </div>
                             
-                            {/* Content - Instagram style: name on top, message + time on bottom */}
-                          <div className="flex-1 min-w-0 max-w-[calc(100%-120px)]">
-                              {/* Row 1: Name with icons */}
-                              <div className="flex items-center gap-1.5">
-                                {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
-                                {conv.muted_until && new Date(conv.muted_until) > new Date() && (
-                                  <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />
-                                )}
-                                <span className={`text-[14px] truncate ${hasUnread ? 'font-bold text-foreground' : 'font-normal text-foreground'}`}>
-                                  {conv.other_user_name}
-                                </span>
-                              </div>
-                              
-                              {/* Row 2: Message preview */}
-                              <div className="flex items-center gap-1 mt-0.5 min-w-0">
-                                {conv.last_message_sender_id === userId && (
-                                  <MessageStatusIcon status={conv.last_message_status} />
-                                )}
-                                <p className={`text-sm truncate max-w-[65%] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                                  {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            {/* Right side controls */}
-                            <div className="flex items-center gap-2 shrink-0 ml-2 z-10 overflow-visible">
-                              {/* Timestamp */}
+                            <div className="flex items-center gap-1 mt-0.5 min-w-0">
+                              {conv.last_message_sender_id === userId && (
+                                <MessageStatusIcon status={conv.last_message_status} />
+                              )}
+                              <p className={`text-sm truncate max-w-[65%] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                                {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
+                              </p>
                               {timeAgo && (
-                                <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">{timeAgo}</span>
-                              )}
-                              {/* Blue dot for unread */}
-                              {hasUnread && (
-                                <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                              )}
-                              
-                              {/* Three-dots context menu - DESKTOP ONLY, always visible */}
-                              {!isMobile && (
-                                <div onClick={(e) => e.stopPropagation()}>
-                                  <ConversationContextMenu
-                                    conversationId={conv.id}
-                                    isPinned={conv.is_pinned || false}
-                                    isArchived={conv.is_archived || false}
-                                    mutedUntil={conv.muted_until || null}
-                                    onUpdate={() => loadConversations()}
-                                  />
-                                </div>
+                                <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap ml-1">· {timeAgo}</span>
                               )}
                             </div>
                           </div>
+                          
+                          <div className="flex items-center gap-2 shrink-0 ml-2">
+                            {hasUnread && (
+                              <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                            )}
+                            
+                            {/* Three-dots context menu for archived chats */}
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <ConversationContextMenu
+                                conversationId={conv.id}
+                                isPinned={conv.is_pinned || false}
+                                isArchived={conv.is_archived || false}
+                                mutedUntil={conv.muted_until || null}
+                                onUpdate={() => loadConversations()}
+                              />
+                            </div>
+                          </div>
                         </div>
-                      );
-                      
-                      // On mobile, wrap with SwipeableChatRow
-                      if (isMobile) {
-                        return (
-                          <SwipeableChatRow
-                            key={conv.id}
-                            conversationId={conv.id}
-                            isPinned={conv.is_pinned || false}
-                            isArchived={conv.is_archived || false}
-                            hasUnread={hasUnread}
-                            onPin={() => handlePinConversation(conv.id, conv.is_pinned || false)}
-                            onArchive={() => handleArchiveConversation(conv.id, conv.is_archived || false)}
-                            onMore={() => setMoreActionConversation(conv)}
-                            onMarkRead={() => handleMarkConversationRead(conv.id)}
-                          >
-                            {chatRowContent}
-                          </SwipeableChatRow>
-                        );
-                      }
-                      
-                      // On desktop, render without swipe wrapper
-                      return <div key={conv.id}>{chatRowContent}</div>;
-                    })}
-                  </>
+                      </div>
+                    );
+                  })
                 )}
               </ScrollArea>
-            )}
+            </>
+          ) : (
+            <>
+              {/* NORMAL VIEW - Messages header + tabs + chats */}
+              <div className={`p-4 border-b border-border ${isMobile ? 'pt-6' : ''} space-y-3`}>
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex flex-col">
+                    <h2 className={`${isMobile ? 'text-3xl' : 'text-2xl'} font-bold flex items-center gap-2`}>
+                      <MessageSquare className="w-6 h-6" />
+                      Messages
+                    </h2>
+                  </div>
+                </div>
+
+                {/* Search bar for ALL roles */}
+                <FriendSearchBar
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  placeholder={activeTab === 'chats' || role !== 'student' ? 'Search messages...' : 'Search students...'}
+                />
+                
+                {/* WhatsApp-style small pill filter tabs */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setActiveTab('chats')}
+                    className={`px-3 py-1 text-[13px] rounded-full transition-colors ${
+                      activeTab === 'chats' 
+                        ? 'bg-primary/15 text-primary font-medium' 
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Filter to show only unread - for now just stays on chats tab
+                      setActiveTab('chats');
+                    }}
+                    className="px-3 py-1 text-[13px] rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                  >
+                    Unread
+                  </button>
+                  {role === 'student' && studentId && (
+                    <button
+                      onClick={() => setActiveTab('friends')}
+                      className={`px-3 py-1 text-[13px] rounded-full transition-colors ${
+                        activeTab === 'friends' 
+                          ? 'bg-primary/15 text-primary font-medium' 
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      }`}
+                    >
+                      Friends
+                    </button>
+                  )}
+                </div>
+              </div>
+              {activeTab === 'friends' && role === 'student' && studentId ? (
+                <FriendsTab studentId={studentId} searchQuery={searchQuery} highlightStudentId={highlightStudentId} />
+              ) : (
+                <ScrollArea className="flex-1 [&>div>div]:!overflow-visible">
+                  {conversations.filter(c => 
+                    !searchQuery || 
+                    c.other_user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    c.last_message?.toLowerCase().includes(searchQuery.toLowerCase())
+                  ).length === 0 ? (
+                    <div className="p-8 text-center text-foreground/60">
+                      <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No conversations yet</p>
+                      <p className="text-sm mt-2">Start chatting about dorms to see conversations here</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Archived section row - WhatsApp style minimal */}
+                      <button
+                        onClick={() => setShowArchivedPage(true)}
+                        className="w-full flex items-center gap-4 px-4 py-2.5 hover:bg-muted/50 transition-colors"
+                      >
+                        <Archive className="w-[18px] h-[18px] text-primary" />
+                        <span className="flex-1 text-left text-[15px] text-foreground">Archived</span>
+                        <span className="text-[13px] text-muted-foreground">
+                          {conversations.filter(c => c.is_archived).length}
+                        </span>
+                      </button>
+                      
+                      {/* Main conversation list - exclude archived */}
+                      {conversations.filter(c => 
+                        !c.is_archived &&
+                        (!searchQuery || 
+                        c.other_user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        c.last_message?.toLowerCase().includes(searchQuery.toLowerCase()))
+                      ).map((conv) => {
+                        const hasUnread = (conv.unreadCount || 0) > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date());
+                        const timeAgo = conv.last_message_time 
+                          ? formatDistanceToNowStrict(new Date(conv.last_message_time), { addSuffix: false })
+                            .replace(' seconds', 's')
+                            .replace(' second', 's')
+                            .replace(' minutes', 'm')
+                            .replace(' minute', 'm')
+                            .replace(' hours', 'h')
+                            .replace(' hour', 'h')
+                            .replace(' days', 'd')
+                            .replace(' day', 'd')
+                            .replace(' weeks', 'w')
+                            .replace(' week', 'w')
+                            .replace(' months', 'mo')
+                            .replace(' month', 'mo')
+                            .replace(' years', 'y')
+                            .replace(' year', 'y')
+                          : '';
+                        
+                        
+                        const chatRowContent = (
+                            <div 
+                              className={`relative group cursor-pointer hover:bg-muted/50 transition-colors ${
+                              selectedConversation === conv.id ? 'bg-muted' : ''
+                            } ${hasUnread ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
+                            onClick={() => {
+                              setSelectedConversation(conv.id);
+                              loadMessages(conv.id);
+                            }}
+                          >
+                            <div className="flex items-center gap-3 px-4 py-3">
+                              {/* Avatar - 56px like Instagram */}
+                              <div className="relative shrink-0">
+                                <Avatar className="w-14 h-14">
+                                  <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
+                                  <AvatarFallback className="bg-primary/20 text-primary text-lg">
+                                    {conv.other_user_name?.charAt(0) || 'U'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {conv.student_id && <OnlineIndicator userId={conv.student_id} />}
+                              </div>
+                              
+                              {/* Content - Instagram style: name on top, message + time on bottom */}
+                            <div className="flex-1 min-w-0 max-w-[calc(100%-120px)]">
+                                {/* Row 1: Name with icons */}
+                                <div className="flex items-center gap-1.5">
+                                  {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
+                                  {conv.muted_until && new Date(conv.muted_until) > new Date() && (
+                                    <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />
+                                  )}
+                                  <span className={`text-[14px] truncate ${hasUnread ? 'font-bold text-foreground' : 'font-normal text-foreground'}`}>
+                                    {conv.other_user_name}
+                                  </span>
+                                </div>
+                                
+                                {/* Row 2: Message preview */}
+                                <div className="flex items-center gap-1 mt-0.5 min-w-0">
+                                  {conv.last_message_sender_id === userId && (
+                                    <MessageStatusIcon status={conv.last_message_status} />
+                                  )}
+                                  <p className={`text-sm truncate max-w-[65%] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                                    {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              {/* Right side controls */}
+                              <div className="flex items-center gap-2 shrink-0 ml-2 z-10 overflow-visible">
+                                {/* Timestamp */}
+                                {timeAgo && (
+                                  <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">{timeAgo}</span>
+                                )}
+                                {/* Blue dot for unread */}
+                                {hasUnread && (
+                                  <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                                )}
+                                
+                                {/* Three-dots context menu - DESKTOP ONLY, always visible */}
+                                {!isMobile && (
+                                  <div onClick={(e) => e.stopPropagation()}>
+                                    <ConversationContextMenu
+                                      conversationId={conv.id}
+                                      isPinned={conv.is_pinned || false}
+                                      isArchived={conv.is_archived || false}
+                                      mutedUntil={conv.muted_until || null}
+                                      onUpdate={() => loadConversations()}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                        
+                        // On mobile, wrap with SwipeableChatRow
+                        if (isMobile) {
+                          return (
+                            <SwipeableChatRow
+                              key={conv.id}
+                              conversationId={conv.id}
+                              isPinned={conv.is_pinned || false}
+                              isArchived={conv.is_archived || false}
+                              hasUnread={hasUnread}
+                              onPin={() => handlePinConversation(conv.id, conv.is_pinned || false)}
+                              onArchive={() => handleArchiveConversation(conv.id, conv.is_archived || false)}
+                              onMore={() => setMoreActionConversation(conv)}
+                              onMarkRead={() => handleMarkConversationRead(conv.id)}
+                            >
+                              {chatRowContent}
+                            </SwipeableChatRow>
+                          );
+                        }
+                        
+                        // On desktop, render without swipe wrapper
+                        return <div key={conv.id}>{chatRowContent}</div>;
+                      })}
+                    </>
+                  )}
+                </ScrollArea>
+              )}
+            </>
+          )}
         </div>
 
         {/* Chat Window - Edge-to-edge, no Card wrapper */}
