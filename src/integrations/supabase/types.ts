@@ -3085,6 +3085,8 @@ export type Database = {
           capacity_occupied: number | null
           created_at: string
           deposit: number | null
+          deposit_1_student: number | null
+          deposit_2_students: number | null
           description: string | null
           dorm_id: string
           id: string
@@ -3092,6 +3094,8 @@ export type Database = {
           name: string
           panorama_urls: string[] | null
           price: number
+          price_1_student: number | null
+          price_2_students: number | null
           roomy_confirmed_occupants: number | null
           three_d_model_url: string | null
           type: string
@@ -3105,6 +3109,8 @@ export type Database = {
           capacity_occupied?: number | null
           created_at?: string
           deposit?: number | null
+          deposit_1_student?: number | null
+          deposit_2_students?: number | null
           description?: string | null
           dorm_id: string
           id?: string
@@ -3112,6 +3118,8 @@ export type Database = {
           name: string
           panorama_urls?: string[] | null
           price: number
+          price_1_student?: number | null
+          price_2_students?: number | null
           roomy_confirmed_occupants?: number | null
           three_d_model_url?: string | null
           type: string
@@ -3125,6 +3133,8 @@ export type Database = {
           capacity_occupied?: number | null
           created_at?: string
           deposit?: number | null
+          deposit_1_student?: number | null
+          deposit_2_students?: number | null
           description?: string | null
           dorm_id?: string
           id?: string
@@ -3132,6 +3142,8 @@ export type Database = {
           name?: string
           panorama_urls?: string[] | null
           price?: number
+          price_1_student?: number | null
+          price_2_students?: number | null
           roomy_confirmed_occupants?: number | null
           three_d_model_url?: string | null
           type?: string

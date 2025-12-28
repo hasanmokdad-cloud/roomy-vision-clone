@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
+import { TieredPricingFields } from '@/components/rooms/TieredPricingFields';
 
 interface RoomEditModalProps {
   room: any;
@@ -26,8 +27,12 @@ export default function RoomEditModal({ room, isOpen, onClose, onUpdate }: RoomE
   const [formData, setFormData] = useState({
     name: room.name || '',
     type: room.type || 'Single',
-    price: room.price || 0,
-    deposit: room.deposit || 0,
+    price: room.price?.toString() || '0',
+    deposit: room.deposit?.toString() || '0',
+    price_1_student: room.price_1_student?.toString() || '',
+    price_2_students: room.price_2_students?.toString() || '',
+    deposit_1_student: room.deposit_1_student?.toString() || '',
+    deposit_2_students: room.deposit_2_students?.toString() || '',
     capacity: room.capacity || 1,
     area_m2: room.area_m2 || 0,
     description: room.description || '',
@@ -42,8 +47,12 @@ export default function RoomEditModal({ room, isOpen, onClose, onUpdate }: RoomE
         .update({
           name: formData.name,
           type: formData.type,
-          price: formData.price,
-          deposit: formData.deposit,
+          price: parseFloat(formData.price) || 0,
+          deposit: parseFloat(formData.deposit) || 0,
+          price_1_student: formData.price_1_student ? parseFloat(formData.price_1_student) : null,
+          price_2_students: formData.price_2_students ? parseFloat(formData.price_2_students) : null,
+          deposit_1_student: formData.deposit_1_student ? parseFloat(formData.deposit_1_student) : null,
+          deposit_2_students: formData.deposit_2_students ? parseFloat(formData.deposit_2_students) : null,
           capacity: formData.capacity,
           area_m2: formData.area_m2,
           description: formData.description,
@@ -115,31 +124,16 @@ export default function RoomEditModal({ room, isOpen, onClose, onUpdate }: RoomE
             </div>
 
             {/* Pricing */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="price">Monthly Price ($)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="deposit">Deposit ($)</Label>
-                <Input
-                  id="deposit"
-                  type="number"
-                  value={formData.deposit}
-                  onChange={(e) => setFormData({ ...formData, deposit: Number(e.target.value) })}
-                />
-                {formData.deposit > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Students pay: ${(formData.deposit * 1.1).toFixed(2)} total
-                  </p>
-                )}
-              </div>
-            </div>
+            <TieredPricingFields
+              roomType={formData.type}
+              price={formData.price}
+              price1Student={formData.price_1_student}
+              price2Students={formData.price_2_students}
+              deposit={formData.deposit}
+              deposit1Student={formData.deposit_1_student}
+              deposit2Students={formData.deposit_2_students}
+              onChange={(field, value) => setFormData({ ...formData, [field]: value })}
+            />
 
             {/* Capacity & Area */}
             <div className="grid grid-cols-2 gap-4">

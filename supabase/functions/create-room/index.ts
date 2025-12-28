@@ -13,6 +13,10 @@ interface RoomData {
   type: string;
   price: number;
   deposit?: number;
+  price_1_student?: number;
+  price_2_students?: number;
+  deposit_1_student?: number;
+  deposit_2_students?: number;
   capacity?: number;
   capacity_occupied?: number;
   area_m2?: number;
@@ -107,6 +111,10 @@ serve(async (req) => {
           type: roomData.type,
           price: roomData.price,
           deposit: roomData.deposit || null,
+          price_1_student: roomData.price_1_student || null,
+          price_2_students: roomData.price_2_students || null,
+          deposit_1_student: roomData.deposit_1_student || null,
+          deposit_2_students: roomData.deposit_2_students || null,
           capacity: roomData.capacity || null,
           capacity_occupied: roomData.capacity_occupied || 0,
           area_m2: roomData.area_m2 || null,
@@ -135,6 +143,10 @@ serve(async (req) => {
           type: roomData.type,
           price: roomData.price,
           deposit: roomData.deposit || null,
+          price_1_student: roomData.price_1_student || null,
+          price_2_students: roomData.price_2_students || null,
+          deposit_1_student: roomData.deposit_1_student || null,
+          deposit_2_students: roomData.deposit_2_students || null,
           capacity: roomData.capacity || null,
           capacity_occupied: roomData.capacity_occupied || 0,
           area_m2: roomData.area_m2 || null,
