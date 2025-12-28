@@ -94,6 +94,8 @@ export function MessageBubble({
   const [showReactionBar, setShowReactionBar] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [reactionPosition, setReactionPosition] = useState<'top' | 'bottom'>('top');
+  const [emojiPickerAnchor, setEmojiPickerAnchor] = useState<{x: number, y: number} | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showTranslateModal, setShowTranslateModal] = useState(false);
   const [showActionOverlay, setShowActionOverlay] = useState(false);
@@ -348,6 +350,21 @@ export function MessageBubble({
   // Right-click detection for desktop
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
+    handleShowReactionBar();
+  };
+
+  // Show reaction bar with smart positioning
+  const handleShowReactionBar = () => {
+    if (bubbleRef.current) {
+      const rect = bubbleRef.current.getBoundingClientRect();
+      // If less than 80px from top of viewport, show below the message
+      setReactionPosition(rect.top < 80 ? 'bottom' : 'top');
+      // Store anchor for emoji picker
+      setEmojiPickerAnchor({
+        x: isSender ? rect.left : rect.right,
+        y: rect.top
+      });
+    }
     setShowReactionBar(true);
   };
 
@@ -489,7 +506,7 @@ export function MessageBubble({
       onContextMenu={(e) => {
         e.preventDefault();
         if (!isMobile) {
-          setShowReactionBar(true);
+          handleShowReactionBar();
         }
       }}
     >
@@ -501,7 +518,18 @@ export function MessageBubble({
       )}
 
       <div className="relative max-w-xs md:max-w-md">
-        {/* Reaction Bar - appears ABOVE message */}
+        {/* Backdrop for click-outside on reaction bar */}
+        {showReactionBar && (
+          <div 
+            className="fixed inset-0 z-40" 
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowReactionBar(false);
+            }} 
+          />
+        )}
+
+        {/* Reaction Bar - appears above or below message based on viewport position */}
         {showReactionBar && (
           <ReactionBar
             onReactionSelect={handleReactionSelect}
@@ -513,6 +541,7 @@ export function MessageBubble({
               .filter((r) => r.user_id === userId)
               .map((r) => r.emoji)}
             isSender={isSender}
+            position={reactionPosition}
           />
         )}
 
@@ -524,7 +553,7 @@ export function MessageBubble({
               variant="ghost"
               size="icon"
               className="opacity-0 group-hover:opacity-100 h-6 w-6 mt-1 transition-opacity flex-shrink-0"
-              onClick={() => setShowReactionBar(!showReactionBar)}
+              onClick={() => showReactionBar ? setShowReactionBar(false) : handleShowReactionBar()}
             >
               <Smile className="h-4 w-4" />
             </Button>
@@ -671,6 +700,7 @@ export function MessageBubble({
           onOpenChange={setShowEmojiPicker}
           onEmojiSelect={handleReactionSelect}
           mode="reaction"
+          anchorPosition={emojiPickerAnchor}
         />
 
         {/* Message Info Sheet */}

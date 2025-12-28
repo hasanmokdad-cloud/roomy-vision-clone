@@ -2436,6 +2436,19 @@ export default function Messages() {
                           {hasUnread && (
                             <div className="w-2.5 h-2.5 rounded-full bg-primary" />
                           )}
+                          
+                          {/* Three-dots context menu for archived chats */}
+                          {!isMobile && (
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <ConversationContextMenu
+                                conversationId={conv.id}
+                                isPinned={conv.is_pinned || false}
+                                isArchived={conv.is_archived || false}
+                                mutedUntil={conv.muted_until || null}
+                                onUpdate={() => loadConversations()}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
