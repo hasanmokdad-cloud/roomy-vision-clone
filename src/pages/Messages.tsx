@@ -2700,13 +2700,13 @@ export default function Messages() {
         } : undefined}
       >
         {/* Conversations List - Edge-to-edge, no Card wrapper */}
-        <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-[420px] border-r border-border bg-white ${isMobile ? 'h-screen' : 'h-[calc(100vh-80px)]'}`}>
+        <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full md:w-[420px] border-r border-border bg-white dark:bg-[#111b21] ${isMobile ? 'h-screen' : 'h-[calc(100vh-80px)]'}`}>
           
           {/* DESKTOP ARCHIVED VIEW - In-sidebar like WhatsApp */}
           {showArchivedPage && !isMobile ? (
             <>
               {/* Archived header with back arrow */}
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-background">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-border dark:border-[#222d34] bg-white dark:bg-[#202c33]">
                 <button 
                   onClick={() => setShowArchivedPage(false)}
                   className="p-1 hover:bg-muted/50 rounded-full transition-colors"
@@ -2717,7 +2717,7 @@ export default function Messages() {
               </div>
               
               {/* Info text like WhatsApp */}
-              <div className="px-4 py-3 text-[13px] text-muted-foreground border-b border-border/50 bg-muted/20">
+              <div className="px-4 py-3 text-[13px] text-muted-foreground border-b border-border/50 dark:border-[#222d34] bg-muted/20 dark:bg-[#182229]">
                 These chats stay archived when new messages are received.
               </div>
               
@@ -2842,8 +2842,8 @@ export default function Messages() {
                     onClick={() => setActiveTab('chats')}
                     className={`px-3 py-1 text-[13px] rounded-full transition-colors ${
                       activeTab === 'chats' 
-                        ? 'bg-primary/15 text-primary font-medium' 
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        ? 'bg-primary/15 dark:bg-[#00a884]/20 text-primary dark:text-[#00a884] font-medium' 
+                        : 'bg-muted dark:bg-[#202c33] text-muted-foreground hover:bg-muted/80 dark:hover:bg-[#2a3942]'
                     }`}
                   >
                     All
@@ -2853,7 +2853,7 @@ export default function Messages() {
                       // Filter to show only unread - for now just stays on chats tab
                       setActiveTab('chats');
                     }}
-                    className="px-3 py-1 text-[13px] rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                    className="px-3 py-1 text-[13px] rounded-full bg-muted dark:bg-[#202c33] text-muted-foreground hover:bg-muted/80 dark:hover:bg-[#2a3942] transition-colors"
                   >
                     Unread
                   </button>
@@ -2862,8 +2862,8 @@ export default function Messages() {
                       onClick={() => setActiveTab('friends')}
                       className={`px-3 py-1 text-[13px] rounded-full transition-colors ${
                         activeTab === 'friends' 
-                          ? 'bg-primary/15 text-primary font-medium' 
-                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                          ? 'bg-primary/15 dark:bg-[#00a884]/20 text-primary dark:text-[#00a884] font-medium' 
+                          : 'bg-muted dark:bg-[#202c33] text-muted-foreground hover:bg-muted/80 dark:hover:bg-[#2a3942]'
                       }`}
                     >
                       Friends
@@ -3154,7 +3154,7 @@ export default function Messages() {
                 {/* Chat Messages - Native scroll on mobile for smooth touch scrolling */}
                 {isMobile ? (
                   <div 
-                    className="flex-1 overflow-y-auto overscroll-contain p-4 bg-[#efeae2]"
+                    className="flex-1 overflow-y-auto overscroll-contain p-4 bg-[#efeae2] dark:bg-[#0b141a] relative"
                     style={{ 
                       WebkitOverflowScrolling: 'touch',
                       backgroundImage: 'url(/images/chat-bg-mobile.jpg)',
@@ -3163,6 +3163,8 @@ export default function Messages() {
                       backgroundRepeat: 'no-repeat'
                     }}
                   >
+                    {/* Dark mode overlay for doodle pattern */}
+                    <div className="absolute inset-0 bg-transparent dark:bg-[#0b141a]/85 pointer-events-none" />
                     <div className="space-y-4">
                       {/* Pinned Messages Banner */}
                       {pinnedMessages.length > 0 && (
@@ -3246,7 +3248,7 @@ export default function Messages() {
                   </div>
                 ) : (
                   <ScrollArea 
-                    className="flex-1 overflow-hidden p-4 bg-[#efeae2]"
+                    className="flex-1 overflow-hidden p-4 bg-[#efeae2] dark:bg-[#0b141a] relative"
                     style={{ 
                       backgroundImage: 'url(/images/chat-bg-desktop.jpg)',
                       backgroundSize: 'cover',
@@ -3254,6 +3256,8 @@ export default function Messages() {
                       backgroundRepeat: 'no-repeat'
                     }}
                   >
+                    {/* Dark mode overlay for doodle pattern */}
+                    <div className="absolute inset-0 bg-transparent dark:bg-[#0b141a]/85 pointer-events-none z-0" />
                     <div className="space-y-4">
                       {/* Pinned Messages Banner */}
                       {pinnedMessages.length > 0 && (
@@ -3338,7 +3342,7 @@ export default function Messages() {
                 )}
 
                 <div 
-                  className={`${isMobile ? 'p-3 shrink-0 bg-background z-20' : 'p-4 bg-[#f0f2f5]'}`}
+                  className={`${isMobile ? 'p-3 shrink-0 bg-background dark:bg-[#202c33] z-20' : 'p-4 bg-[#f0f2f5] dark:bg-[#202c33]'}`}
                   style={isMobile ? { paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' } : undefined}
                 >
                   {/* Voice Recording Overlay - rendered inline to inherit safe area positioning */}
@@ -3598,7 +3602,7 @@ export default function Messages() {
                   ) : (
                     /* Desktop: WhatsApp-style unified rounded container */
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 flex items-center bg-white rounded-lg px-2 py-1">
+                      <div className="flex-1 flex items-center bg-white dark:bg-[#2a3942] rounded-lg px-2 py-1">
                         {/* Plus button inside container */}
                         <button
                           type="button"
