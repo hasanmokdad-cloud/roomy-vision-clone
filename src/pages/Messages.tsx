@@ -335,6 +335,21 @@ export default function Messages() {
   // Start heartbeat for online status
   useOnlineStatus(userId, selectedConversation || undefined);
 
+  // Handle conversation from URL query parameter
+  useEffect(() => {
+    if (!userId) return;
+    
+    const urlParams = new URLSearchParams(location.search);
+    const conversationIdFromUrl = urlParams.get('conversation');
+    
+    if (conversationIdFromUrl && conversationIdFromUrl !== selectedConversation) {
+      setSelectedConversation(conversationIdFromUrl);
+      loadMessages(conversationIdFromUrl);
+      // Clean up URL to prevent reloading on refresh
+      navigate('/messages', { replace: true });
+    }
+  }, [userId, location.search]);
+
   // Handle auto-open from navigation state
   useEffect(() => {
     if (!userId) return;

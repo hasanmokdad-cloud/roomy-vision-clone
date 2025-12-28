@@ -142,7 +142,10 @@ export function FriendsTab({ studentId, searchQuery = '' }: FriendsTabProps) {
         currentUser.user_id,
         friendUser.user_id
       );
-      navigate(`/messages?conversation=${conversationId}`);
+      // Use navigation state which Messages.tsx handles
+      navigate('/messages', { 
+        state: { selectedConversationId: conversationId }
+      });
     }
   };
 
