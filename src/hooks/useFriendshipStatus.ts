@@ -17,15 +17,6 @@ export function useFriendshipStatus(
   const [friendshipId, setFriendshipId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!currentStudentId || !otherStudentId || currentStudentId === otherStudentId) {
-      setLoading(false);
-      return;
-    }
-
-    checkFriendshipStatus();
-  }, [currentStudentId, otherStudentId]);
-
   const checkFriendshipStatus = async () => {
     if (!currentStudentId || !otherStudentId) return;
 
@@ -71,6 +62,48 @@ export function useFriendshipStatus(
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!currentStudentId || !otherStudentId || currentStudentId === otherStudentId) {
+      setLoading(false);
+      return;
+    }
+
+    checkFriendshipStatus();
+
+    // Subscribe to real-time updates for friendships table
+    const channel = supabase
+      .channel(`friendship-${currentStudentId}-${otherStudentId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friendships',
+        },
+        (payload) => {
+          const record = (payload.new || payload.old) as {
+            requester_id?: string;
+            receiver_id?: string;
+          } | null;
+          
+          // Only refresh if this update involves our users
+          if (
+            record &&
+            ((record.requester_id === currentStudentId && record.receiver_id === otherStudentId) ||
+             (record.requester_id === otherStudentId && record.receiver_id === currentStudentId))
+          ) {
+            console.log('[useFriendshipStatus] Real-time update detected, refreshing...');
+            checkFriendshipStatus();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentStudentId, otherStudentId]);
 
   return {
     status,
