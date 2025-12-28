@@ -13,6 +13,11 @@ import { supabase } from '@/integrations/supabase/client';
 interface NotificationMetadata {
   type?: string;
   student_id?: string;
+  conversation_id?: string;
+  sender_id?: string;
+  dorm_id?: string;
+  room_id?: string;
+  claim_id?: string;
   [key: string]: unknown;
 }
 
@@ -161,12 +166,31 @@ export function NotificationBellPopover({
       case 'friend_request':
       case 'friend_accepted':
         // Navigate to Messages → Friends tab → highlight the student
+        console.log('[NotificationBellPopover] Friend notification click, student_id:', metadata.student_id);
         navigate('/messages', { 
           state: { 
             activeTab: 'friends',
             highlightStudentId: metadata.student_id 
           }
         });
+        break;
+      case 'message':
+        // Navigate to Messages and open the specific conversation
+        if (metadata.conversation_id) {
+          console.log('[NotificationBellPopover] Message notification click, conversation_id:', metadata.conversation_id);
+          navigate('/messages', { 
+            state: { 
+              selectedConversationId: metadata.conversation_id 
+            }
+          });
+        }
+        break;
+      case 'room_claim_confirmed':
+        // Navigate to the dorm page
+        if (metadata.dorm_id) {
+          console.log('[NotificationBellPopover] Room claim notification click, dorm_id:', metadata.dorm_id);
+          navigate(`/dorm/${metadata.dorm_id}`);
+        }
         break;
       default:
         break;

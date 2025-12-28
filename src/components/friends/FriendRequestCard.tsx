@@ -30,6 +30,7 @@ export function FriendRequestCard({
   );
   
   const isHighlighted = highlightStudentId === requester?.id;
+  console.log('[FriendRequestCard] highlightStudentId:', highlightStudentId, 'requester.id:', requester?.id, 'isHighlighted:', isHighlighted);
 
   if (!requester) return null;
 

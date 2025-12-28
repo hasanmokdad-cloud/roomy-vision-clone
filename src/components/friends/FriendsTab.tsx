@@ -32,6 +32,7 @@ interface StudentDirectory {
 }
 
 export function FriendsTab({ studentId, searchQuery = '', highlightStudentId }: FriendsTabProps) {
+  console.log('[FriendsTab] highlightStudentId:', highlightStudentId);
   const navigate = useNavigate();
   const {
     friends,
