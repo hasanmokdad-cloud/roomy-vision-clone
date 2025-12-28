@@ -90,33 +90,43 @@ export function VoiceWaveform({ audioUrl, duration, isSender = false, messageId,
     );
   }
 
+  // Generate stable waveform bars (seeded by audioUrl hash)
+  const waveformBars = Array.from({ length: 40 }).map((_, i) => {
+    const seed = (i * 7 + audioUrl.length) % 100;
+    return 20 + Math.sin(i * 0.4 + seed * 0.1) * 15 + (seed % 20);
+  });
+
   return (
-    <div className={`flex items-center gap-2 min-w-[240px] ${isSender ? 'text-primary-foreground' : 'text-foreground'}`}>
-      <Button
-        variant="ghost"
-        size="icon"
-        className={`h-8 w-8 rounded-full shrink-0 ${isSender ? 'hover:bg-primary-foreground/20' : 'hover:bg-muted'}`}
+    <div className={`flex items-center gap-3 min-w-[200px] ${isSender ? 'text-[#111b21] dark:text-[#e9edef]' : 'text-[#111b21] dark:text-[#e9edef]'}`}>
+      {/* WhatsApp-style circular play button */}
+      <button
         onClick={togglePlayPause}
+        className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+          isSender 
+            ? 'bg-[#25d366] hover:bg-[#1fbc5a] text-white' 
+            : 'bg-[#00a884] hover:bg-[#008f72] text-white'
+        }`}
       >
         {isPlaying ? (
-          <Pause className="h-4 w-4" fill="currentColor" />
+          <Pause className="h-5 w-5" fill="currentColor" />
         ) : (
-          <Play className="h-4 w-4" fill="currentColor" />
+          <Play className="h-5 w-5 ml-0.5" fill="currentColor" />
         )}
-      </Button>
+      </button>
 
-      {/* Waveform visualization */}
-      <div className="flex-1 flex items-center gap-0.5 h-8">
-        {Array.from({ length: 40 }).map((_, i) => {
-          const height = 30 + Math.sin(i * 0.5) * 20 + Math.random() * 10;
+      {/* Horizontal waveform visualization */}
+      <div className="flex-1 flex items-center gap-[2px] h-6">
+        {waveformBars.map((height, i) => {
           const isPast = (i / 40) * 100 <= progress;
           return (
             <div
               key={i}
-              className={`w-0.5 rounded-full transition-all duration-100 ${
+              className={`w-[3px] rounded-full transition-colors duration-100 ${
                 isPast 
-                  ? isSender ? 'bg-primary-foreground' : 'bg-primary'
-                  : isSender ? 'bg-primary-foreground/30' : 'bg-muted-foreground/30'
+                  ? 'bg-[#25d366] dark:bg-[#25d366]'
+                  : isSender 
+                    ? 'bg-[#8696a0]/50 dark:bg-[#8696a0]/40' 
+                    : 'bg-[#8696a0]/50 dark:bg-[#8696a0]/40'
               }`}
               style={{ height: `${height}%` }}
             />
@@ -124,8 +134,8 @@ export function VoiceWaveform({ audioUrl, duration, isSender = false, messageId,
         })}
       </div>
 
-      {/* Duration */}
-      <span className={`text-xs tabular-nums shrink-0 ${isSender ? 'opacity-90' : 'opacity-70'}`}>
+      {/* Duration - WhatsApp style */}
+      <span className="text-[11px] text-[#667781] dark:text-[#8696a0] tabular-nums shrink-0">
         {formatTime(isPlaying ? currentTime : audioDuration)}
       </span>
     </div>

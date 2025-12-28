@@ -511,6 +511,16 @@
     background-size: 420px auto;
     background-position: center;
     transition: background-color 0.3s ease-in-out;
+    position: relative;
+    padding-left: 60px;
+    padding-right: 60px;
+  }
+
+  @media (max-width: 768px) {
+    .chat-background-container {
+      padding-left: 12px;
+      padding-right: 12px;
+    }
   }
 
   .chat-background-container::before {
@@ -520,6 +530,40 @@
     background-color: hsl(var(--chat-bg-overlay));
     pointer-events: none;
     transition: background-color 0.3s ease-in-out;
+  }
+
+  /* WhatsApp-style left scrollbar */
+  .whatsapp-scrollbar {
+    direction: rtl;
+  }
+
+  .whatsapp-scrollbar > * {
+    direction: ltr;
+  }
+
+  .whatsapp-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .whatsapp-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .whatsapp-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+  }
+
+  .whatsapp-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  .dark .whatsapp-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .dark .whatsapp-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
   }
 
   /* Smooth theme transitions for chat elements */

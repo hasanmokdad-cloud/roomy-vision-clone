@@ -485,15 +485,15 @@ export function MessageBubble({
     return 'sent';
   };
 
-  // MessageStatusIcon component
+  // MessageStatusIcon component - WhatsApp style
   const MessageStatusIcon = ({ status }: { status: 'sent' | 'delivered' | 'seen' }) => {
     switch (status) {
       case 'sent':
-        return <Check className="w-3 h-3 opacity-70" />;
+        return <Check className="w-[15px] h-[15px] text-[#8696a0]" />;
       case 'delivered':
-        return <CheckCheck className="w-3 h-3 opacity-70" />;
+        return <CheckCheck className="w-[15px] h-[15px] text-[#8696a0]" />;
       case 'seen':
-        return <CheckCheck className="w-3 h-3 text-blue-500" />;
+        return <CheckCheck className="w-[15px] h-[15px] text-[#53bdeb]" />;
       default:
         return null;
     }
@@ -538,7 +538,7 @@ export function MessageBubble({
   return (
     <div
       ref={messageRef}
-      className={`flex ${isSender ? "justify-end" : "justify-start"} mb-4 group relative chat-message-bubble`}
+      className={`flex ${isSender ? "justify-end" : "justify-start"} mb-1 group relative chat-message-bubble`}
       onTouchStart={isMobile ? handleTouchStart : undefined}
       onTouchMove={isMobile ? handleTouchMove : undefined}
       onTouchEnd={isMobile ? handleTouchEnd : undefined}
@@ -556,7 +556,7 @@ export function MessageBubble({
         </Avatar>
       )}
 
-      <div className="relative max-w-xs md:max-w-md">
+      <div className="relative max-w-[65%]">
         {/* Backdrop for click-outside on reaction bar */}
         {showReactionBar && (
           <div 
@@ -598,13 +598,13 @@ export function MessageBubble({
             </Button>
           )}
 
-          {/* Message Bubble */}
+          {/* Message Bubble - WhatsApp style */}
           <div
             ref={bubbleRef}
-            className={`relative rounded-lg px-4 py-2 ${
+            className={`relative px-[14px] py-[8px] shadow-sm ${
               isSender
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-foreground"
+                ? "bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-[18px] rounded-tr-[4px]"
+                : "bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-[18px] rounded-tl-[4px]"
             }`}
           >
             {/* Dropdown Arrow - INSIDE bubble */}
@@ -667,16 +667,16 @@ export function MessageBubble({
 
             {renderContent()}
 
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs opacity-70">
-                {format(new Date(message.created_at), "HH:mm")}
-              </span>
+            {/* WhatsApp-style timestamp and status row */}
+            <div className="flex items-center justify-end gap-1 mt-[2px] -mb-[2px]">
               {message.edited_at && (
-                <span className="text-xs opacity-70">• edited</span>
+                <span className="text-[11px] text-[#667781] dark:text-[#8696a0]">edited</span>
               )}
-              {localIsStarred && <span className="text-xs">⭐</span>}
-              {localIsPinned && <span className="text-xs">📌</span>}
-              
+              {localIsStarred && <span className="text-[11px]">⭐</span>}
+              {localIsPinned && <span className="text-[11px]">📌</span>}
+              <span className="text-[11px] text-[#667781] dark:text-[#8696a0]">
+                {format(new Date(message.created_at), "h:mm a")}
+              </span>
               {/* Read Receipt - Only for sender */}
               {isSender && (
                 <MessageStatusIcon status={getMessageStatus(message)} />

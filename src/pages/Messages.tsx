@@ -3154,13 +3154,13 @@ export default function Messages() {
                 {/* Chat Messages - Native scroll on mobile for smooth touch scrolling */}
                 {isMobile ? (
                   <div 
-                    className="flex-1 overflow-y-auto overscroll-contain p-4 chat-background-container relative"
+                    className="flex-1 overflow-y-auto overscroll-contain py-4 chat-background-container relative"
                     style={{ 
                       WebkitOverflowScrolling: 'touch'
                     }}
                   >
                     {/* Pattern overlay handled by CSS ::before pseudo-element */}
-                    <div className="relative z-[1] space-y-4">
+                    <div className="relative z-[1] space-y-1">
                       {/* Pinned Messages Banner */}
                       {pinnedMessages.length > 0 && (
                         <div 
@@ -3243,10 +3243,10 @@ export default function Messages() {
                   </div>
                 ) : (
                   <ScrollArea 
-                    className="flex-1 overflow-hidden p-4 chat-background-container relative"
+                    className="flex-1 overflow-hidden py-4 chat-background-container relative whatsapp-scrollbar"
                   >
                     {/* Pattern overlay handled by CSS ::before pseudo-element */}
-                    <div className="relative z-[1] space-y-4">
+                    <div className="relative z-[1] space-y-1">
                       {/* Pinned Messages Banner */}
                       {pinnedMessages.length > 0 && (
                         <div 
