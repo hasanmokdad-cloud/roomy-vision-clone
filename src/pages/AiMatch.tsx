@@ -49,6 +49,8 @@ const AiMatch = () => {
   const [showDebug, setShowDebug] = useState(false);
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
   const [hasPendingClaim, setHasPendingClaim] = useState(false);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
+  const [lastMatchMode, setLastMatchMode] = useState<MatchMode | null>(null);
 
   // Check authentication - show Airbnb-style login prompt for unauthenticated users
   useEffect(() => {
@@ -243,8 +245,16 @@ const AiMatch = () => {
   // Fetch matches when profile is complete
   useEffect(() => {
     if (profileStatus !== 'complete' || !userId || !studentProfile) return;
-    fetchMatches();
-  }, [profileStatus, userId, studentProfile, activeMode, matchMode]);
+    
+    // Only fetch if: first load, OR mode actually changed
+    const modeChanged = lastMatchMode !== null && lastMatchMode !== matchMode;
+    
+    if (!hasInitiallyLoaded || modeChanged) {
+      setLastMatchMode(matchMode);
+      setHasInitiallyLoaded(true);
+      fetchMatches();
+    }
+  }, [profileStatus, userId, studentProfile, activeMode, matchMode, hasInitiallyLoaded, lastMatchMode]);
 
   // Generate match reasons for dorms
   const generateDormMatchReasons = (dorm: any, profile: any): string[] => {

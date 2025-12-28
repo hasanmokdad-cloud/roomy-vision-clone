@@ -62,13 +62,14 @@ export const RoommateMatchCard = ({
     : getMatchLabel(matchScore);
 
   const getInitials = (name: string | undefined | null) => {
-    if (!name) return '??';
+    if (!name || name.trim() === '') return 'U';
     return name
       .split(' ')
+      .filter(n => n.length > 0)
       .map(n => n[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2);
+      .slice(0, 2) || 'U';
   };
 
   const handleDismiss = (e: React.MouseEvent) => {
@@ -129,7 +130,7 @@ export const RoommateMatchCard = ({
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-lg line-clamp-1">{roommate.full_name}</h3>
+                  <h3 className="font-bold text-lg line-clamp-1">{roommate.full_name || 'Unknown Student'}</h3>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     {roommate.age && <span>{roommate.age} years</span>}
                     {roommate.gender && (
@@ -285,10 +286,10 @@ export const RoommateMatchCard = ({
                 <BarChart2 className="w-4 h-4" />
               </Button>
             )}
-            {currentStudentId && roommate.student_id && (
+            {currentStudentId && roommate.id && (
               <AddFriendButton 
                 currentStudentId={currentStudentId}
-                targetStudentId={roommate.student_id}
+                targetStudentId={roommate.id}
                 variant="outline"
                 size="icon"
                 className="flex-shrink-0"

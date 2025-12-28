@@ -31,11 +31,22 @@ export default function StudentProfile() {
 
     setLoading(true);
     try {
-      const { data: studentData } = await supabase
+      // First try matching by user_id
+      let { data: studentData } = await supabase
         .from("students")
         .select("*")
         .eq("user_id", id)
         .maybeSingle();
+
+      // Fallback: try matching by student table id
+      if (!studentData) {
+        const { data: fallbackData } = await supabase
+          .from("students")
+          .select("*")
+          .eq("id", id)
+          .maybeSingle();
+        studentData = fallbackData;
+      }
 
       if (studentData) {
         setStudent(studentData);
