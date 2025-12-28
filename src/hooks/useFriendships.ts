@@ -105,9 +105,60 @@ export function useFriendships(studentId: string | null) {
   };
 
   const sendRequest = async (receiverId: string) => {
-    if (!studentId) return;
+    if (!studentId) {
+      console.error('[useFriendships] Cannot send request: studentId is null');
+      toast({
+        title: 'Error',
+        description: 'Unable to send friend request - please log in',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!receiverId) {
+      console.error('[useFriendships] Cannot send request: receiverId is null');
+      toast({
+        title: 'Error',
+        description: 'Cannot send friend request - invalid user',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    console.log('[useFriendships] Sending friend request:', { 
+      requester_id: studentId, 
+      receiver_id: receiverId 
+    });
 
     try {
+      // Verify both IDs exist in students table before inserting
+      const { data: requesterExists } = await supabase
+        .from('students')
+        .select('id')
+        .eq('id', studentId)
+        .maybeSingle();
+        
+      const { data: receiverExists } = await supabase
+        .from('students')
+        .select('id')
+        .eq('id', receiverId)
+        .maybeSingle();
+      
+      if (!requesterExists || !receiverExists) {
+        console.error('[useFriendships] Invalid student IDs:', { 
+          requesterExists: !!requesterExists, 
+          receiverExists: !!receiverExists,
+          studentId,
+          receiverId
+        });
+        toast({
+          title: 'Error',
+          description: 'Unable to send friend request - invalid student profile',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const { error } = await supabase.from('friendships').insert({
         requester_id: studentId,
         receiver_id: receiverId,
