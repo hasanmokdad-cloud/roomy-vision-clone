@@ -268,33 +268,37 @@ export const RoommateMatchCard = ({
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
             <Button 
               onClick={() => navigate(`/student-profile/${roommate.user_id}`)}
-              className="flex-1"
               variant="default"
+              size="sm"
+              className="w-full"
             >
               View Profile
             </Button>
-            {showCompatibilityScore && hasPersonalityMatch && roommate.scores && (
-              <Button 
-                onClick={() => setShowBreakdown(true)}
-                variant="outline"
-                size="icon"
-                className="flex-shrink-0"
-              >
-                <BarChart2 className="w-4 h-4" />
-              </Button>
-            )}
-            {currentStudentId && roommate.id && (
-              <AddFriendButton 
-                currentStudentId={currentStudentId}
-                targetStudentId={roommate.id}
-                variant="outline"
-                size="icon"
-                className="flex-shrink-0"
-              />
-            )}
+            <div className="flex gap-2">
+              {showCompatibilityScore && hasPersonalityMatch && roommate.scores && (
+                <Button 
+                  onClick={() => setShowBreakdown(true)}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                >
+                  <BarChart2 className="w-4 h-4 mr-1" />
+                  Breakdown
+                </Button>
+              )}
+              {currentStudentId && roommate.id && (
+                <AddFriendButton 
+                  currentStudentId={currentStudentId}
+                  targetStudentId={roommate.id}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                />
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
