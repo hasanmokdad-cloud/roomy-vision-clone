@@ -27,15 +27,24 @@ export function ReactionBar({
     const barHeight = 48; // Height of the reaction bar
     const gap = 8; // Gap between button and bar
     
+    // Get the chat container's top boundary to ensure bar stays within chat area
+    const chatContainer = document.querySelector('.whatsapp-scrollbar');
+    const chatAreaTop = chatContainer?.getBoundingClientRect().top ?? 0;
+    
     // Calculate horizontal position - center on button, but keep on screen
     let left = buttonRect.left + buttonRect.width / 2 - barWidth / 2;
     // Keep bar within viewport horizontally
     left = Math.max(10, Math.min(left, window.innerWidth - barWidth - 10));
     
     // Calculate vertical position based on space
-    const top = position === 'top' 
+    let top = position === 'top' 
       ? buttonRect.top - barHeight - gap
       : buttonRect.bottom + gap;
+    
+    // SAFETY: If top position would be above chat area, force bottom position
+    if (position === 'top' && top < chatAreaTop) {
+      top = buttonRect.bottom + gap;
+    }
 
     const barContent = (
       <motion.div
