@@ -870,11 +870,17 @@ export type Database = {
         Row: {
           conversation_type: string | null
           created_at: string
+          created_by: string | null
           dorm_id: string | null
+          group_description: string | null
+          group_name: string | null
+          group_photo_url: string | null
           id: string
           is_archived: boolean | null
           is_favorite: boolean | null
+          is_group: boolean | null
           is_pinned: boolean | null
+          max_members: number | null
           muted_until: string | null
           owner_id: string | null
           student_id: string | null
@@ -885,11 +891,17 @@ export type Database = {
         Insert: {
           conversation_type?: string | null
           created_at?: string
+          created_by?: string | null
           dorm_id?: string | null
+          group_description?: string | null
+          group_name?: string | null
+          group_photo_url?: string | null
           id?: string
           is_archived?: boolean | null
           is_favorite?: boolean | null
+          is_group?: boolean | null
           is_pinned?: boolean | null
+          max_members?: number | null
           muted_until?: string | null
           owner_id?: string | null
           student_id?: string | null
@@ -900,11 +912,17 @@ export type Database = {
         Update: {
           conversation_type?: string | null
           created_at?: string
+          created_by?: string | null
           dorm_id?: string | null
+          group_description?: string | null
+          group_name?: string | null
+          group_photo_url?: string | null
           id?: string
           is_archived?: boolean | null
           is_favorite?: boolean | null
+          is_group?: boolean | null
           is_pinned?: boolean | null
+          max_members?: number | null
           muted_until?: string | null
           owner_id?: string | null
           student_id?: string | null
@@ -1270,6 +1288,53 @@ export type Database = {
           },
         ]
       }
+      group_members: {
+        Row: {
+          added_by: string | null
+          conversation_id: string
+          created_at: string | null
+          id: string
+          is_muted: boolean | null
+          joined_at: string | null
+          muted_until: string | null
+          nickname: string | null
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          is_muted?: boolean | null
+          joined_at?: string | null
+          muted_until?: string | null
+          nickname?: string | null
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          is_muted?: boolean | null
+          joined_at?: string | null
+          muted_until?: string | null
+          nickname?: string | null
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inquiries: {
         Row: {
           created_at: string | null
@@ -1387,6 +1452,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_read_receipts: {
+        Row: {
+          created_at: string | null
+          id: string
+          message_id: string
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message_id: string
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message_id?: string
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_read_receipts_message_id_fkey"
             columns: ["message_id"]
             isOneToOne: false
             referencedRelation: "messages"
