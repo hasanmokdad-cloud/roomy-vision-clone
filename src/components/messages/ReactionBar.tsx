@@ -48,6 +48,7 @@ export function ReactionBar({
 
     const barContent = (
       <motion.div
+        data-reaction-bar="true"
         initial={{ opacity: 0, scale: 0.8, y: position === 'top' ? 10 : -10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.8, y: position === 'top' ? 10 : -10 }}
@@ -128,6 +129,7 @@ export function ReactionBar({
 
   return (
     <motion.div
+      data-reaction-bar="true"
       initial={{ opacity: 0, scale: 0.8, y: position === 'top' ? 10 : -10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.8, y: position === 'top' ? 10 : -10 }}

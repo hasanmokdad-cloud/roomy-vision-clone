@@ -121,11 +121,15 @@ export function MessageBubble({
   // Close emoji picker/reaction bar when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (messageRef.current && !messageRef.current.contains(event.target as Node)) {
-        setShowReactionBar(false);
-        setShowEmojiPicker(false);
-        setEmojiButtonRect(null);
-      }
+      const target = event.target as Node;
+      // Don't close if clicking inside the message
+      if (messageRef.current?.contains(target)) return;
+      // Don't close if clicking inside a reaction bar (which is portaled to body)
+      if ((target as Element).closest?.('[data-reaction-bar]')) return;
+      
+      setShowReactionBar(false);
+      setShowEmojiPicker(false);
+      setEmojiButtonRect(null);
     };
 
     if (showReactionBar || showEmojiPicker) {
