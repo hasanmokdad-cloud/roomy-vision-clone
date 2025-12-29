@@ -103,6 +103,7 @@ const AdminPaymentsDashboard = lazy(() => import("./pages/admin/AdminPaymentsDas
 
 const Legal = lazy(() => import("./pages/Legal"));
 const MockWhishCheckout = lazy(() => import("./pages/MockWhishCheckout"));
+const BlockedUsers = lazy(() => import("./pages/settings/BlockedUsers"));
 const PaymentCallback = lazy(() => import("./pages/PaymentCallback"));
 const Wallet = lazy(() => import("./pages/Wallet"));
 const BillingHistory = lazy(() => import("./pages/BillingHistory"));
@@ -287,6 +288,7 @@ const AppRoutes = () => {
           <Route path="/settings/notifications" element={<ProtectedRoute element={<NotificationsSettings />} />} />
           <Route path="/settings/security" element={<ProtectedRoute element={<LoginSecurity />} />} />
           <Route path="/settings/personal-info" element={<ProtectedRoute element={<PersonalInfo />} />} />
+          <Route path="/settings/blocked-users" element={<ProtectedRoute element={<BlockedUsers />} />} />
           <Route path="/profile/notifications" element={<ProtectedRoute element={<ProfileNotifications />} />} />
           <Route path="/profile/complete" element={<ProtectedRoute element={<CompleteProfile />} requiredRole="student" />} />
           <Route path="/profile/preferences" element={<ProtectedRoute element={<Preferences />} requiredRole="student" />} />

@@ -873,6 +873,7 @@ export type Database = {
           dorm_id: string | null
           id: string
           is_archived: boolean | null
+          is_favorite: boolean | null
           is_pinned: boolean | null
           muted_until: string | null
           owner_id: string | null
@@ -887,6 +888,7 @@ export type Database = {
           dorm_id?: string | null
           id?: string
           is_archived?: boolean | null
+          is_favorite?: boolean | null
           is_pinned?: boolean | null
           muted_until?: string | null
           owner_id?: string | null
@@ -901,6 +903,7 @@ export type Database = {
           dorm_id?: string | null
           id?: string
           is_archived?: boolean | null
+          is_favorite?: boolean | null
           is_pinned?: boolean | null
           muted_until?: string | null
           owner_id?: string | null
@@ -3841,6 +3844,27 @@ export type Database = {
             referencedColumns: ["dorm_id"]
           },
         ]
+      }
+      user_blocks: {
+        Row: {
+          blocked_user_id: string
+          blocker_user_id: string
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          blocked_user_id: string
+          blocker_user_id: string
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          blocked_user_id?: string
+          blocker_user_id?: string
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: []
       }
       user_devices: {
         Row: {
