@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home, Share2, Copy, CreditCard, Receipt, Save, Smartphone, User, Palette, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Bell, Globe, Brain, Trash2, Lock, Heart, CheckCircle, XCircle, Shield, Key, Home, Share2, Copy, CreditCard, Receipt, Save, Smartphone, User, Palette, ChevronRight, Ban } from 'lucide-react';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import { SubPageHeader } from '@/components/mobile/SubPageHeader';
 import { SwipeableSubPage } from '@/components/mobile/SwipeableSubPage';
@@ -756,6 +756,15 @@ export default function Settings() {
                 >
                   <Smartphone className="w-4 h-4 mr-2" />
                   Manage Trusted Devices
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => navigate('/settings/blocked-users')}
+                >
+                  <Ban className="w-4 h-4 mr-2" />
+                  Blocked Users
                 </Button>
               </div>
             </Card>

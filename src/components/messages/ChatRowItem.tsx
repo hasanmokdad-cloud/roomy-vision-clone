@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Pin, BellOff, Check, CheckCheck, ChevronDown, Archive, Trash2, Ban } from "lucide-react";
+import { Pin, BellOff, Check, CheckCheck, ChevronDown, Archive, Trash2, Ban, Mail, Heart, HeartOff } from "lucide-react";
 import { OnlineIndicator } from "./OnlineIndicator";
 import { 
   DropdownMenu,
@@ -33,14 +33,18 @@ interface ChatRowItemProps {
     last_message_status?: 'sent' | 'delivered' | 'seen';
     is_pinned?: boolean;
     is_archived?: boolean;
+    is_favorite?: boolean;
     muted_until?: string | null;
     unreadCount?: number;
     student_id?: string;
+    user_a_id?: string | null;
+    user_b_id?: string | null;
   };
   isSelected: boolean;
   userId: string | null;
   onSelect: () => void;
   onUpdate: () => void;
+  isBlocked?: boolean;
 }
 
 // Format timestamp WhatsApp style
@@ -91,15 +95,20 @@ export function ChatRowItem({
   userId,
   onSelect,
   onUpdate,
+  isBlocked = false,
 }: ChatRowItemProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
   const { toast } = useToast();
   
   const hasUnread = (conv.unreadCount || 0) > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date());
   const unreadCount = conv.unreadCount || 0;
   const timestamp = conv.last_message_time ? formatWhatsAppTimestamp(conv.last_message_time) : '';
+  
+  // Determine the other user's ID for blocking
+  const otherUserId = conv.user_a_id === userId ? conv.user_b_id : conv.user_a_id;
   
   // Handlers for menu actions
   const handlePin = async () => {
@@ -168,8 +177,86 @@ export function ChatRowItem({
     setIsMenuOpen(false);
   };
 
+  // Mark as unread - delete thread state to reset unread count
+  const handleMarkAsUnread = async () => {
+    if (!userId) return;
+    
+    const { error } = await supabase
+      .from('user_thread_state')
+      .delete()
+      .eq('thread_id', conv.id)
+      .eq('user_id', userId);
+    
+    if (error) {
+      toast({ title: "Error", description: "Failed to mark as unread", variant: "destructive" });
+    } else {
+      toast({ title: "Marked as unread" });
+      onUpdate();
+    }
+    setIsMenuOpen(false);
+  };
+
+  // Toggle favorite
+  const handleToggleFavorite = async () => {
+    const newValue = !conv.is_favorite;
+    const { error } = await supabase
+      .from('conversations')
+      .update({ is_favorite: newValue })
+      .eq('id', conv.id);
+    
+    if (error) {
+      toast({ title: "Error", description: "Failed to update favorite status", variant: "destructive" });
+    } else {
+      toast({ title: newValue ? "Added to favorites" : "Removed from favorites" });
+      onUpdate();
+    }
+    setIsMenuOpen(false);
+  };
+
+  // Block user
   const handleBlock = async () => {
-    toast({ title: "Block feature coming soon" });
+    if (!userId || !otherUserId) {
+      toast({ title: "Error", description: "Cannot block this user", variant: "destructive" });
+      return;
+    }
+    
+    const { error } = await supabase
+      .from('user_blocks')
+      .insert({ 
+        blocker_user_id: userId, 
+        blocked_user_id: otherUserId 
+      });
+    
+    if (error) {
+      if (error.code === '23505') {
+        toast({ title: "Already blocked" });
+      } else {
+        toast({ title: "Error", description: "Failed to block user", variant: "destructive" });
+      }
+    } else {
+      toast({ title: "User blocked" });
+      onUpdate();
+    }
+    setShowBlockDialog(false);
+    setIsMenuOpen(false);
+  };
+
+  // Unblock user
+  const handleUnblock = async () => {
+    if (!userId || !otherUserId) return;
+    
+    const { error } = await supabase
+      .from('user_blocks')
+      .delete()
+      .eq('blocker_user_id', userId)
+      .eq('blocked_user_id', otherUserId);
+    
+    if (error) {
+      toast({ title: "Error", description: "Failed to unblock user", variant: "destructive" });
+    } else {
+      toast({ title: "User unblocked" });
+      onUpdate();
+    }
     setIsMenuOpen(false);
   };
 
@@ -205,6 +292,7 @@ export function ChatRowItem({
             {/* Row 1: Name + Timestamp */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                {conv.is_favorite && <Heart className="w-3 h-3 text-red-500 fill-red-500 shrink-0" />}
                 {conv.is_pinned && <Pin className="w-3 h-3 text-muted-foreground shrink-0" />}
                 {isMuted && <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />}
                 <span className={`text-[15px] truncate ${hasUnread ? 'font-semibold text-foreground' : 'text-foreground'}`}>
@@ -294,14 +382,46 @@ export function ChatRowItem({
                         </span>
                       </DropdownMenuItem>
                       
+                      <DropdownMenuItem 
+                        onClick={handleMarkAsUnread}
+                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#f5f6f6] dark:hover:bg-[#182229] cursor-pointer focus:bg-[#f5f6f6] dark:focus:bg-[#182229]"
+                      >
+                        <Mail className="w-5 h-5 text-[#54656f] dark:text-[#aebac1]" />
+                        <span className="text-[14px] text-[#111b21] dark:text-[#e9edef]">
+                          Mark as unread
+                        </span>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuItem 
+                        onClick={handleToggleFavorite}
+                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#f5f6f6] dark:hover:bg-[#182229] cursor-pointer focus:bg-[#f5f6f6] dark:focus:bg-[#182229]"
+                      >
+                        {conv.is_favorite ? (
+                          <HeartOff className="w-5 h-5 text-[#54656f] dark:text-[#aebac1]" />
+                        ) : (
+                          <Heart className="w-5 h-5 text-[#54656f] dark:text-[#aebac1]" />
+                        )}
+                        <span className="text-[14px] text-[#111b21] dark:text-[#e9edef]">
+                          {conv.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
+                        </span>
+                      </DropdownMenuItem>
+                      
                       <DropdownMenuSeparator className="h-[1px] bg-[#e9edef] dark:bg-[#222d34] my-1" />
                       
                       <DropdownMenuItem 
-                        onClick={handleBlock}
+                        onClick={() => {
+                          if (isBlocked) {
+                            handleUnblock();
+                          } else {
+                            setShowBlockDialog(true);
+                          }
+                        }}
                         className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#f5f6f6] dark:hover:bg-[#182229] cursor-pointer focus:bg-[#f5f6f6] dark:focus:bg-[#182229]"
                       >
                         <Ban className="w-5 h-5 text-[#ea0038]" />
-                        <span className="text-[14px] text-[#ea0038]">Block</span>
+                        <span className="text-[14px] text-[#ea0038]">
+                          {isBlocked ? 'Unblock' : 'Block'}
+                        </span>
                       </DropdownMenuItem>
                       
                       <DropdownMenuItem 
@@ -336,6 +456,27 @@ export function ChatRowItem({
               className="bg-destructive hover:bg-destructive/90"
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Block confirmation dialog */}
+      <AlertDialog open={showBlockDialog} onOpenChange={setShowBlockDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Block {conv.other_user_name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Blocked users won't be able to send you messages or see your online status.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBlock}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Block
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

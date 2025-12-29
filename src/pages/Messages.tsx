@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3, Plus, Camera, Keyboard, Trash2, Search } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3, Plus, Camera, Keyboard, Trash2, Search, Heart } from 'lucide-react';
 import { ChatRowItem } from '@/components/messages/ChatRowItem';
 import { ConversationSearchBar, HighlightedText } from '@/components/messages/ConversationSearchBar';
 import { TypingIndicator } from '@/components/messages/TypingIndicator';
@@ -74,6 +74,7 @@ type Conversation = {
   unreadCount?: number;
   is_pinned?: boolean;
   is_archived?: boolean;
+  is_favorite?: boolean;
   muted_until?: string | null;
 };
 
@@ -249,7 +250,7 @@ export default function Messages() {
     error?: string;
   }[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chats' | 'friends'>('chats');
+  const [activeTab, setActiveTab] = useState<'chats' | 'friends' | 'favorites' | 'unread'>('chats');
   const [searchQuery, setSearchQuery] = useState('');
   // Removed hoveredConversation state - three-dot menu is now always visible on desktop
   const [studentId, setStudentId] = useState<string | null>(null);
@@ -2811,13 +2812,25 @@ export default function Messages() {
                     All
                   </button>
                   <button
-                    onClick={() => {
-                      // Filter to show only unread - for now just stays on chats tab
-                      setActiveTab('chats');
-                    }}
-                    className="px-3 py-1 text-[13px] rounded-full bg-muted dark:bg-[#202c33] text-muted-foreground hover:bg-muted/80 dark:hover:bg-[#2a3942] transition-colors"
+                    onClick={() => setActiveTab('unread')}
+                    className={`px-3 py-1 text-[13px] rounded-full transition-colors ${
+                      activeTab === 'unread' 
+                        ? 'bg-primary/15 dark:bg-[#00a884]/20 text-primary dark:text-[#00a884] font-medium' 
+                        : 'bg-muted dark:bg-[#202c33] text-muted-foreground hover:bg-muted/80 dark:hover:bg-[#2a3942]'
+                    }`}
                   >
                     Unread
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('favorites')}
+                    className={`px-3 py-1 text-[13px] rounded-full transition-colors flex items-center gap-1 ${
+                      activeTab === 'favorites' 
+                        ? 'bg-primary/15 dark:bg-[#00a884]/20 text-primary dark:text-[#00a884] font-medium' 
+                        : 'bg-muted dark:bg-[#202c33] text-muted-foreground hover:bg-muted/80 dark:hover:bg-[#2a3942]'
+                    }`}
+                  >
+                    <Heart className="w-3 h-3" />
+                    Favorites
                   </button>
                   {role === 'student' && studentId && (
                     <button
@@ -2835,6 +2848,54 @@ export default function Messages() {
               </div>
               {activeTab === 'friends' && role === 'student' && studentId ? (
                 <FriendsTab studentId={studentId} searchQuery={searchQuery} highlightStudentId={highlightStudentId} />
+              ) : activeTab === 'favorites' ? (
+                <ScrollArea className="flex-1 whatsapp-scrollbar [&>div>div]:!overflow-visible">
+                  {conversations.filter(c => c.is_favorite && !c.is_archived).length === 0 ? (
+                    <div className="p-8 text-center text-foreground/60">
+                      <Heart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No favorite chats</p>
+                      <p className="text-sm mt-2">Add chats to favorites from the menu</p>
+                    </div>
+                  ) : (
+                    conversations.filter(c => c.is_favorite && !c.is_archived).map((conv) => (
+                      <ChatRowItem
+                        key={conv.id}
+                        conversation={conv}
+                        isSelected={selectedConversation === conv.id}
+                        userId={userId}
+                        onSelect={() => {
+                          setSelectedConversation(conv.id);
+                          loadMessages(conv.id);
+                        }}
+                        onUpdate={() => loadConversations()}
+                      />
+                    ))
+                  )}
+                </ScrollArea>
+              ) : activeTab === 'unread' ? (
+                <ScrollArea className="flex-1 whatsapp-scrollbar [&>div>div]:!overflow-visible">
+                  {conversations.filter(c => (c.unreadCount || 0) > 0 && !c.is_archived).length === 0 ? (
+                    <div className="p-8 text-center text-foreground/60">
+                      <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No unread messages</p>
+                      <p className="text-sm mt-2">You're all caught up!</p>
+                    </div>
+                  ) : (
+                    conversations.filter(c => (c.unreadCount || 0) > 0 && !c.is_archived).map((conv) => (
+                      <ChatRowItem
+                        key={conv.id}
+                        conversation={conv}
+                        isSelected={selectedConversation === conv.id}
+                        userId={userId}
+                        onSelect={() => {
+                          setSelectedConversation(conv.id);
+                          loadMessages(conv.id);
+                        }}
+                        onUpdate={() => loadConversations()}
+                      />
+                    ))
+                  )}
+                </ScrollArea>
               ) : (
                 <ScrollArea className="flex-1 whatsapp-scrollbar [&>div>div]:!overflow-visible">
                   {conversations.filter(c => 
