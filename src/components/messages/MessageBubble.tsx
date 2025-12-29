@@ -569,8 +569,11 @@ export function MessageBubble({
     );
   }
 
-  // Determine spacing based on grouping
-  const marginBottom = isLastInGroup ? 'mb-2' : 'mb-[2px]';
+  // Determine spacing based on grouping - add extra space if reactions are present
+  const hasReactions = reactions.length > 0;
+  const marginBottom = hasReactions 
+    ? (isLastInGroup ? 'mb-5' : 'mb-4') 
+    : (isLastInGroup ? 'mb-2' : 'mb-[2px]');
   
   // Only show avatar on first message in group for received messages
   const shouldShowAvatar = !isSender && showAvatar && isFirstInGroup;
@@ -785,9 +788,13 @@ export function MessageBubble({
           position={isSender ? "right" : "left"}
         />
 
-        {/* Reactions Display - below message with animations */}
+        {/* Reactions Display - WhatsApp style: bottom corner, overlapping message bubble */}
         {Object.keys(groupedReactions).length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1 relative">
+          <div 
+            className={`absolute -bottom-3 ${
+              isSender ? "right-2" : "left-2"
+            } flex flex-wrap gap-1 z-10`}
+          >
             {Object.entries(groupedReactions).map(([emoji, data]) => (
               <AnimatedReaction
                 key={emoji}
