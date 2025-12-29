@@ -387,23 +387,25 @@ export function MessageBubble({
   };
 
   // Show reaction bar with smart positioning based on viewport
+  // Position directly adjacent to emoji button
   const handleShowReactionBar = () => {
     if (bubbleRef.current) {
       const rect = bubbleRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       
-      // Reaction bar is approximately 56px tall + 16px margin = 72px needed
+      // Reaction bar is approximately 56px tall
       const spaceAbove = rect.top;
       const spaceBelow = viewportHeight - rect.bottom;
       
-      // If not enough space above (less than 80px), show below
-      // Also check if we're near the top of the viewport
-      setReactionPosition(spaceAbove < 80 ? 'bottom' : 'top');
+      // If less than 70px above, show below
+      setReactionPosition(spaceAbove < 70 ? 'bottom' : 'top');
       
-      // Store anchor for emoji picker
+      // Store anchor for emoji picker - position near the emoji button
+      // Emoji button is at the vertical center of the bubble
+      const bubbleCenter = rect.top + rect.height / 2;
       setEmojiPickerAnchor({
-        x: isSender ? rect.left : rect.right,
-        y: rect.top
+        x: isSender ? rect.left - 40 : rect.right + 40,
+        y: bubbleCenter
       });
     }
     setShowReactionBar(true);
@@ -545,6 +547,26 @@ export function MessageBubble({
   // Only show avatar on first message in group for received messages
   const shouldShowAvatar = !isSender && showAvatar && isFirstInGroup;
 
+  // Double-click to reply (left side of message)
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if (isMobile) return;
+    
+    // Get the bounding rect of the message
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    
+    // Only trigger on left half of the message
+    if (clickX < rect.width / 2) {
+      // Add highlight flash effect
+      const element = e.currentTarget as HTMLElement;
+      element.classList.add('message-highlight-flash');
+      setTimeout(() => element.classList.remove('message-highlight-flash'), 400);
+      
+      // Trigger reply
+      onReply();
+    }
+  };
+
   return (
     <div
       ref={messageRef}
@@ -552,6 +574,7 @@ export function MessageBubble({
       onTouchStart={isMobile ? handleTouchStart : undefined}
       onTouchMove={isMobile ? handleTouchMove : undefined}
       onTouchEnd={isMobile ? handleTouchEnd : undefined}
+      onDoubleClick={handleDoubleClick}
       onContextMenu={(e) => {
         e.preventDefault();
         if (!isMobile) {

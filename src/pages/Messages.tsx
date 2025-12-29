@@ -35,6 +35,7 @@ import { FriendSearchBar } from '@/components/friends/FriendSearchBar';
 import { MicPermissionModal } from '@/components/voice/MicPermissionModal';
 import { MicSetupModal } from '@/components/voice/MicSetupModal';
 import { DateSeparator } from '@/components/messages/DateSeparator';
+import { StickyDateHeader } from '@/components/messages/StickyDateHeader';
 import { ScrollToBottomButton } from '@/components/messages/ScrollToBottomButton';
 import { useMicPermission } from '@/contexts/MicPermissionContext';
 import { useToast } from '@/hooks/use-toast';
@@ -287,6 +288,11 @@ export default function Messages() {
   
   // Scroll-to-bottom button state
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  
+  // Sticky date header state
+  const [stickyDate, setStickyDate] = useState<Date | null>(null);
+  const [showStickyDate, setShowStickyDate] = useState(false);
+  const stickyDateTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Unauthenticated state - Airbnb style (both mobile and desktop)
   if (isAuthReady && !isAuthenticated) {
@@ -381,13 +387,53 @@ export default function Messages() {
       const { scrollTop, scrollHeight, clientHeight } = container;
       const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
       setShowScrollToBottom(!isNearBottom);
+      
+      // Sticky date header logic
+      // Find which date separator is currently at the top
+      const dateSeparators = container.querySelectorAll('[data-date-separator]');
+      let currentDate: Date | null = null;
+      
+      dateSeparators.forEach((sep) => {
+        const rect = sep.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        // If separator is above the visible area, use its date
+        if (rect.top < containerRect.top + 50) {
+          const dateStr = sep.getAttribute('data-date-separator');
+          if (dateStr) {
+            currentDate = new Date(dateStr);
+          }
+        }
+      });
+      
+      // Show sticky date when scrolling up
+      if (scrollTop > 50 && currentDate) {
+        setStickyDate(currentDate);
+        setShowStickyDate(true);
+        
+        // Clear existing timeout
+        if (stickyDateTimeoutRef.current) {
+          clearTimeout(stickyDateTimeoutRef.current);
+        }
+        
+        // Hide after 6 seconds
+        stickyDateTimeoutRef.current = setTimeout(() => {
+          setShowStickyDate(false);
+        }, 6000);
+      } else {
+        setShowStickyDate(false);
+      }
     };
     
     container.addEventListener('scroll', handleScroll, { passive: true });
     // Initial check
     handleScroll();
     
-    return () => container.removeEventListener('scroll', handleScroll);
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      if (stickyDateTimeoutRef.current) {
+        clearTimeout(stickyDateTimeoutRef.current);
+      }
+    };
   }, [selectedConversation]);
 
   // Scroll to bottom function
@@ -3211,6 +3257,9 @@ export default function Messages() {
                 />
 
                 {/* Chat Messages - Native scroll on mobile for smooth touch scrolling */}
+                {/* Sticky Date Header */}
+                <StickyDateHeader date={stickyDate} visible={showStickyDate} />
+
                 {isMobile ? (
                   <div 
                     ref={chatContainerRef}
@@ -3313,10 +3362,10 @@ export default function Messages() {
                       <div ref={messagesEndRef} />
                     </div>
                     
-                    {/* Scroll to bottom button */}
+                    {/* Scroll to bottom button - right side, above input */}
                     <AnimatePresence>
                       {showScrollToBottom && (
-                        <div className="absolute bottom-4 left-4 z-20">
+                        <div className="absolute bottom-20 right-4 z-20">
                           <ScrollToBottomButton onClick={scrollToBottom} />
                         </div>
                       )}
@@ -3421,10 +3470,10 @@ export default function Messages() {
                       <div ref={messagesEndRef} />
                     </div>
                     
-                    {/* Scroll to bottom button */}
+                    {/* Scroll to bottom button - right side, above input */}
                     <AnimatePresence>
                       {showScrollToBottom && (
-                        <div className="absolute bottom-4 left-4 z-20">
+                        <div className="absolute bottom-20 right-4 z-20">
                           <ScrollToBottomButton onClick={scrollToBottom} />
                         </div>
                       )}
@@ -3546,29 +3595,33 @@ export default function Messages() {
                     </div>
                   )}
 
-                  {/* Reply Preview */}
+                  {/* Reply Preview - WhatsApp style with colored left bar */}
                   {replyToMessage && (
-                    <div className="mb-2 bg-muted rounded-lg p-3 flex items-start gap-2 overflow-hidden">
-                      <div className="flex-1 min-w-0 overflow-hidden">
-                        <p className="text-xs font-semibold text-primary truncate">
-                          Replying to {replyToMessage.sender_id === userId ? 'yourself' : conversations.find(c => c.id === selectedConversation)?.other_user_name}
-                        </p>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {replyToMessage.body 
-                            ? replyToMessage.body.length > 100 
-                              ? `${replyToMessage.body.slice(0, 100)}...` 
-                              : replyToMessage.body 
-                            : 'Media message'}
-                        </p>
+                    <div className="mb-2 bg-white dark:bg-[#2a3942] rounded-lg overflow-hidden flex">
+                      {/* Colored left bar - green for self, purple for others */}
+                      <div className={`w-1 shrink-0 ${replyToMessage.sender_id === userId ? 'bg-[#25d366]' : 'bg-[#8696a0]'}`} />
+                      <div className="flex-1 p-2 flex items-start gap-2 overflow-hidden">
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <p className={`text-xs font-semibold truncate ${replyToMessage.sender_id === userId ? 'text-[#25d366]' : 'text-[#8696a0]'}`}>
+                            {replyToMessage.sender_id === userId ? 'You' : conversations.find(c => c.id === selectedConversation)?.other_user_name}
+                          </p>
+                          <p className="text-sm text-[#667781] dark:text-[#8696a0] truncate">
+                            {replyToMessage.body 
+                              ? replyToMessage.body.length > 100 
+                                ? `${replyToMessage.body.slice(0, 100)}...` 
+                                : replyToMessage.body 
+                              : 'Media message'}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 shrink-0 text-[#8696a0] hover:text-[#667781]"
+                          onClick={() => setReplyToMessage(null)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 shrink-0"
-                        onClick={() => setReplyToMessage(null)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
                     </div>
                   )}
 
@@ -3623,7 +3676,7 @@ export default function Messages() {
                           }}
                           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                           disabled={sending || recording}
-                          className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 pr-10"
+                          className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none pr-10 [-webkit-tap-highlight-color:transparent]"
                           aria-label="Message input"
                         />
                         <div className="absolute right-2">
@@ -3740,7 +3793,7 @@ export default function Messages() {
                           }}
                           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                           disabled={sending || recording}
-                          className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none h-9 text-[15px]"
+                          className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:outline-none h-9 text-[15px] [&:focus]:ring-0 [&:focus]:outline-none [-webkit-tap-highlight-color:transparent]"
                           aria-label="Message input"
                         />
 

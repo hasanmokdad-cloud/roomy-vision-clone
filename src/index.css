@@ -532,13 +532,10 @@
     transition: background-color 0.3s ease-in-out;
   }
 
-  /* WhatsApp-style left scrollbar with arrow buttons */
+  /* WhatsApp-style scrollbar - right side, transparent track, filled triangle arrows */
   .whatsapp-scrollbar {
-    direction: rtl;
-  }
-
-  .whatsapp-scrollbar > * {
-    direction: ltr;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .whatsapp-scrollbar::-webkit-scrollbar {
@@ -546,78 +543,67 @@
   }
 
   .whatsapp-scrollbar::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
-    border-radius: 3px;
+    background: transparent;
   }
 
   .whatsapp-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.2);
+    background-color: rgba(134, 150, 160, 0.5);
     border-radius: 3px;
-    min-height: 40px;
   }
 
   .whatsapp-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.3);
+    background-color: rgba(134, 150, 160, 0.7);
   }
 
-  /* Scrollbar arrow buttons */
+  /* Triangle arrow buttons at top and bottom */
   .whatsapp-scrollbar::-webkit-scrollbar-button:single-button {
     display: block;
-    height: 14px;
-    width: 6px;
-    background-color: rgba(0, 0, 0, 0.1);
+    height: 8px;
+    background-color: transparent;
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 6px 6px;
+    background-size: 6px 4px;
   }
 
   .whatsapp-scrollbar::-webkit-scrollbar-button:single-button:vertical:decrement {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667781' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='18 15 12 9 6 15'%3E%3C/polyline%3E%3C/svg%3E");
-    border-radius: 3px 3px 0 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 4'%3E%3Cpath fill='%238696a0' d='M3 0L6 4H0z'/%3E%3C/svg%3E");
   }
 
   .whatsapp-scrollbar::-webkit-scrollbar-button:single-button:vertical:increment {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667781' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    border-radius: 0 0 3px 3px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 4'%3E%3Cpath fill='%238696a0' d='M3 4L0 0h6z'/%3E%3C/svg%3E");
   }
 
-  .whatsapp-scrollbar::-webkit-scrollbar-button:single-button:hover {
-    background-color: rgba(0, 0, 0, 0.15);
+  .whatsapp-scrollbar::-webkit-scrollbar-button:start:decrement,
+  .whatsapp-scrollbar::-webkit-scrollbar-button:end:increment {
+    display: block;
   }
 
-  .dark .whatsapp-scrollbar::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+  .whatsapp-scrollbar::-webkit-scrollbar-button:start:increment,
+  .whatsapp-scrollbar::-webkit-scrollbar-button:end:decrement {
+    display: none;
   }
+}
 
-  .dark .whatsapp-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-  }
+/* Remove focus flash on inputs */
+input:focus,
+textarea:focus {
+  -webkit-tap-highlight-color: transparent;
+  outline: none !important;
+}
 
-  .dark .whatsapp-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-  }
+input:focus-visible,
+textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
 
-  .dark .whatsapp-scrollbar::-webkit-scrollbar-button:single-button {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
+/* Message bubble highlight animation for double-click reply */
+@keyframes message-highlight {
+  0% { background-color: transparent; }
+  50% { background-color: rgba(37, 211, 102, 0.2); }
+  100% { background-color: transparent; }
+}
 
-  .dark .whatsapp-scrollbar::-webkit-scrollbar-button:single-button:vertical:decrement {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238696a0' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='18 15 12 9 6 15'%3E%3C/polyline%3E%3C/svg%3E");
-  }
-
-  .dark .whatsapp-scrollbar::-webkit-scrollbar-button:single-button:vertical:increment {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238696a0' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  }
-
-  .dark .whatsapp-scrollbar::-webkit-scrollbar-button:single-button:hover {
-    background-color: rgba(255, 255, 255, 0.15);
-  }
-
-  /* Smooth theme transitions for chat elements */
-  .chat-theme-transition,
-  .chat-theme-transition * {
-    transition: background-color 0.3s ease-in-out, 
-                border-color 0.3s ease-in-out,
-                color 0.2s ease-in-out;
-  }
+.message-highlight-flash {
+  animation: message-highlight 0.4s ease-out;
 }
