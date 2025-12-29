@@ -12,6 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3, Plus, Camera, Keyboard, Trash2, Search } from 'lucide-react';
+import { ChatRowItem } from '@/components/messages/ChatRowItem';
 import { ConversationSearchBar, HighlightedText } from '@/components/messages/ConversationSearchBar';
 import { TypingIndicator } from '@/components/messages/TypingIndicator';
 import { RecordingIndicator } from '@/components/messages/RecordingIndicator';
@@ -2979,7 +2980,7 @@ export default function Messages() {
               {activeTab === 'friends' && role === 'student' && studentId ? (
                 <FriendsTab studentId={studentId} searchQuery={searchQuery} highlightStudentId={highlightStudentId} />
               ) : (
-                <ScrollArea className="flex-1 [&>div>div]:!overflow-visible">
+                <ScrollArea className="flex-1 whatsapp-scrollbar [&>div>div]:!overflow-visible">
                   {conversations.filter(c => 
                     !searchQuery || 
                     c.other_user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -3012,98 +3013,6 @@ export default function Messages() {
                         c.last_message?.toLowerCase().includes(searchQuery.toLowerCase()))
                       ).map((conv) => {
                         const hasUnread = (conv.unreadCount || 0) > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date());
-                        const timeAgo = conv.last_message_time 
-                          ? formatDistanceToNowStrict(new Date(conv.last_message_time), { addSuffix: false })
-                            .replace(' seconds', 's')
-                            .replace(' second', 's')
-                            .replace(' minutes', 'm')
-                            .replace(' minute', 'm')
-                            .replace(' hours', 'h')
-                            .replace(' hour', 'h')
-                            .replace(' days', 'd')
-                            .replace(' day', 'd')
-                            .replace(' weeks', 'w')
-                            .replace(' week', 'w')
-                            .replace(' months', 'mo')
-                            .replace(' month', 'mo')
-                            .replace(' years', 'y')
-                            .replace(' year', 'y')
-                          : '';
-                        
-                        
-                        const chatRowContent = (
-                            <div 
-                              className={`relative group cursor-pointer hover:bg-muted/50 transition-colors ${
-                              selectedConversation === conv.id ? 'bg-muted' : ''
-                            } ${hasUnread ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
-                            onClick={() => {
-                              setSelectedConversation(conv.id);
-                              loadMessages(conv.id);
-                            }}
-                          >
-                            <div className="flex items-center gap-3 px-4 py-3">
-                              {/* Avatar - 56px like Instagram */}
-                              <div className="relative shrink-0">
-                                <Avatar className="w-14 h-14">
-                                  <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
-                                  <AvatarFallback className="bg-primary/20 text-primary text-lg">
-                                    {conv.other_user_name?.charAt(0) || 'U'}
-                                  </AvatarFallback>
-                                </Avatar>
-                                {conv.student_id && <OnlineIndicator userId={conv.student_id} />}
-                              </div>
-                              
-                              {/* Content - Instagram style: name on top, message + time on bottom */}
-                            <div className="flex-1 min-w-0 max-w-[calc(100%-120px)]">
-                                {/* Row 1: Name with icons */}
-                                <div className="flex items-center gap-1.5">
-                                  {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
-                                  {conv.muted_until && new Date(conv.muted_until) > new Date() && (
-                                    <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />
-                                  )}
-                                  <span className={`text-[14px] truncate ${hasUnread ? 'font-bold text-foreground' : 'font-normal text-foreground'}`}>
-                                    {conv.other_user_name}
-                                  </span>
-                                </div>
-                                
-                                {/* Row 2: Message preview */}
-                                <div className="flex items-center gap-1 mt-0.5 min-w-0">
-                                  {conv.last_message_sender_id === userId && (
-                                    <MessageStatusIcon status={conv.last_message_status} />
-                                  )}
-                                  <p className={`text-sm truncate max-w-[65%] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                                    {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              {/* Right side controls */}
-                              <div className="flex items-center gap-2 shrink-0 ml-2 z-10 overflow-visible">
-                                {/* Timestamp */}
-                                {timeAgo && (
-                                  <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">{timeAgo}</span>
-                                )}
-                                {/* Blue dot for unread */}
-                                {hasUnread && (
-                                  <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                                )}
-                                
-                                {/* Three-dots context menu - DESKTOP ONLY, always visible */}
-                                {!isMobile && (
-                                  <div onClick={(e) => e.stopPropagation()}>
-                                    <ConversationContextMenu
-                                      conversationId={conv.id}
-                                      isPinned={conv.is_pinned || false}
-                                      isArchived={conv.is_archived || false}
-                                      mutedUntil={conv.muted_until || null}
-                                      onUpdate={() => loadConversations()}
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
                         
                         // On mobile, wrap with SwipeableChatRow
                         if (isMobile) {
@@ -3119,13 +3028,34 @@ export default function Messages() {
                               onMore={() => setMoreActionConversation(conv)}
                               onMarkRead={() => handleMarkConversationRead(conv.id)}
                             >
-                              {chatRowContent}
+                              <ChatRowItem
+                                conversation={conv}
+                                isSelected={selectedConversation === conv.id}
+                                userId={userId}
+                                onSelect={() => {
+                                  setSelectedConversation(conv.id);
+                                  loadMessages(conv.id);
+                                }}
+                                onUpdate={() => loadConversations()}
+                              />
                             </SwipeableChatRow>
                           );
                         }
                         
-                        // On desktop, render without swipe wrapper
-                        return <div key={conv.id}>{chatRowContent}</div>;
+                        // On desktop, render ChatRowItem directly
+                        return (
+                          <ChatRowItem
+                            key={conv.id}
+                            conversation={conv}
+                            isSelected={selectedConversation === conv.id}
+                            userId={userId}
+                            onSelect={() => {
+                              setSelectedConversation(conv.id);
+                              loadMessages(conv.id);
+                            }}
+                            onUpdate={() => loadConversations()}
+                          />
+                        );
                       })}
                     </>
                   )}
@@ -3153,7 +3083,7 @@ export default function Messages() {
             {selectedConversation ? (
               <>
               {/* Instagram-style conversation header - fixed on mobile */}
-                <div className={`${isMobile ? 'p-3 shrink-0 z-20' : 'p-4'} border-b border-border flex items-center gap-3 bg-background`}>
+                <div className={`${isMobile ? 'p-3 shrink-0 z-20' : 'p-4'} border-b border-border flex items-center gap-3 bg-white dark:bg-[#202c33]`}>
                   {isMobile && (
                     <Button 
                       variant="ghost" 
