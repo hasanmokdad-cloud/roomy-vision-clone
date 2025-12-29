@@ -1,6 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { Play, Pause, Mic } from 'lucide-react';
+import { Pause, Mic } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+// Custom rounded play icon matching WhatsApp style
+function PlayIcon({ className }: { className?: string }) {
+  return (
+    <svg 
+      viewBox="0 0 24 24" 
+      fill="currentColor" 
+      className={className}
+    >
+      <path 
+        d="M8 5.14v13.72a1 1 0 001.5.86l11-6.86a1 1 0 000-1.72l-11-6.86a1 1 0 00-1.5.86z"
+      />
+    </svg>
+  );
+}
 
 interface VoiceWaveformProps {
   audioUrl: string;
@@ -128,19 +143,19 @@ export function VoiceWaveform({
       {/* WhatsApp-style play button - vertically centered with waveform */}
       <button
         onClick={togglePlayPause}
-        className="shrink-0 text-[#8696a0] hover:text-[#667781] dark:hover:text-[#aebac1] transition-colors self-center"
+        className="shrink-0 text-[#8696a0] hover:text-[#667781] dark:hover:text-[#aebac1] transition-colors"
         aria-label={isPlaying ? 'Pause' : 'Play'}
       >
         {isPlaying ? (
           <Pause className="h-8 w-8" fill="currentColor" strokeWidth={0} />
         ) : (
-          <Play className="h-8 w-8 ml-0.5" fill="currentColor" strokeWidth={0} />
+          <PlayIcon className="h-8 w-8" />
         )}
       </button>
 
-      {/* Waveform container - flex-1 to take remaining space */}
-      <div className="flex-1 flex flex-col gap-1 min-w-[100px]">
-        {/* Waveform with blue progress dot - centered vertically */}
+      {/* Waveform container with duration positioned absolutely */}
+      <div className="flex-1 relative min-w-[100px]">
+        {/* Waveform with blue progress dot - truly centered */}
         <div className="relative flex items-center justify-center gap-[2px] h-8">
           {waveformBars.map((height, i) => {
             const barProgress = (i / waveformBars.length) * 100;
@@ -167,8 +182,8 @@ export function VoiceWaveform({
           />
         </div>
 
-        {/* Duration - at start, WhatsApp style */}
-        <span className="text-[11px] text-[#667781] dark:text-[#8696a0] tabular-nums">
+        {/* Duration - positioned below waveform without affecting centering */}
+        <span className="absolute left-0 top-full mt-0.5 text-[11px] text-[#667781] dark:text-[#8696a0] tabular-nums">
           {formatTime(isPlaying ? currentTime : audioDuration)}
         </span>
       </div>
