@@ -110,7 +110,7 @@ export function VoiceWaveform({
   const dotPosition = progress;
 
   return (
-    <div className="flex items-center gap-2 min-w-[200px] max-w-[280px]">
+    <div className="flex items-center gap-3 min-w-[280px] max-w-[340px]">
       {/* Sender's profile picture with mic icon - WhatsApp style */}
       <div className="relative shrink-0">
         <Avatar className="h-12 w-12">
@@ -125,10 +125,10 @@ export function VoiceWaveform({
         </div>
       </div>
 
-      {/* WhatsApp-style play button - no background, just filled icon */}
+      {/* WhatsApp-style play button - vertically centered with waveform */}
       <button
         onClick={togglePlayPause}
-        className="shrink-0 text-[#8696a0] hover:text-[#667781] dark:hover:text-[#aebac1] transition-colors"
+        className="shrink-0 text-[#8696a0] hover:text-[#667781] dark:hover:text-[#aebac1] transition-colors self-center"
         aria-label={isPlaying ? 'Pause' : 'Play'}
       >
         {isPlaying ? (
@@ -138,17 +138,17 @@ export function VoiceWaveform({
         )}
       </button>
 
-      {/* Waveform container */}
-      <div className="flex-1 flex flex-col gap-1">
-        {/* Waveform with blue progress dot */}
-        <div className="relative flex items-center gap-[1px] h-6">
+      {/* Waveform container - flex-1 to take remaining space */}
+      <div className="flex-1 flex flex-col gap-1 min-w-[100px]">
+        {/* Waveform with blue progress dot - centered vertically */}
+        <div className="relative flex items-center justify-center gap-[2px] h-8">
           {waveformBars.map((height, i) => {
             const barProgress = (i / waveformBars.length) * 100;
             const isPast = barProgress <= progress;
             return (
               <div
                 key={i}
-                className={`w-[2px] rounded-full transition-colors duration-100 ${
+                className={`w-[3px] rounded-full transition-colors duration-100 ${
                   isPast 
                     ? 'bg-[#53bdeb]'
                     : 'bg-[#8696a0]/40 dark:bg-[#8696a0]/30'
