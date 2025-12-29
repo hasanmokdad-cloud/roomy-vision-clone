@@ -2687,113 +2687,40 @@ export default function Messages() {
                 <p>No archived chats</p>
               </div>
             ) : (
-              conversations.filter(c => c.is_archived).map((conv) => {
-                const hasUnread = (conv.unreadCount || 0) > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date());
-                const timeAgo = conv.last_message_time 
-                  ? formatDistanceToNowStrict(new Date(conv.last_message_time), { addSuffix: false })
-                      .replace(' seconds', 's')
-                      .replace(' second', 's')
-                      .replace(' minutes', 'm')
-                      .replace(' minute', 'm')
-                      .replace(' hours', 'h')
-                      .replace(' hour', 'h')
-                      .replace(' days', 'd')
-                      .replace(' day', 'd')
-                      .replace(' weeks', 'w')
-                      .replace(' week', 'w')
-                      .replace(' months', 'mo')
-                      .replace(' month', 'mo')
-                      .replace(' years', 'y')
-                      .replace(' year', 'y')
-                  : '';
-
-                return (
-                  <SwipeableChatRow
-                    key={conv.id}
-                    conversationId={conv.id}
-                    isPinned={conv.is_pinned || false}
-                    isArchived={conv.is_archived || false}
-                    hasUnread={hasUnread}
-                    onPin={() => handlePinConversation(conv.id, conv.is_pinned || false)}
-                    onArchive={async () => {
-                      await handleArchiveConversation(conv.id, conv.is_archived || false);
-                      // If unarchiving, close the archives page after a brief delay
-                      if (conv.is_archived) {
-                        setTimeout(() => {
-                          if (conversations.filter(c => c.is_archived && c.id !== conv.id).length === 0) {
-                            setShowArchivedPage(false);
-                          }
-                        }, 300);
-                      }
+              conversations.filter(c => c.is_archived).map((conv) => (
+                <SwipeableChatRow
+                  key={conv.id}
+                  conversationId={conv.id}
+                  isPinned={conv.is_pinned || false}
+                  isArchived={conv.is_archived || false}
+                  hasUnread={(conv.unreadCount || 0) > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date())}
+                  onPin={() => handlePinConversation(conv.id, conv.is_pinned || false)}
+                  onArchive={async () => {
+                    await handleArchiveConversation(conv.id, conv.is_archived || false);
+                    if (conv.is_archived) {
+                      setTimeout(() => {
+                        if (conversations.filter(c => c.is_archived && c.id !== conv.id).length === 0) {
+                          setShowArchivedPage(false);
+                        }
+                      }, 300);
+                    }
+                  }}
+                  onMore={() => setMoreActionConversation(conv)}
+                  onMarkRead={() => handleMarkConversationRead(conv.id)}
+                >
+                  <ChatRowItem
+                    conversation={conv}
+                    isSelected={selectedConversation === conv.id}
+                    userId={userId}
+                    onSelect={() => {
+                      setSelectedConversation(conv.id);
+                      loadMessages(conv.id);
+                      setShowArchivedPage(false);
                     }}
-                    onMore={() => setMoreActionConversation(conv)}
-                    onMarkRead={() => handleMarkConversationRead(conv.id)}
-                  >
-                    <div 
-                      className={`relative group cursor-pointer hover:bg-muted/50 transition-colors ${hasUnread ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
-                      onClick={() => {
-                        setSelectedConversation(conv.id);
-                        loadMessages(conv.id);
-                        setShowArchivedPage(false);
-                      }}
-                    >
-                      <div className="flex items-center gap-3 px-4 py-3">
-                        <div className="relative shrink-0">
-                          <Avatar className="w-14 h-14">
-                            <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
-                            <AvatarFallback className="bg-primary/20 text-primary text-lg">
-                              {conv.other_user_name?.charAt(0) || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
-                            {conv.muted_until && new Date(conv.muted_until) > new Date() && (
-                              <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />
-                            )}
-                            <span className={`text-[14px] truncate ${hasUnread ? 'font-bold text-foreground' : 'font-normal text-foreground'}`}>
-                              {conv.other_user_name}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center gap-1 mt-0.5 min-w-0">
-                            {conv.last_message_sender_id === userId && (
-                              <MessageStatusIcon status={conv.last_message_status} />
-                            )}
-                            <p className={`text-sm truncate max-w-[65%] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                              {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
-                            </p>
-                            {timeAgo && (
-                              <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap ml-1">· {timeAgo}</span>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 shrink-0 ml-2">
-                          {hasUnread && (
-                            <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                          )}
-                          
-                          {/* Three-dots context menu for archived chats */}
-                          {!isMobile && (
-                            <div onClick={(e) => e.stopPropagation()}>
-                              <ConversationContextMenu
-                                conversationId={conv.id}
-                                isPinned={conv.is_pinned || false}
-                                isArchived={conv.is_archived || false}
-                                mutedUntil={conv.muted_until || null}
-                                onUpdate={() => loadConversations()}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </SwipeableChatRow>
-                );
-              })
+                    onUpdate={() => loadConversations()}
+                  />
+                </SwipeableChatRow>
+              ))
             )}
           </ScrollArea>
         </div>
@@ -2835,90 +2762,19 @@ export default function Messages() {
                     <p>No archived chats</p>
                   </div>
                 ) : (
-                  conversations.filter(c => c.is_archived).map((conv) => {
-                    const hasUnread = (conv.unreadCount || 0) > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date());
-                    const timeAgo = conv.last_message_time 
-                      ? formatDistanceToNowStrict(new Date(conv.last_message_time), { addSuffix: false })
-                          .replace(' seconds', 's')
-                          .replace(' second', 's')
-                          .replace(' minutes', 'm')
-                          .replace(' minute', 'm')
-                          .replace(' hours', 'h')
-                          .replace(' hour', 'h')
-                          .replace(' days', 'd')
-                          .replace(' day', 'd')
-                          .replace(' weeks', 'w')
-                          .replace(' week', 'w')
-                          .replace(' months', 'mo')
-                          .replace(' month', 'mo')
-                          .replace(' years', 'y')
-                          .replace(' year', 'y')
-                      : '';
-
-                    return (
-                      <div 
-                        key={conv.id}
-                        className={`relative group cursor-pointer hover:bg-muted/50 transition-colors ${hasUnread ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
-                        onClick={() => {
-                          setSelectedConversation(conv.id);
-                          loadMessages(conv.id);
-                          // Keep archived tab open - don't close it
-                        }}
-                      >
-                        <div className="flex items-center gap-3 px-4 py-3">
-                          <div className="relative shrink-0">
-                            <Avatar className="w-14 h-14">
-                              <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
-                              <AvatarFallback className="bg-primary/20 text-primary text-lg">
-                                {conv.other_user_name?.charAt(0) || 'U'}
-                              </AvatarFallback>
-                            </Avatar>
-                          </div>
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              {conv.is_pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
-                              {conv.muted_until && new Date(conv.muted_until) > new Date() && (
-                                <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />
-                              )}
-                              <span className={`text-[14px] truncate ${hasUnread ? 'font-bold text-foreground' : 'font-normal text-foreground'}`}>
-                                {conv.other_user_name}
-                              </span>
-                            </div>
-                            
-                            <div className="flex items-center gap-1 mt-0.5 min-w-0">
-                              {conv.last_message_sender_id === userId && (
-                                <MessageStatusIcon status={conv.last_message_status} />
-                              )}
-                              <p className={`text-sm truncate max-w-[65%] ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                                {conv.last_message_sender_id === userId ? 'You: ' : ''}{conv.last_message || 'Start a conversation'}
-                              </p>
-                              {timeAgo && (
-                                <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap ml-1">· {timeAgo}</span>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 shrink-0 ml-2">
-                            {hasUnread && (
-                              <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                            )}
-                            
-                            {/* Three-dots context menu for archived chats */}
-                            <div onClick={(e) => e.stopPropagation()}>
-                              <ConversationContextMenu
-                                conversationId={conv.id}
-                                isPinned={conv.is_pinned || false}
-                                isArchived={conv.is_archived || false}
-                                mutedUntil={conv.muted_until || null}
-                                onUpdate={() => loadConversations()}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
+                  conversations.filter(c => c.is_archived).map((conv) => (
+                    <ChatRowItem
+                      key={conv.id}
+                      conversation={conv}
+                      isSelected={selectedConversation === conv.id}
+                      userId={userId}
+                      onSelect={() => {
+                        setSelectedConversation(conv.id);
+                        loadMessages(conv.id);
+                      }}
+                      onUpdate={() => loadConversations()}
+                    />
+                  ))
                 )}
               </ScrollArea>
             </>
