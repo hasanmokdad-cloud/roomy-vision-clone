@@ -100,6 +100,7 @@ export function MessageBubble({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [reactionPosition, setReactionPosition] = useState<'top' | 'bottom'>('top');
   const [emojiPickerAnchor, setEmojiPickerAnchor] = useState<{x: number, y: number} | null>(null);
+  const emojiButtonRef = useRef<HTMLButtonElement>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showTranslateModal, setShowTranslateModal] = useState(false);
   const [showActionOverlay, setShowActionOverlay] = useState(false);
@@ -388,28 +389,40 @@ export function MessageBubble({
 
   // Show reaction bar with smart positioning based on viewport
   // Position directly adjacent to emoji button
-  const handleShowReactionBar = () => {
-    if (bubbleRef.current) {
-      const rect = bubbleRef.current.getBoundingClientRect();
+  const handleShowReactionBar = useCallback(() => {
+    // Use emoji button ref for precise positioning
+    const emojiBtn = emojiButtonRef.current;
+    const bubble = bubbleRef.current;
+    
+    if (emojiBtn) {
+      const btnRect = emojiBtn.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       
       // Reaction bar is approximately 56px tall
-      const spaceAbove = rect.top;
-      const spaceBelow = viewportHeight - rect.bottom;
+      const spaceAbove = btnRect.top;
+      const spaceBelow = viewportHeight - btnRect.bottom;
       
-      // If less than 70px above, show below
+      // If less than 70px above emoji button, show below
       setReactionPosition(spaceAbove < 70 ? 'bottom' : 'top');
       
-      // Store anchor for emoji picker - position near the emoji button
-      // Emoji button is at the vertical center of the bubble
-      const bubbleCenter = rect.top + rect.height / 2;
+      // Store anchor for emoji picker - center on emoji button
+      setEmojiPickerAnchor({
+        x: btnRect.left + btnRect.width / 2,
+        y: btnRect.top + btnRect.height / 2
+      });
+    } else if (bubble) {
+      // Fallback to bubble positioning
+      const rect = bubble.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const spaceAbove = rect.top;
+      setReactionPosition(spaceAbove < 70 ? 'bottom' : 'top');
       setEmojiPickerAnchor({
         x: isSender ? rect.left - 40 : rect.right + 40,
-        y: bubbleCenter
+        y: rect.top + rect.height / 2
       });
     }
     setShowReactionBar(true);
-  };
+  }, [isSender]);
 
   // Handler functions for menu actions
   const handleInfo = () => {
@@ -624,8 +637,16 @@ export function MessageBubble({
           {/* Emoji button - LEFT side for SENT messages - WhatsApp style white circle */}
           {!isMobile && isSender && (
             <button
+              ref={emojiButtonRef}
               className="opacity-0 group-hover:opacity-100 h-8 w-8 rounded-full bg-white dark:bg-[#2a3942] shadow-sm flex items-center justify-center transition-opacity flex-shrink-0 hover:shadow-md"
-              onClick={() => showReactionBar ? setShowReactionBar(false) : handleShowReactionBar()}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (showReactionBar) {
+                  setShowReactionBar(false);
+                } else {
+                  handleShowReactionBar();
+                }
+              }}
             >
               <Smile className="h-5 w-5 text-[#8696a0]" />
             </button>
@@ -720,8 +741,16 @@ export function MessageBubble({
           {/* Emoji button - RIGHT side for RECEIVED messages - WhatsApp style white circle */}
           {!isMobile && !isSender && (
             <button
+              ref={!isSender ? emojiButtonRef : undefined}
               className="opacity-0 group-hover:opacity-100 h-8 w-8 rounded-full bg-white dark:bg-[#2a3942] shadow-sm flex items-center justify-center transition-opacity flex-shrink-0 hover:shadow-md"
-              onClick={() => setShowReactionBar(!showReactionBar)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (showReactionBar) {
+                  setShowReactionBar(false);
+                } else {
+                  handleShowReactionBar();
+                }
+              }}
             >
               <Smile className="h-5 w-5 text-[#8696a0]" />
             </button>

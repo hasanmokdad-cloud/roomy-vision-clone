@@ -3137,7 +3137,7 @@ export default function Messages() {
 
         {/* Chat Window - Edge-to-edge, no Card wrapper */}
         <div 
-          className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} flex-col bg-background ${
+          className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} flex-col ${
             isMobile 
               ? 'fixed top-0 left-0 right-0 z-30' 
               : 'flex-1 h-[calc(100vh-80px)]'
@@ -3257,13 +3257,15 @@ export default function Messages() {
                 />
 
                 {/* Chat Messages - Native scroll on mobile for smooth touch scrolling */}
-                {/* Sticky Date Header */}
-                <StickyDateHeader date={stickyDate} visible={showStickyDate} />
-
-                {isMobile ? (
+                {/* Chat area wrapper - includes messages, sticky header, scroll button, and input */}
+                <div className="flex-1 flex flex-col relative overflow-hidden chat-background-container">
+                  {/* Sticky Date Header - inside chat area */}
+                  <StickyDateHeader date={stickyDate} visible={showStickyDate} />
+                  
+                  {isMobile ? (
                   <div 
                     ref={chatContainerRef}
-                    className="flex-1 overflow-y-auto overscroll-contain py-4 chat-background-container relative"
+                    className="flex-1 overflow-y-auto overscroll-contain py-4 relative"
                     style={{ 
                       WebkitOverflowScrolling: 'touch'
                     }}
@@ -3362,19 +3364,11 @@ export default function Messages() {
                       <div ref={messagesEndRef} />
                     </div>
                     
-                    {/* Scroll to bottom button - right side, above input */}
-                    <AnimatePresence>
-                      {showScrollToBottom && (
-                        <div className="absolute bottom-20 right-4 z-20">
-                          <ScrollToBottomButton onClick={scrollToBottom} />
-                        </div>
-                      )}
-                    </AnimatePresence>
                   </div>
                 ) : (
                   <div 
                     ref={chatContainerRef}
-                    className="flex-1 overflow-y-auto py-4 chat-background-container relative whatsapp-scrollbar"
+                    className="flex-1 overflow-y-auto py-4 relative whatsapp-scrollbar"
                     onScroll={handleChatScroll}
                   >
                     {/* Pattern overlay handled by CSS ::before pseudo-element */}
@@ -3469,23 +3463,23 @@ export default function Messages() {
                       
                       <div ref={messagesEndRef} />
                     </div>
-                    
-                    {/* Scroll to bottom button - right side, above input */}
-                    <AnimatePresence>
-                      {showScrollToBottom && (
-                        <div className="absolute bottom-20 right-4 z-20">
-                          <ScrollToBottomButton onClick={scrollToBottom} />
-                        </div>
-                      )}
-                    </AnimatePresence>
                   </div>
                 )}
+                  
+                  {/* Scroll to bottom button - positioned inside chat area wrapper, above input */}
+                  <AnimatePresence>
+                    {showScrollToBottom && (
+                      <div className="absolute bottom-4 right-4 z-20">
+                        <ScrollToBottomButton onClick={scrollToBottom} />
+                      </div>
+                    )}
+                  </AnimatePresence>
 
-                {/* Input container - WhatsApp style: no borders, floating */}
-                <div 
-                  className={`${isMobile ? 'px-2 py-2 shrink-0 z-20' : 'px-4 py-3'}`}
-                  style={isMobile ? { paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' } : undefined}
-                >
+                  {/* Input container - WhatsApp style: inside chat background, no white bg */}
+                  <div 
+                    className={`${isMobile ? 'px-2 py-2 shrink-0 z-20' : 'px-4 py-3'} relative z-10`}
+                    style={isMobile ? { paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' } : undefined}
+                  >
                   {/* Voice Recording Overlay - rendered inline to inherit safe area positioning */}
                   {isMobile && recording ? (
                     <VoiceRecordingOverlay
@@ -3891,6 +3885,7 @@ export default function Messages() {
                     </div>
                   </div>
                 )}
+                </div>
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center text-foreground/60">
