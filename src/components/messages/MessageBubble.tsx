@@ -390,7 +390,7 @@ export function MessageBubble({
     handleShowReactionBar(e);
   };
 
-  // Show reaction bar with smart positioning based on viewport
+  // Show reaction bar with smart positioning based on CHAT AREA (not viewport)
   // Position directly adjacent to emoji button - immediate, no delay
   const handleShowReactionBar = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -400,15 +400,18 @@ export function MessageBubble({
     const emojiBtn = emojiButtonRef.current;
     const bubble = bubbleRef.current;
     
+    // Get the chat container's top boundary (the scrollable chat area)
+    const chatContainer = document.querySelector('.whatsapp-scrollbar');
+    const chatContainerTop = chatContainer?.getBoundingClientRect().top ?? 0;
+    
     if (emojiBtn) {
       const btnRect = emojiBtn.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
       
-      // Reaction bar is approximately 56px tall
-      const spaceAbove = btnRect.top;
+      // Calculate space above WITHIN THE CHAT AREA, not viewport
+      const spaceAboveChatArea = btnRect.top - chatContainerTop;
       
-      // If less than 70px above emoji button, show below
-      setReactionPosition(spaceAbove < 70 ? 'bottom' : 'top');
+      // If less than 70px above emoji button within chat area, show below
+      setReactionPosition(spaceAboveChatArea < 70 ? 'bottom' : 'top');
       
       // Store button rect for fixed positioning
       setEmojiButtonRect(btnRect);
@@ -421,9 +424,8 @@ export function MessageBubble({
     } else if (bubble) {
       // Fallback to bubble positioning
       const rect = bubble.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const spaceAbove = rect.top;
-      setReactionPosition(spaceAbove < 70 ? 'bottom' : 'top');
+      const spaceAboveChatArea = rect.top - chatContainerTop;
+      setReactionPosition(spaceAboveChatArea < 70 ? 'bottom' : 'top');
       setEmojiButtonRect(null);
       setEmojiPickerAnchor({
         x: isSender ? rect.left - 40 : rect.right + 40,
