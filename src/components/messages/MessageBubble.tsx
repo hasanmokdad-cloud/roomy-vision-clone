@@ -100,6 +100,7 @@ export function MessageBubble({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [reactionPosition, setReactionPosition] = useState<'top' | 'bottom'>('top');
   const [emojiPickerAnchor, setEmojiPickerAnchor] = useState<{x: number, y: number} | null>(null);
+  const [emojiButtonRect, setEmojiButtonRect] = useState<DOMRect | null>(null);
   const emojiButtonRef = useRef<HTMLButtonElement>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showTranslateModal, setShowTranslateModal] = useState(false);
@@ -123,6 +124,7 @@ export function MessageBubble({
       if (messageRef.current && !messageRef.current.contains(event.target as Node)) {
         setShowReactionBar(false);
         setShowEmojiPicker(false);
+        setEmojiButtonRect(null);
       }
     };
 
@@ -272,6 +274,7 @@ export function MessageBubble({
 
       setShowReactionBar(false);
       setShowEmojiPicker(false);
+      setEmojiButtonRect(null);
     } catch (error) {
       console.error("Error toggling reaction:", error);
     }
@@ -384,12 +387,15 @@ export function MessageBubble({
   // Right-click detection for desktop
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    handleShowReactionBar();
+    handleShowReactionBar(e);
   };
 
   // Show reaction bar with smart positioning based on viewport
-  // Position directly adjacent to emoji button
-  const handleShowReactionBar = useCallback(() => {
+  // Position directly adjacent to emoji button - immediate, no delay
+  const handleShowReactionBar = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    e?.preventDefault();
+    
     // Use emoji button ref for precise positioning
     const emojiBtn = emojiButtonRef.current;
     const bubble = bubbleRef.current;
@@ -400,10 +406,12 @@ export function MessageBubble({
       
       // Reaction bar is approximately 56px tall
       const spaceAbove = btnRect.top;
-      const spaceBelow = viewportHeight - btnRect.bottom;
       
       // If less than 70px above emoji button, show below
       setReactionPosition(spaceAbove < 70 ? 'bottom' : 'top');
+      
+      // Store button rect for fixed positioning
+      setEmojiButtonRect(btnRect);
       
       // Store anchor for emoji picker - center on emoji button
       setEmojiPickerAnchor({
@@ -416,6 +424,7 @@ export function MessageBubble({
       const viewportHeight = window.innerHeight;
       const spaceAbove = rect.top;
       setReactionPosition(spaceAbove < 70 ? 'bottom' : 'top');
+      setEmojiButtonRect(null);
       setEmojiPickerAnchor({
         x: isSender ? rect.left - 40 : rect.right + 40,
         y: rect.top + rect.height / 2
@@ -612,11 +621,12 @@ export function MessageBubble({
             onClick={(e) => {
               e.stopPropagation();
               setShowReactionBar(false);
+              setEmojiButtonRect(null);
             }} 
           />
         )}
 
-        {/* Reaction Bar - appears above or below message based on viewport position */}
+        {/* Reaction Bar - appears above or below emoji button based on viewport position */}
         {showReactionBar && (
           <ReactionBar
             onReactionSelect={handleReactionSelect}
@@ -629,6 +639,7 @@ export function MessageBubble({
               .map((r) => r.emoji)}
             isSender={isSender}
             position={reactionPosition}
+            buttonRect={emojiButtonRect}
           />
         )}
 
@@ -641,10 +652,12 @@ export function MessageBubble({
               className="opacity-0 group-hover:opacity-100 h-8 w-8 rounded-full bg-white dark:bg-[#2a3942] shadow-sm flex items-center justify-center transition-opacity flex-shrink-0 hover:shadow-md"
               onClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 if (showReactionBar) {
                   setShowReactionBar(false);
+                  setEmojiButtonRect(null);
                 } else {
-                  handleShowReactionBar();
+                  handleShowReactionBar(e);
                 }
               }}
             >
@@ -745,10 +758,12 @@ export function MessageBubble({
               className="opacity-0 group-hover:opacity-100 h-8 w-8 rounded-full bg-white dark:bg-[#2a3942] shadow-sm flex items-center justify-center transition-opacity flex-shrink-0 hover:shadow-md"
               onClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 if (showReactionBar) {
                   setShowReactionBar(false);
+                  setEmojiButtonRect(null);
                 } else {
-                  handleShowReactionBar();
+                  handleShowReactionBar(e);
                 }
               }}
             >

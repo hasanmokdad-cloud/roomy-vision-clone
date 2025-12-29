@@ -512,12 +512,17 @@
     background-position: center;
     transition: background-color 0.3s ease-in-out;
     position: relative;
+    /* Removed padding - will be applied to inner content instead */
+  }
+
+  /* Inner padding wrapper - keeps scrollbar on right side */
+  .chat-messages-padding {
     padding-left: 60px;
     padding-right: 60px;
   }
 
   @media (max-width: 768px) {
-    .chat-background-container {
+    .chat-messages-padding {
       padding-left: 12px;
       padding-right: 12px;
     }

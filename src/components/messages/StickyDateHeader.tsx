@@ -22,10 +22,10 @@ export function StickyDateHeader({ date, visible, containerRef }: StickyDateHead
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -40, opacity: 0 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="absolute left-1/2 -translate-x-1/2 z-30 pointer-events-none"
+          className="absolute left-0 right-0 z-30 pointer-events-none flex justify-center"
           style={{ top: '16px' }}
         >
-          <div className="bg-[#e1f2fb] dark:bg-[#182229] text-[#54656f] dark:text-[#8696a0] text-[12.5px] px-3 py-1 rounded-lg shadow-sm">
+          <div className="bg-white/90 dark:bg-[#182229]/90 backdrop-blur-sm text-[#54656f] dark:text-[#8696a0] text-[12px] font-medium px-3 py-1 rounded-lg shadow-sm">
             {formatDate(date)}
           </div>
         </motion.div>

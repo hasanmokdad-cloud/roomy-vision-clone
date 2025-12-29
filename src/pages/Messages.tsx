@@ -3272,7 +3272,7 @@ export default function Messages() {
                     onScroll={handleChatScroll}
                   >
                     {/* Pattern overlay handled by CSS ::before pseudo-element */}
-                    <div className="relative z-[1]">
+                    <div className="relative z-[1] chat-messages-padding">
                       {/* Pinned Messages Banner */}
                       {pinnedMessages.length > 0 && (
                         <div 
@@ -3372,7 +3372,7 @@ export default function Messages() {
                     onScroll={handleChatScroll}
                   >
                     {/* Pattern overlay handled by CSS ::before pseudo-element */}
-                    <div className="relative z-[1]">
+                    <div className="relative z-[1] chat-messages-padding">
                       {/* Pinned Messages Banner */}
                       {pinnedMessages.length > 0 && (
                         <div 
@@ -3466,10 +3466,10 @@ export default function Messages() {
                   </div>
                 )}
                   
-                  {/* Scroll to bottom button - positioned inside chat area wrapper, above input */}
+                  {/* Scroll to bottom button - positioned above input container */}
                   <AnimatePresence>
                     {showScrollToBottom && (
-                      <div className="absolute bottom-4 right-4 z-20">
+                      <div className="absolute bottom-16 right-6 z-20">
                         <ScrollToBottomButton onClick={scrollToBottom} />
                       </div>
                     )}
@@ -3477,7 +3477,7 @@ export default function Messages() {
 
                   {/* Input container - WhatsApp style: inside chat background, no white bg */}
                   <div 
-                    className={`${isMobile ? 'px-2 py-2 shrink-0 z-20' : 'px-4 py-3'} relative z-10`}
+                    className={`${isMobile ? 'px-2 py-2 shrink-0 z-20' : 'py-3 chat-messages-padding'} relative z-10`}
                     style={isMobile ? { paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' } : undefined}
                   >
                   {/* Voice Recording Overlay - rendered inline to inherit safe area positioning */}
