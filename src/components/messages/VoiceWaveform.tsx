@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, Mic } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface VoiceWaveformProps {
@@ -100,8 +100,8 @@ export function VoiceWaveform({
     );
   }
 
-  // Generate stable waveform bars (seeded by audioUrl hash) - reduced count for compact layout
-  const waveformBars = Array.from({ length: 28 }).map((_, i) => {
+  // Generate stable waveform bars (seeded by audioUrl hash) - WhatsApp has ~35 bars
+  const waveformBars = Array.from({ length: 35 }).map((_, i) => {
     const seed = (i * 7 + audioUrl.length) % 100;
     return 20 + Math.sin(i * 0.4 + seed * 0.1) * 15 + (seed % 20);
   });
@@ -110,32 +110,38 @@ export function VoiceWaveform({
   const dotPosition = progress;
 
   return (
-    <div className="flex items-center gap-2 min-w-[160px] max-w-[220px]">
-      {/* Sender's profile picture - WhatsApp style */}
-      <Avatar className="h-10 w-10 shrink-0">
-        <AvatarImage src={senderAvatar} />
-        <AvatarFallback className="text-xs bg-[#dfe5e7] dark:bg-[#3b4a54] text-[#8696a0]">
-          {senderName[0]?.toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
+    <div className="flex items-center gap-2 min-w-[200px] max-w-[280px]">
+      {/* Sender's profile picture with mic icon - WhatsApp style */}
+      <div className="relative shrink-0">
+        <Avatar className="h-12 w-12">
+          <AvatarImage src={senderAvatar} />
+          <AvatarFallback className="text-sm bg-[#dfe5e7] dark:bg-[#3b4a54] text-[#8696a0]">
+            {senderName[0]?.toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        {/* Green mic icon - WhatsApp style */}
+        <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-[#25d366] flex items-center justify-center border-2 border-white dark:border-[#005c4b]">
+          <Mic className="w-2.5 h-2.5 text-white" />
+        </div>
+      </div>
 
-      {/* WhatsApp-style play button - no circular background, just filled icon */}
+      {/* WhatsApp-style play button - no background, just filled icon */}
       <button
         onClick={togglePlayPause}
         className="shrink-0 text-[#8696a0] hover:text-[#667781] dark:hover:text-[#aebac1] transition-colors"
         aria-label={isPlaying ? 'Pause' : 'Play'}
       >
         {isPlaying ? (
-          <Pause className="h-7 w-7" fill="currentColor" strokeWidth={0} />
+          <Pause className="h-8 w-8" fill="currentColor" strokeWidth={0} />
         ) : (
-          <Play className="h-7 w-7 ml-0.5" fill="currentColor" strokeWidth={0} />
+          <Play className="h-8 w-8 ml-0.5" fill="currentColor" strokeWidth={0} />
         )}
       </button>
 
       {/* Waveform container */}
       <div className="flex-1 flex flex-col gap-1">
         {/* Waveform with blue progress dot */}
-        <div className="relative flex items-center gap-[1px] h-5">
+        <div className="relative flex items-center gap-[1px] h-6">
           {waveformBars.map((height, i) => {
             const barProgress = (i / waveformBars.length) * 100;
             const isPast = barProgress <= progress;
@@ -154,9 +160,9 @@ export function VoiceWaveform({
           
           {/* Blue progress dot - WhatsApp style */}
           <div 
-            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[#53bdeb] shadow-sm transition-all duration-100"
+            className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-[#53bdeb] shadow-sm transition-all duration-100"
             style={{ 
-              left: `calc(${Math.min(Math.max(dotPosition, 0), 100)}% - 6px)`,
+              left: `calc(${Math.min(Math.max(dotPosition, 0), 100)}% - 7px)`,
             }}
           />
         </div>

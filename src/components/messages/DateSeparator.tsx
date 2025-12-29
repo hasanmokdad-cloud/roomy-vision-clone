@@ -20,7 +20,10 @@ export function DateSeparator({ date }: DateSeparatorProps) {
   };
 
   return (
-    <div className="flex justify-center my-3">
+    <div 
+      className="flex justify-center my-3"
+      data-date-separator={date.toISOString()}
+    >
       <div className="px-3 py-1 rounded-lg bg-white/90 dark:bg-[#182229]/90 backdrop-blur-sm shadow-sm">
         <span className="text-[12px] text-[#54656f] dark:text-[#8696a0] font-medium">
           {getDateLabel()}
