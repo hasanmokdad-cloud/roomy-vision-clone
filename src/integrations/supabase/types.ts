@@ -1429,6 +1429,69 @@ export type Database = {
           },
         ]
       }
+      help_article_feedback: {
+        Row: {
+          article_id: string
+          created_at: string | null
+          feedback_text: string | null
+          id: string
+          is_helpful: boolean
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          article_id: string
+          created_at?: string | null
+          feedback_text?: string | null
+          id?: string
+          is_helpful: boolean
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          article_id?: string
+          created_at?: string | null
+          feedback_text?: string | null
+          id?: string
+          is_helpful?: boolean
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      help_articles: {
+        Row: {
+          category: string
+          content: string
+          created_at: string | null
+          id: string
+          search_vector: unknown
+          slug: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string | null
+          id?: string
+          search_vector?: unknown
+          slug: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          search_vector?: unknown
+          slug?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       inquiries: {
         Row: {
           created_at: string | null
@@ -4827,6 +4890,17 @@ export type Database = {
       reset_student_ai_memory: {
         Args: { p_student_id: string }
         Returns: undefined
+      }
+      search_help_articles: {
+        Args: { search_query: string }
+        Returns: {
+          category: string
+          content: string
+          id: string
+          rank: number
+          slug: string
+          title: string
+        }[]
       }
       update_student_preference: {
         Args: {

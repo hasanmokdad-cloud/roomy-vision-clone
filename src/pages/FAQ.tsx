@@ -9,6 +9,7 @@ import { SwipeableSubPage } from '@/components/mobile/SwipeableSubPage';
 import { SubPageHeader } from '@/components/mobile/SubPageHeader';
 import { Button } from '@/components/ui/button';
 import { faqData, FAQCategory } from '@/data/faq';
+import { AppBreadcrumb } from '@/components/ui/app-breadcrumb';
 import {
   Accordion,
   AccordionContent,
@@ -161,10 +162,15 @@ export default function FAQ() {
 
       {/* Hero header */}
       <div className="bg-gradient-to-b from-muted/60 via-muted/30 to-background pt-24 pb-8">
-        <div className="max-w-4xl mx-auto px-6 text-center">
+        <div className="max-w-4xl mx-auto px-6">
+          <AppBreadcrumb 
+            items={[{ label: 'FAQ' }]} 
+            className="mb-6"
+          />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            className="text-center"
           >
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">FAQ</h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">

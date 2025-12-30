@@ -5,6 +5,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { SubPageHeader } from '@/components/mobile/SubPageHeader';
 import { SwipeBackWrapper } from '@/components/mobile/SwipeBackWrapper';
 import { FileText, Shield, CreditCard, Cookie, Users } from 'lucide-react';
+import { AppBreadcrumb } from '@/components/ui/app-breadcrumb';
 
 export default function Legal() {
   const { page } = useParams();
@@ -408,6 +409,18 @@ export default function Legal() {
 
   const { title, content } = getContent();
 
+  const pageTitleMap: Record<string, string> = {
+    terms: 'Terms of Service',
+    privacy: 'Privacy Policy',
+    payments: 'Payments & Security',
+    cookies: 'Cookies & Tracking',
+    'owner-agreement': 'Owner Agreement'
+  };
+
+  const breadcrumbItems = page 
+    ? [{ label: 'Legal', href: '/legal' }, { label: pageTitleMap[page] || title }]
+    : [{ label: 'Legal' }];
+
   return (
     <SwipeBackWrapper>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -415,6 +428,9 @@ export default function Legal() {
         {!isMobile && <RoomyNavbar />}
 
         <div className={`container mx-auto px-6 max-w-4xl mb-20 ${isMobile ? 'pt-20 pb-8' : 'py-32'}`}>
+          {!isMobile && (
+            <AppBreadcrumb items={breadcrumbItems} className="mb-6" />
+          )}
           <Card className="p-8">
             <h1 className="text-4xl font-bold mb-8 gradient-text">{title}</h1>
             {content}

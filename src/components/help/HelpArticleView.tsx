@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { HelpArticle, HelpCategory, helpCategories } from '@/data/helpArticles';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useHelpFeedback } from '@/hooks/useHelpFeedback';
 
 interface HelpArticleViewProps {
   article: HelpArticle;
@@ -14,7 +15,7 @@ interface HelpArticleViewProps {
 export function HelpArticleView({ article, onBack }: HelpArticleViewProps) {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
-  const [feedback, setFeedback] = useState<'helpful' | 'not-helpful' | null>(null);
+  const { submitFeedback, submitted, isSubmitting } = useHelpFeedback(article.id);
 
   // Find the category for this article
   const category = helpCategories.find(c => 
@@ -34,9 +35,8 @@ export function HelpArticleView({ article, onBack }: HelpArticleViewProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleFeedback = (type: 'helpful' | 'not-helpful') => {
-    setFeedback(type);
-    toast.success('Thanks for your feedback!');
+  const handleFeedback = (isHelpful: boolean) => {
+    submitFeedback(isHelpful);
   };
 
   const renderContent = (content: string) => {
@@ -165,30 +165,30 @@ export function HelpArticleView({ article, onBack }: HelpArticleViewProps) {
           <p className="text-foreground font-medium mb-4">Was this article helpful?</p>
           <div className="flex gap-3">
             <Button
-              variant={feedback === 'helpful' ? 'default' : 'outline'}
+              variant={submitted ? 'default' : 'outline'}
               size="sm"
-              onClick={() => handleFeedback('helpful')}
-              disabled={feedback !== null}
+              onClick={() => handleFeedback(true)}
+              disabled={submitted || isSubmitting}
               className={cn(
-                feedback === 'helpful' && 'bg-green-600 hover:bg-green-700'
+                submitted && 'bg-green-600 hover:bg-green-700'
               )}
             >
               <ThumbsUp className="w-4 h-4 mr-2" />
               Yes
             </Button>
             <Button
-              variant={feedback === 'not-helpful' ? 'default' : 'outline'}
+              variant="outline"
               size="sm"
-              onClick={() => handleFeedback('not-helpful')}
-              disabled={feedback !== null}
-              className={cn(
-                feedback === 'not-helpful' && 'bg-red-600 hover:bg-red-700'
-              )}
+              onClick={() => handleFeedback(false)}
+              disabled={submitted || isSubmitting}
             >
               <ThumbsDown className="w-4 h-4 mr-2" />
               No
             </Button>
           </div>
+          {submitted && (
+            <p className="text-sm text-muted-foreground mt-2">Thanks for your feedback!</p>
+          )}
         </div>
 
         {/* Related Articles */}
