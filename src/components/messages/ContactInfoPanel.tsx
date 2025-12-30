@@ -6,14 +6,9 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { StarredMessagesPanel } from "./StarredMessagesPanel";
 import { MediaLinksDocsPanel } from "./MediaLinksDocsPanel";
+import { MuteNotificationsModal } from "./MuteNotificationsModal";
 import { useFriendshipStatus } from "@/hooks/useFriendshipStatus";
 import { useFriendships } from "@/hooks/useFriendships";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -446,45 +441,12 @@ export function ContactInfoPanel({
         </Button>
       </div>
 
-      {/* Mute Duration Dialog */}
-      <Dialog open={showMuteDialog} onOpenChange={setShowMuteDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Mute message notifications</DialogTitle>
-            <p className="text-sm text-muted-foreground mt-2">
-              Other members will not see that you muted this chat. You will still be notified if you are mentioned.
-            </p>
-          </DialogHeader>
-          <div className="space-y-2 pt-4">
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => handleMute('8hours')}
-            >
-              8 hours
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => handleMute('1week')}
-            >
-              1 week
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => handleMute('always')}
-            >
-              Always
-            </Button>
-          </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="ghost" onClick={() => setShowMuteDialog(false)}>
-              Cancel
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Mute Duration Modal */}
+      <MuteNotificationsModal
+        open={showMuteDialog}
+        onOpenChange={setShowMuteDialog}
+        onMute={handleMute}
+      />
     </>
   );
 

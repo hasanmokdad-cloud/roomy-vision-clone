@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Pin, BellOff, Check, CheckCheck, ChevronDown, Archive, Trash2, Ban, Mail, Heart, HeartOff, Users, Shield, Building, GraduationCap, BadgeCheck } from "lucide-react";
+import { Pin, PinOff, Bell, BellOff, Check, CheckCheck, ChevronDown, Archive, Trash2, Ban, Mail, Heart, HeartOff, Users, Shield, Building, GraduationCap, BadgeCheck } from "lucide-react";
 import { OnlineIndicator } from "./OnlineIndicator";
 import { GroupAvatarStack } from "./GroupAvatarStack";
+import { MuteNotificationsModal } from "./MuteNotificationsModal";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +23,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
 interface ChatRowItemProps {
   conversation: {
     id: string;
@@ -112,8 +112,8 @@ export function ChatRowItem({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const [showMuteDialog, setShowMuteDialog] = useState(false);
   const { toast } = useToast();
-  
   const hasUnread = (conv.unreadCount || 0) > 0 && (!conv.muted_until || new Date(conv.muted_until) <= new Date());
   const unreadCount = conv.unreadCount || 0;
   const timestamp = conv.last_message_time ? formatWhatsAppTimestamp(conv.last_message_time) : '';
@@ -154,9 +154,16 @@ export function ChatRowItem({
     setIsMenuOpen(false);
   };
 
-  const handleMute = async () => {
-    const isMuted = conv.muted_until && new Date(conv.muted_until) > new Date();
-    const mutedUntil = isMuted ? null : new Date('2099-12-31').toISOString();
+  const handleMute = async (duration: '8hours' | '1week' | 'always') => {
+    let mutedUntil: string | null = null;
+    
+    if (duration === '8hours') {
+      mutedUntil = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
+    } else if (duration === '1week') {
+      mutedUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    } else {
+      mutedUntil = new Date('2099-12-31').toISOString();
+    }
     
     const { error } = await supabase
       .from('conversations')
@@ -164,14 +171,29 @@ export function ChatRowItem({
       .eq('id', conv.id);
     
     if (error) {
-      toast({ title: "Error", description: "Failed to update mute status", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to mute chat", variant: "destructive" });
     } else {
-      toast({ title: isMuted ? "Unmuted" : "Muted" });
+      toast({ title: "Notifications muted" });
+      onUpdate();
+    }
+    setShowMuteDialog(false);
+    setIsMenuOpen(false);
+  };
+
+  const handleUnmute = async () => {
+    const { error } = await supabase
+      .from('conversations')
+      .update({ muted_until: null })
+      .eq('id', conv.id);
+    
+    if (error) {
+      toast({ title: "Error", description: "Failed to unmute chat", variant: "destructive" });
+    } else {
+      toast({ title: "Notifications unmuted" });
       onUpdate();
     }
     setIsMenuOpen(false);
   };
-
   const handleDelete = async () => {
     const { error } = await supabase
       .from('conversations')
@@ -316,7 +338,6 @@ export function ChatRowItem({
               <div className="flex items-center gap-1.5 min-w-0 flex-1">
                 {conv.is_favorite && <Heart className="w-3 h-3 text-red-500 fill-red-500 shrink-0" />}
                 {conv.is_pinned && <Pin className="w-3 h-3 text-muted-foreground shrink-0" />}
-                {isMuted && <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />}
                 {conv.is_group && <Users className="w-3 h-3 text-muted-foreground shrink-0" />}
                 <span className={`text-[15px] truncate ${hasUnread ? 'font-semibold text-foreground' : 'text-foreground'}`}>
                   {conv.is_group ? conv.group_name : conv.other_user_name}
@@ -360,8 +381,18 @@ export function ChatRowItem({
                 </p>
               </div>
               
-              {/* Right side: Unread counter and/or dropdown arrow */}
+              {/* Right side: Muted icon, Unread counter and/or dropdown arrow */}
               <div className="flex items-center gap-1 shrink-0">
+                {/* Muted icon - shifts left when arrow is visible */}
+                {isMuted && (
+                  <div 
+                    className={`transition-transform duration-150 ${
+                      showArrow ? '-translate-x-1.5' : 'translate-x-0'
+                    }`}
+                  >
+                    <BellOff className="w-4 h-4 text-[#8696a0]" />
+                  </div>
+                )}
                 {/* Unread counter - shifts left when arrow is visible */}
                 {hasUnread && unreadCount > 0 && (
                   <div 
@@ -401,21 +432,37 @@ export function ChatRowItem({
                         </span>
                       </DropdownMenuItem>
                       
-                      <DropdownMenuItem 
-                        onClick={handleMute}
-                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#f5f6f6] dark:hover:bg-[#182229] cursor-pointer focus:bg-[#f5f6f6] dark:focus:bg-[#182229]"
-                      >
-                        <BellOff className="w-5 h-5 text-[#54656f] dark:text-[#aebac1]" />
-                        <span className="text-[14px] text-[#111b21] dark:text-[#e9edef]">
-                          {isMuted ? 'Unmute notifications' : 'Mute notifications'}
-                        </span>
-                      </DropdownMenuItem>
+                      {isMuted ? (
+                        <DropdownMenuItem 
+                          onClick={handleUnmute}
+                          className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#f5f6f6] dark:hover:bg-[#182229] cursor-pointer focus:bg-[#f5f6f6] dark:focus:bg-[#182229]"
+                        >
+                          <Bell className="w-5 h-5 text-[#54656f] dark:text-[#aebac1]" />
+                          <span className="text-[14px] text-[#111b21] dark:text-[#e9edef]">
+                            Unmute notifications
+                          </span>
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem 
+                          onClick={() => setShowMuteDialog(true)}
+                          className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#f5f6f6] dark:hover:bg-[#182229] cursor-pointer focus:bg-[#f5f6f6] dark:focus:bg-[#182229]"
+                        >
+                          <BellOff className="w-5 h-5 text-[#54656f] dark:text-[#aebac1]" />
+                          <span className="text-[14px] text-[#111b21] dark:text-[#e9edef]">
+                            Mute notifications
+                          </span>
+                        </DropdownMenuItem>
+                      )}
                       
                       <DropdownMenuItem 
                         onClick={handlePin}
                         className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#f5f6f6] dark:hover:bg-[#182229] cursor-pointer focus:bg-[#f5f6f6] dark:focus:bg-[#182229]"
                       >
-                        <Pin className="w-5 h-5 text-[#54656f] dark:text-[#aebac1]" />
+                        {conv.is_pinned ? (
+                          <PinOff className="w-5 h-5 text-[#54656f] dark:text-[#aebac1]" />
+                        ) : (
+                          <Pin className="w-5 h-5 text-[#54656f] dark:text-[#aebac1]" />
+                        )}
                         <span className="text-[14px] text-[#111b21] dark:text-[#e9edef]">
                           {conv.is_pinned ? 'Unpin chat' : 'Pin chat'}
                         </span>
@@ -520,6 +567,13 @@ export function ChatRowItem({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Mute notifications modal */}
+      <MuteNotificationsModal
+        open={showMuteDialog}
+        onOpenChange={setShowMuteDialog}
+        onMute={handleMute}
+      />
     </>
   );
 }
