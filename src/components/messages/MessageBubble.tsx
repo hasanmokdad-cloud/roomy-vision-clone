@@ -520,6 +520,12 @@ export function MessageBubble({
 
   // Helper to get message status for read receipts
   const getMessageStatus = (msg: Message): 'sent' | 'delivered' | 'seen' => {
+    // First check explicit status field (most reliable for real-time updates)
+    if (msg.status === 'seen') return 'seen';
+    if (msg.status === 'delivered') return 'delivered';
+    if (msg.status === 'sent') return 'sent';
+    
+    // Fallback to timestamps for backwards compatibility
     if (msg.seen_at) return 'seen';
     if (msg.delivered_at) return 'delivered';
     return 'sent';
