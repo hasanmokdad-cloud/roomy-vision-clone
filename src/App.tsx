@@ -288,6 +288,7 @@ const AppRoutes = () => {
           <Route path="/shared/:shareCode" element={<SharedCollection />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/legal" element={<Legal />} />
           <Route path="/legal/:page" element={<Legal />} />
           <Route path="/help" element={<Help />} />
           <Route path="/help/:articleId" element={<Help />} />

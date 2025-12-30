@@ -77,12 +77,18 @@ export const Footer = () => {
           <p className="text-sm text-foreground/60">
             © 2025 Roomy. All rights reserved.
           </p>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap gap-4 md:gap-6">
+            <Link to="/legal/terms" className="text-sm text-foreground/60 hover:text-primary transition-colors">
+              Terms of Service
+            </Link>
             <Link to="/legal/privacy" className="text-sm text-foreground/60 hover:text-primary transition-colors">
               Privacy Policy
             </Link>
-            <Link to="/legal/terms" className="text-sm text-foreground/60 hover:text-primary transition-colors">
-              Terms of Service
+            <Link to="/legal/payments" className="text-sm text-foreground/60 hover:text-primary transition-colors">
+              Payments
+            </Link>
+            <Link to="/legal/cookies" className="text-sm text-foreground/60 hover:text-primary transition-colors">
+              Cookies
             </Link>
             <Link to="/help" className="text-sm text-foreground/60 hover:text-primary transition-colors">
               Help Center

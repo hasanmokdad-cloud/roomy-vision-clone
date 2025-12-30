@@ -1,6 +1,9 @@
 import { motion } from 'framer-motion';
 import { MapPin, Users, Camera, FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { IsometricRoomAnimation } from '../IsometricRoomAnimation';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 interface ReviewStepProps {
   formData: {
@@ -16,6 +19,8 @@ interface ReviewStepProps {
     description: string;
   };
   onEditStep: (step: number) => void;
+  agreedToOwnerTerms: boolean;
+  onAgreedToOwnerTermsChange: (agreed: boolean) => void;
 }
 
 const genderLabels: Record<string, string> = {
@@ -29,7 +34,7 @@ const cityLabels: Record<string, string> = {
   beirut: 'Beirut',
 };
 
-export function ReviewStep({ formData, onEditStep }: ReviewStepProps) {
+export function ReviewStep({ formData, onEditStep, agreedToOwnerTerms, onAgreedToOwnerTermsChange }: ReviewStepProps) {
   const sections = [
     {
       icon: MapPin,
@@ -140,16 +145,46 @@ export function ReviewStep({ formData, onEditStep }: ReviewStepProps) {
         </p>
       </motion.div>
 
+      {/* Owner Agreement Checkbox */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.55 }}
+        className="mt-6 p-4 rounded-xl bg-muted/50"
+      >
+        <div className="flex items-start gap-3">
+          <Checkbox
+            id="owner-agreement-checkbox"
+            checked={agreedToOwnerTerms}
+            onCheckedChange={(checked) => onAgreedToOwnerTermsChange(checked === true)}
+            className="mt-0.5"
+          />
+          <Label 
+            htmlFor="owner-agreement-checkbox" 
+            className="text-sm text-muted-foreground leading-tight cursor-pointer"
+          >
+            I agree to the{' '}
+            <Link 
+              to="/legal/owner-agreement" 
+              className="underline text-primary hover:text-primary/80"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Owner Agreement
+            </Link>
+          </Label>
+        </div>
+      </motion.div>
+
       {/* Verification notice */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
-        className={`mt-6 p-4 rounded-xl flex items-start gap-3 ${
-          allComplete ? 'bg-green-500/10 border border-green-500/20' : 'bg-amber-500/10 border border-amber-500/20'
+        className={`mt-4 p-4 rounded-xl flex items-start gap-3 ${
+          allComplete && agreedToOwnerTerms ? 'bg-green-500/10 border border-green-500/20' : 'bg-amber-500/10 border border-amber-500/20'
         }`}
       >
-        {allComplete ? (
+        {allComplete && agreedToOwnerTerms ? (
           <>
             <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
             <div>
@@ -163,9 +198,15 @@ export function ReviewStep({ formData, onEditStep }: ReviewStepProps) {
           <>
             <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-foreground">Some sections need attention</p>
+              <p className="font-medium text-foreground">
+                {!agreedToOwnerTerms && allComplete 
+                  ? 'Please accept the Owner Agreement' 
+                  : 'Some sections need attention'}
+              </p>
               <p className="text-sm text-muted-foreground">
-                Please complete all required fields before submitting.
+                {!agreedToOwnerTerms && allComplete 
+                  ? 'You must agree to the Owner Agreement before submitting.'
+                  : 'Please complete all required fields before submitting.'}
               </p>
             </div>
           </>
