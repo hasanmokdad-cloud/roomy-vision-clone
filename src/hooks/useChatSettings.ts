@@ -10,6 +10,11 @@ export interface ChatSettings {
   spell_check: boolean;
   replace_text_with_emoji: boolean;
   enter_is_send: boolean;
+  // Sound settings
+  notification_sound: string;
+  incoming_sound_enabled: boolean;
+  outgoing_sound_enabled: boolean;
+  vibration_enabled: boolean;
 }
 
 const defaultSettings: ChatSettings = {
@@ -18,6 +23,10 @@ const defaultSettings: ChatSettings = {
   spell_check: true,
   replace_text_with_emoji: true,
   enter_is_send: true,
+  notification_sound: 'default',
+  incoming_sound_enabled: true,
+  outgoing_sound_enabled: false,
+  vibration_enabled: true,
 };
 
 export function useChatSettings() {
@@ -59,6 +68,10 @@ export function useChatSettings() {
           spell_check: data.spell_check,
           replace_text_with_emoji: data.replace_text_with_emoji,
           enter_is_send: data.enter_is_send,
+          notification_sound: data.notification_sound || 'default',
+          incoming_sound_enabled: data.incoming_sound_enabled ?? true,
+          outgoing_sound_enabled: data.outgoing_sound_enabled ?? false,
+          vibration_enabled: data.vibration_enabled ?? true,
         });
       }
     } catch (error) {
@@ -94,6 +107,10 @@ export function useChatSettings() {
           spell_check: data.spell_check,
           replace_text_with_emoji: data.replace_text_with_emoji,
           enter_is_send: data.enter_is_send,
+          notification_sound: data.notification_sound || 'default',
+          incoming_sound_enabled: data.incoming_sound_enabled ?? true,
+          outgoing_sound_enabled: data.outgoing_sound_enabled ?? false,
+          vibration_enabled: data.vibration_enabled ?? true,
         });
       }
     } catch (error) {

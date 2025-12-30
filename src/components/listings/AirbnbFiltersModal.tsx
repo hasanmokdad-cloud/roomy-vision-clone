@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, Wifi, Car, Snowflake, Dumbbell, ShieldCheck, UtensilsCrossed, BookOpen, Trees, Users, Zap, Droplets, Building2, Armchair, PawPrint, Sparkles, Waves, Flower2, DoorOpen, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Wifi, Car, Snowflake, Dumbbell, ShieldCheck, UtensilsCrossed, BookOpen, Trees, Users, Zap, Droplets, ArrowUpDown, Sofa, PawPrint, Brush, Waves, Flower2, DoorOpen, X, Tv } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
@@ -79,18 +79,20 @@ const amenityCategories = {
   'Essentials': [
     { name: 'Laundry', icon: Droplets },
     { name: 'Kitchen', icon: UtensilsCrossed },
-    { name: 'Furnished', icon: Armchair },
+    { name: 'Furnished', icon: Sofa },
     { name: 'Heating', icon: Zap },
+    { name: 'TV', icon: Tv },
+    { name: 'Electricity', icon: Zap },
   ],
   'Facilities': [
     { name: 'Gym', icon: Dumbbell },
     { name: 'Study Room', icon: BookOpen },
     { name: 'Common Area', icon: Users },
-    { name: 'Elevator', icon: Building2 },
+    { name: 'Elevator', icon: ArrowUpDown },
   ],
   'Safety & Services': [
     { name: 'Security', icon: ShieldCheck },
-    { name: 'Cleaning Service', icon: Sparkles },
+    { name: 'Cleaning Service', icon: Brush },
     { name: 'Pet Friendly', icon: PawPrint },
   ],
   'Outdoor': [
