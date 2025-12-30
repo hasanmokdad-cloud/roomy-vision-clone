@@ -22,7 +22,9 @@ export const Navbar = () => {
       transition={{ duration: 0.8, ease: [0.6, 0.05, 0.01, 0.9] }}
       className="fixed top-0 left-0 right-0 z-50 px-6 py-4"
     >
-      <div className="max-w-7xl mx-auto glass rounded-2xl px-6 py-3 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto navbar-water-glass rounded-2xl px-6 py-3 flex items-center justify-between relative overflow-hidden">
+        {/* Water caustics overlay */}
+        <div className="navbar-water-caustics" />
         <Link to="/">
           <motion.div
             className="flex items-center gap-2"

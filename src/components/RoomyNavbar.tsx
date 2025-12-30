@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { NotificationBellPopover } from '@/components/shared/NotificationBellPopover';
+import { cn } from '@/lib/utils';
 
 export function RoomyNavbar() {
   const navigate = useNavigate();
@@ -90,210 +91,212 @@ export function RoomyNavbar() {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: [0.6, 0.05, 0.01, 0.9] }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled 
-            ? 'bg-background/95 backdrop-blur-xl border-b border-border shadow-sm' 
-            : 'bg-background/80 backdrop-blur-lg'
-        }`}
+        className="fixed top-0 left-0 right-0 z-50 px-4 py-3"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Logo - navigates based on role */}
-            <Link 
-              to={role === 'owner' ? '/owner' : role === 'admin' ? '/admin' : '/listings'} 
-              className="flex items-center gap-2 shrink-0"
+        <div
+          className={cn(
+            "max-w-7xl mx-auto transition-all duration-500 flex items-center justify-between relative",
+            "navbar-water-glass rounded-2xl px-4 md:px-6 py-3"
+          )}
+        >
+          {/* Water caustics overlay */}
+          <div className="navbar-water-caustics" />
+          
+          {/* Logo - navigates based on role */}
+          <Link 
+            to={role === 'owner' ? '/owner' : role === 'admin' ? '/admin' : '/listings'} 
+            className="flex items-center gap-2 shrink-0 relative z-10"
+          >
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center gap-2"
             >
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.2 }}
-                className="flex items-center gap-2"
+              <img 
+                src={RoomyLogo} 
+                alt="Roomy" 
+                className="w-9 h-9 md:w-10 md:h-10 rounded-xl"
+              />
+              <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent hidden sm:block">
+                Roomy
+              </span>
+            </motion.div>
+          </Link>
+
+          {/* Right side actions */}
+          <div className="flex items-center gap-2 md:gap-3 relative z-10">
+            {/* Become an Owner - hide for owners/admins */}
+            {isAuthReady && role !== 'owner' && role !== 'admin' && (
+              <Button
+                variant="ghost"
+                onClick={handleBecomeOwner}
+                className="hidden md:flex text-sm font-medium hover:bg-white/10 rounded-full px-4"
               >
-                <img 
-                  src={RoomyLogo} 
-                  alt="Roomy" 
-                  className="w-9 h-9 md:w-10 md:h-10 rounded-xl"
-                />
-                <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent hidden sm:block">
-                  Roomy
-                </span>
-              </motion.div>
-            </Link>
+                {t('navbar.becomeOwner', 'Become an Owner')}
+              </Button>
+            )}
 
-            {/* Right side actions */}
-            <div className="flex items-center gap-2 md:gap-3">
-              {/* Become an Owner - hide for owners/admins */}
-              {isAuthReady && role !== 'owner' && role !== 'admin' && (
+            {/* Messages - only show when logged in */}
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/messages')}
+                className="relative rounded-full hover:bg-white/10"
+              >
+                <MessageCircle className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Button>
+            )}
+
+            {/* Notification Bell - only show when logged in (desktop) */}
+            {isAuthenticated && user?.id && (
+              <NotificationBellPopover 
+                userId={user.id} 
+                tableType="user" 
+                variant="default"
+              />
+            )}
+
+            {/* Hamburger Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button
-                  variant="ghost"
-                  onClick={handleBecomeOwner}
-                  className="hidden md:flex text-sm font-medium hover:bg-accent/50 rounded-full px-4"
+                  variant="outline"
+                  className="flex items-center gap-2 rounded-full px-3 py-2 h-auto border-white/20 hover:bg-white/10 hover:shadow-md transition-shadow bg-white/5"
                 >
-                  {t('navbar.becomeOwner', 'Become an Owner')}
+                  <Menu className="w-4 h-4" />
+                  <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
+                    {isAuthenticated ? (
+                      <span className="text-sm font-medium text-foreground">
+                        {userName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                      </span>
+                    ) : (
+                      <User className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </div>
                 </Button>
-              )}
-
-              {/* Messages - only show when logged in */}
-              {isAuthenticated && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate('/messages')}
-                  className="relative rounded-full hover:bg-accent/50"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
-                </Button>
-              )}
-
-              {/* Notification Bell - only show when logged in (desktop) */}
-              {isAuthenticated && user?.id && (
-                <NotificationBellPopover 
-                  userId={user.id} 
-                  tableType="user" 
-                  variant="default"
-                />
-              )}
-
-              {/* Hamburger Menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="flex items-center gap-2 rounded-full px-3 py-2 h-auto border-border hover:shadow-md transition-shadow"
-                  >
-                    <Menu className="w-4 h-4" />
-                    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
-                      {isAuthenticated ? (
-                        <span className="text-sm font-medium text-foreground">
-                          {userName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
-                        </span>
-                      ) : (
-                        <User className="w-4 h-4 text-muted-foreground" />
-                      )}
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                
-                <DropdownMenuContent 
-                  align="end" 
-                  className="w-56 bg-background border border-border shadow-xl rounded-xl p-1"
-                >
-                  {!isAuthenticated ? (
-                    // Not logged in menu
-                    <>
+              </DropdownMenuTrigger>
+              
+              <DropdownMenuContent 
+                align="end" 
+                className="w-56 bg-background/95 backdrop-blur-xl border border-border/50 shadow-xl rounded-xl p-1"
+              >
+                {!isAuthenticated ? (
+                  // Not logged in menu
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => navigate('/contact')}
+                      className="cursor-pointer rounded-lg py-3"
+                    >
+                      <Phone className="w-4 h-4 mr-2" />
+                      {t('navbar.contact', 'Contact')}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={openAuthModal}
+                      className="font-semibold cursor-pointer rounded-lg py-3"
+                    >
+                      {t('navbar.loginOrSignup', 'Log in or sign up')}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setLanguageModalOpen(true)}
+                      className="cursor-pointer rounded-lg py-3"
+                    >
+                      <Globe className="w-4 h-4 mr-2" />
+                      {t('navbar.language', 'Language')}
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  // Logged in menu
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => navigate('/profile')}
+                      className="cursor-pointer rounded-lg py-3"
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      {t('navbar.myProfile', 'My Profile')}
+                    </DropdownMenuItem>
+                    
+                    {/* AI Match - only for confirmed students */}
+                    {role === 'student' && (
                       <DropdownMenuItem
-                        onClick={() => navigate('/contact')}
+                        onClick={() => navigate('/ai-match')}
                         className="cursor-pointer rounded-lg py-3"
                       >
-                        <Phone className="w-4 h-4 mr-2" />
-                        {t('navbar.contact', 'Contact')}
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        {t('navbar.aiMatch', 'AI Match')}
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                    )}
+                    
+                    {/* Control Panel for owners */}
+                    {role === 'owner' && (
                       <DropdownMenuItem
-                        onClick={openAuthModal}
-                        className="font-semibold cursor-pointer rounded-lg py-3"
-                      >
-                        {t('navbar.loginOrSignup', 'Log in or sign up')}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => setLanguageModalOpen(true)}
+                        onClick={() => navigate('/owner')}
                         className="cursor-pointer rounded-lg py-3"
                       >
-                        <Globe className="w-4 h-4 mr-2" />
-                        {t('navbar.language', 'Language')}
+                        <Building2 className="w-4 h-4 mr-2" />
+                        {t('navbar.controlPanel', 'Control Panel')}
                       </DropdownMenuItem>
-                    </>
-                  ) : (
-                    // Logged in menu
-                    <>
+                    )}
+                    
+                    {/* Control Panel for admins */}
+                    {role === 'admin' && (
                       <DropdownMenuItem
-                        onClick={() => navigate('/profile')}
+                        onClick={() => navigate('/admin')}
                         className="cursor-pointer rounded-lg py-3"
                       >
-                        <User className="w-4 h-4 mr-2" />
-                        {t('navbar.myProfile', 'My Profile')}
+                        <Shield className="w-4 h-4 mr-2" />
+                        {t('navbar.controlPanel', 'Control Panel')}
                       </DropdownMenuItem>
-                      
-                      {/* AI Match - only for confirmed students */}
-                      {role === 'student' && (
-                        <DropdownMenuItem
-                          onClick={() => navigate('/ai-match')}
-                          className="cursor-pointer rounded-lg py-3"
-                        >
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          {t('navbar.aiMatch', 'AI Match')}
-                        </DropdownMenuItem>
-                      )}
-                      
-                      {/* Control Panel for owners */}
-                      {role === 'owner' && (
-                        <DropdownMenuItem
-                          onClick={() => navigate('/owner')}
-                          className="cursor-pointer rounded-lg py-3"
-                        >
-                          <Building2 className="w-4 h-4 mr-2" />
-                          {t('navbar.controlPanel', 'Control Panel')}
-                        </DropdownMenuItem>
-                      )}
-                      
-                      {/* Control Panel for admins */}
-                      {role === 'admin' && (
-                        <DropdownMenuItem
-                          onClick={() => navigate('/admin')}
-                          className="cursor-pointer rounded-lg py-3"
-                        >
-                          <Shield className="w-4 h-4 mr-2" />
-                          {t('navbar.controlPanel', 'Control Panel')}
-                        </DropdownMenuItem>
-                      )}
-                      
-                      {/* Contact - show for all authenticated users */}
-                      <DropdownMenuItem
-                        onClick={() => navigate('/contact')}
-                        className="cursor-pointer rounded-lg py-3"
-                      >
-                        <Phone className="w-4 h-4 mr-2" />
-                        {t('navbar.contact', 'Contact')}
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuItem
-                        onClick={() => navigate('/settings')}
-                        className="cursor-pointer rounded-lg py-3"
-                      >
-                        <Settings className="w-4 h-4 mr-2" />
-                        {t('navbar.settings', 'Settings')}
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuSeparator />
-                      
-                      <DropdownMenuItem
-                        onClick={() => setLanguageModalOpen(true)}
-                        className="cursor-pointer rounded-lg py-3"
-                      >
-                        <Globe className="w-4 h-4 mr-2" />
-                        {t('navbar.language', 'Language')}
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuSeparator />
-                      
-                      <DropdownMenuItem
-                        onClick={handleSignOut}
-                        disabled={signingOut}
-                        className="cursor-pointer rounded-lg py-3 text-destructive focus:text-destructive"
-                      >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        {signingOut ? t('navbar.signingOut', 'Signing out...') : t('navbar.signOut', 'Sign out')}
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                    )}
+                    
+                    {/* Contact - show for all authenticated users */}
+                    <DropdownMenuItem
+                      onClick={() => navigate('/contact')}
+                      className="cursor-pointer rounded-lg py-3"
+                    >
+                      <Phone className="w-4 h-4 mr-2" />
+                      {t('navbar.contact', 'Contact')}
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem
+                      onClick={() => navigate('/settings')}
+                      className="cursor-pointer rounded-lg py-3"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      {t('navbar.settings', 'Settings')}
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuSeparator />
+                    
+                    <DropdownMenuItem
+                      onClick={() => setLanguageModalOpen(true)}
+                      className="cursor-pointer rounded-lg py-3"
+                    >
+                      <Globe className="w-4 h-4 mr-2" />
+                      {t('navbar.language', 'Language')}
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuSeparator />
+                    
+                    <DropdownMenuItem
+                      onClick={handleSignOut}
+                      disabled={signingOut}
+                      className="cursor-pointer rounded-lg py-3 text-destructive focus:text-destructive"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      {signingOut ? t('navbar.signingOut', 'Signing out...') : t('navbar.signOut', 'Sign out')}
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </motion.nav>
