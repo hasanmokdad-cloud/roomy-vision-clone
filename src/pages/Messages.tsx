@@ -855,14 +855,23 @@ export default function Messages() {
     // Initial load - use ref to get latest function
     loadConversationsRef.current();
 
-    // Subscribe to new messages using realtime utility
-    const messagesChannel = subscribeTo("messages", async (payload) => {
+    // Subscribe to NEW messages only (INSERT events)
+    const messagesInsertChannel = subscribeTo("messages", async (payload) => {
       // Guard against updates during sign-out or after unmount
       if (!isMountedRef.current || isSigningOut) return;
       
       const newMessage = payload.new as Message;
       
-      if (newMessage.conversation_id === selectedConversation) {
+      console.log('[RT] Message INSERT received:', {
+        messageId: newMessage.id,
+        sender: newMessage.sender_id,
+        isCurrentUser: newMessage.sender_id === userId,
+        currentConversation: selectedConversationRef.current,
+        messageConversation: newMessage.conversation_id
+      });
+      
+      // Use ref to avoid stale closure
+      if (newMessage.conversation_id === selectedConversationRef.current) {
         // Only add messages from OTHER users - sender's messages already added optimistically
         if (newMessage.sender_id !== userId) {
           setMessages(prev => {
@@ -871,24 +880,18 @@ export default function Messages() {
             return [...prev, newMessage];
           });
           
-          // Automatically mark as delivered when received
+          // Automatically mark as delivered and seen since conversation is open
           if (isMountedRef.current && !isSigningOut) {
             await supabase
               .from('messages')
               .update({ 
-                status: 'delivered',
-                delivered_at: new Date().toISOString()
+                status: 'seen',
+                delivered_at: new Date().toISOString(),
+                seen_at: new Date().toISOString(),
+                read: true
               })
               .eq('id', newMessage.id);
-            
-            // Mark as seen since conversation is open
-            markAsRead(newMessage.id);
           }
-        } else {
-          // Update the sender's own message status if it was updated
-          setMessages(prev =>
-            prev.map(m => (m.id === newMessage.id ? { ...m, ...newMessage } : m))
-          );
         }
       } else {
         // Message in different conversation, just mark as delivered
@@ -903,15 +906,36 @@ export default function Messages() {
         }
       }
       
-      // Reload conversations to update last message & unread counts - use ref for latest function
+      // Optimistically update conversations list
       if (isMountedRef.current && !isSigningOut) {
-        loadConversationsRef.current();
+        setConversations(prev => {
+          const updated = prev.map(c => {
+            if (c.id === newMessage.conversation_id) {
+              return {
+                ...c,
+                last_message: newMessage.body || '[Media]',
+                last_message_time: newMessage.created_at,
+                last_message_sender_id: newMessage.sender_id,
+                last_message_status: newMessage.sender_id === userId ? newMessage.status : c.last_message_status,
+                unreadCount: newMessage.sender_id !== userId && newMessage.conversation_id !== selectedConversationRef.current
+                  ? (c.unreadCount || 0) + 1 
+                  : c.unreadCount
+              };
+            }
+            return c;
+          });
+          // Sort by last message time
+          return updated.sort((a, b) => 
+            new Date(b.last_message_time || b.updated_at).getTime() - 
+            new Date(a.last_message_time || a.updated_at).getTime()
+          );
+        });
       }
-    });
+    }, undefined, 'INSERT');
 
-    // Subscribe to message updates - only update status fields to prevent flickering
+    // Subscribe to message STATUS updates only (UPDATE events)
     const messagesUpdateChannel = supabase
-      .channel('messages-updates')
+      .channel('messages-status-updates')
       .on(
         'postgres_changes',
         {
@@ -920,6 +944,8 @@ export default function Messages() {
           table: 'messages',
         },
         (payload) => {
+          if (!isMountedRef.current || isSigningOut) return;
+          
           const updatedMessage = payload.new as Message;
           
           console.log('[RT] Message UPDATE received:', {
@@ -930,7 +956,7 @@ export default function Messages() {
             match: updatedMessage.conversation_id === selectedConversationRef.current
           });
           
-          // Use ref to get current conversation (avoids stale closure)
+          // Update messages in current conversation
           if (updatedMessage.conversation_id === selectedConversationRef.current) {
             setMessages(prev =>
               prev.map(m => {
@@ -949,21 +975,28 @@ export default function Messages() {
             );
           }
           
-          // Reload conversations to update chat list preview status
-          if (isMountedRef.current && !isSigningOut) {
-            loadConversationsRef.current();
-          }
+          // Optimistically update conversation list with new status
+          setConversations(prev => 
+            prev.map(c => {
+              if (c.id === updatedMessage.conversation_id && c.last_message_sender_id === userId) {
+                return { ...c, last_message_status: updatedMessage.status };
+              }
+              return c;
+            })
+          );
         }
       )
       .subscribe();
 
     const conversationsChannel = subscribeTo("conversations", () => {
       // Use ref to get latest function
-      loadConversationsRef.current();
+      if (isMountedRef.current && !isSigningOut) {
+        loadConversationsRef.current();
+      }
     });
 
     return () => {
-      unsubscribeFrom(messagesChannel);
+      unsubscribeFrom(messagesInsertChannel);
       supabase.removeChannel(messagesUpdateChannel);
       unsubscribeFrom(conversationsChannel);
       if (presenceChannelRef.current) {
@@ -971,7 +1004,7 @@ export default function Messages() {
         presenceChannelRef.current = null;
       }
     };
-  }, [userId, selectedConversation, isSigningOut, markAllAsDelivered]);
+  }, [userId, isSigningOut, markAllAsDelivered]); // Removed selectedConversation from deps
 
   // Setup typing presence
   useEffect(() => {
