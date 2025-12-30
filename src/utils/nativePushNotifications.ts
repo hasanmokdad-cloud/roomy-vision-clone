@@ -3,6 +3,14 @@ import { PushNotifications, Token, PushNotificationSchema } from '@capacitor/pus
 import { supabase } from '@/integrations/supabase/client';
 
 let isInitialized = false;
+let activeConversationId: string | null = null;
+
+/**
+ * Set the currently active conversation to skip notifications for it
+ */
+export function setActiveConversationForPush(conversationId: string | null) {
+  activeConversationId = conversationId;
+}
 
 /**
  * Initialize native push notifications for iOS/Android
@@ -51,6 +59,13 @@ export async function initializeNativePush() {
     // but this provides additional reliability for when app receives the push
     PushNotifications.addListener('pushNotificationReceived', async (notification: PushNotificationSchema) => {
       console.log('[NativePush] Push received:', notification);
+      
+      // Skip showing notification if user is already viewing this conversation
+      const conversationId = notification.data?.conversation_id;
+      if (conversationId && conversationId === activeConversationId) {
+        console.log('[NativePush] Skipping notification - conversation is active');
+        return;
+      }
       
       // Extract message_id from notification data if available
       const messageId = notification.data?.message_id;
