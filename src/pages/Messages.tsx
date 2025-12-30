@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3, Plus, Camera, Keyboard, Trash2, Search, Heart } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Check, CheckCheck, Mic, Loader2, Pin, BellOff, Archive, X, Smile, Square, Info, BarChart3, Plus, Camera, Keyboard, Trash2, Search, Heart, Users } from 'lucide-react';
 import { ChatRowItem } from '@/components/messages/ChatRowItem';
 import { ConversationSearchBar, HighlightedText } from '@/components/messages/ConversationSearchBar';
 import { TypingIndicator } from '@/components/messages/TypingIndicator';
@@ -38,6 +38,11 @@ import { MicSetupModal } from '@/components/voice/MicSetupModal';
 import { DateSeparator } from '@/components/messages/DateSeparator';
 import { StickyDateHeader } from '@/components/messages/StickyDateHeader';
 import { ScrollToBottomButton } from '@/components/messages/ScrollToBottomButton';
+import { CreateGroupSheet } from '@/components/messages/CreateGroupSheet';
+import { GroupInfoPanel } from '@/components/messages/GroupInfoPanel';
+import { GlobalSearchSheet } from '@/components/messages/GlobalSearchSheet';
+import { NewChatMenu } from '@/components/messages/NewChatMenu';
+import { GroupAvatarStack } from '@/components/messages/GroupAvatarStack';
 import { useMicPermission } from '@/contexts/MicPermissionContext';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
@@ -69,6 +74,7 @@ type Conversation = {
   last_message?: string;
   last_message_status?: 'sent' | 'delivered' | 'seen';
   last_message_sender_id?: string | null;
+  last_message_sender_name?: string | null;
   last_message_time?: string;
   other_user_photo?: string | null;
   unreadCount?: number;
@@ -76,6 +82,12 @@ type Conversation = {
   is_archived?: boolean;
   is_favorite?: boolean;
   muted_until?: string | null;
+  // Group chat fields
+  is_group?: boolean;
+  group_name?: string | null;
+  group_photo_url?: string | null;
+  member_avatars?: (string | null)[];
+  member_count?: number;
 };
 
 type Message = {
@@ -275,6 +287,11 @@ export default function Messages() {
   const [conversationSearchQuery, setConversationSearchQuery] = useState('');
   const [matchingMessageIds, setMatchingMessageIds] = useState<string[]>([]);
   const [currentSearchMatchIndex, setCurrentSearchMatchIndex] = useState(-1);
+  // Group chat state
+  const [showCreateGroupSheet, setShowCreateGroupSheet] = useState(false);
+  const [showGroupInfoPanel, setShowGroupInfoPanel] = useState(false);
+  // Global search state
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -2790,6 +2807,20 @@ export default function Messages() {
                       Messages
                     </h2>
                   </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowGlobalSearch(true)}
+                      className="shrink-0"
+                    >
+                      <Search className="w-5 h-5" />
+                    </Button>
+                    <NewChatMenu
+                      onNewChat={() => toast({ title: 'New chat', description: 'Start typing in search to find contacts' })}
+                      onNewGroup={() => setShowCreateGroupSheet(true)}
+                    />
+                  </div>
                 </div>
 
                 {/* Search bar for ALL roles */}
@@ -3916,6 +3947,38 @@ export default function Messages() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Create Group Sheet */}
+      <CreateGroupSheet
+        open={showCreateGroupSheet}
+        onOpenChange={setShowCreateGroupSheet}
+        userId={userId}
+        onGroupCreated={(conversationId) => {
+          setSelectedConversation(conversationId);
+          loadMessages(conversationId);
+          loadConversations();
+        }}
+      />
+
+      {/* Global Search Sheet */}
+      <GlobalSearchSheet
+        open={showGlobalSearch}
+        onOpenChange={setShowGlobalSearch}
+        userId={userId}
+        onSelectResult={(conversationId, messageId) => {
+          setSelectedConversation(conversationId);
+          loadMessages(conversationId);
+          // Scroll to message after loading
+          setTimeout(() => {
+            const element = document.getElementById(`message-${messageId}`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              element.classList.add('bg-primary/20');
+              setTimeout(() => element.classList.remove('bg-primary/20'), 1500);
+            }
+          }, 500);
+        }}
+      />
     </div>
   );
 }

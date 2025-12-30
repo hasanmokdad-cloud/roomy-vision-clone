@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Pin, BellOff, Check, CheckCheck, ChevronDown, Archive, Trash2, Ban, Mail, Heart, HeartOff } from "lucide-react";
+import { Pin, BellOff, Check, CheckCheck, ChevronDown, Archive, Trash2, Ban, Mail, Heart, HeartOff, Users } from "lucide-react";
 import { OnlineIndicator } from "./OnlineIndicator";
+import { GroupAvatarStack } from "./GroupAvatarStack";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +31,7 @@ interface ChatRowItemProps {
     last_message?: string;
     last_message_time?: string;
     last_message_sender_id?: string | null;
+    last_message_sender_name?: string | null;
     last_message_status?: 'sent' | 'delivered' | 'seen';
     is_pinned?: boolean;
     is_archived?: boolean;
@@ -39,6 +41,12 @@ interface ChatRowItemProps {
     student_id?: string;
     user_a_id?: string | null;
     user_b_id?: string | null;
+    // Group chat fields
+    is_group?: boolean;
+    group_name?: string | null;
+    group_photo_url?: string | null;
+    member_avatars?: (string | null)[];
+    member_count?: number;
   };
   isSelected: boolean;
   userId: string | null;
@@ -278,13 +286,24 @@ export function ChatRowItem({
         <div className="flex items-center gap-3 px-3 py-2.5">
           {/* Avatar - 49px like WhatsApp */}
           <div className="relative shrink-0">
-            <Avatar className="w-[49px] h-[49px]">
-              <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
-              <AvatarFallback className="bg-primary/20 text-primary text-base">
-                {conv.other_user_name?.charAt(0) || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            {conv.student_id && <OnlineIndicator userId={conv.student_id} />}
+            {conv.is_group ? (
+              <GroupAvatarStack
+                groupPhoto={conv.group_photo_url}
+                groupName={conv.group_name || 'Group'}
+                memberAvatars={conv.member_avatars}
+                size="md"
+              />
+            ) : (
+              <>
+                <Avatar className="w-[49px] h-[49px]">
+                  <AvatarImage src={conv.other_user_photo || undefined} alt={conv.other_user_name} />
+                  <AvatarFallback className="bg-primary/20 text-primary text-base">
+                    {conv.other_user_name?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                {conv.student_id && <OnlineIndicator userId={conv.student_id} />}
+              </>
+            )}
           </div>
           
           {/* Content */}
@@ -295,8 +314,9 @@ export function ChatRowItem({
                 {conv.is_favorite && <Heart className="w-3 h-3 text-red-500 fill-red-500 shrink-0" />}
                 {conv.is_pinned && <Pin className="w-3 h-3 text-muted-foreground shrink-0" />}
                 {isMuted && <BellOff className="w-3 h-3 text-muted-foreground shrink-0" />}
+                {conv.is_group && <Users className="w-3 h-3 text-muted-foreground shrink-0" />}
                 <span className={`text-[15px] truncate ${hasUnread ? 'font-semibold text-foreground' : 'text-foreground'}`}>
-                  {conv.other_user_name}
+                  {conv.is_group ? conv.group_name : conv.other_user_name}
                 </span>
               </div>
               {timestamp && (
@@ -317,7 +337,10 @@ export function ChatRowItem({
                   <MessageStatusIcon status={conv.last_message_status} />
                 )}
                 <p className={`text-[13px] truncate ${hasUnread ? 'text-foreground' : 'text-[#667781]'}`}>
-                  {conv.last_message || 'Start a conversation'}
+                  {conv.is_group && conv.last_message_sender_id && conv.last_message_sender_id !== userId && conv.last_message_sender_name
+                    ? `${conv.last_message_sender_name.split(' ')[0]}: ${conv.last_message || ''}`
+                    : conv.last_message || 'Start a conversation'
+                  }
                 </p>
               </div>
               
