@@ -623,10 +623,15 @@ export default function Profile() {
             {/* Student Profile Form - only show if profile is complete */}
             {/* Note: StudentProfileForm handles preventing redirect to /ai-match when pending claim exists */}
             {hasCompletedProfile && (
-              <StudentProfileForm 
-                userId={userId!} 
-                onComplete={() => navigate('/ai-match')}
-              />
+              <>
+                <div className="mb-4">
+                  <ProfileVisibilityNotice />
+                </div>
+                <StudentProfileForm 
+                  userId={userId!} 
+                  onComplete={() => navigate('/ai-match')}
+                />
+              </>
             )}
           </>
         )}
