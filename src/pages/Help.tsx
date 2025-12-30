@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ChevronRight, Eye, Sparkles, Shield, Rocket, Search, MessageCircle, Scale, HelpCircle } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Search, MessageCircle, HelpCircle, Menu, X } from 'lucide-react';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -11,13 +11,25 @@ import { helpCategories, getArticleById, HelpCategory, HelpArticle } from '@/dat
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { HelpSidebar } from '@/components/help/HelpSidebar';
+import { HelpArticleView } from '@/components/help/HelpArticleView';
+import { HelpCategorySection } from '@/components/help/HelpCategorySection';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Rocket, Sparkles, CreditCard, Building2, Eye, Scale, Wrench } from 'lucide-react';
 
 const iconMap: Record<string, React.ReactNode> = {
-  Eye: <Eye className="w-5 h-5" />,
-  Sparkles: <Sparkles className="w-5 h-5" />,
-  Shield: <Shield className="w-5 h-5" />,
   Rocket: <Rocket className="w-5 h-5" />,
+  Sparkles: <Sparkles className="w-5 h-5" />,
+  CreditCard: <CreditCard className="w-5 h-5" />,
+  Building2: <Building2 className="w-5 h-5" />,
+  Eye: <Eye className="w-5 h-5" />,
   Scale: <Scale className="w-5 h-5" />,
+  Wrench: <Wrench className="w-5 h-5" />,
   HelpCircle: <HelpCircle className="w-5 h-5" />,
 };
 
@@ -26,24 +38,36 @@ export default function Help() {
   const { articleId } = useParams();
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // If articleId is provided, show that article
+  // Get current article if viewing one
   const currentArticle = articleId ? getArticleById(articleId) : null;
 
   // Filter articles based on search
-  const filteredCategories = helpCategories.map(category => ({
-    ...category,
-    articles: category.articles.filter(article =>
-      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.content.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  })).filter(category => category.articles.length > 0);
+  const filteredCategories = searchQuery
+    ? helpCategories.map(category => ({
+        ...category,
+        articles: category.articles.filter(article =>
+          article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          article.content.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      })).filter(category => category.articles.length > 0)
+    : helpCategories;
+
+  const handleArticleClick = (id: string) => {
+    navigate(`/help/${id}`);
+    setMobileMenuOpen(false);
+  };
 
   const renderArticleContent = (content: string) => {
-    // Simple markdown-like rendering
     const lines = content.split('\n');
     return lines.map((line, index) => {
+      // Handle links in markdown format [text](url)
+      const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+      const processedLine = line.replace(linkRegex, (_, text, url) => {
+        return `<a href="${url}" class="text-primary hover:underline">${text}</a>`;
+      });
+
       if (line.startsWith('## ')) {
         return <h2 key={index} className="text-lg font-semibold text-foreground mt-6 mb-3">{line.replace('## ', '')}</h2>;
       }
@@ -51,7 +75,13 @@ export default function Help() {
         return <h3 key={index} className="text-base font-medium text-foreground mt-4 mb-2">{line.replace('### ', '')}</h3>;
       }
       if (line.startsWith('- ')) {
-        return <li key={index} className="text-muted-foreground ml-4 mb-1">{line.replace('- ', '')}</li>;
+        return (
+          <li 
+            key={index} 
+            className="text-muted-foreground ml-4 mb-1"
+            dangerouslySetInnerHTML={{ __html: processedLine.replace('- ', '') }}
+          />
+        );
       }
       if (line.startsWith('**') && line.endsWith('**')) {
         return <p key={index} className="font-medium text-foreground mb-2">{line.replace(/\*\*/g, '')}</p>;
@@ -59,7 +89,13 @@ export default function Help() {
       if (line.trim() === '') {
         return <div key={index} className="h-2" />;
       }
-      return <p key={index} className="text-muted-foreground mb-2 leading-relaxed">{line}</p>;
+      return (
+        <p 
+          key={index} 
+          className="text-muted-foreground mb-2 leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: processedLine }}
+        />
+      );
     });
   };
 
@@ -100,29 +136,8 @@ export default function Help() {
               />
             </div>
 
-            {/* Categories */}
-            {(searchQuery ? filteredCategories : helpCategories).map((category) => (
-              <div key={category.id} className="space-y-2">
-                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {category.title}
-                </h2>
-                <div className="bg-card border border-border rounded-xl divide-y divide-border">
-                  {category.articles.map((article) => (
-                    <button
-                      key={article.id}
-                      onClick={() => navigate(`/help/${article.id}`)}
-                      className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/50 transition-colors"
-                    >
-                      <span className="text-sm text-foreground">{article.title}</span>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-
             {/* Browse FAQ link */}
-            <div className="bg-muted/50 border border-border rounded-xl p-4 mb-4">
+            <div className="bg-muted/50 border border-border rounded-xl p-4">
               <p className="text-sm text-muted-foreground mb-2">
                 Looking for quick answers?
               </p>
@@ -136,6 +151,43 @@ export default function Help() {
                 Browse FAQ
               </Button>
             </div>
+
+            {/* Categories with Accordion */}
+            <Accordion type="multiple" className="space-y-3">
+              {(searchQuery ? filteredCategories : helpCategories).map((category) => (
+                <AccordionItem 
+                  key={category.id} 
+                  value={category.id}
+                  className="border border-border rounded-xl overflow-hidden bg-card"
+                >
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/50">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                        {iconMap[category.icon]}
+                      </div>
+                      <div className="text-left">
+                        <p className="font-medium text-foreground">{category.title}</p>
+                        <p className="text-xs text-muted-foreground">{category.articles.length} articles</p>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-0 pb-0">
+                    <div className="divide-y divide-border border-t border-border">
+                      {category.articles.map((article) => (
+                        <button
+                          key={article.id}
+                          onClick={() => handleArticleClick(article.id)}
+                          className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/50 transition-colors"
+                        >
+                          <span className="text-sm text-foreground">{article.title}</span>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
 
             {/* Contact support */}
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
@@ -159,138 +211,85 @@ export default function Help() {
     );
   }
 
-  // Desktop view
+  // Desktop view with sidebar
   return (
     <div className="min-h-screen bg-background">
       <RoomyNavbar />
       
-      <div className="max-w-6xl mx-auto pt-24 pb-20 px-6">
-        <div className="flex gap-8">
-          {/* Sidebar */}
-          <div className="w-64 flex-shrink-0">
-            <div className="sticky top-24">
-              <h1 className="text-2xl font-bold text-foreground mb-6">Help Center</h1>
-              
-              {/* Search */}
-              <div className="relative mb-6">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+      <div className="pt-16 flex">
+        {/* Sidebar */}
+        <HelpSidebar
+          categories={helpCategories}
+          currentArticleId={articleId || null}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onArticleClick={handleArticleClick}
+        />
+
+        {/* Main Content */}
+        {currentArticle ? (
+          <HelpArticleView 
+            article={currentArticle} 
+            onBack={() => navigate('/help')} 
+          />
+        ) : (
+          <div className="flex-1 min-h-screen">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-b border-border">
+              <div className="max-w-4xl mx-auto px-8 py-12">
+                <h1 className="text-3xl font-bold text-foreground mb-2">Help Center</h1>
+                <p className="text-muted-foreground">
+                  Find answers to common questions and learn how to use Roomy
+                </p>
               </div>
-
-              {/* Category navigation */}
-              <ScrollArea className="h-[calc(100vh-280px)]">
-                <nav className="space-y-1">
-                  {helpCategories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => setSelectedCategory(selectedCategory === category.id ? null : category.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                        selectedCategory === category.id
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      {iconMap[category.icon]}
-                      <span className="text-sm font-medium">{category.title}</span>
-                    </button>
-                  ))}
-                </nav>
-              </ScrollArea>
             </div>
-          </div>
 
-          {/* Main content */}
-          <div className="flex-1">
-            {currentArticle ? (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <button
-                  onClick={() => navigate('/help')}
-                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back to Help Center
-                </button>
-                
-                <div className="bg-card border border-border rounded-xl p-8">
-                  <div className="text-xs text-muted-foreground mb-2">{currentArticle.category}</div>
-                  <h1 className="text-2xl font-bold text-foreground mb-6">{currentArticle.title}</h1>
-                  <div className="prose prose-sm max-w-none">
-                    {renderArticleContent(currentArticle.content)}
+            {/* Content */}
+            <div className="max-w-4xl mx-auto px-8 py-8">
+              {/* Browse FAQ Card */}
+              <div className="bg-muted/50 border border-border rounded-xl p-6 mb-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-1">Browse FAQ</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Quick answers to the most common questions
+                    </p>
                   </div>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-8"
-              >
-                {(searchQuery ? filteredCategories : helpCategories).map((category) => (
-                  <div key={category.id}>
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                        {iconMap[category.icon]}
-                      </div>
-                      <h2 className="text-lg font-semibold text-foreground">{category.title}</h2>
-                    </div>
-                    
-                    <div className="bg-card border border-border rounded-xl divide-y divide-border">
-                      {category.articles.map((article) => (
-                        <button
-                          key={article.id}
-                          onClick={() => navigate(`/help/${article.id}`)}
-                          className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/50 transition-colors first:rounded-t-xl last:rounded-b-xl"
-                        >
-                          <span className="text-sm text-foreground">{article.title}</span>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Browse FAQ link */}
-                <div className="bg-muted/50 border border-border rounded-xl p-6 mb-8">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-1">Browse FAQ</h3>
-                      <p className="text-muted-foreground text-sm">
-                        Quick answers to common questions
-                      </p>
-                    </div>
-                    <Button onClick={() => navigate('/faq')} variant="outline" className="gap-2">
-                      <HelpCircle className="w-4 h-4" />
-                      View FAQ
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Contact support */}
-                <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
-                  <h3 className="font-semibold text-foreground mb-2">Still need help?</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Can't find what you're looking for? Our support team is here to help.
-                  </p>
-                  <Button onClick={() => navigate('/contact')} className="gap-2">
-                    <MessageCircle className="w-4 h-4" />
-                    Contact Support
+                  <Button onClick={() => navigate('/faq')} variant="outline" className="gap-2">
+                    <HelpCircle className="w-4 h-4" />
+                    View FAQ
                   </Button>
                 </div>
-              </motion.div>
-            )}
-          </div>
-        </div>
-      </div>
+              </div>
 
-      <Footer />
+              {/* Categories Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {(searchQuery ? filteredCategories : helpCategories).map((category) => (
+                  <HelpCategorySection
+                    key={category.id}
+                    category={category}
+                    onArticleClick={handleArticleClick}
+                  />
+                ))}
+              </div>
+
+              {/* Contact Support */}
+              <div className="mt-12 bg-primary/5 border border-primary/20 rounded-xl p-6">
+                <h3 className="font-semibold text-foreground mb-2">Still need help?</h3>
+                <p className="text-muted-foreground mb-4">
+                  Can't find what you're looking for? Our support team is here to help.
+                </p>
+                <Button onClick={() => navigate('/contact')} className="gap-2">
+                  <MessageCircle className="w-4 h-4" />
+                  Contact Support
+                </Button>
+              </div>
+            </div>
+
+            <Footer />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
