@@ -24,8 +24,8 @@ const steps = [
   {
     number: '04',
     icon: CheckCircle,
-    title: 'Secure Booking',
-    description: 'Book with confidence — all listings are verified and scam-free',
+    title: 'Reserve Direct',
+    description: 'Reserve directly with verified dorm owners — no middlemen or hidden fees',
   },
 ];
 

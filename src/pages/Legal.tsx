@@ -340,6 +340,34 @@ export default function Legal() {
               </section>
 
               <section>
+                <h2 className="text-2xl font-bold mb-4">Marketplace Disclaimer</h2>
+                <p className="text-muted-foreground mb-4">
+                  Roomy functions exclusively as a digital marketplace that connects students and property owners. Roomy is not a real estate broker, agent, sub-lessor, property manager, escrow holder, or financial intermediary. Roomy does not guarantee the accuracy of listings, availability, suitability, pricing, or safety of properties. All rental agreements, payments, disputes, and relationships are strictly between students and property owners.
+                </p>
+                <p className="text-muted-foreground mb-4">
+                  By using Roomy, you agree that Roomy shall not be held liable for:
+                </p>
+                <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4 mb-4">
+                  <li>lost payments, failed reservations, or financial disagreements</li>
+                  <li>safety or maintenance issues within the dorm or property</li>
+                  <li>inaccurate or misleading information provided by Owners</li>
+                  <li>emotional, financial, or physical harm sustained on-site</li>
+                </ul>
+                <p className="text-muted-foreground mb-4">
+                  You agree to release, indemnify, and hold Roomy harmless against any claims arising out of:
+                </p>
+                <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4 mb-4">
+                  <li>(a) the condition of the property</li>
+                  <li>(b) communication with an Owner</li>
+                  <li>(c) payment or refund disputes</li>
+                  <li>(d) housing outcomes resulting from information on the Platform</li>
+                </ul>
+                <p className="text-muted-foreground">
+                  If a disagreement occurs, users must contact the Owner directly. Roomy may, at its discretion, voluntarily assist, but has no obligation to mediate or resolve disputes.
+                </p>
+              </section>
+
+              <section>
                 <h2 className="text-2xl font-bold mb-4">Limitation of Liability</h2>
                 <p className="text-muted-foreground">
                   Roomy is not liable for any disputes between students and property owners. 
