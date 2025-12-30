@@ -811,8 +811,38 @@ export default function Messages() {
 
   // Mobile uses tap-to-start now (same as desktop), no need for native touch listeners
 
+  // Mark all undelivered messages as delivered when user loads Messages page
+  const markAllAsDelivered = useCallback(async () => {
+    if (!userId) return;
+    
+    // Get all conversations for this user
+    const { data: conversations } = await supabase
+      .from('conversations')
+      .select('id')
+      .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`);
+    
+    if (!conversations || conversations.length === 0) return;
+    
+    const conversationIds = conversations.map(c => c.id);
+    
+    // Update all undelivered messages where this user is the receiver
+    await supabase
+      .from('messages')
+      .update({ 
+        status: 'delivered',
+        delivered_at: new Date().toISOString()
+      })
+      .in('conversation_id', conversationIds)
+      .neq('sender_id', userId)
+      .is('delivered_at', null)
+      .eq('status', 'sent');
+  }, [userId]);
+
   useEffect(() => {
     if (!userId || isSigningOut) return;
+    
+    // Mark all undelivered messages as delivered when user opens Messages page
+    markAllAsDelivered();
     
     // Initial load - use ref to get latest function
     loadConversationsRef.current();
@@ -902,6 +932,11 @@ export default function Messages() {
               })
             );
           }
+          
+          // Reload conversations to update chat list preview status
+          if (isMountedRef.current && !isSigningOut) {
+            loadConversationsRef.current();
+          }
         }
       )
       .subscribe();
@@ -920,7 +955,7 @@ export default function Messages() {
         presenceChannelRef.current = null;
       }
     };
-  }, [userId, selectedConversation, isSigningOut]);
+  }, [userId, selectedConversation, isSigningOut, markAllAsDelivered]);
 
   // Setup typing presence
   useEffect(() => {
@@ -1259,7 +1294,7 @@ export default function Messages() {
     // Fetch last messages in parallel (small number of parallel queries is fine)
     const lastMessagesResults = await Promise.all(conversationIds.map(id => 
       supabase.from('messages')
-        .select('body, attachment_type, sender_id, created_at, conversation_id')
+        .select('body, attachment_type, sender_id, created_at, conversation_id, status')
         .eq('conversation_id', id)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -1464,6 +1499,7 @@ export default function Messages() {
         last_message: lastMessage,
         last_message_sender_id: lastMsg?.sender_id || null,
         last_message_time: lastMsg?.created_at || conv.updated_at,
+        last_message_status: lastMsg?.status || undefined,
         unreadCount
       };
     });
