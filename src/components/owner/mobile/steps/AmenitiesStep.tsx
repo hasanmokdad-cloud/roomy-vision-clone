@@ -1,14 +1,21 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Wifi, UtensilsCrossed, WashingMachine, Thermometer, Snowflake, 
   BookOpen, Users, TreePine, Dumbbell, Waves,
-  ShieldCheck, Building2, Car, Sparkles, Dog
+  ShieldCheck, ArrowUpDown, Car, Brush, Dog, Sofa, Tv, Zap
 } from 'lucide-react';
+import { ElectricityOptionsModal } from './ElectricityOptionsModal';
+import { TVOptionsModal } from './TVOptionsModal';
+import { CleaningOptionsModal } from './CleaningOptionsModal';
+import type { ElectricityOption, TVOption, CleaningOption, AmenityDetails } from '@/types/amenities';
 
 interface AmenitiesStepProps {
   category: 'essentials' | 'shared' | 'safety';
   selectedAmenities: string[];
   onToggle: (amenity: string) => void;
+  amenityDetails?: AmenityDetails;
+  onUpdateAmenityDetails?: (details: AmenityDetails) => void;
 }
 
 const amenityCategories = {
@@ -21,7 +28,9 @@ const amenityCategories = {
       { id: 'Laundry', label: 'Laundry', icon: WashingMachine },
       { id: 'Heating', label: 'Heating', icon: Thermometer },
       { id: 'Air Conditioning', label: 'AC', icon: Snowflake },
-      { id: 'Furnished', label: 'Furnished', icon: Building2 },
+      { id: 'Furnished', label: 'Furnished', icon: Sofa },
+      { id: 'TV', label: 'TV', icon: Tv, hasOptions: true, optionType: 'tv' },
+      { id: 'Electricity', label: 'Electricity', icon: Zap, hasOptions: true, optionType: 'electricity' },
     ],
   },
   shared: {
@@ -40,16 +49,96 @@ const amenityCategories = {
     subtitle: 'These are important to students',
     items: [
       { id: 'Security', label: 'Security', icon: ShieldCheck },
-      { id: 'Elevator', label: 'Elevator', icon: Building2 },
+      { id: 'Elevator', label: 'Elevator', icon: ArrowUpDown },
       { id: 'Parking', label: 'Parking', icon: Car },
-      { id: 'Cleaning Service', label: 'Cleaning', icon: Sparkles },
+      { id: 'Cleaning Service', label: 'Cleaning', icon: Brush, hasOptions: true, optionType: 'cleaning' },
       { id: 'Pet Friendly', label: 'Pet Friendly', icon: Dog },
     ],
   },
 };
 
-export function AmenitiesStep({ category, selectedAmenities, onToggle }: AmenitiesStepProps) {
+export function AmenitiesStep({ 
+  category, 
+  selectedAmenities, 
+  onToggle, 
+  amenityDetails = {},
+  onUpdateAmenityDetails 
+}: AmenitiesStepProps) {
   const categoryData = amenityCategories[category];
+  const [electricityModalOpen, setElectricityModalOpen] = useState(false);
+  const [tvModalOpen, setTvModalOpen] = useState(false);
+  const [cleaningModalOpen, setCleaningModalOpen] = useState(false);
+
+  const handleAmenityClick = (item: { id: string; label: string; hasOptions?: boolean; optionType?: string }) => {
+    if (item.hasOptions && item.optionType) {
+      // If already selected, toggle off
+      if (selectedAmenities.includes(item.id)) {
+        onToggle(item.id);
+        return;
+      }
+      
+      // Open options modal
+      switch (item.optionType) {
+        case 'electricity':
+          setElectricityModalOpen(true);
+          break;
+        case 'tv':
+          setTvModalOpen(true);
+          break;
+        case 'cleaning':
+          setCleaningModalOpen(true);
+          break;
+      }
+    } else {
+      onToggle(item.id);
+    }
+  };
+
+  const handleElectricitySave = (option: ElectricityOption) => {
+    if (!selectedAmenities.includes('Electricity')) {
+      onToggle('Electricity');
+    }
+    onUpdateAmenityDetails?.({ ...amenityDetails, electricity: option });
+  };
+
+  const handleTVSave = (option: TVOption) => {
+    if (!selectedAmenities.includes('TV')) {
+      onToggle('TV');
+    }
+    onUpdateAmenityDetails?.({ ...amenityDetails, tv: option });
+  };
+
+  const handleCleaningSave = (option: CleaningOption) => {
+    if (!selectedAmenities.includes('Cleaning Service')) {
+      onToggle('Cleaning Service');
+    }
+    onUpdateAmenityDetails?.({ ...amenityDetails, cleaning: option });
+  };
+
+  const getOptionLabel = (itemId: string): string | null => {
+    switch (itemId) {
+      case 'Electricity':
+        if (amenityDetails.electricity) {
+          return amenityDetails.electricity.type === '24/7' ? '24/7' : 'Custom';
+        }
+        break;
+      case 'TV':
+        if (amenityDetails.tv) {
+          return amenityDetails.tv.type === '24/7' ? '24/7' : 'Custom';
+        }
+        break;
+      case 'Cleaning Service':
+        if (amenityDetails.cleaning) {
+          const freq = amenityDetails.cleaning.frequency;
+          if (freq === 'once') return '1x/week';
+          if (freq === 'twice') return '2x/week';
+          if (freq === 'three') return '3x/week';
+          return 'Custom';
+        }
+        break;
+    }
+    return null;
+  };
 
   return (
     <div className="px-6 pt-24 pb-32">
@@ -69,13 +158,15 @@ export function AmenitiesStep({ category, selectedAmenities, onToggle }: Ameniti
       <div className="grid grid-cols-2 gap-4">
         {categoryData.items.map((item, index) => {
           const isSelected = selectedAmenities.includes(item.id);
+          const optionLabel = getOptionLabel(item.id);
+          
           return (
             <motion.button
               key={item.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              onClick={() => onToggle(item.id)}
+              onClick={() => handleAmenityClick(item)}
               className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all ${
                 isSelected
                   ? 'border-primary bg-primary/5 shadow-md'
@@ -92,6 +183,11 @@ export function AmenitiesStep({ category, selectedAmenities, onToggle }: Ameniti
               }`}>
                 {item.label}
               </span>
+              {isSelected && optionLabel && (
+                <span className="text-xs text-primary/70 mt-1">
+                  {optionLabel}
+                </span>
+              )}
             </motion.button>
           );
         })}
@@ -105,6 +201,26 @@ export function AmenitiesStep({ category, selectedAmenities, onToggle }: Ameniti
       >
         {selectedAmenities.length} selected
       </motion.p>
+
+      {/* Option Modals */}
+      <ElectricityOptionsModal
+        open={electricityModalOpen}
+        onOpenChange={setElectricityModalOpen}
+        initialValue={amenityDetails.electricity}
+        onSave={handleElectricitySave}
+      />
+      <TVOptionsModal
+        open={tvModalOpen}
+        onOpenChange={setTvModalOpen}
+        initialValue={amenityDetails.tv}
+        onSave={handleTVSave}
+      />
+      <CleaningOptionsModal
+        open={cleaningModalOpen}
+        onOpenChange={setCleaningModalOpen}
+        initialValue={amenityDetails.cleaning}
+        onSave={handleCleaningSave}
+      />
     </div>
   );
 }

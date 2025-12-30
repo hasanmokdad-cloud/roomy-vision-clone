@@ -1,11 +1,11 @@
 import { 
   Wifi, Car, Snowflake, Dumbbell, ShieldCheck, UtensilsCrossed, 
-  BookOpen, Users, Zap, Droplets, Building2, Armchair, 
+  BookOpen, Users, Zap, Droplets, Armchair, 
   PawPrint, Sparkles, Waves, Flower2, DoorOpen, Home, Tv, 
   WashingMachine, Fan, Bath, Lock, Wind, Bed, Plug, Gamepad2,
   Baby, Cigarette, Mountain, Thermometer, Phone, Lamp, 
   SquareStack, Microwave, Coffee, Shirt, Flame, AlertTriangle,
-  Package, Sofa, type LucideIcon
+  Package, Sofa, ArrowUpDown, Brush, type LucideIcon
 } from 'lucide-react';
 
 // Comprehensive amenity icon map matching AirbnbFiltersModal icons
@@ -36,8 +36,8 @@ export const amenityIconMap: Record<string, LucideIcon> = {
   'dryer': Wind,
   'kitchen': UtensilsCrossed,
   'kitchenette': UtensilsCrossed,
-  'furnished': Armchair,
-  'fully furnished': Armchair,
+  'furnished': Sofa,
+  'fully furnished': Sofa,
   'electricity': Zap,
   'power': Plug,
   'electricity included': Zap,
@@ -53,9 +53,9 @@ export const amenityIconMap: Record<string, LucideIcon> = {
   'common area': Users,
   'common room': Users,
   'shared space': Users,
-  'lounge': Sofa,
-  'elevator': Building2,
-  'lift': Building2,
+  'lounge': Armchair,
+  'elevator': ArrowUpDown,
+  'lift': ArrowUpDown,
   'tv': Tv,
   'television': Tv,
   'cable tv': Tv,
@@ -67,10 +67,10 @@ export const amenityIconMap: Record<string, LucideIcon> = {
   '24/7 security': ShieldCheck,
   'cctv': ShieldCheck,
   'guard': ShieldCheck,
-  'cleaning service': Sparkles,
-  'cleaning': Sparkles,
-  'housekeeping': Sparkles,
-  'maid service': Sparkles,
+  'cleaning service': Brush,
+  'cleaning': Brush,
+  'housekeeping': Brush,
+  'maid service': Brush,
   'pet friendly': PawPrint,
   'pets allowed': PawPrint,
   'reception': Phone,

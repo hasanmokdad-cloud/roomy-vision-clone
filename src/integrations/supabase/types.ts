@@ -921,33 +921,45 @@ export type Database = {
           created_at: string | null
           enter_is_send: boolean | null
           id: string
+          incoming_sound_enabled: boolean | null
+          notification_sound: string | null
+          outgoing_sound_enabled: boolean | null
           replace_text_with_emoji: boolean | null
           spell_check: boolean | null
           theme: string | null
           updated_at: string | null
           user_id: string
+          vibration_enabled: boolean | null
         }
         Insert: {
           chat_wallpaper?: string | null
           created_at?: string | null
           enter_is_send?: boolean | null
           id?: string
+          incoming_sound_enabled?: boolean | null
+          notification_sound?: string | null
+          outgoing_sound_enabled?: boolean | null
           replace_text_with_emoji?: boolean | null
           spell_check?: boolean | null
           theme?: string | null
           updated_at?: string | null
           user_id: string
+          vibration_enabled?: boolean | null
         }
         Update: {
           chat_wallpaper?: string | null
           created_at?: string | null
           enter_is_send?: boolean | null
           id?: string
+          incoming_sound_enabled?: boolean | null
+          notification_sound?: string | null
+          outgoing_sound_enabled?: boolean | null
           replace_text_with_emoji?: boolean | null
           spell_check?: boolean | null
           theme?: string | null
           updated_at?: string | null
           user_id?: string
+          vibration_enabled?: boolean | null
         }
         Relationships: []
       }
