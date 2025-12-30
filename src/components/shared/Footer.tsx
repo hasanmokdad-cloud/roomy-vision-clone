@@ -14,7 +14,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-white/10 bg-black/40 backdrop-blur-sm py-16 px-4">
       <div className="container mx-auto max-w-7xl">
-        <div className="grid md:grid-cols-4 gap-12 mb-12">
+        <div className="grid md:grid-cols-5 gap-12 mb-12">
           {/* Left Block */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -66,6 +66,38 @@ export default function Footer() {
                   </Link>
                 </li>
               ))}
+            </ul>
+          </div>
+
+          {/* Legal */}
+          <div>
+            <h3 className="font-bold text-lg mb-4">Legal</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/legal/terms" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link to="/legal/privacy" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/legal/payments" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                  Payments & Security
+                </Link>
+              </li>
+              <li>
+                <Link to="/legal/refunds" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                  Refund Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/help" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                  Help Center
+                </Link>
+              </li>
             </ul>
           </div>
 
