@@ -1,6 +1,7 @@
 // Simplified room types for students - for search/filtering
 export const studentRoomTypes = [
   "Any",
+  "Any shared",
   "Single",
   "Double",
   "Triple",
@@ -37,9 +38,23 @@ export const ownerRoomTypes = [
 // Legacy export for backward compatibility
 export const roomTypes = studentRoomTypes;
 
+// Shared room types (capacity >= 2) - excludes single rooms
+export const sharedRoomTypes = ['double', 'triple', 'quadruple', 'suite', 'apartment', 'studio'];
+
+// Check if a room type is a shared room (capacity >= 2)
+export const isSharedRoomType = (roomType: string | undefined | null): boolean => {
+  if (!roomType) return false;
+  const normalizedRoom = roomType.toLowerCase();
+  // Single rooms are NOT shared
+  if (normalizedRoom.includes('single')) return false;
+  // Check if matches any shared type
+  return sharedRoomTypes.some(type => normalizedRoom.includes(type));
+};
+
 // Helper function for substring matching - used in filtering
 export const matchesRoomTypeFilter = (roomType: string | undefined | null, filterType: string): boolean => {
   if (!filterType || filterType === 'Any') return true;
+  if (filterType === 'Any shared') return isSharedRoomType(roomType);
   if (!roomType) return false;
   
   const normalizedRoom = roomType.toLowerCase();
@@ -50,6 +65,6 @@ export const matchesRoomTypeFilter = (roomType: string | undefined | null, filte
 
 // Check if a room type is a single room (for roommate toggle logic)
 export const isSingleRoom = (roomType: string | undefined | null): boolean => {
-  if (!roomType || roomType === 'Any') return false;
+  if (!roomType || roomType === 'Any' || roomType === 'Any shared') return false;
   return roomType.toLowerCase().includes('single');
 };

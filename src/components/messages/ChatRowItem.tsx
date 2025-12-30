@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Pin, BellOff, Check, CheckCheck, ChevronDown, Archive, Trash2, Ban, Mail, Heart, HeartOff, Users } from "lucide-react";
+import { Pin, BellOff, Check, CheckCheck, ChevronDown, Archive, Trash2, Ban, Mail, Heart, HeartOff, Users, Shield, Building, GraduationCap, BadgeCheck } from "lucide-react";
 import { OnlineIndicator } from "./OnlineIndicator";
 import { GroupAvatarStack } from "./GroupAvatarStack";
 import { 
@@ -47,6 +47,9 @@ interface ChatRowItemProps {
     group_photo_url?: string | null;
     member_avatars?: (string | null)[];
     member_count?: number;
+    // Role fields
+    other_user_role?: 'Student' | 'Owner' | 'Admin' | string;
+    owner_dorm_name?: string | null;
   };
   isSelected: boolean;
   userId: string | null;
@@ -318,6 +321,19 @@ export function ChatRowItem({
                 <span className={`text-[15px] truncate ${hasUnread ? 'font-semibold text-foreground' : 'text-foreground'}`}>
                   {conv.is_group ? conv.group_name : conv.other_user_name}
                 </span>
+                {/* Role icon for non-group chats */}
+                {!conv.is_group && conv.other_user_role && (
+                  <span className="shrink-0 flex items-center gap-0.5">
+                    {conv.other_user_role === 'Admin' && (
+                      <>
+                        <Shield className="w-3 h-3 text-orange-500" />
+                        <BadgeCheck className="w-3 h-3 text-blue-500 fill-blue-100" />
+                      </>
+                    )}
+                    {conv.other_user_role === 'Owner' && <Building className="w-3 h-3 text-blue-500" />}
+                    {conv.other_user_role === 'Student' && <GraduationCap className="w-3 h-3 text-green-500" />}
+                  </span>
+                )}
               </div>
               {timestamp && (
                 <span 
