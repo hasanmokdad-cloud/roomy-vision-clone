@@ -915,6 +915,42 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_settings: {
+        Row: {
+          chat_wallpaper: string | null
+          created_at: string | null
+          enter_is_send: boolean | null
+          id: string
+          replace_text_with_emoji: boolean | null
+          spell_check: boolean | null
+          theme: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chat_wallpaper?: string | null
+          created_at?: string | null
+          enter_is_send?: boolean | null
+          id?: string
+          replace_text_with_emoji?: boolean | null
+          spell_check?: boolean | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chat_wallpaper?: string | null
+          created_at?: string | null
+          enter_is_send?: boolean | null
+          id?: string
+          replace_text_with_emoji?: boolean | null
+          spell_check?: boolean | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       contact_messages: {
         Row: {
           admin_notes: string | null
@@ -1778,6 +1814,7 @@ export type Database = {
       }
       notification_preferences: {
         Row: {
+          background_sync: boolean | null
           created_at: string
           id: string
           notify_messages: boolean
@@ -1785,11 +1822,16 @@ export type Database = {
           notify_reservations: boolean
           notify_social: boolean
           notify_tours: boolean
+          play_sound_incoming: boolean | null
+          play_sound_outgoing: boolean | null
           push_enabled: boolean
+          show_message_previews: boolean | null
+          show_reaction_notifications: boolean | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          background_sync?: boolean | null
           created_at?: string
           id?: string
           notify_messages?: boolean
@@ -1797,11 +1839,16 @@ export type Database = {
           notify_reservations?: boolean
           notify_social?: boolean
           notify_tours?: boolean
+          play_sound_incoming?: boolean | null
+          play_sound_outgoing?: boolean | null
           push_enabled?: boolean
+          show_message_previews?: boolean | null
+          show_reaction_notifications?: boolean | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          background_sync?: boolean | null
           created_at?: string
           id?: string
           notify_messages?: boolean
@@ -1809,7 +1856,11 @@ export type Database = {
           notify_reservations?: boolean
           notify_social?: boolean
           notify_tours?: boolean
+          play_sound_incoming?: boolean | null
+          play_sound_outgoing?: boolean | null
           push_enabled?: boolean
+          show_message_previews?: boolean | null
+          show_reaction_notifications?: boolean | null
           updated_at?: string
           user_id?: string
         }
