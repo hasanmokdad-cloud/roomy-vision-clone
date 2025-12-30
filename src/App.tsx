@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { ChatbotBubble } from "./components/ChatbotBubble";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +24,14 @@ import OnboardingGuard from "@/components/guards/OnboardingGuard";
 import { NativePermissionsProvider } from "@/providers/NativePermissionsProvider";
 import { CallProvider } from "@/contexts/CallContext";
 import { CallOverlay } from "@/components/calls/CallOverlay";
+import { initializeBackgroundSync } from "@/utils/backgroundSync";
+import { initializeNativePush } from "@/utils/nativePushNotifications";
+
+// Initialize background sync and native push on app load
+if (typeof window !== 'undefined') {
+  initializeBackgroundSync();
+  initializeNativePush();
+}
 
 // Lazy load route components
 const CheckEmail = lazy(() => import("./pages/auth/CheckEmail"));

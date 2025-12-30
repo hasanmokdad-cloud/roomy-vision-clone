@@ -14,6 +14,9 @@ const config: CapacitorConfig = {
       backgroundColor: '#0B0E1A',
       showSpinner: false,
     },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
   },
   // iOS Permission Descriptions (add to Info.plist when running `npx cap sync`)
   ios: {
@@ -39,10 +42,17 @@ export default config;
  * <key>NSPhotoLibraryUsageDescription</key>
  * <string>Roomy needs photo library access to share images</string>
  * 
+ * <key>UIBackgroundModes</key>
+ * <array>
+ *   <string>remote-notification</string>
+ * </array>
+ * 
  * Android AndroidManifest.xml additions (add manually after `npx cap add android`):
  * 
  * <uses-permission android:name="android.permission.RECORD_AUDIO" />
  * <uses-permission android:name="android.permission.CAMERA" />
  * <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
  * <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+ * <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+ * <uses-permission android:name="android.permission.VIBRATE" />
  */

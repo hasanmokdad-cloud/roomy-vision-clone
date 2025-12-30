@@ -107,3 +107,6 @@ verify_jwt = true
 
 [functions.send-message-notification]
 verify_jwt = false
+
+[functions.mark-messages-delivered]
+verify_jwt = false
