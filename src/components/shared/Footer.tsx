@@ -85,12 +85,22 @@ export default function Footer() {
               </li>
               <li>
                 <Link to="/legal/payments" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
-                  Payments & Security
+                  Payments Disclaimer
                 </Link>
               </li>
               <li>
-                <Link to="/legal/cookies" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
-                  Cookies & Tracking
+                <Link to="/legal/owner-agreement" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                  Owner Agreement
+                </Link>
+              </li>
+              <li>
+                <Link to="/legal/community" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                  Community Guidelines
+                </Link>
+              </li>
+              <li>
+                <Link to="/legal/data-rights" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                  Data Rights
                 </Link>
               </li>
               <li>

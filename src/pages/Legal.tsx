@@ -1,441 +1,145 @@
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Card } from '@/components/ui/card';
+import { useParams, Link } from 'react-router-dom';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SubPageHeader } from '@/components/mobile/SubPageHeader';
 import { SwipeBackWrapper } from '@/components/mobile/SwipeBackWrapper';
-import { FileText, Shield, CreditCard, Cookie, Users } from 'lucide-react';
 import { AppBreadcrumb } from '@/components/ui/app-breadcrumb';
+import { LegalSidebar } from '@/components/legal/LegalSidebar';
+import { legalDocuments, getLegalDocument, formatLastUpdated } from '@/data/legalDocuments';
+import { Card } from '@/components/ui/card';
+import { FileText, Shield, CreditCard, Cookie, Users, Scale, Trash2, Clock } from 'lucide-react';
 
 export default function Legal() {
   const { page } = useParams();
-  const navigate = useNavigate();
   const isMobile = useIsMobile();
 
-  const getContent = () => {
-    // Legal Hub (index page)
-    if (!page) {
-      return {
-        title: 'Legal Information',
-        content: (
-          <div className="space-y-6">
-            <p className="text-muted-foreground mb-8">
-              Review our policies and agreements that govern the use of Roomy.
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Link
-                to="/legal/terms"
-                className="flex items-start gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/50 transition-all"
-              >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <FileText className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Terms of Service</h3>
-                  <p className="text-sm text-muted-foreground">Usage rules and conditions</p>
-                </div>
-              </Link>
+  const currentDocument = page ? getLegalDocument(page) : null;
 
-              <Link
-                to="/legal/privacy"
-                className="flex items-start gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/50 transition-all"
-              >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <Shield className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Privacy Policy</h3>
-                  <p className="text-sm text-muted-foreground">How we handle your data</p>
-                </div>
-              </Link>
+  // Build breadcrumb items
+  const breadcrumbItems = [
+    { label: 'Legal', href: '/legal' },
+    ...(currentDocument ? [{ label: currentDocument.shortTitle }] : []),
+  ];
 
-              <Link
-                to="/legal/payments"
-                className="flex items-start gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/50 transition-all"
-              >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <CreditCard className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Payments & Security</h3>
-                  <p className="text-sm text-muted-foreground">Payment processing and security</p>
-                </div>
-              </Link>
+  // Render hub content when no page is selected
+  const renderHubContent = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-8">
+        <Scale className="w-12 h-12 mx-auto text-primary mb-4" />
+        <h1 className="text-3xl font-bold mb-2">Legal Information</h1>
+        <p className="text-muted-foreground max-w-2xl mx-auto">
+          Review our policies and agreements that govern the use of Roomy. Select a document from the sidebar or click below to learn more.
+        </p>
+      </div>
 
-              <Link
-                to="/legal/cookies"
-                className="flex items-start gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/50 transition-all"
-              >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <Cookie className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Cookies & Tracking</h3>
-                  <p className="text-sm text-muted-foreground">How we use cookies</p>
-                </div>
-              </Link>
-
-              <Link
-                to="/legal/owner-agreement"
-                className="flex items-start gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/50 transition-all"
-              >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <Users className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Owner Agreement</h3>
-                  <p className="text-sm text-muted-foreground">Terms for property owners</p>
-                </div>
-              </Link>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {legalDocuments.map((doc) => (
+          <Link
+            key={doc.id}
+            to={`/legal/${doc.id}`}
+            className="flex flex-col gap-3 p-5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-muted/50 transition-all group"
+          >
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+              {doc.icon}
             </div>
+            <div>
+              <h3 className="font-semibold text-foreground mb-1">{doc.title}</h3>
+              <p className="text-sm text-muted-foreground mb-2">{doc.description}</p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                Updated {formatLastUpdated(doc.lastUpdated)}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Render document content
+  const renderDocumentContent = () => {
+    if (!currentDocument) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Document not found</p>
+          <Link to="/legal" className="text-primary hover:underline mt-2 inline-block">
+            Return to Legal Hub
+          </Link>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Document Header */}
+        <div className="flex items-start gap-4 pb-6 border-b border-border">
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            {currentDocument.icon}
           </div>
-        ),
-      };
-    }
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1">{currentDocument.title}</h1>
+            <p className="text-sm text-muted-foreground flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" />
+              Last Updated: {formatLastUpdated(currentDocument.lastUpdated)}
+            </p>
+          </div>
+        </div>
 
-    switch (page) {
-      case 'payments':
-        return {
-          title: 'Payments & Security',
-          content: (
-            <div className="space-y-6">
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Payment Processing</h2>
-                <p className="text-muted-foreground mb-4">
-                  All payments on Roomy are processed securely through Whish (Codnloc Pay), 
-                  a certified payment gateway that complies with international security standards.
-                </p>
-                <p className="text-muted-foreground">
-                  We do not store your full credit card information. All payment data is 
-                  encrypted and handled directly by our payment processor.
-                </p>
-              </section>
+        {/* Document Content */}
+        <div className="prose prose-sm max-w-none dark:prose-invert">
+          {currentDocument.content}
+        </div>
 
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Payment Breakdown</h2>
-                <p className="text-muted-foreground mb-4">
-                  When you make a reservation, you pay:
-                </p>
-                <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
-                  <li><strong>Room Deposit:</strong> Paid directly to the property owner</li>
-                  <li><strong>Service Fee (10%):</strong> Roomy's platform fee for secure booking and support</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Secure Transactions</h2>
-                <p className="text-muted-foreground">
-                  All transactions are protected by SSL encryption and monitored for fraud. 
-                  Your payment information is never shared with property owners or other users.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Questions?</h2>
-                <p className="text-muted-foreground">
-                  If you have any questions about payments or security, please contact our 
-                  support team at support@roomy.app
-                </p>
-              </section>
-            </div>
-          ),
-        };
-
-      case 'cookies':
-        return {
-          title: 'Cookies & Tracking Policy',
-          content: (
-            <div className="space-y-6">
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Overview of Cookies</h2>
-                <p className="text-muted-foreground">
-                  [Explain what cookies are and why Roomy uses them]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Session & Authentication Cookies</h2>
-                <p className="text-muted-foreground">
-                  [Describe cookies used for login sessions and user authentication]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Analytics Cookies</h2>
-                <p className="text-muted-foreground">
-                  [Describe cookies used for analytics and improving the platform]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Opt-Out Instructions</h2>
-                <p className="text-muted-foreground">
-                  [Explain how users can manage or disable cookies]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
-                <p className="text-muted-foreground">
-                  For questions about our cookie policy, please contact us at privacy@roomy.app
-                </p>
-              </section>
-            </div>
-          ),
-        };
-
-      case 'owner-agreement':
-        return {
-          title: 'Owner Agreement',
-          content: (
-            <div className="space-y-6">
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Owner Responsibilities</h2>
-                <p className="text-muted-foreground">
-                  [Define the responsibilities of property owners using Roomy]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Accuracy of Listings</h2>
-                <p className="text-muted-foreground">
-                  [Requirements for accurate and truthful listing information]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Safety Compliance</h2>
-                <p className="text-muted-foreground">
-                  [Safety standards and regulations owners must follow]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Property Verification</h2>
-                <p className="text-muted-foreground">
-                  [Verification process and requirements for properties]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Removal and Termination</h2>
-                <p className="text-muted-foreground">
-                  [Conditions under which listings may be removed or accounts terminated]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Liability Disclaimer</h2>
-                <p className="text-muted-foreground">
-                  [Roomy's liability limitations regarding owner properties]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Report Unsafe Dorms</h2>
-                <p className="text-muted-foreground">
-                  [Policy and process for reporting unsafe conditions]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
-                <p className="text-muted-foreground">
-                  For questions about the Owner Agreement, please contact us at owners@roomy.app
-                </p>
-              </section>
-            </div>
-          ),
-        };
-
-      case 'privacy':
-        return {
-          title: 'Privacy Policy',
-          content: (
-            <div className="space-y-6">
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Information We Collect</h2>
-                <p className="text-muted-foreground">
-                  [Your privacy policy content here - describe what personal data is collected]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">How We Use Your Information</h2>
-                <p className="text-muted-foreground">
-                  [Describe how collected data is used]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Information Sharing</h2>
-                <p className="text-muted-foreground">
-                  [Describe when/if data is shared with third parties]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Data Security</h2>
-                <p className="text-muted-foreground">
-                  [Describe security measures]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Your Rights</h2>
-                <p className="text-muted-foreground">
-                  [Describe user rights regarding their data]
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
-                <p className="text-muted-foreground">
-                  For privacy-related inquiries, please contact us at privacy@roomy.app
-                </p>
-              </section>
-            </div>
-          ),
-        };
-
-      case 'terms':
-        return {
-          title: 'Terms of Service',
-          content: (
-            <div className="space-y-6">
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Acceptance of Terms</h2>
-                <p className="text-muted-foreground">
-                  By accessing and using Roomy, you accept and agree to be bound by the terms 
-                  and provision of this agreement. If you do not agree to these terms, please 
-                  do not use our service.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">User Accounts</h2>
-                <p className="text-muted-foreground mb-4">
-                  You are responsible for maintaining the confidentiality of your account and 
-                  password. You agree to accept responsibility for all activities that occur 
-                  under your account.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Platform Usage</h2>
-                <p className="text-muted-foreground mb-4">
-                  Roomy is a platform connecting students with property owners. We facilitate 
-                  bookings but are not party to the actual rental agreements between students 
-                  and property owners.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Prohibited Activities</h2>
-                <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
-                  <li>Posting false, misleading, or fraudulent information</li>
-                  <li>Attempting to circumvent our payment system</li>
-                  <li>Harassing or abusing other users</li>
-                  <li>Violating any applicable laws or regulations</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Marketplace Disclaimer</h2>
-                <p className="text-muted-foreground mb-4">
-                  Roomy functions exclusively as a digital marketplace that connects students and property owners. Roomy is not a real estate broker, agent, sub-lessor, property manager, escrow holder, or financial intermediary. Roomy does not guarantee the accuracy of listings, availability, suitability, pricing, or safety of properties. All rental agreements, payments, disputes, and relationships are strictly between students and property owners.
-                </p>
-                <p className="text-muted-foreground mb-4">
-                  By using Roomy, you agree that Roomy shall not be held liable for:
-                </p>
-                <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4 mb-4">
-                  <li>lost payments, failed reservations, or financial disagreements</li>
-                  <li>safety or maintenance issues within the dorm or property</li>
-                  <li>inaccurate or misleading information provided by Owners</li>
-                  <li>emotional, financial, or physical harm sustained on-site</li>
-                </ul>
-                <p className="text-muted-foreground mb-4">
-                  You agree to release, indemnify, and hold Roomy harmless against any claims arising out of:
-                </p>
-                <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4 mb-4">
-                  <li>(a) the condition of the property</li>
-                  <li>(b) communication with an Owner</li>
-                  <li>(c) payment or refund disputes</li>
-                  <li>(d) housing outcomes resulting from information on the Platform</li>
-                </ul>
-                <p className="text-muted-foreground">
-                  If a disagreement occurs, users must contact the Owner directly. Roomy may, at its discretion, voluntarily assist, but has no obligation to mediate or resolve disputes.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Limitation of Liability</h2>
-                <p className="text-muted-foreground">
-                  Roomy is not liable for any disputes between students and property owners. 
-                  We provide the platform as-is and make no warranties about the accuracy of 
-                  listings or user information.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Changes to Terms</h2>
-                <p className="text-muted-foreground">
-                  We reserve the right to modify these terms at any time. Continued use of 
-                  the platform after changes constitutes acceptance of the new terms.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
-                <p className="text-muted-foreground">
-                  For questions about these terms, please contact us at legal@roomy.app
-                </p>
-              </section>
-            </div>
-          ),
-        };
-
-      default:
-        return {
-          title: 'Legal Information',
-          content: (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Page not found</p>
-            </div>
-          ),
-        };
-    }
+        {/* Back to Hub Link */}
+        <div className="pt-6 border-t border-border">
+          <Link 
+            to="/legal" 
+            className="text-primary hover:underline text-sm flex items-center gap-1"
+          >
+            ← Back to Legal Hub
+          </Link>
+        </div>
+      </div>
+    );
   };
-
-  const { title, content } = getContent();
-
-  const pageTitleMap: Record<string, string> = {
-    terms: 'Terms of Service',
-    privacy: 'Privacy Policy',
-    payments: 'Payments & Security',
-    cookies: 'Cookies & Tracking',
-    'owner-agreement': 'Owner Agreement'
-  };
-
-  const breadcrumbItems = page 
-    ? [{ label: 'Legal', href: '/legal' }, { label: pageTitleMap[page] || title }]
-    : [{ label: 'Legal' }];
 
   return (
     <SwipeBackWrapper>
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        {isMobile && <SubPageHeader title={title} />}
-        {!isMobile && <RoomyNavbar />}
+      <div className="min-h-screen bg-background">
+        {isMobile ? (
+          <SubPageHeader 
+            title={currentDocument?.shortTitle || "Legal"} 
+          />
+        ) : (
+          <RoomyNavbar />
+        )}
 
-        <div className={`container mx-auto px-6 max-w-4xl mb-20 ${isMobile ? 'pt-20 pb-8' : 'py-32'}`}>
-          {!isMobile && (
-            <AppBreadcrumb items={breadcrumbItems} className="mb-6" />
-          )}
-          <Card className="p-8">
-            <h1 className="text-4xl font-bold mb-8 gradient-text">{title}</h1>
-            {content}
-          </Card>
-        </div>
+        <main className={`${isMobile ? 'pt-4 pb-24' : 'pt-24 pb-16'} px-4`}>
+          <div className="max-w-7xl mx-auto">
+            {/* Breadcrumb - Desktop only */}
+            {!isMobile && (
+              <div className="mb-6">
+                <AppBreadcrumb items={breadcrumbItems} />
+              </div>
+            )}
+
+            {/* Main Layout */}
+            <div className="flex gap-8">
+              {/* Sidebar - Desktop */}
+              {!isMobile && <LegalSidebar />}
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <Card className="p-6 sm:p-8">
+                  {page ? renderDocumentContent() : renderHubContent()}
+                </Card>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        {/* Mobile Sidebar Trigger */}
+        {isMobile && <LegalSidebar />}
       </div>
     </SwipeBackWrapper>
   );
