@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ChevronRight, Eye, Sparkles, Shield, Rocket, Search, MessageCircle } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Eye, Sparkles, Shield, Rocket, Search, MessageCircle, Scale, HelpCircle } from 'lucide-react';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -17,6 +17,8 @@ const iconMap: Record<string, React.ReactNode> = {
   Sparkles: <Sparkles className="w-5 h-5" />,
   Shield: <Shield className="w-5 h-5" />,
   Rocket: <Rocket className="w-5 h-5" />,
+  Scale: <Scale className="w-5 h-5" />,
+  HelpCircle: <HelpCircle className="w-5 h-5" />,
 };
 
 export default function Help() {
@@ -118,6 +120,22 @@ export default function Help() {
                 </div>
               </div>
             ))}
+
+            {/* Browse FAQ link */}
+            <div className="bg-muted/50 border border-border rounded-xl p-4 mb-4">
+              <p className="text-sm text-muted-foreground mb-2">
+                Looking for quick answers?
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/faq')}
+                className="gap-2 w-full"
+              >
+                <HelpCircle className="w-4 h-4" />
+                Browse FAQ
+              </Button>
+            </div>
 
             {/* Contact support */}
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
@@ -238,6 +256,22 @@ export default function Help() {
                     </div>
                   </div>
                 ))}
+
+                {/* Browse FAQ link */}
+                <div className="bg-muted/50 border border-border rounded-xl p-6 mb-8">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-1">Browse FAQ</h3>
+                      <p className="text-muted-foreground text-sm">
+                        Quick answers to common questions
+                      </p>
+                    </div>
+                    <Button onClick={() => navigate('/faq')} variant="outline" className="gap-2">
+                      <HelpCircle className="w-4 h-4" />
+                      View FAQ
+                    </Button>
+                  </div>
+                </div>
 
                 {/* Contact support */}
                 <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
