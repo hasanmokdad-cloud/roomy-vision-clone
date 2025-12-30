@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import type { StudentProfile } from './ProfileHub';
 import type { AiMatchPlan } from '@/utils/tierLogic';
+import { ProfileVisibilityNotice } from './ProfileVisibilityNotice';
 
 interface ProfileHubHeaderProps {
   profile: StudentProfile | null;
@@ -167,6 +168,11 @@ export function ProfileHubHeader({ profile, userId }: ProfileHubHeaderProps) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Profile Visibility Notice */}
+      <div className="mt-4 pt-4 border-t border-border/30">
+        <ProfileVisibilityNotice />
       </div>
     </div>
   );
