@@ -22,6 +22,8 @@ import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { useIsMobile } from "@/hooks/use-mobile";
 import OnboardingGuard from "@/components/guards/OnboardingGuard";
 import { NativePermissionsProvider } from "@/providers/NativePermissionsProvider";
+import { CallProvider } from "@/contexts/CallContext";
+import { CallOverlay } from "@/components/calls/CallOverlay";
 
 // Lazy load route components
 const CheckEmail = lazy(() => import("./pages/auth/CheckEmail"));
@@ -402,9 +404,12 @@ const App = () => (
                       <Sonner />
                       <BrowserRouter>
                         <NativePermissionsProvider>
-                          <GlobalAuthModal />
-                          <OnboardingFlow />
-                          <AppRoutes />
+                          <CallProvider>
+                            <GlobalAuthModal />
+                            <OnboardingFlow />
+                            <CallOverlay />
+                            <AppRoutes />
+                          </CallProvider>
                         </NativePermissionsProvider>
                       </BrowserRouter>
                     </div>
