@@ -1003,6 +1003,19 @@ export default function Messages() {
     };
   }, [selectedConversation, userId]);
 
+  // Polling fallback for delivery status updates - catches any missed real-time updates
+  useEffect(() => {
+    if (!userId || isSigningOut) return;
+    
+    const pollInterval = setInterval(() => {
+      if (isMountedRef.current && !isSigningOut) {
+        loadConversationsRef.current();
+      }
+    }, 30000); // Every 30 seconds
+    
+    return () => clearInterval(pollInterval);
+  }, [userId, isSigningOut]);
+
   // Scroll to bottom only on initial load or when sending new messages
   const lastMessageCountRef = useRef(0);
   const isInitialLoadRef = useRef(true);
@@ -2590,6 +2603,9 @@ export default function Messages() {
         setMessages(prev => 
           prev.map(m => m.id === tempId ? data as Message : m)
         );
+        
+        // Reload conversations to update chat list preview immediately
+        loadConversationsRef.current();
       }
     } catch (error: any) {
       // Remove optimistic message on error

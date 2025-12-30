@@ -27,10 +27,19 @@ import { CallOverlay } from "@/components/calls/CallOverlay";
 import { initializeBackgroundSync } from "@/utils/backgroundSync";
 import { initializeNativePush } from "@/utils/nativePushNotifications";
 
-// Initialize background sync and native push on app load
-if (typeof window !== 'undefined') {
-  initializeBackgroundSync();
-  initializeNativePush();
+// BackgroundSyncInitializer - runs after authentication to properly initialize background sync
+function BackgroundSyncInitializer() {
+  const { userId, isAuthReady } = useAuth();
+  
+  useEffect(() => {
+    if (isAuthReady && userId) {
+      console.log('[BackgroundSync] User authenticated, initializing background sync');
+      initializeBackgroundSync();
+      initializeNativePush();
+    }
+  }, [isAuthReady, userId]);
+  
+  return null;
 }
 
 // Lazy load route components
@@ -416,6 +425,7 @@ const App = () => (
                             <GlobalAuthModal />
                             <OnboardingFlow />
                             <CallOverlay />
+                            <BackgroundSyncInitializer />
                             <AppRoutes />
                           </CallProvider>
                         </NativePermissionsProvider>
