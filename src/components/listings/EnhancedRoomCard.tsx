@@ -5,10 +5,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
-import { Calendar, MessageSquare, Home, Users, Heart, Share2, Eye, Play } from 'lucide-react';
+import { Calendar, MessageSquare, Home, Users, Heart, Share2, Eye, Play, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BookingRequestModal } from '@/components/bookings/BookingRequestModal';
 import { ReservationConfirmModal } from '@/components/reservations/ReservationConfirmModal';
+import { ReservationAgreementModal } from '@/components/modals/ReservationAgreementModal';
 import { ImageGallery } from '@/components/shared/ImageGallery';
 import { VideoPlayerModal } from '@/components/shared/VideoPlayerModal';
 import { motion } from 'framer-motion';
@@ -55,6 +56,7 @@ export function EnhancedRoomCard({
   const { isAuthenticated, openAuthModal } = useAuth();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [reservationModalOpen, setReservationModalOpen] = useState(false);
+  const [agreementModalOpen, setAgreementModalOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
@@ -306,7 +308,7 @@ export function EnhancedRoomCard({
       return;
     }
 
-    setReservationModalOpen(true);
+    setAgreementModalOpen(true);
   };
 
   return (
@@ -612,6 +614,14 @@ export function EnhancedRoomCard({
                 {isFull ? 'Full' : 'Reserve'}
               </Button>
             </div>
+
+            {/* Non-refundable notice */}
+            {!isUnavailable && !isFull && (
+              <p className="text-xs text-muted-foreground text-center mt-2 flex items-center justify-center gap-1">
+                <AlertTriangle className="w-3 h-3" />
+                Deposits are non-refundable — paid directly to the dorm owner.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -631,6 +641,15 @@ export function EnhancedRoomCard({
         room={room}
         dormName={dormName}
         depositAmount={room.deposit || room.price}
+      />
+
+      <ReservationAgreementModal
+        open={agreementModalOpen}
+        onOpenChange={setAgreementModalOpen}
+        onAgree={() => {
+          setAgreementModalOpen(false);
+          setReservationModalOpen(true);
+        }}
       />
 
       {displayImages.length > 0 && (

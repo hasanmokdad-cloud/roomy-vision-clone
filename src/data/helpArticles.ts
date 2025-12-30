@@ -269,6 +269,90 @@ The device will be signed out immediately.`
 Tap the heart icon to save a dorm to your wishlist. Access your saved dorms anytime from the Saved page.`
       }
     ]
+  },
+  {
+    id: 'legal-safety',
+    title: 'Legal & Safety',
+    icon: 'Scale',
+    articles: [
+      {
+        id: 'payments-handling',
+        title: 'Who handles payments and refunds?',
+        category: 'Legal & Safety',
+        content: `Roomy is a marketplace platform that connects students with property owners. Here's how payments work:
+
+## Payment Flow
+
+All payments, including deposits, are made directly to the dorm owner. Roomy facilitates the transaction through our secure payment partner (Whish) but does not hold or manage the funds.
+
+## Important Notice
+
+- **Deposits are non-refundable** and are paid directly to the dorm owner
+- Any refund requests must be directed to the property owner
+- Roomy is not a party to the rental agreement between you and the owner
+
+## For More Information
+
+See our [Payments & Security](/legal/payments) policy for complete details on how transactions are processed.`
+      },
+      {
+        id: 'housing-safety',
+        title: 'Is Roomy responsible for housing safety?',
+        category: 'Legal & Safety',
+        content: `Roomy is a digital marketplace that connects students with property owners. Here's what you need to know about safety responsibilities:
+
+## Roomy's Role
+
+Roomy verifies listings to reduce scams and fake postings. However, Roomy does not:
+- Inspect physical properties
+- Guarantee safety or maintenance standards
+- Serve as a landlord or property manager
+
+## Owner Responsibilities
+
+Property owners are responsible for:
+- Maintaining safe living conditions
+- Providing accurate listing information
+- Complying with local housing regulations
+
+## Your Rights
+
+If you encounter safety issues:
+1. Contact the property owner directly
+2. Report the issue to local authorities if necessary
+3. You may report unsafe conditions to Roomy, and we may take action at our discretion
+
+## For More Information
+
+See our [Terms of Service](/legal/terms) for the full Marketplace Disclaimer.`
+      },
+      {
+        id: 'owner-agreement-info',
+        title: 'What is the Owner Agreement?',
+        category: 'Legal & Safety',
+        content: `The Owner Agreement is a set of terms that property owners must accept before listing on Roomy.
+
+## What It Covers
+
+The Owner Agreement includes:
+- Owner responsibilities for accurate listings
+- Safety and compliance requirements
+- Property verification process
+- Conditions for listing removal
+- Liability and dispute handling
+
+## Why It Matters to Students
+
+The Owner Agreement helps ensure that:
+- Listings are accurate and truthful
+- Owners commit to basic safety standards
+- There's a clear process for reporting issues
+
+## For More Information
+
+Read the full [Owner Agreement](/legal/owner-agreement) or visit our [Privacy Policy](/legal/privacy) to learn how your data is protected.`
+      }
+    ]
   }
 ];
 
