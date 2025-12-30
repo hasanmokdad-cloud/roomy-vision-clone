@@ -90,6 +90,9 @@ export const Footer = () => {
             <Link to="/legal/cookies" className="text-sm text-foreground/60 hover:text-primary transition-colors">
               Cookies
             </Link>
+            <Link to="/faq" className="text-sm text-foreground/60 hover:text-primary transition-colors">
+              FAQ
+            </Link>
             <Link to="/help" className="text-sm text-foreground/60 hover:text-primary transition-colors">
               Help Center
             </Link>
