@@ -366,7 +366,7 @@ export function ChatRowItem({
                 {hasUnread && unreadCount > 0 && (
                   <div 
                     className={`transition-transform duration-150 ${
-                      showArrow ? '-translate-x-6' : 'translate-x-0'
+                      showArrow ? '-translate-x-1.5' : 'translate-x-0'
                     }`}
                   >
                     <span className="bg-[#25d366] text-white text-[11px] font-bold min-w-[20px] h-[20px] rounded-full flex items-center justify-center px-1.5">
