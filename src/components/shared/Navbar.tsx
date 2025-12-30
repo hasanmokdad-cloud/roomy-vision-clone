@@ -102,10 +102,13 @@ export default function Navbar() {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.6, 0.05, 0.01, 0.9] }}
-        className="fixed top-0 left-0 right-0 z-50 px-6 py-4"
+        className="fixed top-0 left-0 right-0 z-50 px-4 md:px-6 py-4"
       >
-        <div className="max-w-7xl mx-auto glass rounded-2xl px-6 py-3 flex items-center justify-between">
-          <Link to="/">
+        <div className="max-w-7xl mx-auto navbar-water-glass rounded-2xl px-4 md:px-6 py-3 flex items-center justify-between relative overflow-hidden">
+          {/* Water caustics overlay */}
+          <div className="navbar-water-caustics" />
+          
+          <Link to="/" className="relative z-10">
             <motion.div
               className="flex items-center gap-2"
               whileHover={{ scale: 1.05 }}
@@ -121,7 +124,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-1 relative z-10">
             {navItems.map((item, index) => (
               <Link key={item.label} to={item.href}>
                 <motion.div
@@ -130,7 +133,7 @@ export default function Navbar() {
                   transition={{ delay: index * 0.1, duration: 0.5 }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-white/5 transition-all"
+                  className="px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-white/10 transition-all"
                 >
                   <item.icon className="w-4 h-4" />
                   {item.label}
@@ -144,12 +147,12 @@ export default function Navbar() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5, duration: 0.5 }}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 relative z-10"
           >
             {/* Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="hover:bg-white/10">
                   <Menu className="w-5 h-5" />
                 </Button>
               </SheetTrigger>
@@ -179,7 +182,7 @@ export default function Navbar() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="relative hidden md:flex"
+                  className="relative hidden md:flex hover:bg-white/10"
                   asChild
                 >
                   <Link to="/messages">
@@ -204,7 +207,7 @@ export default function Navbar() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent 
                     align="end"
-                    className="bg-background/95 backdrop-blur-sm border border-white/10"
+                    className="bg-background/95 backdrop-blur-xl border border-white/10"
                   >
                     <DropdownMenuItem onClick={() => navigate('/profile')}>
                       <User className="w-4 h-4 mr-2" />
