@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { Mail, MapPin, Phone } from 'lucide-react';
 import RoomyLogo from '@/assets/roomy-logo.png';
 
@@ -78,15 +78,15 @@ export const Footer = () => {
             © 2025 Roomy. All rights reserved.
           </p>
           <div className="flex gap-6">
-            {['Privacy Policy', 'Terms of Service', 'Cookies'].map((link) => (
-              <a
-                key={link}
-                href="#"
-                className="text-sm text-foreground/60 hover:text-primary transition-colors"
-              >
-                {link}
-              </a>
-            ))}
+            <Link to="/legal/privacy" className="text-sm text-foreground/60 hover:text-primary transition-colors">
+              Privacy Policy
+            </Link>
+            <Link to="/legal/terms" className="text-sm text-foreground/60 hover:text-primary transition-colors">
+              Terms of Service
+            </Link>
+            <Link to="/help" className="text-sm text-foreground/60 hover:text-primary transition-colors">
+              Help Center
+            </Link>
           </div>
         </div>
       </div>

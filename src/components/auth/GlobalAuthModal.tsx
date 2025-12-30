@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,11 +25,13 @@ export function GlobalAuthModal() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const resetForm = () => {
     setEmail('');
     setPassword('');
     setConfirmPassword('');
+    setAgreedToTerms(false);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -288,17 +291,38 @@ export function GlobalAuthModal() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="terms-checkbox"
+                checked={agreedToTerms}
+                onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                required
+                className="mt-0.5"
+              />
+              <Label htmlFor="terms-checkbox" className="text-xs text-muted-foreground leading-tight cursor-pointer">
+                I agree to the{' '}
+                <Link 
+                  to="/legal/terms" 
+                  className="underline hover:text-foreground"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Terms of Service
+                </Link>
+                {' '}and{' '}
+                <Link 
+                  to="/legal/privacy" 
+                  className="underline hover:text-foreground"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Privacy Policy
+                </Link>
+              </Label>
+            </div>
+
+            <Button type="submit" className="w-full" disabled={loading || !agreedToTerms}>
               {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Create Account
             </Button>
-
-            <p className="text-xs text-center text-muted-foreground">
-              By signing up, you agree to our{' '}
-              <a href="/legal/terms" className="underline hover:text-foreground">Terms of Service</a>
-              {' '}and{' '}
-              <a href="/legal/privacy" className="underline hover:text-foreground">Privacy Policy</a>
-            </p>
           </form>
         </TabsContent>
       </Tabs>

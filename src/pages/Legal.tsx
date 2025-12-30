@@ -116,6 +116,56 @@ export default function Legal() {
           ),
         };
 
+      case 'privacy':
+        return {
+          title: 'Privacy Policy',
+          content: (
+            <div className="space-y-6">
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Information We Collect</h2>
+                <p className="text-muted-foreground">
+                  [Your privacy policy content here - describe what personal data is collected]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">How We Use Your Information</h2>
+                <p className="text-muted-foreground">
+                  [Describe how collected data is used]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Information Sharing</h2>
+                <p className="text-muted-foreground">
+                  [Describe when/if data is shared with third parties]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Data Security</h2>
+                <p className="text-muted-foreground">
+                  [Describe security measures]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Your Rights</h2>
+                <p className="text-muted-foreground">
+                  [Describe user rights regarding their data]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
+                <p className="text-muted-foreground">
+                  For privacy-related inquiries, please contact us at privacy@roomy.app
+                </p>
+              </section>
+            </div>
+          ),
+        };
+
       case 'terms':
         return {
           title: 'Terms of Service',
