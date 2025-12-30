@@ -306,6 +306,9 @@ export default function Messages() {
   const touchStartPosRef = useRef({ x: 0, y: 0 });
   const micButtonRef = useRef<HTMLButtonElement>(null);
   
+  // Ref to store the latest loadConversations function for real-time handlers
+  const loadConversationsRef = useRef<() => Promise<void>>(() => Promise.resolve());
+  
   // Scroll-to-bottom button state
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   
@@ -810,7 +813,9 @@ export default function Messages() {
 
   useEffect(() => {
     if (!userId || isSigningOut) return;
-    loadConversations();
+    
+    // Initial load - use ref to get latest function
+    loadConversationsRef.current();
 
     // Subscribe to new messages using realtime utility
     const messagesChannel = subscribeTo("messages", async (payload) => {
@@ -860,9 +865,9 @@ export default function Messages() {
         }
       }
       
-      // Reload conversations to update last message & unread counts
+      // Reload conversations to update last message & unread counts - use ref for latest function
       if (isMountedRef.current && !isSigningOut) {
-        loadConversations();
+        loadConversationsRef.current();
       }
     });
 
@@ -902,7 +907,8 @@ export default function Messages() {
       .subscribe();
 
     const conversationsChannel = subscribeTo("conversations", () => {
-      loadConversations();
+      // Use ref to get latest function
+      loadConversationsRef.current();
     });
 
     return () => {
@@ -914,7 +920,7 @@ export default function Messages() {
         presenceChannelRef.current = null;
       }
     };
-  }, [userId, selectedConversation]);
+  }, [userId, selectedConversation, isSigningOut]);
 
   // Setup typing presence
   useEffect(() => {
@@ -1099,10 +1105,6 @@ export default function Messages() {
     }
   };
 
-  useEffect(() => {
-    loadConversations();
-  }, []);
-
   const markAsRead = async (messageId: string) => {
     if (!userId || !selectedConversation) return;
     
@@ -1160,7 +1162,7 @@ export default function Messages() {
     }
   };
 
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     if (!userId) return;
     // Guard against updates during sign-out or after unmount
     if (isSigningOut || !isMountedRef.current) return;
@@ -1470,7 +1472,10 @@ export default function Messages() {
     if (!isMountedRef.current || isSigningOut) return;
     
     setConversations(enriched);
-  };
+  }, [userId, isSigningOut]);
+
+  // Keep ref updated synchronously with latest loadConversations function for realtime handlers
+  loadConversationsRef.current = loadConversations;
 
   const loadMessages = async (conversationId: string) => {
     // Guard against updates during sign-out or after unmount
