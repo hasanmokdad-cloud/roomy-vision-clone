@@ -309,6 +309,14 @@ export default function Messages() {
   // Ref to store the latest loadConversations function for real-time handlers
   const loadConversationsRef = useRef<() => Promise<void>>(() => Promise.resolve());
   
+  // Ref for selectedConversation to avoid stale closures in real-time subscriptions
+  const selectedConversationRef = useRef<string | null>(null);
+  
+  // Keep selectedConversationRef in sync with state
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation;
+  }, [selectedConversation]);
+  
   // Scroll-to-bottom button state
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   
@@ -914,8 +922,16 @@ export default function Messages() {
         (payload) => {
           const updatedMessage = payload.new as Message;
           
-          // Only update if this message belongs to current conversation
-          if (updatedMessage.conversation_id === selectedConversation) {
+          console.log('[RT] Message UPDATE received:', {
+            messageId: updatedMessage.id,
+            newStatus: updatedMessage.status,
+            currentConversation: selectedConversationRef.current,
+            messageConversation: updatedMessage.conversation_id,
+            match: updatedMessage.conversation_id === selectedConversationRef.current
+          });
+          
+          // Use ref to get current conversation (avoids stale closure)
+          if (updatedMessage.conversation_id === selectedConversationRef.current) {
             setMessages(prev =>
               prev.map(m => {
                 if (m.id === updatedMessage.id) {
@@ -2604,7 +2620,18 @@ export default function Messages() {
           prev.map(m => m.id === tempId ? data as Message : m)
         );
         
-        // Reload conversations to update chat list preview immediately
+        // Optimistic update for chat preview (instant, no delay)
+        setConversations(prev => 
+          prev.map(c => c.id === selectedConversation ? {
+            ...c,
+            last_message: messageText || '[Media]',
+            last_message_time: new Date().toISOString(),
+            last_message_sender_id: userId,
+            last_message_status: 'sent' as const
+          } : c)
+        );
+        
+        // Still reload in background to get accurate data
         loadConversationsRef.current();
       }
     } catch (error: any) {
