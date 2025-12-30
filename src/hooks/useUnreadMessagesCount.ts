@@ -1,40 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+
+// Import the global active conversation tracker
+import { setGlobalActiveConversation } from './useUnreadCount';
+
+// Re-export for convenience
+export { setGlobalActiveConversation };
 
 export function useUnreadMessagesCount(userId?: string, role?: string) {
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
 
-  useEffect(() => {
-    if (!userId || !role) {
-      setLoading(false);
-      return;
-    }
-
-    loadUnreadCount();
-
-    // Set up realtime subscription
-    const channel = supabase
-      .channel('messages-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-        },
-        () => {
-          loadUnreadCount();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId, role]);
-
-  const loadUnreadCount = async () => {
+  const loadUnreadCount = useCallback(async () => {
     if (!userId || !role) return;
 
     try {
@@ -81,13 +59,13 @@ export function useUnreadMessagesCount(userId?: string, role?: string) {
 
       const conversationIds = conversations.map((c) => c.id);
 
-      // Count unread messages in these conversations
+      // Count unread messages using status field (consistent with useUnreadCount)
       const { count: unreadCount } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
         .in('conversation_id', conversationIds)
-        .eq('read', false)
-        .neq('sender_id', userId);
+        .neq('sender_id', userId)
+        .or('status.neq.seen,status.is.null');
 
       setCount(unreadCount || 0);
     } catch (error) {
@@ -96,7 +74,67 @@ export function useUnreadMessagesCount(userId?: string, role?: string) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, role]);
+
+  // Debounced load
+  const debouncedLoad = useCallback(() => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    debounceTimeoutRef.current = setTimeout(loadUnreadCount, 100);
+  }, [loadUnreadCount]);
+
+  useEffect(() => {
+    if (!userId || !role) {
+      setLoading(false);
+      return;
+    }
+
+    loadUnreadCount();
+
+    // Set up realtime subscription with debouncing
+    const channel = supabase
+      .channel('messages-count-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+        },
+        (payload) => {
+          const newMessage = payload.new as any;
+          // Skip if from current user
+          if (newMessage.sender_id === userId) return;
+          // Optimistic increment
+          setCount(prev => prev + 1);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+        },
+        (payload) => {
+          const updated = payload.new as any;
+          const old = payload.old as any;
+          // If marked as seen, decrement
+          if (updated.status === 'seen' && old.status !== 'seen' && updated.sender_id !== userId) {
+            setCount(prev => Math.max(0, prev - 1));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+      supabase.removeChannel(channel);
+    };
+  }, [userId, role, loadUnreadCount, debouncedLoad]);
 
   return { count, loading };
 }

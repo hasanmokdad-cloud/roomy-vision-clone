@@ -57,6 +57,8 @@ import { subscribeTo, unsubscribeFrom } from '@/lib/supabaseRealtime';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { extractMeetingUrl } from '@/lib/meetingUtils';
 import { haptics } from '@/utils/haptics';
+import { setGlobalActiveConversation } from '@/hooks/useUnreadCount';
+import { setActiveConversationForPush } from '@/utils/nativePushNotifications';
 
 type Conversation = {
   id: string;
@@ -312,9 +314,19 @@ export default function Messages() {
   // Ref for selectedConversation to avoid stale closures in real-time subscriptions
   const selectedConversationRef = useRef<string | null>(null);
   
-  // Keep selectedConversationRef in sync with state
+  // Keep selectedConversationRef and global active conversation in sync with state
   useEffect(() => {
     selectedConversationRef.current = selectedConversation;
+    // Update global tracker so useUnreadCount knows which conversation is active
+    setGlobalActiveConversation(selectedConversation);
+    // Also update native push to skip notifications for active conversation
+    setActiveConversationForPush(selectedConversation);
+    
+    // Cleanup: clear active conversation when component unmounts or user leaves
+    return () => {
+      setGlobalActiveConversation(null);
+      setActiveConversationForPush(null);
+    };
   }, [selectedConversation]);
   
   // Scroll-to-bottom button state

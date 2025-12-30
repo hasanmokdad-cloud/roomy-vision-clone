@@ -18,6 +18,7 @@ import { BottomNavProvider } from "@/contexts/BottomNavContext";
 import { MicPermissionProvider } from "@/contexts/MicPermissionContext";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { ScrollPositionProvider } from "@/contexts/ScrollPositionContext";
+import { ActiveConversationProvider } from "@/contexts/ActiveConversationContext";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { useIsMobile } from "@/hooks/use-mobile";
 import OnboardingGuard from "@/components/guards/OnboardingGuard";
@@ -412,29 +413,31 @@ const App = () => (
       <ThemeProvider>
         <TooltipProvider>
           <AuthProvider>
-            <MicPermissionProvider>
-              <OnboardingProvider>
-                <BottomNavProvider>
-                  <ScrollPositionProvider>
-                    <div className="w-full max-w-screen overflow-x-hidden">
-                      <Toaster />
-                      <Sonner />
-                      <BrowserRouter>
-                        <NativePermissionsProvider>
-                          <CallProvider>
-                            <GlobalAuthModal />
-                            <OnboardingFlow />
-                            <CallOverlay />
-                            <BackgroundSyncInitializer />
-                            <AppRoutes />
-                          </CallProvider>
-                        </NativePermissionsProvider>
-                      </BrowserRouter>
-                    </div>
-                  </ScrollPositionProvider>
-                </BottomNavProvider>
-              </OnboardingProvider>
-            </MicPermissionProvider>
+            <ActiveConversationProvider>
+              <MicPermissionProvider>
+                <OnboardingProvider>
+                  <BottomNavProvider>
+                    <ScrollPositionProvider>
+                      <div className="w-full max-w-screen overflow-x-hidden">
+                        <Toaster />
+                        <Sonner />
+                        <BrowserRouter>
+                          <NativePermissionsProvider>
+                            <CallProvider>
+                              <GlobalAuthModal />
+                              <OnboardingFlow />
+                              <CallOverlay />
+                              <BackgroundSyncInitializer />
+                              <AppRoutes />
+                            </CallProvider>
+                          </NativePermissionsProvider>
+                        </BrowserRouter>
+                      </div>
+                    </ScrollPositionProvider>
+                  </BottomNavProvider>
+                </OnboardingProvider>
+              </MicPermissionProvider>
+            </ActiveConversationProvider>
           </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
