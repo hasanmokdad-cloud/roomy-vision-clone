@@ -29,6 +29,7 @@ import { SwipeableMessage } from '@/components/messages/SwipeableMessage';
 import { SwipeableChatRow } from '@/components/messages/SwipeableChatRow';
 import { OnlineIndicator } from '@/components/messages/OnlineIndicator';
 import { LastSeenStatus } from '@/components/messages/LastSeenStatus';
+import { RoleBadge } from '@/components/messages/RoleBadge';
 import { EditMessageModal } from '@/components/messages/EditMessageModal';
 import { ContactInfoPanel } from '@/components/messages/ContactInfoPanel';
 import { FriendsTab } from '@/components/friends/FriendsTab';
@@ -3065,27 +3066,31 @@ export default function Messages() {
                     <h3 className="font-semibold text-base truncate">
                       {conversations.find(c => c.id === selectedConversation)?.other_user_name}
                     </h3>
-                    <LastSeenStatus
-                      userId={(() => {
+                    <div className="flex items-center gap-1.5">
+                      {(() => {
                         const conv = conversations.find(c => c.id === selectedConversation);
                         if (!conv) return null;
-                        // Determine the other user's ID based on conversation type and role
-                        if (conv.conversation_type === 'student_to_student') {
-                          return conv.user_a_id === userId ? conv.user_b_id : conv.user_a_id;
-                        }
-                        return role === 'owner' ? conv.student_id : conv.owner_id;
+                        return (
+                          <RoleBadge 
+                            role={conv.other_user_role || 'Student'}
+                            dormName={conv.owner_dorm_name}
+                          />
+                        );
                       })()}
-                      isTyping={typingUsers.size > 0}
-                      isRecording={recordingUsers.size > 0}
-                      fallbackText={(() => {
-                        const conv = conversations.find(c => c.id === selectedConversation);
-                        if (!conv) return '';
-                        if (conv.other_user_role === 'Owner' && conv.owner_dorm_name) {
-                          return `${conv.owner_dorm_name} • Owner`;
-                        }
-                        return conv.other_user_role || 'User';
-                      })()}
-                    />
+                      <span className="text-muted-foreground text-xs">•</span>
+                      <LastSeenStatus
+                        userId={(() => {
+                          const conv = conversations.find(c => c.id === selectedConversation);
+                          if (!conv) return null;
+                          if (conv.conversation_type === 'student_to_student') {
+                            return conv.user_a_id === userId ? conv.user_b_id : conv.user_a_id;
+                          }
+                          return role === 'owner' ? conv.student_id : conv.owner_id;
+                        })()}
+                        isTyping={typingUsers.size > 0}
+                        isRecording={recordingUsers.size > 0}
+                      />
+                    </div>
                   </div>
                   <Button
                     variant="ghost"
