@@ -617,9 +617,10 @@ export function EnhancedRoomCard({
 
             {/* Non-refundable notice */}
             {!isUnavailable && !isFull && (
-              <p className="text-xs text-muted-foreground text-center mt-2 flex items-center justify-center gap-1">
+              <p className="text-xs text-muted-foreground text-center mt-2 flex items-center justify-center gap-1 flex-wrap">
                 <AlertTriangle className="w-3 h-3" />
-                Deposits are non-refundable — paid directly to the dorm owner.
+                <span>Deposits and platform fees are non-refundable.</span>
+                <a href="/legal/payments" className="underline hover:text-foreground">Learn more</a>
               </p>
             )}
           </div>

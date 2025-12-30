@@ -323,6 +323,13 @@ export function GlobalAuthModal() {
               {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Create Account
             </Button>
+
+            <p className="text-xs text-muted-foreground text-center">
+              By signing up, you agree to the{' '}
+              <Link to="/legal/terms" className="underline hover:text-foreground">Terms of Service</Link>
+              {' '}and{' '}
+              <Link to="/legal/payments" className="underline hover:text-foreground">Payments Disclaimer</Link>.
+            </p>
           </form>
         </TabsContent>
       </Tabs>
