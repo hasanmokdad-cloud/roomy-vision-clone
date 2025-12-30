@@ -1427,6 +1427,35 @@ export type Database = {
           },
         ]
       }
+      message_mentions: {
+        Row: {
+          created_at: string | null
+          id: string
+          mentioned_user_id: string
+          message_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          mentioned_user_id: string
+          message_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          mentioned_user_id?: string
+          message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_mentions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_reactions: {
         Row: {
           created_at: string | null
@@ -2392,6 +2421,98 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "personality_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poll_votes: {
+        Row: {
+          created_at: string | null
+          id: string
+          option_id: string
+          poll_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          option_id: string
+          poll_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          option_id?: string
+          poll_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      polls: {
+        Row: {
+          allow_multiple_answers: boolean | null
+          anonymous_votes: boolean | null
+          closes_at: string | null
+          conversation_id: string
+          created_at: string | null
+          creator_id: string
+          id: string
+          is_closed: boolean | null
+          message_id: string | null
+          options: Json
+          question: string
+          updated_at: string | null
+        }
+        Insert: {
+          allow_multiple_answers?: boolean | null
+          anonymous_votes?: boolean | null
+          closes_at?: string | null
+          conversation_id: string
+          created_at?: string | null
+          creator_id: string
+          id?: string
+          is_closed?: boolean | null
+          message_id?: string | null
+          options?: Json
+          question: string
+          updated_at?: string | null
+        }
+        Update: {
+          allow_multiple_answers?: boolean | null
+          anonymous_votes?: boolean | null
+          closes_at?: string | null
+          conversation_id?: string
+          created_at?: string | null
+          creator_id?: string
+          id?: string
+          is_closed?: boolean | null
+          message_id?: string | null
+          options?: Json
+          question?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "polls_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "polls_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
         ]

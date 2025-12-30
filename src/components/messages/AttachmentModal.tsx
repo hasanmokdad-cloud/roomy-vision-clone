@@ -1,4 +1,4 @@
-import { Camera, Image, File, X } from 'lucide-react';
+import { Camera, Image, File, X, BarChart3 } from 'lucide-react';
 import {
   Drawer,
   DrawerContent,
@@ -12,7 +12,9 @@ interface AttachmentModalProps {
   onSelectPhoto: () => void;
   onSelectCamera: () => void;
   onSelectDocument: () => void;
+  onSelectPoll?: () => void;
   uploading?: boolean;
+  isGroupChat?: boolean;
 }
 
 export function AttachmentModal({
@@ -21,7 +23,9 @@ export function AttachmentModal({
   onSelectPhoto,
   onSelectCamera,
   onSelectDocument,
+  onSelectPoll,
   uploading,
+  isGroupChat = false,
 }: AttachmentModalProps) {
   const handleSelect = (handler: () => void) => {
     handler();
@@ -44,7 +48,7 @@ export function AttachmentModal({
         </DrawerHeader>
         
         <div className="p-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             {/* Photo & Video */}
             <button
               onClick={() => handleSelect(onSelectPhoto)}
@@ -80,6 +84,20 @@ export function AttachmentModal({
               </div>
               <span className="text-sm text-foreground">Document</span>
             </button>
+
+            {/* Poll - Only show in group chats or always for now */}
+            {onSelectPoll && (
+              <button
+                onClick={() => handleSelect(onSelectPoll)}
+                disabled={uploading}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-muted transition-colors disabled:opacity-50"
+              >
+                <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <BarChart3 className="w-7 h-7 text-emerald-500" />
+                </div>
+                <span className="text-sm text-foreground">Poll</span>
+              </button>
+            )}
           </div>
         </div>
       </DrawerContent>
