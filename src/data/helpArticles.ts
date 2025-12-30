@@ -656,6 +656,112 @@ See our [Terms of Service](/legal/terms) for the full Marketplace Disclaimer.`
 [Contact Support](/contact) for assistance.`
       },
       {
+        id: 'confirmation-email-not-received',
+        title: "I didn't receive a confirmation email",
+        category: 'Troubleshooting',
+        content: `If you haven't received your confirmation or verification email, try these steps.
+
+## Check your spam folder
+
+Confirmation emails sometimes end up in spam or junk folders. Check there first.
+
+## Wait a few minutes
+
+Emails can sometimes be delayed. Wait up to 10 minutes before trying again.
+
+## Resend the email
+
+1. Go to the login page
+2. Click "Resend verification email"
+3. Enter your email address
+4. Check your inbox (and spam folder)
+
+## Check your email address
+
+Make sure you entered the correct email when signing up. Typos are common!
+
+## Common issues
+
+- **Using work/school email**: Some institutions block external emails. Try using a personal email.
+- **Full inbox**: If your inbox is full, new emails may not arrive.
+- **Email filters**: Check if you have filters that might redirect or delete our emails.
+
+## Still not working?
+
+[Contact Support](/contact) and we'll help you verify your account manually.`
+      },
+      {
+        id: 'payments-failing',
+        title: 'Payments failing — what to do',
+        category: 'Troubleshooting',
+        content: `If your payment isn't going through, here's how to troubleshoot.
+
+## Common reasons for payment failures
+
+### Insufficient funds
+Make sure your card has enough balance to cover the payment.
+
+### Card declined
+Your bank may have declined the transaction. Contact your bank to authorize the payment.
+
+### Incorrect card details
+Double-check your card number, expiry date, and CVV.
+
+### Card not supported
+We accept most major credit and debit cards. Some prepaid cards may not work.
+
+### 3D Secure verification
+Make sure to complete the verification step if prompted by your bank.
+
+## Try these solutions
+
+1. **Use a different card**: Try another payment method
+2. **Contact your bank**: Ask them to approve international transactions
+3. **Clear browser cache**: Sometimes cached data causes issues
+4. **Try a different browser**: Some browsers handle payments better than others
+
+## Payment still failing?
+
+[Contact Support](/contact) with details about the error message you're seeing.`
+      },
+      {
+        id: 'reservations-not-showing',
+        title: 'Reservations not showing',
+        category: 'Troubleshooting',
+        content: `If your reservations aren't appearing in your account, try these steps.
+
+## Refresh your page
+
+Sometimes a simple refresh loads the latest data. Pull down to refresh on mobile or press F5 on desktop.
+
+## Check you're logged in
+
+Make sure you're logged into the correct account. You might have multiple accounts with different emails.
+
+## Wait a few minutes
+
+New reservations may take a moment to process. Wait a few minutes and check again.
+
+## Check your email
+
+Look for a booking confirmation email. If you received one, your reservation was processed.
+
+## Common issues
+
+### Payment pending
+Your reservation might not appear until payment is confirmed. Check your payment status.
+
+### Wrong account
+If you made the reservation while logged out, it may be under a guest booking.
+
+### Owner hasn't confirmed
+Some reservations require owner approval before they appear as confirmed.
+
+## Still not showing?
+
+[Contact Support](/contact) with your booking confirmation email or payment receipt.`
+      },
+      {
         id: 'how-to-delete-account',
         title: 'How to Delete My Account',
         category: 'Troubleshooting',

@@ -110,3 +110,6 @@ verify_jwt = false
 
 [functions.mark-messages-delivered]
 verify_jwt = false
+
+[functions.search-help-articles]
+verify_jwt = false
