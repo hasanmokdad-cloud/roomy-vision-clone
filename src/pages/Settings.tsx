@@ -574,39 +574,6 @@ export default function Settings() {
               </SettingsSection>
             )}
 
-            {/* Security Section */}
-            <SettingsSection title="Security">
-              <SettingsRow
-                icon={emailVerified ? <CheckCircle className="w-5 h-5 text-green-500" /> : <XCircle className="w-5 h-5 text-destructive" />}
-                label="Email verification"
-                subtitle={emailVerified ? 'Your email is verified' : 'Please verify your email'}
-                showChevron={false}
-                rightElement={
-                  <Badge variant={emailVerified ? 'default' : 'destructive'} className="text-xs">
-                    {emailVerified ? 'Verified' : 'Unverified'}
-                  </Badge>
-                }
-              />
-              <SettingsRow
-                icon={<Lock className="w-5 h-5" />}
-                label="Change password"
-                subtitle="Update your password"
-                onClick={() => setShowPasswordModal(true)}
-              />
-              <SettingsRow
-                icon={<Shield className="w-5 h-5" />}
-                label="Two-factor authentication"
-                subtitle="Add extra security"
-                onClick={handleEnable2FA}
-              />
-              <SettingsRow
-                icon={<Smartphone className="w-5 h-5" />}
-                label="Trusted devices"
-                subtitle="Manage signed-in devices"
-                onClick={() => navigate('/settings/devices')}
-              />
-            </SettingsSection>
-
             {/* AI Section - Students and Admins */}
             {role !== 'owner' && (
               <SettingsSection title="AI">
