@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Key, Shield, Smartphone } from 'lucide-react';
+import { ArrowLeft, Key, Shield, Smartphone, CheckCircle, XCircle, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -19,6 +19,7 @@ import { MobileMenuRow } from '@/components/mobile/MobileMenuRow';
 import BottomNav from '@/components/BottomNav';
 import { SwipeableSubPage } from '@/components/mobile/SwipeableSubPage';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Badge } from '@/components/ui/badge';
 
 export default function LoginSecurity() {
   const navigate = useNavigate();
@@ -30,6 +31,15 @@ export default function LoginSecurity() {
   const [qrCode, setQrCode] = useState('');
   const [verifyCode, setVerifyCode] = useState('');
   const [factorId, setFactorId] = useState('');
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setEmailVerified(!!user?.email_confirmed_at);
+      setUserEmail(user?.email || 'Not set');
+    });
+  }, []);
 
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
@@ -144,6 +154,32 @@ export default function LoginSecurity() {
 
           {/* Security Options */}
           <div className="space-y-6">
+            <div>
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Email & Identity
+              </h2>
+              <div className="divide-y divide-border/20">
+                <MobileMenuRow
+                  icon={emailVerified 
+                    ? <CheckCircle className="w-6 h-6 text-green-500" /> 
+                    : <XCircle className="w-6 h-6 text-destructive" />
+                  }
+                  label="Email verification"
+                  subtitle={userEmail}
+                  showChevron={false}
+                  onClick={() => {}}
+                  rightElement={
+                    <Badge 
+                      variant={emailVerified ? 'default' : 'destructive'} 
+                      className="text-xs"
+                    >
+                      {emailVerified ? 'Verified' : 'Unverified'}
+                    </Badge>
+                  }
+                />
+              </div>
+            </div>
+
             <div>
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                 Login
