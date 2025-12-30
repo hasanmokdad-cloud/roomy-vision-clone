@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     );
 
     const payload: MessagePayload = await req.json();
-    const { sender_id, receiver_id, body, conversation_id } = payload;
+    const { message_id, sender_id, receiver_id, body, conversation_id } = payload;
 
     console.log('[send-message-notification] Processing message notification');
     console.log('Sender:', sender_id, 'Receiver:', receiver_id);
@@ -103,6 +103,25 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Mark message as delivered if push was successfully sent
+    if (data?.sent > 0 && message_id) {
+      console.log('[send-message-notification] Push delivered, marking message as delivered:', message_id);
+      const { error: updateError } = await supabase
+        .from('messages')
+        .update({ 
+          status: 'delivered',
+          delivered_at: new Date().toISOString()
+        })
+        .eq('id', message_id)
+        .eq('status', 'sent'); // Only update if still in 'sent' status
+      
+      if (updateError) {
+        console.error('[send-message-notification] Error marking message as delivered:', updateError);
+      } else {
+        console.log('[send-message-notification] Message marked as delivered');
+      }
+    }
+
     // Also insert into notifications table for in-app notification
     await supabase.from('notifications').insert({
       user_id: receiver_id,
@@ -114,7 +133,7 @@ Deno.serve(async (req) => {
     console.log('[send-message-notification] Push notification sent successfully');
 
     return new Response(
-      JSON.stringify({ success: true, sent: data?.sent || 0 }),
+      JSON.stringify({ success: true, sent: data?.sent || 0, delivered: data?.sent > 0 }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

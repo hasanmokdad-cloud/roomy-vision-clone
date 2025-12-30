@@ -8,7 +8,8 @@ export function useMessagePushNotification() {
   const sendPushForMessage = async (
     conversationId: string,
     senderId: string,
-    messageBody: string
+    messageBody: string,
+    messageId: string // Added: actual message ID for delivery tracking
   ) => {
     try {
       // Get conversation to find receiver
@@ -33,10 +34,10 @@ export function useMessagePushNotification() {
         return;
       }
 
-      // Call the edge function (it will handle preference checking)
-      await supabase.functions.invoke('send-message-notification', {
+      // Call the edge function (it will handle preference checking and delivery marking)
+      const { data, error } = await supabase.functions.invoke('send-message-notification', {
         body: {
-          message_id: crypto.randomUUID(),
+          message_id: messageId, // Pass actual message ID for delivery tracking
           conversation_id: conversationId,
           sender_id: senderId,
           receiver_id: receiverId,
@@ -44,7 +45,12 @@ export function useMessagePushNotification() {
         }
       });
 
-      console.log('[useMessagePushNotification] Push notification sent');
+      if (error) {
+        console.error('[useMessagePushNotification] Edge function error:', error);
+        return;
+      }
+
+      console.log('[useMessagePushNotification] Push notification sent, delivered:', data?.delivered);
     } catch (error) {
       // Silent fail - don't block messaging for notification failures
       console.error('[useMessagePushNotification] Error:', error);
