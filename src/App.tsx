@@ -156,6 +156,7 @@ const AccountSuspended = lazy(() => import("./pages/AccountSuspended"));
 const BecomeOwner = lazy(() => import("./pages/BecomeOwner"));
 const Wishlists = lazy(() => import("./pages/Wishlists"));
 const StudentOnboarding = lazy(() => import("./pages/student/StudentOnboarding"));
+const Help = lazy(() => import("./pages/Help"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -288,6 +289,8 @@ const AppRoutes = () => {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/legal/:page" element={<Legal />} />
+          <Route path="/help" element={<Help />} />
+          <Route path="/help/:articleId" element={<Help />} />
           
           {/* PUBLIC - Listings and Dorm Details (no auth required, but OnboardingGuard for students) */}
           <Route path="/listings" element={<OnboardingGuard><MobileSwipeLayout><Listings /></MobileSwipeLayout></OnboardingGuard>} />

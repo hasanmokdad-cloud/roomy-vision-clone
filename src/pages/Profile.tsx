@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StudentOnboardingDrawer } from '@/components/student/mobile/StudentOnboardingDrawer';
 import { useBottomNav } from '@/contexts/BottomNavContext';
 import { AccommodationStatusCard } from '@/components/profile/AccommodationStatusCard';
+import { ProfileVisibilityNotice } from '@/components/profile/ProfileVisibilityNotice';
 
 
 
@@ -318,6 +319,11 @@ export default function Profile() {
                 <p className="text-muted-foreground text-sm">Student</p>
               </button>
 
+              {/* Profile Visibility Notice */}
+              <div className="px-2">
+                <ProfileVisibilityNotice />
+              </div>
+
               {/* Get Started Banner - only show if profile not complete */}
               {!hasCompletedProfile && (
                 <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-5">
@@ -399,11 +405,11 @@ export default function Profile() {
                   label="Account settings"
                   onClick={() => navigate('/settings')}
                 />
-                <MobileMenuRow
-                  icon={<HelpCircle className="w-6 h-6" />}
-                  label="Get help"
-                  onClick={() => navigate('/contact')}
-                />
+              <MobileMenuRow
+                icon={<HelpCircle className="w-6 h-6" />}
+                label="Help Center"
+                onClick={() => navigate('/help')}
+              />
                 <MobileMenuRow
                   icon={<User className="w-6 h-6" />}
                   label="View profile"
