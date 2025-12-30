@@ -16,16 +16,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Pin, Archive, Bell, BellOff, Trash2, MoreVertical } from 'lucide-react';
+import { Pin, PinOff, Archive, Bell, BellOff, Trash2, MoreVertical } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { MuteNotificationsModal } from './MuteNotificationsModal';
 
 type ConversationContextMenuProps = {
   conversationId: string;
@@ -144,18 +138,22 @@ export function ConversationContextMenu({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuItem onClick={handlePin}>
-            <Pin className="w-4 h-4 mr-2" />
+            {isPinned ? (
+              <PinOff className="w-4 h-4 mr-2" />
+            ) : (
+              <Pin className="w-4 h-4 mr-2" />
+            )}
             {isPinned ? 'Unpin chat' : 'Pin chat'}
           </DropdownMenuItem>
           
           {isMuted ? (
             <DropdownMenuItem onClick={handleUnmute}>
-              <BellOff className="w-4 h-4 mr-2" />
+              <Bell className="w-4 h-4 mr-2" />
               Unmute notifications
             </DropdownMenuItem>
           ) : (
             <DropdownMenuItem onClick={() => setShowMuteDialog(true)}>
-              <Bell className="w-4 h-4 mr-2" />
+              <BellOff className="w-4 h-4 mr-2" />
               Mute notifications
             </DropdownMenuItem>
           )}
@@ -177,44 +175,11 @@ export function ConversationContextMenu({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={showMuteDialog} onOpenChange={setShowMuteDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Mute message notifications</DialogTitle>
-            <p className="text-sm text-muted-foreground mt-2">
-              Other members will not see that you muted this chat. You will still be notified if you are mentioned.
-            </p>
-          </DialogHeader>
-          <div className="space-y-2 pt-4">
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => handleMute('8hours')}
-            >
-              8 hours
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => handleMute('1week')}
-            >
-              1 week
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => handleMute('always')}
-            >
-              Always
-            </Button>
-          </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="ghost" onClick={() => setShowMuteDialog(false)}>
-              Cancel
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <MuteNotificationsModal
+        open={showMuteDialog}
+        onOpenChange={setShowMuteDialog}
+        onMute={handleMute}
+      />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
