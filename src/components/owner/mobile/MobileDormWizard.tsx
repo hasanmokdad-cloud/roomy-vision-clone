@@ -113,6 +113,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
   const [hasSavedProgress, setHasSavedProgress] = useState(false);
   const [savedStep, setSavedStep] = useState(0);
+  const [agreedToOwnerTerms, setAgreedToOwnerTerms] = useState(false);
 
   // Check for saved progress
   useEffect(() => {
@@ -308,7 +309,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       case 3: return formData.capacity < 1 || formData.capacity > 2000;
       case 8: return !formData.genderPreference;
       case 9: return !formData.coverImage;
-      case 14: return !formData.title || !formData.area;
+      case 14: return !formData.title || !formData.area || !agreedToOwnerTerms;
       default: return false;
     }
   };
@@ -441,6 +442,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           <ReviewStep
             formData={formData}
             onEditStep={setCurrentStep}
+            agreedToOwnerTerms={agreedToOwnerTerms}
+            onAgreedToOwnerTermsChange={setAgreedToOwnerTerms}
           />
         );
       default:

@@ -1,9 +1,10 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SubPageHeader } from '@/components/mobile/SubPageHeader';
 import { SwipeBackWrapper } from '@/components/mobile/SwipeBackWrapper';
+import { FileText, Shield, CreditCard, Cookie, Users } from 'lucide-react';
 
 export default function Legal() {
   const { page } = useParams();
@@ -11,6 +12,86 @@ export default function Legal() {
   const isMobile = useIsMobile();
 
   const getContent = () => {
+    // Legal Hub (index page)
+    if (!page) {
+      return {
+        title: 'Legal Information',
+        content: (
+          <div className="space-y-6">
+            <p className="text-muted-foreground mb-8">
+              Review our policies and agreements that govern the use of Roomy.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Link
+                to="/legal/terms"
+                className="flex items-start gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/50 transition-all"
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Terms of Service</h3>
+                  <p className="text-sm text-muted-foreground">Usage rules and conditions</p>
+                </div>
+              </Link>
+
+              <Link
+                to="/legal/privacy"
+                className="flex items-start gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/50 transition-all"
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <Shield className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Privacy Policy</h3>
+                  <p className="text-sm text-muted-foreground">How we handle your data</p>
+                </div>
+              </Link>
+
+              <Link
+                to="/legal/payments"
+                className="flex items-start gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/50 transition-all"
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <CreditCard className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Payments & Security</h3>
+                  <p className="text-sm text-muted-foreground">Payment processing and security</p>
+                </div>
+              </Link>
+
+              <Link
+                to="/legal/cookies"
+                className="flex items-start gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/50 transition-all"
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <Cookie className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Cookies & Tracking</h3>
+                  <p className="text-sm text-muted-foreground">How we use cookies</p>
+                </div>
+              </Link>
+
+              <Link
+                to="/legal/owner-agreement"
+                className="flex items-start gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/50 transition-all"
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <Users className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Owner Agreement</h3>
+                  <p className="text-sm text-muted-foreground">Terms for property owners</p>
+                </div>
+              </Link>
+            </div>
+          </div>
+        ),
+      };
+    }
+
     switch (page) {
       case 'payments':
         return {
@@ -59,57 +140,107 @@ export default function Legal() {
           ),
         };
 
-      case 'refunds':
+      case 'cookies':
         return {
-          title: 'Refund Policy',
+          title: 'Cookies & Tracking Policy',
           content: (
             <div className="space-y-6">
               <section>
-                <h2 className="text-2xl font-bold mb-4">Refund Window</h2>
-                <p className="text-muted-foreground mb-4">
-                  You can request a refund within 72 hours of making a reservation, provided 
-                  you have not yet moved into the property.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Refund Process</h2>
-                <ol className="list-decimal list-inside space-y-3 text-muted-foreground ml-4">
-                  <li>Submit a refund request through your payment history page</li>
-                  <li>Property owner reviews your request (typically within 24-48 hours)</li>
-                  <li>If approved by owner, admin processes the refund</li>
-                  <li>Refund is issued to your original payment method within 5-7 business days</li>
-                </ol>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Refundable Amount</h2>
-                <p className="text-muted-foreground mb-4">
-                  Approved refunds include:
-                </p>
-                <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
-                  <li>Full deposit amount</li>
-                  <li>Full service fee</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Non-Refundable Items</h2>
-                <p className="text-muted-foreground mb-4">
-                  The following are non-refundable:
-                </p>
-                <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
-                  <li>AI Match premium plans (digital services consumed immediately)</li>
-                  <li>Reservations after the 72-hour window has expired</li>
-                  <li>Reservations where you have already moved into the property</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold mb-4">Disputes</h2>
+                <h2 className="text-2xl font-bold mb-4">Overview of Cookies</h2>
                 <p className="text-muted-foreground">
-                  If you have a dispute regarding a refund decision, please contact our support 
-                  team at support@roomy.app with your reservation details.
+                  [Explain what cookies are and why Roomy uses them]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Session & Authentication Cookies</h2>
+                <p className="text-muted-foreground">
+                  [Describe cookies used for login sessions and user authentication]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Analytics Cookies</h2>
+                <p className="text-muted-foreground">
+                  [Describe cookies used for analytics and improving the platform]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Opt-Out Instructions</h2>
+                <p className="text-muted-foreground">
+                  [Explain how users can manage or disable cookies]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
+                <p className="text-muted-foreground">
+                  For questions about our cookie policy, please contact us at privacy@roomy.app
+                </p>
+              </section>
+            </div>
+          ),
+        };
+
+      case 'owner-agreement':
+        return {
+          title: 'Owner Agreement',
+          content: (
+            <div className="space-y-6">
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Owner Responsibilities</h2>
+                <p className="text-muted-foreground">
+                  [Define the responsibilities of property owners using Roomy]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Accuracy of Listings</h2>
+                <p className="text-muted-foreground">
+                  [Requirements for accurate and truthful listing information]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Safety Compliance</h2>
+                <p className="text-muted-foreground">
+                  [Safety standards and regulations owners must follow]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Property Verification</h2>
+                <p className="text-muted-foreground">
+                  [Verification process and requirements for properties]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Removal and Termination</h2>
+                <p className="text-muted-foreground">
+                  [Conditions under which listings may be removed or accounts terminated]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Liability Disclaimer</h2>
+                <p className="text-muted-foreground">
+                  [Roomy's liability limitations regarding owner properties]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Report Unsafe Dorms</h2>
+                <p className="text-muted-foreground">
+                  [Policy and process for reporting unsafe conditions]
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
+                <p className="text-muted-foreground">
+                  For questions about the Owner Agreement, please contact us at owners@roomy.app
                 </p>
               </section>
             </div>
