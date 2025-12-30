@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 // Import the global active conversation tracker
-import { setGlobalActiveConversation } from './useUnreadCount';
+import { setGlobalActiveConversation, getGlobalActiveConversation } from './useUnreadCount';
 
 // Re-export for convenience
 export { setGlobalActiveConversation };
@@ -102,10 +102,12 @@ export function useUnreadMessagesCount(userId?: string, role?: string) {
           schema: 'public',
           table: 'messages',
         },
-        (payload) => {
+      (payload) => {
           const newMessage = payload.new as any;
           // Skip if from current user
           if (newMessage.sender_id === userId) return;
+          // Skip if this is the active conversation (user is already viewing it)
+          if (newMessage.conversation_id === getGlobalActiveConversation()) return;
           // Optimistic increment
           setCount(prev => prev + 1);
         }

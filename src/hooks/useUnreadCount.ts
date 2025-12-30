@@ -8,6 +8,10 @@ export function setGlobalActiveConversation(id: string | null) {
   globalActiveConversationId = id;
 }
 
+export function getGlobalActiveConversation(): string | null {
+  return globalActiveConversationId;
+}
+
 export function useUnreadCount(userId: string | null) {
   const [unreadCount, setUnreadCount] = useState(0);
   const debounceTimeoutRef = useRef<NodeJS.Timeout>();
