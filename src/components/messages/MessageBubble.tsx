@@ -15,6 +15,8 @@ import { HighlightedText } from "./ConversationSearchBar";
 import { AnimatedReaction } from "./AnimatedReaction";
 import { InlineReactionCelebration } from "./ReactionCelebration";
 import { ReactionSummarySheet } from "./ReactionSummarySheet";
+import { PollMessage } from "./PollMessage";
+import { renderMentionedText } from "./MentionInput";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -71,6 +73,8 @@ interface MessageBubbleProps {
   isCurrentSearchMatch?: boolean;
   isFirstInGroup?: boolean;
   isLastInGroup?: boolean;
+  isGroupChat?: boolean;
+  onMentionClick?: (userId: string) => void;
 }
 
 export function MessageBubble({
@@ -90,6 +94,8 @@ export function MessageBubble({
   isCurrentSearchMatch = false,
   isFirstInGroup = true,
   isLastInGroup = true,
+  isGroupChat = false,
+  onMentionClick,
 }: MessageBubbleProps) {
   const isMobile = useIsMobile();
   const { toast } = useToast();
