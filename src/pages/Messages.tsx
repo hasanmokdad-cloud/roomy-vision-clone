@@ -1377,6 +1377,7 @@ export default function Messages() {
           }
         } else {
           otherUserName = 'Roomy Support';
+          otherUserRole = 'Admin';
         }
       } else if (conv.user_a_id && conv.user_b_id) {
         // Peer-to-peer conversation
