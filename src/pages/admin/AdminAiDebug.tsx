@@ -25,7 +25,7 @@ export default function AdminAiDebug() {
     const checkAdminAccess = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate('/auth');
+        navigate('/listings');
         return;
       }
 

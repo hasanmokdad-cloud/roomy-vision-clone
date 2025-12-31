@@ -383,7 +383,7 @@ export default function ResetPassword() {
             <EmailProviderButtons variant="outline" />
 
             <button
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/listings')}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               ← Back to login

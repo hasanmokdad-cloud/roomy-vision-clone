@@ -55,7 +55,7 @@ export function useMatchTier({ studentId, userId, onTierChange }: UseMatchTierOp
           description: 'Please sign in to upgrade your plan',
           variant: 'destructive',
         });
-        navigate('/auth');
+        navigate('/listings');
         return;
       }
 

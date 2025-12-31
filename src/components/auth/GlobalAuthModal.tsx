@@ -125,16 +125,23 @@ export function GlobalAuthModal() {
           console.error('[GlobalAuthModal] Failed to assign student role:', roleError);
         }
 
-        // Send verification email (non-blocking - don't fail signup if this fails)
-        supabase.functions.invoke('send-verification-email', {
+        // Send verification email (blocking - show error if fails)
+        const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
           body: {
             userId: data.user.id,
             email: email.trim(),
             tokenType: 'signup'
           }
-        }).catch(err => {
-          console.error('[GlobalAuthModal] Failed to send verification email:', err);
         });
+
+        if (emailError) {
+          console.error('[GlobalAuthModal] Failed to send verification email:', emailError);
+          toast({
+            title: 'Account created',
+            description: 'Verification email may be delayed. Check spam or resend from the next page.',
+            variant: 'default',
+          });
+        }
       }
 
       // Clear any previous onboarding state for fresh signup experience

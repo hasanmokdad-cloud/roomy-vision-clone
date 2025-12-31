@@ -289,7 +289,7 @@ export default function OwnerHome() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    navigate('/auth');
+    navigate('/listings');
   };
 
 

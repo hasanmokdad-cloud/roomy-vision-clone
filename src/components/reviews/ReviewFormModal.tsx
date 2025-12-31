@@ -88,7 +88,7 @@ export function ReviewFormModal({
           description: 'Please sign in to submit a review',
           variant: 'destructive' 
         });
-        navigate('/auth');
+        navigate('/listings');
         return;
       }
 
