@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, Wifi, Car, Snowflake, Dumbbell, ShieldCheck, UtensilsCrossed, BookOpen, Trees, Users, Zap, Droplets, ArrowUpDown, Sofa, PawPrint, Brush, Waves, Flower2, DoorOpen, X, Tv } from 'lucide-react';
+import { ChevronDown, ChevronUp, Wifi, Car, Snowflake, Dumbbell, ShieldCheck, UtensilsCrossed, BookOpen, Trees, Users, Zap, Droplets, ArrowUpDown, Sofa, PawPrint, Brush, Waves, Flower2, DoorOpen, X, Tv, Thermometer } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ interface Filters {
   shuttle: 'all' | 'available' | 'none';
   genderPreference: string[];
   amenities: string[];
+  electricity24_7?: boolean;
 }
 
 interface Room {
@@ -80,7 +81,7 @@ const amenityCategories = {
     { name: 'Laundry', icon: Droplets },
     { name: 'Kitchen', icon: UtensilsCrossed },
     { name: 'Furnished', icon: Sofa },
-    { name: 'Heating', icon: Zap },
+    { name: 'Heating', icon: Thermometer },
     { name: 'TV', icon: Tv },
     { name: 'Electricity', icon: Zap },
   ],
@@ -245,7 +246,8 @@ export function AirbnbFiltersModal({
       cities: [],
       shuttle: 'all',
       genderPreference: [],
-      amenities: []
+      amenities: [],
+      electricity24_7: false
     };
     setLocalFilters(defaultFilters);
     onFilterChange(defaultFilters);  // Apply to parent immediately
@@ -271,7 +273,8 @@ export function AirbnbFiltersModal({
       localFilters.cities.length > 0 ||
       localFilters.shuttle !== 'all' ||
       localFilters.genderPreference.length > 0 ||
-      localFilters.amenities.length > 0
+      localFilters.amenities.length > 0 ||
+      localFilters.electricity24_7 === true
     );
   }, [localFilters]);
 
@@ -560,6 +563,33 @@ export function AirbnbFiltersModal({
           </section>
         </>
       )}
+
+      <hr className="border-border" />
+
+      {/* 24/7 Electricity Filter */}
+      <section className="space-y-4">
+        <h3 className="text-base font-semibold">Special Requirements</h3>
+        <button
+          onClick={() => updateFilter('electricity24_7', !localFilters.electricity24_7)}
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-xl border text-sm transition-colors w-full",
+            localFilters.electricity24_7
+              ? "bg-foreground text-background border-foreground"
+              : "border-border hover:border-foreground"
+          )}
+        >
+          <Zap className="h-5 w-5" />
+          <div className="text-left">
+            <span className="font-medium">24/7 Electricity</span>
+            <p className={cn(
+              "text-xs mt-0.5",
+              localFilters.electricity24_7 ? "text-background/70" : "text-muted-foreground"
+            )}>
+              Only show dorms with electricity included in rent
+            </p>
+          </div>
+        </button>
+      </section>
 
       <hr className="border-border" />
 

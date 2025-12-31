@@ -6,9 +6,9 @@ import {
   ShieldCheck, ArrowUpDown, Car, Brush, Dog, Sofa, Tv, Zap
 } from 'lucide-react';
 import { ElectricityOptionsModal } from './ElectricityOptionsModal';
-import { TVOptionsModal } from './TVOptionsModal';
+import { WiFiOptionsModal } from './WiFiOptionsModal';
 import { CleaningOptionsModal } from './CleaningOptionsModal';
-import type { ElectricityOption, TVOption, CleaningOption, AmenityDetails } from '@/types/amenities';
+import type { ElectricityOption, WiFiOption, CleaningOption, AmenityDetails } from '@/types/amenities';
 
 interface AmenitiesStepProps {
   category: 'essentials' | 'shared' | 'safety';
@@ -23,13 +23,13 @@ const amenityCategories = {
     title: 'What essentials does your dorm offer?',
     subtitle: 'Select all that apply',
     items: [
-      { id: 'WiFi', label: 'WiFi', icon: Wifi },
+      { id: 'WiFi', label: 'WiFi', icon: Wifi, hasOptions: true, optionType: 'wifi' },
       { id: 'Kitchen', label: 'Kitchen', icon: UtensilsCrossed },
       { id: 'Laundry', label: 'Laundry', icon: WashingMachine },
       { id: 'Heating', label: 'Heating', icon: Thermometer },
       { id: 'Air Conditioning', label: 'AC', icon: Snowflake },
       { id: 'Furnished', label: 'Furnished', icon: Sofa },
-      { id: 'TV', label: 'TV', icon: Tv, hasOptions: true, optionType: 'tv' },
+      { id: 'TV', label: 'TV', icon: Tv },
       { id: 'Electricity', label: 'Electricity', icon: Zap, hasOptions: true, optionType: 'electricity' },
     ],
   },
@@ -66,7 +66,7 @@ export function AmenitiesStep({
 }: AmenitiesStepProps) {
   const categoryData = amenityCategories[category];
   const [electricityModalOpen, setElectricityModalOpen] = useState(false);
-  const [tvModalOpen, setTvModalOpen] = useState(false);
+  const [wifiModalOpen, setWifiModalOpen] = useState(false);
   const [cleaningModalOpen, setCleaningModalOpen] = useState(false);
 
   const handleAmenityClick = (item: { id: string; label: string; hasOptions?: boolean; optionType?: string }) => {
@@ -82,8 +82,8 @@ export function AmenitiesStep({
         case 'electricity':
           setElectricityModalOpen(true);
           break;
-        case 'tv':
-          setTvModalOpen(true);
+        case 'wifi':
+          setWifiModalOpen(true);
           break;
         case 'cleaning':
           setCleaningModalOpen(true);
@@ -101,11 +101,11 @@ export function AmenitiesStep({
     onUpdateAmenityDetails?.({ ...amenityDetails, electricity: option });
   };
 
-  const handleTVSave = (option: TVOption) => {
-    if (!selectedAmenities.includes('TV')) {
-      onToggle('TV');
+  const handleWiFiSave = (option: WiFiOption) => {
+    if (!selectedAmenities.includes('WiFi')) {
+      onToggle('WiFi');
     }
-    onUpdateAmenityDetails?.({ ...amenityDetails, tv: option });
+    onUpdateAmenityDetails?.({ ...amenityDetails, wifi: option });
   };
 
   const handleCleaningSave = (option: CleaningOption) => {
@@ -119,12 +119,12 @@ export function AmenitiesStep({
     switch (itemId) {
       case 'Electricity':
         if (amenityDetails.electricity) {
-          return amenityDetails.electricity.type === '24/7' ? '24/7' : 'Custom';
+          return amenityDetails.electricity.included === 'yes' ? 'Included' : 'Not incl.';
         }
         break;
-      case 'TV':
-        if (amenityDetails.tv) {
-          return amenityDetails.tv.type === '24/7' ? '24/7' : 'Custom';
+      case 'WiFi':
+        if (amenityDetails.wifi) {
+          return amenityDetails.wifi.included === 'yes' ? 'Included' : 'Not incl.';
         }
         break;
       case 'Cleaning Service':
@@ -209,11 +209,11 @@ export function AmenitiesStep({
         initialValue={amenityDetails.electricity}
         onSave={handleElectricitySave}
       />
-      <TVOptionsModal
-        open={tvModalOpen}
-        onOpenChange={setTvModalOpen}
-        initialValue={amenityDetails.tv}
-        onSave={handleTVSave}
+      <WiFiOptionsModal
+        open={wifiModalOpen}
+        onOpenChange={setWifiModalOpen}
+        initialValue={amenityDetails.wifi}
+        onSave={handleWiFiSave}
       />
       <CleaningOptionsModal
         open={cleaningModalOpen}

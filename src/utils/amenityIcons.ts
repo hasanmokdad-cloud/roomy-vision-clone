@@ -25,7 +25,7 @@ export const amenityIconMap: Record<string, LucideIcon> = {
   'ac': Snowflake,
   'a/c': Snowflake,
   'cooling': Snowflake,
-  'heating': Zap,
+  'heating': Thermometer,
   'heater': Thermometer,
   'central heating': Thermometer,
   

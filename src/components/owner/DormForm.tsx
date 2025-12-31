@@ -34,6 +34,8 @@ const AMENITIES_OPTIONS = [
   "Furnished",
   "Pet Friendly",
   "Cleaning Service",
+  "TV",
+  "Electricity",
 ];
 
 interface DormFormProps {
