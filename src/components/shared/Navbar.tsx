@@ -22,7 +22,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
-import AuthModal from './AuthModal';
+import GlobalAuthModal from '@/components/auth/GlobalAuthModal';
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -243,7 +243,7 @@ export default function Navbar() {
         </div>
       </motion.nav>
 
-      <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
+      <GlobalAuthModal open={authOpen} onOpenChange={setAuthOpen} />
     </>
   );
 }
