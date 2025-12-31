@@ -204,7 +204,7 @@ export default function PasswordReset() {
 
               {/* Back to Login */}
               <motion.button
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate('/listings')}
                 className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

@@ -27,7 +27,7 @@ const Main = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        navigate('/auth', { replace: true });
+        navigate('/listings', { replace: true });
         return;
       }
 

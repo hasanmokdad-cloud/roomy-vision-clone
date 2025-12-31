@@ -122,7 +122,7 @@ export default function SecureAccount() {
                     Reset Password Now
                   </Button>
                   <Button
-                    onClick={() => navigate("/auth")}
+                    onClick={() => navigate("/listings")}
                     variant="outline"
                     className="w-full"
                   >
@@ -144,7 +144,7 @@ export default function SecureAccount() {
                 <h2 className="text-2xl font-bold">Something Went Wrong</h2>
                 <p className="text-foreground/70">{errorMessage}</p>
                 <Button
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/listings")}
                   variant="outline"
                   className="w-full"
                 >

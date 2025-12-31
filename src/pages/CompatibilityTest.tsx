@@ -41,7 +41,7 @@ export default function CompatibilityTest() {
   const loadExistingResponses = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      navigate('/auth');
+      navigate('/listings');
       return;
     }
     setUserId(user.id);

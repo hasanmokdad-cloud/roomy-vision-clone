@@ -32,7 +32,7 @@ export default function Onboarding() {
       const sessionToUse = refreshedSession?.session || sessionData?.session;
       
       if (!sessionToUse) {
-        navigate("/auth", { replace: true });
+        navigate("/listings", { replace: true });
         return;
       }
 
@@ -135,7 +135,7 @@ export default function Onboarding() {
           description: "You need to be logged in to save preferences.",
           variant: "destructive"
         });
-        navigate("/auth");
+        navigate("/listings");
       }
 
       setSaving(false);

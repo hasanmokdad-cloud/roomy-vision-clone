@@ -79,7 +79,7 @@ export default function DevicePending() {
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={() => navigate("/auth")}
+                onClick={() => navigate("/listings")}
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Try Login Again
@@ -88,7 +88,7 @@ export default function DevicePending() {
               <Button
                 variant="ghost"
                 className="w-full text-foreground/60"
-                onClick={() => navigate("/auth")}
+                onClick={() => navigate("/listings")}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Login

@@ -219,7 +219,10 @@ export default function SharedCollection() {
           </p>
           <div className="flex gap-3 justify-center">
             <Button
-              onClick={() => navigate('/auth')}
+              onClick={() => {
+                navigate('/listings');
+                // Auth modal will be triggered by listings page for unauthenticated users
+              }}
               className="bg-gradient-to-r from-primary to-secondary"
             >
               Sign Up Free

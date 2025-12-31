@@ -34,7 +34,7 @@ export const TierSelectionCard = ({ selectedPlan, onPlanChange, onPurchaseRequir
             description: 'Please sign in to purchase a plan',
             variant: 'destructive',
           });
-          navigate('/auth');
+          navigate('/listings');
           return;
         }
 

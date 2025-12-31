@@ -1,12 +1,8 @@
 // src/components/MobileNavbar.tsx
-import { useLocation } from "react-router-dom";
+// This component is deprecated - mobile navigation is handled by bottom nav
+// Auth is now modal-based via GlobalAuthModal
 
 export default function MobileNavbar() {
-  const location = useLocation();
-
-  // Hide completely on mobile - bottom nav handles all navigation
-  if (location.pathname === "/auth") return null;
-
-  // Always hidden on mobile, only shown on desktop by parent component
+  // Always hidden on mobile - bottom nav handles all navigation
   return null;
 }
