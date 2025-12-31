@@ -23,7 +23,6 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
-import { GlobalAuthModal } from '@/components/auth/GlobalAuthModal';
 
 export default function Navbar() {
   const navigate = useNavigate();
