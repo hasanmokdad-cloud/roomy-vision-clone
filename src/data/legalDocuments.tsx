@@ -105,7 +105,7 @@ export const legalDocuments: LegalDocument[] = [
         <section>
           <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
           <p className="text-muted-foreground">
-            For questions about these terms, please contact us at legal@roomylb.com
+            For questions about these terms, please contact us at security@roomylb.com
           </p>
         </section>
       </div>
@@ -158,7 +158,7 @@ export const legalDocuments: LegalDocument[] = [
         <section>
           <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
           <p className="text-muted-foreground">
-            For privacy-related inquiries, please contact us at privacy@roomylb.com
+            For privacy-related inquiries, please contact us at security@roomylb.com
           </p>
         </section>
       </div>
@@ -255,7 +255,7 @@ export const legalDocuments: LegalDocument[] = [
         <section>
           <h2 className="text-2xl font-bold mb-4">8. Contact for Payment Inquiries</h2>
           <p className="text-muted-foreground">
-            For questions about payments, please contact us at payments@roomylb.com. For refund requests, contact the property owner directly.
+            For questions about payments, please contact us at security@roomylb.com. For refund requests, contact the property owner directly.
           </p>
         </section>
       </div>
@@ -375,7 +375,7 @@ export const legalDocuments: LegalDocument[] = [
         <section>
           <h2 className="text-2xl font-bold mb-4">9. Contact</h2>
           <p className="text-muted-foreground">
-            For questions about the Owner Listing Agreement, please contact us at owners@roomylb.com
+            For questions about the Owner Listing Agreement, please contact us at security@roomylb.com
           </p>
         </section>
       </div>
@@ -446,7 +446,7 @@ export const legalDocuments: LegalDocument[] = [
           </p>
           <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
             <li>The in-app reporting feature on user profiles or listings.</li>
-            <li>Email: community@roomylb.com</li>
+            <li>Email: security@roomylb.com</li>
           </ul>
           <p className="text-muted-foreground mt-4">
             All reports are reviewed confidentially. Roomy will investigate and take appropriate action.
@@ -469,7 +469,7 @@ export const legalDocuments: LegalDocument[] = [
         <section>
           <h2 className="text-2xl font-bold mb-4">7. Contact</h2>
           <p className="text-muted-foreground">
-            For questions about our Community Guidelines, please contact us at community@roomylb.com
+            For questions about our Community Guidelines, please contact us at security@roomylb.com
           </p>
         </section>
       </div>
@@ -540,7 +540,7 @@ export const legalDocuments: LegalDocument[] = [
             <li>Your account and associated data will be scheduled for deletion.</li>
           </ol>
           <p className="text-muted-foreground mt-4">
-            Alternatively, you can email privacy@roomylb.com with your deletion request. We will process your request within 30 days.
+            Alternatively, you can email security@roomylb.com with your deletion request. We will process your request within 30 days.
           </p>
         </section>
 
@@ -565,7 +565,7 @@ export const legalDocuments: LegalDocument[] = [
           </p>
           <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
             <li>Navigating to Settings &gt; Privacy &gt; Export Data.</li>
-            <li>Emailing privacy@roomylb.com with "Data Export Request" in the subject line.</li>
+            <li>Emailing security@roomylb.com with "Data Export Request" in the subject line.</li>
           </ul>
           <p className="text-muted-foreground mt-4">
             We will provide your data in JSON or CSV format within 30 days.
@@ -590,7 +590,7 @@ export const legalDocuments: LegalDocument[] = [
         <section>
           <h2 className="text-2xl font-bold mb-4">8. Contact for Data Requests</h2>
           <p className="text-muted-foreground">
-            For any data-related requests or questions, please contact our Data Protection team at privacy@roomylb.com
+            For any data-related requests or questions, please contact our Data Protection team at security@roomylb.com
           </p>
         </section>
       </div>
@@ -636,7 +636,7 @@ export const legalDocuments: LegalDocument[] = [
         <section>
           <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
           <p className="text-muted-foreground">
-            For questions about our cookie policy, please contact us at privacy@roomylb.com
+            For questions about our cookie policy, please contact us at security@roomylb.com
           </p>
         </section>
       </div>
