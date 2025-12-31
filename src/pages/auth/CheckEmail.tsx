@@ -23,12 +23,12 @@ export default function CheckEmail() {
     
     setIsResending(true);
     try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/verify`,
-        },
+      // Use custom edge function to send from security@roomylb.com
+      const { error } = await supabase.functions.invoke('send-verification-email', {
+        body: {
+          email: email,
+          tokenType: 'signup'
+        }
       });
       
       if (error) throw error;
