@@ -498,6 +498,61 @@ You have the right to:
 - Legal requirements: Some data may be retained for legal compliance
 
 See our [Privacy Policy](/legal/privacy) for complete details.`
+      },
+      {
+        id: 'how-roomy-protects-your-data',
+        title: 'How Roomy protects your data',
+        category: 'Privacy & Profile Visibility',
+        content: `Roomy is committed to protecting your personal information. Here's a simple breakdown of how we handle your data.
+
+## What data we collect
+
+We collect only what's needed to help you find housing:
+
+- **Account info**: Name, email, phone, university details
+- **Housing preferences**: Room type, location, budget
+- **AI matching data**: Personality questionnaire responses and compatibility scores
+
+## What we don't collect
+
+Currently, Roomy does not collect:
+
+- Behavioral analytics or tracking cookies
+- Third-party advertising identifiers
+
+If we add analytics in the future, you'll be notified and asked to consent.
+
+## How we use your data
+
+Your information is used exclusively for:
+
+- Logging in and managing your account
+- Matching you with compatible roommates
+- Processing housing reservations
+- Sending important notifications (like verification emails)
+
+## Your rights
+
+You have the right to:
+
+- **Access**: Request a copy of all your data
+- **Correction**: Fix inaccurate information
+- **Deletion**: Request full account and data deletion
+- **Opt out**: Exclude yourself from AI matching
+
+## How to delete your account
+
+To request account deletion, email **security@roomylb.com** with the subject line "Account Deletion Request" followed by your full name. We'll process your request within 30 days.
+
+## Data security
+
+- We don't sell, rent, or share your data with advertisers
+- Data is only disclosed when you contact an Owner or when required by Lebanese law
+- Profile photos may remain cached up to 30 days after account deletion
+
+## Full policy
+
+For complete legal details, read our [Privacy Policy](/legal/privacy).`
       }
     ]
   },

@@ -123,11 +123,16 @@ export function AccountSecurityCard({ profile, userId, onSignOut }: AccountSecur
                   <h4 className="text-sm font-semibold text-destructive mb-2">Danger Zone</h4>
                   <Button
                     variant="outline"
-                    disabled
-                    className="w-full justify-start text-muted-foreground cursor-not-allowed opacity-50"
+                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                    onClick={() => {
+                      const userName = profile?.full_name || 'User';
+                      const subject = encodeURIComponent(`Account Deletion Request – ${userName}`);
+                      const body = encodeURIComponent('Please permanently delete my account and all stored data.');
+                      window.location.href = `mailto:security@roomylb.com?subject=${subject}&body=${body}`;
+                    }}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Delete account (coming soon)
+                    Request full account deletion
                   </Button>
                 </div>
               </div>
