@@ -27,7 +27,7 @@ import { GlobalAuthModal } from '@/components/auth/GlobalAuthModal';
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const [authOpen, setAuthOpen] = useState(false);
+  const { openAuthModal } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [role, setRole] = useState<string | null>(null);
@@ -234,7 +234,7 @@ export default function Navbar() {
               </>
             ) : (
               <Button
-                onClick={() => setAuthOpen(true)}
+                onClick={() => openAuthModal()}
                 className="bg-gradient-to-r from-primary to-secondary text-white font-semibold px-6 py-2 rounded-xl hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] transition-all duration-300"
               >
                 Get Started
@@ -244,7 +244,8 @@ export default function Navbar() {
         </div>
       </motion.nav>
 
-      <GlobalAuthModal open={authOpen} onOpenChange={setAuthOpen} />
     </>
+  );
+}
   );
 }
