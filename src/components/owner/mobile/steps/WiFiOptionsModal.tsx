@@ -4,22 +4,22 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Zap } from 'lucide-react';
-import type { ElectricityOption } from '@/types/amenities';
+import { Wifi } from 'lucide-react';
+import type { WiFiOption } from '@/types/amenities';
 
-interface ElectricityOptionsModalProps {
+interface WiFiOptionsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialValue?: ElectricityOption;
-  onSave: (option: ElectricityOption) => void;
+  initialValue?: WiFiOption;
+  onSave: (option: WiFiOption) => void;
 }
 
-export function ElectricityOptionsModal({
+export function WiFiOptionsModal({
   open,
   onOpenChange,
   initialValue,
   onSave,
-}: ElectricityOptionsModalProps) {
+}: WiFiOptionsModalProps) {
   const [included, setIncluded] = useState<'yes' | 'no'>(initialValue?.included || 'yes');
   const [billingInfo, setBillingInfo] = useState(initialValue?.billingInfo || '');
 
@@ -36,33 +36,33 @@ export function ElectricityOptionsModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-primary" />
-            Electricity Billing
+            <Wifi className="w-5 h-5 text-primary" />
+            WiFi Service
           </DialogTitle>
         </DialogHeader>
 
         <div className="py-4">
           <p className="text-sm text-muted-foreground mb-4">
-            Is electricity included in the monthly rent?
+            Is WiFi included in the monthly rent?
           </p>
           
           <RadioGroup value={included} onValueChange={(v) => setIncluded(v as 'yes' | 'no')}>
             <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer">
-              <RadioGroupItem value="yes" id="elec-included" />
-              <Label htmlFor="elec-included" className="flex-1 cursor-pointer">
+              <RadioGroupItem value="yes" id="wifi-included" />
+              <Label htmlFor="wifi-included" className="flex-1 cursor-pointer">
                 <span className="font-medium">Included in rent</span>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  24/7 electricity with no extra charges
+                  WiFi access with no extra charges
                 </p>
               </Label>
             </div>
             
             <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer">
-              <RadioGroupItem value="no" id="elec-not-included" />
-              <Label htmlFor="elec-not-included" className="flex-1 cursor-pointer">
+              <RadioGroupItem value="no" id="wifi-not-included" />
+              <Label htmlFor="wifi-not-included" className="flex-1 cursor-pointer">
                 <span className="font-medium">Not included</span>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Students pay separately for electricity usage
+                  Students pay a separate subscription fee
                 </p>
               </Label>
             </div>
@@ -73,13 +73,13 @@ export function ElectricityOptionsModal({
               <Label htmlFor="billing-info">How are students charged?</Label>
               <Textarea
                 id="billing-info"
-                placeholder="e.g., Charged per kWh based on monthly meter reading. Average cost: $30-50/month depending on usage."
+                placeholder="e.g., $20/month subscription fee for fiber connection"
                 value={billingInfo}
                 onChange={(e) => setBillingInfo(e.target.value)}
                 className="min-h-[80px]"
               />
               <p className="text-xs text-muted-foreground">
-                Help students understand how electricity billing works
+                Help students understand WiFi costs
               </p>
             </div>
           )}

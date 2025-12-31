@@ -5,17 +5,17 @@ export interface AmenityWithOptions {
   label: string;
   icon: LucideIcon;
   hasOptions?: boolean;
-  optionType?: 'electricity' | 'cleaning' | 'tv';
+  optionType?: 'electricity' | 'wifi' | 'cleaning';
 }
 
 export interface ElectricityOption {
-  type: '24/7' | 'other';
-  customSchedule?: string; // For "Other" option
+  included: 'yes' | 'no';
+  billingInfo?: string; // How students are charged if not included
 }
 
-export interface TVOption {
-  type: '24/7' | 'other';
-  customSchedule?: string; // For "Other" option
+export interface WiFiOption {
+  included: 'yes' | 'no';
+  billingInfo?: string; // e.g., "$20/month subscription"
 }
 
 export interface CleaningOption {
@@ -23,22 +23,22 @@ export interface CleaningOption {
   customSchedule?: string; // For "Other" option
 }
 
-export type AmenityOptionType = ElectricityOption | TVOption | CleaningOption;
+export type AmenityOptionType = ElectricityOption | WiFiOption | CleaningOption;
 
 export interface AmenityDetails {
   electricity?: ElectricityOption;
-  tv?: TVOption;
+  wifi?: WiFiOption;
   cleaning?: CleaningOption;
 }
 
 export function formatElectricityOption(option: ElectricityOption): string {
-  if (option.type === '24/7') return '24/7';
-  return option.customSchedule || 'Custom schedule';
+  if (option.included === 'yes') return 'Included';
+  return option.billingInfo || 'Not included';
 }
 
-export function formatTVOption(option: TVOption): string {
-  if (option.type === '24/7') return '24/7';
-  return option.customSchedule || 'Custom schedule';
+export function formatWiFiOption(option: WiFiOption): string {
+  if (option.included === 'yes') return 'Included';
+  return option.billingInfo || 'Not included';
 }
 
 export function formatCleaningOption(option: CleaningOption): string {
