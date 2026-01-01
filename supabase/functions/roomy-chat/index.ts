@@ -771,10 +771,12 @@ serve(async (req) => {
       // Check user tier for personality insights
       userTier = studentProfile?.ai_match_plan || 'basic';
       
+      // Only include users who have opted into AI personality matching
       const { data: potentialRoommates, error: roommatesError } = await supabase
         .from("students")
         .select("full_name, age, gender, university, budget, preferred_room_types, preferred_amenities, personality_test_completed, personality_intro_extro, personality_cleanliness_level, personality_smoking")
         .neq("user_id", userId || "")
+        .eq("enable_personality_matching", true)
         .limit(3);
       
       if (potentialRoommates && potentialRoommates.length > 0) {

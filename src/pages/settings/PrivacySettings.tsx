@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, FileText, Brain, Trash2, Shield, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,23 +12,60 @@ export default function PrivacySettings() {
   const navigate = useNavigate();
   const { userId } = useAuthSession();
   const [aiMatchingEnabled, setAiMatchingEnabled] = useState(true);
+  const [isLoadingPreference, setIsLoadingPreference] = useState(true);
+  const [isUpdatingPreference, setIsUpdatingPreference] = useState(false);
   const [showDeletionModal, setShowDeletionModal] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [profile, setProfile] = useState<{ full_name?: string; email?: string } | null>(null);
 
-  // Fetch profile for deletion email
-  useState(() => {
-    const fetchProfile = async () => {
+  // Fetch profile and AI matching preference
+  useEffect(() => {
+    const fetchProfileAndPreferences = async () => {
       if (!userId) return;
+      
       const { data } = await supabase
         .from('students')
-        .select('full_name, email')
+        .select('full_name, email, enable_personality_matching')
         .eq('user_id', userId)
         .single();
-      if (data) setProfile(data);
+      
+      if (data) {
+        setProfile(data);
+        setAiMatchingEnabled(data.enable_personality_matching ?? true);
+      }
+      setIsLoadingPreference(false);
     };
-    fetchProfile();
-  });
+    
+    fetchProfileAndPreferences();
+  }, [userId]);
+
+  const handleAIMatchingToggle = async (enabled: boolean) => {
+    if (!userId) return;
+    
+    setAiMatchingEnabled(enabled);
+    setIsUpdatingPreference(true);
+    
+    try {
+      const { error } = await supabase
+        .from('students')
+        .update({ enable_personality_matching: enabled })
+        .eq('user_id', userId);
+      
+      if (error) throw error;
+      
+      toast.success(
+        enabled 
+          ? "AI matching enabled. You'll now appear in roommate match results."
+          : "AI matching disabled. Your profile won't appear in match results."
+      );
+    } catch (error) {
+      // Revert on error
+      setAiMatchingEnabled(!enabled);
+      toast.error('Failed to update AI matching preference');
+    } finally {
+      setIsUpdatingPreference(false);
+    }
+  };
 
   const handleDownloadData = () => {
     const subject = encodeURIComponent('Data Export Request');
@@ -127,11 +164,16 @@ export default function PrivacySettings() {
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium text-foreground">AI Matching</p>
-                <p className="text-xs text-muted-foreground">Use personality data for roommate matching</p>
+                <p className="text-xs text-muted-foreground">
+                  {aiMatchingEnabled 
+                    ? "Your profile appears in roommate matches" 
+                    : "You're hidden from match results"}
+                </p>
               </div>
               <Switch
                 checked={aiMatchingEnabled}
-                onCheckedChange={setAiMatchingEnabled}
+                onCheckedChange={handleAIMatchingToggle}
+                disabled={isLoadingPreference || isUpdatingPreference}
               />
             </div>
 

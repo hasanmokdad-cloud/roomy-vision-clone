@@ -257,11 +257,13 @@ export const useCompatibilityMatch = (userId?: string) => {
       }
 
       // Find other students who also need roommates and completed the test
+      // Only include users who have opted into AI personality matching
       let query = supabase
         .from('students')
         .select('*')
         .neq('user_id', userId)
-        .eq('compatibility_test_completed', true);
+        .eq('compatibility_test_completed', true)
+        .eq('enable_personality_matching', true);
 
       // Case 1: User has accommodation, needs roommate for current place
       if (currentUser.needs_roommate_current_place) {
