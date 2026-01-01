@@ -16,6 +16,7 @@ interface AccountSecurityCardProps {
 export function AccountSecurityCard({ profile, userId, onSignOut }: AccountSecurityCardProps) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showDeletionModal, setShowDeletionModal] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   const maskEmail = (email: string | null) => {
@@ -124,12 +125,7 @@ export function AccountSecurityCard({ profile, userId, onSignOut }: AccountSecur
                   <Button
                     variant="outline"
                     className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-                    onClick={() => {
-                      const userName = profile?.full_name || 'User';
-                      const subject = encodeURIComponent(`Account Deletion Request – ${userName}`);
-                      const body = encodeURIComponent('Please permanently delete my account and all stored data.');
-                      window.location.href = `mailto:security@roomylb.com?subject=${subject}&body=${body}`;
-                    }}
+                    onClick={() => setShowDeletionModal(true)}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Request full account deletion
@@ -151,6 +147,55 @@ export function AccountSecurityCard({ profile, userId, onSignOut }: AccountSecur
         confirmText="Sign out"
         onConfirm={onSignOut}
       />
+
+      {/* Account Deletion Confirmation */}
+      <ResponsiveAlertModal
+        open={showDeletionModal}
+        onOpenChange={setShowDeletionModal}
+        title="Request Account Deletion"
+        description="This will send a deletion request to our security team. Processing takes up to 30 days."
+        confirmText="Continue to email"
+        cancelText="Keep my account"
+        onConfirm={() => {
+          const userName = profile?.full_name || 'User';
+          const subject = encodeURIComponent(`Account Deletion Request – ${userName}`);
+          const body = encodeURIComponent('Please permanently delete my account and all stored data.');
+          window.location.href = `mailto:security@roomylb.com?subject=${subject}&body=${body}`;
+          setShowDeletionModal(false);
+        }}
+        variant="destructive"
+      >
+        <div className="space-y-3 text-sm">
+          <p className="font-medium text-foreground">Data that will be permanently deleted:</p>
+          <ul className="space-y-2 text-muted-foreground">
+            <li className="flex items-start gap-2">
+              <span className="text-destructive">•</span>
+              Profile information (name, email, phone, university)
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-destructive">•</span>
+              Housing preferences and saved rooms
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-destructive">•</span>
+              AI personality questionnaire and match scores
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-destructive">•</span>
+              All messages and conversation history
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-destructive">•</span>
+              Reservation and booking records
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-destructive">•</span>
+              Profile photos and uploaded files
+            </li>
+          </ul>
+          <p className="text-destructive font-medium pt-2">This action cannot be undone.</p>
+        </div>
+      </ResponsiveAlertModal>
     </>
   );
 }
