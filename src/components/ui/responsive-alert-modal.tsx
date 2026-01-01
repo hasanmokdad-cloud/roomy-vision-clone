@@ -35,6 +35,7 @@ interface ResponsiveAlertModalProps {
   variant?: "default" | "destructive";
   isLoading?: boolean;
   className?: string;
+  children?: React.ReactNode;
 }
 
 export function ResponsiveAlertModal({
@@ -49,6 +50,7 @@ export function ResponsiveAlertModal({
   variant = "default",
   isLoading = false,
   className,
+  children,
 }: ResponsiveAlertModalProps) {
   const isMobile = useIsMobile();
 
@@ -78,6 +80,7 @@ export function ResponsiveAlertModal({
             <DrawerTitle>{title}</DrawerTitle>
             {description && <DrawerDescription>{description}</DrawerDescription>}
           </DrawerHeader>
+          {children && <div className="px-4">{children}</div>}
           <DrawerFooter className="flex-row gap-3 pt-4">
             <Button
               variant="outline"
@@ -110,6 +113,7 @@ export function ResponsiveAlertModal({
             <AlertDialogDescription>{description}</AlertDialogDescription>
           )}
         </AlertDialogHeader>
+        {children && <div className="py-2">{children}</div>}
         <AlertDialogFooter>
           <AlertDialogCancel onClick={handleCancel} disabled={isLoading}>
             {cancelText}

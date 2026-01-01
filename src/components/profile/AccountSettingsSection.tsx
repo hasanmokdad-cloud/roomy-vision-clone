@@ -3,6 +3,7 @@ import {
   User,
   Shield,
   Bell,
+  Eye,
   Wallet,
   FileText,
   HelpCircle,
@@ -33,6 +34,12 @@ const menuItems = [
     label: 'Notifications',
     subtitle: 'Push, email alerts',
     path: '/settings/notifications',
+  },
+  {
+    icon: Eye,
+    label: 'Privacy & Data',
+    subtitle: 'Export, deletion',
+    path: '/settings/privacy',
   },
   {
     icon: Wallet,
