@@ -14,6 +14,7 @@ import { WhatsAppDropdown } from '@/components/shared/WhatsAppDropdown';
 import { triggerContactEmailNotification } from '@/lib/contactNotifications';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffect } from 'react';
 
 const CONTACT_CATEGORIES = [
   'General Inquiry',
@@ -28,7 +29,7 @@ const CONTACT_CATEGORIES = [
 export default function Contact() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const { isAuthenticated, openAuthModal } = useAuth();
+  const { isAuthenticated, isAuthReady, openAuthModal } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -38,6 +39,14 @@ export default function Contact() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Auto-open auth modal for unauthenticated users, store redirect for post-login
+  useEffect(() => {
+    if (isAuthReady && !isAuthenticated) {
+      sessionStorage.setItem('roomy_auth_redirect', '/contact');
+      openAuthModal();
+    }
+  }, [isAuthReady, isAuthenticated, openAuthModal]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -79,7 +79,8 @@ export function RoomyNavbar() {
 
   const handleBecomeOwner = () => {
     if (!isAuthenticated) {
-      openAuthModal();
+      // Airbnb-style redirect: go to login page with redirect_url
+      navigate('/login?redirect_url=%2Fbecome-owner');
     } else {
       navigate('/become-owner');
     }

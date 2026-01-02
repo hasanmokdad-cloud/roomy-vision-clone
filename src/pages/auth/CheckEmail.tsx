@@ -1,9 +1,11 @@
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import RoomyLogo from "@/assets/roomy-logo.png";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Mail, ExternalLink } from "lucide-react";
-import FluidBackground from "@/components/FluidBackground";
+import { RoomyNavbar } from "@/components/RoomyNavbar";
+import { Footer } from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -16,14 +18,21 @@ export default function CheckEmail() {
   const [isResending, setIsResending] = useState(false);
   
   const email = searchParams.get('email') || '';
+  const redirectUrl = searchParams.get('redirect_url');
   const providerInfo = getEmailProviderInfo(email);
+
+  // Store redirect URL for post-verification if provided
+  useEffect(() => {
+    if (redirectUrl) {
+      sessionStorage.setItem('roomy_auth_redirect', redirectUrl);
+    }
+  }, [redirectUrl]);
 
   const handleResendEmail = async () => {
     if (!email) return;
     
     setIsResending(true);
     try {
-      // Use custom edge function to send from security@roomylb.com
       const { error } = await supabase.functions.invoke('send-verification-email', {
         body: {
           email: email,
@@ -55,10 +64,11 @@ export default function CheckEmail() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      <FluidBackground />
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-background/95 backdrop-blur-sm border-border/50 shadow-2xl">
+    <div className="min-h-screen flex flex-col bg-background">
+      <RoomyNavbar />
+      
+      <main className="flex-1 flex items-center justify-center p-4 mt-20">
+        <Card className="w-full max-w-md border-border/50 shadow-xl">
           <CardContent className="pt-8 pb-8 px-6 text-center space-y-6">
             {/* Logo */}
             <img 
@@ -107,17 +117,11 @@ export default function CheckEmail() {
                 {isResending ? 'Sending...' : 'Resend email'}
               </button>
             </div>
-            
-            {/* Back to Listings */}
-            <button
-              onClick={() => navigate('/listings')}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              ← Back to listings
-            </button>
           </CardContent>
         </Card>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }

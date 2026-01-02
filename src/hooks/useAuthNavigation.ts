@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
- * Hook for navigating users to login. Opens the global auth modal on listings page.
+ * Hook for navigating users to login. Supports both modal-based and redirect-based auth flows.
  * Use this instead of navigate('/auth') to ensure consistent auth flow.
  */
 export function useAuthNavigation() {
@@ -27,8 +27,17 @@ export function useAuthNavigation() {
     openAuthModal();
   };
 
+  /**
+   * Redirects to the login page with a return URL (Airbnb-style flow)
+   * Use this when you need the user to be redirected back after login
+   */
+  const redirectToLoginWithReturn = (returnUrl: string) => {
+    navigate(`/login?redirect_url=${encodeURIComponent(returnUrl)}`);
+  };
+
   return {
     redirectToLogin,
+    redirectToLoginWithReturn,
     showLogin,
     openAuthModal
   };

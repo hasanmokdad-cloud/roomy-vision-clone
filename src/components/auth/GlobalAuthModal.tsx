@@ -56,13 +56,18 @@ export function GlobalAuthModal() {
       closeAuthModal();
       await refreshAuth();
       
-      // Role-based redirect
-      if (roleData === 'owner') {
+      // Check for stored redirect URL first (Airbnb-style flow)
+      const storedRedirect = sessionStorage.getItem('roomy_auth_redirect');
+      sessionStorage.removeItem('roomy_auth_redirect');
+      
+      if (storedRedirect) {
+        navigate(storedRedirect, { replace: true });
+      } else if (roleData === 'owner') {
         navigate('/owner', { replace: true });
       } else if (roleData === 'admin') {
         navigate('/admin', { replace: true });
       }
-      // Students stay on current page
+      // Students stay on current page if no redirect stored
     } catch (error: any) {
       toast({
         title: 'Login failed',
@@ -154,7 +159,14 @@ export function GlobalAuthModal() {
       
       resetForm();
       closeAuthModal();
-      navigate(`/auth/check-email?email=${encodeURIComponent(email.trim())}`);
+      
+      // Pass redirect_url to check-email page if one exists
+      const storedRedirect = sessionStorage.getItem('roomy_auth_redirect');
+      const checkEmailUrl = storedRedirect 
+        ? `/auth/check-email?email=${encodeURIComponent(email.trim())}&redirect_url=${encodeURIComponent(storedRedirect)}`
+        : `/auth/check-email?email=${encodeURIComponent(email.trim())}`;
+      
+      navigate(checkEmailUrl);
     } catch (error: any) {
       toast({
         title: 'Signup failed',
