@@ -1,8 +1,8 @@
 export async function triggerContactEmailNotification(payload: {
-  first_name: string;
-  last_name?: string | null;
+  full_name: string;
   email: string;
-  university?: string | null;
+  category: string;
+  subject: string;
   message: string;
 }) {
   try {

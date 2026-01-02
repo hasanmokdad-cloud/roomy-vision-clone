@@ -2,7 +2,20 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const ADMIN_EMAIL = "hassan.mokdad01@lau.edu";
+
+// Category-based email routing
+const SUPPORT_EMAIL = "support@roomylb.com";
+const INFO_EMAIL = "info@roomylb.com";
+
+const SUPPORT_CATEGORIES = ["Customer Support", "Technical Issue", "Feedback"];
+const INFO_CATEGORIES = ["General Inquiry", "Business Partnership", "Press & Media", "Careers"];
+
+function getRecipientEmail(category: string): string {
+  if (SUPPORT_CATEGORIES.includes(category)) {
+    return SUPPORT_EMAIL;
+  }
+  return INFO_EMAIL;
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,23 +45,22 @@ function isRateLimited(ip: string): boolean {
 }
 
 interface ContactPayload {
-  first_name: string;
-  last_name?: string;
+  full_name: string;
   email: string;
-  university?: string;
+  category: string;
+  subject: string;
   message: string;
 }
 
-// Roomy branded contact form notification email
+// Generate professional contact form notification email
 function generateContactNotificationHtml(
-  firstName: string,
-  lastName: string | undefined,
+  fullName: string,
   email: string,
-  university: string | undefined,
+  category: string,
+  subject: string,
   message: string
 ): string {
   const year = new Date().getFullYear();
-  const fullName = `${firstName} ${lastName || ''}`.trim();
   const timestamp = new Date().toLocaleString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -58,6 +70,26 @@ function generateContactNotificationHtml(
     minute: '2-digit'
   });
 
+  // Category badge color
+  const getCategoryColor = (cat: string) => {
+    switch (cat) {
+      case "Customer Support":
+      case "Technical Issue":
+        return { bg: "#FEF3C7", text: "#92400E", border: "#F59E0B" };
+      case "Feedback":
+        return { bg: "#D1FAE5", text: "#065F46", border: "#10B981" };
+      case "Business Partnership":
+      case "Careers":
+        return { bg: "#EDE9FE", text: "#5B21B6", border: "#8B5CF6" };
+      case "Press & Media":
+        return { bg: "#FCE7F3", text: "#9D174D", border: "#EC4899" };
+      default:
+        return { bg: "#E0F2FE", text: "#0369A1", border: "#0EA5E9" };
+    }
+  };
+
+  const catColor = getCategoryColor(category);
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -65,7 +97,7 @@ function generateContactNotificationHtml(
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light">
-  <title>New Contact Form Submission - Roomy</title>
+  <title>[${category}] ${subject} - Roomy Contact Form</title>
   <style>
     body { 
       margin: 0; 
@@ -78,9 +110,21 @@ function generateContactNotificationHtml(
     .header { text-align: center; padding: 32px 0 24px 0; }
     .tagline { font-size: 14px; color: #64748B; margin: 8px 0 0 0; }
     .card { background: #ffffff; border-radius: 12px; padding: 48px 40px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); border: 1px solid #E5E7EB; }
-    .icon { text-align: center; font-size: 56px; margin-bottom: 16px; }
-    .heading { font-size: 28px; font-weight: 700; color: #0F172A; text-align: center; margin: 0 0 8px 0; }
-    .subheading { font-size: 16px; color: #64748B; text-align: center; margin: 0 0 32px 0; }
+    .category-badge { 
+      display: inline-block; 
+      background: ${catColor.bg}; 
+      color: ${catColor.text}; 
+      border: 1px solid ${catColor.border};
+      font-size: 12px; 
+      font-weight: 600; 
+      padding: 6px 12px; 
+      border-radius: 20px; 
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+    .subject-line { font-size: 24px; font-weight: 700; color: #0F172A; text-align: center; margin: 0 0 8px 0; line-height: 1.3; }
+    .from-line { font-size: 16px; color: #64748B; text-align: center; margin: 0 0 32px 0; }
     .info-box { background: #F9FAFB; border-radius: 12px; padding: 24px; margin: 24px 0; border: 1px solid #E5E7EB; }
     .info-title { font-size: 14px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 16px 0; }
     .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #E5E7EB; }
@@ -100,27 +144,29 @@ function generateContactNotificationHtml(
     @media only screen and (max-width: 480px) {
       .container { padding: 0 16px; }
       .card { padding: 32px 24px; border-radius: 12px; }
-      .heading { font-size: 24px; }
+      .subject-line { font-size: 20px; }
       .button { display: block; width: 100%; text-align: center; }
     }
   </style>
 </head>
 <body>
   <div style="display: none; max-height: 0px; overflow: hidden;">
-    New message from ${fullName} via Roomy contact form &nbsp;‌&nbsp;‌&nbsp;‌
+    [${category}] ${subject} - from ${fullName} &nbsp;‌&nbsp;‌&nbsp;‌
   </div>
   
   <div class="wrapper">
     <div class="container">
       <div class="header">
         <img src="https://roomylb.com/roomy-logo.png" alt="Roomy" width="80" height="80" style="border-radius: 16px; margin-bottom: 12px;" />
-        <p class="tagline">Admin Notification</p>
+        <p class="tagline">Contact Form Submission</p>
       </div>
 
       <div class="card">
-        <div class="icon">📬</div>
-        <h1 class="heading">New Contact Form Submission</h1>
-        <p class="subheading">Someone reached out via the Roomy website</p>
+        <div style="text-align: center;">
+          <span class="category-badge">${category}</span>
+        </div>
+        <h1 class="subject-line">${subject}</h1>
+        <p class="from-line">from ${fullName}</p>
         
         <div class="info-box">
           <p class="info-title">Contact Details</p>
@@ -132,12 +178,10 @@ function generateContactNotificationHtml(
             <span class="info-label">Email</span>
             <span class="info-value"><a href="mailto:${email}">${email}</a></span>
           </div>
-          ${university ? `
           <div class="info-row">
-            <span class="info-label">University</span>
-            <span class="info-value">${university}</span>
+            <span class="info-label">Category</span>
+            <span class="info-value">${category}</span>
           </div>
-          ` : ''}
         </div>
 
         <div class="message-box">
@@ -148,16 +192,14 @@ function generateContactNotificationHtml(
         <p class="timestamp">Received on ${timestamp}</p>
 
         <div class="button-container">
-          <a href="mailto:${email}?subject=Re: Your Roomy Inquiry" class="button">Reply to ${firstName}</a>
+          <a href="mailto:${email}?subject=Re: ${subject}" class="button">Reply to ${fullName.split(' ')[0]}</a>
         </div>
       </div>
 
       <div class="footer">
-        <!-- Signature -->
         <div style="border-top: 1px solid #E5E7EB; margin-top: 16px; padding-top: 16px; text-align: center;">
-          <p style="font-weight: 600; color: #0F172A; margin: 0; font-size: 14px;">Roomy Info Team</p>
-          <p style="color: #64748B; margin: 4px 0; font-size: 13px;"><a href="mailto:info@roomylb.com" style="color: #BD00FF; text-decoration: none;">info@roomylb.com</a></p>
-          <p style="color: #64748B; margin: 4px 0; font-size: 13px;"><a href="https://roomylb.com" style="color: #BD00FF; text-decoration: none;">roomylb.com</a> • Lebanon</p>
+          <p style="font-weight: 600; color: #0F172A; margin: 0; font-size: 14px;">Roomy Contact Form</p>
+          <p style="color: #64748B; margin: 4px 0; font-size: 13px;"><a href="https://roomylb.com/contact" style="color: #BD00FF; text-decoration: none;">roomylb.com/contact</a></p>
           <p style="color: #8B5CF6; margin: 8px 0 0 0; font-size: 12px;">Roomy — AI-Powered Student Housing Platform</p>
         </div>
       </div>
@@ -166,6 +208,51 @@ function generateContactNotificationHtml(
 </body>
 </html>
   `;
+}
+
+// Generate plain text version for better deliverability
+function generatePlainTextEmail(
+  fullName: string,
+  email: string,
+  category: string,
+  subject: string,
+  message: string
+): string {
+  const timestamp = new Date().toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  return `
+ROOMY CONTACT FORM SUBMISSION
+=============================
+
+[${category}] ${subject}
+From: ${fullName}
+
+CONTACT DETAILS
+---------------
+Name: ${fullName}
+Email: ${email}
+Category: ${category}
+
+MESSAGE
+-------
+${message}
+
+---
+Received on ${timestamp}
+
+To reply, email: ${email}
+
+--
+Roomy — AI-Powered Student Housing Platform
+https://roomylb.com
+  `.trim();
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -213,7 +300,8 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const payload: ContactPayload = await req.json();
 
-    console.log("[contact-form-email] Processing notification for:", payload.email);
+    console.log("[contact-form-email] Processing contact form from:", payload.email);
+    console.log("[contact-form-email] Category:", payload.category);
 
     if (!RESEND_API_KEY) {
       console.warn("[contact-form-email] RESEND_API_KEY not configured, skipping email");
@@ -223,14 +311,29 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Generate Roomy branded email
+    // Determine recipient based on category
+    const recipientEmail = getRecipientEmail(payload.category);
+    console.log("[contact-form-email] Routing to:", recipientEmail);
+
+    // Generate email content
     const emailHtml = generateContactNotificationHtml(
-      payload.first_name,
-      payload.last_name,
+      payload.full_name,
       payload.email,
-      payload.university,
+      payload.category,
+      payload.subject,
       payload.message
     );
+
+    const emailText = generatePlainTextEmail(
+      payload.full_name,
+      payload.email,
+      payload.category,
+      payload.subject,
+      payload.message
+    );
+
+    // Format subject: [Category] Subject - Full Name
+    const emailSubject = `[${payload.category}] ${payload.subject} - ${payload.full_name}`;
 
     // Send email using Resend with verified domain
     const emailResponse = await fetch("https://api.resend.com/emails", {
@@ -240,11 +343,16 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Roomy Info Team <info@roomylb.com>",
-        to: [ADMIN_EMAIL],
-        subject: `📬 New Contact Form: ${payload.first_name} ${payload.last_name || ""}`,
+        from: "Roomy Contact Form <noreply@roomylb.com>",
+        to: [recipientEmail],
+        subject: emailSubject,
         html: emailHtml,
+        text: emailText,
         reply_to: payload.email,
+        headers: {
+          "X-Priority": "1",
+          "X-Mailer": "Roomy-Platform"
+        }
       }),
     });
 
@@ -253,9 +361,11 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Resend API error: ${emailResponse.statusText} - ${errorText}`);
     }
 
-    console.log("[contact-form-email] ✅ Email sent successfully");
+    const result = await emailResponse.json();
+    console.log("[contact-form-email] ✅ Email sent successfully to", recipientEmail);
+    console.log("[contact-form-email] Resend ID:", result.id);
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, recipient: recipientEmail }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {

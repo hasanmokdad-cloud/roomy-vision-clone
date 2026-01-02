@@ -119,6 +119,7 @@ export default function Contact() {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
+      // Save to contact_messages table for record-keeping
       const { error: contactError } = await supabase.from('contact_messages').insert({
         user_id: user?.id || null,
         first_name: sanitizeInput(firstName),
@@ -131,32 +132,19 @@ export default function Contact() {
 
       if (contactError) throw contactError;
 
-      let conversationId = null;
-      if (user?.id) {
-        const { createSupportConversation } = await import('@/lib/conversationUtils');
-        conversationId = await createSupportConversation(user.id, sanitizeInput(formData.message));
-      }
-
+      // Send email directly to Roomy's support/info inbox
       await triggerContactEmailNotification({
-        first_name: sanitizeInput(firstName),
-        last_name: sanitizeInput(lastName),
+        full_name: sanitizeInput(formData.fullName.trim()),
         email: formData.email,
-        university: `[${formData.category}] ${sanitizeInput(formData.subject)}`,
+        category: formData.category,
+        subject: sanitizeInput(formData.subject),
         message: sanitizeInput(formData.message),
       });
 
       toast({
         title: 'Message Sent Successfully!',
-        description: user?.id && conversationId
-          ? "We've received your message! Redirecting to chat with Roomy Support..."
-          : "Thank you for contacting Roomy! We'll get back to you within 24 hours.",
+        description: "Thank you for contacting Roomy! We'll get back to you within 24 hours.",
       });
-
-      if (user?.id && conversationId) {
-        setTimeout(() => {
-          window.location.href = '/messages';
-        }, 1500);
-      }
 
       setFormData({
         fullName: '',
