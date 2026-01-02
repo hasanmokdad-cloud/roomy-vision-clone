@@ -7,6 +7,7 @@ import FluidBackground from "@/components/FluidBackground";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOnboarding } from "@/contexts/OnboardingContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 type VerificationStep = 'checking' | 'loading' | 'verifying' | 'success' | 'error';
 
@@ -14,6 +15,7 @@ export default function VerifyEmail() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { startOnboarding } = useOnboarding();
+  const { refreshEmailVerification, refreshAuth } = useAuth();
   const [step, setStep] = useState<VerificationStep>('checking');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -73,12 +75,14 @@ export default function VerifyEmail() {
           // Token verified - user is now confirmed
           console.log('[VerifyEmail] Custom token verified for user:', data.userId);
           
-          // Sign in the user automatically after verification
-          // We need to get a session for them - they should sign in
+          // Refresh auth context to update isEmailVerified
+          await refreshEmailVerification();
+          await refreshAuth();
+          
           setStep('success');
           toast({
             title: "Email verified",
-            description: "Your email has been verified successfully. Please sign in.",
+            description: "Your email has been verified successfully.",
           });
           
           setTimeout(() => {

@@ -18,7 +18,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const { isAuthenticated, isAuthReady, refreshAuth } = useAuth();
+  const { isAuthenticated, isAuthReady, hasPendingVerification, user, refreshAuth } = useAuth();
   
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -41,13 +41,25 @@ export default function Login() {
   // Skip auto-redirect if we're in the middle of signing up
   useEffect(() => {
     if (isSigningUp) return;
+    if (!isAuthReady) return;
     
-    if (isAuthReady && isAuthenticated) {
+    // If user has session but email not verified, redirect to check-email
+    if (hasPendingVerification && user?.email) {
+      const storedRedirect = sessionStorage.getItem('roomy_auth_redirect');
+      const checkEmailUrl = storedRedirect 
+        ? `/auth/check-email?email=${encodeURIComponent(user.email)}&redirect_url=${encodeURIComponent(storedRedirect)}`
+        : `/auth/check-email?email=${encodeURIComponent(user.email)}`;
+      navigate(checkEmailUrl, { replace: true });
+      return;
+    }
+    
+    // Only redirect if fully authenticated (email verified)
+    if (isAuthenticated) {
       const storedRedirect = sessionStorage.getItem('roomy_auth_redirect');
       sessionStorage.removeItem('roomy_auth_redirect');
       navigate(storedRedirect || '/listings', { replace: true });
     }
-  }, [isAuthReady, isAuthenticated, navigate, isSigningUp]);
+  }, [isAuthReady, isAuthenticated, hasPendingVerification, user, navigate, isSigningUp]);
 
   const resetForm = () => {
     setEmail('');
