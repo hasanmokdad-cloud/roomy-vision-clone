@@ -1,21 +1,22 @@
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import RoomyLogo from "@/assets/roomy-logo.png";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Mail, ExternalLink } from "lucide-react";
 import { RoomyNavbar } from "@/components/RoomyNavbar";
-import { Footer } from "@/components/Footer";
+import Footer from "@/components/shared/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
 import { getEmailProviderInfo } from "@/utils/emailProvider";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function CheckEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isResending, setIsResending] = useState(false);
+  const { isAuthenticated, isAuthReady } = useAuth();
   
   const email = searchParams.get('email') || '';
   const redirectUrl = searchParams.get('redirect_url');
@@ -27,6 +28,32 @@ export default function CheckEmail() {
       sessionStorage.setItem('roomy_auth_redirect', redirectUrl);
     }
   }, [redirectUrl]);
+
+  // Auto-redirect when user becomes authenticated (verified in another tab)
+  useEffect(() => {
+    if (isAuthReady && isAuthenticated) {
+      const storedRedirect = sessionStorage.getItem('roomy_auth_redirect');
+      sessionStorage.removeItem('roomy_auth_redirect');
+      navigate(storedRedirect || '/listings', { replace: true });
+    }
+  }, [isAuthReady, isAuthenticated, navigate]);
+
+  // Listen for visibility changes to check auth when user returns to tab
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const storedRedirect = sessionStorage.getItem('roomy_auth_redirect');
+          sessionStorage.removeItem('roomy_auth_redirect');
+          navigate(storedRedirect || '/listings', { replace: true });
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [navigate]);
 
   const handleResendEmail = async () => {
     if (!email) return;

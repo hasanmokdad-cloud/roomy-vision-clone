@@ -7,7 +7,7 @@ import { logAnalyticsEvent } from '@/utils/analytics';
 import { Hero } from '@/components/Hero';
 import { HowItWorks } from '@/components/HowItWorks';
 import { DormListings } from '@/components/DormListings';
-import { Footer } from '@/components/Footer';
+import Footer from '@/components/shared/Footer';
 import { SkipToContent } from '@/components/SkipToContent';
 import { Skeleton } from '@/components/ui/skeleton';
 
