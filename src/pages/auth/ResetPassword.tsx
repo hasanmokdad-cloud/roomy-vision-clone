@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Lock, Eye, EyeOff } from "lucide-react";
-import FluidBackground from "@/components/FluidBackground";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { EmailProviderButtons } from "@/components/auth/EmailProviderButtons";
 import { checkPasswordBreach } from "@/utils/passwordBreachCheck";
+import { RoomyNavbar } from "@/components/RoomyNavbar";
+import Footer from "@/components/shared/Footer";
+import RoomyLogo from "@/assets/roomy-logo.png";
 
 type ResetStep = 'checking' | 'loading' | 'form' | 'error';
 
@@ -323,7 +325,7 @@ export default function ResetPassword() {
               <Button
                 type="submit"
                 disabled={isLoading || !isFormValid}
-                className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90 disabled:opacity-50"
+                className="w-full bg-gradient-to-r from-[#00E0FF] to-[#BD00FF] hover:opacity-90 disabled:opacity-50"
                 size="lg"
               >
                 {isLoading ? (
@@ -363,7 +365,7 @@ export default function ResetPassword() {
             
             <Button
               onClick={() => navigate('/password-reset')}
-              className="w-full bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] hover:opacity-90"
+              className="w-full bg-gradient-to-r from-[#00E0FF] to-[#BD00FF] hover:opacity-90"
               size="lg"
             >
               Request New Reset Link
@@ -394,33 +396,38 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      <FluidBackground />
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col bg-background">
+      <RoomyNavbar />
+      
+      <main className="flex-1 flex items-center justify-center p-4 mt-20">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <Card className="w-full max-w-[380px] sm:max-w-md bg-background/95 backdrop-blur-sm border-border/50 shadow-2xl">
+          <Card className="w-full max-w-[380px] sm:max-w-md border-border/50 shadow-xl">
             <CardContent className="pt-8 pb-8 px-6 space-y-6">
               {/* Logo */}
               <motion.div 
-                className="text-center text-4xl font-extrabold"
+                className="text-center"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <span className="bg-gradient-to-r from-[#6b21a8] via-[#2563eb] to-[#10b981] bg-clip-text text-transparent">
-                  Roomy
-                </span>
+                <img 
+                  src={RoomyLogo} 
+                  alt="Roomy Logo" 
+                  className="h-24 w-24 mx-auto mb-4 drop-shadow-lg"
+                />
               </motion.div>
 
               {getStepContent()}
             </CardContent>
           </Card>
         </motion.div>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }
