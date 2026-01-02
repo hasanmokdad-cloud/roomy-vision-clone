@@ -7,6 +7,7 @@ type AppRole = 'admin' | 'owner' | 'student' | null;
 interface AuthContextValue {
   isAuthReady: boolean;
   isRoleReady: boolean;
+  isEmailVerificationReady: boolean;
   session: Session | null;
   user: User | null;
   role: AppRole;
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<AppRole>(null);
   const [isEmailVerified, setIsEmailVerified] = useState<boolean | null>(null);
+  const [isEmailVerificationReady, setIsEmailVerificationReady] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const initRef = useRef(false);
@@ -147,6 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Check custom email verification
         const verified = await checkEmailVerification(currentSession.user.email || '');
         setIsEmailVerified(verified);
+        setIsEmailVerificationReady(true);
         console.log('✅ AuthContext: Email verified:', verified);
       } else {
         console.log('🔓 AuthContext: No session found');
@@ -154,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setRole(null);
         setIsEmailVerified(null);
+        setIsEmailVerificationReady(true);
         setIsRoleReady(true);
       }
     } catch (err) {
@@ -217,6 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(newSession);
         setUser(newSession.user);
         setIsRoleReady(false); // Reset while fetching
+        setIsEmailVerificationReady(false); // Reset while checking
         
         // Defer async fetchRole with setTimeout(0) to avoid async callback issues
         setTimeout(async () => {
@@ -227,6 +232,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Check email verification
           const verified = await checkEmailVerification(newSession.user.email || '');
           setIsEmailVerified(verified);
+          setIsEmailVerificationReady(true);
         }, 0);
       }
 
@@ -293,6 +299,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value: AuthContextValue = {
     isAuthReady,
     isRoleReady,
+    isEmailVerificationReady,
     session,
     user,
     role,
