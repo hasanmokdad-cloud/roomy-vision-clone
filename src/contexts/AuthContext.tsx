@@ -12,12 +12,15 @@ interface AuthContextValue {
   role: AppRole;
   userId: string | null;
   isAuthenticated: boolean;
+  isEmailVerified: boolean | null;
+  hasPendingVerification: boolean;
   isSigningOut: boolean;
   signOut: () => Promise<void>;
   openAuthModal: () => void;
   closeAuthModal: () => void;
   authModalOpen: boolean;
   refreshAuth: () => Promise<void>;
+  refreshEmailVerification: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -28,11 +31,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<AppRole>(null);
+  const [isEmailVerified, setIsEmailVerified] = useState<boolean | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const initRef = useRef(false);
   const isSigningOutRef = useRef(false);
   const lastHandledUserRef = useRef<string | null>(null);
+
+  // Check custom email verification status via Roomy token system
+  const checkEmailVerification = useCallback(async (userEmail: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('check-email-verified', {
+        body: { email: userEmail }
+      });
+      if (error) {
+        console.warn('Email verification check failed:', error);
+        return false;
+      }
+      return data?.verified === true;
+    } catch (err) {
+      console.warn('Email verification check error:', err);
+      return false;
+    }
+  }, []);
 
   const fetchRole = useCallback(async (userId: string, retryCount = 0): Promise<AppRole> => {
     try {
@@ -122,11 +143,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setRole(userRole);
         setIsRoleReady(true);
         console.log('✅ AuthContext: Role resolved:', userRole);
+        
+        // Check custom email verification
+        const verified = await checkEmailVerification(currentSession.user.email || '');
+        setIsEmailVerified(verified);
+        console.log('✅ AuthContext: Email verified:', verified);
       } else {
         console.log('🔓 AuthContext: No session found');
         setSession(null);
         setUser(null);
         setRole(null);
+        setIsEmailVerified(null);
         setIsRoleReady(true);
       }
     } catch (err) {
@@ -174,6 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(null);
         setUser(null);
         setRole(null);
+        setIsEmailVerified(null);
         return;
       }
 
@@ -191,11 +219,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsRoleReady(false); // Reset while fetching
         
         // Defer async fetchRole with setTimeout(0) to avoid async callback issues
-        setTimeout(() => {
-          fetchRole(newSession.user.id).then(userRole => {
-            setRole(userRole);
-            setIsRoleReady(true);
-          });
+        setTimeout(async () => {
+          const userRole = await fetchRole(newSession.user.id);
+          setRole(userRole);
+          setIsRoleReady(true);
+          
+          // Check email verification
+          const verified = await checkEmailVerification(newSession.user.email || '');
+          setIsEmailVerified(verified);
         }, 0);
       }
 
@@ -209,7 +240,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [initializeAuth, fetchRole]);
+  }, [initializeAuth, fetchRole, checkEmailVerification]);
 
   const signOut = useCallback(async () => {
     console.log('🚪 AuthContext: Signing out...');
@@ -253,6 +284,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setRole(userRole);
   }, [session, fetchRole]);
 
+  const refreshEmailVerification = useCallback(async () => {
+    if (!user?.email) return;
+    const verified = await checkEmailVerification(user.email);
+    setIsEmailVerified(verified);
+  }, [user, checkEmailVerification]);
+
   const value: AuthContextValue = {
     isAuthReady,
     isRoleReady,
@@ -260,13 +297,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     role,
     userId: user?.id || null,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user && isEmailVerified === true,
+    isEmailVerified,
+    hasPendingVerification: !!user && isEmailVerified === false,
     isSigningOut,
     signOut,
     openAuthModal,
     closeAuthModal,
     authModalOpen,
     refreshAuth,
+    refreshEmailVerification,
   };
 
   return (

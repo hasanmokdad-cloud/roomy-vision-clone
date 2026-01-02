@@ -10,45 +10,32 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function BecomeOwner() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { refreshAuth } = useAuth();
-  const [user, setUser] = useState<any>(null);
+  const { refreshAuth, user, isAuthReady, isAuthenticated, hasPendingVerification } = useAuth();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const checkAuthAndRole = async () => {
+      if (!isAuthReady) return;
+      
+      // Not logged in at all
+      if (!user) {
+        navigate('/login?redirect_url=%2Fbecome-owner', { replace: true });
+        return;
+      }
+
+      // User has session but email not verified
+      if (hasPendingVerification) {
+        navigate(`/auth/check-email?email=${encodeURIComponent(user.email || '')}&redirect_url=%2Fbecome-owner`, { replace: true });
+        return;
+      }
+
+      // User is fully authenticated, check role
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          // Not logged in, redirect to login page with redirect back (Airbnb-style)
-          navigate('/login?redirect_url=%2Fbecome-owner', { replace: true });
-          return;
-        }
-
-        // Check if user's email is verified via custom Roomy token system
-        try {
-          const { data: tokenData } = await supabase.functions.invoke('check-email-verified', {
-            body: { email: session.user.email }
-          });
-          
-          if (!tokenData?.verified) {
-            console.log('Email not verified via custom token, redirecting to check-email');
-            navigate(`/auth/check-email?email=${encodeURIComponent(session.user.email || '')}&redirect_url=%2Fbecome-owner`, { replace: true });
-            return;
-          }
-        } catch (error) {
-          console.error('Error checking custom email verification:', error);
-          // If check fails, let user proceed (fail open for now)
-        }
-
-        setUser(session.user);
-
-        // Check current role
         const { data: roleRow } = await supabase
           .from('user_roles')
           .select('roles(name)')
-          .eq('user_id', session.user.id)
+          .eq('user_id', user.id)
           .maybeSingle();
 
         const currentRole = (roleRow?.roles as any)?.name;
@@ -64,16 +51,15 @@ export default function BecomeOwner() {
         }
 
         // User is a student or has no role - they can proceed to fill the form
-        // DO NOT upgrade role here - only after form submission
       } catch (error) {
-        console.error('Error checking auth:', error);
+        console.error('Error checking role:', error);
       } finally {
         setLoading(false);
       }
     };
 
     checkAuthAndRole();
-  }, [navigate, t]);
+  }, [navigate, t, isAuthReady, user, hasPendingVerification]);
 
   // This function is called BEFORE dorm submission to create owner profile
   // Returns the new owner_id to be used for dorm creation
