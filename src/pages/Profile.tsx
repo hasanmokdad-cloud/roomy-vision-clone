@@ -20,7 +20,10 @@ import { StudentOnboardingDrawer } from '@/components/student/mobile/StudentOnbo
 import { useBottomNav } from '@/contexts/BottomNavContext';
 import { AccommodationStatusCard } from '@/components/profile/AccommodationStatusCard';
 import { ProfileVisibilityNotice } from '@/components/profile/ProfileVisibilityNotice';
-
+import { AirbnbProfileLayout } from '@/components/profile/AirbnbProfileLayout';
+import { AboutMeTab } from '@/components/profile/AboutMeTab';
+import { FriendsProfileTab } from '@/components/profile/FriendsProfileTab';
+import { ProfileEditView } from '@/components/profile/ProfileEditView';
 
 
 export default function Profile() {
@@ -42,6 +45,12 @@ export default function Profile() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [hasCompletedProfile, setHasCompletedProfile] = useState(true); // Default true to hide button
   const [showOnboardingDrawer, setShowOnboardingDrawer] = useState(false);
+  
+  // Airbnb-style profile state for students
+  const [activeProfileTab, setActiveProfileTab] = useState<'about' | 'friends'>('about');
+  const [showEditView, setShowEditView] = useState(false);
+  const [studentProfileData, setStudentProfileData] = useState<any>(null);
+  const [studentId, setStudentId] = useState<string | null>(null);
   
   // Hide bottom nav when viewing profile form (sub-page)
   useEffect(() => {
@@ -73,13 +82,15 @@ export default function Profile() {
       if (role === 'student' || role === null) {
         const { data: student } = await supabase
           .from('students')
-          .select('profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed')
+          .select('id, profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed, age, major, year_of_study, preferred_housing_area')
           .eq('user_id', userId)
           .maybeSingle(); // Use maybeSingle for new accounts that may not have a record
         
         if (student) {
           setProfilePhotoUrl(student.profile_photo_url || null);
           setUserName(student.full_name || '');
+          setStudentProfileData(student);
+          setStudentId(student.id);
           
           // Check if profile is complete (has key fields filled)
           const profileComplete = !!(student.full_name && student.university && student.gender);
@@ -87,6 +98,8 @@ export default function Profile() {
         } else {
           // No student record yet - definitely needs onboarding
           setHasCompletedProfile(false);
+          setStudentProfileData(null);
+          setStudentId(null);
         }
         
         // Fetch saved dorms count
@@ -138,17 +151,21 @@ export default function Profile() {
     
     const { data: student } = await supabase
       .from('students')
-      .select('profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed')
+      .select('id, profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed, age, major, year_of_study, preferred_housing_area')
       .eq('user_id', userId)
       .maybeSingle();
     
     if (student) {
       setProfilePhotoUrl(student.profile_photo_url || null);
       setUserName(student.full_name || '');
+      setStudentProfileData(student);
+      setStudentId(student.id);
       const profileComplete = !!(student.full_name && student.university && student.gender);
       setHasCompletedProfile(profileComplete);
     } else {
       setHasCompletedProfile(false);
+      setStudentProfileData(null);
+      setStudentId(null);
     }
   };
 
@@ -565,6 +582,64 @@ export default function Profile() {
   }
 
   // Desktop layout
+  // For students, use Airbnb-style layout
+  if (role === 'student' || role === null) {
+    const handleProfileUpdated = async () => {
+      if (!userId) return;
+      const { data: student } = await supabase
+        .from('students')
+        .select('id, profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed, age, major, year_of_study, preferred_housing_area')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (student) {
+        setProfilePhotoUrl(student.profile_photo_url || null);
+        setUserName(student.full_name || '');
+        setStudentProfileData(student);
+        setStudentId(student.id);
+        const profileComplete = !!(student.full_name && student.university && student.gender);
+        setHasCompletedProfile(profileComplete);
+      }
+    };
+
+    return (
+      <div className="min-h-screen relative bg-white">
+        <RoomyNavbar />
+        
+        <div className="pt-20">
+          <AirbnbProfileLayout 
+            activeTab={activeProfileTab} 
+            onTabChange={setActiveProfileTab}
+          >
+            {showEditView ? (
+              <ProfileEditView
+                userId={userId!}
+                profileData={studentProfileData}
+                profilePhotoUrl={profilePhotoUrl}
+                onClose={() => setShowEditView(false)}
+                onProfileUpdated={handleProfileUpdated}
+              />
+            ) : activeProfileTab === 'about' ? (
+              <AboutMeTab
+                profileData={studentProfileData}
+                userName={userName}
+                profilePhotoUrl={profilePhotoUrl}
+                hasCompletedProfile={hasCompletedProfile}
+                onEditClick={() => setShowEditView(true)}
+                onGetStartedClick={() => navigate('/onboarding/student')}
+              />
+            ) : (
+              studentId && <FriendsProfileTab studentId={studentId} />
+            )}
+          </AirbnbProfileLayout>
+        </div>
+        
+        <Footer />
+      </div>
+    );
+  }
+
+  // Desktop layout for owners and admins
   return (
     <div className="min-h-screen relative bg-background">
       <RoomyNavbar />
@@ -583,58 +658,6 @@ export default function Profile() {
           <ArrowLeft className="w-4 h-4 mr-2" />
           {getBackButtonText()}
         </Button>
-
-        {(role === 'student' || role === null) && (
-          <>
-            {/* Get Started Banner - only show if profile not complete */}
-            {!hasCompletedProfile && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.6 }}
-                className="max-w-2xl mx-auto mb-6"
-              >
-                <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-6 shadow-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="bg-white/20 rounded-xl p-3">
-                      <Rocket className="w-8 h-8 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-white mb-1">Complete Your Profile</h3>
-                      <p className="text-white/80 mb-4">
-                        Set up your profile to get personalized dorm matches and find the perfect roommate
-                      </p>
-                      <Button
-                        onClick={() => navigate('/onboarding/student')}
-                        variant="secondary"
-                        size="lg"
-                        className="bg-white text-primary hover:bg-white/90"
-                      >
-                        <Rocket className="w-4 h-4 mr-2" />
-                        Get Started
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-
-            {/* Student Profile Form - only show if profile is complete */}
-            {/* Note: StudentProfileForm handles preventing redirect to /ai-match when pending claim exists */}
-            {hasCompletedProfile && (
-              <>
-                <div className="mb-4">
-                  <ProfileVisibilityNotice />
-                </div>
-                <StudentProfileForm 
-                  userId={userId!} 
-                  onComplete={() => navigate('/ai-match')}
-                />
-              </>
-            )}
-          </>
-        )}
 
         {role === 'owner' && (
           <>
