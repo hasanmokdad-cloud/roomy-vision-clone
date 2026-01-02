@@ -30,45 +30,69 @@ export default function CheckEmail() {
     }
   }, [redirectUrl]);
 
-  // Auto-redirect when user becomes authenticated AND verified (same browser/tab)
+  // Check custom token verification status on mount (for users with session but unverified custom token)
   useEffect(() => {
-    const checkAuthAndVerification = async () => {
-      if (!isAuthReady) return;
+    const checkCustomVerification = async () => {
+      if (!email || isVerified) return;
       
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        // Check if email is actually verified
-        if (session.user.email_confirmed_at) {
-          const storedRedirect = sessionStorage.getItem('roomy_auth_redirect');
-          sessionStorage.removeItem('roomy_auth_redirect');
-          navigate(storedRedirect || '/listings', { replace: true });
-        } else {
-          // User has session but email not verified - show verification UI
-          console.log('User authenticated but email not verified - showing verification UI');
+      try {
+        const { data, error } = await supabase.functions.invoke('check-email-verified', {
+          body: { email }
+        });
+        
+        if (error) {
+          console.error('Initial verification check error:', error);
+          return;
         }
+        
+        if (data?.verified) {
+          console.log('Email already verified via custom token');
+          setIsVerified(true);
+          // Auto-redirect if user is also authenticated
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            const storedRedirect = sessionStorage.getItem('roomy_auth_redirect');
+            sessionStorage.removeItem('roomy_auth_redirect');
+            navigate(storedRedirect || '/listings', { replace: true });
+          }
+        }
+      } catch (error) {
+        console.error('Custom verification check failed:', error);
       }
     };
     
-    checkAuthAndVerification();
-  }, [isAuthReady, isAuthenticated, navigate]);
+    checkCustomVerification();
+  }, [email, isVerified, navigate]);
 
-  // Listen for visibility changes to check auth when user returns to tab (same device)
+  // Listen for visibility changes to check custom token verification when user returns to tab
   useEffect(() => {
     const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible') {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const storedRedirect = sessionStorage.getItem('roomy_auth_redirect');
-          sessionStorage.removeItem('roomy_auth_redirect');
-          navigate(storedRedirect || '/listings', { replace: true });
+      if (document.visibilityState === 'visible' && email) {
+        try {
+          // Check custom token verification status
+          const { data } = await supabase.functions.invoke('check-email-verified', {
+            body: { email }
+          });
+          
+          if (data?.verified) {
+            setIsVerified(true);
+            // Also check if user has session to auto-redirect
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+              const storedRedirect = sessionStorage.getItem('roomy_auth_redirect');
+              sessionStorage.removeItem('roomy_auth_redirect');
+              navigate(storedRedirect || '/listings', { replace: true });
+            }
+          }
+        } catch (error) {
+          console.error('Visibility check failed:', error);
         }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [navigate]);
+  }, [navigate, email]);
 
   // Poll for cross-device email verification
   useEffect(() => {

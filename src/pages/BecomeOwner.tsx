@@ -26,11 +26,20 @@ export default function BecomeOwner() {
           return;
         }
 
-        // Check if user's email is verified - if not, redirect to check-email
-        if (!session.user.email_confirmed_at) {
-          console.log('Email not verified, redirecting to check-email');
-          navigate(`/auth/check-email?email=${encodeURIComponent(session.user.email || '')}&redirect_url=%2Fbecome-owner`, { replace: true });
-          return;
+        // Check if user's email is verified via custom Roomy token system
+        try {
+          const { data: tokenData } = await supabase.functions.invoke('check-email-verified', {
+            body: { email: session.user.email }
+          });
+          
+          if (!tokenData?.verified) {
+            console.log('Email not verified via custom token, redirecting to check-email');
+            navigate(`/auth/check-email?email=${encodeURIComponent(session.user.email || '')}&redirect_url=%2Fbecome-owner`, { replace: true });
+            return;
+          }
+        } catch (error) {
+          console.error('Error checking custom email verification:', error);
+          // If check fails, let user proceed (fail open for now)
         }
 
         setUser(session.user);
