@@ -113,3 +113,6 @@ verify_jwt = false
 
 [functions.search-help-articles]
 verify_jwt = false
+
+[functions.check-email-verified]
+verify_jwt = false
