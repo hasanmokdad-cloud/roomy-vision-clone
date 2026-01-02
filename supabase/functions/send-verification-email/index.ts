@@ -68,30 +68,78 @@ serve(async (req) => {
     const verifyUrl = tokenType === 'recovery' 
       ? `https://roomylb.com/auth/reset?token=${token}&type=${tokenType}`
       : `https://roomylb.com/auth/verify?token=${token}&type=${tokenType}`;
+    
     // Determine email content based on type
     let subject: string;
     let heading: string;
     let message: string;
     let buttonText: string;
+    let plainTextEmail: string;
+    let expiryText: string;
 
     switch (tokenType) {
       case 'recovery':
-        subject = "Reset your Roomy password";
+        subject = "Roomy Password Reset";
         heading = "Reset Your Password";
         message = "We received a request to reset your password. Click the button below to create a new password.";
         buttonText = "Reset Password";
+        expiryText = "1 hour";
+        plainTextEmail = `
+Roomy Password Reset
+
+We received a request to reset your password.
+
+Reset your password: ${verifyUrl}
+
+If you didn't request this, you can safely ignore this email.
+
+This link expires in 1 hour.
+
+--
+Roomy | roomylb.com
+        `.trim();
         break;
       case 'email_change':
-        subject = "Confirm your new email for Roomy";
+        subject = "Confirm Your New Roomy Email";
         heading = "Confirm Email Change";
         message = "Please confirm your new email address by clicking the button below.";
         buttonText = "Confirm Email";
+        expiryText = "24 hours";
+        plainTextEmail = `
+Confirm Your New Roomy Email
+
+Please confirm your new email address.
+
+Confirm your email: ${verifyUrl}
+
+If you didn't request this, you can safely ignore this email.
+
+This link expires in 24 hours.
+
+--
+Roomy | roomylb.com
+        `.trim();
         break;
       default: // signup
-        subject = "Confirm your Roomy email";
+        subject = "Verify Your Roomy Email";
         heading = "Welcome to Roomy!";
         message = "Thank you for signing up! Please verify your email address to get started finding your perfect student housing.";
         buttonText = "Verify Email";
+        expiryText = "24 hours";
+        plainTextEmail = `
+Welcome to Roomy!
+
+Thank you for signing up! Please verify your email address to get started.
+
+Verify your email: ${verifyUrl}
+
+If you didn't request this, you can safely ignore this email.
+
+This link expires in 24 hours.
+
+--
+Roomy | roomylb.com
+        `.trim();
     }
 
     // Send branded email via Resend
@@ -158,10 +206,10 @@ serve(async (req) => {
           <tr>
             <td style="background-color: #f8f9fc; padding: 24px 40px; border-top: 1px solid #e8e8f0;">
               <p style="color: #8888a0; font-size: 12px; margin: 0; text-align: center;">
-                Roomy Security • <a href="https://roomylb.com" style="color: #BD00FF; text-decoration: none;">roomylb.com</a>
+                Roomy • <a href="https://roomylb.com" style="color: #BD00FF; text-decoration: none;">roomylb.com</a>
               </p>
               <p style="color: #aaaab8; font-size: 11px; margin: 8px 0 0; text-align: center;">
-                This link expires in 24 hours.
+                This link expires in ${expiryText}.
               </p>
             </td>
           </tr>
@@ -173,7 +221,10 @@ serve(async (req) => {
 </html>
     `;
 
-    // Send email via Resend API
+    console.log(`[send-verification-email] Sending email to ${email} via Resend...`);
+    console.log(`[send-verification-email] From: Roomy <noreply@roomylb.com>, type: ${tokenType}`);
+
+    // Send email via Resend API with improved deliverability settings
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -181,21 +232,35 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Roomy Security <security@roomylb.com>",
+        from: "Roomy <noreply@roomylb.com>",
+        reply_to: "support@roomylb.com",
         to: [email],
         subject,
         html: emailHtml,
+        text: plainTextEmail,
+        headers: {
+          "X-Priority": "1",
+          "X-Mailer": "Roomy-Platform",
+        },
+        tags: [
+          { name: "category", value: tokenType },
+          { name: "user_id", value: userId }
+        ]
       }),
     });
 
     const emailResult = await emailResponse.json();
+
+    console.log(`[send-verification-email] Resend API response status: ${emailResponse.status}`);
+    console.log(`[send-verification-email] Resend API response body: ${JSON.stringify(emailResult)}`);
 
     if (!emailResponse.ok) {
       console.error("[send-verification-email] Resend error:", emailResult);
       throw new Error(emailResult.message || "Failed to send email");
     }
 
-    console.log(`[send-verification-email] Email sent to ${email}, type: ${tokenType}`);
+    console.log(`[send-verification-email] ✅ Email sent successfully to ${email}, type: ${tokenType}`);
+    console.log(`[send-verification-email] Resend email ID: ${emailResult.id}`);
 
     return new Response(
       JSON.stringify({ success: true, messageId: emailResult.id }),
