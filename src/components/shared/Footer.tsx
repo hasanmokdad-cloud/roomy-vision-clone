@@ -3,19 +3,11 @@ import { Mail, MapPin, Phone } from 'lucide-react';
 import RoomyLogo from '@/assets/roomy-logo.png';
 
 export default function Footer() {
-  const universities = [
-    { name: 'LAU (Byblos)', href: '/listings' },
-    { name: 'LAU (Beirut)', href: '/listings' },
-    { name: 'AUB', href: '/listings' },
-    { name: 'USEK', href: '/listings' },
-    { name: 'USJ', href: '/listings' },
-  ];
-
   return (
     <footer className="border-t border-white/10 bg-black/40 backdrop-blur-sm py-16 px-4">
       <div className="container mx-auto max-w-7xl">
-        <div className="grid md:grid-cols-5 gap-12 mb-12">
-          {/* Left Block */}
+        <div className="grid md:grid-cols-4 gap-12 mb-12">
+          {/* Roomy Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <img 
@@ -26,7 +18,7 @@ export default function Footer() {
               <span className="text-2xl font-bold gradient-text">Roomy</span>
             </div>
             <p className="text-sm text-foreground/70 leading-relaxed">
-              AI-powered smart student living platform. Find verified dorms safely and quickly.
+              AI-powered smart student living platform. Find verified dorms instantly.
             </p>
           </div>
 
@@ -52,23 +44,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Universities */}
-          <div>
-            <h3 className="font-bold text-lg mb-4">Universities</h3>
-            <ul className="space-y-2">
-              {universities.map(uni => (
-                <li key={uni.name}>
-                  <Link 
-                    to={uni.href} 
-                    className="text-sm text-foreground/70 hover:text-primary transition-colors story-link"
-                  >
-                    {uni.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
           {/* Legal */}
           <div>
             <h3 className="font-bold text-lg mb-4">Legal</h3>
@@ -86,11 +61,6 @@ export default function Footer() {
               <li>
                 <Link to="/legal/payments" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
                   Payments Disclaimer
-                </Link>
-              </li>
-              <li>
-                <Link to="/legal/owner-agreement" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
-                  Owner Agreement
                 </Link>
               </li>
               <li>
@@ -141,7 +111,7 @@ export default function Footer() {
         {/* Bottom Line */}
         <div className="pt-8 border-t border-white/10">
           <p className="text-sm text-foreground/60 text-center">
-            © 2025 Roomy. Making student living smarter and safer in Lebanon.
+            © 2025 Roomy. Making student living smarter and simpler in Lebanon.
           </p>
         </div>
       </div>
