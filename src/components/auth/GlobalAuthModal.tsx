@@ -154,7 +154,7 @@ export function GlobalAuthModal() {
 
       toast({
         title: 'Check your email',
-        description: 'We sent you a verification link from security@roomylb.com',
+        description: 'We sent you a verification link from noreply@roomylb.com',
       });
       
       resetForm();
