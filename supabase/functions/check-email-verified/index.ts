@@ -42,9 +42,11 @@ serve(async (req) => {
       .single();
 
     if (error) {
-      console.log(`No verification token found for ${email}:`, error.message);
+      // No token found = legacy account created before custom verification system
+      // If they have a valid Supabase session, they should be allowed through
+      console.log(`No verification token found for ${email} - treating as legacy/verified account`);
       return new Response(
-        JSON.stringify({ verified: false }),
+        JSON.stringify({ verified: true, legacy: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
