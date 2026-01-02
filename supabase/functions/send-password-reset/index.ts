@@ -23,12 +23,26 @@ serve(async (req) => {
   try {
     const { email } = await req.json();
 
+    console.log(`[send-password-reset] Processing request for email: ${email}`);
+
     if (!email) {
+      console.log("[send-password-reset] Missing email in request");
       return new Response(
         JSON.stringify({ error: "Missing email" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Check if RESEND_API_KEY is configured
+    if (!RESEND_API_KEY) {
+      console.error("[send-password-reset] RESEND_API_KEY is not configured!");
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`[send-password-reset] RESEND_API_KEY configured: ${RESEND_API_KEY ? 'Yes' : 'No'}`);
 
     // Create Supabase admin client
     const supabaseAdmin = createClient(
@@ -59,17 +73,23 @@ serve(async (req) => {
       );
     }
 
+    console.log(`[send-password-reset] Found user: ${user.id} for email: ${user.email}`);
+
     // Generate secure token
     const token = generateSecureToken();
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour for password reset
 
     // Delete any existing unused recovery tokens for this user
-    await supabaseAdmin
+    const { error: deleteError } = await supabaseAdmin
       .from("email_verification_tokens")
       .delete()
       .eq("user_id", user.id)
       .eq("token_type", "recovery")
       .is("used_at", null);
+
+    if (deleteError) {
+      console.log("[send-password-reset] Delete old tokens result:", deleteError);
+    }
 
     // Store new token
     const { error: insertError } = await supabaseAdmin
@@ -86,6 +106,8 @@ serve(async (req) => {
       console.error("[send-password-reset] Token insert error:", insertError);
       throw new Error("Failed to create reset token");
     }
+
+    console.log(`[send-password-reset] Token created successfully, expires: ${expiresAt.toISOString()}`);
 
     // Construct reset URL
     const resetUrl = `https://roomylb.com/auth/reset?token=${token}&type=recovery`;
@@ -169,6 +191,9 @@ serve(async (req) => {
 </html>
     `;
 
+    console.log(`[send-password-reset] Sending email to ${user.email} via Resend...`);
+    console.log(`[send-password-reset] From: Roomy Security <security@roomylb.com>`);
+
     // Send email via Resend API
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -186,12 +211,17 @@ serve(async (req) => {
 
     const emailResult = await emailResponse.json();
 
+    console.log(`[send-password-reset] Resend API response status: ${emailResponse.status}`);
+    console.log(`[send-password-reset] Resend API response body: ${JSON.stringify(emailResult)}`);
+
     if (!emailResponse.ok) {
-      console.error("[send-password-reset] Resend error:", emailResult);
+      console.error("[send-password-reset] Resend API error:", emailResult);
+      console.error(`[send-password-reset] Resend error details - status: ${emailResponse.status}, message: ${emailResult.message || 'Unknown'}, name: ${emailResult.name || 'Unknown'}`);
       throw new Error(emailResult.message || "Failed to send email");
     }
 
-    console.log(`[send-password-reset] Password reset email sent to ${user.email}`);
+    console.log(`[send-password-reset] ✅ Password reset email sent successfully to ${user.email}`);
+    console.log(`[send-password-reset] Resend email ID: ${emailResult.id}`);
 
     return new Response(
       JSON.stringify({ success: true }),
@@ -199,6 +229,7 @@ serve(async (req) => {
     );
   } catch (error: any) {
     console.error("[send-password-reset] Error:", error);
+    console.error(`[send-password-reset] Error stack: ${error.stack || 'No stack trace'}`);
     // Return success to prevent email enumeration
     return new Response(
       JSON.stringify({ success: true }),

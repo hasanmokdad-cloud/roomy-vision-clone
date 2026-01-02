@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, CheckCircle, ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
-import FluidBackground from "@/components/FluidBackground";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { getEmailProviderInfo } from "@/utils/emailProvider";
 import RoomyLogo from "@/assets/roomy-logo.png";
+import { RoomyNavbar } from "@/components/RoomyNavbar";
+import Footer from "@/components/shared/Footer";
 
 export default function PasswordReset() {
   const navigate = useNavigate();
@@ -66,15 +67,16 @@ export default function PasswordReset() {
   const providerInfo = getEmailProviderInfo(email);
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      <FluidBackground />
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col bg-background">
+      <RoomyNavbar />
+      
+      <main className="flex-1 flex items-center justify-center p-4 mt-20">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <Card className="w-full max-w-[380px] sm:max-w-md bg-background/95 backdrop-blur-sm border-border/50 shadow-2xl">
+          <Card className="w-full max-w-[380px] sm:max-w-md border-border/50 shadow-xl">
             <CardContent className="pt-8 pb-8 px-6 space-y-6">
               {/* Logo */}
               <motion.div 
@@ -216,7 +218,9 @@ export default function PasswordReset() {
             </CardContent>
           </Card>
         </motion.div>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }
