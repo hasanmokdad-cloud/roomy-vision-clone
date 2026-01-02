@@ -116,3 +116,9 @@ verify_jwt = false
 
 [functions.check-email-verified]
 verify_jwt = false
+
+[functions.send-password-reset]
+verify_jwt = false
+
+[functions.update-user-password]
+verify_jwt = false
