@@ -30,13 +30,27 @@ export default function CheckEmail() {
     }
   }, [redirectUrl]);
 
-  // Auto-redirect when user becomes authenticated (verified in same browser/tab)
+  // Auto-redirect when user becomes authenticated AND verified (same browser/tab)
   useEffect(() => {
-    if (isAuthReady && isAuthenticated) {
-      const storedRedirect = sessionStorage.getItem('roomy_auth_redirect');
-      sessionStorage.removeItem('roomy_auth_redirect');
-      navigate(storedRedirect || '/listings', { replace: true });
-    }
+    const checkAuthAndVerification = async () => {
+      if (!isAuthReady) return;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // Check if email is actually verified
+        if (session.user.email_confirmed_at) {
+          const storedRedirect = sessionStorage.getItem('roomy_auth_redirect');
+          sessionStorage.removeItem('roomy_auth_redirect');
+          navigate(storedRedirect || '/listings', { replace: true });
+        } else {
+          // User has session but email not verified - show verification UI
+          console.log('User authenticated but email not verified - showing verification UI');
+        }
+      }
+    };
+    
+    checkAuthAndVerification();
   }, [isAuthReady, isAuthenticated, navigate]);
 
   // Listen for visibility changes to check auth when user returns to tab (same device)

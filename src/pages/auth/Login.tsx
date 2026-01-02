@@ -27,6 +27,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
   // Store redirect URL in sessionStorage on mount
   useEffect(() => {
@@ -37,13 +38,16 @@ export default function Login() {
   }, [searchParams]);
 
   // If already authenticated, redirect to intended destination or home
+  // Skip auto-redirect if we're in the middle of signing up
   useEffect(() => {
+    if (isSigningUp) return;
+    
     if (isAuthReady && isAuthenticated) {
       const storedRedirect = sessionStorage.getItem('roomy_auth_redirect');
       sessionStorage.removeItem('roomy_auth_redirect');
       navigate(storedRedirect || '/listings', { replace: true });
     }
-  }, [isAuthReady, isAuthenticated, navigate]);
+  }, [isAuthReady, isAuthenticated, navigate, isSigningUp]);
 
   const resetForm = () => {
     setEmail('');
@@ -100,6 +104,7 @@ export default function Login() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setIsSigningUp(true); // Block auto-redirect during signup
 
     try {
       if (password !== confirmPassword) {
@@ -179,8 +184,10 @@ export default function Login() {
         ? `/auth/check-email?email=${encodeURIComponent(email.trim())}&redirect_url=${encodeURIComponent(storedRedirect)}`
         : `/auth/check-email?email=${encodeURIComponent(email.trim())}`;
       
-      navigate(checkEmailUrl);
+      // Use replace to prevent back-navigation issues and flashing
+      navigate(checkEmailUrl, { replace: true });
     } catch (error: any) {
+      setIsSigningUp(false); // Reset on error so user can try again
       toast({
         title: 'Signup failed',
         description: error.message || 'Something went wrong',
@@ -188,6 +195,7 @@ export default function Login() {
       });
     } finally {
       setLoading(false);
+      // Note: Don't reset isSigningUp on success - we're navigating away
     }
   };
 
