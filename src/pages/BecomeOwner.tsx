@@ -26,6 +26,13 @@ export default function BecomeOwner() {
           return;
         }
 
+        // Check if user's email is verified - if not, redirect to check-email
+        if (!session.user.email_confirmed_at) {
+          console.log('Email not verified, redirecting to check-email');
+          navigate(`/auth/check-email?email=${encodeURIComponent(session.user.email || '')}&redirect_url=%2Fbecome-owner`, { replace: true });
+          return;
+        }
+
         setUser(session.user);
 
         // Check current role

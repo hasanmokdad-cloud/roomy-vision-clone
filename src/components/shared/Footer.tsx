@@ -4,7 +4,7 @@ import RoomyLogo from '@/assets/roomy-logo.png';
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-black/40 backdrop-blur-sm py-16 px-4">
+    <footer className="border-t border-gray-200 bg-white py-16 px-4">
       <div className="container mx-auto max-w-7xl">
         <div className="grid md:grid-cols-4 gap-12 mb-12">
           {/* Roomy Section */}
@@ -17,7 +17,7 @@ export default function Footer() {
               />
               <span className="text-2xl font-bold gradient-text">Roomy</span>
             </div>
-            <p className="text-sm text-foreground/70 leading-relaxed">
+            <p className="text-sm text-gray-600 leading-relaxed">
               AI-powered smart student living platform. Find verified dorms instantly.
             </p>
           </div>
@@ -27,17 +27,17 @@ export default function Footer() {
             <h3 className="font-bold text-lg mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/listings" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                <Link to="/listings" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
                   Browse Dorms
                 </Link>
               </li>
               <li>
-                <Link to="/ai-match" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                <Link to="/ai-match" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
                   AI Match
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                <Link to="/about" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
                   About Roomy
                 </Link>
               </li>
@@ -49,37 +49,37 @@ export default function Footer() {
             <h3 className="font-bold text-lg mb-4">Legal</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/legal/terms" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                <Link to="/legal/terms" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
                   Terms of Service
                 </Link>
               </li>
               <li>
-                <Link to="/legal/privacy" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                <Link to="/legal/privacy" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link to="/legal/payments" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                <Link to="/legal/payments" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
                   Payments Disclaimer
                 </Link>
               </li>
               <li>
-                <Link to="/legal/community" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                <Link to="/legal/community" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
                   Community Guidelines
                 </Link>
               </li>
               <li>
-                <Link to="/legal/data-rights" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                <Link to="/legal/data-rights" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
                   Data Rights
                 </Link>
               </li>
               <li>
-                <Link to="/faq" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                <Link to="/faq" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
                   FAQ
                 </Link>
               </li>
               <li>
-                <Link to="/help" className="text-sm text-foreground/70 hover:text-primary transition-colors story-link">
+                <Link to="/help" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
                   Help Center
                 </Link>
               </li>
@@ -90,17 +90,17 @@ export default function Footer() {
           <div>
             <h3 className="font-bold text-lg mb-4">Contact</h3>
             <ul className="space-y-3">
-              <li className="flex items-start gap-2 text-sm text-foreground/70">
+              <li className="flex items-start gap-2 text-sm text-gray-600">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>Beirut, Lebanon</span>
               </li>
-              <li className="flex items-start gap-2 text-sm text-foreground/70">
+              <li className="flex items-start gap-2 text-sm text-gray-600">
                 <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <a href="mailto:info@roomylb.com" className="hover:text-primary transition-colors">
                   info@roomylb.com
                 </a>
               </li>
-              <li className="flex items-start gap-2 text-sm text-foreground/70">
+              <li className="flex items-start gap-2 text-sm text-gray-600">
                 <Phone className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span className="italic">Coming Soon</span>
               </li>
@@ -109,8 +109,8 @@ export default function Footer() {
         </div>
 
         {/* Bottom Line */}
-        <div className="pt-8 border-t border-white/10">
-          <p className="text-sm text-foreground/60 text-center">
+        <div className="pt-8 border-t border-gray-200">
+          <p className="text-sm text-gray-500 text-center">
             © 2025 Roomy. Making student living smarter and simpler in Lebanon.
           </p>
         </div>
