@@ -112,6 +112,22 @@ serve(async (req) => {
     // Construct reset URL
     const resetUrl = `https://roomylb.com/auth/reset?token=${token}&type=recovery`;
 
+    // Plain text version for better deliverability
+    const plainTextEmail = `
+Roomy Password Reset
+
+We received a request to reset your password.
+
+Reset your password: ${resetUrl}
+
+If you didn't request this, you can safely ignore this email.
+
+This link expires in 1 hour.
+
+--
+Roomy | roomylb.com
+    `.trim();
+
     // Send branded email via Resend
     const emailHtml = `
 <!DOCTYPE html>
@@ -119,7 +135,7 @@ serve(async (req) => {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reset your Roomy password</title>
+  <title>Roomy Password Reset</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #0B0E1A; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0B0E1A; padding: 40px 20px;">
@@ -176,7 +192,7 @@ serve(async (req) => {
           <tr>
             <td style="background-color: #f8f9fc; padding: 24px 40px; border-top: 1px solid #e8e8f0;">
               <p style="color: #8888a0; font-size: 12px; margin: 0; text-align: center;">
-                Roomy Security • <a href="https://roomylb.com" style="color: #BD00FF; text-decoration: none;">roomylb.com</a>
+                Roomy • <a href="https://roomylb.com" style="color: #BD00FF; text-decoration: none;">roomylb.com</a>
               </p>
               <p style="color: #aaaab8; font-size: 11px; margin: 8px 0 0; text-align: center;">
                 This link expires in 1 hour.
@@ -192,9 +208,9 @@ serve(async (req) => {
     `;
 
     console.log(`[send-password-reset] Sending email to ${user.email} via Resend...`);
-    console.log(`[send-password-reset] From: Roomy Security <security@roomylb.com>`);
+    console.log(`[send-password-reset] From: Roomy <noreply@roomylb.com>`);
 
-    // Send email via Resend API
+    // Send email via Resend API with improved deliverability settings
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -202,10 +218,20 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Roomy Security <security@roomylb.com>",
+        from: "Roomy <noreply@roomylb.com>",
+        reply_to: "support@roomylb.com",
         to: [user.email],
-        subject: "Reset your Roomy password",
+        subject: "Roomy Password Reset",
         html: emailHtml,
+        text: plainTextEmail,
+        headers: {
+          "X-Priority": "1",
+          "X-Mailer": "Roomy-Platform",
+        },
+        tags: [
+          { name: "category", value: "password_reset" },
+          { name: "user_id", value: user.id }
+        ]
       }),
     });
 
