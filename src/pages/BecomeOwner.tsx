@@ -21,8 +21,8 @@ export default function BecomeOwner() {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-          // Not logged in, redirect to auth with redirect back
-          navigate('/auth?redirect=/become-owner', { replace: true });
+          // Not logged in, redirect to login page with redirect back (Airbnb-style)
+          navigate('/login?redirect_url=%2Fbecome-owner', { replace: true });
           return;
         }
 
@@ -155,7 +155,7 @@ export default function BecomeOwner() {
           <p className="text-muted-foreground mb-4">
             {t('becomeOwner.signInRequired', 'Please sign in to become an owner.')}
           </p>
-          <Button onClick={() => navigate('/auth?redirect=/become-owner')}>
+          <Button onClick={() => navigate('/login?redirect_url=%2Fbecome-owner')}>
             {t('buttons.signIn', 'Sign In')}
           </Button>
         </div>

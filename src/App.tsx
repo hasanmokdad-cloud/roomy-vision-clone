@@ -159,6 +159,7 @@ const Wishlists = lazy(() => import("./pages/Wishlists"));
 const StudentOnboarding = lazy(() => import("./pages/student/StudentOnboarding"));
 const Help = lazy(() => import("./pages/Help"));
 const FAQ = lazy(() => import("./pages/FAQ"));
+const Login = lazy(() => import("./pages/auth/Login"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -271,8 +272,9 @@ const AppRoutes = () => {
           {/* Root redirect - check if intro was played */}
           <Route path="/" element={<IntroRedirect />} />
           
-          {/* Auth routes redirected to listings (modal-based auth now) */}
+          {/* Auth routes */}
           <Route path="/auth" element={<Navigate to="/listings" replace />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/auth/check-email" element={<CheckEmail />} />
           <Route path="/auth/verify" element={<VerifyEmail />} />
           <Route path="/auth/reset" element={<ResetPassword />} />

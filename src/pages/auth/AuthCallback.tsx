@@ -41,16 +41,21 @@ export default function AuthCallback() {
           p_user_id: session.user.id,
         });
 
-        // Redirect based on role
+        // Check for stored redirect URL first (Airbnb-style flow)
+        const storedRedirect = sessionStorage.getItem('roomy_auth_redirect');
+        sessionStorage.removeItem('roomy_auth_redirect');
+
+        // Redirect based on stored URL or role
         setTimeout(() => {
-          if (roleData === "admin") {
+          if (storedRedirect) {
+            navigate(storedRedirect, { replace: true });
+          } else if (roleData === "admin") {
             navigate("/admin", { replace: true });
           } else if (roleData === "owner") {
             navigate("/owner", { replace: true });
-          } else if (roleData === "student") {
-            navigate("/intro", { replace: true });
           } else {
-            navigate("/select-role", { replace: true });
+            // Default to listings for students and new users
+            navigate("/listings", { replace: true });
           }
         }, 1500);
       } catch (err) {
