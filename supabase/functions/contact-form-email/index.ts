@@ -52,6 +52,160 @@ interface ContactPayload {
   message: string;
 }
 
+// Generate reference ID for tracking
+function generateReferenceId(): string {
+  const now = new Date();
+  const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
+  const timePart = Math.floor(now.getTime() / 1000).toString().slice(-4);
+  return `REF-${datePart}-${timePart}`;
+}
+
+// Generate auto-reply confirmation email to user
+function generateAutoReplyHtml(
+  fullName: string,
+  category: string,
+  subject: string,
+  referenceId: string
+): string {
+  const firstName = fullName.split(' ')[0];
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>We received your message - Roomy</title>
+  <style>
+    body { 
+      margin: 0; 
+      padding: 0; 
+      background: #F9FAFB;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    .wrapper { width: 100%; padding: 40px 0; }
+    .container { max-width: 600px; margin: 0 auto; padding: 0 20px; }
+    .header { text-align: center; padding: 32px 0 24px 0; }
+    .card { background: #ffffff; border-radius: 12px; padding: 48px 40px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); border: 1px solid #E5E7EB; }
+    .greeting { font-size: 24px; font-weight: 700; color: #0F172A; margin: 0 0 24px 0; }
+    .message-text { font-size: 16px; color: #374151; line-height: 1.7; margin: 0 0 24px 0; }
+    .summary-box { background: #F0F9FF; border-radius: 12px; padding: 24px; margin: 24px 0; border: 1px solid #BAE6FD; }
+    .summary-title { font-size: 14px; font-weight: 600; color: #0369A1; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 16px 0; }
+    .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #E0F2FE; }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-label { font-size: 14px; color: #64748B; }
+    .summary-value { font-size: 14px; font-weight: 600; color: #0F172A; text-align: right; max-width: 60%; }
+    .help-section { background: #F9FAFB; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: center; }
+    .help-text { font-size: 14px; color: #64748B; margin: 0 0 12px 0; }
+    .help-link { color: #BD00FF; font-weight: 600; text-decoration: none; }
+    .signature { margin-top: 40px; padding-top: 24px; border-top: 1px solid #E5E7EB; }
+    .sig-name { font-size: 14px; font-weight: 600; color: #0F172A; margin: 0 0 4px 0; }
+    .sig-link { font-size: 13px; color: #64748B; margin: 0 0 2px 0; }
+    .sig-link a { color: #BD00FF; text-decoration: none; }
+    .sig-location { font-size: 13px; color: #64748B; margin: 0 0 12px 0; }
+    .sig-tagline { font-size: 12px; color: #8B5CF6; margin: 0; font-style: italic; }
+    .footer { text-align: center; padding: 24px 0; }
+    .footer-text { font-size: 12px; color: #9CA3AF; margin: 0; }
+    
+    @media only screen and (max-width: 480px) {
+      .container { padding: 0 16px; }
+      .card { padding: 32px 24px; }
+      .greeting { font-size: 20px; }
+      .summary-row { flex-direction: column; gap: 4px; }
+      .summary-value { text-align: left; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div style="display: none; max-height: 0px; overflow: hidden;">
+    Thank you for contacting us! We've received your message and will respond within 24-48 hours. &nbsp;‌&nbsp;‌&nbsp;‌
+  </div>
+  
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <img src="https://roomylb.com/roomy-logo.png" alt="Roomy" width="80" height="80" style="border-radius: 16px;" />
+      </div>
+
+      <div class="card">
+        <h1 class="greeting">Hi ${firstName},</h1>
+        
+        <p class="message-text">
+          Thank you for reaching out! We've received your message and our team will get back to you within <strong>24-48 business hours</strong>.
+        </p>
+        
+        <div class="summary-box">
+          <p class="summary-title">Your Inquiry Summary</p>
+          <div class="summary-row">
+            <span class="summary-label">Category</span>
+            <span class="summary-value">${category}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Subject</span>
+            <span class="summary-value">${subject}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Reference</span>
+            <span class="summary-value">${referenceId}</span>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <p class="help-text">In the meantime, you might find answers in our Help Center:</p>
+          <a href="https://roomylb.com/help" class="help-link">Visit Help Center →</a>
+        </div>
+
+        <div class="signature">
+          <p class="sig-name">Roomy Team</p>
+          <p class="sig-link"><a href="https://roomylb.com">https://roomylb.com</a></p>
+          <p class="sig-location">Lebanon</p>
+          <p class="sig-tagline">Roomy — AI-Powered Student Housing Platform</p>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p class="footer-text">© ${new Date().getFullYear()} Roomy. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
+// Generate plain text auto-reply for deliverability
+function generateAutoReplyText(
+  fullName: string,
+  category: string,
+  subject: string,
+  referenceId: string
+): string {
+  const firstName = fullName.split(' ')[0];
+
+  return `
+Hi ${firstName},
+
+Thank you for reaching out! We've received your message and our team will get back to you within 24-48 business hours.
+
+YOUR INQUIRY SUMMARY
+--------------------
+Category: ${category}
+Subject: ${subject}
+Reference: ${referenceId}
+
+In the meantime, you might find answers in our Help Center:
+https://roomylb.com/help
+
+--
+Roomy Team
+https://roomylb.com
+Lebanon
+
+Roomy — AI-Powered Student Housing Platform
+  `.trim();
+}
+
 // Generate professional contact form notification email
 function generateContactNotificationHtml(
   fullName: string,
@@ -332,11 +486,62 @@ const handler = async (req: Request): Promise<Response> => {
       payload.message
     );
 
-    // Format subject: [Category] Subject - Full Name
-    const emailSubject = `[${payload.category}] ${payload.subject} - ${payload.full_name}`;
+    // Generate reference ID for tracking
+    const referenceId = generateReferenceId();
+    console.log("[contact-form-email] Reference ID:", referenceId);
 
-    // Send email using Resend with verified domain
-    const emailResponse = await fetch("https://api.resend.com/emails", {
+    // Format subject: [Category] Subject - Full Name
+    const teamEmailSubject = `[${payload.category}] ${payload.subject} - ${payload.full_name}`;
+
+    // 1. Send auto-reply confirmation to user first
+    const autoReplyHtml = generateAutoReplyHtml(
+      payload.full_name,
+      payload.category,
+      payload.subject,
+      referenceId
+    );
+    const autoReplyText = generateAutoReplyText(
+      payload.full_name,
+      payload.category,
+      payload.subject,
+      referenceId
+    );
+
+    try {
+      const autoReplyResponse = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          from: "Roomy <noreply@roomylb.com>",
+          to: [payload.email],
+          subject: "We received your message - Roomy",
+          html: autoReplyHtml,
+          text: autoReplyText,
+          headers: {
+            "X-Priority": "1",
+            "X-Mailer": "Roomy-Platform"
+          }
+        }),
+      });
+
+      if (autoReplyResponse.ok) {
+        const autoReplyResult = await autoReplyResponse.json();
+        console.log("[contact-form-email] ✅ Auto-reply sent to", payload.email);
+        console.log("[contact-form-email] Auto-reply Resend ID:", autoReplyResult.id);
+      } else {
+        const errorText = await autoReplyResponse.text();
+        console.error("[contact-form-email] Auto-reply failed:", errorText);
+      }
+    } catch (autoReplyError) {
+      console.error("[contact-form-email] Auto-reply error:", autoReplyError);
+      // Continue with team notification even if auto-reply fails
+    }
+
+    // 2. Send notification to team
+    const teamEmailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -345,7 +550,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: "Roomy Contact Form <noreply@roomylb.com>",
         to: [recipientEmail],
-        subject: emailSubject,
+        subject: teamEmailSubject,
         html: emailHtml,
         text: emailText,
         reply_to: payload.email,
@@ -356,16 +561,20 @@ const handler = async (req: Request): Promise<Response> => {
       }),
     });
 
-    if (!emailResponse.ok) {
-      const errorText = await emailResponse.text();
-      throw new Error(`Resend API error: ${emailResponse.statusText} - ${errorText}`);
+    if (!teamEmailResponse.ok) {
+      const errorText = await teamEmailResponse.text();
+      throw new Error(`Resend API error: ${teamEmailResponse.statusText} - ${errorText}`);
     }
 
-    const result = await emailResponse.json();
-    console.log("[contact-form-email] ✅ Email sent successfully to", recipientEmail);
-    console.log("[contact-form-email] Resend ID:", result.id);
+    const teamResult = await teamEmailResponse.json();
+    console.log("[contact-form-email] ✅ Team notification sent to", recipientEmail);
+    console.log("[contact-form-email] Team Resend ID:", teamResult.id);
 
-    return new Response(JSON.stringify({ success: true, recipient: recipientEmail }), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      recipient: recipientEmail,
+      referenceId: referenceId 
+    }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
