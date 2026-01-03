@@ -606,33 +606,33 @@ export default function Profile() {
       <div className="min-h-screen relative bg-white">
         <RoomyNavbar />
         
-        <div className="pt-20">
-          <AirbnbProfileLayout 
-            activeTab={activeProfileTab} 
-            onTabChange={setActiveProfileTab}
-          >
-            {showEditView ? (
-              <ProfileEditView
-                userId={userId!}
-                profileData={studentProfileData}
-                profilePhotoUrl={profilePhotoUrl}
-                onClose={() => setShowEditView(false)}
-                onProfileUpdated={handleProfileUpdated}
-              />
-            ) : activeProfileTab === 'about' ? (
-              <AboutMeTab
-                profileData={studentProfileData}
-                userName={userName}
-                profilePhotoUrl={profilePhotoUrl}
-                hasCompletedProfile={hasCompletedProfile}
-                onEditClick={() => setShowEditView(true)}
-                onGetStartedClick={() => navigate('/onboarding/student')}
-              />
-            ) : (
-              studentId && <FriendsProfileTab studentId={studentId} />
-            )}
-          </AirbnbProfileLayout>
-        </div>
+        <AirbnbProfileLayout 
+          activeTab={activeProfileTab} 
+          onTabChange={setActiveProfileTab}
+          userInitial={userName?.charAt(0)?.toUpperCase() || 'U'}
+          profilePhotoUrl={profilePhotoUrl}
+        >
+          {showEditView ? (
+            <ProfileEditView
+              userId={userId!}
+              profileData={studentProfileData}
+              profilePhotoUrl={profilePhotoUrl}
+              onClose={() => setShowEditView(false)}
+              onProfileUpdated={handleProfileUpdated}
+            />
+          ) : activeProfileTab === 'about' ? (
+            <AboutMeTab
+              profileData={studentProfileData}
+              userName={userName}
+              profilePhotoUrl={profilePhotoUrl}
+              hasCompletedProfile={hasCompletedProfile}
+              onEditClick={() => setShowEditView(true)}
+              onGetStartedClick={() => navigate('/onboarding/student')}
+            />
+          ) : (
+            studentId && <FriendsProfileTab studentId={studentId} />
+          )}
+        </AirbnbProfileLayout>
         
         <Footer />
       </div>
@@ -648,7 +648,7 @@ export default function Profile() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="container mx-auto px-4 md:px-6 py-24 md:py-32 mt-16 md:mt-0"
+        className="container mx-auto px-4 md:px-6 py-12 md:py-16"
       >
         <Button
           variant="ghost"
