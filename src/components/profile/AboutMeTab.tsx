@@ -101,18 +101,16 @@ export function AboutMeTab({
       {/* Divider Line - spans full width */}
       <div className="border-t border-[#DDDDDD] mt-10 pt-8">
         {/* Reviews I've written section */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <MessageSquareText 
-            size={24} 
+            size={20} 
             strokeWidth={1.5}
-            className="text-[#222222]" 
+            className="text-[#484848]" 
+            fill="rgba(72, 72, 72, 0.08)"
           />
-          <h3 
-            className="text-[22px] font-semibold text-[#222222]"
-            style={{ fontFamily: 'Circular, -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif' }}
-          >
+          <span className="text-base font-normal text-[#484848]">
             Reviews I've written
-          </h3>
+          </span>
         </div>
       </div>
     </div>
