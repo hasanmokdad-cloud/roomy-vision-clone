@@ -8,6 +8,8 @@ interface AirbnbProfileLayoutProps {
   activeTab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
   children: ReactNode;
+  userInitial?: string;
+  profilePhotoUrl?: string | null;
 }
 
 interface TabItemProps {
@@ -15,33 +17,46 @@ interface TabItemProps {
   label: string;
   active: boolean;
   onClick: () => void;
+  showAvatar?: boolean;
+  avatarInitial?: string;
+  avatarUrl?: string | null;
 }
 
-function TabItem({ icon, label, active, onClick }: TabItemProps) {
+function TabItem({ icon, label, active, onClick, showAvatar, avatarInitial, avatarUrl }: TabItemProps) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
+        "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors",
         active 
           ? "bg-[#F7F7F7] text-[#222222] font-medium" 
           : "text-[#717171] hover:bg-[#F7F7F7]/50"
       )}
     >
-      <span className="w-6 h-6 flex items-center justify-center">
-        {icon}
-      </span>
-      <span className="text-base">{label}</span>
+      {showAvatar ? (
+        <div className="w-10 h-10 rounded-full bg-[#222222] flex items-center justify-center overflow-hidden flex-shrink-0">
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-white text-sm font-medium">{avatarInitial || 'U'}</span>
+          )}
+        </div>
+      ) : (
+        <span className="w-6 h-6 flex items-center justify-center">
+          {icon}
+        </span>
+      )}
+      <span className="text-[15px]">{label}</span>
     </button>
   );
 }
 
-export function AirbnbProfileLayout({ activeTab, onTabChange, children }: AirbnbProfileLayoutProps) {
+export function AirbnbProfileLayout({ activeTab, onTabChange, children, userInitial, profilePhotoUrl }: AirbnbProfileLayoutProps) {
   return (
-    <div className="flex min-h-[calc(100vh-80px)] bg-white">
+    <div className="flex min-h-[calc(100vh-81px)] bg-white">
       {/* Left Sidebar */}
-      <aside className="w-[280px] flex-shrink-0 border-r border-[#DDDDDD] py-8 px-6">
-        <h1 className="text-[32px] font-bold text-[#222222] mb-8 font-sans">
+      <aside className="w-[320px] flex-shrink-0 py-10 pl-12 pr-6">
+        <h1 className="text-[32px] font-semibold text-[#222222] mb-8 tracking-tight" style={{ fontFamily: 'Circular, -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif' }}>
           Profile
         </h1>
         
@@ -51,6 +66,9 @@ export function AirbnbProfileLayout({ activeTab, onTabChange, children }: Airbnb
             label="About me"
             active={activeTab === 'about'}
             onClick={() => onTabChange('about')}
+            showAvatar={true}
+            avatarInitial={userInitial}
+            avatarUrl={profilePhotoUrl}
           />
           <TabItem
             icon={<Users className="w-5 h-5" />}
@@ -61,8 +79,11 @@ export function AirbnbProfileLayout({ activeTab, onTabChange, children }: Airbnb
         </nav>
       </aside>
 
+      {/* Vertical Divider */}
+      <div className="w-px bg-[#DDDDDD] flex-shrink-0" />
+
       {/* Main Content Area */}
-      <main className="flex-1 py-8 px-12 max-w-[720px]">
+      <main className="flex-1 py-10 px-12">
         {children}
       </main>
     </div>

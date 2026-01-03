@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Camera, ChevronRight, Calendar, Users, GraduationCap, BookOpen, DollarSign, MapPin, Home, ArrowLeft } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User, ChevronRight, Calendar, Users, GraduationCap, BookOpen, DollarSign, MapPin, Home, ArrowLeft, Briefcase, Globe, Music, Clock, PawPrint, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProfileFieldModal } from './ProfileFieldModal';
 import { Input } from '@/components/ui/input';
@@ -10,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { universities } from '@/data/universities';
 import { housingAreas } from '@/data/housingAreas';
 import { roomTypes } from '@/data/roomTypes';
+import { ProfilePhotoUpload } from './ProfilePhotoUpload';
 
 interface ProfileData {
   profile_photo_url?: string | null;
@@ -38,13 +38,13 @@ interface ProfileEditViewProps {
 
 const FIELDS: { key: FieldKey; label: string; icon: React.ReactNode; type: 'text' | 'number' | 'select'; options?: string[] }[] = [
   { key: 'full_name', label: 'Full name', icon: <User className="w-5 h-5" />, type: 'text' },
-  { key: 'age', label: 'Age', icon: <Calendar className="w-5 h-5" />, type: 'number' },
+  { key: 'age', label: 'Decade I was born', icon: <Calendar className="w-5 h-5" />, type: 'number' },
   { key: 'gender', label: 'Gender', icon: <Users className="w-5 h-5" />, type: 'select', options: ['Male', 'Female'] },
-  { key: 'university', label: 'University', icon: <GraduationCap className="w-5 h-5" />, type: 'select', options: universities },
-  { key: 'major', label: 'Major', icon: <BookOpen className="w-5 h-5" />, type: 'text' },
-  { key: 'year_of_study', label: 'Year of study', icon: <Calendar className="w-5 h-5" />, type: 'select', options: ['1', '2', '3', '4', '5'] },
+  { key: 'university', label: 'Where I went to school', icon: <GraduationCap className="w-5 h-5" />, type: 'select', options: universities },
+  { key: 'major', label: 'My work', icon: <Briefcase className="w-5 h-5" />, type: 'text' },
+  { key: 'year_of_study', label: 'Year of study', icon: <BookOpen className="w-5 h-5" />, type: 'select', options: ['1', '2', '3', '4', '5'] },
   { key: 'budget', label: 'Budget ($/month)', icon: <DollarSign className="w-5 h-5" />, type: 'number' },
-  { key: 'preferred_housing_area', label: 'Preferred area', icon: <MapPin className="w-5 h-5" />, type: 'select', options: housingAreas },
+  { key: 'preferred_housing_area', label: "Where I've always wanted to go", icon: <Globe className="w-5 h-5" />, type: 'select', options: housingAreas },
   { key: 'room_type', label: 'Room type', icon: <Home className="w-5 h-5" />, type: 'select', options: roomTypes },
 ];
 
@@ -57,7 +57,6 @@ export function ProfileEditView({
 }: ProfileEditViewProps) {
   const { toast } = useToast();
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState(profilePhotoUrl);
-  const [uploading, setUploading] = useState(false);
   const [editingField, setEditingField] = useState<FieldKey | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [saving, setSaving] = useState(false);
@@ -90,44 +89,9 @@ export function ProfileEditView({
     }
   }, [profileData]);
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${userId}/profile.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('profile-photos')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile-photos')
-        .getPublicUrl(filePath);
-
-      // Update with cache buster
-      const urlWithCache = `${publicUrl}?t=${Date.now()}`;
-
-      const { error: updateError } = await supabase
-        .from('students')
-        .update({ profile_photo_url: urlWithCache })
-        .eq('user_id', userId);
-
-      if (updateError) throw updateError;
-
-      setCurrentPhotoUrl(urlWithCache);
-      toast({ title: 'Photo uploaded', description: 'Your profile photo has been updated' });
-      onProfileUpdated();
-    } catch (err) {
-      console.error('Upload error:', err);
-      toast({ title: 'Upload failed', variant: 'destructive' });
-    } finally {
-      setUploading(false);
-    }
+  const handlePhotoUploaded = (url: string) => {
+    setCurrentPhotoUrl(url);
+    onProfileUpdated();
   };
 
   const openFieldEditor = (field: FieldKey) => {
@@ -166,84 +130,78 @@ export function ProfileEditView({
 
   const currentField = FIELDS.find(f => f.key === editingField);
 
+  // Split fields into two columns for Airbnb-style layout
+  const leftFields = FIELDS.filter((_, i) => i % 2 === 0);
+  const rightFields = FIELDS.filter((_, i) => i % 2 === 1);
+
   return (
-    <div className="space-y-8">
-      {/* Back button */}
-      <button
-        onClick={onClose}
-        className="flex items-center gap-2 text-[#222222] hover:text-[#717171] transition-colors"
-      >
-        <ArrowLeft className="w-5 h-5" />
-        <span className="font-medium">Back to profile</span>
-      </button>
-
-      {/* Large Avatar with Add button */}
-      <div className="flex flex-col items-center">
-        <div className="relative">
-          <Avatar className="w-48 h-48 border-4 border-white shadow-[0_6px_20px_rgba(0,0,0,0.12)]">
-            <AvatarImage src={currentPhotoUrl || undefined} />
-            <AvatarFallback className="bg-[#222222] text-white text-5xl font-semibold">
-              {formData.full_name?.charAt(0).toUpperCase() || <User className="w-16 h-16" />}
-            </AvatarFallback>
-          </Avatar>
-          <label className="absolute bottom-2 right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg cursor-pointer border border-[#DDDDDD] hover:bg-[#F7F7F7] transition-colors">
-            <Camera className="w-6 h-6 text-[#222222]" />
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              className="hidden"
-              disabled={uploading}
-            />
-          </label>
+    <div className="max-w-[900px]">
+      {/* Two-column layout: Avatar left, Fields right */}
+      <div className="flex gap-16">
+        {/* Left Column - Avatar */}
+        <div className="flex-shrink-0">
+          <ProfilePhotoUpload 
+            userId={userId}
+            currentUrl={currentPhotoUrl}
+            onUploaded={handlePhotoUploaded}
+            tableName="students"
+          />
         </div>
-        <button
-          onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}
-          className="mt-4 text-base font-semibold text-[#222222] underline underline-offset-2"
-        >
-          {uploading ? 'Uploading...' : 'Add'}
-        </button>
-      </div>
 
-      {/* My Profile Header */}
-      <div>
-        <h2 className="text-[32px] font-bold text-[#222222] mb-2">My profile</h2>
-        <p className="text-base text-[#717171]">
-          The information you share will be used to help find your perfect dorm and roommate matches.
-        </p>
-      </div>
+        {/* Right Column - Profile Fields */}
+        <div className="flex-1">
+          {/* My Profile Header */}
+          <div className="mb-8">
+            <h2 
+              className="text-[32px] font-semibold text-[#222222] mb-2 tracking-tight"
+              style={{ fontFamily: 'Circular, -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif' }}
+            >
+              My profile
+            </h2>
+            <p className="text-base text-[#717171] leading-relaxed">
+              Hosts and guests can see your profile and it may appear across Roomy to help us build trust in our community.{' '}
+              <button className="underline font-medium text-[#222222]">Learn more</button>
+            </p>
+          </div>
 
-      {/* Profile Fields Grid */}
-      <div className="divide-y divide-[#DDDDDD]">
-        {FIELDS.map((field) => (
-          <button
-            key={field.key}
-            onClick={() => openFieldEditor(field.key)}
-            className="w-full flex items-center justify-between py-5 hover:bg-[#F7F7F7] transition-colors -mx-4 px-4"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-[#F7F7F7] flex items-center justify-center text-[#717171]">
-                {field.icon}
-              </div>
-              <div className="text-left">
-                <p className="text-base font-medium text-[#222222]">{field.label}</p>
-                <p className="text-sm text-[#717171]">
-                  {formData[field.key] || 'Add'}
-                </p>
-              </div>
+          {/* Two-column Profile Fields Grid */}
+          <div className="grid grid-cols-2 gap-x-8">
+            {/* Left Column Fields */}
+            <div className="divide-y divide-[#EBEBEB]">
+              {leftFields.map((field) => (
+                <FieldRow 
+                  key={field.key}
+                  field={field}
+                  value={formData[field.key]}
+                  onClick={() => openFieldEditor(field.key)}
+                />
+              ))}
             </div>
-            <ChevronRight className="w-5 h-5 text-[#717171]" />
-          </button>
-        ))}
+
+            {/* Right Column Fields */}
+            <div className="divide-y divide-[#EBEBEB]">
+              {rightFields.map((field) => (
+                <FieldRow 
+                  key={field.key}
+                  field={field}
+                  value={formData[field.key]}
+                  onClick={() => openFieldEditor(field.key)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Done Button */}
-      <Button
-        onClick={onClose}
-        className="w-full bg-[#222222] hover:bg-[#000000] text-white font-semibold py-4 rounded-lg text-base"
-      >
-        Done
-      </Button>
+      {/* Done Button - Fixed at bottom right */}
+      <div className="flex justify-end mt-12">
+        <Button
+          onClick={onClose}
+          className="bg-[#222222] hover:bg-[#000000] text-white font-semibold px-8 py-3 h-auto rounded-lg text-base"
+        >
+          Done
+        </Button>
+      </div>
 
       {/* Field Edit Modal */}
       <ProfileFieldModal
@@ -277,5 +235,28 @@ export function ProfileEditView({
         )}
       </ProfileFieldModal>
     </div>
+  );
+}
+
+// Field Row Component
+interface FieldRowProps {
+  field: { key: FieldKey; label: string; icon: React.ReactNode };
+  value: string;
+  onClick: () => void;
+}
+
+function FieldRow({ field, value, onClick }: FieldRowProps) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-4 py-5 hover:bg-[#F7F7F7] transition-colors text-left group"
+    >
+      <div className="w-6 h-6 flex items-center justify-center text-[#717171]">
+        {field.icon}
+      </div>
+      <span className="text-[15px] text-[#222222]">
+        {value || field.label}
+      </span>
+    </button>
   );
 }
