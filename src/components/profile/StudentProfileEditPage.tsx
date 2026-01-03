@@ -329,22 +329,68 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
   };
 
   const getMatchButtonText = () => {
+    // HAVE DORM path
     if (accommodationStatus === 'have_dorm') {
-      return 'Find Roommate Matches';
+      // Only show "Find Roommate Matches" if:
+      // - Student has selected a non-single room
+      // - Room is not at full capacity
+      // - Student enabled "Need a Roommate" toggle
+      if (currentRoomData && !isSingleRoom(currentRoomData.type) && !projectedRoomFull && needsRoommateCurrentPlace) {
+        return 'Find Roommate Matches';
+      }
+      return 'Done';
     }
-    if (needsRoommateNewDorm) {
-      return 'Find Matches';
+    
+    // NEED DORM path
+    if (accommodationStatus === 'need_dorm') {
+      // Check if student has entered any dorm-search info
+      const hasDormSearchInfo = 
+        profileData.budget || 
+        (selectedAreas && selectedAreas.length > 0) || 
+        profileData.room_type;
+      
+      if (hasDormSearchInfo) {
+        // If non-single room type AND roommate toggle enabled -> "Find Matches"
+        if (profileData.room_type && !isSingleRoom(profileData.room_type) && needsRoommateNewDorm) {
+          return 'Find Matches';
+        }
+        // Otherwise just looking for dorm -> "Find Dorm Matches"
+        return 'Find Dorm Matches';
+      }
     }
-    return 'Find Dorm Matches';
+    
+    // Default: no accommodation status selected or no info entered
+    return 'Done';
   };
 
-  const handleFindMatches = () => {
-    navigate('/ai-match');
+  const handleBottomAction = () => {
+    const buttonText = getMatchButtonText();
+    if (buttonText === 'Done') {
+      onClose();
+    } else {
+      navigate('/ai-match');
+    }
   };
 
-  // Determine if room type allows roommate (non-single)
-  const currentRoomType = accommodationStatus === 'have_dorm' && currentRoomData ? currentRoomData.type : profileData.room_type;
-  const showRoommateToggle = currentRoomType && !isSingleRoom(currentRoomType);
+  // Determine if roommate toggle should be shown
+  const showRoommateToggle = (() => {
+    if (accommodationStatus === 'need_dorm') {
+      // Need Dorm: show toggle when room type is selected and not single
+      return profileData.room_type && !isSingleRoom(profileData.room_type);
+    }
+    
+    if (accommodationStatus === 'have_dorm') {
+      // Have Dorm: show toggle ONLY when:
+      // 1. A room is actually selected (currentRoomData exists)
+      // 2. Room type is non-single
+      // 3. Room is NOT at full capacity (has space for roommate)
+      return currentRoomData && 
+             !isSingleRoom(currentRoomData.type) && 
+             !projectedRoomFull;
+    }
+    
+    return false;
+  })();
 
   if (loading) {
     return (
@@ -509,17 +555,14 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
 
       {/* Fixed Bottom Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#EBEBEB] px-6 py-4">
-        <div className="max-w-[900px] mx-auto flex justify-between items-center">
+        <div className="max-w-[900px] mx-auto flex justify-end items-center">
           <Button
-            variant="outline"
-            onClick={onClose}
-            className="border-[#222222] text-[#222222] hover:bg-[#F7F7F7]"
-          >
-            Done
-          </Button>
-          <Button
-            onClick={handleFindMatches}
-            className="bg-[#FF385C] hover:bg-[#E31C5F] text-white font-semibold px-8"
+            onClick={handleBottomAction}
+            className={`font-semibold px-8 ${
+              getMatchButtonText() === 'Done' 
+                ? 'border border-[#222222] bg-white text-[#222222] hover:bg-[#F7F7F7]' 
+                : 'bg-[#FF385C] hover:bg-[#E31C5F] text-white'
+            }`}
           >
             {getMatchButtonText()}
           </Button>
