@@ -57,7 +57,7 @@ export function AboutMeTab({
       <div className="flex gap-10">
         {/* Left Column - Profile Card */}
         <div className="flex-shrink-0">
-          <div className="w-[280px] bg-white rounded-2xl shadow-[0_6px_16px_rgba(0,0,0,0.12)] p-6 text-center">
+          <div className="w-[320px] bg-white rounded-2xl shadow-[0_6px_16px_rgba(0,0,0,0.12)] px-10 py-8 text-center">
             {/* Avatar */}
             <div className="w-[120px] h-[120px] mx-auto rounded-full bg-[#222222] flex items-center justify-center overflow-hidden mb-4">
               {profilePhotoUrl ? (
@@ -79,7 +79,7 @@ export function AboutMeTab({
         </div>
 
         {/* Right Column - Complete Your Profile (always shown, no profile fields on this view) */}
-        <div className="flex-1 pt-2 max-w-[280px]">
+        <div className="flex-1 pt-2 max-w-[300px]">
           <h3 
             className="text-[22px] font-semibold text-[#222222] mb-3"
             style={{ fontFamily: 'Circular, -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif' }}
@@ -87,7 +87,7 @@ export function AboutMeTab({
             Complete your profile
           </h3>
           <p className="text-base text-[#717171] mb-6 leading-relaxed">
-            Your Roomy profile is an important part of every reservation. Complete yours to help property owners and students get to know you.
+            Your Roomy profile is an important part of every reservation. Complete yours to help other students get to know you.
           </p>
           <Button
             onClick={onGetStartedClick}

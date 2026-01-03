@@ -83,7 +83,7 @@ export function AirbnbProfileLayout({ activeTab, onTabChange, children, userInit
       <div className="w-px bg-[#DDDDDD] flex-shrink-0" />
 
       {/* Main Content Area */}
-      <main className="flex-1 py-10 px-12">
+      <main className="flex-1 py-10 pl-16 pr-12">
         {children}
       </main>
     </div>
