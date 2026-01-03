@@ -227,7 +227,7 @@ export default function Listings() {
 
 
   return (
-    <div className="min-h-screen flex flex-col relative">
+    <div className="min-h-screen flex flex-col relative bg-white">
       <SkipToContent />
       {!isMobile && <RoomyNavbar />}
       
