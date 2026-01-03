@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Calendar, Users, GraduationCap, BookOpen, DollarSign, MapPin, Home, Building2, Sparkles, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -76,11 +76,38 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
   const [personalityTestCompleted, setPersonalityTestCompleted] = useState(false);
   const [isRoomConfirmed, setIsRoomConfirmed] = useState(false);
   const [showPersonalitySurvey, setShowPersonalitySurvey] = useState(false);
+  const [showFixedBottomBar, setShowFixedBottomBar] = useState(true);
+  
+  // Refs for dynamic bottom bar behavior
+  const lastContentLineRef = useRef<HTMLDivElement>(null);
+  const bottomBarRef = useRef<HTMLDivElement>(null);
 
   const handlePersonalitySurveyComplete = () => {
     setPersonalityTestCompleted(true);
     setShowPersonalitySurvey(false);
   };
+  
+  // Scroll handler for dynamic bottom bar (Airbnb style)
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!lastContentLineRef.current) return;
+      
+      const lastLineRect = lastContentLineRef.current.getBoundingClientRect();
+      const bottomBarHeight = 72;
+      const windowHeight = window.innerHeight;
+      
+      // When the last grey line is above where bottom bar would be, hide the fixed bar
+      if (lastLineRect.bottom <= windowHeight - bottomBarHeight) {
+        setShowFixedBottomBar(false);
+      } else {
+        setShowFixedBottomBar(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial check
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   
   // Location state
   const [tempGovernorate, setTempGovernorate] = useState<Governorate | ''>('');
@@ -411,7 +438,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
     <div className="min-h-screen bg-white">
       <RoomyNavbar />
       
-      <div className="max-w-[900px] mx-auto px-6 py-8 pb-32">
+      <div className="max-w-[900px] mx-auto px-6 pt-12 pb-32">
         {/* Back button */}
         <button
           onClick={onClose}
@@ -422,9 +449,9 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
         </button>
 
         {/* Two-column layout: Avatar left, Fields right */}
-        <div className="flex gap-16">
-          {/* Left Column - Avatar */}
-          <div className="flex-shrink-0">
+        <div className="flex gap-24">
+          {/* Left Column - Avatar (Sticky) */}
+          <div className="flex-shrink-0 self-start sticky top-24">
             <ProfilePhotoUpload 
               userId={userId}
               currentUrl={profilePhotoUrl}
@@ -503,17 +530,25 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
 
               {/* Conditional fields based on status */}
               {accommodationStatus === 'need_dorm' && (
-                <div className="divide-y divide-[#EBEBEB]">
-                  <FieldRow icon={<DollarSign className="w-5 h-5" />} label="Monthly budget" value={profileData.budget ? `$${profileData.budget}` : undefined} onClick={() => openFieldModal('budget')} />
-                  <FieldRow icon={<MapPin className="w-5 h-5" />} label="Preferred areas" value={getPreferredLocationDisplay()} onClick={() => openFieldModal('preferred_location')} />
-                  <FieldRow icon={<Home className="w-5 h-5" />} label="Room type" value={profileData.room_type} onClick={() => openFieldModal('room_type')} />
-                </div>
+                <>
+                  <div className="divide-y divide-[#EBEBEB]">
+                    <FieldRow icon={<DollarSign className="w-5 h-5" />} label="Monthly budget" value={profileData.budget ? `$${profileData.budget}` : undefined} onClick={() => openFieldModal('budget')} />
+                    <FieldRow icon={<MapPin className="w-5 h-5" />} label="Preferred areas" value={getPreferredLocationDisplay()} onClick={() => openFieldModal('preferred_location')} />
+                    <FieldRow icon={<Home className="w-5 h-5" />} label="Room type" value={profileData.room_type} onClick={() => openFieldModal('room_type')} />
+                  </div>
+                  {/* Grey line below Room Type when no Roommate section follows */}
+                  {!showRoommateToggle && <div className="border-b border-[#EBEBEB]" />}
+                </>
               )}
 
               {accommodationStatus === 'have_dorm' && (
-                <div className="divide-y divide-[#EBEBEB]">
-                  <FieldRow icon={<Building2 className="w-5 h-5" />} label="Current dorm & room" value={getCurrentDormDisplay()} onClick={() => openFieldModal('current_dorm')} />
-                </div>
+                <>
+                  <div className="divide-y divide-[#EBEBEB]">
+                    <FieldRow icon={<Building2 className="w-5 h-5" />} label="Current dorm & room" value={getCurrentDormDisplay()} onClick={() => openFieldModal('current_dorm')} />
+                  </div>
+                  {/* Grey line below Current dorm when no Roommate section follows */}
+                  {!showRoommateToggle && <div className="border-b border-[#EBEBEB]" />}
+                </>
               )}
             </div>
 
@@ -564,27 +599,45 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
                     </div>
                   )}
                 </div>
+                {/* Grey line at end of Roommate section */}
+                <div className="border-b border-[#EBEBEB] mt-4" />
               </div>
             )}
+
+            {/* Last content line ref - for dynamic bottom bar behavior */}
+            <div ref={lastContentLineRef} className="pt-8 pb-4 flex justify-end">
+              <Button
+                onClick={handleBottomAction}
+                className={`font-semibold px-8 ${
+                  getMatchButtonText() === 'Done' 
+                    ? 'border border-[#222222] bg-white text-[#222222] hover:bg-[#F7F7F7]' 
+                    : 'bg-[#FF385C] hover:bg-[#E31C5F] text-white'
+                }`}
+              >
+                {getMatchButtonText()}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Fixed Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#EBEBEB] px-6 py-4">
-        <div className="max-w-[900px] mx-auto flex justify-end items-center">
-          <Button
-            onClick={handleBottomAction}
-            className={`font-semibold px-8 ${
-              getMatchButtonText() === 'Done' 
-                ? 'border border-[#222222] bg-white text-[#222222] hover:bg-[#F7F7F7]' 
-                : 'bg-[#FF385C] hover:bg-[#E31C5F] text-white'
-            }`}
-          >
-            {getMatchButtonText()}
-          </Button>
+      {/* Fixed Bottom Bar - shows only when content not scrolled past */}
+      {showFixedBottomBar && (
+        <div ref={bottomBarRef} className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#EBEBEB] px-6 py-4 z-10">
+          <div className="max-w-[900px] mx-auto flex justify-end items-center">
+            <Button
+              onClick={handleBottomAction}
+              className={`font-semibold px-8 ${
+                getMatchButtonText() === 'Done' 
+                  ? 'border border-[#222222] bg-white text-[#222222] hover:bg-[#F7F7F7]' 
+                  : 'bg-[#FF385C] hover:bg-[#E31C5F] text-white'
+              }`}
+            >
+              {getMatchButtonText()}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Field Edit Modals */}
       <ProfileFieldModal
