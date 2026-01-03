@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ProfilePhotoUpload } from './ProfilePhotoUpload';
 import { ProfileFieldModal } from './ProfileFieldModal';
+import { PersonalitySurveyModal } from './PersonalitySurveyModal';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import { residentialAreas, type Governorate, type District } from '@/data/residentialAreas';
 import { universities } from '@/data/universities';
@@ -74,6 +75,12 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
   const [enablePersonalityMatching, setEnablePersonalityMatching] = useState(false);
   const [personalityTestCompleted, setPersonalityTestCompleted] = useState(false);
   const [isRoomConfirmed, setIsRoomConfirmed] = useState(false);
+  const [showPersonalitySurvey, setShowPersonalitySurvey] = useState(false);
+
+  const handlePersonalitySurveyComplete = () => {
+    setPersonalityTestCompleted(true);
+    setShowPersonalitySurvey(false);
+  };
   
   // Location state
   const [tempGovernorate, setTempGovernorate] = useState<Governorate | ''>('');
@@ -540,10 +547,20 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
                           </p>
                         </div>
                       </div>
-                      <Switch
-                        checked={enablePersonalityMatching}
-                        onCheckedChange={(checked) => handleToggleChange('enable_personality_matching', checked)}
-                      />
+                      <div className="flex items-center gap-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowPersonalitySurvey(true)}
+                          className="text-[#222222] border-[#222222] hover:bg-[#F7F7F7] font-medium"
+                        >
+                          {personalityTestCompleted ? 'Edit' : 'Start'}
+                        </Button>
+                        <Switch
+                          checked={enablePersonalityMatching}
+                          onCheckedChange={(checked) => handleToggleChange('enable_personality_matching', checked)}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -860,6 +877,14 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
           )}
         </div>
       </ProfileFieldModal>
+
+      {/* Personality Survey Modal */}
+      <PersonalitySurveyModal
+        open={showPersonalitySurvey}
+        onOpenChange={setShowPersonalitySurvey}
+        userId={userId}
+        onComplete={handlePersonalitySurveyComplete}
+      />
     </div>
   );
 }
