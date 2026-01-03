@@ -34,7 +34,7 @@ function TabItem({ icon, label, active, onClick, showAvatar, avatarInitial, avat
       )}
     >
       {showAvatar ? (
-        <div className="w-10 h-10 rounded-full bg-[#222222] flex items-center justify-center overflow-hidden flex-shrink-0">
+        <div className="w-12 h-12 rounded-full bg-[#222222] flex items-center justify-center overflow-hidden flex-shrink-0">
           {avatarUrl ? (
             <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
           ) : (
@@ -55,7 +55,7 @@ export function AirbnbProfileLayout({ activeTab, onTabChange, children, userInit
   return (
     <div className="flex min-h-[calc(100vh-81px)] bg-white pt-20">
       {/* Left Sidebar */}
-      <aside className="w-[400px] flex-shrink-0 py-10 pl-20 pr-8">
+      <aside className="w-[550px] flex-shrink-0 py-10 pl-20 pr-12">
         <h1 className="text-[32px] font-semibold text-[#222222] mb-8 tracking-tight" style={{ fontFamily: 'Circular, -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif' }}>
           Profile
         </h1>
