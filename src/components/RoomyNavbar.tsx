@@ -75,7 +75,7 @@ export function RoomyNavbar() {
 
   return (
     <>
-      <nav className="w-full bg-white border-b border-[#DDDDDD]">
+      <nav className="fixed top-0 left-0 right-0 z-50 w-full bg-white border-b border-[#DDDDDD]">
         <div className="max-w-[1760px] mx-auto px-6 md:px-10 lg:px-20">
           <div className="flex items-center justify-between h-20">
             {/* Logo - navigates based on role */}
@@ -89,7 +89,7 @@ export function RoomyNavbar() {
                 className="w-8 h-8 md:w-10 md:h-10 rounded-xl"
               />
               <span 
-                className="text-xl md:text-[22px] font-semibold text-[#FF385C] hidden sm:block"
+                className="text-xl md:text-[22px] font-semibold bg-gradient-to-r from-primary via-purple-500 to-primary bg-clip-text text-transparent hidden sm:block"
                 style={{ fontFamily: 'Circular, -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif' }}
               >
                 Roomy
@@ -143,7 +143,7 @@ export function RoomyNavbar() {
                     className="flex items-center gap-3 rounded-full px-2 py-1.5 h-auto border-[#DDDDDD] hover:shadow-md transition-shadow bg-white ml-2"
                   >
                     <Menu className="w-4 h-4 text-[#222222] ml-1" />
-                    <div className="w-8 h-8 rounded-full bg-[#717171] flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-[#222222] flex items-center justify-center">
                       {isAuthenticated ? (
                         <span className="text-sm font-medium text-white">
                           {userName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
