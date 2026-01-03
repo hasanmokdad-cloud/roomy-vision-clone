@@ -1,4 +1,4 @@
-import { User } from 'lucide-react';
+import { MessageSquareText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ProfileData {
@@ -95,6 +95,24 @@ export function AboutMeTab({
           >
             Get started
           </Button>
+        </div>
+      </div>
+
+      {/* Divider Line - spans full width */}
+      <div className="border-t border-[#DDDDDD] mt-10 pt-8">
+        {/* Reviews I've written section */}
+        <div className="flex items-center gap-4">
+          <MessageSquareText 
+            size={24} 
+            strokeWidth={1.5}
+            className="text-[#222222]" 
+          />
+          <h3 
+            className="text-[22px] font-semibold text-[#222222]"
+            style={{ fontFamily: 'Circular, -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif' }}
+          >
+            Reviews I've written
+          </h3>
         </div>
       </div>
     </div>
