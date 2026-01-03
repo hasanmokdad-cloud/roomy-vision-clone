@@ -205,7 +205,7 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete 
 
   const currentSection = questions[currentStep];
   const totalSteps = questions.length;
-  const progress = ((currentStep + 1) / totalSteps) * 100;
+  const progress = (currentStep / totalSteps) * 100;
 
   const handleAnswer = (questionId: string, value: string | number) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
