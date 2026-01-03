@@ -38,7 +38,7 @@ export function AboutMeTab({
   return (
     <div className="max-w-[560px]">
       {/* Header with Edit button */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center gap-4 mb-8">
         <h2 
           className="text-[32px] font-semibold text-[#222222] tracking-tight"
           style={{ fontFamily: 'Circular, -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif' }}
@@ -47,7 +47,7 @@ export function AboutMeTab({
         </h2>
         <button
           onClick={onEditClick}
-          className="px-4 py-2 text-sm font-semibold text-[#222222] border border-[#222222] rounded-full hover:bg-[#F7F7F7] transition-colors"
+          className="px-5 py-2 text-sm font-medium text-[#222222] border border-[#B0B0B0] rounded-full hover:border-[#222222] transition-colors"
         >
           Edit
         </button>
@@ -57,24 +57,24 @@ export function AboutMeTab({
       <div className="flex gap-8">
         {/* Left Column - Profile Card */}
         <div className="flex-shrink-0">
-          <div className="w-[160px] bg-white rounded-2xl shadow-[0_6px_16px_rgba(0,0,0,0.12)] p-5 text-center">
+          <div className="w-[280px] bg-white rounded-2xl shadow-[0_6px_16px_rgba(0,0,0,0.12)] p-6 text-center">
             {/* Avatar */}
-            <div className="w-[88px] h-[88px] mx-auto rounded-full bg-[#222222] flex items-center justify-center overflow-hidden mb-3">
+            <div className="w-[120px] h-[120px] mx-auto rounded-full bg-[#222222] flex items-center justify-center overflow-hidden mb-4">
               {profilePhotoUrl ? (
                 <img src={profilePhotoUrl} alt={userName} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-white text-2xl font-semibold">{userInitial}</span>
+                <span className="text-white text-4xl font-semibold">{userInitial}</span>
               )}
             </div>
             {/* Name */}
             <h3 
-              className="text-lg font-semibold text-[#222222] mb-0.5 leading-tight truncate"
+              className="text-2xl font-semibold text-[#222222] mb-1 leading-tight truncate"
               style={{ fontFamily: 'Circular, -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif' }}
             >
               {userName || 'Guest'}
             </h3>
             {/* Role Label */}
-            <p className="text-sm text-[#717171]">Student</p>
+            <p className="text-base text-[#717171]">Student</p>
           </div>
         </div>
 
