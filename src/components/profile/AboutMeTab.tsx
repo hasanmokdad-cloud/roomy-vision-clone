@@ -36,7 +36,7 @@ export function AboutMeTab({
   const userInitial = userName?.charAt(0)?.toUpperCase() || 'U';
 
   return (
-    <div className="max-w-[560px]">
+    <div className="max-w-[700px]">
       {/* Header with Edit button */}
       <div className="flex items-center gap-4 mb-8">
         <h2 
@@ -54,7 +54,7 @@ export function AboutMeTab({
       </div>
 
       {/* Two-column layout: Profile Card + Complete Section */}
-      <div className="flex gap-8">
+      <div className="flex gap-10">
         {/* Left Column - Profile Card */}
         <div className="flex-shrink-0">
           <div className="w-[280px] bg-white rounded-2xl shadow-[0_6px_16px_rgba(0,0,0,0.12)] p-6 text-center">
@@ -79,15 +79,15 @@ export function AboutMeTab({
         </div>
 
         {/* Right Column - Complete Your Profile (always shown, no profile fields on this view) */}
-        <div className="flex-1 pt-2">
+        <div className="flex-1 pt-2 max-w-[280px]">
           <h3 
-            className="text-[22px] font-semibold text-[#222222] mb-2"
+            className="text-[22px] font-semibold text-[#222222] mb-3"
             style={{ fontFamily: 'Circular, -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif' }}
           >
             Complete your profile
           </h3>
           <p className="text-base text-[#717171] mb-6 leading-relaxed">
-            Your Roomy profile helps property owners and other students get to know you. Complete yours to unlock personalized dorm matches.
+            Your Roomy profile is an important part of every reservation. Complete yours to help property owners and students get to know you.
           </p>
           <Button
             onClick={onGetStartedClick}
