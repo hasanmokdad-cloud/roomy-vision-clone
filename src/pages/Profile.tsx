@@ -24,7 +24,7 @@ import { AirbnbProfileLayout } from '@/components/profile/AirbnbProfileLayout';
 import { AboutMeTab } from '@/components/profile/AboutMeTab';
 import { FriendsProfileTab } from '@/components/profile/FriendsProfileTab';
 import { ProfileEditView } from '@/components/profile/ProfileEditView';
-
+import { StudentProfileEditPage } from '@/components/profile/StudentProfileEditPage';
 
 export default function Profile() {
   const isMobile = useIsMobile();
@@ -64,6 +64,9 @@ export default function Profile() {
       setShowProfileForm(true);
     }
   }, [searchParams, isAuthenticated]);
+
+  // Check for ?editMode=true query param for desktop full-page edit
+  const isEditMode = searchParams.get('editMode') === 'true';
 
   useEffect(() => {
     // Wait for both auth AND role to be ready
@@ -602,6 +605,16 @@ export default function Profile() {
       }
     };
 
+    // Full-page edit mode (no sidebar) - /profile?editMode=true
+    if (isEditMode) {
+      return (
+        <StudentProfileEditPage
+          userId={userId!}
+          onClose={() => navigate('/profile')}
+        />
+      );
+    }
+
     return (
       <div className="min-h-screen relative bg-white">
         <RoomyNavbar />
@@ -626,7 +639,7 @@ export default function Profile() {
               userName={userName}
               profilePhotoUrl={profilePhotoUrl}
               hasCompletedProfile={hasCompletedProfile}
-              onEditClick={() => setShowEditView(true)}
+              onEditClick={() => navigate('/profile?editMode=true')}
               onGetStartedClick={() => navigate('/onboarding/student')}
             />
           ) : (
