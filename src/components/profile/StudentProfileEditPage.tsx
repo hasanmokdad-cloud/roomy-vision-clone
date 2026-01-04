@@ -438,7 +438,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
     <div className="min-h-screen bg-white">
       <RoomyNavbar />
       
-      <div className="max-w-[900px] mx-auto px-6 pt-12 pb-32">
+      <div className="max-w-[900px] mx-auto px-6 pt-20 pb-32">
         {/* Back button */}
         <button
           onClick={onClose}
@@ -449,9 +449,9 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
         </button>
 
         {/* Two-column layout: Avatar left, Fields right */}
-        <div className="flex gap-24">
+        <div className="flex gap-32">
           {/* Left Column - Avatar (Sticky) */}
-          <div className="flex-shrink-0 self-start sticky top-24">
+          <div className="flex-shrink-0 self-start sticky top-28 z-10 mt-4">
             <ProfilePhotoUpload 
               userId={userId}
               currentUrl={profilePhotoUrl}
