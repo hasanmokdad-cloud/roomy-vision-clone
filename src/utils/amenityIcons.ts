@@ -41,6 +41,7 @@ export const amenityIconMap: Record<string, LucideIcon> = {
   'electricity': Zap,
   'power': Plug,
   'electricity included': Zap,
+  'water': Droplets,
   
   // Facilities
   'gym': Dumbbell,
@@ -167,4 +168,5 @@ export const amenityLabels: Record<string, string> = {
   'tv': 'TV',
   'private bathroom': 'Private Bathroom',
   'pet friendly': 'Pet Friendly',
+  'water': 'Water',
 };

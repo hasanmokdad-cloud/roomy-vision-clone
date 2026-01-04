@@ -5,7 +5,7 @@ export interface AmenityWithOptions {
   label: string;
   icon: LucideIcon;
   hasOptions?: boolean;
-  optionType?: 'electricity' | 'wifi' | 'cleaning';
+  optionType?: 'electricity' | 'wifi' | 'cleaning' | 'water';
 }
 
 export interface ElectricityOption {
@@ -23,12 +23,19 @@ export interface CleaningOption {
   customSchedule?: string; // For "Other" option
 }
 
-export type AmenityOptionType = ElectricityOption | WiFiOption | CleaningOption;
+export interface WaterOption {
+  waterType: 'sweet' | 'salty';
+  hotWater: '24/7' | 'other';
+  hotWaterDetails?: string; // For "Other" option - schedule or electrical heater info
+}
+
+export type AmenityOptionType = ElectricityOption | WiFiOption | CleaningOption | WaterOption;
 
 export interface AmenityDetails {
   electricity?: ElectricityOption;
   wifi?: WiFiOption;
   cleaning?: CleaningOption;
+  water?: WaterOption;
 }
 
 export function formatElectricityOption(option: ElectricityOption): string {
@@ -48,4 +55,10 @@ export function formatCleaningOption(option: CleaningOption): string {
     case 'three': return 'Three times per week';
     case 'other': return option.customSchedule || 'Custom schedule';
   }
+}
+
+export function formatWaterOption(option: WaterOption): string {
+  const type = option.waterType === 'sweet' ? 'Sweet' : 'Salty';
+  const hot = option.hotWater === '24/7' ? 'Hot 24/7' : 'Custom';
+  return `${type}, ${hot}`;
 }

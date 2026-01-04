@@ -3,12 +3,13 @@ import { motion } from 'framer-motion';
 import { 
   Wifi, UtensilsCrossed, WashingMachine, Thermometer, Snowflake, 
   BookOpen, Users, TreePine, Dumbbell, Waves,
-  ShieldCheck, ArrowUpDown, Car, Brush, Dog, Sofa, Tv, Zap
+  ShieldCheck, ArrowUpDown, Car, Brush, Dog, Sofa, Tv, Zap, Droplets
 } from 'lucide-react';
 import { ElectricityOptionsModal } from './ElectricityOptionsModal';
 import { WiFiOptionsModal } from './WiFiOptionsModal';
 import { CleaningOptionsModal } from './CleaningOptionsModal';
-import type { ElectricityOption, WiFiOption, CleaningOption, AmenityDetails } from '@/types/amenities';
+import { WaterOptionsModal } from './WaterOptionsModal';
+import type { ElectricityOption, WiFiOption, CleaningOption, WaterOption, AmenityDetails } from '@/types/amenities';
 
 interface AmenitiesStepProps {
   category: 'essentials' | 'shared' | 'safety';
@@ -31,6 +32,7 @@ const amenityCategories = {
       { id: 'Furnished', label: 'Furnished', icon: Sofa },
       { id: 'TV', label: 'TV', icon: Tv },
       { id: 'Electricity', label: 'Electricity', icon: Zap, hasOptions: true, optionType: 'electricity' },
+      { id: 'Water', label: 'Water', icon: Droplets, hasOptions: true, optionType: 'water' },
     ],
   },
   shared: {
@@ -68,6 +70,7 @@ export function AmenitiesStep({
   const [electricityModalOpen, setElectricityModalOpen] = useState(false);
   const [wifiModalOpen, setWifiModalOpen] = useState(false);
   const [cleaningModalOpen, setCleaningModalOpen] = useState(false);
+  const [waterModalOpen, setWaterModalOpen] = useState(false);
 
   const handleAmenityClick = (item: { id: string; label: string; hasOptions?: boolean; optionType?: string }) => {
     if (item.hasOptions && item.optionType) {
@@ -87,6 +90,9 @@ export function AmenitiesStep({
           break;
         case 'cleaning':
           setCleaningModalOpen(true);
+          break;
+        case 'water':
+          setWaterModalOpen(true);
           break;
       }
     } else {
@@ -115,6 +121,13 @@ export function AmenitiesStep({
     onUpdateAmenityDetails?.({ ...amenityDetails, cleaning: option });
   };
 
+  const handleWaterSave = (option: WaterOption) => {
+    if (!selectedAmenities.includes('Water')) {
+      onToggle('Water');
+    }
+    onUpdateAmenityDetails?.({ ...amenityDetails, water: option });
+  };
+
   const getOptionLabel = (itemId: string): string | null => {
     switch (itemId) {
       case 'Electricity':
@@ -134,6 +147,13 @@ export function AmenitiesStep({
           if (freq === 'twice') return '2x/week';
           if (freq === 'three') return '3x/week';
           return 'Custom';
+        }
+        break;
+      case 'Water':
+        if (amenityDetails.water) {
+          const type = amenityDetails.water.waterType === 'sweet' ? 'Sweet' : 'Salty';
+          const hot = amenityDetails.water.hotWater === '24/7' ? '24/7' : 'Custom';
+          return `${type}, ${hot}`;
         }
         break;
     }
@@ -220,6 +240,12 @@ export function AmenitiesStep({
         onOpenChange={setCleaningModalOpen}
         initialValue={amenityDetails.cleaning}
         onSave={handleCleaningSave}
+      />
+      <WaterOptionsModal
+        open={waterModalOpen}
+        onOpenChange={setWaterModalOpen}
+        initialValue={amenityDetails.water}
+        onSave={handleWaterSave}
       />
     </div>
   );
