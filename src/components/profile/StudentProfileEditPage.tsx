@@ -438,18 +438,20 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
     <div className="min-h-screen bg-white">
       <RoomyNavbar />
       
-      <div className="max-w-[1200px] mx-auto px-6 pt-[120px] pb-32">
+      <div className="max-w-[1200px] mx-auto px-6 pt-[160px] pb-32">
         {/* Two-column layout */}
         <div className="flex gap-32">
           {/* Left Column - Avatar (Sticky, no white box) */}
-          <div className="flex-shrink-0 self-start sticky top-[120px] z-10">
-            <ProfilePhotoUpload 
-              userId={userId}
-              currentUrl={profilePhotoUrl}
-              onUploaded={(url) => setProfilePhotoUrl(url)}
-              tableName="students"
-              userInitial={profileData.full_name?.charAt(0).toUpperCase() || 'U'}
-            />
+          <div className="flex-shrink-0 w-[208px]">
+            <div className="sticky top-[160px] z-10">
+              <ProfilePhotoUpload 
+                userId={userId}
+                currentUrl={profilePhotoUrl}
+                onUploaded={(url) => setProfilePhotoUrl(url)}
+                tableName="students"
+                userInitial={profileData.full_name?.charAt(0).toUpperCase() || 'U'}
+              />
+            </div>
           </div>
 
           {/* Right Column - Profile Fields */}
@@ -593,7 +595,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
 
         {/* Inline button - same level as the flex, spans full content width */}
         {!showFixedBottomBar && (
-          <div className="border-t border-[#EBEBEB] py-4 flex justify-end">
+          <div className="py-4 flex justify-end">
             <Button
               onClick={handleBottomAction}
               className={`font-semibold px-8 ${
