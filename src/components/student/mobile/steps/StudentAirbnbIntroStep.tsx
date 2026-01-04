@@ -1,0 +1,142 @@
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import RoomyLogo from '@/assets/roomy-logo.png';
+import Step1Graphic from '@/assets/wizard/step-1-graphic.avif';
+import Step2Graphic from '@/assets/wizard/step-2-graphic.avif';
+import Step3Graphic from '@/assets/wizard/step-3-graphic.avif';
+
+interface StudentAirbnbIntroStepProps {
+  onGetStarted: () => void;
+  hasSavedProgress?: boolean;
+  onResume?: () => void;
+}
+
+const stepGraphics = {
+  1: Step1Graphic,
+  2: Step2Graphic,
+  3: Step3Graphic,
+};
+
+export function StudentAirbnbIntroStep({ onGetStarted, hasSavedProgress, onResume }: StudentAirbnbIntroStepProps) {
+  const navigate = useNavigate();
+
+  const steps = [
+    {
+      number: 1,
+      title: 'Tell us about yourself',
+      description: 'Share your name, hometown, and academic background to help us personalize your experience.',
+    },
+    {
+      number: 2,
+      title: 'Set your preferences',
+      description: "Tell us what you're looking for in a dorm and whether you need a roommate match.",
+    },
+    {
+      number: 3,
+      title: 'Complete your profile',
+      description: "Add a photo and any final touches — you're all set to find your perfect match.",
+    },
+  ];
+
+  const handleExit = () => {
+    navigate('/listings');
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-white">
+      {/* Top bar with Roomy logo and Exit button */}
+      <div className="flex items-center justify-between px-6 py-4 lg:px-12">
+        <button onClick={handleExit} className="focus:outline-none">
+          <img 
+            src={RoomyLogo} 
+            alt="Roomy" 
+            className="w-8 h-8 rounded-lg object-contain"
+          />
+        </button>
+        <button
+          onClick={handleExit}
+          className="px-4 py-2 text-sm font-medium text-[#222222] border border-[#222222] rounded-full hover:bg-[#F7F7F7] transition-colors"
+        >
+          Exit
+        </button>
+      </div>
+
+      {/* Main content - split layout */}
+      <div className="flex-1 flex flex-col lg:flex-row">
+        {/* Left side - heading */}
+        <div className="lg:w-1/2 flex items-start lg:items-center justify-start lg:justify-center px-6 py-8 lg:p-12 lg:pr-16">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-[32px] lg:text-[48px] xl:text-[56px] font-semibold text-[#222222] leading-tight tracking-tight max-w-md"
+          >
+            Let's set up your profile
+          </motion.h1>
+        </div>
+
+        {/* Right side - steps list */}
+        <div className="lg:w-1/2 flex flex-col justify-center px-6 lg:px-12 lg:pl-8">
+          <div className="divide-y divide-[#EBEBEB]">
+            {steps.map((step, index) => (
+              <motion.div
+                key={step.number}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 + index * 0.15, duration: 0.4 }}
+                className="flex items-start gap-4 py-6 lg:py-8 first:pt-0 lg:first:pt-8"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2 mb-1">
+                    <span className="text-[18px] lg:text-[19px] font-semibold text-[#222222]">
+                      {step.number}
+                    </span>
+                    <h3 className="text-[18px] lg:text-[19px] font-semibold text-[#222222]">
+                      {step.title}
+                    </h3>
+                  </div>
+                  <p className="text-[14px] lg:text-[15px] text-[#717171] leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
+                <img 
+                  src={stepGraphics[step.number as 1 | 2 | 3]} 
+                  alt={step.title}
+                  className="w-[100px] h-[80px] lg:w-[120px] lg:h-[100px] object-contain shrink-0"
+                />
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer with thick separator and Get started button */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8 }}
+      >
+        {/* Separator bar */}
+        <div className="h-[6px] bg-[#DDDDDD] w-full" />
+        <div className="px-6 lg:px-12 py-6 flex justify-end gap-3">
+          {hasSavedProgress && onResume && (
+            <button
+              onClick={onResume}
+              className="px-6 py-3 border border-[#222222] text-[#222222] font-semibold text-[16px] rounded-lg hover:bg-[#F7F7F7] transition-colors"
+            >
+              Resume
+            </button>
+          )}
+          <button
+            onClick={onGetStarted}
+            className="px-6 py-3 bg-gradient-to-r from-[#E61E4D] via-[#E31C5F] to-[#D70466] text-white font-semibold text-[16px] rounded-lg hover:opacity-90 transition-opacity min-w-[140px]"
+          >
+            Get started
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+export default StudentAirbnbIntroStep;

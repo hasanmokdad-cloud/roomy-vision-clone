@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { calculateProfileCompletion } from '@/utils/profileCompletion';
 import StudentWizardTopBar from './StudentWizardTopBar';
 import StudentWizardFooter from './StudentWizardFooter';
-import StudentIntroStep from './steps/StudentIntroStep';
+import { StudentAirbnbIntroStep } from './steps/StudentAirbnbIntroStep';
 import StudentStepOverview from './steps/StudentStepOverview';
 import BasicInfoStep from './steps/BasicInfoStep';
 import HometownStep from './steps/HometownStep';
@@ -385,7 +385,7 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <StudentIntroStep onGetStarted={() => setCurrentStep(1)} />;
+        return <StudentAirbnbIntroStep onGetStarted={() => setCurrentStep(1)} />;
       case 1:
         return <StudentStepOverview phase={1} />;
       case 2:
