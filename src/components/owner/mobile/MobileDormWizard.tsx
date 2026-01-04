@@ -14,6 +14,7 @@ import { GenderPreferenceStep } from './steps/GenderPreferenceStep';
 import { PhotosStep } from './steps/PhotosStep';
 import { DescriptionStep } from './steps/DescriptionStep';
 import { ReviewStep } from './steps/ReviewStep';
+import { PropertyTypeStep } from './steps/PropertyTypeStep';
 import { ResponsiveAlertModal } from '@/components/ui/responsive-alert-modal';
 import Step1Video from '@/assets/wizard/step1-animation.mp4';
 import Step2Video from '@/assets/wizard/step2-animation.mp4';
@@ -42,25 +43,26 @@ interface WizardFormData {
 
 const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 
-// Total steps: 0-14 (15 steps)
+// Total steps: 0-15 (16 steps)
 // Step order:
 // 0: Intro
 // 1: Filler Phase 1
-// 2: Location
-// 3: Capacity
-// 4: Filler Phase 2
-// 5-7: Amenities (essentials, shared, safety)
-// 8: Gender preference
-// 9: Photos
-// 10: Filler Phase 3 (moved here from step 13)
-// 11: Highlights
-// 12: Title
-// 13: Description
-// 14: Review
-const TOTAL_STEPS = 15;
+// 2: Property Type (NEW)
+// 3: Location
+// 4: Capacity
+// 5: Filler Phase 2
+// 6-8: Amenities (essentials, shared, safety)
+// 9: Gender preference
+// 10: Photos
+// 11: Filler Phase 3
+// 12: Highlights
+// 13: Title
+// 14: Description
+// 15: Review
+const TOTAL_STEPS = 16;
 
 // Transition/filler steps
-const TRANSITION_STEPS = [1, 4, 10];
+const TRANSITION_STEPS = [1, 5, 11];
 
 // Description generation based on highlights
 const highlightDescriptions: Record<string, string> = {
@@ -194,8 +196,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       return;
     }
 
-    // Special handling for step 3 → step 4 (preload step 2 video)
-    if (currentStep === 3) {
+    // Special handling for step 4 → step 5 (preload step 2 video)
+    if (currentStep === 4) {
       setVideoPreloading(true);
       
       const video = step2VideoRef.current;
@@ -211,13 +213,13 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       }
       
       setVideoPreloading(false);
-      setCurrentStep(4);
+      setCurrentStep(5);
       return;
     }
 
-    // When moving from highlights step (step 11) to title step (step 12),
+    // When moving from highlights step (step 12) to title step (step 13),
     // generate description if not already set
-    if (currentStep === 11 && formData.highlights.length > 0 && !formData.description) {
+    if (currentStep === 12 && formData.highlights.length > 0 && !formData.description) {
       const generatedDesc = generateDescriptionFromHighlights(formData.highlights);
       setFormData(prev => ({ ...prev, description: generatedDesc }));
     }
@@ -305,11 +307,12 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
   const isNextDisabled = () => {
     switch (currentStep) {
-      case 2: return !formData.city || !formData.area;
-      case 3: return formData.capacity < 1 || formData.capacity > 2000;
-      case 8: return !formData.genderPreference;
-      case 9: return !formData.coverImage;
-      case 14: return !formData.title || !formData.area || !agreedToOwnerTerms;
+      case 2: return !formData.propertyType;
+      case 3: return !formData.city || !formData.area;
+      case 4: return formData.capacity < 1 || formData.capacity > 2000;
+      case 9: return !formData.genderPreference;
+      case 10: return !formData.coverImage;
+      case 15: return !formData.title || !formData.area || !agreedToOwnerTerms;
       default: return false;
     }
   };
@@ -339,6 +342,13 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         return <AirbnbStepTransition phase={1} />;
       case 2:
         return (
+          <PropertyTypeStep
+            value={formData.propertyType}
+            onChange={(v) => setFormData({ ...formData, propertyType: v })}
+          />
+        );
+      case 3:
+        return (
           <LocationStep
             city={formData.city}
             area={formData.area}
@@ -350,16 +360,16 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onShuttleChange={(v) => setFormData({ ...formData, shuttle: v })}
           />
         );
-      case 3:
+      case 4:
         return (
           <CapacityStep
             value={formData.capacity}
             onChange={(v) => setFormData({ ...formData, capacity: v })}
           />
         );
-      case 4:
-        return <AirbnbStepTransition phase={2} />;
       case 5:
+        return <AirbnbStepTransition phase={2} />;
+      case 6:
         return (
           <AmenitiesStep
             category="essentials"
@@ -367,7 +377,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onToggle={toggleAmenity}
           />
         );
-      case 6:
+      case 7:
         return (
           <AmenitiesStep
             category="shared"
@@ -375,7 +385,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onToggle={toggleAmenity}
           />
         );
-      case 7:
+      case 8:
         return (
           <AmenitiesStep
             category="safety"
@@ -383,14 +393,14 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onToggle={toggleAmenity}
           />
         );
-      case 8:
+      case 9:
         return (
           <GenderPreferenceStep
             value={formData.genderPreference}
             onChange={(v) => setFormData({ ...formData, genderPreference: v })}
           />
         );
-      case 9:
+      case 10:
         return (
           <PhotosStep
             coverImage={formData.coverImage}
@@ -399,9 +409,9 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onGalleryChange={(v) => setFormData({ ...formData, galleryImages: v })}
           />
         );
-      case 10:
-        return <AirbnbStepTransition phase={3} />;
       case 11:
+        return <AirbnbStepTransition phase={3} />;
+      case 12:
         return (
           <DescriptionStep
             mode="highlights"
@@ -413,7 +423,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onDescriptionChange={(v) => setFormData({ ...formData, description: v })}
           />
         );
-      case 12:
+      case 13:
         return (
           <DescriptionStep
             mode="title"
@@ -425,7 +435,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onDescriptionChange={(v) => setFormData({ ...formData, description: v })}
           />
         );
-      case 13:
+      case 14:
         return (
           <DescriptionStep
             mode="description"
@@ -437,7 +447,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onDescriptionChange={(v) => setFormData({ ...formData, description: v })}
           />
         );
-      case 14:
+      case 15:
         return (
           <ReviewStep
             formData={formData}
@@ -484,7 +494,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       )}
 
       {/* Hidden preload video for step 2 */}
-      {currentStep >= 1 && currentStep <= 3 && (
+      {currentStep >= 1 && currentStep <= 4 && (
         <video
           ref={step2VideoRef}
           src={Step2Video}
