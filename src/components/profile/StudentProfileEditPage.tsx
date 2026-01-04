@@ -438,12 +438,12 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
     <div className="min-h-screen bg-white">
       <RoomyNavbar />
       
-      <div className="max-w-[1200px] mx-auto px-6 pt-[100px]">
+      <div className="max-w-[1200px] mx-auto px-6 pt-[160px]">
         {/* Two-column layout with CSS Grid for proper sticky support */}
         <div className="grid grid-cols-[208px_1fr] gap-32">
           {/* Left Column - Avatar (Sticky) */}
-          <div className="relative">
-            <div className="sticky top-[100px]">
+          <div className="self-stretch">
+            <div className="sticky top-[160px]">
               <ProfilePhotoUpload 
                 userId={userId}
                 currentUrl={profilePhotoUrl}
