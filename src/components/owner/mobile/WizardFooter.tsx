@@ -11,13 +11,12 @@ interface WizardFooterProps {
   isVideoPreloading?: boolean;
 }
 
-// Phase definitions for progress calculation
-// Phase 1: Steps 1-4 (filler at 1, content at 2,3, ends at 4 filler)
-// Phase 2: Steps 4-10 (filler at 4, content at 5,6,7,8,9, ends at 10 filler - now step 10 is the phase 3 filler)
-// Phase 3: Steps 10-14 (filler at 10, content at 11,12,13,14)
+// Phase definitions for progress calculation (16 total steps: 0-15)
+// Phase 1: Steps 1-5 (filler at 1, content at 2,3,4, ends at 5 filler)
+// Phase 2: Steps 5-11 (filler at 5, content at 6,7,8,9,10, ends at 11 filler)
+// Phase 3: Steps 11-15 (filler at 11, content at 12,13,14,15)
 
-// Updated step order: Step 3 filler (phase 3) now comes AFTER photos (step 9), before highlights
-// New order: 0(intro), 1(filler1), 2(location), 3(capacity), 4(filler2), 5-7(amenities), 8(gender), 9(photos), 10(filler3), 11(highlights), 12(title), 13(desc), 14(review)
+// Step order: 0(intro), 1(filler1), 2(property type), 3(location), 4(capacity), 5(filler2), 6-8(amenities), 9(gender), 10(photos), 11(filler3), 12(highlights), 13(title), 14(desc), 15(review)
 
 export function WizardFooter({
   currentStep,
@@ -29,24 +28,24 @@ export function WizardFooter({
   isSubmitting = false,
   isVideoPreloading = false,
 }: WizardFooterProps) {
-  // Phase 1 content steps: 2, 3 (location, capacity)
-  // Phase 2 content steps: 5, 6, 7, 8, 9 (amenities x3, gender, photos)
-  // Phase 3 content steps: 11, 12, 13, 14 (highlights, title, description, review)
+  // Phase 1 content steps: 2, 3, 4 (property type, location, capacity)
+  // Phase 2 content steps: 6, 7, 8, 9, 10 (amenities x3, gender, photos)
+  // Phase 3 content steps: 12, 13, 14, 15 (highlights, title, description, review)
   
   // Filler steps and their positions:
   // Step 1: 0% (start of phase 1)
-  // Step 4: 33.3% (end of phase 1, start of phase 2)
-  // Step 10: 66.6% (end of phase 2, start of phase 3)
+  // Step 5: 33.3% (end of phase 1, start of phase 2)
+  // Step 11: 66.6% (end of phase 2, start of phase 3)
   
   const FILLER_STEPS: Record<number, number> = {
     1: 0,       // Phase 1 filler at 0%
-    4: 1/3,     // Phase 2 filler at 33%
-    10: 2/3,    // Phase 3 filler at 66%
+    5: 1/3,     // Phase 2 filler at 33%
+    11: 2/3,    // Phase 3 filler at 66%
   };
   
-  const phase1Steps = [2, 3];
-  const phase2Steps = [5, 6, 7, 8, 9];
-  const phase3Steps = [11, 12, 13, 14];
+  const phase1Steps = [2, 3, 4];
+  const phase2Steps = [6, 7, 8, 9, 10];
+  const phase3Steps = [12, 13, 14, 15];
   
   let progressPercentage: number;
   
