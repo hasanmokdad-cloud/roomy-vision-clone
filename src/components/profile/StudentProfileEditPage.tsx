@@ -530,25 +530,17 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
 
               {/* Conditional fields based on status */}
               {accommodationStatus === 'need_dorm' && (
-                <>
-                  <div className="divide-y divide-[#EBEBEB]">
-                    <FieldRow icon={<DollarSign className="w-5 h-5" />} label="Monthly budget" value={profileData.budget ? `$${profileData.budget}` : undefined} onClick={() => openFieldModal('budget')} />
-                    <FieldRow icon={<MapPin className="w-5 h-5" />} label="Preferred areas" value={getPreferredLocationDisplay()} onClick={() => openFieldModal('preferred_location')} />
-                    <FieldRow icon={<Home className="w-5 h-5" />} label="Room type" value={profileData.room_type} onClick={() => openFieldModal('room_type')} />
-                  </div>
-                  {/* Grey line below Room Type when no Roommate section follows */}
-                  {!showRoommateToggle && <div className="border-b border-[#EBEBEB]" />}
-                </>
+                <div className="divide-y divide-[#EBEBEB]">
+                  <FieldRow icon={<DollarSign className="w-5 h-5" />} label="Monthly budget" value={profileData.budget ? `$${profileData.budget}` : undefined} onClick={() => openFieldModal('budget')} />
+                  <FieldRow icon={<MapPin className="w-5 h-5" />} label="Preferred areas" value={getPreferredLocationDisplay()} onClick={() => openFieldModal('preferred_location')} />
+                  <FieldRow icon={<Home className="w-5 h-5" />} label="Room type" value={profileData.room_type} onClick={() => openFieldModal('room_type')} />
+                </div>
               )}
 
               {accommodationStatus === 'have_dorm' && (
-                <>
-                  <div className="divide-y divide-[#EBEBEB]">
-                    <FieldRow icon={<Building2 className="w-5 h-5" />} label="Current dorm & room" value={getCurrentDormDisplay()} onClick={() => openFieldModal('current_dorm')} />
-                  </div>
-                  {/* Grey line below Current dorm when no Roommate section follows */}
-                  {!showRoommateToggle && <div className="border-b border-[#EBEBEB]" />}
-                </>
+                <div className="divide-y divide-[#EBEBEB]">
+                  <FieldRow icon={<Building2 className="w-5 h-5" />} label="Current dorm & room" value={getCurrentDormDisplay()} onClick={() => openFieldModal('current_dorm')} />
+                </div>
               )}
             </div>
 
@@ -556,8 +548,8 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
             {showRoommateToggle && (
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-[#222222] mb-4">Roommate Matching</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between py-4 border-b border-[#EBEBEB]">
+                <div className="divide-y divide-[#EBEBEB]">
+                  <div className="flex items-center justify-between py-4">
                     <div>
                       <p className="text-[15px] text-[#222222]">Looking for a roommate?</p>
                       <p className="text-sm text-[#717171]">Enable to find compatible roommates</p>
@@ -572,7 +564,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
                   </div>
 
                   {(needsRoommateCurrentPlace || needsRoommateNewDorm) && (
-                    <div className="flex items-center justify-between py-4 border-b border-[#EBEBEB]">
+                    <div className="flex items-center justify-between py-4">
                       <div className="flex items-center gap-3">
                         <Sparkles className="w-5 h-5 text-primary" />
                         <div>
@@ -599,24 +591,27 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
                     </div>
                   )}
                 </div>
-                {/* Grey line at end of Roommate section */}
-                <div className="border-b border-[#EBEBEB] mt-4" />
               </div>
             )}
 
-            {/* Last content line ref - for dynamic bottom bar behavior */}
-            <div ref={lastContentLineRef} className="pt-8 pb-4 flex justify-end">
-              <Button
-                onClick={handleBottomAction}
-                className={`font-semibold px-8 ${
-                  getMatchButtonText() === 'Done' 
-                    ? 'border border-[#222222] bg-white text-[#222222] hover:bg-[#F7F7F7]' 
-                    : 'bg-[#FF385C] hover:bg-[#E31C5F] text-white'
-                }`}
-              >
-                {getMatchButtonText()}
-              </Button>
-            </div>
+            {/* Last content grey line - marks end of content for dynamic bottom bar */}
+            <div ref={lastContentLineRef} className="border-b border-[#EBEBEB]" />
+
+            {/* Inline button area - only visible when scrolled past content */}
+            {!showFixedBottomBar && (
+              <div className="py-4 flex justify-end">
+                <Button
+                  onClick={handleBottomAction}
+                  className={`font-semibold px-8 ${
+                    getMatchButtonText() === 'Done' 
+                      ? 'border border-[#222222] bg-white text-[#222222] hover:bg-[#F7F7F7]' 
+                      : 'bg-[#FF385C] hover:bg-[#E31C5F] text-white'
+                  }`}
+                >
+                  {getMatchButtonText()}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
