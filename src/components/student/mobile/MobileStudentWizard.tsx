@@ -490,7 +490,7 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
   const totalSteps = getTotalSteps();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       <StudentWizardTopBar onSaveAndExit={handleSaveAndExit} />
       {renderStep()}
       {!isTransitionStep && (

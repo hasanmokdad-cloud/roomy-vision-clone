@@ -45,7 +45,7 @@ export function StudentAirbnbIntroStep({ onGetStarted, hasSavedProgress, onResum
   return (
     <div className="min-h-screen flex flex-col bg-white">
       {/* Top bar with Roomy logo and Exit button */}
-      <div className="flex items-center justify-between px-6 py-4 lg:px-12">
+      <div className="flex items-center justify-between px-8 lg:px-16 xl:px-24 py-4">
         <button onClick={handleExit} className="focus:outline-none">
           <img 
             src={RoomyLogo} 
