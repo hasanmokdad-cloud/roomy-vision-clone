@@ -5,9 +5,15 @@ import { Label } from '@/components/ui/label';
 interface CapacityStepProps {
   value: number;
   onChange: (value: number) => void;
+  propertyType: string;
 }
 
-export function CapacityStep({ value, onChange }: CapacityStepProps) {
+export function CapacityStep({ value, onChange, propertyType }: CapacityStepProps) {
+  const isApartment = propertyType === 'apartment';
+  const unitLabel = isApartment ? 'apartment' : 'room';
+  const unitLabelPlural = isApartment ? 'apartments' : 'rooms';
+  const buildingLabel = isApartment ? 'building' : 'dorm';
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
     
@@ -35,10 +41,10 @@ export function CapacityStep({ value, onChange }: CapacityStepProps) {
         className="text-center mb-12 w-full"
       >
         <h1 className="text-2xl font-bold text-foreground mb-2">
-          How many rooms does your dorm have?
+          How many {unitLabelPlural} does your {buildingLabel} have?
         </h1>
         <p className="text-muted-foreground">
-          This helps students know your dorm's size
+          This helps students know your {buildingLabel}'s size
         </p>
       </motion.div>
 
@@ -48,17 +54,17 @@ export function CapacityStep({ value, onChange }: CapacityStepProps) {
         transition={{ delay: 0.2 }}
         className="w-full max-w-xs"
       >
-        <Label htmlFor="rooms" className="text-base font-medium text-center block mb-3">
-          Number of Rooms
+        <Label htmlFor="capacity" className="text-base font-medium text-center block mb-3">
+          Number of {isApartment ? 'Apartments' : 'Rooms'}
         </Label>
         <Input
-          id="rooms"
+          id="capacity"
           type="number"
           min={1}
           max={2000}
           value={value || ''}
           onChange={handleChange}
-          placeholder="Enter number of rooms"
+          placeholder={`Enter number of ${unitLabelPlural}`}
           className="h-16 text-3xl font-bold text-center"
         />
       </motion.div>
@@ -69,19 +75,8 @@ export function CapacityStep({ value, onChange }: CapacityStepProps) {
         transition={{ delay: 0.4 }}
         className="text-center text-muted-foreground mt-8"
       >
-        {value === 1 ? '1 room' : `${value} rooms`}
+        {value === 1 ? `1 ${unitLabel}` : `${value} ${unitLabelPlural}`}
       </motion.p>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="mt-12 p-4 rounded-xl bg-primary/5 border border-primary/20"
-      >
-        <p className="text-sm text-center text-muted-foreground">
-          💡 You can add individual room details later from your dashboard
-        </p>
-      </motion.div>
     </div>
   );
 }

@@ -12,11 +12,7 @@ interface WizardFooterProps {
 }
 
 // Phase definitions for progress calculation (16 total steps: 0-15)
-// Phase 1: Steps 1-5 (filler at 1, content at 2,3,4, ends at 5 filler)
-// Phase 2: Steps 5-11 (filler at 5, content at 6,7,8,9,10, ends at 11 filler)
-// Phase 3: Steps 11-15 (filler at 11, content at 12,13,14,15)
-
-// Step order: 0(intro), 1(filler1), 2(property type), 3(location), 4(capacity), 5(filler2), 6-8(amenities), 9(gender), 10(photos), 11(filler3), 12(highlights), 13(title), 14(desc), 15(review)
+// Step order: 0(intro), 1(filler1), 2(property type), 3(title), 4(gender), 5(highlights), 6(desc), 7(filler2), 8(location), 9-11(amenities), 12(photos), 13(filler3), 14(capacity), 15(review)
 
 export function WizardFooter({
   currentStep,
@@ -28,24 +24,24 @@ export function WizardFooter({
   isSubmitting = false,
   isVideoPreloading = false,
 }: WizardFooterProps) {
-  // Phase 1 content steps: 2, 3, 4 (property type, location, capacity)
-  // Phase 2 content steps: 6, 7, 8, 9, 10 (amenities x3, gender, photos)
-  // Phase 3 content steps: 12, 13, 14, 15 (highlights, title, description, review)
+  // Phase 1 content steps: 2, 3, 4, 5, 6 (property type, title, gender, highlights, description)
+  // Phase 2 content steps: 8, 9, 10, 11, 12 (location, amenities x3, photos)
+  // Phase 3 content steps: 14, 15 (capacity, review)
   
   // Filler steps and their positions:
   // Step 1: 0% (start of phase 1)
-  // Step 5: 33.3% (end of phase 1, start of phase 2)
-  // Step 11: 66.6% (end of phase 2, start of phase 3)
+  // Step 7: 33.3% (end of phase 1, start of phase 2)
+  // Step 13: 66.6% (end of phase 2, start of phase 3)
   
   const FILLER_STEPS: Record<number, number> = {
     1: 0,       // Phase 1 filler at 0%
-    5: 1/3,     // Phase 2 filler at 33%
-    11: 2/3,    // Phase 3 filler at 66%
+    7: 1/3,     // Phase 2 filler at 33%
+    13: 2/3,    // Phase 3 filler at 66%
   };
   
-  const phase1Steps = [2, 3, 4];
-  const phase2Steps = [6, 7, 8, 9, 10];
-  const phase3Steps = [12, 13, 14, 15];
+  const phase1Steps = [2, 3, 4, 5, 6];
+  const phase2Steps = [8, 9, 10, 11, 12];
+  const phase3Steps = [14, 15];
   
   let progressPercentage: number;
   

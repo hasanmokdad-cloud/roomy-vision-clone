@@ -11,17 +11,17 @@ const phaseContent = {
   1: {
     title: 'Step 1',
     heading: 'Tell us about your dorm',
-    description: "In this step, we'll ask you which type of property you have and where it is located. Then let us know how many rooms you have.",
+    description: "In this step, we'll ask which type of property you have, give it a name, set preferences, and add a description.",
   },
   2: {
     title: 'Step 2',
     heading: 'Make it stand out',
-    description: "Add photos plus the dorm's name and description — we'll help you out.",
+    description: "Add your location, select amenities, and upload photos to showcase your property.",
   },
   3: {
     title: 'Step 3',
     heading: 'Finish up and publish',
-    description: 'Review your info and submit for verification.',
+    description: "Let us know your capacity and submit for verification.",
   },
 };
 
