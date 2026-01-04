@@ -610,7 +610,10 @@ export default function Profile() {
       return (
         <StudentProfileEditPage
           userId={userId!}
-          onClose={() => navigate('/profile')}
+          onClose={() => {
+            window.scrollTo(0, 0);
+            navigate('/profile');
+          }}
         />
       );
     }
