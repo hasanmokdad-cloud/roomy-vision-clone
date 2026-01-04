@@ -438,25 +438,17 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
     <div className="min-h-screen bg-white">
       <RoomyNavbar />
       
-      <div className="max-w-[900px] mx-auto px-6 pt-20 pb-32">
-        {/* Back button */}
-        <button
-          onClick={onClose}
-          className="flex items-center gap-2 text-[#222222] mb-8 hover:underline"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="text-base">Back to profile</span>
-        </button>
-
+      <div className="max-w-[1200px] mx-auto px-6 pt-20 pb-32">
         {/* Two-column layout: Avatar left, Fields right */}
         <div className="flex gap-32">
-          {/* Left Column - Avatar (Sticky) */}
-          <div className="flex-shrink-0 self-start sticky top-28 z-10 mt-4">
+          {/* Left Column - Avatar (Sticky) with shadow */}
+          <div className="flex-shrink-0 self-start sticky top-28 z-10 mt-4 p-6 rounded-2xl bg-white shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
             <ProfilePhotoUpload 
               userId={userId}
               currentUrl={profilePhotoUrl}
               onUploaded={(url) => setProfilePhotoUrl(url)}
               tableName="students"
+              userInitial={profileData.full_name?.charAt(0).toUpperCase() || 'U'}
             />
           </div>
 
