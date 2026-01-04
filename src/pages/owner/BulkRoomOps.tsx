@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { OwnerLayout } from "@/components/owner/OwnerLayout";
 import { OwnerBreadcrumb } from "@/components/owner/OwnerBreadcrumb";
-import { ArrowLeft, Download, Upload, Building2, FileSpreadsheet, CheckCircle2, AlertCircle, Image, Video, DollarSign, ToggleLeft, ToggleRight, CheckSquare, Square, Layers, Filter } from "lucide-react";
+import { ArrowLeft, Download, Upload, Building2, FileSpreadsheet, CheckCircle2, AlertCircle, Image, Video, DollarSign, CheckSquare, Square, ChevronDown, ChevronUp, Droplets } from "lucide-react";
 import { OwnerTableSkeleton } from "@/components/skeletons/OwnerSkeletons";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import * as XLSX from "xlsx";
 import imageCompression from "browser-image-compression";
 
@@ -222,7 +223,6 @@ export default function BulkRoomOps() {
         const rowNum = i + 2;
 
         try {
-          // Parse columns in new order
           const roomName = String(row[0]).trim();
           const type = String(row[1] || "").trim();
           const monthlyPrice = parseFloat(row[2]) || null;
@@ -253,7 +253,6 @@ export default function BulkRoomOps() {
             updateData.capacity_occupied = capacityOccupied;
             if (areaM2 !== null) updateData.area_m2 = areaM2;
             
-            // Tiered pricing fields
             updateData.price_1_student = price1Student;
             updateData.price_2_students = price2Students;
             updateData.deposit_1_student = deposit1Student;
@@ -284,7 +283,6 @@ export default function BulkRoomOps() {
             if (deposit !== null) insertData.deposit = deposit;
             if (areaM2 !== null) insertData.area_m2 = areaM2;
             
-            // Tiered pricing fields
             if (price1Student !== null) insertData.price_1_student = price1Student;
             if (price2Students !== null) insertData.price_2_students = price2Students;
             if (deposit1Student !== null) insertData.deposit_1_student = deposit1Student;
@@ -365,7 +363,7 @@ export default function BulkRoomOps() {
             <div>
               <h1 className="text-3xl font-semibold text-foreground">Bulk Room Operations</h1>
               <p className="text-muted-foreground text-sm mt-1">
-                Import, export, and bulk update rooms for each dorm
+                Select rooms first, then apply bulk actions
               </p>
             </div>
           </motion.div>
@@ -465,10 +463,12 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
-  // Active operations tab
-  const [activeTab, setActiveTab] = useState("selection");
+  // Collapsible section states
+  const [pricingOpen, setPricingOpen] = useState(true);
+  const [mediaOpen, setMediaOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
-  // Extract unique room types (real-time updated when dorm.rooms changes)
+  // Extract unique room types
   const uniqueRoomTypes = useMemo(() => {
     const types = dorm.rooms.map(r => r.type).filter(Boolean);
     return [...new Set(types)].sort();
@@ -513,9 +513,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
 
   const selectByRoomType = (type: string) => {
     setSelectedRoomType(type);
-    if (!type) {
-      return;
-    }
+    if (!type) return;
     const roomsOfType = dorm.rooms.filter(r => r.type === type);
     setSelectedRooms(new Set(roomsOfType.map(r => r.id)));
   };
@@ -641,7 +639,6 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
 
     setBulkUpdating(true);
     try {
-      // Update double rooms (only price_1_student and deposit_1_student)
       if (hasDoubleRoomsSelected && (price1 !== null || deposit1 !== null)) {
         const doubleRoomIds = selectedRoomsList
           .filter(r => isDoubleRoom(r.type))
@@ -660,7 +657,6 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
         }
       }
 
-      // Update triple rooms (all tiered fields)
       if (hasTripleRoomsSelected) {
         const tripleRoomIds = selectedRoomsList
           .filter(r => isTripleRoom(r.type))
@@ -819,7 +815,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Dorm Header */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -883,82 +879,173 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
           </Card>
         </motion.div>
       ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12 }}
-        >
-          <Card className="rounded-2xl shadow-md">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <CardHeader className="pb-0">
-                <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/50">
-                  <TabsTrigger value="selection" className="gap-2 py-2.5">
-                    <Layers className="w-4 h-4" />
-                    <span className="hidden sm:inline">Selection & Actions</span>
-                    <span className="sm:hidden">Actions</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="media" className="gap-2 py-2.5">
-                    <Image className="w-4 h-4" />
-                    <span className="hidden sm:inline">Media Upload</span>
-                    <span className="sm:hidden">Media</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="import" className="gap-2 py-2.5">
-                    <FileSpreadsheet className="w-4 h-4" />
-                    <span className="hidden sm:inline">Excel Import</span>
-                    <span className="sm:hidden">Import</span>
-                  </TabsTrigger>
-                </TabsList>
-              </CardHeader>
-
-              <CardContent className="pt-6">
-                {/* Tab 1: Selection & Quick Actions */}
-                <TabsContent value="selection" className="mt-0 space-y-6">
-                  {/* Selection Tools */}
-                  <div className="p-4 bg-muted/30 rounded-xl space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Filter className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Room Selection</span>
-                      </div>
-                      <Badge variant={hasSelection ? "default" : "secondary"}>
-                        {selectedCount} of {dorm.rooms.length} selected
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-3">
-                      <Button variant="outline" size="sm" onClick={selectAllRooms} className="gap-1.5">
-                        <CheckSquare className="w-4 h-4" />
-                        Select All
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={deselectAllRooms} className="gap-1.5">
-                        <Square className="w-4 h-4" />
-                        Deselect All
-                      </Button>
-                      
-                      {uniqueRoomTypes.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">or</span>
-                          <Select value={selectedRoomType} onValueChange={selectByRoomType}>
-                            <SelectTrigger className="w-[180px] h-9">
-                              <SelectValue placeholder="Select by type..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {uniqueRoomTypes.map(type => (
-                                <SelectItem key={type} value={type}>
-                                  {type} ({dorm.rooms.filter(r => r.type === type).length})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                    </div>
+        <>
+          {/* SECTION 1: Room Selection Table - AT THE TOP */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+          >
+            <Card className="rounded-2xl shadow-md">
+              <CardHeader className="pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-lg">Select Rooms</CardTitle>
+                    <CardDescription>Select rooms to apply bulk actions</CardDescription>
                   </div>
+                  <Badge 
+                    variant={hasSelection ? "default" : "secondary"} 
+                    className="self-start sm:self-center text-sm px-3 py-1"
+                  >
+                    {selectedCount} of {dorm.rooms.length} selected
+                  </Badge>
+                </div>
+                
+                {/* Quick Filters */}
+                <div className="flex flex-wrap items-center gap-2 pt-2">
+                  <Button variant="outline" size="sm" onClick={selectAllRooms} className="gap-1.5">
+                    <CheckSquare className="w-4 h-4" />
+                    Select All
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={deselectAllRooms} className="gap-1.5">
+                    <Square className="w-4 h-4" />
+                    Deselect
+                  </Button>
+                  
+                  {uniqueRoomTypes.length > 1 && (
+                    <Select value={selectedRoomType} onValueChange={selectByRoomType}>
+                      <SelectTrigger className="w-[160px] h-8 text-sm">
+                        <SelectValue placeholder="Select by type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {uniqueRoomTypes.map(type => (
+                          <SelectItem key={type} value={type}>
+                            {type} ({dorm.rooms.filter(r => r.type === type).length})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              </CardHeader>
+              
+              <CardContent className="pt-0">
+                <div className="overflow-x-auto border rounded-xl">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr className="border-b text-left">
+                        <th className="p-3 w-10">
+                          <Checkbox
+                            checked={selectedCount === dorm.rooms.length && dorm.rooms.length > 0}
+                            onCheckedChange={(checked) => {
+                              if (checked) selectAllRooms();
+                              else deselectAllRooms();
+                            }}
+                          />
+                        </th>
+                        <th className="p-3 font-medium text-muted-foreground">Room</th>
+                        <th className="p-3 font-medium text-muted-foreground">Type</th>
+                        <th className="p-3 font-medium text-muted-foreground">Price</th>
+                        <th className="p-3 font-medium text-muted-foreground">Deposit</th>
+                        <th className="p-3 font-medium text-muted-foreground">Capacity</th>
+                        <th className="p-3 font-medium text-muted-foreground">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dorm.rooms.map((room) => {
+                        const { minPrice, hasTiers } = getDisplayPrice(room);
+                        const roomIsTiered = isTieredRoom(room.type);
+                        
+                        return (
+                          <tr 
+                            key={room.id}
+                            className={`border-b last:border-0 cursor-pointer hover:bg-muted/30 transition-colors ${selectedRooms.has(room.id) ? "bg-primary/5" : ""}`}
+                            onClick={() => toggleRoomSelection(room.id)}
+                          >
+                            <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                              <Checkbox
+                                checked={selectedRooms.has(room.id)}
+                                onCheckedChange={() => toggleRoomSelection(room.id)}
+                              />
+                            </td>
+                            <td className="p-3 font-medium">{room.name}</td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-1">
+                                {room.type}
+                                {roomIsTiered && (
+                                  <Badge variant="outline" className="text-[10px] px-1">
+                                    Tiered
+                                  </Badge>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              {hasTiers ? (
+                                <span className="text-primary">
+                                  From ${minPrice}
+                                </span>
+                              ) : (
+                                `$${room.price}`
+                              )}
+                            </td>
+                            <td className="p-3">{room.deposit ? `$${room.deposit}` : "-"}</td>
+                            <td className="p-3">{room.capacity_occupied || 0}/{room.capacity || "-"}</td>
+                            <td className="p-3">
+                              {room.available ? (
+                                <Badge variant="default" className="gap-1">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  Available
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary">Unavailable</Badge>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
 
-                  <Separator />
-
-                  {/* Quick Actions */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* SECTION 2: Pricing & Availability - Collapsible */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            <Collapsible open={pricingOpen} onOpenChange={setPricingOpen}>
+              <Card className={`rounded-2xl shadow-md transition-opacity ${!hasSelection ? 'opacity-60' : ''}`}>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-2xl">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-500/10 rounded-xl">
+                          <DollarSign className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">Pricing & Availability</CardTitle>
+                          <CardDescription>
+                            {hasSelection 
+                              ? `Update ${selectedCount} selected room${selectedCount !== 1 ? 's' : ''}` 
+                              : 'Select rooms above to enable bulk actions'}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {hasSelection && (
+                          <Badge variant="default">{selectedCount} selected</Badge>
+                        )}
+                        {pricingOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                      </div>
+                    </div>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent>
+                  <CardContent className="space-y-6 pt-0">
                     {/* Availability */}
                     <div className="space-y-3">
                       <Label className="text-sm font-medium">Bulk Availability</Label>
@@ -969,8 +1056,8 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                           disabled={!hasSelection || bulkUpdating}
                           onClick={() => bulkSetAvailability(true)}
                         >
-                          <ToggleRight className="w-4 h-4 text-green-500" />
-                          Available
+                          <CheckCircle2 className="w-4 h-4 text-green-600" />
+                          Set Available
                         </Button>
                         <Button
                           variant="outline"
@@ -978,253 +1065,179 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                           disabled={!hasSelection || bulkUpdating}
                           onClick={() => bulkSetAvailability(false)}
                         >
-                          <ToggleLeft className="w-4 h-4 text-muted-foreground" />
-                          Unavailable
+                          Set Unavailable
                         </Button>
                       </div>
                     </div>
 
-                    {/* Price Update */}
-                    <div className="space-y-3">
-                      <Label className="text-sm font-medium flex items-center gap-1">
-                        <DollarSign className="w-4 h-4" />
-                        Bulk Price Update
-                      </Label>
-                      <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          placeholder="Enter price..."
-                          value={bulkPrice}
-                          onChange={(e) => setBulkPrice(e.target.value)}
-                          className="flex-1"
-                        />
-                        <Button 
-                          onClick={bulkUpdatePrice}
-                          disabled={!hasSelection || !bulkPrice || bulkUpdating}
-                        >
-                          Apply
-                        </Button>
+                    <Separator />
+
+                    {/* Price & Deposit Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Bulk Price Update</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            placeholder="Enter price..."
+                            value={bulkPrice}
+                            onChange={(e) => setBulkPrice(e.target.value)}
+                            className="flex-1"
+                            disabled={!hasSelection}
+                          />
+                          <Button 
+                            onClick={bulkUpdatePrice}
+                            disabled={!hasSelection || !bulkPrice || bulkUpdating}
+                          >
+                            Apply
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Bulk Deposit Update</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            placeholder="Enter deposit..."
+                            value={bulkDeposit}
+                            onChange={(e) => setBulkDeposit(e.target.value)}
+                            className="flex-1"
+                            disabled={!hasSelection}
+                          />
+                          <Button 
+                            onClick={bulkUpdateDeposit}
+                            disabled={!hasSelection || !bulkDeposit || bulkUpdating}
+                          >
+                            Apply
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Deposit Update */}
-                    <div className="space-y-3">
-                      <Label className="text-sm font-medium flex items-center gap-1">
-                        <DollarSign className="w-4 h-4" />
-                        Bulk Deposit Update
-                      </Label>
-                      <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          placeholder="Enter deposit..."
-                          value={bulkDeposit}
-                          onChange={(e) => setBulkDeposit(e.target.value)}
-                          className="flex-1"
-                        />
-                        <Button 
-                          onClick={bulkUpdateDeposit}
-                          disabled={!hasSelection || !bulkDeposit || bulkUpdating}
-                        >
-                          Apply
-                        </Button>
+                    {/* Tiered Pricing - Only show when tiered rooms are selected */}
+                    {hasTieredRoomsSelected && (
+                      <>
+                        <Separator />
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm font-medium">Tiered Pricing</Label>
+                            <Badge variant="outline" className="text-xs">
+                              {hasDoubleRoomsSelected && hasTripleRoomsSelected 
+                                ? "Double & Triple" 
+                                : hasDoubleRoomsSelected 
+                                  ? "Double Rooms" 
+                                  : "Triple Rooms"}
+                            </Badge>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs text-muted-foreground">Price (1 student)</Label>
+                              <Input
+                                type="number"
+                                placeholder="e.g. 300"
+                                value={bulkPrice1Student}
+                                onChange={(e) => setBulkPrice1Student(e.target.value)}
+                              />
+                            </div>
+
+                            {hasTripleRoomsSelected && (
+                              <div className="space-y-1.5">
+                                <Label className="text-xs text-muted-foreground">Price (2 students)</Label>
+                                <Input
+                                  type="number"
+                                  placeholder="e.g. 500"
+                                  value={bulkPrice2Students}
+                                  onChange={(e) => setBulkPrice2Students(e.target.value)}
+                                />
+                              </div>
+                            )}
+
+                            <div className="space-y-1.5">
+                              <Label className="text-xs text-muted-foreground">Deposit (1 student)</Label>
+                              <Input
+                                type="number"
+                                placeholder="e.g. 150"
+                                value={bulkDeposit1Student}
+                                onChange={(e) => setBulkDeposit1Student(e.target.value)}
+                              />
+                            </div>
+
+                            {hasTripleRoomsSelected && (
+                              <div className="space-y-1.5">
+                                <Label className="text-xs text-muted-foreground">Deposit (2 students)</Label>
+                                <Input
+                                  type="number"
+                                  placeholder="e.g. 250"
+                                  value={bulkDeposit2Students}
+                                  onChange={(e) => setBulkDeposit2Students(e.target.value)}
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          <Button 
+                            onClick={bulkUpdateTieredPricing}
+                            disabled={!hasSelection || bulkUpdating || (!bulkPrice1Student && !bulkPrice2Students && !bulkDeposit1Student && !bulkDeposit2Students)}
+                            className="gap-2"
+                          >
+                            <DollarSign className="w-4 h-4" />
+                            Apply Tiered Pricing
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          </motion.div>
+
+          {/* SECTION 3: Media Upload - Collapsible */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18 }}
+          >
+            <Collapsible open={mediaOpen} onOpenChange={setMediaOpen}>
+              <Card className={`rounded-2xl shadow-md transition-opacity ${!hasSelection ? 'opacity-60' : ''}`}>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-2xl">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-500/10 rounded-xl">
+                          <Image className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">Media Upload</CardTitle>
+                          <CardDescription>
+                            {hasSelection 
+                              ? `Upload images/videos to ${selectedCount} room${selectedCount !== 1 ? 's' : ''}` 
+                              : 'Select rooms above to upload media'}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {hasSelection && (
+                          <Badge variant="default">{selectedCount} selected</Badge>
+                        )}
+                        {mediaOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                       </div>
                     </div>
-                  </div>
-
-                  {/* Tiered Pricing Section - Only show when tiered rooms are selected */}
-                  {hasTieredRoomsSelected && (
-                    <>
-                      <Separator />
-                      <div className="space-y-4">
+                  </CardHeader>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Image Upload */}
+                      <div className="border rounded-xl p-4 space-y-4 bg-muted/20">
                         <div className="flex items-center gap-2">
-                          <DollarSign className="w-4 h-4 text-primary" />
-                          <Label className="text-sm font-medium">Tiered Pricing (Double/Triple Rooms)</Label>
-                          <Badge variant="outline" className="text-xs">
-                            {hasDoubleRoomsSelected && hasTripleRoomsSelected 
-                              ? "Double & Triple" 
-                              : hasDoubleRoomsSelected 
-                                ? "Double" 
-                                : "Triple"}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Update pricing tiers for selected double/triple rooms. Only applicable fields will be updated.
-                        </p>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          {/* Price (1 student) - For Double & Triple */}
-                          <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">Price (1 student)</Label>
-                            <Input
-                              type="number"
-                              placeholder="e.g. 300"
-                              value={bulkPrice1Student}
-                              onChange={(e) => setBulkPrice1Student(e.target.value)}
-                            />
-                          </div>
-
-                          {/* Price (2 students) - Only for Triple */}
-                          {hasTripleRoomsSelected && (
-                            <div className="space-y-2">
-                              <Label className="text-xs text-muted-foreground">Price (2 students)</Label>
-                              <Input
-                                type="number"
-                                placeholder="e.g. 500"
-                                value={bulkPrice2Students}
-                                onChange={(e) => setBulkPrice2Students(e.target.value)}
-                              />
-                            </div>
-                          )}
-
-                          {/* Deposit (1 student) - For Double & Triple */}
-                          <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">Deposit (1 student)</Label>
-                            <Input
-                              type="number"
-                              placeholder="e.g. 150"
-                              value={bulkDeposit1Student}
-                              onChange={(e) => setBulkDeposit1Student(e.target.value)}
-                            />
-                          </div>
-
-                          {/* Deposit (2 students) - Only for Triple */}
-                          {hasTripleRoomsSelected && (
-                            <div className="space-y-2">
-                              <Label className="text-xs text-muted-foreground">Deposit (2 students)</Label>
-                              <Input
-                                type="number"
-                                placeholder="e.g. 250"
-                                value={bulkDeposit2Students}
-                                onChange={(e) => setBulkDeposit2Students(e.target.value)}
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        <Button 
-                          onClick={bulkUpdateTieredPricing}
-                          disabled={!hasSelection || bulkUpdating || (!bulkPrice1Student && !bulkPrice2Students && !bulkDeposit1Student && !bulkDeposit2Students)}
-                          className="gap-2"
-                        >
-                          <DollarSign className="w-4 h-4" />
-                          Apply Tiered Pricing
-                        </Button>
-                      </div>
-                    </>
-                  )}
-
-                  <Separator />
-
-                  {/* Rooms Table */}
-                  <div>
-                    <h4 className="text-sm font-medium mb-3">Rooms</h4>
-                    <div className="overflow-x-auto border rounded-xl">
-                      <table className="w-full text-sm">
-                        <thead className="bg-muted/50">
-                          <tr className="border-b text-left">
-                            <th className="p-3 w-10">
-                              <Checkbox
-                                checked={selectedCount === dorm.rooms.length && dorm.rooms.length > 0}
-                                onCheckedChange={(checked) => {
-                                  if (checked) selectAllRooms();
-                                  else deselectAllRooms();
-                                }}
-                              />
-                            </th>
-                            <th className="p-3 font-medium text-muted-foreground">Room</th>
-                            <th className="p-3 font-medium text-muted-foreground">Type</th>
-                            <th className="p-3 font-medium text-muted-foreground">Price</th>
-                            <th className="p-3 font-medium text-muted-foreground">Deposit</th>
-                            <th className="p-3 font-medium text-muted-foreground">Capacity</th>
-                            <th className="p-3 font-medium text-muted-foreground">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {dorm.rooms.map((room) => {
-                            const { minPrice, hasTiers } = getDisplayPrice(room);
-                            const roomIsTiered = isTieredRoom(room.type);
-                            
-                            return (
-                              <tr 
-                                key={room.id}
-                                className={`border-b last:border-0 cursor-pointer hover:bg-muted/30 transition-colors ${selectedRooms.has(room.id) ? "bg-primary/5" : ""}`}
-                                onClick={() => toggleRoomSelection(room.id)}
-                              >
-                                <td className="p-3" onClick={(e) => e.stopPropagation()}>
-                                  <Checkbox
-                                    checked={selectedRooms.has(room.id)}
-                                    onCheckedChange={() => toggleRoomSelection(room.id)}
-                                  />
-                                </td>
-                                <td className="p-3 font-medium">{room.name}</td>
-                                <td className="p-3">
-                                  <div className="flex items-center gap-1">
-                                    {room.type}
-                                    {roomIsTiered && (
-                                      <Badge variant="outline" className="text-[10px] px-1">
-                                        Tiered
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="p-3">
-                                  {hasTiers ? (
-                                    <span className="text-primary">
-                                      From ${minPrice}
-                                    </span>
-                                  ) : (
-                                    `$${room.price}`
-                                  )}
-                                </td>
-                                <td className="p-3">{room.deposit ? `$${room.deposit}` : "-"}</td>
-                                <td className="p-3">{room.capacity_occupied || 0}/{room.capacity || "-"}</td>
-                                <td className="p-3">
-                                  {room.available ? (
-                                    <Badge variant="default" className="gap-1">
-                                      <CheckCircle2 className="w-3 h-3" />
-                                      Available
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="secondary">Unavailable</Badge>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                {/* Tab 2: Media Upload */}
-                <TabsContent value="media" className="mt-0 space-y-6">
-                  <div className="p-4 bg-muted/30 rounded-xl">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Filter className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">Selected Rooms</span>
-                      <Badge variant={hasSelection ? "default" : "secondary"}>
-                        {selectedCount} selected
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Go to "Selection & Actions" tab to select rooms for media upload
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Image Upload */}
-                    <Card className="border-dashed">
-                      <CardHeader>
-                        <CardTitle className="text-base flex items-center gap-2">
                           <Image className="w-5 h-5 text-primary" />
-                          Bulk Image Upload
-                        </CardTitle>
-                        <CardDescription>
-                          Upload the same images to all selected rooms
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
+                          <span className="font-medium">Bulk Images</span>
+                        </div>
+                        
                         <RadioGroup
                           value={imageUploadMode}
                           onValueChange={(v) => setImageUploadMode(v as "replace" | "add")}
@@ -1239,6 +1252,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                             <Label htmlFor="add" className="text-sm cursor-pointer">Add to existing</Label>
                           </div>
                         </RadioGroup>
+                        
                         <input
                           ref={imageInputRef}
                           type="file"
@@ -1254,26 +1268,21 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                           onClick={() => imageInputRef.current?.click()}
                         >
                           <Image className="w-4 h-4" />
-                          {uploadingMedia ? "Uploading..." : `Upload Images`}
+                          {uploadingMedia ? "Uploading..." : "Upload Images"}
                         </Button>
-                      </CardContent>
-                    </Card>
+                      </div>
 
-                    {/* Video Upload */}
-                    <Card className="border-dashed">
-                      <CardHeader>
-                        <CardTitle className="text-base flex items-center gap-2">
+                      {/* Video Upload */}
+                      <div className="border rounded-xl p-4 space-y-4 bg-muted/20">
+                        <div className="flex items-center gap-2">
                           <Video className="w-5 h-5 text-primary" />
-                          Bulk Video Upload
-                        </CardTitle>
-                        <CardDescription>
-                          Upload the same video to all selected rooms (max 50MB)
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
+                          <span className="font-medium">Bulk Video</span>
+                        </div>
+                        
                         <p className="text-xs text-muted-foreground">
-                          Supported formats: MP4, WebM, MOV
+                          Max 50MB • MP4, WebM, MOV
                         </p>
+                        
                         <input
                           ref={videoInputRef}
                           type="file"
@@ -1288,106 +1297,115 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                           onClick={() => videoInputRef.current?.click()}
                         >
                           <Video className="w-4 h-4" />
-                          {uploadingMedia ? "Uploading..." : `Upload Video`}
+                          {uploadingMedia ? "Uploading..." : "Upload Video"}
                         </Button>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </TabsContent>
-
-                {/* Tab 3: Excel Import/Export */}
-                <TabsContent value="import" className="mt-0 space-y-6">
-                  <div className="bg-muted/30 rounded-xl p-4 space-y-4">
-                    <h4 className="font-medium">How it works:</h4>
-                    <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                      <li>
-                        <strong>Download the template</strong> - Get an Excel file pre-filled with your existing rooms
-                      </li>
-                      <li>
-                        <strong>Fill in room data</strong> - Add or modify room information in Excel
-                      </li>
-                      <li>
-                        <strong>Upload the file</strong> - Import your updated data back to Roomy
-                      </li>
-                    </ol>
-
-                    <Separator />
-                    
-                    <div>
-                      <h5 className="text-sm font-medium mb-2">Template Columns:</h5>
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        <Badge variant="outline">Room</Badge>
-                        <Badge variant="outline">Type</Badge>
-                        <Badge variant="outline">Monthly Price</Badge>
-                        <Badge variant="outline" className="bg-primary/5">Price (2 students)</Badge>
-                        <Badge variant="outline" className="bg-primary/5">Price (1 student)</Badge>
-                        <Badge variant="outline">Deposit</Badge>
-                        <Badge variant="outline" className="bg-primary/5">Deposit (2 students)</Badge>
-                        <Badge variant="outline" className="bg-primary/5">Deposit (1 student)</Badge>
-                        <Badge variant="outline">Capacity</Badge>
-                        <Badge variant="outline">Capacity Occupied</Badge>
-                        <Badge variant="outline">Area (m²)</Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        <span className="inline-block w-2 h-2 bg-primary/20 rounded mr-1"></span>
-                        Tiered pricing columns are optional and only apply to Double/Triple rooms
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          </motion.div>
+
+          {/* SECTION 4: Excel Import/Export - Collapsible */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.21 }}
+          >
+            <Collapsible open={importOpen} onOpenChange={setImportOpen}>
+              <Card className="rounded-2xl shadow-md">
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-2xl">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-orange-500/10 rounded-xl">
+                          <FileSpreadsheet className="w-5 h-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">Excel Import/Export</CardTitle>
+                          <CardDescription>Download template or import room data</CardDescription>
+                        </div>
+                      </div>
+                      {importOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                    </div>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent>
+                  <CardContent className="space-y-4 pt-0">
+                    <div className="bg-muted/30 rounded-xl p-4 space-y-3">
+                      <h4 className="font-medium text-sm">How it works:</h4>
+                      <ol className="list-decimal list-inside space-y-1.5 text-sm text-muted-foreground">
+                        <li><strong>Download</strong> the template with your existing rooms</li>
+                        <li><strong>Edit</strong> the Excel file with your room data</li>
+                        <li><strong>Upload</strong> to create or update rooms</li>
+                      </ol>
+                      
+                      <div className="flex flex-wrap gap-1.5 pt-2">
+                        <Badge variant="outline" className="text-xs">Room</Badge>
+                        <Badge variant="outline" className="text-xs">Type</Badge>
+                        <Badge variant="outline" className="text-xs">Monthly Price</Badge>
+                        <Badge variant="outline" className="text-xs bg-primary/5">Tiered Prices</Badge>
+                        <Badge variant="outline" className="text-xs">Deposit</Badge>
+                        <Badge variant="outline" className="text-xs">Capacity</Badge>
+                      </div>
+                      
+                      <p className="text-xs text-muted-foreground flex items-start gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                        Matching room names update existing; new names create new rooms.
                       </p>
                     </div>
 
-                    <p className="text-xs text-muted-foreground flex items-start gap-1.5">
-                      <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                      The "Room" column matches existing rooms. Matching names update; new names create new rooms.
-                    </p>
-                  </div>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button
+                        onClick={() => onDownload(dorm)}
+                        variant="outline"
+                        className="gap-2 flex-1"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download Template
+                        <Badge variant="secondary" className="ml-1">
+                          {dorm.rooms.length} rooms
+                        </Badge>
+                      </Button>
 
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button
-                      onClick={() => onDownload(dorm)}
-                      variant="outline"
-                      className="gap-2 flex-1"
-                    >
-                      <Download className="w-4 h-4" />
-                      Download Template
-                      <Badge variant="secondary" className="ml-1">
-                        {dorm.rooms.length} rooms
-                      </Badge>
-                    </Button>
-
-                    <input
-                      type="file"
-                      accept=".xlsx,.xls,.csv"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) onImport(dorm.id, file);
-                        e.target.value = "";
-                      }}
-                      className="hidden"
-                      id={`file-import-${dorm.id}`}
-                    />
-                    
-                    <Button
-                      onClick={() => triggerFileInput(dorm.id)}
-                      disabled={importing}
-                      className="gap-2 flex-1"
-                    >
-                      {importing ? (
-                        <>
-                          <span className="animate-spin">⏳</span>
-                          Importing...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4" />
-                          Upload Excel/CSV
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </TabsContent>
-              </CardContent>
-            </Tabs>
-          </Card>
-        </motion.div>
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) onImport(dorm.id, file);
+                          e.target.value = "";
+                        }}
+                        className="hidden"
+                        id={`file-import-${dorm.id}`}
+                      />
+                      
+                      <Button
+                        onClick={() => triggerFileInput(dorm.id)}
+                        disabled={importing}
+                        className="gap-2 flex-1"
+                      >
+                        {importing ? (
+                          <>
+                            <span className="animate-spin">⏳</span>
+                            Importing...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            Upload Excel/CSV
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          </motion.div>
+        </>
       )}
     </div>
   );
