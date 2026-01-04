@@ -438,20 +438,18 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
     <div className="min-h-screen bg-white">
       <RoomyNavbar />
       
-      <div className="max-w-[1200px] mx-auto px-6 pt-[160px]">
-        {/* Two-column layout with CSS Grid for proper sticky support */}
-        <div className="grid grid-cols-[208px_1fr] gap-32">
-          {/* Left Column - Avatar (Sticky) */}
-          <div className="self-stretch">
-            <div className="sticky top-[160px]">
-              <ProfilePhotoUpload 
-                userId={userId}
-                currentUrl={profilePhotoUrl}
-                onUploaded={(url) => setProfilePhotoUrl(url)}
-                tableName="students"
-                userInitial={profileData.full_name?.charAt(0).toUpperCase() || 'U'}
-              />
-            </div>
+      <div className="max-w-[1200px] mx-auto px-6 pt-[120px] pb-32">
+        {/* Two-column layout */}
+        <div className="flex gap-32">
+          {/* Left Column - Avatar (Sticky, no white box) */}
+          <div className="flex-shrink-0 self-start sticky top-[120px] z-10">
+            <ProfilePhotoUpload 
+              userId={userId}
+              currentUrl={profilePhotoUrl}
+              onUploaded={(url) => setProfilePhotoUrl(url)}
+              tableName="students"
+              userInitial={profileData.full_name?.charAt(0).toUpperCase() || 'U'}
+            />
           </div>
 
           {/* Right Column - Profile Fields */}
@@ -590,43 +588,40 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
 
             {/* Last content grey line - marks end of content for dynamic bottom bar */}
             <div ref={lastContentLineRef} className="border-b border-[#EBEBEB]" />
-
-            {/* Inline button - appears when fixed bar hides */}
-            {!showFixedBottomBar && (
-              <div className="py-4 flex justify-end">
-                <Button
-                  onClick={handleBottomAction}
-                  className={`font-semibold px-8 ${
-                    getMatchButtonText() === 'Done' 
-                      ? 'border border-[#222222] bg-white text-[#222222] hover:bg-[#F7F7F7]' 
-                      : 'bg-[#FF385C] hover:bg-[#E31C5F] text-white'
-                  }`}
-                >
-                  {getMatchButtonText()}
-                </Button>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* Inline button - same level as the flex, spans full content width */}
+        {!showFixedBottomBar && (
+          <div className="border-t border-[#EBEBEB] py-4 flex justify-end">
+            <Button
+              onClick={handleBottomAction}
+              className={`font-semibold px-8 ${
+                getMatchButtonText() === 'Done' 
+                  ? 'border border-[#222222] bg-white text-[#222222] hover:bg-[#F7F7F7]' 
+                  : 'bg-[#FF385C] hover:bg-[#E31C5F] text-white'
+              }`}
+            >
+              {getMatchButtonText()}
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Fixed Bottom Bar - shows only when content not scrolled past */}
+      {/* Fixed Bottom Bar */}
       {showFixedBottomBar && (
         <div ref={bottomBarRef} className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#EBEBEB] px-6 py-4 z-10">
-          <div className="max-w-[1200px] mx-auto grid grid-cols-[208px_1fr] gap-32">
-            <div></div> {/* Empty left column placeholder */}
-            <div className="flex justify-end items-center">
-              <Button
-                onClick={handleBottomAction}
-                className={`font-semibold px-8 ${
-                  getMatchButtonText() === 'Done' 
-                    ? 'border border-[#222222] bg-white text-[#222222] hover:bg-[#F7F7F7]' 
-                    : 'bg-[#FF385C] hover:bg-[#E31C5F] text-white'
-                }`}
-              >
-                {getMatchButtonText()}
-              </Button>
-            </div>
+          <div className="max-w-[1200px] mx-auto flex justify-end items-center">
+            <Button
+              onClick={handleBottomAction}
+              className={`font-semibold px-8 ${
+                getMatchButtonText() === 'Done' 
+                  ? 'border border-[#222222] bg-white text-[#222222] hover:bg-[#F7F7F7]' 
+                  : 'bg-[#FF385C] hover:bg-[#E31C5F] text-white'
+              }`}
+            >
+              {getMatchButtonText()}
+            </Button>
           </div>
         </div>
       )}
