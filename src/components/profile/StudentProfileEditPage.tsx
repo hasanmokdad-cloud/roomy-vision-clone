@@ -438,11 +438,11 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
     <div className="min-h-screen bg-white">
       <RoomyNavbar />
       
-      <div className="max-w-[1200px] mx-auto px-6 pt-20 pb-32">
+      <div className="max-w-[1200px] mx-auto px-6 pt-[120px] pb-32">
         {/* Two-column layout: Avatar left, Fields right */}
         <div className="flex gap-32">
-          {/* Left Column - Avatar (Sticky) with shadow */}
-          <div className="flex-shrink-0 self-start sticky top-28 z-10 mt-4 p-6 rounded-2xl bg-white shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
+          {/* Left Column - Avatar (Sticky) */}
+          <div className="flex-shrink-0 self-start sticky top-[120px] z-10">
             <ProfilePhotoUpload 
               userId={userId}
               currentUrl={profilePhotoUrl}
@@ -588,30 +588,30 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
 
             {/* Last content grey line - marks end of content for dynamic bottom bar */}
             <div ref={lastContentLineRef} className="border-b border-[#EBEBEB]" />
-
-            {/* Inline button area - only visible when scrolled past content */}
-            {!showFixedBottomBar && (
-              <div className="py-4 flex justify-end">
-                <Button
-                  onClick={handleBottomAction}
-                  className={`font-semibold px-8 ${
-                    getMatchButtonText() === 'Done' 
-                      ? 'border border-[#222222] bg-white text-[#222222] hover:bg-[#F7F7F7]' 
-                      : 'bg-[#FF385C] hover:bg-[#E31C5F] text-white'
-                  }`}
-                >
-                  {getMatchButtonText()}
-                </Button>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* Inline button area - outside flex, spans full content width for exact alignment with fixed bar */}
+        {!showFixedBottomBar && (
+          <div className="border-t border-[#EBEBEB] py-4 flex justify-end">
+            <Button
+              onClick={handleBottomAction}
+              className={`font-semibold px-8 ${
+                getMatchButtonText() === 'Done' 
+                  ? 'border border-[#222222] bg-white text-[#222222] hover:bg-[#F7F7F7]' 
+                  : 'bg-[#FF385C] hover:bg-[#E31C5F] text-white'
+              }`}
+            >
+              {getMatchButtonText()}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Fixed Bottom Bar - shows only when content not scrolled past */}
       {showFixedBottomBar && (
         <div ref={bottomBarRef} className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#EBEBEB] px-6 py-4 z-10">
-          <div className="max-w-[900px] mx-auto flex justify-end items-center">
+          <div className="max-w-[1200px] mx-auto flex justify-end items-center">
             <Button
               onClick={handleBottomAction}
               className={`font-semibold px-8 ${
