@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Home, DollarSign, Users, Edit, CheckCircle, XCircle, Plus, Trash2, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
+import { Home, DollarSign, Users, Edit, CheckCircle, XCircle, Plus, Trash2, ChevronDown, ChevronUp, ArrowLeft, AlertCircle, DoorOpen } from 'lucide-react';
 import { OwnerTableSkeleton } from '@/components/skeletons/OwnerSkeletons';
 import { useNavigate } from 'react-router-dom';
 import { OwnerLayout } from '@/components/owner/OwnerLayout';
@@ -357,10 +357,23 @@ export default function OwnerRooms() {
                                             </div>
                                           </div>
 
-                                          {/* Capacity - Show Roomy-confirmed occupants */}
-                                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                                            <Users className="w-4 h-4" />
-                                            <span>{room.roomy_confirmed_occupants} / {room.capacity} confirmed via Roomy</span>
+                                          {/* Capacity & Reservation Status */}
+                                          <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                              <Users className="w-4 h-4" />
+                                              <span>{room.roomy_confirmed_occupants} / {room.capacity} confirmed</span>
+                                            </div>
+                                            {room.roomy_confirmed_occupants >= room.capacity ? (
+                                              <Badge variant="destructive" className="text-xs gap-1">
+                                                <AlertCircle className="w-3 h-3" />
+                                                Full
+                                              </Badge>
+                                            ) : (
+                                              <Badge variant="outline" className="text-xs gap-1 text-green-600 border-green-600">
+                                                <DoorOpen className="w-3 h-3" />
+                                                Open
+                                              </Badge>
+                                            )}
                                           </div>
 
                                           {/* Confirmed Occupants Preview */}
@@ -380,25 +393,30 @@ export default function OwnerRooms() {
                                           </div>
 
                                           <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                                            <div className="flex items-center gap-3">
-                                              <Label
-                                                htmlFor={`room-${room.id}`}
-                                                className="flex items-center gap-2 cursor-pointer"
-                                              >
-                                                {isAvailable ? (
-                                                  <CheckCircle className="w-4 h-4 text-green-500" />
-                                                ) : (
-                                                  <XCircle className="w-4 h-4 text-red-500" />
-                                                )}
-                                                <span className="text-sm font-medium">
-                                                  {isAvailable ? 'Available' : 'Unavailable'}
-                                                </span>
-                                              </Label>
-                                              <Switch
-                                                id={`room-${room.id}`}
-                                                checked={isAvailable}
-                                                onCheckedChange={() => toggleRoomAvailability(room.id, isAvailable)}
-                                              />
+                                            <div className="flex flex-col gap-0.5">
+                                              <div className="flex items-center gap-3">
+                                                <Label
+                                                  htmlFor={`room-${room.id}`}
+                                                  className="flex items-center gap-2 cursor-pointer"
+                                                >
+                                                  {isAvailable ? (
+                                                    <CheckCircle className="w-4 h-4 text-green-500" />
+                                                  ) : (
+                                                    <XCircle className="w-4 h-4 text-red-500" />
+                                                  )}
+                                                  <span className="text-sm font-medium">
+                                                    {isAvailable ? 'Available' : 'Unavailable'}
+                                                  </span>
+                                                </Label>
+                                                <Switch
+                                                  id={`room-${room.id}`}
+                                                  checked={isAvailable}
+                                                  onCheckedChange={() => toggleRoomAvailability(room.id, isAvailable)}
+                                                />
+                                              </div>
+                                              <span className="text-[10px] text-muted-foreground ml-6">
+                                                {isAvailable ? 'Visible to students' : 'Hidden from students'}
+                                              </span>
                                             </div>
                                             <div className="flex items-center gap-1">
                                               <Button

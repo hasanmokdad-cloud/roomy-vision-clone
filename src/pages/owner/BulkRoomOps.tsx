@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { OwnerLayout } from "@/components/owner/OwnerLayout";
 import { OwnerBreadcrumb } from "@/components/owner/OwnerBreadcrumb";
-import { ArrowLeft, Download, Upload, Building2, FileSpreadsheet, CheckCircle2, AlertCircle, Image, Video, DollarSign, CheckSquare, Square, ChevronDown, ChevronUp, Droplets } from "lucide-react";
+import { ArrowLeft, Download, Upload, Building2, FileSpreadsheet, CheckCircle2, AlertCircle, Image, Video, DollarSign, CheckSquare, Square, ChevronDown, ChevronUp, Droplets, DoorOpen } from "lucide-react";
 import { OwnerTableSkeleton } from "@/components/skeletons/OwnerSkeletons";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -949,6 +949,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                         <th className="p-3 font-medium text-muted-foreground">Deposit</th>
                         <th className="p-3 font-medium text-muted-foreground">Capacity</th>
                         <th className="p-3 font-medium text-muted-foreground">Status</th>
+                        <th className="p-3 font-medium text-muted-foreground">Reservation</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -998,6 +999,19 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                                 </Badge>
                               ) : (
                                 <Badge variant="secondary">Unavailable</Badge>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              {(room.capacity_occupied || 0) >= (room.capacity || 1) ? (
+                                <Badge variant="destructive" className="gap-1">
+                                  <AlertCircle className="w-3 h-3" />
+                                  Full
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="gap-1 text-green-600 border-green-600">
+                                  <DoorOpen className="w-3 h-3" />
+                                  Open
+                                </Badge>
                               )}
                             </td>
                           </tr>
