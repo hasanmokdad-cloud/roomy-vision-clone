@@ -450,6 +450,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
   const [bulkPrice, setBulkPrice] = useState("");
   const [bulkDeposit, setBulkDeposit] = useState("");
   const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState("");
   
   // Tiered pricing bulk update state
   const [bulkPrice1Student, setBulkPrice1Student] = useState("");
@@ -489,6 +490,12 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
 
   const hasTieredRoomsSelected = hasDoubleRoomsSelected || hasTripleRoomsSelected;
 
+  // Compute Open/Full room counts
+  const reservationCounts = useMemo(() => {
+    const full = dorm.rooms.filter(r => (r.capacity_occupied || 0) >= (r.capacity || 1)).length;
+    return { full, open: dorm.rooms.length - full };
+  }, [dorm.rooms]);
+
   // Selection helpers
   const toggleRoomSelection = (roomId: string) => {
     setSelectedRooms(prev => {
@@ -509,6 +516,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
   const deselectAllRooms = () => {
     setSelectedRooms(new Set());
     setSelectedRoomType("");
+    setSelectedReservation("");
   };
 
   const selectByRoomType = (type: string) => {
@@ -516,6 +524,52 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
     if (!type) return;
     const roomsOfType = dorm.rooms.filter(r => r.type === type);
     setSelectedRooms(new Set(roomsOfType.map(r => r.id)));
+  };
+
+  const selectByReservation = (status: string) => {
+    setSelectedReservation(status);
+    if (!status) return;
+    const roomsWithStatus = dorm.rooms.filter(r => {
+      const isFull = (r.capacity_occupied || 0) >= (r.capacity || 1);
+      return status === 'full' ? isFull : !isFull;
+    });
+    setSelectedRooms(new Set(roomsWithStatus.map(r => r.id)));
+  };
+
+  // Mark all full rooms as unavailable
+  const markFullRoomsUnavailable = async () => {
+    const fullAvailableRooms = dorm.rooms.filter(r => 
+      (r.capacity_occupied || 0) >= (r.capacity || 1) && r.available
+    );
+    
+    if (fullAvailableRooms.length === 0) {
+      toast({ 
+        title: "No rooms to update", 
+        description: "All full rooms are already unavailable",
+      });
+      return;
+    }
+
+    setBulkUpdating(true);
+    try {
+      const roomIds = fullAvailableRooms.map(r => r.id);
+      const { error } = await supabase
+        .from("rooms")
+        .update({ available: false })
+        .in("id", roomIds);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `${roomIds.length} full room${roomIds.length !== 1 ? 's' : ''} marked as unavailable`,
+      });
+      await onRefresh();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setBulkUpdating(false);
+    }
   };
 
   const selectedCount = selectedRooms.size;
@@ -926,6 +980,20 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                       </SelectContent>
                     </Select>
                   )}
+                  
+                  <Select value={selectedReservation} onValueChange={selectByReservation}>
+                    <SelectTrigger className="w-[180px] h-8 text-sm">
+                      <SelectValue placeholder="Select by reservation" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open">
+                        Open ({reservationCounts.open})
+                      </SelectItem>
+                      <SelectItem value="full">
+                        Full ({reservationCounts.full})
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardHeader>
               
@@ -1082,6 +1150,28 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                           Set Unavailable
                         </Button>
                       </div>
+                    </div>
+
+                    {/* Smart Actions */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Smart Actions</Label>
+                      <Button
+                        variant="outline"
+                        className="gap-2 w-full justify-start text-amber-600 border-amber-200 hover:bg-amber-50 dark:border-amber-800 dark:hover:bg-amber-950"
+                        disabled={bulkUpdating || reservationCounts.full === 0}
+                        onClick={markFullRoomsUnavailable}
+                      >
+                        <AlertCircle className="w-4 h-4" />
+                        Hide Full Rooms from Students
+                        {reservationCounts.full > 0 && (
+                          <Badge variant="secondary" className="ml-auto">
+                            {reservationCounts.full} full
+                          </Badge>
+                        )}
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        Automatically mark all rooms at full capacity as unavailable
+                      </p>
                     </div>
 
                     <Separator />
