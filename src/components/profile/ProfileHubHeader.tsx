@@ -115,8 +115,8 @@ export function ProfileHubHeader({ profile, userId }: ProfileHubHeaderProps) {
         {/* Avatar */}
         <Avatar className="w-16 h-16 border-2 border-background shadow-lg">
           <AvatarImage src={profile?.profile_photo_url || undefined} />
-          <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-xl">
-            {profile?.full_name?.charAt(0).toUpperCase() || <User className="w-8 h-8" />}
+          <AvatarFallback className="bg-[#222222] text-white text-xl font-medium">
+            {profile?.full_name?.charAt(0).toUpperCase() || 'U'}
           </AvatarFallback>
         </Avatar>
 

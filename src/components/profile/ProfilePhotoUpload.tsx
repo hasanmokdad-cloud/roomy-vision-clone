@@ -11,9 +11,10 @@ interface ProfilePhotoUploadProps {
   currentUrl?: string | null;
   onUploaded: (url: string) => void;
   tableName?: 'students' | 'owners' | 'admins';
+  userInitial?: string;
 }
 
-export function ProfilePhotoUpload({ userId, currentUrl, onUploaded, tableName = 'students' }: ProfilePhotoUploadProps) {
+export function ProfilePhotoUpload({ userId, currentUrl, onUploaded, tableName = 'students', userInitial = 'U' }: ProfilePhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(currentUrl);
   const [showCropModal, setShowCropModal] = useState(false);
@@ -151,10 +152,10 @@ export function ProfilePhotoUpload({ userId, currentUrl, onUploaded, tableName =
       <div className="flex flex-col items-center">
         <div className="relative">
           {/* Airbnb-style large profile photo circle - 208px diameter */}
-          <Avatar className="w-52 h-52 ring-4 ring-border/30">
+          <Avatar className="w-52 h-52 ring-4 ring-border/30 shadow-lg">
             <AvatarImage src={previewUrl || undefined} alt="Profile photo" />
-            <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-5xl">
-              <Camera className="w-16 h-16" />
+            <AvatarFallback className="bg-[#222222] text-white text-6xl font-medium">
+              {userInitial}
             </AvatarFallback>
           </Avatar>
           
