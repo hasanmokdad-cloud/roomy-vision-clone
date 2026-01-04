@@ -438,11 +438,11 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
     <div className="min-h-screen bg-white">
       <RoomyNavbar />
       
-      <div className="max-w-[1200px] mx-auto px-6 pt-[120px] pb-32">
+      <div className="max-w-[1200px] mx-auto px-6 pt-[100px] pb-32">
         {/* Two-column layout: Avatar left, Fields right */}
         <div className="flex gap-32">
           {/* Left Column - Avatar (Sticky) */}
-          <div className="flex-shrink-0 self-start sticky top-[120px] z-10">
+          <div className="flex-shrink-0 w-[208px] sticky top-[100px] h-fit z-10">
             <ProfilePhotoUpload 
               userId={userId}
               currentUrl={profilePhotoUrl}
@@ -590,10 +590,12 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
             <div ref={lastContentLineRef} className="border-b border-[#EBEBEB]" />
           </div>
         </div>
+      </div>
 
-        {/* Inline button area - outside flex, spans full content width for exact alignment with fixed bar */}
-        {!showFixedBottomBar && (
-          <div className="border-t border-[#EBEBEB] py-4 flex justify-end">
+      {/* Inline button area - OUTSIDE max-w container, mirrors fixed bar structure exactly */}
+      {!showFixedBottomBar && (
+        <div className="px-6 py-4">
+          <div className="max-w-[1200px] mx-auto flex justify-end items-center">
             <Button
               onClick={handleBottomAction}
               className={`font-semibold px-8 ${
@@ -605,8 +607,8 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
               {getMatchButtonText()}
             </Button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Fixed Bottom Bar - shows only when content not scrolled past */}
       {showFixedBottomBar && (
