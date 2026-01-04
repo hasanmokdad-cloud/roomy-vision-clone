@@ -88,6 +88,7 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<WizardFormData>(INITIAL_DATA);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasSavedProgress, setHasSavedProgress] = useState(false);
 
   const STORAGE_KEY = `roomy_student_onboarding_${user?.id}`;
 
@@ -141,10 +142,17 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
     }
   }, [currentStep]);
 
-  // Load saved progress
+  // Check for saved progress on mount (don't auto-restore, just set flag)
   useEffect(() => {
     if (!user?.id) return;
     
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      setHasSavedProgress(true);
+    }
+  }, [user?.id, STORAGE_KEY]);
+
+  const handleResume = () => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
@@ -152,10 +160,15 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
         setCurrentStep(step);
         setFormData(prev => ({ ...prev, ...data }));
       } catch (e) {
-        console.error('Failed to load saved progress:', e);
+        console.error('Failed to resume:', e);
       }
     }
-  }, [user?.id, STORAGE_KEY]);
+  };
+
+  const handleClearProgress = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setHasSavedProgress(false);
+  };
 
   // Save progress on changes
   useEffect(() => {
@@ -385,7 +398,16 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <StudentAirbnbIntroStep onGetStarted={() => setCurrentStep(1)} />;
+        return (
+          <StudentAirbnbIntroStep 
+            onGetStarted={() => {
+              handleClearProgress();
+              setCurrentStep(1);
+            }}
+            hasSavedProgress={hasSavedProgress}
+            onResume={handleResume}
+          />
+        );
       case 1:
         return <StudentStepOverview phase={1} />;
       case 2:
@@ -460,18 +482,12 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
     }
   };
 
-  // Intro step has its own layout
+  // Intro step has its own layout (no top bar, no footer)
   if (currentStep === 0) {
-    return (
-      <div className="min-h-screen bg-background">
-        <StudentWizardTopBar onSaveAndExit={handleSaveAndExit} />
-        {renderStep()}
-      </div>
-    );
+    return renderStep();
   }
 
   const totalSteps = getTotalSteps();
-  const displayStep = getDisplayStep();
 
   return (
     <div className="min-h-screen bg-background">
@@ -479,14 +495,14 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
       {renderStep()}
       {!isTransitionStep && (
         <StudentWizardFooter
-          currentStep={displayStep}
-          totalSteps={totalSteps}
+          currentStep={currentStep}
           onBack={handleBack}
           onNext={handleNext}
-          isFirstStep={currentStep <= 1}
+          isNextDisabled={!canProceed()}
           isLastStep={currentStep === 11}
-          canProceed={canProceed()}
           isSubmitting={isSubmitting}
+          hasHousingPrefs={formData.accommodation_status === 'need_dorm'}
+          hasPersonality={formData.enable_personality_matching}
         />
       )}
     </div>

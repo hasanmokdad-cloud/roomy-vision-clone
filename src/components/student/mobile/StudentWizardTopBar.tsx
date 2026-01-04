@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import RoomyLogo from '@/assets/roomy-logo.png';
 
 interface StudentWizardTopBarProps {
   onSaveAndExit: () => void;
@@ -7,19 +7,19 @@ interface StudentWizardTopBarProps {
 
 const StudentWizardTopBar = ({ onSaveAndExit }: StudentWizardTopBarProps) => {
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border px-4 py-3 flex items-center justify-between">
-      <Button
-        variant="ghost"
-        size="sm"
+    <div className="fixed top-0 left-0 right-0 z-50 bg-white px-6 py-4 lg:px-12 flex items-center justify-between">
+      <img 
+        src={RoomyLogo} 
+        alt="Roomy" 
+        className="w-8 h-8 rounded-lg object-contain"
+      />
+      <button
         onClick={onSaveAndExit}
-        className="text-foreground hover:bg-muted"
+        className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#222222] border border-[#222222] rounded-full hover:bg-[#F7F7F7] transition-colors"
       >
-        <X className="w-5 h-5 mr-1" />
+        <X className="w-4 h-4" />
         Save & exit
-      </Button>
-      
-      {/* Questions button removed */}
-      <div />
+      </button>
     </div>
   );
 };
