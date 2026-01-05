@@ -11,8 +11,10 @@ interface WizardFooterProps {
   isVideoPreloading?: boolean;
 }
 
-// Phase definitions for progress calculation (16 total steps: 0-15)
-// Step order: 0(intro), 1(filler1), 2(property type), 3(title), 4(gender), 5(highlights), 6(desc), 7(filler2), 8(location), 9-11(amenities), 12(photos), 13(filler3), 14(capacity), 15(review)
+// Phase definitions for progress calculation (25 total steps: 0-24)
+// Step order: 0(intro), 1(filler1), 2-6(property info), 7(filler2), 8-12(location/amenities/photos),
+// 13(filler3), 14(capacity), 15(upload method), 16(room names/excel), 17(room types),
+// 18(bulk selection), 19(pricing), 20(tiered), 21(area), 22(capacity manual), 23(occupancy), 24(media), 25(review)
 
 export function WizardFooter({
   currentStep,
@@ -26,7 +28,7 @@ export function WizardFooter({
 }: WizardFooterProps) {
   // Phase 1 content steps: 2, 3, 4, 5, 6 (property type, title, gender, highlights, description)
   // Phase 2 content steps: 8, 9, 10, 11, 12 (location, amenities x3, photos)
-  // Phase 3 content steps: 14, 15 (capacity, review)
+  // Phase 3 content steps: 14-25 (capacity through review)
   
   // Filler steps and their positions:
   // Step 1: 0% (start of phase 1)
@@ -41,7 +43,7 @@ export function WizardFooter({
   
   const phase1Steps = [2, 3, 4, 5, 6];
   const phase2Steps = [8, 9, 10, 11, 12];
-  const phase3Steps = [14, 15];
+  const phase3Steps = [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25];
   
   let progressPercentage: number;
   

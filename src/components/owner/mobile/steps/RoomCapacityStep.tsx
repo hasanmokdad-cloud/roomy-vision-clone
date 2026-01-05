@@ -5,22 +5,49 @@ import { Badge } from '@/components/ui/badge';
 import { Users } from 'lucide-react';
 import { WizardRoomData } from './RoomNamesStep';
 
-interface RoomOccupancyStepProps {
+interface RoomCapacityStepProps {
   rooms: WizardRoomData[];
   selectedIds: string[];
   onChange: (rooms: WizardRoomData[]) => void;
 }
 
-export function RoomOccupancyStep({ rooms, selectedIds, onChange }: RoomOccupancyStepProps) {
-  // Filter to only show selected rooms
-  const selectedRooms = rooms.filter(r => selectedIds.includes(r.id));
+// Check if room type has auto-capacity
+function hasAutoCapacity(type: string): boolean {
+  const t = type?.toLowerCase() || '';
+  return t.includes('single') || t.includes('double') || t.includes('triple') || t.includes('quadruple');
+}
 
-  const updateOccupancy = (roomId: string, occupied: number) => {
+export function RoomCapacityStep({ rooms, selectedIds, onChange }: RoomCapacityStepProps) {
+  // Filter to only show selected rooms that need manual capacity
+  const roomsNeedingCapacity = rooms.filter(
+    r => selectedIds.includes(r.id) && !hasAutoCapacity(r.type)
+  );
+
+  const updateCapacity = (roomId: string, capacity: number) => {
     const updated = rooms.map(room =>
-      room.id === roomId ? { ...room, capacity_occupied: occupied } : room
+      room.id === roomId ? { ...room, capacity } : room
     );
     onChange(updated);
   };
+
+  if (roomsNeedingCapacity.length === 0) {
+    return (
+      <div className="px-6 pt-24 pb-32">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center"
+        >
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            Capacity set automatically
+          </h1>
+          <p className="text-muted-foreground">
+            All selected rooms have standard types with automatic capacity.
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-6 pt-24 pb-32">
@@ -30,16 +57,16 @@ export function RoomOccupancyStep({ rooms, selectedIds, onChange }: RoomOccupanc
         className="mb-6"
       >
         <h1 className="text-2xl font-bold text-foreground mb-2">
-          Current occupancy
+          Set room capacity
         </h1>
         <p className="text-muted-foreground">
-          How many students currently occupy each room?
+          How many students can each room accommodate?
         </p>
       </motion.div>
 
       <ScrollArea className="h-[calc(100vh-280px)]">
         <div className="space-y-3 pr-4">
-          {selectedRooms.map((room, index) => (
+          {roomsNeedingCapacity.map((room, index) => (
             <motion.div
               key={room.id}
               initial={{ opacity: 0, y: 10 }}
@@ -55,37 +82,27 @@ export function RoomOccupancyStep({ rooms, selectedIds, onChange }: RoomOccupanc
                   <span className="font-semibold text-foreground block truncate">
                     {room.name || `Room`}
                   </span>
-                  <div className="flex items-center gap-2">
-                    {room.type && (
-                      <Badge variant="outline" className="text-xs">
-                        {room.type}
-                      </Badge>
-                    )}
-                    <span className="text-xs text-muted-foreground">
-                      Capacity: {room.capacity || '?'}
-                    </span>
-                  </div>
+                  {room.type && (
+                    <Badge variant="outline" className="text-xs">
+                      {room.type}
+                    </Badge>
+                  )}
                 </div>
               </div>
 
               <Select
-                value={room.capacity_occupied?.toString() || '0'}
-                onValueChange={(v) => updateOccupancy(room.id, parseInt(v))}
-                disabled={!room.capacity}
+                value={room.capacity?.toString() || ''}
+                onValueChange={(v) => updateCapacity(room.id, parseInt(v))}
               >
                 <SelectTrigger className="w-24 h-10 rounded-xl">
-                  <SelectValue />
+                  <SelectValue placeholder="Cap" />
                 </SelectTrigger>
                 <SelectContent>
-                  {room.capacity ? (
-                    Array.from({ length: (room.capacity || 0) + 1 }, (_, i) => i).map(num => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num} / {room.capacity}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="0">0</SelectItem>
-                  )}
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num} {num === 1 ? 'person' : 'people'}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </motion.div>
