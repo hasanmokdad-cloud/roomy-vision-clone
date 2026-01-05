@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion';
-import { MapPin, Users, Camera, FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import { MapPin, Users, Camera, FileText, AlertCircle, CheckCircle, DoorOpen, DollarSign } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { IsometricRoomAnimation } from '../IsometricRoomAnimation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { WizardRoomData } from './RoomNamesStep';
 
 interface ReviewStepProps {
   formData: {
@@ -17,6 +19,7 @@ interface ReviewStepProps {
     galleryImages: string[];
     title: string;
     description: string;
+    rooms?: WizardRoomData[];
   };
   onEditStep: (step: number) => void;
   agreedToOwnerTerms: boolean;
@@ -35,6 +38,11 @@ const cityLabels: Record<string, string> = {
 };
 
 export function ReviewStep({ formData, onEditStep, agreedToOwnerTerms, onAgreedToOwnerTermsChange }: ReviewStepProps) {
+  const rooms = formData.rooms || [];
+  const roomsWithPrice = rooms.filter(r => r.price !== null && r.price > 0);
+  const roomsWithImages = rooms.filter(r => r.images.length > 0);
+  const roomTypes = [...new Set(rooms.map(r => r.type).filter(Boolean))];
+
   const sections = [
     {
       icon: MapPin,
@@ -43,28 +51,46 @@ export function ReviewStep({ formData, onEditStep, agreedToOwnerTerms, onAgreedT
         ? `${cityLabels[formData.city] || formData.city} • ${formData.area}${formData.address ? ` • ${formData.address}` : ''}`
         : 'Not set',
       complete: !!formData.city && !!formData.area,
-      editStep: 2,
+      editStep: 8,
     },
     {
       icon: Users,
       title: 'Capacity & Gender',
       value: `${formData.capacity} rooms • ${genderLabels[formData.genderPreference] || 'Not set'}`,
       complete: formData.capacity > 0 && !!formData.genderPreference,
-      editStep: 3,
+      editStep: 14,
     },
     {
       icon: Camera,
-      title: 'Photos',
+      title: 'Dorm Photos',
       value: `${formData.coverImage ? 1 : 0} cover, ${formData.galleryImages.length} gallery`,
       complete: !!formData.coverImage,
-      editStep: 9,
+      editStep: 12,
     },
     {
       icon: FileText,
       title: 'Description',
       value: formData.title || 'No title',
       complete: !!formData.title,
-      editStep: 11,
+      editStep: 3,
+    },
+    {
+      icon: DoorOpen,
+      title: 'Rooms Setup',
+      value: rooms.length > 0 
+        ? `${rooms.length} rooms • ${roomTypes.length} type${roomTypes.length !== 1 ? 's' : ''}`
+        : 'No rooms added',
+      complete: rooms.length > 0 && rooms.every(r => r.name && r.type),
+      editStep: 16,
+    },
+    {
+      icon: DollarSign,
+      title: 'Room Pricing',
+      value: roomsWithPrice.length > 0
+        ? `${roomsWithPrice.length}/${rooms.length} rooms priced`
+        : 'No pricing set',
+      complete: roomsWithPrice.length === rooms.length,
+      editStep: 19,
     },
   ];
 
@@ -133,16 +159,30 @@ export function ReviewStep({ formData, onEditStep, agreedToOwnerTerms, onAgreedT
         ))}
       </div>
 
-      {/* Amenities count */}
+      {/* Amenities and Room Media counts */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="mt-4 p-4 rounded-xl bg-muted/50"
+        className="mt-4 p-4 rounded-xl bg-muted/50 space-y-2"
       >
         <p className="text-sm text-muted-foreground">
           <strong>{formData.amenities.length}</strong> amenities selected
         </p>
+        {rooms.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            <strong>{roomsWithImages.length}</strong> of {rooms.length} rooms have photos
+          </p>
+        )}
+        {roomTypes.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {roomTypes.map(type => (
+              <Badge key={type} variant="outline" className="text-xs">
+                {type}
+              </Badge>
+            ))}
+          </div>
+        )}
       </motion.div>
 
       {/* Owner Agreement Checkbox */}

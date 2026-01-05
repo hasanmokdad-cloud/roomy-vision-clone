@@ -15,6 +15,16 @@ import { PhotosStep } from './steps/PhotosStep';
 import { DescriptionStep } from './steps/DescriptionStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { PropertyTypeStep } from './steps/PropertyTypeStep';
+import { UploadMethodStep } from './steps/UploadMethodStep';
+import { ExcelUploadStep } from './steps/ExcelUploadStep';
+import { RoomNamesStep, WizardRoomData } from './steps/RoomNamesStep';
+import { RoomTypesStep } from './steps/RoomTypesStep';
+import { RoomBulkSelectionStep } from './steps/RoomBulkSelectionStep';
+import { RoomPricingStep } from './steps/RoomPricingStep';
+import { TieredPricingStep } from './steps/TieredPricingStep';
+import { RoomAreaStep } from './steps/RoomAreaStep';
+import { RoomOccupancyStep } from './steps/RoomOccupancyStep';
+import { RoomMediaStep } from './steps/RoomMediaStep';
 import { ResponsiveAlertModal } from '@/components/ui/responsive-alert-modal';
 import Step1Video from '@/assets/wizard/step1-animation.mp4';
 import Step2Video from '@/assets/wizard/step2-animation.mp4';
@@ -39,11 +49,14 @@ interface WizardFormData {
   highlights: string[];
   title: string;
   description: string;
+  uploadMethod: 'manual' | 'excel' | '';
+  rooms: WizardRoomData[];
+  selectedRoomIds: string[];
 }
 
 const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 
-// Total steps: 0-15 (16 steps)
+// Total steps: 0-23 (24 steps)
 // Step order:
 // 0: Intro
 // 1: Filler Phase 1
@@ -57,9 +70,18 @@ const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 // 9-11: Amenities (essentials, shared, safety)
 // 12: Photos
 // 13: Filler Phase 3
-// 14: Capacity
-// 15: Review
-const TOTAL_STEPS = 16;
+// 14: Capacity (How many rooms?)
+// 15: Upload Method (Manual or Excel)
+// 16: Excel Upload / Room Names (based on upload method)
+// 17: Room Types
+// 18: Bulk Selection (for pricing)
+// 19: Pricing Setup
+// 20: Tiered Pricing
+// 21: Area Setup
+// 22: Occupancy
+// 23: Room Media
+// 24: Review
+const TOTAL_STEPS = 25;
 
 // Transition/filler steps
 const TRANSITION_STEPS = [1, 7, 13];
@@ -88,6 +110,25 @@ function generateDescriptionFromHighlights(highlights: string[]): string {
   return `Welcome to this wonderful dorm! ${descriptions.join(' ')}`;
 }
 
+function createEmptyRoom(index: number): WizardRoomData {
+  return {
+    id: `room-${Date.now()}-${index}`,
+    name: '',
+    type: '',
+    price: null,
+    deposit: null,
+    price_1_student: null,
+    price_2_students: null,
+    deposit_1_student: null,
+    deposit_2_students: null,
+    capacity: null,
+    capacity_occupied: 0,
+    area_m2: null,
+    images: [],
+    video_url: null,
+  };
+}
+
 export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: MobileDormWizardProps) {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
@@ -111,6 +152,9 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     highlights: [],
     title: '',
     description: '',
+    uploadMethod: '',
+    rooms: [],
+    selectedRoomIds: [],
   });
 
   const [hasSavedProgress, setHasSavedProgress] = useState(false);
@@ -170,6 +214,11 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
   const handleBack = () => {
     if (currentStep > 0) {
+      // Skip Excel upload step when going back if manual was selected
+      if (currentStep === 17 && formData.uploadMethod === 'manual') {
+        setCurrentStep(15);
+        return;
+      }
       setCurrentStep(currentStep - 1);
     }
   };
@@ -222,6 +271,28 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     if (currentStep === 5 && formData.highlights.length > 0 && !formData.description) {
       const generatedDesc = generateDescriptionFromHighlights(formData.highlights);
       setFormData(prev => ({ ...prev, description: generatedDesc }));
+    }
+
+    // After capacity step, create empty room objects
+    if (currentStep === 14 && formData.rooms.length !== formData.capacity) {
+      const rooms = Array.from({ length: formData.capacity }, (_, i) => createEmptyRoom(i));
+      setFormData(prev => ({ ...prev, rooms, selectedRoomIds: rooms.map(r => r.id) }));
+    }
+
+    // After upload method, skip to appropriate step
+    if (currentStep === 15) {
+      if (formData.uploadMethod === 'excel') {
+        setCurrentStep(16); // Excel upload step
+        return;
+      } else {
+        setCurrentStep(16); // Room names step (same step number, different content based on method)
+        return;
+      }
+    }
+
+    // After bulk selection, update selected IDs
+    if (currentStep === 18 && formData.selectedRoomIds.length === 0) {
+      setFormData(prev => ({ ...prev, selectedRoomIds: prev.rooms.map(r => r.id) }));
     }
     
     if (currentStep < TOTAL_STEPS - 1) {
@@ -285,6 +356,37 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
       if (error) throw error;
 
+      // Create all rooms for this dorm
+      if (formData.rooms.length > 0 && newDormId) {
+        for (const room of formData.rooms) {
+          const roomPayload = {
+            dorm_id: newDormId,
+            name: room.name || `Room ${formData.rooms.indexOf(room) + 1}`,
+            type: room.type || 'Single',
+            price: room.price || 0,
+            deposit: room.deposit,
+            price_1_student: room.price_1_student,
+            price_2_students: room.price_2_students,
+            deposit_1_student: room.deposit_1_student,
+            deposit_2_students: room.deposit_2_students,
+            capacity: room.capacity || 1,
+            capacity_occupied: room.capacity_occupied || 0,
+            area_m2: room.area_m2,
+            images: room.images,
+            video_url: room.video_url,
+            available: true,
+          };
+
+          const { error: roomError } = await supabase.functions.invoke('create-room', {
+            body: roomPayload
+          });
+
+          if (roomError) {
+            console.error('Error creating room:', roomError);
+          }
+        }
+      }
+
       await clearSavedProgress();
       
       toast({
@@ -313,7 +415,16 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       case 8: return !formData.city || !formData.area;
       case 12: return !formData.coverImage;
       case 14: return formData.capacity < 1 || formData.capacity > 2000;
-      case 15: return !formData.title || !formData.area || !agreedToOwnerTerms;
+      case 15: return !formData.uploadMethod;
+      case 16: 
+        // For manual: check room names; for excel: check if imported
+        if (formData.uploadMethod === 'manual') {
+          return formData.rooms.some(r => !r.name);
+        }
+        return formData.rooms.length === 0;
+      case 17: return formData.rooms.some(r => !r.type);
+      case 18: return formData.selectedRoomIds.length === 0;
+      case 24: return !formData.title || !formData.area || !agreedToOwnerTerms;
       default: return false;
     }
   };
@@ -450,6 +561,84 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           />
         );
       case 15:
+        return (
+          <UploadMethodStep
+            value={formData.uploadMethod}
+            onChange={(v) => setFormData({ ...formData, uploadMethod: v })}
+          />
+        );
+      case 16:
+        if (formData.uploadMethod === 'excel') {
+          return (
+            <ExcelUploadStep
+              roomCount={formData.capacity}
+              onImport={(rooms) => setFormData({ ...formData, rooms, selectedRoomIds: rooms.map(r => r.id) })}
+              importedCount={formData.rooms.length}
+            />
+          );
+        }
+        return (
+          <RoomNamesStep
+            rooms={formData.rooms}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+          />
+        );
+      case 17:
+        return (
+          <RoomTypesStep
+            rooms={formData.rooms}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+          />
+        );
+      case 18:
+        return (
+          <RoomBulkSelectionStep
+            rooms={formData.rooms}
+            selectedIds={formData.selectedRoomIds}
+            onSelectionChange={(ids) => setFormData({ ...formData, selectedRoomIds: ids })}
+            title="Select rooms for pricing"
+            subtitle="Choose which rooms to set prices for"
+          />
+        );
+      case 19:
+        return (
+          <RoomPricingStep
+            rooms={formData.rooms}
+            selectedIds={formData.selectedRoomIds}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+          />
+        );
+      case 20:
+        return (
+          <TieredPricingStep
+            rooms={formData.rooms}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+          />
+        );
+      case 21:
+        return (
+          <RoomAreaStep
+            rooms={formData.rooms}
+            selectedIds={formData.selectedRoomIds}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+          />
+        );
+      case 22:
+        return (
+          <RoomOccupancyStep
+            rooms={formData.rooms}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+          />
+        );
+      case 23:
+        return (
+          <RoomMediaStep
+            rooms={formData.rooms}
+            selectedIds={formData.selectedRoomIds}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+          />
+        );
+      case 24:
         return (
           <ReviewStep
             formData={formData}
