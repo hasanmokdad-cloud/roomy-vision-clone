@@ -37,6 +37,7 @@ interface RoomData {
   type: string;
   capacity: number | null;
   capacity_occupied: number | null;
+  roomy_confirmed_occupants: number | null;
   area_m2: number | null;
   available: boolean;
   images?: string[] | null;
@@ -45,6 +46,7 @@ interface RoomData {
   price_2_students?: number | null;
   deposit_1_student?: number | null;
   deposit_2_students?: number | null;
+  confirmed_occupants?: Array<{ id: string; full_name: string }>;
 }
 
 interface ImportResult {
@@ -113,15 +115,35 @@ export default function BulkRoomOps() {
       for (const dorm of ownerDorms) {
         const { data: rooms, error: roomsError } = await supabase
           .from("rooms")
-          .select("id, name, price, deposit, type, capacity, capacity_occupied, area_m2, available, images, video_url, price_1_student, price_2_students, deposit_1_student, deposit_2_students")
+          .select("id, name, price, deposit, type, capacity, capacity_occupied, roomy_confirmed_occupants, area_m2, available, images, video_url, price_1_student, price_2_students, deposit_1_student, deposit_2_students")
           .eq("dorm_id", dorm.id)
           .order("name", { ascending: true });
 
         if (roomsError) throw roomsError;
 
+        // Fetch confirmed occupants for each room
+        const roomsWithOccupants = await Promise.all((rooms || []).map(async (room) => {
+          const { data: claims } = await supabase
+            .from('room_occupancy_claims')
+            .select('student_id')
+            .eq('room_id', room.id)
+            .eq('status', 'confirmed');
+          
+          let confirmed_occupants: Array<{ id: string; full_name: string }> = [];
+          if (claims && claims.length > 0) {
+            const { data: students } = await supabase
+              .from('students')
+              .select('id, full_name')
+              .in('id', claims.map(c => c.student_id));
+            confirmed_occupants = students || [];
+          }
+          
+          return { ...room, confirmed_occupants };
+        }));
+
         dormsWithRooms.push({
           ...dorm,
-          rooms: rooms || []
+          rooms: roomsWithOccupants
         });
       }
 
@@ -146,11 +168,7 @@ export default function BulkRoomOps() {
       "Room", 
       "Type", 
       "Monthly Price", 
-      "Price (2 students)", 
-      "Price (1 student)", 
       "Deposit", 
-      "Deposit (2 students)", 
-      "Deposit (1 student)", 
       "Capacity", 
       "Capacity Occupied", 
       "Area (m²)"
@@ -163,26 +181,21 @@ export default function BulkRoomOps() {
         room.name,
         room.type || "",
         room.price || "",
-        room.price_2_students || "",
-        room.price_1_student || "",
         room.deposit || "",
-        room.deposit_2_students || "",
-        room.deposit_1_student || "",
         room.capacity || "",
         room.capacity_occupied || 0,
         room.area_m2 || ""
       ]);
       data = [headers, ...roomRows];
     } else {
-      data.push(["1", "Single", "500", "", "", "200", "", "", "1", "0", "15"]);
-      data.push(["2", "Double", "700", "", "400", "300", "", "150", "2", "0", "20"]);
-      data.push(["B1", "Triple", "900", "700", "450", "400", "300", "180", "3", "0", "30"]);
+      data.push(["1", "Single", "500", "200", "1", "0", "15"]);
+      data.push(["2", "Double", "700", "300", "2", "0", "20"]);
+      data.push(["B1", "Triple", "900", "400", "3", "0", "30"]);
     }
 
     const ws = XLSX.utils.aoa_to_sheet(data);
     ws['!cols'] = [
-      { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 18 }, { wch: 18 }, 
-      { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 12 }, { wch: 18 }, { wch: 12 },
+      { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 12 },
     ];
 
     XLSX.utils.book_append_sheet(wb, ws, "Rooms");
@@ -492,7 +505,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
 
   // Compute Open/Full room counts
   const reservationCounts = useMemo(() => {
-    const full = dorm.rooms.filter(r => (r.capacity_occupied || 0) >= (r.capacity || 1)).length;
+    const full = dorm.rooms.filter(r => (r.roomy_confirmed_occupants || 0) >= (r.capacity || 1)).length;
     return { full, open: dorm.rooms.length - full };
   }, [dorm.rooms]);
 
@@ -530,7 +543,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
     setSelectedReservation(status);
     if (!status) return;
     const roomsWithStatus = dorm.rooms.filter(r => {
-      const isFull = (r.capacity_occupied || 0) >= (r.capacity || 1);
+      const isFull = (r.roomy_confirmed_occupants || 0) >= (r.capacity || 1);
       return status === 'full' ? isFull : !isFull;
     });
     setSelectedRooms(new Set(roomsWithStatus.map(r => r.id)));
@@ -539,7 +552,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
   // Mark all full rooms as unavailable
   const markFullRoomsUnavailable = async () => {
     const fullAvailableRooms = dorm.rooms.filter(r => 
-      (r.capacity_occupied || 0) >= (r.capacity || 1) && r.available
+      (r.roomy_confirmed_occupants || 0) >= (r.capacity || 1) && r.available
     );
     
     if (fullAvailableRooms.length === 0) {
@@ -1012,6 +1025,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                           />
                         </th>
                         <th className="p-3 font-medium text-muted-foreground">Room</th>
+                        <th className="p-3 font-medium text-muted-foreground">Students</th>
                         <th className="p-3 font-medium text-muted-foreground">Type</th>
                         <th className="p-3 font-medium text-muted-foreground">Price</th>
                         <th className="p-3 font-medium text-muted-foreground">Deposit</th>
@@ -1039,6 +1053,15 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                             </td>
                             <td className="p-3 font-medium">{room.name}</td>
                             <td className="p-3">
+                              {room.confirmed_occupants && room.confirmed_occupants.length > 0 ? (
+                                <span className="text-sm" title={room.confirmed_occupants.map(s => s.full_name).join(', ')}>
+                                  {room.confirmed_occupants.map(s => s.full_name).join(', ')}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </td>
+                            <td className="p-3">
                               <div className="flex items-center gap-1">
                                 {room.type}
                                 {roomIsTiered && (
@@ -1058,7 +1081,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                               )}
                             </td>
                             <td className="p-3">{room.deposit ? `$${room.deposit}` : "-"}</td>
-                            <td className="p-3">{room.capacity_occupied || 0}/{room.capacity || "-"}</td>
+                            <td className="p-3">{room.roomy_confirmed_occupants || 0}/{room.capacity || "-"}</td>
                             <td className="p-3">
                               {room.available ? (
                                 <Badge variant="default" className="gap-1">
@@ -1070,7 +1093,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                               )}
                             </td>
                             <td className="p-3">
-                              {(room.capacity_occupied || 0) >= (room.capacity || 1) ? (
+                              {(room.roomy_confirmed_occupants || 0) >= (room.capacity || 1) ? (
                                 <Badge variant="destructive" className="gap-1">
                                   <AlertCircle className="w-3 h-3" />
                                   Full

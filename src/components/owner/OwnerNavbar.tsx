@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { NotificationBellPopover } from '@/components/shared/NotificationBellPopover';
 import { supabase } from '@/integrations/supabase/client';
 import { LanguageModal } from '@/components/LanguageModal';
+import { Badge } from '@/components/ui/badge';
 interface OwnerNavbarProps {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
@@ -86,6 +87,21 @@ export function OwnerNavbar({ sidebarOpen, onToggleSidebar }: OwnerNavbarProps) 
 
         {/* Right side actions */}
         <div className="flex items-center gap-2">
+          {/* Messages Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative"
+            onClick={() => navigate('/messages')}
+          >
+            <MessageSquare className="w-5 h-5" />
+            {unreadMessages > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white text-xs rounded-full flex items-center justify-center">
+                {unreadMessages > 9 ? '9+' : unreadMessages}
+              </span>
+            )}
+          </Button>
+
           {/* Notification Bell */}
           {ownerId && (
             <NotificationBellPopover 
@@ -110,15 +126,6 @@ export function OwnerNavbar({ sidebarOpen, onToggleSidebar }: OwnerNavbarProps) 
               <DropdownMenuItem onClick={() => navigate('/profile')}>
                 <User className="w-4 h-4 mr-2" />
                 My Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/messages')}>
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Messages
-                {unreadMessages > 0 && (
-                  <span className="ml-auto w-5 h-5 bg-gradient-to-r from-[#6D5BFF] to-[#9A6AFF] text-white text-xs rounded-full flex items-center justify-center">
-                    {unreadMessages > 9 ? '9+' : unreadMessages}
-                  </span>
-                )}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/about')}>
                 <Info className="w-4 h-4 mr-2" />
