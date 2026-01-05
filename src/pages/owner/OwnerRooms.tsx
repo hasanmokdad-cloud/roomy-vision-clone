@@ -320,9 +320,9 @@ export default function OwnerRooms() {
                                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                                     {dorm.rooms.map((room) => {
                                       const isAvailable = room.available;
-                                      // Use roomy_confirmed_occupants for the occupancy bar
+                                      // Use capacity_occupied (owner-entered) for the occupancy bar
                                       const occupancyPercent = room.capacity > 0 
-                                        ? (room.roomy_confirmed_occupants / room.capacity) * 100 
+                                        ? ((room.capacity_occupied || 0) / room.capacity) * 100 
                                         : 0;
                                       
                                       return (
@@ -361,9 +361,9 @@ export default function OwnerRooms() {
                                           <div className="flex items-center justify-between mb-3">
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                               <Users className="w-4 h-4" />
-                                              <span>{room.roomy_confirmed_occupants} / {room.capacity} confirmed</span>
+                                              <span>{room.capacity_occupied || 0} / {room.capacity} occupied</span>
                                             </div>
-                                            {room.roomy_confirmed_occupants >= room.capacity ? (
+                                            {(room.capacity_occupied || 0) >= room.capacity ? (
                                               <Badge variant="destructive" className="text-xs gap-1">
                                                 <AlertCircle className="w-3 h-3" />
                                                 Full

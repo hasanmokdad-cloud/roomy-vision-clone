@@ -94,8 +94,7 @@ Deno.serve(async (req) => {
           .from('rooms')
           .update({
             capacity_occupied: Math.max(0, (room.capacity_occupied || 0) - 1),
-            roomy_confirmed_occupants: Math.max(0, (room.roomy_confirmed_occupants || 0) - 1),
-            available: true
+            roomy_confirmed_occupants: Math.max(0, (room.roomy_confirmed_occupants || 0) - 1)
           })
           .eq('id', student.current_room_id);
 

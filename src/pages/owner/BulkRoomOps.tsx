@@ -505,7 +505,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
 
   // Compute Open/Full room counts
   const reservationCounts = useMemo(() => {
-    const full = dorm.rooms.filter(r => (r.roomy_confirmed_occupants || 0) >= (r.capacity || 1)).length;
+    const full = dorm.rooms.filter(r => (r.capacity_occupied || 0) >= (r.capacity || 1)).length;
     return { full, open: dorm.rooms.length - full };
   }, [dorm.rooms]);
 
@@ -543,7 +543,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
     setSelectedReservation(status);
     if (!status) return;
     const roomsWithStatus = dorm.rooms.filter(r => {
-      const isFull = (r.roomy_confirmed_occupants || 0) >= (r.capacity || 1);
+      const isFull = (r.capacity_occupied || 0) >= (r.capacity || 1);
       return status === 'full' ? isFull : !isFull;
     });
     setSelectedRooms(new Set(roomsWithStatus.map(r => r.id)));
@@ -552,7 +552,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
   // Mark all full rooms as unavailable
   const markFullRoomsUnavailable = async () => {
     const fullAvailableRooms = dorm.rooms.filter(r => 
-      (r.roomy_confirmed_occupants || 0) >= (r.capacity || 1) && r.available
+      (r.capacity_occupied || 0) >= (r.capacity || 1) && r.available
     );
     
     if (fullAvailableRooms.length === 0) {
@@ -1081,7 +1081,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                               )}
                             </td>
                             <td className="p-3">{room.deposit ? `$${room.deposit}` : "-"}</td>
-                            <td className="p-3">{room.roomy_confirmed_occupants || 0}/{room.capacity || "-"}</td>
+                            <td className="p-3">{room.capacity_occupied || 0}/{room.capacity || "-"}</td>
                             <td className="p-3">
                               {room.available ? (
                                 <Badge variant="default" className="gap-1">
@@ -1093,7 +1093,7 @@ function DormBulkSection({ dorm, onDownload, onImport, importing, triggerFileInp
                               )}
                             </td>
                             <td className="p-3">
-                              {(room.roomy_confirmed_occupants || 0) >= (room.capacity || 1) ? (
+                              {(room.capacity_occupied || 0) >= (room.capacity || 1) ? (
                                 <Badge variant="destructive" className="gap-1">
                                   <AlertCircle className="w-3 h-3" />
                                   Full
