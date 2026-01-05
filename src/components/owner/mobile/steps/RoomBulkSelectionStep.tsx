@@ -1,60 +1,82 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { CheckSquare, Square } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { CheckCircle2, Circle } from 'lucide-react';
 import { WizardRoomData } from './RoomNamesStep';
 
 interface RoomBulkSelectionStepProps {
   rooms: WizardRoomData[];
   selectedIds: string[];
+  completedIds?: string[];
   onSelectionChange: (ids: string[]) => void;
   title?: string;
   subtitle?: string;
 }
 
+// Check if room has all required data
+function isRoomComplete(room: WizardRoomData): boolean {
+  return !!(
+    room.type &&
+    room.price !== null &&
+    room.area_m2 !== null &&
+    room.capacity !== null
+  );
+}
+
 export function RoomBulkSelectionStep({
   rooms,
   selectedIds,
+  completedIds = [],
   onSelectionChange,
-  title = "Select rooms to update",
-  subtitle = "Use filters to quickly select groups of rooms"
+  title = 'Select rooms for pricing',
+  subtitle = 'Choose which rooms to configure'
 }: RoomBulkSelectionStepProps) {
+  
   const uniqueTypes = useMemo(() => {
-    const types = [...new Set(rooms.map(r => r.type).filter(Boolean))];
-    return types.sort();
+    const types = rooms.map(r => r.type).filter(Boolean);
+    return [...new Set(types)];
   }, [rooms]);
 
-  const selectAll = () => {
-    onSelectionChange(rooms.map(r => r.id));
-  };
-
-  const deselectAll = () => {
-    onSelectionChange([]);
-  };
+  // Separate completed and incomplete rooms
+  const incompleteRooms = useMemo(() => 
+    rooms.filter(r => !completedIds.includes(r.id)),
+    [rooms, completedIds]
+  );
+  
+  const completedRooms = useMemo(() => 
+    rooms.filter(r => completedIds.includes(r.id)),
+    [rooms, completedIds]
+  );
 
   const selectByType = (type: string) => {
-    const matching = rooms.filter(r => r.type === type).map(r => r.id);
-    onSelectionChange(matching);
+    if (!type) return;
+    const idsOfType = incompleteRooms.filter(r => r.type === type).map(r => r.id);
+    onSelectionChange(idsOfType);
   };
 
   const toggleRoom = (roomId: string) => {
-    if (selectedIds.includes(roomId)) {
-      onSelectionChange(selectedIds.filter(id => id !== roomId));
-    } else {
-      onSelectionChange([...selectedIds, roomId]);
-    }
+    // Only allow toggling incomplete rooms
+    if (completedIds.includes(roomId)) return;
+    
+    onSelectionChange(
+      selectedIds.includes(roomId)
+        ? selectedIds.filter(id => id !== roomId)
+        : [...selectedIds, roomId]
+    );
   };
+
+  const selectedCount = selectedIds.length;
+  const allComplete = incompleteRooms.length === 0;
 
   return (
     <div className="px-6 pt-24 pb-32">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-6"
+        className="mb-4"
       >
         <h1 className="text-2xl font-bold text-foreground mb-2">
           {title}
@@ -64,83 +86,144 @@ export function RoomBulkSelectionStep({
         </p>
       </motion.div>
 
+      {/* Progress indicator */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="flex flex-wrap gap-2 mb-4"
+        transition={{ delay: 0.05 }}
+        className="mb-4"
       >
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={selectAll}
-          className="gap-2 rounded-xl"
-        >
-          <CheckSquare className="w-4 h-4" />
-          Select All
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={deselectAll}
-          className="gap-2 rounded-xl"
-        >
-          <Square className="w-4 h-4" />
-          Deselect All
-        </Button>
-        {uniqueTypes.length > 0 && (
-          <Select onValueChange={selectByType}>
-            <SelectTrigger className="w-36 h-9 rounded-xl">
-              <SelectValue placeholder="By type" />
-            </SelectTrigger>
-            <SelectContent>
-              {uniqueTypes.map((type) => (
-                <SelectItem key={type} value={type}>{type}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        <div className="flex items-center gap-2 text-sm">
+          <CheckCircle2 className="w-4 h-4 text-green-500" />
+          <span className="text-muted-foreground">
+            {completedRooms.length} of {rooms.length} rooms complete
+          </span>
+        </div>
       </motion.div>
 
-      <Badge variant="secondary" className="mb-4">
-        {selectedIds.length} of {rooms.length} selected
-      </Badge>
+      {allComplete ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-12"
+        >
+          <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            All rooms configured!
+          </h2>
+          <p className="text-muted-foreground">
+            Continue to upload room photos and videos.
+          </p>
+        </motion.div>
+      ) : (
+        <>
+          {/* Filter by type - only option now */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-4"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">Select by type:</span>
+              <Select onValueChange={selectByType}>
+                <SelectTrigger className="flex-1 h-10 rounded-xl">
+                  <SelectValue placeholder="Choose room type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {uniqueTypes.map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {selectedCount > 0 && (
+              <Badge variant="secondary" className="mt-2 text-xs">
+                {selectedCount} room{selectedCount !== 1 ? 's' : ''} selected
+              </Badge>
+            )}
+          </motion.div>
 
-      <ScrollArea className="h-[calc(100vh-400px)]">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pr-4">
-          {rooms.map((room, index) => (
-            <motion.button
-              key={room.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.02 }}
-              onClick={() => toggleRoom(room.id)}
-              className={`relative bg-card border-2 rounded-xl p-3 text-left transition-all ${
-                selectedIds.includes(room.id)
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <div className="absolute top-2 right-2">
-                <Checkbox checked={selectedIds.includes(room.id)} />
-              </div>
-              <span className="font-semibold text-foreground block">
-                {room.name || `Room ${index + 1}`}
-              </span>
-              {room.type && (
-                <Badge variant="outline" className="mt-1 text-xs">
-                  {room.type}
-                </Badge>
+          <ScrollArea className="h-[calc(100vh-400px)]">
+            <div className="space-y-3 pr-4">
+              {/* Incomplete rooms (selectable) */}
+              {incompleteRooms.map((room, index) => (
+                <motion.div
+                  key={room.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.02 }}
+                  className={`bg-card border rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-colors ${
+                    selectedIds.includes(room.id) 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-border'
+                  }`}
+                  onClick={() => toggleRoom(room.id)}
+                >
+                  <Checkbox
+                    checked={selectedIds.includes(room.id)}
+                    onCheckedChange={() => toggleRoom(room.id)}
+                    className="h-5 w-5"
+                  />
+                  <Circle className="w-4 h-4 text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <span className="font-semibold text-foreground block truncate">
+                      {room.name}
+                    </span>
+                    <div className="flex items-center gap-2 mt-1">
+                      {room.type && (
+                        <Badge variant="outline" className="text-xs">
+                          {room.type}
+                        </Badge>
+                      )}
+                      {room.price && (
+                        <span className="text-xs text-muted-foreground">
+                          ${room.price}/mo
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+
+              {/* Completed rooms (not selectable, shown with checkmark) */}
+              {completedRooms.length > 0 && (
+                <>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wide pt-4 pb-2">
+                    Completed
+                  </div>
+                  {completedRooms.map((room, index) => (
+                    <motion.div
+                      key={room.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: (incompleteRooms.length + index) * 0.02 }}
+                      className="bg-muted/50 border border-border rounded-xl p-4 flex items-center gap-3 opacity-60"
+                    >
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      <div className="flex-1 min-w-0">
+                        <span className="font-semibold text-foreground block truncate">
+                          {room.name}
+                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          {room.type && (
+                            <Badge variant="outline" className="text-xs">
+                              {room.type}
+                            </Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            ${room.price}/mo • {room.area_m2}m²
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </>
               )}
-              {room.price && (
-                <span className="text-xs text-muted-foreground mt-1 block">
-                  ${room.price}/mo
-                </span>
-              )}
-            </motion.button>
-          ))}
-        </div>
-      </ScrollArea>
+            </div>
+          </ScrollArea>
+        </>
+      )}
     </div>
   );
 }
