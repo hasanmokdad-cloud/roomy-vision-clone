@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Users, Camera, FileText, AlertCircle, CheckCircle, DoorOpen, DollarSign } from 'lucide-react';
+import { MapPin, Users, Camera, FileText, AlertCircle, CheckCircle, DoorOpen, DollarSign, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { IsometricRoomAnimation } from '../IsometricRoomAnimation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { WizardRoomData } from './RoomNamesStep';
+import { WizardDormPreviewModal } from '../WizardDormPreviewModal';
 
 interface ReviewStepProps {
   formData: {
@@ -20,10 +23,13 @@ interface ReviewStepProps {
     title: string;
     description: string;
     rooms?: WizardRoomData[];
+    shuttle?: boolean;
   };
   onEditStep: (step: number) => void;
   agreedToOwnerTerms: boolean;
   onAgreedToOwnerTermsChange: (agreed: boolean) => void;
+  onSubmit?: () => void;
+  submitting?: boolean;
 }
 
 const genderLabels: Record<string, string> = {
@@ -37,7 +43,16 @@ const cityLabels: Record<string, string> = {
   beirut: 'Beirut',
 };
 
-export function ReviewStep({ formData, onEditStep, agreedToOwnerTerms, onAgreedToOwnerTermsChange }: ReviewStepProps) {
+export function ReviewStep({ 
+  formData, 
+  onEditStep, 
+  agreedToOwnerTerms, 
+  onAgreedToOwnerTermsChange,
+  onSubmit,
+  submitting = false
+}: ReviewStepProps) {
+  const [showPreview, setShowPreview] = useState(false);
+  
   const rooms = formData.rooms || [];
   const roomsWithPrice = rooms.filter(r => r.price !== null && r.price > 0);
   const roomsWithImages = rooms.filter(r => r.images.length > 0);
@@ -185,6 +200,23 @@ export function ReviewStep({ formData, onEditStep, agreedToOwnerTerms, onAgreedT
         )}
       </motion.div>
 
+      {/* Preview Listing Button */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.52 }}
+        className="mt-4"
+      >
+        <Button
+          variant="outline"
+          className="w-full gap-2 rounded-xl h-12"
+          onClick={() => setShowPreview(true)}
+        >
+          <Eye className="w-5 h-5" />
+          Preview Your Listing
+        </Button>
+      </motion.div>
+
       {/* Owner Agreement Checkbox */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -252,6 +284,31 @@ export function ReviewStep({ formData, onEditStep, agreedToOwnerTerms, onAgreedT
           </>
         )}
       </motion.div>
+
+      {/* Preview Modal */}
+      <WizardDormPreviewModal
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        onSubmit={() => {
+          setShowPreview(false);
+          onSubmit?.();
+        }}
+        formData={{
+          title: formData.title,
+          city: formData.city,
+          area: formData.area,
+          address: formData.address,
+          description: formData.description,
+          capacity: formData.capacity,
+          coverImage: formData.coverImage,
+          galleryImages: formData.galleryImages,
+          amenities: formData.amenities,
+          shuttle: formData.shuttle || false,
+          genderPreference: formData.genderPreference,
+          rooms: rooms,
+        }}
+        submitting={submitting}
+      />
     </div>
   );
 }

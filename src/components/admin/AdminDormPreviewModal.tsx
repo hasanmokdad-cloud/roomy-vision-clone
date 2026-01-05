@@ -1,7 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Building2, MapPin, DollarSign, Users, Phone, Mail, Globe, Calendar, Image as ImageIcon } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Building2, MapPin, DollarSign, Users, Phone, Mail, Globe, Calendar, Image as ImageIcon, DoorOpen, Video, ChevronDown, Maximize2 } from "lucide-react";
+import { useState } from "react";
 
 interface AdminDormPreviewModalProps {
   dorm: any;
@@ -10,7 +12,13 @@ interface AdminDormPreviewModalProps {
 }
 
 export function AdminDormPreviewModal({ dorm, isOpen, onClose }: AdminDormPreviewModalProps) {
+  const [roomsExpanded, setRoomsExpanded] = useState(true);
+  
   if (!dorm) return null;
+
+  const rooms = dorm.rooms || [];
+  const roomTypes = [...new Set(rooms.map((r: any) => r.type).filter(Boolean))] as string[];
+  const roomsWithMedia = rooms.filter((r: any) => (r.images && r.images.length > 0) || r.video_url).length;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -196,6 +204,132 @@ export function AdminDormPreviewModal({ dorm, isOpen, onClose }: AdminDormPrevie
                   ))}
                 </div>
               </div>
+            )}
+
+            {/* Rooms Section */}
+            {rooms.length > 0 && (
+              <Collapsible open={roomsExpanded} onOpenChange={setRoomsExpanded}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <DoorOpen className="w-4 h-4" />
+                    Rooms ({rooms.length})
+                  </h4>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">{roomsWithMedia} with media</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${roomsExpanded ? 'rotate-180' : ''}`} />
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  {/* Room Type Summary */}
+                  {roomTypes.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {roomTypes.map(type => {
+                        const count = rooms.filter((r: any) => r.type === type).length;
+                        return (
+                          <Badge key={type} variant="outline" className="text-xs">
+                            {type} ({count})
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Individual Room Cards */}
+                  <div className="space-y-3">
+                    {rooms.map((room: any) => (
+                      <div key={room.id} className="border rounded-lg p-4 bg-muted/30">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <p className="font-medium">{room.name}</p>
+                            {room.type && (
+                              <Badge variant="secondary" className="text-xs mt-1">{room.type}</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {room.images && room.images.length > 0 && (
+                              <Badge variant="outline" className="text-xs">
+                                <ImageIcon className="w-3 h-3 mr-1" />
+                                {room.images.length}
+                              </Badge>
+                            )}
+                            {room.video_url && (
+                              <Badge variant="outline" className="text-xs">
+                                <Video className="w-3 h-3 mr-1" />
+                                Video
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Price:</span>
+                            <p className="font-medium">${room.price}/mo</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Deposit:</span>
+                            <p className="font-medium">${room.deposit || 0}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Capacity:</span>
+                            <p className="font-medium">{room.capacity || '-'} ({room.capacity_occupied || 0} occupied)</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Area:</span>
+                            <p className="font-medium">{room.area_m2 ? `${room.area_m2}m²` : '-'}</p>
+                          </div>
+                        </div>
+
+                        {/* Tiered Pricing */}
+                        {(room.price_1_student || room.price_2_students) && (
+                          <div className="mt-3 pt-3 border-t">
+                            <p className="text-xs text-muted-foreground mb-1">Tiered Pricing:</p>
+                            <div className="flex gap-3 text-xs">
+                              {room.price_1_student && (
+                                <span>1 student: ${room.price_1_student}/mo</span>
+                              )}
+                              {room.price_2_students && (
+                                <span>2 students: ${room.price_2_students}/mo</span>
+                              )}
+                            </div>
+                            {(room.deposit_1_student || room.deposit_2_students) && (
+                              <div className="flex gap-3 text-xs mt-1 text-muted-foreground">
+                                {room.deposit_1_student && (
+                                  <span>Deposit (1): ${room.deposit_1_student}</span>
+                                )}
+                                {room.deposit_2_students && (
+                                  <span>Deposit (2): ${room.deposit_2_students}</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Room Images Thumbnails */}
+                        {room.images && room.images.length > 0 && (
+                          <div className="mt-3 pt-3 border-t">
+                            <div className="flex gap-2 flex-wrap">
+                              {room.images.slice(0, 4).map((img: string, idx: number) => (
+                                <img
+                                  key={idx}
+                                  src={img}
+                                  alt=""
+                                  className="w-12 h-12 rounded-lg object-cover"
+                                />
+                              ))}
+                              {room.images.length > 4 && (
+                                <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                                  +{room.images.length - 4}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
 
             {/* Rejection Reason (if rejected) */}
