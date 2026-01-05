@@ -43,7 +43,7 @@ export default function AdminPendingReview() {
     try {
       const { data, error } = await supabase
         .from('dorms')
-        .select('*, rooms(id, name, type, price, available)')
+        .select('*, rooms(id, name, type, price, deposit, capacity, capacity_occupied, area_m2, images, video_url, price_1_student, price_2_students, deposit_1_student, deposit_2_students, available)')
         .eq('verification_status', 'Pending')
         .order('created_at', { ascending: false });
 

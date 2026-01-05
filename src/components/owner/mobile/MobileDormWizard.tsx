@@ -732,10 +732,12 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       case 25:
         return (
           <ReviewStep
-            formData={formData}
+            formData={{...formData, shuttle: formData.shuttle || false}}
             onEditStep={setCurrentStep}
             agreedToOwnerTerms={agreedToOwnerTerms}
             onAgreedToOwnerTermsChange={setAgreedToOwnerTerms}
+            onSubmit={handleSubmit}
+            submitting={submitting}
           />
         );
       default:
