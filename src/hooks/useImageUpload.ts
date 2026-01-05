@@ -16,7 +16,7 @@ export interface ImageUploadState {
   uploadedUrl?: string;
 }
 
-export const useImageUpload = (bucketName: string = 'room-images', folder: string = '') => {
+export const useImageUpload = (bucketName: string = 'room-images', folder: string = 'wizard-rooms') => {
   const [images, setImages] = useState<ImageUploadState[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
