@@ -12,12 +12,12 @@ export const studentRoomTypes = [
 ];
 
 // Full list of room types for owners - includes base types and variations
+// Note: "Apartment" is excluded as apartments are property types that contain rooms
 export const ownerRoomTypes = [
   "Single",
   "Double",
   "Triple",
   "Quadruple",
-  "Apartment",
   "Suite",
   "Studio",
   "Junior Suite",

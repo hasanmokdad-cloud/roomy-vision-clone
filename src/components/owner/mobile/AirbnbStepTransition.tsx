@@ -20,8 +20,8 @@ const phaseContent = {
   },
   3: {
     title: 'Step 3',
-    heading: 'Finish up and publish',
-    description: "Let us know your capacity and submit for verification.",
+    heading: 'Set up your rooms',
+    description: "Add your rooms, set pricing, upload photos, and prepare for launch.",
   },
 };
 
