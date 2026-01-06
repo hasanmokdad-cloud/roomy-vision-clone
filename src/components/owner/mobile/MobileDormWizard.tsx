@@ -30,6 +30,7 @@ import { HybridCapacityStep } from './steps/HybridCapacityStep';
 import { ResponsiveAlertModal } from '@/components/ui/responsive-alert-modal';
 import Step1Video from '@/assets/wizard/step1-animation.mp4';
 import Step2Video from '@/assets/wizard/step2-animation.mp4';
+import type { AmenityDetails } from '@/types/amenities';
 
 interface MobileDormWizardProps {
   onBeforeSubmit?: () => Promise<string | null>;
@@ -47,6 +48,7 @@ interface WizardFormData {
   dormRoomCount?: number;    // For hybrid properties
   apartmentCount?: number;   // For hybrid properties
   amenities: string[];
+  amenityDetails: AmenityDetails;
   genderPreference: string;
   coverImage: string;
   galleryImages: string[];
@@ -70,6 +72,7 @@ const INITIAL_FORM_DATA: WizardFormData = {
   dormRoomCount: undefined,
   apartmentCount: undefined,
   amenities: [],
+  amenityDetails: {},
   genderPreference: '',
   coverImage: '',
   galleryImages: [],
@@ -786,6 +789,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             category="essentials"
             selectedAmenities={formData.amenities}
             onToggle={toggleAmenity}
+            amenityDetails={formData.amenityDetails}
+            onUpdateAmenityDetails={(details) => setFormData({ ...formData, amenityDetails: details })}
           />
         );
       case 10:
@@ -794,6 +799,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             category="shared"
             selectedAmenities={formData.amenities}
             onToggle={toggleAmenity}
+            amenityDetails={formData.amenityDetails}
+            onUpdateAmenityDetails={(details) => setFormData({ ...formData, amenityDetails: details })}
           />
         );
       case 11:
@@ -802,6 +809,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             category="safety"
             selectedAmenities={formData.amenities}
             onToggle={toggleAmenity}
+            amenityDetails={formData.amenityDetails}
+            onUpdateAmenityDetails={(details) => setFormData({ ...formData, amenityDetails: details })}
           />
         );
       case 12:
