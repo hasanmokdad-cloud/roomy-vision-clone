@@ -11,18 +11,18 @@ export function IntroStep({ onGetStarted }: IntroStepProps) {
   const steps = [
     {
       icon: Home,
-      title: 'Tell us about your dorm',
-      description: 'Property type, title, gender preference, highlights & description',
+      title: 'Tell us about your property',
+      description: 'Property type, name, gender preference, highlights & description.',
     },
     {
       icon: Camera,
       title: 'Make it stand out',
-      description: 'Location, essential services, amenities & photos',
+      description: 'Location, essential services, amenities & photos.',
     },
     {
       icon: CheckCircle,
       title: 'Finish up and publish',
-      description: 'Room details, pricing, occupancy & media',
+      description: 'Room details, pricing, occupancy & media.',
     },
   ];
 
@@ -45,7 +45,7 @@ export function IntroStep({ onGetStarted }: IntroStepProps) {
         className="text-center mb-8"
       >
         <h1 className="text-3xl font-bold text-foreground mb-2">
-          List your dorm on Roomy
+          List your property on Roomy
         </h1>
         <p className="text-muted-foreground">
           It takes about 5–7 minutes. You can save and finish later.

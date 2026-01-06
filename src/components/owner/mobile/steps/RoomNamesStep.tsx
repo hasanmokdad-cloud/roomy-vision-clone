@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Wand2 } from 'lucide-react';
+import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 export interface WizardRoomData {
   id: string;
@@ -24,9 +25,12 @@ export interface WizardRoomData {
 interface RoomNamesStepProps {
   rooms: WizardRoomData[];
   onChange: (rooms: WizardRoomData[]) => void;
+  propertyType?: string;
 }
 
-export function RoomNamesStep({ rooms, onChange }: RoomNamesStepProps) {
+export function RoomNamesStep({ rooms, onChange, propertyType = 'dorm' }: RoomNamesStepProps) {
+  const { roomsLabel, roomLabel, roomsLabelCap } = usePropertyTerminology(propertyType);
+  
   const updateRoomName = (index: number, name: string) => {
     const updated = [...rooms];
     updated[index] = { ...updated[index], name };
@@ -59,38 +63,38 @@ export function RoomNamesStep({ rooms, onChange }: RoomNamesStepProps) {
           className="mb-6"
         >
           <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
-            Name your rooms
+            Name your {roomsLabel}
           </h1>
           <p className="text-muted-foreground">
-            Each room needs a unique name or number
+            Each {roomLabel} needs a unique name or number
           </p>
         </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="flex gap-2 mb-6"
-      >
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={autoFillNumbers}
-          className="gap-2 rounded-xl"
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex gap-2 mb-6"
         >
-          <Wand2 className="w-4 h-4" />
-          1, 2, 3...
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={autoFillLetterNumbers}
-          className="gap-2 rounded-xl"
-        >
-          <Wand2 className="w-4 h-4" />
-          A1, A2, B1...
-        </Button>
-      </motion.div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={autoFillNumbers}
+            className="gap-2 rounded-xl"
+          >
+            <Wand2 className="w-4 h-4" />
+            1, 2, 3...
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={autoFillLetterNumbers}
+            className="gap-2 rounded-xl"
+          >
+            <Wand2 className="w-4 h-4" />
+            A1, A2, B1...
+          </Button>
+        </motion.div>
 
         <ScrollArea className="h-[calc(100vh-320px)]">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pr-4">
@@ -103,7 +107,7 @@ export function RoomNamesStep({ rooms, onChange }: RoomNamesStepProps) {
                 className="bg-card border border-border rounded-xl p-3"
               >
                 <span className="text-xs text-muted-foreground mb-1 block">
-                  Room {index + 1}
+                  {roomsLabelCap === 'Apartments' ? 'Apt' : 'Room'} {index + 1}
                 </span>
                 <Input
                   value={room.name}

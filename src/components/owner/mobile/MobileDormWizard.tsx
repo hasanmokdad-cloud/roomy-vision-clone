@@ -792,6 +792,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onToggle={toggleAmenity}
             amenityDetails={formData.amenityDetails}
             onUpdateAmenityDetails={(details) => setFormData(prev => ({ ...prev, amenityDetails: details }))}
+            propertyType={formData.propertyType}
           />
         );
       case 10:
@@ -802,6 +803,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onToggle={toggleAmenity}
             amenityDetails={formData.amenityDetails}
             onUpdateAmenityDetails={(details) => setFormData(prev => ({ ...prev, amenityDetails: details }))}
+            propertyType={formData.propertyType}
           />
         );
       case 11:
@@ -812,6 +814,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onToggle={toggleAmenity}
             amenityDetails={formData.amenityDetails}
             onUpdateAmenityDetails={(details) => setFormData(prev => ({ ...prev, amenityDetails: details }))}
+            propertyType={formData.propertyType}
           />
         );
       case 12:
@@ -821,6 +824,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             galleryImages={formData.galleryImages}
             onCoverChange={(v) => setFormData({ ...formData, coverImage: v })}
             onGalleryChange={(v) => setFormData({ ...formData, galleryImages: v })}
+            propertyType={formData.propertyType}
           />
         );
       case 13:
@@ -848,6 +852,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           <UploadMethodStep
             value={formData.uploadMethod}
             onChange={(v) => setFormData({ ...formData, uploadMethod: v })}
+            propertyType={formData.propertyType}
           />
         );
       case 16:
@@ -864,6 +869,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           <RoomNamesStep
             rooms={formData.rooms}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
+            propertyType={formData.propertyType}
           />
         );
       case 17:
@@ -871,6 +877,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           <RoomTypesStep
             rooms={formData.rooms}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
+            propertyType={formData.propertyType}
           />
         );
       case 18:
@@ -880,8 +887,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             selectedIds={formData.selectedRoomIds}
             completedIds={formData.completedRoomIds}
             onSelectionChange={(ids) => setFormData({ ...formData, selectedRoomIds: ids })}
-            title="Select rooms for pricing"
-            subtitle="Choose which rooms to configure"
+            propertyType={formData.propertyType}
           />
         );
       case 19:
@@ -890,6 +896,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             rooms={formData.rooms}
             selectedIds={formData.selectedRoomIds}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
+            propertyType={formData.propertyType}
           />
         );
       case 20:
@@ -906,6 +913,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             rooms={formData.rooms}
             selectedIds={formData.selectedRoomIds}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
+            propertyType={formData.propertyType}
           />
         );
       case 22:
@@ -914,6 +922,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             rooms={formData.rooms}
             selectedIds={formData.selectedRoomIds}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
+            propertyType={formData.propertyType}
           />
         );
       case 23:
@@ -922,6 +931,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             rooms={formData.rooms}
             selectedIds={formData.selectedRoomIds}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
+            propertyType={formData.propertyType}
           />
         );
       case 24:
@@ -930,12 +940,13 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             rooms={formData.rooms}
             selectedIds={formData.selectedRoomIds}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
+            propertyType={formData.propertyType}
           />
         );
       case 25:
         return (
           <ReviewStep
-            formData={{...formData, shuttle: formData.shuttle || false}}
+            formData={{...formData, shuttle: formData.shuttle || false, propertyType: formData.propertyType}}
             onEditStep={setCurrentStep}
             agreedToOwnerTerms={agreedToOwnerTerms}
             onAgreedToOwnerTermsChange={setAgreedToOwnerTerms}

@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { WizardRoomData } from './RoomNamesStep';
 import { WizardDormPreviewModal } from '../WizardDormPreviewModal';
+import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface ReviewStepProps {
   formData: {
@@ -24,6 +25,7 @@ interface ReviewStepProps {
     description: string;
     rooms?: WizardRoomData[];
     shuttle?: boolean;
+    propertyType?: string;
   };
   onEditStep: (step: number) => void;
   agreedToOwnerTerms: boolean;
@@ -51,6 +53,7 @@ export function ReviewStep({
   onSubmit,
   submitting = false
 }: ReviewStepProps) {
+  const { dormLabel, dormLabelCap, roomsLabel, roomLabel, roomsLabelCap } = usePropertyTerminology(formData.propertyType || 'dorm');
   const [showPreview, setShowPreview] = useState(false);
   
   const rooms = formData.rooms || [];
@@ -71,13 +74,13 @@ export function ReviewStep({
     {
       icon: Users,
       title: 'Capacity & Gender',
-      value: `${formData.capacity} rooms • ${genderLabels[formData.genderPreference] || 'Not set'}`,
+      value: `${formData.capacity} ${roomsLabel} • ${genderLabels[formData.genderPreference] || 'Not set'}`,
       complete: formData.capacity > 0 && !!formData.genderPreference,
       editStep: 14,
     },
     {
       icon: Camera,
-      title: 'Dorm Photos',
+      title: `${dormLabelCap} Photos`,
       value: `${formData.coverImage ? 1 : 0} cover, ${formData.galleryImages.length} gallery`,
       complete: !!formData.coverImage,
       editStep: 12,
@@ -91,18 +94,18 @@ export function ReviewStep({
     },
     {
       icon: DoorOpen,
-      title: 'Rooms Setup',
+      title: `${roomsLabelCap} Setup`,
       value: rooms.length > 0 
-        ? `${rooms.length} rooms • ${roomTypes.length} type${roomTypes.length !== 1 ? 's' : ''}`
-        : 'No rooms added',
+        ? `${rooms.length} ${roomsLabel} • ${roomTypes.length} type${roomTypes.length !== 1 ? 's' : ''}`
+        : `No ${roomsLabel} added`,
       complete: rooms.length > 0 && rooms.every(r => r.name && r.type),
       editStep: 16,
     },
     {
       icon: DollarSign,
-      title: 'Room Pricing',
+      title: `${roomsLabelCap} Pricing`,
       value: roomsWithPrice.length > 0
-        ? `${roomsWithPrice.length}/${rooms.length} rooms priced`
+        ? `${roomsWithPrice.length}/${rooms.length} ${roomsLabel} priced`
         : 'No pricing set',
       complete: roomsWithPrice.length === rooms.length,
       editStep: 19,
@@ -186,7 +189,7 @@ export function ReviewStep({
         </p>
         {rooms.length > 0 && (
           <p className="text-sm text-muted-foreground">
-            <strong>{roomsWithImages.length}</strong> of {rooms.length} rooms have photos
+            <strong>{roomsWithImages.length}</strong> of {rooms.length} {roomsLabel} have photos
           </p>
         )}
         {roomTypes.length > 0 && (
@@ -262,7 +265,7 @@ export function ReviewStep({
             <div>
               <p className="font-medium text-foreground">Ready to submit!</p>
               <p className="text-sm text-muted-foreground">
-                Your dorm will be reviewed by our team. You'll be notified once it's approved.
+                Your {dormLabel} will be reviewed by our team. You'll be notified once it's approved.
               </p>
             </div>
           </>

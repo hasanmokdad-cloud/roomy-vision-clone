@@ -14,6 +14,7 @@ import type {
   ElectricityOption, WiFiOption, CleaningOption, WaterOption, LaundryOption, AmenityDetails,
   formatElectricityOption, formatLaundryOption 
 } from '@/types/amenities';
+import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface AmenitiesStepProps {
   category: 'essentials' | 'shared' | 'safety';
@@ -21,55 +22,59 @@ interface AmenitiesStepProps {
   onToggle: (amenity: string) => void;
   amenityDetails?: AmenityDetails;
   onUpdateAmenityDetails?: (details: AmenityDetails) => void;
+  propertyType?: string;
 }
-
-const amenityCategories = {
-  essentials: {
-    title: 'What essentials does your dorm offer?',
-    subtitle: 'Select all that apply',
-    items: [
-      { id: 'WiFi', label: 'WiFi', icon: Wifi, hasOptions: true, optionType: 'wifi' },
-      { id: 'Kitchenette', label: 'Kitchenette', icon: UtensilsCrossed },
-      { id: 'Laundry', label: 'Laundry', icon: WashingMachine, hasOptions: true, optionType: 'laundry' },
-      { id: 'Heating', label: 'Heating', icon: Thermometer },
-      { id: 'Air Conditioning', label: 'AC', icon: Snowflake },
-      { id: 'Furnished', label: 'Furnished', icon: Sofa },
-      { id: 'TV', label: 'TV', icon: Tv },
-      { id: 'Electricity', label: 'Electricity', icon: Zap, hasOptions: true, optionType: 'electricity' },
-      { id: 'Water', label: 'Water', icon: Droplets, hasOptions: true, optionType: 'water' },
-    ],
-  },
-  shared: {
-    title: 'Any shared spaces?',
-    subtitle: 'Great for student life',
-    items: [
-      { id: 'Study Room', label: 'Study Room', icon: BookOpen },
-      { id: 'Common Area', label: 'Common Area', icon: Users },
-      { id: 'Garden', label: 'Garden', icon: TreePine },
-      { id: 'Gym', label: 'Gym', icon: Dumbbell },
-      { id: 'Pool', label: 'Pool', icon: Waves },
-    ],
-  },
-  safety: {
-    title: 'Safety & convenience features?',
-    subtitle: 'These are important to students',
-    items: [
-      { id: 'Security', label: 'Security', icon: ShieldCheck },
-      { id: 'Elevator', label: 'Elevator', icon: ArrowUpDown },
-      { id: 'Parking', label: 'Parking', icon: Car },
-      { id: 'Cleaning Service', label: 'Cleaning', icon: Brush, hasOptions: true, optionType: 'cleaning' },
-      { id: 'Pet Friendly', label: 'Pet Friendly', icon: Dog },
-    ],
-  },
-};
 
 export function AmenitiesStep({ 
   category, 
   selectedAmenities, 
   onToggle, 
   amenityDetails = {},
-  onUpdateAmenityDetails 
+  onUpdateAmenityDetails,
+  propertyType = 'dorm'
 }: AmenitiesStepProps) {
+  const { dormLabel } = usePropertyTerminology(propertyType);
+  
+  const amenityCategories = {
+    essentials: {
+      title: `What essentials does your ${dormLabel} offer?`,
+      subtitle: 'Select all that apply',
+      items: [
+        { id: 'WiFi', label: 'WiFi', icon: Wifi, hasOptions: true, optionType: 'wifi' },
+        { id: 'Kitchenette', label: 'Kitchenette', icon: UtensilsCrossed },
+        { id: 'Laundry', label: 'Laundry', icon: WashingMachine, hasOptions: true, optionType: 'laundry' },
+        { id: 'Heating', label: 'Heating', icon: Thermometer },
+        { id: 'Air Conditioning', label: 'AC', icon: Snowflake },
+        { id: 'Furnished', label: 'Furnished', icon: Sofa },
+        { id: 'TV', label: 'TV', icon: Tv },
+        { id: 'Electricity', label: 'Electricity', icon: Zap, hasOptions: true, optionType: 'electricity' },
+        { id: 'Water', label: 'Water', icon: Droplets, hasOptions: true, optionType: 'water' },
+      ],
+    },
+    shared: {
+      title: 'Any shared spaces?',
+      subtitle: 'Great for student life',
+      items: [
+        { id: 'Study Room', label: 'Study Room', icon: BookOpen },
+        { id: 'Common Area', label: 'Common Area', icon: Users },
+        { id: 'Garden', label: 'Garden', icon: TreePine },
+        { id: 'Gym', label: 'Gym', icon: Dumbbell },
+        { id: 'Pool', label: 'Pool', icon: Waves },
+      ],
+    },
+    safety: {
+      title: 'Safety & convenience features?',
+      subtitle: 'These are important to students',
+      items: [
+        { id: 'Security', label: 'Security', icon: ShieldCheck },
+        { id: 'Elevator', label: 'Elevator', icon: ArrowUpDown },
+        { id: 'Parking', label: 'Parking', icon: Car },
+        { id: 'Cleaning Service', label: 'Cleaning', icon: Brush, hasOptions: true, optionType: 'cleaning' },
+        { id: 'Pet Friendly', label: 'Pet Friendly', icon: Dog },
+      ],
+    },
+  };
+
   const categoryData = amenityCategories[category];
   const [electricityModalOpen, setElectricityModalOpen] = useState(false);
   const [wifiModalOpen, setWifiModalOpen] = useState(false);

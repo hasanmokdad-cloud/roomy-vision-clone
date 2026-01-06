@@ -6,14 +6,17 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { DollarSign, Check } from 'lucide-react';
 import { WizardRoomData } from './RoomNamesStep';
+import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface RoomPricingStepProps {
   rooms: WizardRoomData[];
   selectedIds: string[];
   onChange: (rooms: WizardRoomData[]) => void;
+  propertyType?: string;
 }
 
-export function RoomPricingStep({ rooms, selectedIds, onChange }: RoomPricingStepProps) {
+export function RoomPricingStep({ rooms, selectedIds, onChange, propertyType = 'dorm' }: RoomPricingStepProps) {
+  const { roomsLabel } = usePropertyTerminology(propertyType);
   const [price, setPrice] = useState('');
   const [deposit, setDeposit] = useState('');
   const [priceApplied, setPriceApplied] = useState(false);
@@ -57,10 +60,10 @@ export function RoomPricingStep({ rooms, selectedIds, onChange }: RoomPricingSte
           className="mb-6"
         >
           <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
-            Set pricing for selected rooms
+            Set pricing for selected {roomsLabel}
           </h1>
           <p className="text-muted-foreground">
-            Enter prices and apply to {selectedCount} room{selectedCount !== 1 ? 's' : ''}
+            Enter prices and apply to {selectedCount} {selectedCount !== 1 ? roomsLabel : roomsLabel.slice(0, -1)}
           </p>
         </motion.div>
 

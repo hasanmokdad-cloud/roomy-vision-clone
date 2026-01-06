@@ -10,18 +10,18 @@ interface AirbnbStepTransitionProps {
 const phaseContent = {
   1: {
     title: 'Step 1',
-    heading: 'Tell us about your dorm',
-    description: "In this step, we'll ask which type of property you have, give it a name, set preferences, and add a description.",
+    heading: 'Tell us about your property',
+    description: 'Property type, name, gender preference, highlights & description.',
   },
   2: {
     title: 'Step 2',
     heading: 'Make it stand out',
-    description: "Add your location, select amenities, and upload photos to showcase your property.",
+    description: 'Location, essential services, amenities & photos.',
   },
   3: {
     title: 'Step 3',
     heading: 'Set up your rooms',
-    description: "Add your rooms, set pricing, upload photos, and prepare for launch.",
+    description: 'Room details, pricing, occupancy & media.',
   },
 };
 

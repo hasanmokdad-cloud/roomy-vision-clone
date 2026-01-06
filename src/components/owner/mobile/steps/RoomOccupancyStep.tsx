@@ -4,14 +4,18 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Users } from 'lucide-react';
 import { WizardRoomData } from './RoomNamesStep';
+import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface RoomOccupancyStepProps {
   rooms: WizardRoomData[];
   selectedIds: string[];
   onChange: (rooms: WizardRoomData[]) => void;
+  propertyType?: string;
 }
 
-export function RoomOccupancyStep({ rooms, selectedIds, onChange }: RoomOccupancyStepProps) {
+export function RoomOccupancyStep({ rooms, selectedIds, onChange, propertyType = 'dorm' }: RoomOccupancyStepProps) {
+  const { roomsLabel, roomLabel } = usePropertyTerminology(propertyType);
+  
   // Filter to show selected rooms, or all rooms when none selected (editing mode)
   const selectedRooms = selectedIds.length > 0 
     ? rooms.filter(r => selectedIds.includes(r.id))
@@ -36,7 +40,7 @@ export function RoomOccupancyStep({ rooms, selectedIds, onChange }: RoomOccupanc
             Current occupancy
           </h1>
           <p className="text-muted-foreground">
-            How many students currently occupy each room?
+            How many students currently occupy each {roomLabel}?
           </p>
         </motion.div>
 
