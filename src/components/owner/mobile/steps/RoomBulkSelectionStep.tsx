@@ -70,19 +70,20 @@ export function RoomBulkSelectionStep({
   const allComplete = incompleteRooms.length === 0;
 
   return (
-    <div className="px-6 pt-24 pb-32">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-4"
-      >
-        <h1 className="text-2xl font-bold text-foreground mb-2">
-          {title}
-        </h1>
-        <p className="text-muted-foreground">
-          {subtitle}
-        </p>
-      </motion.div>
+    <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
+      <div className="w-full max-w-xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4"
+        >
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+            {title}
+          </h1>
+          <p className="text-muted-foreground">
+            {subtitle}
+          </p>
+        </motion.div>
 
       {/* Progress indicator */}
       <motion.div
@@ -232,6 +233,7 @@ export function RoomBulkSelectionStep({
           </ScrollArea>
         </>
       )}
+      </div>
     </div>
   );
 }

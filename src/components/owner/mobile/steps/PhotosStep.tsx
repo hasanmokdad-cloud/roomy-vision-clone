@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import CameraIcon from '@/assets/camera-icon.avif';
 import { PhotoUploadModal } from '../PhotoUploadModal';
+import { cn } from '@/lib/utils';
 
 interface PhotosStepProps {
   coverImage: string;
@@ -20,6 +21,18 @@ export function PhotosStep({
 }: PhotosStepProps) {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadMode, setUploadMode] = useState<'cover' | 'gallery'>('gallery');
+  const [coverImageLoaded, setCoverImageLoaded] = useState(false);
+  const [galleryImagesLoaded, setGalleryImagesLoaded] = useState<Record<number, boolean>>({});
+
+  // Reset cover image loaded state when cover image changes
+  useEffect(() => {
+    setCoverImageLoaded(false);
+  }, [coverImage]);
+
+  // Reset gallery image loaded state when gallery images change
+  useEffect(() => {
+    setGalleryImagesLoaded({});
+  }, [galleryImages.length]);
 
   const handleModalUpload = (urls: string[]) => {
     if (urls.length === 0) return;
@@ -75,7 +88,17 @@ export function PhotosStep({
           <div className="relative">
             {coverImage ? (
               <div className="relative h-[200px] lg:h-[240px] rounded-xl overflow-hidden border border-border">
-                <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
+                {!coverImageLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+                    <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+                <img 
+                  src={coverImage} 
+                  alt="Cover" 
+                  className={cn("w-full h-full object-cover transition-opacity", !coverImageLoaded && "opacity-0")}
+                  onLoad={() => setCoverImageLoaded(true)}
+                />
                 <button
                   onClick={() => onCoverChange('')}
                   className="absolute top-2 right-2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
@@ -136,7 +159,17 @@ export function PhotosStep({
               <div className="grid grid-cols-3 gap-2">
                 {galleryImages.map((url, index) => (
                   <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
-                    <img src={url} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover" />
+                    {!galleryImagesLoaded[index] && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+                        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                    <img 
+                      src={url} 
+                      alt={`Gallery ${index + 1}`} 
+                      className={cn("w-full h-full object-cover transition-opacity", !galleryImagesLoaded[index] && "opacity-0")}
+                      onLoad={() => setGalleryImagesLoaded(prev => ({ ...prev, [index]: true }))}
+                    />
                     <button
                       onClick={() => removeGalleryImage(index)}
                       className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"

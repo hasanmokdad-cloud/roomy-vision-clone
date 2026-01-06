@@ -104,19 +104,20 @@ export function ExcelUploadStep({ roomCount, onImport, importedCount }: ExcelUpl
   }, [onImport]);
 
   return (
-    <div className="px-6 pt-24 pb-32">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-6"
-      >
-        <h1 className="text-2xl font-bold text-foreground mb-2">
-          Upload room data
-        </h1>
-        <p className="text-muted-foreground">
-          Download the template, fill it in, and upload
-        </p>
-      </motion.div>
+    <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
+      <div className="w-full max-w-xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+            Upload room data
+          </h1>
+          <p className="text-muted-foreground">
+            Download the template, fill it in, and upload
+          </p>
+        </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -218,14 +219,15 @@ export function ExcelUploadStep({ roomCount, onImport, importedCount }: ExcelUpl
           </div>
         )}
 
-        <div className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-xl flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          <p>
-            Tip: You can still edit individual room details after importing. 
-            Continue to the next steps to add images and make adjustments.
-          </p>
-        </div>
-      </motion.div>
+          <div className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-xl flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <p>
+              Tip: You can still edit individual room details after importing. 
+              Continue to the next steps to add images and make adjustments.
+            </p>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }

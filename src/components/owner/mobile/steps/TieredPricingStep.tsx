@@ -74,38 +74,41 @@ export function TieredPricingStep({ rooms, selectedIds, onChange }: TieredPricin
 
   if (tieredRooms.length === 0) {
     return (
-      <div className="px-6 pt-24 pb-32">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center"
-        >
-          <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground mb-2">
-            No tiered pricing needed
-          </h1>
-          <p className="text-muted-foreground">
-            The selected rooms don't require tiered pricing. Tiered pricing applies to Double and Triple rooms only.
-          </p>
-        </motion.div>
+      <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
+        <div className="w-full max-w-xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center"
+          >
+            <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+              No tiered pricing needed
+            </h1>
+            <p className="text-muted-foreground">
+              The selected rooms don't require tiered pricing. Tiered pricing applies to Double and Triple rooms only.
+            </p>
+          </motion.div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="px-6 pt-24 pb-32">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-6"
-      >
-        <h1 className="text-2xl font-bold text-foreground mb-2">
-          Tiered pricing
-        </h1>
-        <p className="text-muted-foreground">
-          Set discounted prices when fewer students occupy a room
-        </p>
-      </motion.div>
+    <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
+      <div className="w-full max-w-xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+            Tiered pricing
+          </h1>
+          <p className="text-muted-foreground">
+            Set discounted prices when fewer students occupy a room
+          </p>
+        </motion.div>
 
       <ScrollArea className="h-[calc(100vh-280px)]">
         <div className="space-y-6 pr-4">
@@ -273,7 +276,8 @@ export function TieredPricingStep({ rooms, selectedIds, onChange }: TieredPricin
             )}
           </div>
         </div>
-      </ScrollArea>
+        </ScrollArea>
+      </div>
     </div>
   );
 }

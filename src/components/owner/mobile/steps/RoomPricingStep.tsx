@@ -49,19 +49,20 @@ export function RoomPricingStep({ rooms, selectedIds, onChange }: RoomPricingSte
   const selectedCount = effectiveSelectedIds.length;
 
   return (
-    <div className="px-6 pt-24 pb-32">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-6"
-      >
-        <h1 className="text-2xl font-bold text-foreground mb-2">
-          Set pricing for selected rooms
-        </h1>
-        <p className="text-muted-foreground">
-          Enter prices and apply to {selectedCount} room{selectedCount !== 1 ? 's' : ''}
-        </p>
-      </motion.div>
+    <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
+      <div className="w-full max-w-xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+            Set pricing for selected rooms
+          </h1>
+          <p className="text-muted-foreground">
+            Enter prices and apply to {selectedCount} room{selectedCount !== 1 ? 's' : ''}
+          </p>
+        </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -136,7 +137,8 @@ export function RoomPricingStep({ rooms, selectedIds, onChange }: RoomPricingSte
             </Badge>
           )}
         </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }

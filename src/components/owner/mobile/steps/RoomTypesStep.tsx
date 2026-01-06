@@ -81,19 +81,20 @@ export function RoomTypesStep({ rooms, onChange }: RoomTypesStepProps) {
   };
 
   return (
-    <div className="px-6 pt-24 pb-32">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-4"
-      >
-        <h1 className="text-2xl font-bold text-foreground mb-2">
-          What type are your rooms?
-        </h1>
-        <p className="text-muted-foreground">
-          Assign a room type to each room
-        </p>
-      </motion.div>
+    <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
+      <div className="w-full max-w-xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4"
+        >
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+            What type are your rooms?
+          </h1>
+          <p className="text-muted-foreground">
+            Assign a room type to each room
+          </p>
+        </motion.div>
 
       {/* Bulk operations */}
       <motion.div
@@ -166,43 +167,44 @@ export function RoomTypesStep({ rooms, onChange }: RoomTypesStepProps) {
         </div>
       </motion.div>
 
-      <ScrollArea className="h-[calc(100vh-420px)]">
-        <div className="space-y-3 pr-4">
-          {rooms.map((room, index) => (
-            <motion.div
-              key={room.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.02 }}
-              className="bg-card border border-border rounded-xl p-4 flex items-center gap-3"
-            >
-              <Checkbox
-                checked={selectedIds.includes(room.id)}
-                onCheckedChange={() => toggleRoom(room.id)}
-                className="h-5 w-5"
-              />
-              <div className="flex-1 min-w-0">
-                <span className="font-semibold text-foreground block truncate">
-                  {room.name || `Room ${index + 1}`}
-                </span>
-              </div>
-              <Select
-                value={room.type || ''}
-                onValueChange={(v) => updateRoomType(index, v)}
+        <ScrollArea className="h-[calc(100vh-420px)]">
+          <div className="space-y-3 pr-4">
+            {rooms.map((room, index) => (
+              <motion.div
+                key={room.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.02 }}
+                className="bg-card border border-border rounded-xl p-4 flex items-center gap-3"
               >
-                <SelectTrigger className="w-32 h-10 rounded-xl">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ownerRoomTypes.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </motion.div>
-          ))}
-        </div>
-      </ScrollArea>
+                <Checkbox
+                  checked={selectedIds.includes(room.id)}
+                  onCheckedChange={() => toggleRoom(room.id)}
+                  className="h-5 w-5"
+                />
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold text-foreground block truncate">
+                    {room.name || `Room ${index + 1}`}
+                  </span>
+                </div>
+                <Select
+                  value={room.type || ''}
+                  onValueChange={(v) => updateRoomType(index, v)}
+                >
+                  <SelectTrigger className="w-32 h-10 rounded-xl">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ownerRoomTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </motion.div>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   );
 }
