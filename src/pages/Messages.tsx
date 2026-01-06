@@ -44,8 +44,9 @@ import { GroupInfoPanel } from '@/components/messages/GroupInfoPanel';
 import { GlobalSearchSheet } from '@/components/messages/GlobalSearchSheet';
 import { NewChatMenu } from '@/components/messages/NewChatMenu';
 import { GroupAvatarStack } from '@/components/messages/GroupAvatarStack';
-import { MessagesIconSidebar } from '@/components/messages/MessagesIconSidebar';
-import { MessagesSettingsPanel } from '@/components/messages/MessagesSettingsPanel';
+// COMMENTED OUT: WhatsApp-style icon sidebar - causing UI issues, will work on later
+// import { MessagesIconSidebar } from '@/components/messages/MessagesIconSidebar';
+// import { MessagesSettingsPanel } from '@/components/messages/MessagesSettingsPanel';
 import { useMicPermission } from '@/contexts/MicPermissionContext';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
@@ -297,8 +298,8 @@ export default function Messages() {
   const [showGroupInfoPanel, setShowGroupInfoPanel] = useState(false);
   // Global search state
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
-  // Messages settings panel state (desktop only)
-  const [showMessagesSettings, setShowMessagesSettings] = useState(false);
+  // COMMENTED OUT: Messages settings panel state (desktop only) - will work on later
+  // const [showMessagesSettings, setShowMessagesSettings] = useState(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
