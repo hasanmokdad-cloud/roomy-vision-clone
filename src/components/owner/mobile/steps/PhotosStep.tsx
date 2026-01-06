@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { compressImage } from '@/utils/imageCompression';
 import { toast } from '@/hooks/use-toast';
 import CameraIcon from '@/assets/camera-icon.avif';
+import { PhotoUploadModal } from '../PhotoUploadModal';
 
 interface PhotosStepProps {
   coverImage: string;
@@ -20,8 +21,10 @@ export function PhotosStep({
   onGalleryChange 
 }: PhotosStepProps) {
   const [uploading, setUploading] = useState(false);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'cover' | 'gallery'>('gallery');
 
-  const handleUpload = async (file: File, isCover: boolean) => {
+  const handleUpload = async (file: File, isCover: boolean): Promise<string | null> => {
     try {
       const compressed = await compressImage(file);
       const fileName = `${Date.now()}-${file.name}`;
@@ -37,50 +40,57 @@ export function PhotosStep({
         .from('dorm-uploads')
         .getPublicUrl(filePath);
 
-      if (isCover) {
-        onCoverChange(publicUrl);
-      } else {
-        onGalleryChange([...galleryImages, publicUrl]);
-      }
-
-      return true;
+      return publicUrl;
     } catch (error: any) {
       toast({ 
         title: 'Upload failed', 
         description: error.message,
         variant: 'destructive' 
       });
-      return false;
+      return null;
     }
   };
 
-  const handleCoverFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setUploading(true);
-      await handleUpload(file, true);
-      setUploading(false);
-    }
-  };
-
-  const handleGalleryFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
+  const handleModalUpload = async (files: File[]) => {
+    if (files.length === 0) return;
+    
     setUploading(true);
     
-    const filesToUpload = Array.from(files).slice(0, 10 - galleryImages.length);
-    
-    for (const file of filesToUpload) {
-      await handleUpload(file, false);
-    }
-    
-    if (filesToUpload.length > 0) {
-      toast({ title: `${filesToUpload.length} photo(s) uploaded!` });
+    if (uploadMode === 'cover') {
+      const url = await handleUpload(files[0], true);
+      if (url) {
+        onCoverChange(url);
+        toast({ title: 'Cover photo uploaded!' });
+      }
+    } else {
+      const filesToUpload = files.slice(0, 10 - galleryImages.length);
+      const newUrls: string[] = [];
+      
+      for (const file of filesToUpload) {
+        const url = await handleUpload(file, false);
+        if (url) {
+          newUrls.push(url);
+        }
+      }
+      
+      if (newUrls.length > 0) {
+        onGalleryChange([...galleryImages, ...newUrls]);
+        toast({ title: `${newUrls.length} photo(s) uploaded!` });
+      }
     }
     
     setUploading(false);
-    e.target.value = '';
+    setUploadModalOpen(false);
+  };
+
+  const openCoverModal = () => {
+    setUploadMode('cover');
+    setUploadModalOpen(true);
+  };
+
+  const openGalleryModal = () => {
+    setUploadMode('gallery');
+    setUploadModalOpen(true);
   };
 
   const removeGalleryImage = (index: number) => {
@@ -122,7 +132,10 @@ export function PhotosStep({
                 </button>
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center h-[200px] lg:h-[240px] rounded-xl border border-dashed border-muted-foreground/40 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors">
+              <div 
+                onClick={openCoverModal}
+                className="flex flex-col items-center justify-center h-[200px] lg:h-[240px] rounded-xl border border-dashed border-muted-foreground/40 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors"
+              >
                 <img 
                   src={CameraIcon} 
                   alt="Camera" 
@@ -131,22 +144,10 @@ export function PhotosStep({
                 <button 
                   type="button"
                   className="px-5 py-2 bg-background border border-foreground rounded-lg text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const input = e.currentTarget.parentElement?.querySelector('input');
-                    input?.click();
-                  }}
                 >
                   Add photos
                 </button>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleCoverFileSelect}
-                  disabled={uploading}
-                />
-              </label>
+              </div>
             )}
           </div>
         </motion.div>
@@ -158,11 +159,14 @@ export function PhotosStep({
           transition={{ delay: 0.2 }}
         >
           <label className="block text-sm font-medium text-foreground mb-2">
-            Gallery Photos (Rooms, Common Areas) - Optional
+            Gallery Photos (Common Areas, Lounge, Gym, Rooftop, Pool...) - Optional
           </label>
           
           {galleryImages.length === 0 ? (
-            <label className="flex flex-col items-center justify-center h-[160px] lg:h-[180px] rounded-xl border border-dashed border-muted-foreground/40 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors">
+            <div 
+              onClick={openGalleryModal}
+              className="flex flex-col items-center justify-center h-[160px] lg:h-[180px] rounded-xl border border-dashed border-muted-foreground/40 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors"
+            >
               <img 
                 src={CameraIcon} 
                 alt="Camera" 
@@ -171,23 +175,10 @@ export function PhotosStep({
               <button 
                 type="button"
                 className="px-5 py-2 bg-background border border-foreground rounded-lg text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const input = e.currentTarget.parentElement?.querySelector('input');
-                  input?.click();
-                }}
               >
                 Add photos
               </button>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={handleGalleryFileSelect}
-                disabled={uploading}
-              />
-            </label>
+            </div>
           ) : (
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2">
@@ -204,22 +195,17 @@ export function PhotosStep({
                 ))}
                 
                 {galleryImages.length < 10 && (
-                  <label className="flex flex-col items-center justify-center aspect-square rounded-lg border border-dashed border-muted-foreground/40 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors">
+                  <div 
+                    onClick={openGalleryModal}
+                    className="flex flex-col items-center justify-center aspect-square rounded-lg border border-dashed border-muted-foreground/40 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors"
+                  >
                     <img 
                       src={CameraIcon} 
                       alt="Add" 
                       className="w-8 h-8 mb-1 object-contain opacity-60" 
                     />
                     <span className="text-xs text-muted-foreground">Add</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={handleGalleryFileSelect}
-                      disabled={uploading}
-                    />
-                  </label>
+                  </div>
                 )}
               </div>
               <p className="text-xs text-muted-foreground text-center">
@@ -229,6 +215,16 @@ export function PhotosStep({
           )}
         </motion.div>
       </div>
+
+      {/* Upload Modal */}
+      <PhotoUploadModal
+        open={uploadModalOpen}
+        onOpenChange={setUploadModalOpen}
+        onUpload={handleModalUpload}
+        maxFiles={10}
+        currentCount={uploadMode === 'gallery' ? galleryImages.length : 0}
+        isCover={uploadMode === 'cover'}
+      />
 
       {uploading && (
         <motion.div
