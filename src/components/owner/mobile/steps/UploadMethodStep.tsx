@@ -23,51 +23,47 @@ const uploadMethods = [
 
 export function UploadMethodStep({ value, onChange }: UploadMethodStepProps) {
   return (
-    <div className="px-6 pt-24 pb-32">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <h1 className="text-2xl font-bold text-foreground mb-2">
-          How would you like to add your rooms?
-        </h1>
-        <p className="text-muted-foreground">
-          Choose the method that works best for you
-        </p>
-      </motion.div>
+    <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
+      <div className="w-full max-w-xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-6"
+        >
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+            How would you like to add your rooms?
+          </h1>
+          <p className="text-muted-foreground text-sm lg:text-base">
+            You can add more amenities after you submit your listing.
+          </p>
+        </motion.div>
 
-      <div className="grid grid-cols-1 gap-4">
-        {uploadMethods.map((method, index) => (
-          <motion.button
-            key={method.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            onClick={() => onChange(method.id)}
-            className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left ${
-              value === method.id
-                ? 'border-primary bg-primary/5 shadow-lg'
-                : 'border-border bg-card hover:border-primary/50'
-            }`}
-          >
-            <method.icon
-              className={`w-10 h-10 flex-shrink-0 ${
-                value === method.id ? 'text-primary' : 'text-muted-foreground'
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+          {uploadMethods.map((method, index) => (
+            <motion.button
+              key={method.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              onClick={() => onChange(method.id)}
+              className={`relative flex flex-col justify-between p-4 rounded-xl border transition-all min-h-[100px] text-left ${
+                value === method.id
+                  ? 'border-foreground bg-background shadow-sm'
+                  : 'border-border hover:border-foreground/50'
               }`}
-            />
-            <div>
-              <span className={`font-semibold text-base block ${
-                value === method.id ? 'text-primary' : 'text-foreground'
-              }`}>
-                {method.label}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {method.description}
-              </span>
-            </div>
-          </motion.button>
-        ))}
+            >
+              <method.icon className="w-6 h-6 text-foreground" />
+              <div className="flex flex-col items-start mt-2">
+                <span className="font-medium text-sm text-foreground">
+                  {method.label}
+                </span>
+                <span className="text-xs text-muted-foreground mt-0.5">
+                  {method.description}
+                </span>
+              </div>
+            </motion.button>
+          ))}
+        </div>
       </div>
     </div>
   );

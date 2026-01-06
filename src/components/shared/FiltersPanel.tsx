@@ -92,7 +92,7 @@ const amenitiesOptions = [
   'Pool',
   'Parking',
   'Security',
-  'Kitchen',
+  'Kitchenette',
   'Study Room',
   'Garden',
   'Common Area',

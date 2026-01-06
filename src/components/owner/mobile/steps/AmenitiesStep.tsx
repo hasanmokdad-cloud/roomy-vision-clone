@@ -29,7 +29,7 @@ const amenityCategories = {
     subtitle: 'Select all that apply',
     items: [
       { id: 'WiFi', label: 'WiFi', icon: Wifi, hasOptions: true, optionType: 'wifi' },
-      { id: 'Kitchen', label: 'Kitchen', icon: UtensilsCrossed },
+      { id: 'Kitchenette', label: 'Kitchenette', icon: UtensilsCrossed },
       { id: 'Laundry', label: 'Laundry', icon: WashingMachine, hasOptions: true, optionType: 'laundry' },
       { id: 'Heating', label: 'Heating', icon: Thermometer },
       { id: 'Air Conditioning', label: 'AC', icon: Snowflake },
@@ -188,66 +188,55 @@ export function AmenitiesStep({
   };
 
   return (
-    <div className="px-6 pt-24 pb-32">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <h1 className="text-2xl font-bold text-foreground mb-2">
-          {categoryData.title}
-        </h1>
-        <p className="text-muted-foreground">
-          {categoryData.subtitle}
-        </p>
-      </motion.div>
+    <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
+      <div className="w-full max-w-xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-6"
+        >
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+            {categoryData.title}
+          </h1>
+          <p className="text-muted-foreground text-sm lg:text-base">
+            You can add more amenities after you submit your listing.
+          </p>
+        </motion.div>
 
-      <div className="grid grid-cols-2 gap-4">
-        {categoryData.items.map((item, index) => {
-          const isSelected = selectedAmenities.includes(item.id);
-          const optionLabel = getOptionLabel(item.id);
-          
-          return (
-            <motion.button
-              key={item.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              onClick={() => handleAmenityClick(item)}
-              className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all ${
-                isSelected
-                  ? 'border-primary bg-primary/5 shadow-md'
-                  : 'border-border bg-card hover:border-primary/50'
-              }`}
-            >
-              <item.icon 
-                className={`w-8 h-8 mb-2 ${
-                  isSelected ? 'text-primary' : 'text-muted-foreground'
-                }`} 
-              />
-              <span className={`font-medium text-sm ${
-                isSelected ? 'text-primary' : 'text-foreground'
-              }`}>
-                {item.label}
-              </span>
-              {isSelected && optionLabel && (
-                <span className="text-xs text-primary/70 mt-1">
-                  {optionLabel}
-                </span>
-              )}
-            </motion.button>
-          );
-        })}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+          {categoryData.items.map((item, index) => {
+            const isSelected = selectedAmenities.includes(item.id);
+            const optionLabel = getOptionLabel(item.id);
+            
+            return (
+              <motion.button
+                key={item.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.03 }}
+                onClick={() => handleAmenityClick(item)}
+                className={`relative flex flex-col justify-between p-4 rounded-xl border transition-all min-h-[90px] lg:min-h-[100px] text-left ${
+                  isSelected
+                    ? 'border-foreground bg-background shadow-sm'
+                    : 'border-border hover:border-foreground/50'
+                }`}
+              >
+                <item.icon className="w-6 h-6 text-foreground" />
+                <div className="flex flex-col items-start mt-2">
+                  <span className="font-medium text-sm text-foreground">
+                    {item.label}
+                  </span>
+                  {isSelected && optionLabel && (
+                    <span className="text-xs text-muted-foreground mt-0.5">
+                      {optionLabel}
+                    </span>
+                  )}
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
       </div>
-
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="text-center text-sm text-muted-foreground mt-6"
-      >
-        {selectedAmenities.length} selected
-      </motion.p>
 
       {/* Option Modals */}
       <ElectricityOptionsModal

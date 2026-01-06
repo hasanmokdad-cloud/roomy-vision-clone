@@ -91,7 +91,7 @@ const amenityCategories = {
   ],
   'Essentials': [
     { name: 'Laundry', icon: WashingMachine },
-    { name: 'Kitchen', icon: UtensilsCrossed },
+    { name: 'Kitchenette', icon: UtensilsCrossed },
     { name: 'Furnished', icon: Sofa },
     { name: 'Heating', icon: Thermometer },
     { name: 'TV', icon: Tv },

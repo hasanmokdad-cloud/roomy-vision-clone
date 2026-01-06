@@ -25,7 +25,7 @@ export const AMENITIES_CONFIG: Record<string, AmenityCategoryConfig> = {
     subtitle: 'Select all that apply',
     items: [
       { id: 'WiFi', label: 'WiFi', icon: Wifi, hasOptions: true, optionType: 'wifi' },
-      { id: 'Kitchen', label: 'Kitchen', icon: UtensilsCrossed },
+      { id: 'Kitchenette', label: 'Kitchenette', icon: UtensilsCrossed },
       { id: 'Laundry', label: 'Laundry', icon: WashingMachine, hasOptions: true, optionType: 'laundry' },
       { id: 'Heating', label: 'Heating', icon: Thermometer },
       { id: 'Air Conditioning', label: 'AC', icon: Snowflake },
