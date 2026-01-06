@@ -1,15 +1,18 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ImagePlus, Video, X, Upload, Eye, ChevronDown, ChevronUp, Play } from 'lucide-react';
+import { ImagePlus, Video, X, Upload, Eye, ChevronDown, ChevronUp, Play, Loader2, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { WizardRoomData } from './RoomNamesStep';
 import { WizardRoomPreviewModal } from '../WizardRoomPreviewModal';
+import { RoomUploadProgressBar, RoomUploadProgress } from '../RoomUploadProgressBar';
+import { MediaDropZone } from '../MediaDropZone';
+import { ImageEditorModal } from '@/components/owner/ImageEditorModal';
 
 interface RoomMediaStepProps {
   rooms: WizardRoomData[];
@@ -17,13 +20,32 @@ interface RoomMediaStepProps {
   onChange: (rooms: WizardRoomData[]) => void;
 }
 
+// Comprehensive file type accepts
+const IMAGE_ACCEPT = "image/*,.heic,.heif,.avif,.bmp,.tiff,.tif,.svg,.ico,.jfif,.raw,.cr2,.nef,.arw";
+const VIDEO_ACCEPT = "video/*,.mov,.avi,.wmv,.mkv,.3gp,.3g2,.flv,.m4v,.mpg,.mpeg";
+
 export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepProps) {
-  const [uploading, setUploading] = useState(false);
-  const [uploadingVideo, setUploadingVideo] = useState(false);
+  // Per-room upload tracking
+  const [roomUploads, setRoomUploads] = useState<Record<string, RoomUploadProgress[]>>({});
+  const [bulkUploads, setBulkUploads] = useState<RoomUploadProgress[]>([]);
+  
   const [expandedRoom, setExpandedRoom] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string>('');
   const [typeFilteredIds, setTypeFilteredIds] = useState<string[]>([]);
   const [previewRoom, setPreviewRoom] = useState<WizardRoomData | null>(null);
+  
+  // Editor state
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingFile, setEditingFile] = useState<File | null>(null);
+  const [pendingUpload, setPendingUpload] = useState<{
+    roomId: string | 'bulk';
+    files: File[];
+    currentIndex: number;
+  } | null>(null);
+
+  // File input refs for each room
+  const imageInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const videoInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // Get unique room types
   const roomTypes = [...new Set(rooms.map(r => r.type).filter(Boolean))] as string[];
@@ -42,10 +64,306 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
   // Get the effective selected IDs (type filter overrides if set)
   const effectiveSelectedIds = typeFilteredIds.length > 0 ? typeFilteredIds : selectedIds;
 
-  const handleBulkImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const isRoomUploading = (roomId: string) => {
+    const uploads = roomUploads[roomId] || [];
+    return uploads.some(u => u.status === 'uploading');
+  };
 
+  const isBulkUploading = bulkUploads.some(u => u.status === 'uploading');
+
+  // Upload single file with progress
+  const uploadFile = async (
+    file: File,
+    roomId: string,
+    isVideo: boolean,
+    onProgress: (progress: number) => void
+  ): Promise<string> => {
+    const ext = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+    const subFolder = isVideo ? 'videos/' : '';
+    const filePath = `wizard-rooms/${subFolder}${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('room-images')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    onProgress(100);
+    
+    const { data: urlData } = supabase.storage
+      .from('room-images')
+      .getPublicUrl(filePath);
+
+    return urlData.publicUrl;
+  };
+
+  // Open editor for file
+  const openEditorForFile = (roomId: string | 'bulk', files: File[], index: number = 0) => {
+    if (index >= files.length) {
+      // All files edited, start upload
+      startUpload(roomId, files);
+      return;
+    }
+    
+    const file = files[index];
+    // Only edit images
+    if (file.type.startsWith('image/')) {
+      setEditingFile(file);
+      setPendingUpload({ roomId, files, currentIndex: index });
+      setEditorOpen(true);
+    } else {
+      // Skip to next or upload
+      openEditorForFile(roomId, files, index + 1);
+    }
+  };
+
+  const handleEditorSave = (editedFile: File) => {
+    if (!pendingUpload) return;
+    
+    // Replace the file in the array with edited version
+    const newFiles = [...pendingUpload.files];
+    newFiles[pendingUpload.currentIndex] = editedFile;
+    
+    setEditorOpen(false);
+    setEditingFile(null);
+    
+    // Move to next file or start upload
+    const nextIndex = pendingUpload.currentIndex + 1;
+    if (nextIndex < newFiles.length && newFiles[nextIndex].type.startsWith('image/')) {
+      openEditorForFile(pendingUpload.roomId, newFiles, nextIndex);
+    } else {
+      startUpload(pendingUpload.roomId, newFiles);
+      setPendingUpload(null);
+    }
+  };
+
+  const handleEditorSkip = () => {
+    if (!pendingUpload) return;
+    
+    setEditorOpen(false);
+    setEditingFile(null);
+    
+    const nextIndex = pendingUpload.currentIndex + 1;
+    if (nextIndex < pendingUpload.files.length) {
+      const nextFile = pendingUpload.files[nextIndex];
+      if (nextFile.type.startsWith('image/')) {
+        openEditorForFile(pendingUpload.roomId, pendingUpload.files, nextIndex);
+        return;
+      }
+    }
+    
+    startUpload(pendingUpload.roomId, pendingUpload.files);
+    setPendingUpload(null);
+  };
+
+  const startUpload = async (roomId: string | 'bulk', files: File[]) => {
+    const targetRoomIds = roomId === 'bulk' ? effectiveSelectedIds : [roomId];
+    
+    if (targetRoomIds.length === 0) {
+      toast({
+        title: 'No rooms selected',
+        description: 'Please select rooms first',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Separate images and videos
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    const videoFiles = files.filter(f => f.type.startsWith('video/'));
+
+    // Check video size
+    for (const video of videoFiles) {
+      if (video.size > 50 * 1024 * 1024) {
+        toast({
+          title: 'Video too large',
+          description: `${video.name} exceeds 50MB limit`,
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
+    // Initialize upload progress for all target rooms
+    const initialProgress: RoomUploadProgress[] = [
+      ...imageFiles.map((f, i) => ({
+        roomId: roomId === 'bulk' ? 'bulk' : roomId,
+        fileName: f.name,
+        progress: 0,
+        type: 'image' as const,
+        status: 'uploading' as const,
+      })),
+      ...videoFiles.map(f => ({
+        roomId: roomId === 'bulk' ? 'bulk' : roomId,
+        fileName: f.name,
+        progress: 0,
+        type: 'video' as const,
+        status: 'uploading' as const,
+      })),
+    ];
+
+    if (roomId === 'bulk') {
+      setBulkUploads(initialProgress);
+    } else {
+      setRoomUploads(prev => ({
+        ...prev,
+        [roomId]: initialProgress
+      }));
+    }
+
+    try {
+      const uploadedImageUrls: string[] = [];
+      let uploadedVideoUrl: string | undefined;
+
+      // Upload images
+      for (let i = 0; i < imageFiles.length; i++) {
+        const file = imageFiles[i];
+        try {
+          const url = await uploadFile(file, roomId.toString(), false, (progress) => {
+            const updateProgress = (prev: RoomUploadProgress[]) =>
+              prev.map((p, idx) => idx === i ? { ...p, progress } : p);
+            
+            if (roomId === 'bulk') {
+              setBulkUploads(updateProgress);
+            } else {
+              setRoomUploads(prev => ({
+                ...prev,
+                [roomId]: updateProgress(prev[roomId] || [])
+              }));
+            }
+          });
+          uploadedImageUrls.push(url);
+          
+          // Mark as complete
+          const markComplete = (prev: RoomUploadProgress[]) =>
+            prev.map((p, idx) => idx === i ? { ...p, status: 'complete' as const, progress: 100 } : p);
+          
+          if (roomId === 'bulk') {
+            setBulkUploads(markComplete);
+          } else {
+            setRoomUploads(prev => ({
+              ...prev,
+              [roomId]: markComplete(prev[roomId] || [])
+            }));
+          }
+        } catch (error) {
+          const markError = (prev: RoomUploadProgress[]) =>
+            prev.map((p, idx) => idx === i ? { ...p, status: 'error' as const } : p);
+          
+          if (roomId === 'bulk') {
+            setBulkUploads(markError);
+          } else {
+            setRoomUploads(prev => ({
+              ...prev,
+              [roomId]: markError(prev[roomId] || [])
+            }));
+          }
+        }
+      }
+
+      // Upload video (only first one)
+      if (videoFiles.length > 0) {
+        const videoFile = videoFiles[0];
+        const videoIdx = imageFiles.length;
+        try {
+          uploadedVideoUrl = await uploadFile(videoFile, roomId.toString(), true, (progress) => {
+            const updateProgress = (prev: RoomUploadProgress[]) =>
+              prev.map((p, idx) => idx === videoIdx ? { ...p, progress } : p);
+            
+            if (roomId === 'bulk') {
+              setBulkUploads(updateProgress);
+            } else {
+              setRoomUploads(prev => ({
+                ...prev,
+                [roomId]: updateProgress(prev[roomId] || [])
+              }));
+            }
+          });
+          
+          const markComplete = (prev: RoomUploadProgress[]) =>
+            prev.map((p, idx) => idx === videoIdx ? { ...p, status: 'complete' as const, progress: 100 } : p);
+          
+          if (roomId === 'bulk') {
+            setBulkUploads(markComplete);
+          } else {
+            setRoomUploads(prev => ({
+              ...prev,
+              [roomId]: markComplete(prev[roomId] || [])
+            }));
+          }
+        } catch (error) {
+          const markError = (prev: RoomUploadProgress[]) =>
+            prev.map((p, idx) => idx === videoIdx ? { ...p, status: 'error' as const } : p);
+          
+          if (roomId === 'bulk') {
+            setBulkUploads(markError);
+          } else {
+            setRoomUploads(prev => ({
+              ...prev,
+              [roomId]: markError(prev[roomId] || [])
+            }));
+          }
+        }
+      }
+
+      // Apply to rooms
+      const updated = rooms.map(room => {
+        if (targetRoomIds.includes(room.id)) {
+          return {
+            ...room,
+            images: [...room.images, ...uploadedImageUrls],
+            ...(uploadedVideoUrl ? { video_url: uploadedVideoUrl } : {})
+          };
+        }
+        return room;
+      });
+      onChange(updated);
+
+      toast({
+        title: 'Upload complete',
+        description: `${uploadedImageUrls.length} image(s)${uploadedVideoUrl ? ' and 1 video' : ''} added`,
+      });
+
+      // Clear progress after delay
+      setTimeout(() => {
+        if (roomId === 'bulk') {
+          setBulkUploads([]);
+        } else {
+          setRoomUploads(prev => {
+            const newState = { ...prev };
+            delete newState[roomId];
+            return newState;
+          });
+        }
+      }, 2000);
+
+    } catch (error: any) {
+      toast({
+        title: 'Upload failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleFilesSelected = (roomId: string | 'bulk', files: File[], skipEditor: boolean = false) => {
+    if (files.length === 0) return;
+    
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    
+    // If there are images and we're not skipping editor, open editor
+    if (imageFiles.length > 0 && !skipEditor) {
+      openEditorForFile(roomId, files, 0);
+    } else {
+      startUpload(roomId, files);
+    }
+  };
+
+  const handleBulkImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    
     if (effectiveSelectedIds.length === 0) {
       toast({
         title: 'No rooms selected',
@@ -54,211 +372,31 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
       });
       return;
     }
-
-    setUploading(true);
-    try {
-      const uploadedUrls: string[] = [];
-      
-      for (const file of Array.from(files)) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `wizard-rooms/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('room-images')
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage
-          .from('room-images')
-          .getPublicUrl(filePath);
-
-        uploadedUrls.push(urlData.publicUrl);
-      }
-
-      // Apply to all selected rooms
-      const updated = rooms.map(room =>
-        effectiveSelectedIds.includes(room.id)
-          ? { ...room, images: [...room.images, ...uploadedUrls] }
-          : room
-      );
-      onChange(updated);
-      
-      toast({
-        title: 'Images uploaded',
-        description: `${uploadedUrls.length} images added to ${effectiveSelectedIds.length} room(s)`,
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Upload failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setUploading(false);
-      // Reset file input
-      e.target.value = '';
-    }
+    
+    handleFilesSelected('bulk', files);
+    e.target.value = '';
   };
 
-  const handleBulkVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (effectiveSelectedIds.length === 0) {
-      toast({
-        title: 'No rooms selected',
-        description: 'Please select rooms using the type filter first',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Check file size (50MB max)
-    if (file.size > 50 * 1024 * 1024) {
-      toast({
-        title: 'File too large',
-        description: 'Video must be under 50MB',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setUploadingVideo(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `wizard-rooms/videos/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('room-images')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('room-images')
-        .getPublicUrl(filePath);
-
-      // Apply video to all selected rooms
-      const updated = rooms.map(room =>
-        effectiveSelectedIds.includes(room.id)
-          ? { ...room, video_url: urlData.publicUrl }
-          : room
-      );
-      onChange(updated);
-      
-      toast({
-        title: 'Video uploaded',
-        description: `Video added to ${effectiveSelectedIds.length} room(s)`,
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Upload failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setUploadingVideo(false);
-      e.target.value = '';
-    }
+  const handleBulkVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    handleFilesSelected('bulk', files, true);
+    e.target.value = '';
   };
 
-  const handleSingleRoomImageUpload = async (roomId: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setUploading(true);
-    try {
-      const uploadedUrls: string[] = [];
-      
-      for (const file of Array.from(files)) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `wizard-rooms/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('room-images')
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage
-          .from('room-images')
-          .getPublicUrl(filePath);
-
-        uploadedUrls.push(urlData.publicUrl);
-      }
-
-      const updated = rooms.map(room =>
-        room.id === roomId
-          ? { ...room, images: [...room.images, ...uploadedUrls] }
-          : room
-      );
-      onChange(updated);
-    } catch (error: any) {
-      toast({
-        title: 'Upload failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setUploading(false);
-      e.target.value = '';
-    }
+  const handleSingleRoomImageUpload = (roomId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    handleFilesSelected(roomId, files);
+    e.target.value = '';
   };
 
-  const handleSingleRoomVideoUpload = async (roomId: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleSingleRoomVideoUpload = (roomId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    handleFilesSelected(roomId, files, true);
+    e.target.value = '';
+  };
 
-    if (file.size > 50 * 1024 * 1024) {
-      toast({
-        title: 'File too large',
-        description: 'Video must be under 50MB',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setUploadingVideo(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `wizard-rooms/videos/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('room-images')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('room-images')
-        .getPublicUrl(filePath);
-
-      const updated = rooms.map(room =>
-        room.id === roomId
-          ? { ...room, video_url: urlData.publicUrl }
-          : room
-      );
-      onChange(updated);
-      
-      toast({
-        title: 'Video uploaded',
-        description: 'Video added to room',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Upload failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setUploadingVideo(false);
-      e.target.value = '';
-    }
+  const handleDroppedFiles = (roomId: string, files: File[]) => {
+    handleFilesSelected(roomId, files);
   };
 
   const removeImage = (roomId: string, imageIndex: number) => {
@@ -303,88 +441,106 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
         transition={{ delay: 0.1 }}
         className="mb-6"
       >
-        <div className="bg-card border border-border rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Upload className="w-5 h-5 text-primary" />
-            <span className="font-semibold">Bulk Upload</span>
-          </div>
+        <MediaDropZone
+          onFilesDropped={(files) => handleFilesSelected('bulk', files)}
+          disabled={effectiveSelectedIds.length === 0 || isBulkUploading}
+        >
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Upload className="w-5 h-5 text-primary" />
+              <span className="font-semibold">Bulk Upload</span>
+            </div>
 
-          {/* Type Filter */}
-          <div className="mb-4">
-            <label className="text-sm text-muted-foreground mb-2 block">Select by room type</label>
-            <Select value={selectedType} onValueChange={handleTypeFilter}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select room type..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All rooms</SelectItem>
-                {roomTypes.map(type => (
-                  <SelectItem key={type} value={type}>
-                    {type} ({rooms.filter(r => r.type === type).length})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {effectiveSelectedIds.length > 0 && (
-              <Badge variant="secondary" className="mt-2">
-                {effectiveSelectedIds.length} rooms selected
-              </Badge>
+            {/* Type Filter */}
+            <div className="mb-4">
+              <label className="text-sm text-muted-foreground mb-2 block">Select by room type</label>
+              <Select value={selectedType} onValueChange={handleTypeFilter}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select room type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All rooms</SelectItem>
+                  {roomTypes.map(type => (
+                    <SelectItem key={type} value={type}>
+                      {type} ({rooms.filter(r => r.type === type).length})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {effectiveSelectedIds.length > 0 && (
+                <Badge variant="secondary" className="mt-2">
+                  {effectiveSelectedIds.length} rooms selected
+                </Badge>
+              )}
+            </div>
+
+            <p className="text-sm text-muted-foreground mb-4">
+              Upload media that will be added to all selected rooms. Drag & drop supported.
+            </p>
+
+            {/* Bulk Upload Progress */}
+            {bulkUploads.length > 0 && (
+              <RoomUploadProgressBar uploads={bulkUploads} />
             )}
+
+            <div className="flex gap-3">
+              {/* Bulk Image Upload */}
+              <label className="flex-1">
+                <Input
+                  type="file"
+                  accept={IMAGE_ACCEPT}
+                  multiple
+                  onChange={handleBulkImageUpload}
+                  disabled={isBulkUploading || effectiveSelectedIds.length === 0}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full rounded-xl gap-2"
+                  disabled={isBulkUploading || effectiveSelectedIds.length === 0}
+                  asChild
+                >
+                  <span>
+                    {isBulkUploading && bulkUploads.some(u => u.type === 'image' && u.status === 'uploading') ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ImagePlus className="w-4 h-4" />
+                    )}
+                    Images
+                  </span>
+                </Button>
+              </label>
+
+              {/* Bulk Video Upload */}
+              <label className="flex-1">
+                <Input
+                  type="file"
+                  accept={VIDEO_ACCEPT}
+                  onChange={handleBulkVideoUpload}
+                  disabled={isBulkUploading || effectiveSelectedIds.length === 0}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full rounded-xl gap-2"
+                  disabled={isBulkUploading || effectiveSelectedIds.length === 0}
+                  asChild
+                >
+                  <span>
+                    {isBulkUploading && bulkUploads.some(u => u.type === 'video' && u.status === 'uploading') ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Video className="w-4 h-4" />
+                    )}
+                    Video
+                  </span>
+                </Button>
+              </label>
+            </div>
           </div>
-
-          <p className="text-sm text-muted-foreground mb-4">
-            Upload media that will be added to all selected rooms
-          </p>
-
-          <div className="flex gap-3">
-            {/* Bulk Image Upload */}
-            <label className="flex-1">
-              <Input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleBulkImageUpload}
-                disabled={uploading || effectiveSelectedIds.length === 0}
-                className="hidden"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full rounded-xl gap-2"
-                disabled={uploading || effectiveSelectedIds.length === 0}
-                asChild
-              >
-                <span>
-                  <ImagePlus className="w-4 h-4" />
-                  {uploading ? 'Uploading...' : 'Images'}
-                </span>
-              </Button>
-            </label>
-
-            {/* Bulk Video Upload */}
-            <label className="flex-1">
-              <Input
-                type="file"
-                accept="video/*"
-                onChange={handleBulkVideoUpload}
-                disabled={uploadingVideo || effectiveSelectedIds.length === 0}
-                className="hidden"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full rounded-xl gap-2"
-                disabled={uploadingVideo || effectiveSelectedIds.length === 0}
-                asChild
-              >
-                <span>
-                  <Video className="w-4 h-4" />
-                  {uploadingVideo ? 'Uploading...' : 'Video'}
-                </span>
-              </Button>
-            </label>
-          </div>
-        </div>
+        </MediaDropZone>
       </motion.div>
 
       <div className="flex items-center justify-between mb-4">
@@ -396,6 +552,8 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
         <div className="space-y-3 pr-4">
           {rooms.map((room, index) => {
             const hasMedia = room.images.length > 0 || room.video_url;
+            const roomIsUploading = isRoomUploading(room.id);
+            const uploads = roomUploads[room.id] || [];
             
             return (
               <motion.div
@@ -403,162 +561,183 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.02 }}
-                className="bg-card border border-border rounded-xl overflow-hidden"
               >
-                <div className="p-4 flex items-center justify-between">
-                  <button
-                    onClick={() => setExpandedRoom(expandedRoom === room.id ? null : room.id)}
-                    className="flex items-center gap-3 text-left flex-1"
-                  >
-                    <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
-                      {room.images.length > 0 ? (
-                        <img
-                          src={room.images[0]}
-                          alt=""
-                          className="w-10 h-10 rounded-lg object-cover"
-                        />
-                      ) : room.video_url ? (
-                        <Play className="w-5 h-5 text-muted-foreground" />
-                      ) : (
-                        <ImagePlus className="w-5 h-5 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-foreground truncate">
-                          {room.name || `Room ${index + 1}`}
-                        </span>
-                        {room.type && (
-                          <Badge variant="secondary" className="text-xs shrink-0">
-                            {room.type}
-                          </Badge>
-                        )}
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {room.images.length} image{room.images.length !== 1 ? 's' : ''}
-                        {room.video_url && ' • 1 video'}
-                      </span>
-                    </div>
-                  </button>
-
-                  <div className="flex items-center gap-2">
-                    {hasMedia && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setPreviewRoom(room)}
-                        className="gap-1"
+                <MediaDropZone
+                  onFilesDropped={(files) => handleDroppedFiles(room.id, files)}
+                  disabled={roomIsUploading}
+                >
+                  <div className="bg-card border border-border rounded-xl overflow-hidden">
+                    <div className="p-4 flex items-center justify-between">
+                      <button
+                        onClick={() => setExpandedRoom(expandedRoom === room.id ? null : room.id)}
+                        className="flex items-center gap-3 text-left flex-1"
                       >
-                        <Eye className="w-4 h-4" />
-                        Preview
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setExpandedRoom(expandedRoom === room.id ? null : room.id)}
-                    >
-                      {expandedRoom === room.id ? (
-                        <ChevronUp className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-
-                {expandedRoom === room.id && (
-                  <div className="px-4 pb-4 space-y-3 border-t pt-3">
-                    {/* Images */}
-                    {room.images.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {room.images.map((img, imgIndex) => (
-                          <div key={imgIndex} className="relative">
+                        <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                          {room.images.length > 0 ? (
                             <img
-                              src={img}
+                              src={room.images[0]}
                               alt=""
-                              className="w-16 h-16 rounded-lg object-cover"
+                              className="w-10 h-10 rounded-lg object-cover"
                             />
-                            <button
-                              onClick={() => removeImage(room.id, imgIndex)}
-                              className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
+                          ) : room.video_url ? (
+                            <Play className="w-5 h-5 text-muted-foreground" />
+                          ) : (
+                            <ImagePlus className="w-5 h-5 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-foreground truncate">
+                              {room.name || `Room ${index + 1}`}
+                            </span>
+                            {room.type && (
+                              <Badge variant="secondary" className="text-xs shrink-0">
+                                {room.type}
+                              </Badge>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                          <span className="text-xs text-muted-foreground">
+                            {room.images.length} image{room.images.length !== 1 ? 's' : ''}
+                            {room.video_url && ' • 1 video'}
+                          </span>
+                        </div>
+                      </button>
 
-                    {/* Video */}
-                    {room.video_url && (
-                      <div className="relative inline-block">
-                        <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
-                          <Play className="w-4 h-4" />
-                          <span className="text-sm">Video uploaded</span>
-                          <button
-                            onClick={() => removeVideo(room.id)}
-                            className="w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center ml-2"
+                      <div className="flex items-center gap-2">
+                        {hasMedia && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setPreviewRoom(room)}
+                            className="gap-1"
                           >
-                            <X className="w-3 h-3" />
-                          </button>
+                            <Eye className="w-4 h-4" />
+                            Preview
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setExpandedRoom(expandedRoom === room.id ? null : room.id)}
+                        >
+                          {expandedRoom === room.id ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {expandedRoom === room.id && (
+                      <div className="px-4 pb-4 space-y-3 border-t pt-3">
+                        {/* Upload Progress for this room */}
+                        {uploads.length > 0 && (
+                          <RoomUploadProgressBar uploads={uploads} />
+                        )}
+
+                        {/* Images */}
+                        {room.images.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {room.images.map((img, imgIndex) => (
+                              <div key={imgIndex} className="relative">
+                                <img
+                                  src={img}
+                                  alt=""
+                                  className="w-16 h-16 rounded-lg object-cover"
+                                />
+                                <button
+                                  onClick={() => removeImage(room.id, imgIndex)}
+                                  className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Video */}
+                        {room.video_url && (
+                          <div className="relative inline-block">
+                            <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
+                              <Play className="w-4 h-4" />
+                              <span className="text-sm">Video uploaded</span>
+                              <button
+                                onClick={() => removeVideo(room.id)}
+                                className="w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center ml-2"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Upload buttons */}
+                        <div className="flex gap-2">
+                          <label className="flex-1">
+                            <Input
+                              type="file"
+                              accept={IMAGE_ACCEPT}
+                              multiple
+                              onChange={(e) => handleSingleRoomImageUpload(room.id, e)}
+                              disabled={roomIsUploading}
+                              className="hidden"
+                              ref={(el) => { imageInputRefs.current[room.id] = el; }}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="w-full rounded-lg gap-2"
+                              disabled={roomIsUploading}
+                              asChild
+                            >
+                              <span>
+                                {roomIsUploading && uploads.some(u => u.type === 'image' && u.status === 'uploading') ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <ImagePlus className="w-4 h-4" />
+                                )}
+                                Add Images
+                              </span>
+                            </Button>
+                          </label>
+
+                          {!room.video_url && (
+                            <label className="flex-1">
+                              <Input
+                                type="file"
+                                accept={VIDEO_ACCEPT}
+                                onChange={(e) => handleSingleRoomVideoUpload(room.id, e)}
+                                disabled={roomIsUploading}
+                                className="hidden"
+                                ref={(el) => { videoInputRefs.current[room.id] = el; }}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="w-full rounded-lg gap-2"
+                                disabled={roomIsUploading}
+                                asChild
+                              >
+                                <span>
+                                  {roomIsUploading && uploads.some(u => u.type === 'video' && u.status === 'uploading') ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Video className="w-4 h-4" />
+                                  )}
+                                  Add Video
+                                </span>
+                              </Button>
+                            </label>
+                          )}
                         </div>
                       </div>
                     )}
-
-                    {/* Upload buttons */}
-                    <div className="flex gap-2">
-                      <label className="flex-1">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={(e) => handleSingleRoomImageUpload(room.id, e)}
-                          disabled={uploading}
-                          className="hidden"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="w-full rounded-lg gap-2"
-                          disabled={uploading}
-                          asChild
-                        >
-                          <span>
-                            <ImagePlus className="w-4 h-4" />
-                            Add Images
-                          </span>
-                        </Button>
-                      </label>
-
-                      {!room.video_url && (
-                        <label className="flex-1">
-                          <Input
-                            type="file"
-                            accept="video/*"
-                            onChange={(e) => handleSingleRoomVideoUpload(room.id, e)}
-                            disabled={uploadingVideo}
-                            className="hidden"
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="w-full rounded-lg gap-2"
-                            disabled={uploadingVideo}
-                            asChild
-                          >
-                            <span>
-                              <Video className="w-4 h-4" />
-                              Add Video
-                            </span>
-                          </Button>
-                        </label>
-                      )}
-                    </div>
                   </div>
-                )}
+                </MediaDropZone>
               </motion.div>
             );
           })}
@@ -571,6 +750,16 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
           isOpen={!!previewRoom}
           onClose={() => setPreviewRoom(null)}
           room={previewRoom}
+        />
+      )}
+
+      {/* Image Editor Modal */}
+      {editingFile && (
+        <ImageEditorModal
+          isOpen={editorOpen}
+          onClose={handleEditorSkip}
+          imageFile={editingFile}
+          onSave={handleEditorSave}
         />
       )}
     </div>
