@@ -4,11 +4,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Users } from 'lucide-react';
 import { WizardRoomData } from './RoomNamesStep';
+import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface RoomCapacityStepProps {
   rooms: WizardRoomData[];
   selectedIds: string[];
   onChange: (rooms: WizardRoomData[]) => void;
+  propertyType?: string;
 }
 
 // Check if room type has auto-capacity
@@ -17,7 +19,9 @@ function hasAutoCapacity(type: string): boolean {
   return t.includes('single') || t.includes('double') || t.includes('triple') || t.includes('quadruple');
 }
 
-export function RoomCapacityStep({ rooms, selectedIds, onChange }: RoomCapacityStepProps) {
+export function RoomCapacityStep({ rooms, selectedIds, onChange, propertyType = 'dorm' }: RoomCapacityStepProps) {
+  const { roomsLabel, roomLabel } = usePropertyTerminology(propertyType);
+  
   // Filter to show selected rooms that need manual capacity, or all rooms when none selected (editing mode)
   const effectiveIds = selectedIds.length > 0 ? selectedIds : rooms.map(r => r.id);
   const roomsNeedingCapacity = rooms.filter(
@@ -44,7 +48,7 @@ export function RoomCapacityStep({ rooms, selectedIds, onChange }: RoomCapacityS
               Capacity set automatically
             </h1>
             <p className="text-muted-foreground">
-              All selected rooms have standard types with automatic capacity.
+              All selected {roomsLabel} have standard types with automatic capacity.
             </p>
           </motion.div>
         </div>
@@ -61,10 +65,10 @@ export function RoomCapacityStep({ rooms, selectedIds, onChange }: RoomCapacityS
           className="mb-6"
         >
           <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
-            Set room capacity
+            Set {roomLabel} capacity
           </h1>
           <p className="text-muted-foreground">
-            How many students can each room accommodate?
+            How many students can each {roomLabel} accommodate?
           </p>
         </motion.div>
 

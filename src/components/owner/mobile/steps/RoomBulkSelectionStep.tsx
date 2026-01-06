@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CheckCircle2, Circle } from 'lucide-react';
 import { WizardRoomData } from './RoomNamesStep';
+import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface RoomBulkSelectionStepProps {
   rooms: WizardRoomData[];
@@ -14,6 +15,7 @@ interface RoomBulkSelectionStepProps {
   onSelectionChange: (ids: string[]) => void;
   title?: string;
   subtitle?: string;
+  propertyType?: string;
 }
 
 // Check if room has all required data
@@ -31,9 +33,15 @@ export function RoomBulkSelectionStep({
   selectedIds,
   completedIds = [],
   onSelectionChange,
-  title = 'Select rooms for pricing',
-  subtitle = 'Choose which rooms to configure'
+  title,
+  subtitle,
+  propertyType = 'dorm'
 }: RoomBulkSelectionStepProps) {
+  const { roomsLabel, roomLabel } = usePropertyTerminology(propertyType);
+  
+  // Use dynamic terminology in default values
+  const displayTitle = title || `Select ${roomsLabel} for pricing`;
+  const displaySubtitle = subtitle || `Choose which ${roomsLabel} to configure`;
   
   const uniqueTypes = useMemo(() => {
     const types = rooms.map(r => r.type).filter(Boolean);
@@ -78,10 +86,10 @@ export function RoomBulkSelectionStep({
           className="mb-4"
         >
           <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
-            {title}
+            {displayTitle}
           </h1>
           <p className="text-muted-foreground">
-            {subtitle}
+            {displaySubtitle}
           </p>
         </motion.div>
 
@@ -95,7 +103,7 @@ export function RoomBulkSelectionStep({
         <div className="flex items-center gap-2 text-sm">
           <CheckCircle2 className="w-4 h-4 text-green-500" />
           <span className="text-muted-foreground">
-            {completedRooms.length} of {rooms.length} rooms complete
+            {completedRooms.length} of {rooms.length} {roomsLabel} complete
           </span>
         </div>
       </motion.div>
@@ -108,10 +116,10 @@ export function RoomBulkSelectionStep({
         >
           <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-foreground mb-2">
-            All rooms configured!
+            All {roomsLabel} configured!
           </h2>
           <p className="text-muted-foreground">
-            Continue to upload room photos and videos.
+            Continue to upload {roomLabel} photos and videos.
           </p>
         </motion.div>
       ) : (
@@ -127,7 +135,7 @@ export function RoomBulkSelectionStep({
               <span className="text-sm text-muted-foreground whitespace-nowrap">Select by type:</span>
               <Select onValueChange={selectByType}>
                 <SelectTrigger className="flex-1 h-10 rounded-xl">
-                  <SelectValue placeholder="Choose room type" />
+                  <SelectValue placeholder={`Choose ${roomLabel} type`} />
                 </SelectTrigger>
                 <SelectContent>
                   {uniqueTypes.map(type => (
@@ -138,7 +146,7 @@ export function RoomBulkSelectionStep({
             </div>
             {selectedCount > 0 && (
               <Badge variant="secondary" className="mt-2 text-xs">
-                {selectedCount} room{selectedCount !== 1 ? 's' : ''} selected
+                {selectedCount} {selectedCount !== 1 ? roomsLabel : roomLabel} selected
               </Badge>
             )}
           </motion.div>

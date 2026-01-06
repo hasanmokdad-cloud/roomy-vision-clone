@@ -6,14 +6,17 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Ruler, Check } from 'lucide-react';
 import { WizardRoomData } from './RoomNamesStep';
+import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface RoomAreaStepProps {
   rooms: WizardRoomData[];
   selectedIds: string[];
   onChange: (rooms: WizardRoomData[]) => void;
+  propertyType?: string;
 }
 
-export function RoomAreaStep({ rooms, selectedIds, onChange }: RoomAreaStepProps) {
+export function RoomAreaStep({ rooms, selectedIds, onChange, propertyType = 'dorm' }: RoomAreaStepProps) {
+  const { roomsLabel, roomLabel, roomsLabelCap } = usePropertyTerminology(propertyType);
   const [area, setArea] = useState('');
   const [applied, setApplied] = useState(false);
 
@@ -43,10 +46,10 @@ export function RoomAreaStep({ rooms, selectedIds, onChange }: RoomAreaStepProps
           className="mb-6"
         >
           <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
-            Room dimensions
+            {roomsLabelCap} dimensions
           </h1>
           <p className="text-muted-foreground">
-            Set the area in square meters for {selectedCount} selected room{selectedCount !== 1 ? 's' : ''}
+            Set the area in square meters for {selectedCount} selected {selectedCount !== 1 ? roomsLabel : roomLabel}
           </p>
         </motion.div>
 

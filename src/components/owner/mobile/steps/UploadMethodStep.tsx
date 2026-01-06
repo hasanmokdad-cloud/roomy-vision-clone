@@ -1,27 +1,31 @@
 import { motion } from 'framer-motion';
 import { FileSpreadsheet, Edit3 } from 'lucide-react';
+import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface UploadMethodStepProps {
   value: 'manual' | 'excel' | '';
   onChange: (value: 'manual' | 'excel') => void;
+  propertyType?: string;
 }
 
-const uploadMethods = [
-  {
-    id: 'manual' as const,
-    label: 'Manual Entry',
-    icon: Edit3,
-    description: 'Enter room details step by step with bulk operations'
-  },
-  {
-    id: 'excel' as const,
-    label: 'Excel Upload',
-    icon: FileSpreadsheet,
-    description: 'Download template, fill offline, upload'
-  },
-];
+export function UploadMethodStep({ value, onChange, propertyType = 'dorm' }: UploadMethodStepProps) {
+  const { roomsLabel } = usePropertyTerminology(propertyType);
 
-export function UploadMethodStep({ value, onChange }: UploadMethodStepProps) {
+  const uploadMethods = [
+    {
+      id: 'manual' as const,
+      label: 'Manual Entry',
+      icon: Edit3,
+      description: `Enter ${roomsLabel} details step by step with bulk operations`
+    },
+    {
+      id: 'excel' as const,
+      label: 'Excel Upload',
+      icon: FileSpreadsheet,
+      description: 'Download template, fill offline, upload'
+    },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
       <div className="w-full max-w-xl mx-auto">
@@ -31,7 +35,7 @@ export function UploadMethodStep({ value, onChange }: UploadMethodStepProps) {
           className="text-center mb-6"
         >
           <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground">
-            How would you like to add your rooms?
+            How would you like to add your {roomsLabel}?
           </h1>
         </motion.div>
 

@@ -5,20 +5,24 @@ import { toast } from '@/hooks/use-toast';
 import CameraIcon from '@/assets/camera-icon.avif';
 import { PhotoUploadModal } from '../PhotoUploadModal';
 import { cn } from '@/lib/utils';
+import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface PhotosStepProps {
   coverImage: string;
   galleryImages: string[];
   onCoverChange: (url: string) => void;
   onGalleryChange: (urls: string[]) => void;
+  propertyType?: string;
 }
 
 export function PhotosStep({ 
   coverImage, 
   galleryImages, 
   onCoverChange, 
-  onGalleryChange 
+  onGalleryChange,
+  propertyType = 'dorm'
 }: PhotosStepProps) {
+  const { dormLabel } = usePropertyTerminology(propertyType);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadMode, setUploadMode] = useState<'cover' | 'gallery'>('gallery');
   const [coverImageLoaded, setCoverImageLoaded] = useState(false);
@@ -71,7 +75,7 @@ export function PhotosStep({
           className="text-center mb-6"
         >
           <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground">
-            Add photos of your dorm
+            Add photos of your {dormLabel}
           </h1>
         </motion.div>
 

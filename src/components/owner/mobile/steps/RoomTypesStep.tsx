@@ -8,10 +8,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ownerRoomTypes } from '@/data/roomTypes';
 import { WizardRoomData } from './RoomNamesStep';
 import { Check } from 'lucide-react';
+import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface RoomTypesStepProps {
   rooms: WizardRoomData[];
   onChange: (rooms: WizardRoomData[]) => void;
+  propertyType?: string;
 }
 
 const getCapacityFromType = (type: string): number | null => {
@@ -24,7 +26,8 @@ const getCapacityFromType = (type: string): number | null => {
   return null;
 };
 
-export function RoomTypesStep({ rooms, onChange }: RoomTypesStepProps) {
+export function RoomTypesStep({ rooms, onChange, propertyType = 'dorm' }: RoomTypesStepProps) {
+  const { roomsLabel, roomLabel } = usePropertyTerminology(propertyType);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkType, setBulkType] = useState('');
   const [applied, setApplied] = useState(false);
@@ -89,10 +92,10 @@ export function RoomTypesStep({ rooms, onChange }: RoomTypesStepProps) {
           className="mb-4"
         >
           <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
-            What type are your rooms?
+            What type are your {roomsLabel}?
           </h1>
           <p className="text-muted-foreground">
-            Assign a room type to each room
+            Assign a type to each {roomLabel}
           </p>
         </motion.div>
 

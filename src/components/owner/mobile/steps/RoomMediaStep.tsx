@@ -16,18 +16,22 @@ import { DraggableRoomImages } from '../DraggableRoomImages';
 import { ImageEditorModal } from '@/components/owner/ImageEditorModal';
 import { VideoTrimmerModal } from '../VideoTrimmerModal';
 import { uploadFileWithProgress, generateFilePath, UploadHandle } from '@/utils/uploadWithProgress';
+import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface RoomMediaStepProps {
   rooms: WizardRoomData[];
   selectedIds: string[];
   onChange: (rooms: WizardRoomData[]) => void;
+  propertyType?: string;
 }
 
 // Comprehensive file type accepts
 const IMAGE_ACCEPT = "image/*,.heic,.heif,.avif,.bmp,.tiff,.tif,.svg,.ico,.jfif,.raw,.cr2,.nef,.arw";
 const VIDEO_ACCEPT = "video/*,.mov,.avi,.wmv,.mkv,.3gp,.3g2,.flv,.m4v,.mpg,.mpeg";
 
-export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepProps) {
+export function RoomMediaStep({ rooms, selectedIds, onChange, propertyType = 'dorm' }: RoomMediaStepProps) {
+  const { roomsLabel } = usePropertyTerminology(propertyType);
+  
   // Per-room upload tracking
   const [roomUploads, setRoomUploads] = useState<Record<string, RoomUploadProgress[]>>({});
   const [bulkUploads, setBulkUploads] = useState<RoomUploadProgress[]>([]);
@@ -584,10 +588,10 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
           className="mb-6"
         >
           <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
-            Showcase your rooms
+            Showcase your {roomsLabel}
           </h1>
           <p className="text-muted-foreground">
-            Upload images and videos to help students see your rooms
+            Upload images and videos to help students see your {roomsLabel}
           </p>
         </motion.div>
 

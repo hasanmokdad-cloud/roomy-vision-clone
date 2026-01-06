@@ -50,18 +50,18 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress, hasSavedProgres
   const steps = [
     {
       number: 1,
-      title: 'Tell us about your dorm',
-      description: 'Share some basic info, like where it is and how many students can stay.',
+      title: 'Tell us about your property',
+      description: 'Property type, name, gender preference, highlights & description.',
     },
     {
       number: 2,
       title: 'Make it stand out',
-      description: "Add photos plus the dorm's name and description — we'll help you out.",
+      description: 'Location, essential services, amenities & photos.',
     },
     {
       number: 3,
       title: 'Finish up and publish',
-      description: 'Review your info and submit for verification.',
+      description: 'Room details, pricing, occupancy & media.',
     },
   ];
 
