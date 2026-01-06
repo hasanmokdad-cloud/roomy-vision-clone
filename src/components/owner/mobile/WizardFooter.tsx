@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { RotateCcw } from 'lucide-react';
 
 interface WizardFooterProps {
   currentStep: number;
@@ -9,6 +10,8 @@ interface WizardFooterProps {
   isLastStep?: boolean;
   isSubmitting?: boolean;
   isVideoPreloading?: boolean;
+  onClearAll?: () => void;
+  showClearAll?: boolean;
 }
 
 // Phase definitions for progress calculation (25 total steps: 0-24)
@@ -25,6 +28,8 @@ export function WizardFooter({
   isLastStep = false,
   isSubmitting = false,
   isVideoPreloading = false,
+  onClearAll,
+  showClearAll = false,
 }: WizardFooterProps) {
   // Phase 1 content steps: 2, 3, 4, 5, 6 (property type, title, gender, highlights, description)
   // Phase 2 content steps: 8, 9, 10, 11, 12 (location, amenities x3, photos)
@@ -101,28 +106,41 @@ export function WizardFooter({
           Back
         </Button>
         
-        <Button
-          onClick={onNext}
-          disabled={isNextDisabled || isSubmitting || isVideoPreloading}
-          className="bg-[#222222] text-white hover:bg-[#000000] rounded-lg px-6 py-3 font-semibold text-base h-12 min-w-[100px]"
-        >
-          {isVideoPreloading ? (
-            <span className="flex items-center gap-1 text-lg tracking-widest">
-              <span className="animate-bounce" style={{ animationDelay: '0ms', animationDuration: '600ms' }}>.</span>
-              <span className="animate-bounce" style={{ animationDelay: '150ms', animationDuration: '600ms' }}>.</span>
-              <span className="animate-bounce" style={{ animationDelay: '300ms', animationDuration: '600ms' }}>.</span>
-            </span>
-          ) : isSubmitting ? (
-            <span className="flex items-center gap-2">
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
-              Submitting...
-            </span>
-          ) : isLastStep ? (
-            'Submit for verification'
-          ) : (
-            'Next'
+        <div className="flex items-center gap-3">
+          {showClearAll && onClearAll && (
+            <Button
+              variant="ghost"
+              onClick={onClearAll}
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Clear all
+            </Button>
           )}
-        </Button>
+          
+          <Button
+            onClick={onNext}
+            disabled={isNextDisabled || isSubmitting || isVideoPreloading}
+            className="bg-[#222222] text-white hover:bg-[#000000] rounded-lg px-6 py-3 font-semibold text-base h-12 min-w-[100px]"
+          >
+            {isVideoPreloading ? (
+              <span className="flex items-center gap-1 text-lg tracking-widest">
+                <span className="animate-bounce" style={{ animationDelay: '0ms', animationDuration: '600ms' }}>.</span>
+                <span className="animate-bounce" style={{ animationDelay: '150ms', animationDuration: '600ms' }}>.</span>
+                <span className="animate-bounce" style={{ animationDelay: '300ms', animationDuration: '600ms' }}>.</span>
+              </span>
+            ) : isSubmitting ? (
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                Submitting...
+              </span>
+            ) : isLastStep ? (
+              'Submit for verification'
+            ) : (
+              'Next'
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
