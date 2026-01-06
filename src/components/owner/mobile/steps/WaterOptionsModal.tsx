@@ -77,7 +77,7 @@ export function WaterOptionsModal({
                 <RadioGroupItem value="sweet" id="water-sweet" />
                 <Label htmlFor="water-sweet" className="flex-1 cursor-pointer">
                   <span className="font-medium">Sweet Water</span>
-                  <p className="text-sm text-muted-foreground">Fresh, drinkable water supply</p>
+                  <p className="text-sm text-muted-foreground">Fresh water supply</p>
                 </Label>
               </div>
               <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
