@@ -59,6 +59,8 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
   
   // Upload abort handles
   const uploadHandlesRef = useRef<Map<string, UploadHandle>>(new Map());
+  // Track cancelled files to prevent adding their URLs
+  const cancelledFilesRef = useRef<Set<string>>(new Set());
 
   // Get unique room types
   const roomTypes = [...new Set(rooms.map(r => r.type).filter(Boolean))] as string[];
@@ -114,6 +116,9 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
 
   // Cancel upload handler
   const handleCancelUpload = (fileName: string, roomId: string | 'bulk') => {
+    // Mark as cancelled first - this prevents the URL from being added
+    cancelledFilesRef.current.add(fileName);
+    
     const handle = uploadHandlesRef.current.get(fileName);
     if (handle) {
       handle.abort();
@@ -252,8 +257,17 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
       // Upload images
       for (let i = 0; i < imageFiles.length; i++) {
         const file = imageFiles[i];
+        
+        // Skip if already cancelled
+        if (cancelledFilesRef.current.has(file.name)) {
+          continue;
+        }
+        
         try {
           const url = await uploadFile(file, roomId.toString(), false, (progress) => {
+            // Check if cancelled during upload
+            if (cancelledFilesRef.current.has(file.name)) return;
+            
             const updateProgress = (prev: RoomUploadProgress[]) =>
               prev.map((p, idx) => idx === i ? { ...p, progress } : p);
             
@@ -266,21 +280,31 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
               }));
             }
           });
-          uploadedImageUrls.push(url);
           
-          // Mark as complete
-          const markComplete = (prev: RoomUploadProgress[]) =>
-            prev.map((p, idx) => idx === i ? { ...p, status: 'complete' as const, progress: 100 } : p);
-          
-          if (roomId === 'bulk') {
-            setBulkUploads(markComplete);
-          } else {
-            setRoomUploads(prev => ({
-              ...prev,
-              [roomId]: markComplete(prev[roomId] || [])
-            }));
+          // Only add URL if not cancelled
+          if (!cancelledFilesRef.current.has(file.name)) {
+            uploadedImageUrls.push(url);
+            
+            // Mark as complete
+            const markComplete = (prev: RoomUploadProgress[]) =>
+              prev.map((p, idx) => idx === i ? { ...p, status: 'complete' as const, progress: 100 } : p);
+            
+            if (roomId === 'bulk') {
+              setBulkUploads(markComplete);
+            } else {
+              setRoomUploads(prev => ({
+                ...prev,
+                [roomId]: markComplete(prev[roomId] || [])
+              }));
+            }
           }
-        } catch (error) {
+        } catch (error: any) {
+          // Check if it was a cancellation (abort)
+          if (error.message === 'Upload cancelled' || cancelledFilesRef.current.has(file.name)) {
+            console.log('Upload cancelled for:', file.name);
+            continue; // Skip to next file
+          }
+          
           const markError = (prev: RoomUploadProgress[]) =>
             prev.map((p, idx) => idx === i ? { ...p, status: 'error' as const } : p);
           
@@ -299,46 +323,67 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
       if (videoFiles.length > 0) {
         const videoFile = videoFiles[0];
         const videoIdx = imageFiles.length;
-        try {
-          uploadedVideoUrl = await uploadFile(videoFile, roomId.toString(), true, (progress) => {
-            const updateProgress = (prev: RoomUploadProgress[]) =>
-              prev.map((p, idx) => idx === videoIdx ? { ...p, progress } : p);
+        
+        // Skip if already cancelled
+        if (!cancelledFilesRef.current.has(videoFile.name)) {
+          try {
+            uploadedVideoUrl = await uploadFile(videoFile, roomId.toString(), true, (progress) => {
+              // Check if cancelled during upload
+              if (cancelledFilesRef.current.has(videoFile.name)) return;
+              
+              const updateProgress = (prev: RoomUploadProgress[]) =>
+                prev.map((p, idx) => idx === videoIdx ? { ...p, progress } : p);
+              
+              if (roomId === 'bulk') {
+                setBulkUploads(updateProgress);
+              } else {
+                setRoomUploads(prev => ({
+                  ...prev,
+                  [roomId]: updateProgress(prev[roomId] || [])
+                }));
+              }
+            });
             
-            if (roomId === 'bulk') {
-              setBulkUploads(updateProgress);
+            // Only mark complete if not cancelled
+            if (!cancelledFilesRef.current.has(videoFile.name)) {
+              const markComplete = (prev: RoomUploadProgress[]) =>
+                prev.map((p, idx) => idx === videoIdx ? { ...p, status: 'complete' as const, progress: 100 } : p);
+              
+              if (roomId === 'bulk') {
+                setBulkUploads(markComplete);
+              } else {
+                setRoomUploads(prev => ({
+                  ...prev,
+                  [roomId]: markComplete(prev[roomId] || [])
+                }));
+              }
             } else {
-              setRoomUploads(prev => ({
-                ...prev,
-                [roomId]: updateProgress(prev[roomId] || [])
-              }));
+              // Cancelled - clear the URL
+              uploadedVideoUrl = undefined;
             }
-          });
-          
-          const markComplete = (prev: RoomUploadProgress[]) =>
-            prev.map((p, idx) => idx === videoIdx ? { ...p, status: 'complete' as const, progress: 100 } : p);
-          
-          if (roomId === 'bulk') {
-            setBulkUploads(markComplete);
-          } else {
-            setRoomUploads(prev => ({
-              ...prev,
-              [roomId]: markComplete(prev[roomId] || [])
-            }));
-          }
-        } catch (error) {
-          const markError = (prev: RoomUploadProgress[]) =>
-            prev.map((p, idx) => idx === videoIdx ? { ...p, status: 'error' as const } : p);
-          
-          if (roomId === 'bulk') {
-            setBulkUploads(markError);
-          } else {
-            setRoomUploads(prev => ({
-              ...prev,
-              [roomId]: markError(prev[roomId] || [])
-            }));
+          } catch (error: any) {
+            // Check if it was a cancellation (abort)
+            if (error.message === 'Upload cancelled' || cancelledFilesRef.current.has(videoFile.name)) {
+              console.log('Video upload cancelled for:', videoFile.name);
+            } else {
+              const markError = (prev: RoomUploadProgress[]) =>
+                prev.map((p, idx) => idx === videoIdx ? { ...p, status: 'error' as const } : p);
+              
+              if (roomId === 'bulk') {
+                setBulkUploads(markError);
+              } else {
+                setRoomUploads(prev => ({
+                  ...prev,
+                  [roomId]: markError(prev[roomId] || [])
+                }));
+              }
+            }
           }
         }
       }
+      
+      // Clear cancelled files after processing
+      cancelledFilesRef.current.clear();
 
       // Apply to rooms
       const updated = rooms.map(room => {
