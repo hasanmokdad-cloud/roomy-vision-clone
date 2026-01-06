@@ -15,7 +15,7 @@ import { MediaDropZone } from '../MediaDropZone';
 import { DraggableRoomImages } from '../DraggableRoomImages';
 import { ImageEditorModal } from '@/components/owner/ImageEditorModal';
 import { VideoTrimmerModal } from '../VideoTrimmerModal';
-import { uploadFileWithProgress, generateFilePath } from '@/utils/uploadWithProgress';
+import { uploadFileWithProgress, generateFilePath, UploadHandle } from '@/utils/uploadWithProgress';
 
 interface RoomMediaStepProps {
   rooms: WizardRoomData[];
@@ -56,6 +56,9 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
   // File input refs for each room
   const imageInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const videoInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  
+  // Upload abort handles
+  const uploadHandlesRef = useRef<Map<string, UploadHandle>>(new Map());
 
   // Get unique room types
   const roomTypes = [...new Set(rooms.map(r => r.type).filter(Boolean))] as string[];
@@ -90,14 +93,42 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
   ): Promise<string> => {
     const filePath = generateFilePath('wizard-rooms', file.name, isVideo);
     
+    // Create a handle to track this upload
+    const handleRef: { current: UploadHandle | null } = { current: null };
+    
     const url = await uploadFileWithProgress(
       file,
       'room-images',
       filePath,
-      onProgress
+      onProgress,
+      handleRef
     );
+    
+    // Store handle for potential cancellation
+    if (handleRef.current) {
+      uploadHandlesRef.current.set(file.name, handleRef.current);
+    }
 
     return url;
+  };
+
+  // Cancel upload handler
+  const handleCancelUpload = (fileName: string, roomId: string | 'bulk') => {
+    const handle = uploadHandlesRef.current.get(fileName);
+    if (handle) {
+      handle.abort();
+      uploadHandlesRef.current.delete(fileName);
+    }
+    
+    // Remove from progress state
+    if (roomId === 'bulk') {
+      setBulkUploads(prev => prev.filter(u => u.fileName !== fileName));
+    } else {
+      setRoomUploads(prev => ({
+        ...prev,
+        [roomId]: (prev[roomId] || []).filter(u => u.fileName !== fileName)
+      }));
+    }
   };
 
   // Open editor for file
@@ -540,7 +571,10 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
 
             {/* Bulk Upload Progress */}
             {bulkUploads.length > 0 && (
-              <RoomUploadProgressBar uploads={bulkUploads} />
+              <RoomUploadProgressBar 
+                uploads={bulkUploads} 
+                onCancel={(fileName) => handleCancelUpload(fileName, 'bulk')}
+              />
             )}
 
             <div className="flex gap-3">
@@ -693,7 +727,10 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
                       <div className="px-4 pb-4 space-y-3 border-t pt-3">
                         {/* Upload Progress for this room */}
                         {uploads.length > 0 && (
-                          <RoomUploadProgressBar uploads={uploads} />
+                          <RoomUploadProgressBar 
+                            uploads={uploads} 
+                            onCancel={(fileName) => handleCancelUpload(fileName, room.id)}
+                          />
                         )}
 
                         {/* Images with drag-and-drop reordering */}
