@@ -10,6 +10,14 @@ export const studentRoomTypes = [
   "Studio"
 ];
 
+// Apartment types for apartment buildings
+export const apartmentTypes = [
+  "Apartment",
+  "Small Apartment",
+  "Medium Apartment",
+  "Large Apartment"
+];
+
 // Full list of room types for owners - includes base types and variations
 // Note: "Apartment" is excluded as apartments are property types that contain rooms
 export const ownerRoomTypes = [

@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
+import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface GenderPreferenceStepProps {
   value: string;
   onChange: (value: string) => void;
+  propertyType?: string;
 }
 
 const options = [
@@ -11,7 +13,9 @@ const options = [
   { id: 'mixed', label: 'Mixed (Co-ed)', emoji: '👥', description: 'All students welcome' },
 ];
 
-export function GenderPreferenceStep({ value, onChange }: GenderPreferenceStepProps) {
+export function GenderPreferenceStep({ value, onChange, propertyType = 'dorm' }: GenderPreferenceStepProps) {
+  const { dormLabel } = usePropertyTerminology(propertyType);
+  
   return (
     <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
       <div className="w-full max-w-xl mx-auto">
@@ -21,7 +25,7 @@ export function GenderPreferenceStep({ value, onChange }: GenderPreferenceStepPr
           className="text-center mb-6"
         >
           <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground">
-            Who can stay in your dorm?
+            Who can stay in your {dormLabel}?
           </h1>
         </motion.div>
 

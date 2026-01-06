@@ -736,6 +736,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onHighlightsChange={(v) => setFormData({ ...formData, highlights: v })}
             onTitleChange={(v) => setFormData({ ...formData, title: v })}
             onDescriptionChange={(v) => setFormData({ ...formData, description: v })}
+            propertyType={formData.propertyType}
           />
         );
       case 4:
@@ -743,6 +744,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           <GenderPreferenceStep
             value={formData.genderPreference}
             onChange={(v) => setFormData({ ...formData, genderPreference: v })}
+            propertyType={formData.propertyType}
           />
         );
       case 5:
@@ -755,6 +757,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onHighlightsChange={(v) => setFormData({ ...formData, highlights: v })}
             onTitleChange={(v) => setFormData({ ...formData, title: v })}
             onDescriptionChange={(v) => setFormData({ ...formData, description: v })}
+            propertyType={formData.propertyType}
           />
         );
       case 6:
@@ -767,6 +770,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onHighlightsChange={(v) => setFormData({ ...formData, highlights: v })}
             onTitleChange={(v) => setFormData({ ...formData, title: v })}
             onDescriptionChange={(v) => setFormData({ ...formData, description: v, descriptionManuallyEdited: true })}
+            propertyType={formData.propertyType}
           />
         );
       case 7:
@@ -782,6 +786,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onAreaChange={(v) => setFormData({ ...formData, area: v })}
             onAddressChange={(v) => setFormData({ ...formData, address: v })}
             onShuttleChange={(v) => setFormData({ ...formData, shuttle: v })}
+            propertyType={formData.propertyType}
           />
         );
       case 9:

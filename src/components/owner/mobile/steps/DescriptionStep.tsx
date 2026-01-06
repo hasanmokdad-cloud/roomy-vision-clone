@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface DescriptionStepProps {
   mode: 'highlights' | 'title' | 'description';
@@ -10,6 +11,7 @@ interface DescriptionStepProps {
   onHighlightsChange: (highlights: string[]) => void;
   onTitleChange: (title: string) => void;
   onDescriptionChange: (description: string) => void;
+  propertyType?: string;
 }
 
 const highlightOptions = [
@@ -61,7 +63,10 @@ export function DescriptionStep({
   onHighlightsChange,
   onTitleChange,
   onDescriptionChange,
+  propertyType = 'dorm',
 }: DescriptionStepProps) {
+  const { dormLabel } = usePropertyTerminology(propertyType);
+  
   const toggleHighlight = (id: string) => {
     if (highlights.includes(id)) {
       onHighlightsChange(highlights.filter((h) => h !== id));
@@ -80,7 +85,7 @@ export function DescriptionStep({
             className="text-center mb-6"
           >
             <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground">
-              Let's describe your dorm
+              Let's describe your {dormLabel}
             </h1>
           </motion.div>
 
@@ -129,7 +134,7 @@ export function DescriptionStep({
             className="text-center mb-6"
           >
             <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground">
-              Give your dorm a title
+              Give your {dormLabel} a title
             </h1>
           </motion.div>
 
@@ -174,7 +179,7 @@ export function DescriptionStep({
           <Textarea
             value={description}
             onChange={(e) => onDescriptionChange(e.target.value.slice(0, 500))}
-            placeholder="Describe your dorm... What do students love about it? Any house rules? What makes it unique?"
+            placeholder={`Describe your ${dormLabel}... What do students love about it? Any house rules? What makes it unique?`}
             className="min-h-[200px] text-base"
           />
           <p className="text-right text-sm text-muted-foreground mt-2">
@@ -189,7 +194,7 @@ export function DescriptionStep({
           className="mt-6 p-4 rounded-xl bg-muted/50"
         >
           <p className="text-sm text-muted-foreground">
-            💡 <strong>Tips:</strong> Mention nearby landmarks, transportation, what's included, and any unique features that set your dorm apart.
+            💡 <strong>Tips:</strong> Mention nearby landmarks, transportation, what's included, and any unique features that set your {dormLabel} apart.
           </p>
         </motion.div>
       </div>
