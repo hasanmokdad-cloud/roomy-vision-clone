@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, Wifi, Car, Snowflake, Dumbbell, ShieldCheck, UtensilsCrossed, BookOpen, Trees, Users, Zap, Droplets, ArrowUpDown, Sofa, PawPrint, Brush, Waves, Flower2, DoorOpen, X, Tv, Thermometer } from 'lucide-react';
+import { ChevronDown, ChevronUp, Wifi, Car, Snowflake, Dumbbell, ShieldCheck, UtensilsCrossed, BookOpen, Trees, Users, Zap, Droplets, ArrowUpDown, Sofa, PawPrint, Brush, Waves, Flower2, X, Tv, Thermometer } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
@@ -112,7 +112,6 @@ const amenityCategories = {
   'Outdoor': [
     { name: 'Pool', icon: Waves },
     { name: 'Garden', icon: Flower2 },
-    { name: 'Balcony', icon: DoorOpen },
   ],
 };
 
@@ -700,26 +699,31 @@ export function AirbnbFiltersModal({
       <section className="space-y-4">
         <h3 className="text-base font-semibold">Amenities</h3>
         
-        {/* Popular amenities always visible with inline sub-options */}
-        <div className="space-y-3">
+        {/* Popular amenities in flex-wrap layout */}
+        <div className="flex flex-wrap gap-2">
           {popularAmenities.map(({ name, icon: Icon }) => (
-            <div key={name} className="flex flex-col">
-              <button
-                onClick={() => toggleArrayFilter('amenities', name)}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors w-fit",
-                  localFilters.amenities.includes(name)
-                    ? "bg-foreground text-background border-foreground"
-                    : "border-border hover:border-foreground"
-                )}
-              >
-                <Icon className="h-5 w-5" />
-                {name}
-              </button>
-              {renderAmenitySubOptions(name)}
-            </div>
+            <button
+              key={name}
+              onClick={() => toggleArrayFilter('amenities', name)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors",
+                localFilters.amenities.includes(name)
+                  ? "bg-foreground text-background border-foreground"
+                  : "border-border hover:border-foreground"
+              )}
+            >
+              <Icon className="h-5 w-5" />
+              {name}
+            </button>
           ))}
         </div>
+        
+        {/* Sub-options for selected popular amenities */}
+        {popularAmenities.map(({ name }) => (
+          <div key={`${name}-options`}>
+            {renderAmenitySubOptions(name)}
+          </div>
+        ))}
 
         {/* Show more/less button */}
         <button
@@ -730,32 +734,36 @@ export function AirbnbFiltersModal({
           {showAllAmenities ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
 
-        {/* Expanded amenities by category with inline sub-options */}
+        {/* Expanded amenities by category */}
         {showAllAmenities && (
           <div className="space-y-6 pt-2">
             {Object.entries(amenityCategories).map(([category, amenities]) => (
               category !== 'Popular' && (
                 <div key={category} className="space-y-3">
                   <h4 className="text-sm font-medium text-muted-foreground">{category}</h4>
-                  <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
                     {amenities.map(({ name, icon: Icon }) => (
-                      <div key={name} className="flex flex-col">
-                        <button
-                          onClick={() => toggleArrayFilter('amenities', name)}
-                          className={cn(
-                            "flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors w-fit",
-                            localFilters.amenities.includes(name)
-                              ? "bg-foreground text-background border-foreground"
-                              : "border-border hover:border-foreground"
-                          )}
-                        >
-                          <Icon className="h-5 w-5" />
-                          {name}
-                        </button>
-                        {renderAmenitySubOptions(name)}
-                      </div>
+                      <button
+                        key={name}
+                        onClick={() => toggleArrayFilter('amenities', name)}
+                        className={cn(
+                          "flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors",
+                          localFilters.amenities.includes(name)
+                            ? "bg-foreground text-background border-foreground"
+                            : "border-border hover:border-foreground"
+                        )}
+                      >
+                        <Icon className="h-5 w-5" />
+                        {name}
+                      </button>
                     ))}
                   </div>
+                  {/* Sub-options for selected amenities in this category */}
+                  {amenities.map(({ name }) => (
+                    <div key={`${name}-options`}>
+                      {renderAmenitySubOptions(name)}
+                    </div>
+                  ))}
                 </div>
               )
             ))}

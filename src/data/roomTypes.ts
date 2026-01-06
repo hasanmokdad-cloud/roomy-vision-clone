@@ -7,7 +7,6 @@ export const studentRoomTypes = [
   "Triple",
   "Quadruple",
   "Suite",
-  "Apartment",
   "Studio"
 ];
 
@@ -39,7 +38,7 @@ export const ownerRoomTypes = [
 export const roomTypes = studentRoomTypes;
 
 // Shared room types (capacity >= 2) - excludes single rooms
-export const sharedRoomTypes = ['double', 'triple', 'quadruple', 'suite', 'apartment', 'studio'];
+export const sharedRoomTypes = ['double', 'triple', 'quadruple', 'suite', 'studio'];
 
 // Check if a room type is a shared room (capacity >= 2)
 export const isSharedRoomType = (roomType: string | undefined | null): boolean => {
