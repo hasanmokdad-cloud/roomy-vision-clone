@@ -19,8 +19,9 @@ export function RoomAreaStep({ rooms, selectedIds, onChange }: RoomAreaStepProps
 
   const applyArea = () => {
     if (!area) return;
+    const effectiveIds = selectedIds.length > 0 ? selectedIds : rooms.map(r => r.id);
     const updated = rooms.map(room =>
-      selectedIds.includes(room.id)
+      effectiveIds.includes(room.id)
         ? { ...room, area_m2: parseFloat(area) }
         : room
     );
@@ -29,7 +30,9 @@ export function RoomAreaStep({ rooms, selectedIds, onChange }: RoomAreaStepProps
     setTimeout(() => setApplied(false), 2000);
   };
 
-  const selectedCount = selectedIds.length;
+  // Show all rooms when none selected (editing mode)
+  const effectiveSelectedIds = selectedIds.length > 0 ? selectedIds : rooms.map(r => r.id);
+  const selectedCount = effectiveSelectedIds.length;
 
   return (
     <div className="px-6 pt-24 pb-32">
@@ -82,7 +85,7 @@ export function RoomAreaStep({ rooms, selectedIds, onChange }: RoomAreaStepProps
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {rooms.filter(r => selectedIds.includes(r.id)).slice(0, 6).map(room => (
+          {rooms.filter(r => effectiveSelectedIds.includes(r.id)).slice(0, 6).map(room => (
             <Badge key={room.id} variant="secondary" className="text-xs">
               {room.name || room.id.slice(0, 4)} {room.area_m2 ? `- ${room.area_m2}m²` : ''}
             </Badge>

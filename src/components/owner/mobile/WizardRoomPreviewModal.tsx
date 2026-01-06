@@ -14,9 +14,9 @@ interface WizardRoomPreviewModalProps {
 }
 
 export function WizardRoomPreviewModal({ isOpen, onClose, room }: WizardRoomPreviewModalProps) {
-  // Calculate if room is full based on capacity
+// Calculate if room is full based on capacity
   const capacity = room.capacity || 1;
-  const capacityOccupied = 0; // New room always starts empty
+  const capacityOccupied = room.capacity_occupied || 0;
   const isFull = capacityOccupied >= capacity;
   const capacityDisplay = `${capacityOccupied}/${capacity}`;
   
@@ -244,11 +244,6 @@ export function WizardRoomPreviewModal({ isOpen, onClose, room }: WizardRoomPrev
           </div>
         </ScrollArea>
 
-        <div className="flex justify-end p-4 border-t bg-background">
-          <Button variant="outline" onClick={onClose}>
-            Close Preview
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );

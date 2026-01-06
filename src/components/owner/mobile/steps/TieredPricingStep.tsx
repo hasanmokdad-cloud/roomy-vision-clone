@@ -21,14 +21,17 @@ export function TieredPricingStep({ rooms, selectedIds, onChange }: TieredPricin
   const [deposit2Students, setDeposit2Students] = useState('');
   const [applied, setApplied] = useState(false);
 
+  // Show all rooms when none selected (editing mode)
+  const effectiveSelectedIds = selectedIds.length > 0 ? selectedIds : rooms.map(r => r.id);
+  
   // Filter to only show Double/Triple rooms from current selection
   const tieredRooms = useMemo(() => {
     return rooms.filter(r => {
-      if (!selectedIds.includes(r.id)) return false;
+      if (!effectiveSelectedIds.includes(r.id)) return false;
       const type = r.type?.toLowerCase() || '';
       return type.includes('double') || type.includes('triple');
     });
-  }, [rooms, selectedIds]);
+  }, [rooms, effectiveSelectedIds]);
 
   const doubleRooms = tieredRooms.filter(r => r.type?.toLowerCase().includes('double'));
   const tripleRooms = tieredRooms.filter(r => r.type?.toLowerCase().includes('triple'));
@@ -36,7 +39,7 @@ export function TieredPricingStep({ rooms, selectedIds, onChange }: TieredPricin
   const applyToDoubles = () => {
     if (!price1Student && !deposit1Student) return;
     const updated = rooms.map(room => {
-      if (!selectedIds.includes(room.id)) return room;
+      if (!effectiveSelectedIds.includes(room.id)) return room;
       const type = room.type?.toLowerCase() || '';
       if (!type.includes('double')) return room;
       return {
@@ -53,7 +56,7 @@ export function TieredPricingStep({ rooms, selectedIds, onChange }: TieredPricin
   const applyToTriples = () => {
     if (!price1Student && !deposit1Student && !price2Students && !deposit2Students) return;
     const updated = rooms.map(room => {
-      if (!selectedIds.includes(room.id)) return room;
+      if (!effectiveSelectedIds.includes(room.id)) return room;
       const type = room.type?.toLowerCase() || '';
       if (!type.includes('triple')) return room;
       return {

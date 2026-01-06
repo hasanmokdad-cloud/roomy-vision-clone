@@ -12,8 +12,10 @@ interface RoomOccupancyStepProps {
 }
 
 export function RoomOccupancyStep({ rooms, selectedIds, onChange }: RoomOccupancyStepProps) {
-  // Filter to only show selected rooms
-  const selectedRooms = rooms.filter(r => selectedIds.includes(r.id));
+  // Filter to show selected rooms, or all rooms when none selected (editing mode)
+  const selectedRooms = selectedIds.length > 0 
+    ? rooms.filter(r => selectedIds.includes(r.id))
+    : rooms;
 
   const updateOccupancy = (roomId: string, occupied: number) => {
     const updated = rooms.map(room =>

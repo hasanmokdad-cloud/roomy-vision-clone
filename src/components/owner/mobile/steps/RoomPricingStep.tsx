@@ -19,10 +19,13 @@ export function RoomPricingStep({ rooms, selectedIds, onChange }: RoomPricingSte
   const [priceApplied, setPriceApplied] = useState(false);
   const [depositApplied, setDepositApplied] = useState(false);
 
+  // Show all rooms when none selected (editing mode)
+  const effectiveSelectedIds = selectedIds.length > 0 ? selectedIds : rooms.map(r => r.id);
+
   const applyPrice = () => {
     if (!price) return;
     const updated = rooms.map(room =>
-      selectedIds.includes(room.id)
+      effectiveSelectedIds.includes(room.id)
         ? { ...room, price: parseFloat(price) }
         : room
     );
@@ -34,7 +37,7 @@ export function RoomPricingStep({ rooms, selectedIds, onChange }: RoomPricingSte
   const applyDeposit = () => {
     if (!deposit) return;
     const updated = rooms.map(room =>
-      selectedIds.includes(room.id)
+      effectiveSelectedIds.includes(room.id)
         ? { ...room, deposit: parseFloat(deposit) }
         : room
     );
@@ -43,7 +46,7 @@ export function RoomPricingStep({ rooms, selectedIds, onChange }: RoomPricingSte
     setTimeout(() => setDepositApplied(false), 2000);
   };
 
-  const selectedCount = selectedIds.length;
+  const selectedCount = effectiveSelectedIds.length;
 
   return (
     <div className="px-6 pt-24 pb-32">
@@ -122,7 +125,7 @@ export function RoomPricingStep({ rooms, selectedIds, onChange }: RoomPricingSte
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {rooms.filter(r => selectedIds.includes(r.id)).slice(0, 6).map(room => (
+          {rooms.filter(r => effectiveSelectedIds.includes(r.id)).slice(0, 6).map(room => (
             <Badge key={room.id} variant="secondary" className="text-xs">
               {room.name || room.id.slice(0, 4)} {room.price ? `- $${room.price}` : ''}
             </Badge>

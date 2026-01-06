@@ -58,9 +58,7 @@ export function RoomBulkSelectionStep({
   };
 
   const toggleRoom = (roomId: string) => {
-    // Only allow toggling incomplete rooms
-    if (completedIds.includes(roomId)) return;
-    
+    // Allow toggling any room (including completed ones for re-editing)
     onSelectionChange(
       selectedIds.includes(roomId)
         ? selectedIds.filter(id => id !== roomId)
@@ -198,9 +196,19 @@ export function RoomBulkSelectionStep({
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: (incompleteRooms.length + index) * 0.02 }}
-                      className="bg-muted/50 border border-border rounded-xl p-4 flex items-center gap-3 opacity-60"
+                      className={`bg-muted/50 border rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-colors ${
+                        selectedIds.includes(room.id) 
+                          ? 'border-primary bg-primary/5 opacity-100' 
+                          : 'border-border opacity-60'
+                      }`}
+                      onClick={() => toggleRoom(room.id)}
                     >
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      <Checkbox
+                        checked={selectedIds.includes(room.id)}
+                        onCheckedChange={() => toggleRoom(room.id)}
+                        className="h-5 w-5"
+                      />
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
                       <div className="flex-1 min-w-0">
                         <span className="font-semibold text-foreground block truncate">
                           {room.name}

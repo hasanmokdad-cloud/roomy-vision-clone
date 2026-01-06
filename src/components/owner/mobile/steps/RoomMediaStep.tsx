@@ -15,6 +15,7 @@ import { MediaDropZone } from '../MediaDropZone';
 import { DraggableRoomImages } from '../DraggableRoomImages';
 import { ImageEditorModal } from '@/components/owner/ImageEditorModal';
 import { VideoTrimmerModal } from '../VideoTrimmerModal';
+import { uploadFileWithProgress, generateFilePath } from '@/utils/uploadWithProgress';
 
 interface RoomMediaStepProps {
   rooms: WizardRoomData[];
@@ -80,31 +81,23 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
 
   const isBulkUploading = bulkUploads.some(u => u.status === 'uploading');
 
-  // Upload single file with progress
+  // Upload single file with real-time progress
   const uploadFile = async (
     file: File,
     roomId: string,
     isVideo: boolean,
     onProgress: (progress: number) => void
   ): Promise<string> => {
-    const ext = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-    const subFolder = isVideo ? 'videos/' : '';
-    const filePath = `wizard-rooms/${subFolder}${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('room-images')
-      .upload(filePath, file);
-
-    if (uploadError) throw uploadError;
-
-    onProgress(100);
+    const filePath = generateFilePath('wizard-rooms', file.name, isVideo);
     
-    const { data: urlData } = supabase.storage
-      .from('room-images')
-      .getPublicUrl(filePath);
+    const url = await uploadFileWithProgress(
+      file,
+      'room-images',
+      filePath,
+      onProgress
+    );
 
-    return urlData.publicUrl;
+    return url;
   };
 
   // Open editor for file

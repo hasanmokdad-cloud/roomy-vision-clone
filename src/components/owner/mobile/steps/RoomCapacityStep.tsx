@@ -18,9 +18,10 @@ function hasAutoCapacity(type: string): boolean {
 }
 
 export function RoomCapacityStep({ rooms, selectedIds, onChange }: RoomCapacityStepProps) {
-  // Filter to only show selected rooms that need manual capacity
+  // Filter to show selected rooms that need manual capacity, or all rooms when none selected (editing mode)
+  const effectiveIds = selectedIds.length > 0 ? selectedIds : rooms.map(r => r.id);
   const roomsNeedingCapacity = rooms.filter(
-    r => selectedIds.includes(r.id) && !hasAutoCapacity(r.type)
+    r => effectiveIds.includes(r.id) && !hasAutoCapacity(r.type)
   );
 
   const updateCapacity = (roomId: string, capacity: number) => {

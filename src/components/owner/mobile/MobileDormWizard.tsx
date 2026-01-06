@@ -217,14 +217,75 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
   };
 
   const handleBack = () => {
-    if (currentStep > 0) {
-      // Skip Excel upload step when going back if manual was selected
-      if (currentStep === 17 && formData.uploadMethod === 'manual') {
-        setCurrentStep(15);
-        return;
-      }
-      setCurrentStep(currentStep - 1);
+    if (currentStep <= 0) return;
+    
+    // From media step (24), go back to occupancy (23) with all rooms selected for editing
+    if (currentStep === 24) {
+      setFormData(prev => ({
+        ...prev,
+        selectedRoomIds: prev.rooms.map(r => r.id),
+        completedRoomIds: [] // Allow re-editing
+      }));
+      setCurrentStep(23);
+      return;
     }
+    
+    // From occupancy (23), go back to capacity (22) or area (21)
+    if (currentStep === 23) {
+      if (!selectedNeedsCapacityStep()) {
+        setCurrentStep(21);
+      } else {
+        setCurrentStep(22);
+      }
+      return;
+    }
+    
+    // From capacity (22), go back to area (21)
+    if (currentStep === 22) {
+      setCurrentStep(21);
+      return;
+    }
+    
+    // From area (21), go back to tiered pricing (20) or pricing (19)
+    if (currentStep === 21) {
+      if (!selectedHasTieredRooms()) {
+        setCurrentStep(19);
+      } else {
+        setCurrentStep(20);
+      }
+      return;
+    }
+    
+    // From tiered pricing (20), go back to pricing (19)
+    if (currentStep === 20) {
+      setCurrentStep(19);
+      return;
+    }
+    
+    // From pricing (19), go back to bulk selection (18)
+    if (currentStep === 19) {
+      setCurrentStep(18);
+      return;
+    }
+    
+    // From bulk selection (18), restore all rooms for editing and go to room types
+    if (currentStep === 18) {
+      setFormData(prev => ({
+        ...prev,
+        selectedRoomIds: prev.rooms.map(r => r.id),
+        completedRoomIds: []
+      }));
+      setCurrentStep(17);
+      return;
+    }
+    
+    // Skip Excel upload step when going back if manual was selected
+    if (currentStep === 17 && formData.uploadMethod === 'manual') {
+      setCurrentStep(15);
+      return;
+    }
+    
+    setCurrentStep(currentStep - 1);
   };
 
   // Helper to check if room type has auto-capacity
