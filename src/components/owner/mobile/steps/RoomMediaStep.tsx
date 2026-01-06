@@ -5,14 +5,16 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ImagePlus, Video, X, Upload, Eye, ChevronDown, ChevronUp, Play, Loader2, Edit } from 'lucide-react';
+import { ImagePlus, Video, X, Upload, Eye, ChevronDown, ChevronUp, Play, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { WizardRoomData } from './RoomNamesStep';
 import { WizardRoomPreviewModal } from '../WizardRoomPreviewModal';
 import { RoomUploadProgressBar, RoomUploadProgress } from '../RoomUploadProgressBar';
 import { MediaDropZone } from '../MediaDropZone';
+import { DraggableRoomImages } from '../DraggableRoomImages';
 import { ImageEditorModal } from '@/components/owner/ImageEditorModal';
+import { VideoTrimmerModal } from '../VideoTrimmerModal';
 
 interface RoomMediaStepProps {
   rooms: WizardRoomData[];
@@ -34,13 +36,20 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
   const [typeFilteredIds, setTypeFilteredIds] = useState<string[]>([]);
   const [previewRoom, setPreviewRoom] = useState<WizardRoomData | null>(null);
   
-  // Editor state
+  // Image Editor state
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingFile, setEditingFile] = useState<File | null>(null);
   const [pendingUpload, setPendingUpload] = useState<{
     roomId: string | 'bulk';
     files: File[];
     currentIndex: number;
+  } | null>(null);
+  
+  // Video Trimmer state
+  const [videoTrimmerOpen, setVideoTrimmerOpen] = useState(false);
+  const [trimmingVideoFile, setTrimmingVideoFile] = useState<File | null>(null);
+  const [pendingVideoUpload, setPendingVideoUpload] = useState<{
+    roomId: string | 'bulk';
   } | null>(null);
 
   // File input refs for each room
@@ -351,13 +360,71 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
     if (files.length === 0) return;
     
     const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    const videoFiles = files.filter(f => f.type.startsWith('video/'));
+    
+    // Handle video files first with trimmer
+    if (videoFiles.length > 0) {
+      setTrimmingVideoFile(videoFiles[0]);
+      setPendingVideoUpload({ roomId });
+      setVideoTrimmerOpen(true);
+      // If there are also images, we'll handle them after video
+      if (imageFiles.length > 0) {
+        setPendingUpload({ roomId, files: imageFiles, currentIndex: 0 });
+      }
+      return;
+    }
     
     // If there are images and we're not skipping editor, open editor
     if (imageFiles.length > 0 && !skipEditor) {
-      openEditorForFile(roomId, files, 0);
-    } else {
-      startUpload(roomId, files);
+      openEditorForFile(roomId, imageFiles, 0);
+    } else if (imageFiles.length > 0) {
+      startUpload(roomId, imageFiles);
     }
+  };
+
+  const handleVideoTrimSave = (trimmedFile: File) => {
+    setVideoTrimmerOpen(false);
+    setTrimmingVideoFile(null);
+    
+    if (pendingVideoUpload) {
+      // Upload the trimmed video
+      startUpload(pendingVideoUpload.roomId, [trimmedFile]);
+      
+      // If there are pending images, open editor for them
+      if (pendingUpload) {
+        setTimeout(() => {
+          openEditorForFile(pendingUpload.roomId, pendingUpload.files, 0);
+        }, 100);
+      }
+    }
+    
+    setPendingVideoUpload(null);
+  };
+
+  const handleVideoTrimSkip = () => {
+    setVideoTrimmerOpen(false);
+    
+    if (pendingVideoUpload && trimmingVideoFile) {
+      // Upload original video without trimming
+      startUpload(pendingVideoUpload.roomId, [trimmingVideoFile]);
+      
+      // If there are pending images, open editor for them
+      if (pendingUpload) {
+        setTimeout(() => {
+          openEditorForFile(pendingUpload.roomId, pendingUpload.files, 0);
+        }, 100);
+      }
+    }
+    
+    setTrimmingVideoFile(null);
+    setPendingVideoUpload(null);
+  };
+
+  const handleReorderImages = (roomId: string, newOrder: string[]) => {
+    const updated = rooms.map(room =>
+      room.id === roomId ? { ...room, images: newOrder } : room
+    );
+    onChange(updated);
   };
 
   const handleBulkImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -636,25 +703,13 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
                           <RoomUploadProgressBar uploads={uploads} />
                         )}
 
-                        {/* Images */}
+                        {/* Images with drag-and-drop reordering */}
                         {room.images.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {room.images.map((img, imgIndex) => (
-                              <div key={imgIndex} className="relative">
-                                <img
-                                  src={img}
-                                  alt=""
-                                  className="w-16 h-16 rounded-lg object-cover"
-                                />
-                                <button
-                                  onClick={() => removeImage(room.id, imgIndex)}
-                                  className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
+                          <DraggableRoomImages
+                            images={room.images}
+                            onReorder={(newOrder) => handleReorderImages(room.id, newOrder)}
+                            onRemove={(index) => removeImage(room.id, index)}
+                          />
                         )}
 
                         {/* Video */}
@@ -760,6 +815,21 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
           onClose={handleEditorSkip}
           imageFile={editingFile}
           onSave={handleEditorSave}
+        />
+      )}
+      
+      {/* Video Trimmer Modal */}
+      {trimmingVideoFile && (
+        <VideoTrimmerModal
+          isOpen={videoTrimmerOpen}
+          onClose={() => {
+            setVideoTrimmerOpen(false);
+            setTrimmingVideoFile(null);
+            setPendingVideoUpload(null);
+          }}
+          videoFile={trimmingVideoFile}
+          onSave={handleVideoTrimSave}
+          onSkip={handleVideoTrimSkip}
         />
       )}
     </div>

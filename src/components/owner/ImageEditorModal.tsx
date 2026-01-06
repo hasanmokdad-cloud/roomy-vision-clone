@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
-import { Crop, Sliders, Sparkles, RotateCw, FlipHorizontal, FlipVertical } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Crop, Sliders, Sparkles, RotateCw, FlipHorizontal, FlipVertical, FileDown } from 'lucide-react';
 import ReactCrop, { Crop as CropType, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import {
@@ -15,6 +17,12 @@ import {
   canvasToFile,
   loadImageToCanvas,
 } from '@/utils/imageEditor';
+import { compressImage } from '@/utils/imageCompression';
+
+interface CompressionSettings {
+  quality: number;
+  maxDimension: number; // 0 = original
+}
 
 interface ImageEditorModalProps {
   isOpen: boolean;
@@ -29,11 +37,15 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [originalCanvas, setOriginalCanvas] = useState<HTMLCanvasElement | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [compression, setCompression] = useState<CompressionSettings>({ quality: 80, maxDimension: 1920 });
+  const [originalSize, setOriginalSize] = useState<number>(0);
+  const [estimatedSize, setEstimatedSize] = useState<number>(0);
   const imgRef = useRef<HTMLImageElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (isOpen && imageFile) {
+      setOriginalSize(imageFile.size);
       loadImageToCanvas(imageFile).then(canvas => {
         setOriginalCanvas(canvas);
         setPreviewUrl(URL.createObjectURL(imageFile));
@@ -44,6 +56,25 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [isOpen, imageFile]);
+
+  // Estimate compressed size when compression settings change
+  useEffect(() => {
+    if (!originalSize) return;
+    
+    // Rough estimation: quality affects size roughly proportionally
+    // Dimension reduction has quadratic effect on file size
+    let sizeFactor = compression.quality / 100;
+    
+    if (compression.maxDimension > 0 && originalCanvas) {
+      const originalMaxDim = Math.max(originalCanvas.width, originalCanvas.height);
+      if (originalMaxDim > compression.maxDimension) {
+        const dimRatio = compression.maxDimension / originalMaxDim;
+        sizeFactor *= dimRatio * dimRatio; // Quadratic for area
+      }
+    }
+    
+    setEstimatedSize(Math.round(originalSize * sizeFactor * 0.7)); // 0.7 for JPEG baseline
+  }, [compression, originalSize, originalCanvas]);
 
   useEffect(() => {
     if (!originalCanvas || !previewCanvasRef.current) return;
@@ -68,6 +99,7 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
     setAdjustments(defaultAdjustments);
     setCrop(undefined);
     setCompletedCrop(undefined);
+    setCompression({ quality: 80, maxDimension: 1920 });
   };
 
   const handleSave = async () => {
@@ -80,10 +112,19 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
         completedCrop
       );
       
-      const editedFile = await canvasToFile(
+      let editedFile = await canvasToFile(
         finalCanvas,
         imageFile.name.replace(/\.[^/.]+$/, '-edited.jpg')
       );
+      
+      // Apply compression if settings are not default
+      if (compression.quality < 100 || compression.maxDimension > 0) {
+        editedFile = await compressImage(editedFile, {
+          maxSizeMB: compression.quality < 50 ? 0.5 : compression.quality < 80 ? 1 : 2,
+          maxWidthOrHeight: compression.maxDimension || undefined,
+          useWebWorker: true,
+        });
+      }
       
       onSave(editedFile);
       onClose();
@@ -135,22 +176,26 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
 
           {/* Tools */}
           <Tabs defaultValue="adjust" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="crop">
-                <Crop className="w-4 h-4 mr-2" />
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="crop" className="text-xs px-2">
+                <Crop className="w-4 h-4 mr-1" />
                 Crop
               </TabsTrigger>
-              <TabsTrigger value="adjust">
-                <Sliders className="w-4 h-4 mr-2" />
+              <TabsTrigger value="adjust" className="text-xs px-2">
+                <Sliders className="w-4 h-4 mr-1" />
                 Adjust
               </TabsTrigger>
-              <TabsTrigger value="filters">
-                <Sparkles className="w-4 h-4 mr-2" />
+              <TabsTrigger value="filters" className="text-xs px-2">
+                <Sparkles className="w-4 h-4 mr-1" />
                 Filters
               </TabsTrigger>
-              <TabsTrigger value="transform">
-                <RotateCw className="w-4 h-4 mr-2" />
+              <TabsTrigger value="transform" className="text-xs px-2">
+                <RotateCw className="w-4 h-4 mr-1" />
                 Transform
+              </TabsTrigger>
+              <TabsTrigger value="compress" className="text-xs px-2">
+                <FileDown className="w-4 h-4 mr-1" />
+                Compress
               </TabsTrigger>
             </TabsList>
 
@@ -281,6 +326,80 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
                       Vertical
                     </Button>
                   </div>
+                </div>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="compress" className="space-y-4">
+              <Card className="p-4 space-y-4">
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <label className="text-sm font-medium">Quality</label>
+                    <span className="text-sm text-muted-foreground">{compression.quality}%</span>
+                  </div>
+                  <Slider
+                    value={[compression.quality]}
+                    onValueChange={([value]) => setCompression(prev => ({ ...prev, quality: value }))}
+                    min={10}
+                    max={100}
+                    step={5}
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>Smaller file</span>
+                    <span>Higher quality</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-3 block">Max Dimension</label>
+                  <RadioGroup
+                    value={compression.maxDimension.toString()}
+                    onValueChange={(value) => setCompression(prev => ({ ...prev, maxDimension: parseInt(value) }))}
+                    className="grid grid-cols-2 gap-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="0" id="dim-original" />
+                      <Label htmlFor="dim-original" className="text-sm">Original size</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="1920" id="dim-1920" />
+                      <Label htmlFor="dim-1920" className="text-sm">1920px (recommended)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="1280" id="dim-1280" />
+                      <Label htmlFor="dim-1280" className="text-sm">1280px</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="800" id="dim-800" />
+                      <Label htmlFor="dim-800" className="text-sm">800px (thumbnail)</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                  <div className="text-sm font-medium flex items-center gap-2">
+                    <FileDown className="w-4 h-4" />
+                    Size Estimate
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Original:</span>
+                      <span className="ml-2 font-medium">{(originalSize / 1024 / 1024).toFixed(2)} MB</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Output:</span>
+                      <span className="ml-2 font-medium text-primary">
+                        ~{estimatedSize > 1024 * 1024 
+                          ? `${(estimatedSize / 1024 / 1024).toFixed(2)} MB`
+                          : `${Math.round(estimatedSize / 1024)} KB`}
+                      </span>
+                    </div>
+                  </div>
+                  {originalSize > 0 && estimatedSize > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      Reduction: ~{Math.round((1 - estimatedSize / originalSize) * 100)}%
+                    </div>
+                  )}
                 </div>
               </Card>
             </TabsContent>
