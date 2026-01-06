@@ -53,11 +53,35 @@ interface WizardFormData {
   highlights: string[];
   title: string;
   description: string;
+  descriptionManuallyEdited?: boolean; // Track if user manually edited description
   uploadMethod: 'manual' | 'excel' | '';
   rooms: WizardRoomData[];
   selectedRoomIds: string[];
   completedRoomIds: string[];
 }
+
+const INITIAL_FORM_DATA: WizardFormData = {
+  propertyType: 'dorm',
+  city: '',
+  area: '',
+  address: '',
+  shuttle: false,
+  capacity: 1,
+  dormRoomCount: undefined,
+  apartmentCount: undefined,
+  amenities: [],
+  genderPreference: '',
+  coverImage: '',
+  galleryImages: [],
+  highlights: [],
+  title: '',
+  description: '',
+  descriptionManuallyEdited: false,
+  uploadMethod: '',
+  rooms: [],
+  selectedRoomIds: [],
+  completedRoomIds: [],
+};
 
 const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 
@@ -169,30 +193,13 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [showClearDialog, setShowClearDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [videoPreloading, setVideoPreloading] = useState(false);
   const step1VideoRef = useRef<HTMLVideoElement>(null);
   const step2VideoRef = useRef<HTMLVideoElement>(null);
 
-  const [formData, setFormData] = useState<WizardFormData>({
-    propertyType: 'dorm',
-    city: '',
-    area: '',
-    address: '',
-    shuttle: false,
-    capacity: 1,
-    amenities: [],
-    genderPreference: '',
-    coverImage: '',
-    galleryImages: [],
-    highlights: [],
-    title: '',
-    description: '',
-    uploadMethod: '',
-    rooms: [],
-    selectedRoomIds: [],
-    completedRoomIds: [],
-  });
+  const [formData, setFormData] = useState<WizardFormData>({ ...INITIAL_FORM_DATA });
 
   const [hasSavedProgress, setHasSavedProgress] = useState(false);
   const [savedStep, setSavedStep] = useState(0);
@@ -247,6 +254,41 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
   const confirmExit = () => {
     setShowExitDialog(false);
     navigate('/listings');
+  };
+
+  // Handle property type change - reset all data when type changes
+  const handlePropertyTypeChange = async (newType: string) => {
+    if (newType !== formData.propertyType) {
+      // Reset all data except the new property type
+      setFormData({
+        ...INITIAL_FORM_DATA,
+        propertyType: newType,
+      });
+      // Clear saved progress since we're starting fresh
+      await clearSavedProgress();
+      setHasSavedProgress(false);
+    } else {
+      setFormData(prev => ({ ...prev, propertyType: newType }));
+    }
+  };
+
+  // Handle clear all - reset everything
+  const handleClearAll = () => {
+    setShowClearDialog(true);
+  };
+
+  const confirmClearAll = async () => {
+    setFormData({ ...INITIAL_FORM_DATA });
+    await clearSavedProgress();
+    setCurrentStep(0);
+    setShowClearDialog(false);
+    setAgreedToOwnerTerms(false);
+    setHasSavedProgress(false);
+    
+    toast({
+      title: 'All data cleared',
+      description: 'You can start fresh with your listing.',
+    });
   };
 
   const handleBack = () => {
@@ -393,13 +435,13 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     }
 
     // When moving from highlights step (step 5) to description step (step 6),
-    // generate description if not already set
-    if (currentStep === 5 && formData.highlights.length > 0 && !formData.description) {
+    // generate description if not already set AND not manually edited
+    if (currentStep === 5 && formData.highlights.length > 0 && !formData.description && !formData.descriptionManuallyEdited) {
       const generatedDesc = generateDescriptionFromHighlights(formData.highlights);
       setFormData(prev => ({ ...prev, description: generatedDesc }));
     }
 
-    // After capacity step, create empty room objects
+    // After capacity step, create/adjust room objects based on capacity
     if (currentStep === 14) {
       let totalRooms: number;
       if (formData.propertyType === 'hybrid') {
@@ -412,17 +454,38 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         totalRooms = formData.capacity;
       }
       
+      // If room count changed, adjust rooms array (preserve existing data where possible)
       if (formData.rooms.length !== totalRooms && totalRooms > 0) {
         const dormCount = formData.propertyType === 'hybrid' ? (formData.dormRoomCount || 0) : 0;
-        const rooms = Array.from({ length: totalRooms }, (_, i) => {
+        const newRooms = Array.from({ length: totalRooms }, (_, i) => {
+          // Keep existing room data if available
+          if (i < formData.rooms.length) {
+            const existingRoom = formData.rooms[i];
+            // For hybrid, update type based on new position if needed
+            if (formData.propertyType === 'hybrid') {
+              return { ...existingRoom, type: i >= dormCount ? 'Apartment' : existingRoom.type };
+            }
+            return existingRoom;
+          }
+          // Create new room
           const room = createEmptyRoom(i);
-          // For hybrid, pre-label apartment rooms
           if (formData.propertyType === 'hybrid' && i >= dormCount) {
             room.type = 'Apartment';
           }
           return room;
         });
-        setFormData(prev => ({ ...prev, rooms, selectedRoomIds: rooms.map(r => r.id), completedRoomIds: [] }));
+        
+        // Update selected and completed IDs to only include existing rooms
+        const newRoomIds = new Set(newRooms.map(r => r.id));
+        const updatedSelectedIds = formData.selectedRoomIds.filter(id => newRoomIds.has(id));
+        const updatedCompletedIds = formData.completedRoomIds.filter(id => newRoomIds.has(id));
+        
+        setFormData(prev => ({ 
+          ...prev, 
+          rooms: newRooms, 
+          selectedRoomIds: newRooms.map(r => r.id), 
+          completedRoomIds: updatedCompletedIds 
+        }));
       }
     }
 
@@ -656,7 +719,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         return (
           <PropertyTypeStep
             value={formData.propertyType}
-            onChange={(v) => setFormData({ ...formData, propertyType: v })}
+            onChange={handlePropertyTypeChange}
           />
         );
       case 3:
@@ -699,7 +762,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             description={formData.description}
             onHighlightsChange={(v) => setFormData({ ...formData, highlights: v })}
             onTitleChange={(v) => setFormData({ ...formData, title: v })}
-            onDescriptionChange={(v) => setFormData({ ...formData, description: v })}
+            onDescriptionChange={(v) => setFormData({ ...formData, description: v, descriptionManuallyEdited: true })}
           />
         );
       case 7:
@@ -929,6 +992,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           isLastStep={isLastStep}
           isSubmitting={submitting || isSubmitting}
           isVideoPreloading={videoPreloading}
+          onClearAll={handleClearAll}
+          showClearAll={currentStep >= 2}
         />
       )}
 
@@ -941,6 +1006,18 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         cancelText="Cancel"
         onConfirm={confirmExit}
         onCancel={() => setShowExitDialog(false)}
+      />
+
+      <ResponsiveAlertModal
+        open={showClearDialog}
+        onOpenChange={setShowClearDialog}
+        title="Clear all data?"
+        description="This will reset all entered information and start fresh. This action cannot be undone."
+        confirmText="Clear all"
+        cancelText="Cancel"
+        onConfirm={confirmClearAll}
+        onCancel={() => setShowClearDialog(false)}
+        variant="destructive"
       />
     </div>
   );
