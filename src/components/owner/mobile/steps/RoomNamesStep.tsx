@@ -51,19 +51,20 @@ export function RoomNamesStep({ rooms, onChange }: RoomNamesStepProps) {
   };
 
   return (
-    <div className="px-6 pt-24 pb-32">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-6"
-      >
-        <h1 className="text-2xl font-bold text-foreground mb-2">
-          Name your rooms
-        </h1>
-        <p className="text-muted-foreground">
-          Each room needs a unique name or number
-        </p>
-      </motion.div>
+    <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
+      <div className="w-full max-w-xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+            Name your rooms
+          </h1>
+          <p className="text-muted-foreground">
+            Each room needs a unique name or number
+          </p>
+        </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -91,29 +92,30 @@ export function RoomNamesStep({ rooms, onChange }: RoomNamesStepProps) {
         </Button>
       </motion.div>
 
-      <ScrollArea className="h-[calc(100vh-320px)]">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pr-4">
-          {rooms.map((room, index) => (
-            <motion.div
-              key={room.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.02 }}
-              className="bg-card border border-border rounded-xl p-3"
-            >
-              <span className="text-xs text-muted-foreground mb-1 block">
-                Room {index + 1}
-              </span>
-              <Input
-                value={room.name}
-                onChange={(e) => updateRoomName(index, e.target.value)}
-                placeholder="Name"
-                className="h-9 rounded-lg text-sm"
-              />
-            </motion.div>
-          ))}
-        </div>
-      </ScrollArea>
+        <ScrollArea className="h-[calc(100vh-320px)]">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pr-4">
+            {rooms.map((room, index) => (
+              <motion.div
+                key={room.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.02 }}
+                className="bg-card border border-border rounded-xl p-3"
+              >
+                <span className="text-xs text-muted-foreground mb-1 block">
+                  Room {index + 1}
+                </span>
+                <Input
+                  value={room.name}
+                  onChange={(e) => updateRoomName(index, e.target.value)}
+                  placeholder="Name"
+                  className="h-9 rounded-lg text-sm"
+                />
+              </motion.div>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   );
 }

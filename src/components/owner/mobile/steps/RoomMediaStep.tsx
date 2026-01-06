@@ -576,19 +576,20 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
   const roomsWithMedia = rooms.filter(r => r.images.length > 0 || r.video_url).length;
 
   return (
-    <div className="px-6 pt-24 pb-32">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-6"
-      >
-        <h1 className="text-2xl font-bold text-foreground mb-2">
-          Showcase your rooms
-        </h1>
-        <p className="text-muted-foreground">
-          Upload images and videos to help students see your rooms
-        </p>
-      </motion.div>
+    <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
+      <div className="w-full max-w-xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+            Showcase your rooms
+          </h1>
+          <p className="text-muted-foreground">
+            Upload images and videos to help students see your rooms
+          </p>
+        </motion.div>
 
       {/* Bulk Upload Section */}
       <motion.div
@@ -928,6 +929,7 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
           onSkip={handleVideoTrimSkip}
         />
       )}
+      </div>
     </div>
   );
 }

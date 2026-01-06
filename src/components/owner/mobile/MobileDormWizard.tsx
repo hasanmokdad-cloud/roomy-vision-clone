@@ -678,11 +678,12 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         return formData.capacity < 1 || formData.capacity > 2000;
       case 15: return !formData.uploadMethod;
       case 16: 
-        // For manual: check room names; for excel: check if imported
+        // For manual: check room names; for excel: check if rooms were imported
         if (formData.uploadMethod === 'manual') {
           return formData.rooms.some(r => !r.name);
         }
-        return formData.rooms.length === 0;
+        // For excel: check if any rooms were imported from Excel file
+        return formData.rooms.length === 0 || !formData.rooms.some(r => r.id.startsWith('excel-'));
       case 17: return formData.rooms.some(r => !r.type);
       case 18: 
         // If all rooms complete, allow proceeding to media

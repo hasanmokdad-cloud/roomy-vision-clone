@@ -25,19 +25,20 @@ export function RoomOccupancyStep({ rooms, selectedIds, onChange }: RoomOccupanc
   };
 
   return (
-    <div className="px-6 pt-24 pb-32">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-6"
-      >
-        <h1 className="text-2xl font-bold text-foreground mb-2">
-          Current occupancy
-        </h1>
-        <p className="text-muted-foreground">
-          How many students currently occupy each room?
-        </p>
-      </motion.div>
+    <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
+      <div className="w-full max-w-xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+            Current occupancy
+          </h1>
+          <p className="text-muted-foreground">
+            How many students currently occupy each room?
+          </p>
+        </motion.div>
 
       <ScrollArea className="h-[calc(100vh-280px)]">
         <div className="space-y-3 pr-4">
@@ -93,7 +94,8 @@ export function RoomOccupancyStep({ rooms, selectedIds, onChange }: RoomOccupanc
             </motion.div>
           ))}
         </div>
-      </ScrollArea>
+        </ScrollArea>
+      </div>
     </div>
   );
 }
