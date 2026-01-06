@@ -16,27 +16,10 @@ import { validateEmail, validatePhone, validateUrl, sanitizeInput } from "@/util
 import { ImageDropzone } from "./ImageDropzone";
 import { DraggableImageList } from "./DraggableImageList";
 import { cities, areasByCity } from "@/data/dormLocations";
+import { AMENITIES_LIST } from "@/config/amenities";
 
-const AMENITIES_OPTIONS = [
-  "WiFi",
-  "Laundry",
-  "Gym",
-  "Pool",
-  "Parking",
-  "Security",
-  "Kitchen",
-  "Study Room",
-  "Garden",
-  "Common Area",
-  "Air Conditioning",
-  "Heating",
-  "Elevator",
-  "Furnished",
-  "Pet Friendly",
-  "Cleaning Service",
-  "TV",
-  "Electricity",
-];
+// Use shared amenities config
+const AMENITIES_OPTIONS = AMENITIES_LIST;
 
 interface DormFormProps {
   dorm?: any;

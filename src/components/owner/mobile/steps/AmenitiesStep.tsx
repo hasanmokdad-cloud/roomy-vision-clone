@@ -9,7 +9,11 @@ import { ElectricityOptionsModal } from './ElectricityOptionsModal';
 import { WiFiOptionsModal } from './WiFiOptionsModal';
 import { CleaningOptionsModal } from './CleaningOptionsModal';
 import { WaterOptionsModal } from './WaterOptionsModal';
-import type { ElectricityOption, WiFiOption, CleaningOption, WaterOption, AmenityDetails } from '@/types/amenities';
+import { LaundryOptionsModal } from './LaundryOptionsModal';
+import type { 
+  ElectricityOption, WiFiOption, CleaningOption, WaterOption, LaundryOption, AmenityDetails,
+  formatElectricityOption, formatLaundryOption 
+} from '@/types/amenities';
 
 interface AmenitiesStepProps {
   category: 'essentials' | 'shared' | 'safety';
@@ -26,7 +30,7 @@ const amenityCategories = {
     items: [
       { id: 'WiFi', label: 'WiFi', icon: Wifi, hasOptions: true, optionType: 'wifi' },
       { id: 'Kitchen', label: 'Kitchen', icon: UtensilsCrossed },
-      { id: 'Laundry', label: 'Laundry', icon: WashingMachine },
+      { id: 'Laundry', label: 'Laundry', icon: WashingMachine, hasOptions: true, optionType: 'laundry' },
       { id: 'Heating', label: 'Heating', icon: Thermometer },
       { id: 'Air Conditioning', label: 'AC', icon: Snowflake },
       { id: 'Furnished', label: 'Furnished', icon: Sofa },
@@ -71,6 +75,7 @@ export function AmenitiesStep({
   const [wifiModalOpen, setWifiModalOpen] = useState(false);
   const [cleaningModalOpen, setCleaningModalOpen] = useState(false);
   const [waterModalOpen, setWaterModalOpen] = useState(false);
+  const [laundryModalOpen, setLaundryModalOpen] = useState(false);
 
   const handleAmenityClick = (item: { id: string; label: string; hasOptions?: boolean; optionType?: string }) => {
     if (item.hasOptions && item.optionType) {
@@ -93,6 +98,9 @@ export function AmenitiesStep({
           break;
         case 'water':
           setWaterModalOpen(true);
+          break;
+        case 'laundry':
+          setLaundryModalOpen(true);
           break;
       }
     } else {
@@ -128,11 +136,21 @@ export function AmenitiesStep({
     onUpdateAmenityDetails?.({ ...amenityDetails, water: option });
   };
 
+  const handleLaundrySave = (option: LaundryOption) => {
+    if (!selectedAmenities.includes('Laundry')) {
+      onToggle('Laundry');
+    }
+    onUpdateAmenityDetails?.({ ...amenityDetails, laundry: option });
+  };
+
   const getOptionLabel = (itemId: string): string | null => {
     switch (itemId) {
       case 'Electricity':
         if (amenityDetails.electricity) {
-          return amenityDetails.electricity.included === 'yes' ? 'Included' : 'Not incl.';
+          const e = amenityDetails.electricity;
+          const avail = e.availability === '24/7' ? '24/7' : 'Ltd';
+          const bill = e.included === 'yes' ? 'Incl.' : 'Sep.';
+          return `${avail}, ${bill}`;
         }
         break;
       case 'WiFi':
@@ -154,6 +172,15 @@ export function AmenitiesStep({
           const type = amenityDetails.water.waterType === 'sweet' ? 'Sweet' : 'Salty';
           const hot = amenityDetails.water.hotWater === '24/7' ? '24/7' : 'Custom';
           return `${type}, ${hot}`;
+        }
+        break;
+      case 'Laundry':
+        if (amenityDetails.laundry) {
+          const machines = [];
+          if (amenityDetails.laundry.washingMachine) machines.push('W');
+          if (amenityDetails.laundry.dryingMachine) machines.push('D');
+          const billing = amenityDetails.laundry.billing === 'included' ? 'Incl.' : 'Per use';
+          return `${machines.join('+')} (${billing})`;
         }
         break;
     }
@@ -246,6 +273,12 @@ export function AmenitiesStep({
         onOpenChange={setWaterModalOpen}
         initialValue={amenityDetails.water}
         onSave={handleWaterSave}
+      />
+      <LaundryOptionsModal
+        open={laundryModalOpen}
+        onOpenChange={setLaundryModalOpen}
+        initialValue={amenityDetails.laundry}
+        onSave={handleLaundrySave}
       />
     </div>
   );

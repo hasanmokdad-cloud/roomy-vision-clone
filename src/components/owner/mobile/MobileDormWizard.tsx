@@ -26,6 +26,7 @@ import { RoomAreaStep } from './steps/RoomAreaStep';
 import { RoomCapacityStep } from './steps/RoomCapacityStep';
 import { RoomOccupancyStep } from './steps/RoomOccupancyStep';
 import { RoomMediaStep } from './steps/RoomMediaStep';
+import { HybridCapacityStep } from './steps/HybridCapacityStep';
 import { ResponsiveAlertModal } from '@/components/ui/responsive-alert-modal';
 import Step1Video from '@/assets/wizard/step1-animation.mp4';
 import Step2Video from '@/assets/wizard/step2-animation.mp4';
@@ -43,6 +44,8 @@ interface WizardFormData {
   address: string;
   shuttle: boolean;
   capacity: number;
+  dormRoomCount?: number;    // For hybrid properties
+  apartmentCount?: number;   // For hybrid properties
   amenities: string[];
   genderPreference: string;
   coverImage: string;
@@ -397,9 +400,30 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     }
 
     // After capacity step, create empty room objects
-    if (currentStep === 14 && formData.rooms.length !== formData.capacity) {
-      const rooms = Array.from({ length: formData.capacity }, (_, i) => createEmptyRoom(i));
-      setFormData(prev => ({ ...prev, rooms, selectedRoomIds: rooms.map(r => r.id), completedRoomIds: [] }));
+    if (currentStep === 14) {
+      let totalRooms: number;
+      if (formData.propertyType === 'hybrid') {
+        totalRooms = (formData.dormRoomCount || 0) + (formData.apartmentCount || 0);
+        // Update capacity to total for downstream logic
+        if (formData.capacity !== totalRooms) {
+          setFormData(prev => ({ ...prev, capacity: totalRooms }));
+        }
+      } else {
+        totalRooms = formData.capacity;
+      }
+      
+      if (formData.rooms.length !== totalRooms && totalRooms > 0) {
+        const dormCount = formData.propertyType === 'hybrid' ? (formData.dormRoomCount || 0) : 0;
+        const rooms = Array.from({ length: totalRooms }, (_, i) => {
+          const room = createEmptyRoom(i);
+          // For hybrid, pre-label apartment rooms
+          if (formData.propertyType === 'hybrid' && i >= dormCount) {
+            room.type = 'Apartment';
+          }
+          return room;
+        });
+        setFormData(prev => ({ ...prev, rooms, selectedRoomIds: rooms.map(r => r.id), completedRoomIds: [] }));
+      }
     }
 
     // After upload method, skip to appropriate step
@@ -580,7 +604,12 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       case 4: return !formData.genderPreference;
       case 8: return !formData.city || !formData.area;
       case 12: return !formData.coverImage;
-      case 14: return formData.capacity < 1 || formData.capacity > 2000;
+      case 14: 
+        if (formData.propertyType === 'hybrid') {
+          const totalHybrid = (formData.dormRoomCount || 0) + (formData.apartmentCount || 0);
+          return totalHybrid < 1;
+        }
+        return formData.capacity < 1 || formData.capacity > 2000;
       case 15: return !formData.uploadMethod;
       case 16: 
         // For manual: check room names; for excel: check if imported
@@ -724,6 +753,16 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       case 13:
         return <AirbnbStepTransition phase={3} />;
       case 14:
+        if (formData.propertyType === 'hybrid') {
+          return (
+            <HybridCapacityStep
+              dormRoomCount={formData.dormRoomCount || 0}
+              apartmentCount={formData.apartmentCount || 0}
+              onDormRoomCountChange={(v) => setFormData({ ...formData, dormRoomCount: v })}
+              onApartmentCountChange={(v) => setFormData({ ...formData, apartmentCount: v })}
+            />
+          );
+        }
         return (
           <CapacityStep
             value={formData.capacity}
