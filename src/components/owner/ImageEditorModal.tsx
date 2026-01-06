@@ -43,7 +43,8 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
   const [showStickyBar, setShowStickyBar] = useState(true);
   const imgRef = useRef<HTMLImageElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const lastContentLineRef = useRef<HTMLDivElement>(null);
+  const dialogContentRef = useRef<HTMLDivElement>(null);
 
   // Track if any changes have been made
   const hasChanges = useMemo(() => {
@@ -79,17 +80,29 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
     };
   }, [isOpen, imageFile]);
 
-  // Intersection observer for sticky bar
+  // Scroll handler for sticky bar (like StudentProfileEditPage)
   useEffect(() => {
-    if (!bottomRef.current || !isOpen) return;
+    const scrollContainer = dialogContentRef.current;
+    if (!scrollContainer || !isOpen) return;
     
-    const observer = new IntersectionObserver(
-      ([entry]) => setShowStickyBar(!entry.isIntersecting),
-      { threshold: 0.1 }
-    );
-    
-    observer.observe(bottomRef.current);
-    return () => observer.disconnect();
+    const handleScroll = () => {
+      if (!lastContentLineRef.current) return;
+      
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const lastLineRect = lastContentLineRef.current.getBoundingClientRect();
+      const bottomBarHeight = 72;
+      
+      // When the last content line is above where bottom bar would be, hide the sticky bar
+      if (lastLineRect.bottom <= containerRect.bottom - bottomBarHeight) {
+        setShowStickyBar(false);
+      } else {
+        setShowStickyBar(true);
+      }
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial check
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
   }, [isOpen]);
 
   // Estimate compressed size when compression settings change
@@ -192,7 +205,7 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto pb-20">
+      <DialogContent ref={dialogContentRef} className="max-w-5xl max-h-[90vh] overflow-y-auto pb-20">
         <DialogHeader>
           <DialogTitle>Edit Image</DialogTitle>
         </DialogHeader>
@@ -458,16 +471,21 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
             </TabsContent>
           </Tabs>
 
-          {/* Inline Actions - at bottom of modal */}
-          <div ref={bottomRef} className="flex justify-between py-4">
-            <ActionButtons />
-          </div>
+          {/* Last content line - marks end of content for dynamic bottom bar */}
+          <div ref={lastContentLineRef} className="border-b border-border" />
+
+          {/* Inline Actions - shown when sticky bar is hidden */}
+          {!showStickyBar && (
+            <div className="flex justify-between py-4">
+              <ActionButtons />
+            </div>
+          )}
         </div>
 
         {/* Fixed sticky bar - shows when inline buttons not visible */}
         {showStickyBar && (
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-50 shadow-lg">
-            <div className="flex justify-between max-w-5xl mx-auto">
+          <div className="sticky bottom-0 left-0 right-0 p-4 bg-background border-t z-50 shadow-lg -mx-6 -mb-20 mt-4">
+            <div className="flex justify-between">
               <ActionButtons />
             </div>
           </div>
