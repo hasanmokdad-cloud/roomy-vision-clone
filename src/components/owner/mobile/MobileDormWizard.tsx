@@ -790,7 +790,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             selectedAmenities={formData.amenities}
             onToggle={toggleAmenity}
             amenityDetails={formData.amenityDetails}
-            onUpdateAmenityDetails={(details) => setFormData({ ...formData, amenityDetails: details })}
+            onUpdateAmenityDetails={(details) => setFormData(prev => ({ ...prev, amenityDetails: details }))}
           />
         );
       case 10:
@@ -800,7 +800,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             selectedAmenities={formData.amenities}
             onToggle={toggleAmenity}
             amenityDetails={formData.amenityDetails}
-            onUpdateAmenityDetails={(details) => setFormData({ ...formData, amenityDetails: details })}
+            onUpdateAmenityDetails={(details) => setFormData(prev => ({ ...prev, amenityDetails: details }))}
           />
         );
       case 11:
@@ -810,7 +810,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             selectedAmenities={formData.amenities}
             onToggle={toggleAmenity}
             amenityDetails={formData.amenityDetails}
-            onUpdateAmenityDetails={(details) => setFormData({ ...formData, amenityDetails: details })}
+            onUpdateAmenityDetails={(details) => setFormData(prev => ({ ...prev, amenityDetails: details }))}
           />
         );
       case 12:
