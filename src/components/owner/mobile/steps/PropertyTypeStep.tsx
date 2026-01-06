@@ -36,12 +36,9 @@ export function PropertyTypeStep({ value, onChange }: PropertyTypeStepProps) {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-6"
         >
-          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground">
             What type of accommodation do you offer?
           </h1>
-          <p className="text-muted-foreground text-sm lg:text-base">
-            You can add more amenities after you submit your listing.
-          </p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-4">

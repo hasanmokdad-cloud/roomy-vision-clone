@@ -38,12 +38,9 @@ export function CapacityStep({ value, onChange, propertyType }: CapacityStepProp
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground">
             How many {unitLabelPlural} does your {buildingLabel} have?
           </h1>
-          <p className="text-muted-foreground text-sm lg:text-base">
-            You can add more amenities after you submit your listing.
-          </p>
         </motion.div>
 
         <motion.div

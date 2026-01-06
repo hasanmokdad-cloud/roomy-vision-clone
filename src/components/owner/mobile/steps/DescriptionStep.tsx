@@ -79,12 +79,9 @@ export function DescriptionStep({
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-6"
           >
-            <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+            <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground">
               Let's describe your dorm
             </h1>
-            <p className="text-muted-foreground text-sm lg:text-base">
-              You can add more amenities after you submit your listing.
-            </p>
           </motion.div>
 
           <div className="flex flex-wrap gap-2 justify-center">
@@ -131,12 +128,9 @@ export function DescriptionStep({
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-6"
           >
-            <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+            <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground">
               Give your dorm a title
             </h1>
-            <p className="text-muted-foreground text-sm lg:text-base">
-              You can add more amenities after you submit your listing.
-            </p>
           </motion.div>
 
           <motion.div
@@ -167,12 +161,9 @@ export function DescriptionStep({
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-6"
         >
-          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground">
             Create your description
           </h1>
-          <p className="text-muted-foreground text-sm lg:text-base">
-            You can add more amenities after you submit your listing.
-          </p>
         </motion.div>
 
         <motion.div
