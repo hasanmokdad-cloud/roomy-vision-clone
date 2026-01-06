@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Wifi } from 'lucide-react';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import type { WiFiOption } from '@/types/amenities';
 
 interface WiFiOptionsModalProps {
@@ -12,6 +13,8 @@ interface WiFiOptionsModalProps {
   onOpenChange: (open: boolean) => void;
   initialValue?: WiFiOption;
   onSave: (option: WiFiOption) => void;
+  isSelected?: boolean;
+  onRemove?: () => void;
 }
 
 export function WiFiOptionsModal({
@@ -19,9 +22,18 @@ export function WiFiOptionsModal({
   onOpenChange,
   initialValue,
   onSave,
+  isSelected,
+  onRemove,
 }: WiFiOptionsModalProps) {
   const [included, setIncluded] = useState<'yes' | 'no'>(initialValue?.included || 'yes');
   const [billingInfo, setBillingInfo] = useState(initialValue?.billingInfo || '');
+
+  useEffect(() => {
+    if (initialValue) {
+      setIncluded(initialValue.included || 'yes');
+      setBillingInfo(initialValue.billingInfo || '');
+    }
+  }, [initialValue, open]);
 
   const handleSave = () => {
     onSave({
@@ -39,6 +51,9 @@ export function WiFiOptionsModal({
             <Wifi className="w-5 h-5 text-primary" />
             WiFi Service
           </DialogTitle>
+          <VisuallyHidden>
+            <DialogDescription>Configure WiFi service options</DialogDescription>
+          </VisuallyHidden>
         </DialogHeader>
 
         <div className="py-4">
@@ -86,6 +101,11 @@ export function WiFiOptionsModal({
         </div>
 
         <DialogFooter className="flex gap-2">
+          {isSelected && onRemove && (
+            <Button variant="ghost" onClick={onRemove} className="text-destructive hover:text-destructive mr-auto">
+              Remove
+            </Button>
+          )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

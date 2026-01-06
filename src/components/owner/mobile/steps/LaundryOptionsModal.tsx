@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { WashingMachine } from 'lucide-react';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import type { LaundryOption } from '@/types/amenities';
 
 interface LaundryOptionsModalProps {
@@ -13,6 +14,8 @@ interface LaundryOptionsModalProps {
   onOpenChange: (open: boolean) => void;
   initialValue?: LaundryOption;
   onSave: (option: LaundryOption) => void;
+  isSelected?: boolean;
+  onRemove?: () => void;
 }
 
 export function LaundryOptionsModal({
@@ -20,6 +23,8 @@ export function LaundryOptionsModal({
   onOpenChange,
   initialValue,
   onSave,
+  isSelected,
+  onRemove,
 }: LaundryOptionsModalProps) {
   const [washingMachine, setWashingMachine] = useState(initialValue?.washingMachine ?? true);
   const [dryingMachine, setDryingMachine] = useState(initialValue?.dryingMachine ?? false);
@@ -58,6 +63,9 @@ export function LaundryOptionsModal({
             <WashingMachine className="w-5 h-5 text-primary" />
             Laundry Options
           </DialogTitle>
+          <VisuallyHidden>
+            <DialogDescription>Configure laundry options</DialogDescription>
+          </VisuallyHidden>
         </DialogHeader>
 
         <div className="py-4 space-y-6">
@@ -163,6 +171,11 @@ export function LaundryOptionsModal({
         </div>
 
         <DialogFooter className="flex gap-2">
+          {isSelected && onRemove && (
+            <Button variant="ghost" onClick={onRemove} className="text-destructive hover:text-destructive mr-auto">
+              Remove
+            </Button>
+          )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

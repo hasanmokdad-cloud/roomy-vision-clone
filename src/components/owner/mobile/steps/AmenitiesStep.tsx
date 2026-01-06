@@ -79,13 +79,7 @@ export function AmenitiesStep({
 
   const handleAmenityClick = (item: { id: string; label: string; hasOptions?: boolean; optionType?: string }) => {
     if (item.hasOptions && item.optionType) {
-      // If already selected, toggle off
-      if (selectedAmenities.includes(item.id)) {
-        onToggle(item.id);
-        return;
-      }
-      
-      // Open options modal
+      // Always open modal for amenities with options (for both selecting and editing)
       switch (item.optionType) {
         case 'electricity':
           setElectricityModalOpen(true);
@@ -106,6 +100,57 @@ export function AmenitiesStep({
     } else {
       onToggle(item.id);
     }
+  };
+
+  // Remove handlers for amenities with options
+  const handleElectricityRemove = () => {
+    if (selectedAmenities.includes('Electricity')) {
+      onToggle('Electricity');
+    }
+    const newDetails = { ...amenityDetails };
+    delete newDetails.electricity;
+    onUpdateAmenityDetails?.(newDetails);
+    setElectricityModalOpen(false);
+  };
+
+  const handleWiFiRemove = () => {
+    if (selectedAmenities.includes('WiFi')) {
+      onToggle('WiFi');
+    }
+    const newDetails = { ...amenityDetails };
+    delete newDetails.wifi;
+    onUpdateAmenityDetails?.(newDetails);
+    setWifiModalOpen(false);
+  };
+
+  const handleCleaningRemove = () => {
+    if (selectedAmenities.includes('Cleaning Service')) {
+      onToggle('Cleaning Service');
+    }
+    const newDetails = { ...amenityDetails };
+    delete newDetails.cleaning;
+    onUpdateAmenityDetails?.(newDetails);
+    setCleaningModalOpen(false);
+  };
+
+  const handleWaterRemove = () => {
+    if (selectedAmenities.includes('Water')) {
+      onToggle('Water');
+    }
+    const newDetails = { ...amenityDetails };
+    delete newDetails.water;
+    onUpdateAmenityDetails?.(newDetails);
+    setWaterModalOpen(false);
+  };
+
+  const handleLaundryRemove = () => {
+    if (selectedAmenities.includes('Laundry')) {
+      onToggle('Laundry');
+    }
+    const newDetails = { ...amenityDetails };
+    delete newDetails.laundry;
+    onUpdateAmenityDetails?.(newDetails);
+    setLaundryModalOpen(false);
   };
 
   const handleElectricitySave = (option: ElectricityOption) => {
@@ -244,30 +289,40 @@ export function AmenitiesStep({
         onOpenChange={setElectricityModalOpen}
         initialValue={amenityDetails.electricity}
         onSave={handleElectricitySave}
+        isSelected={selectedAmenities.includes('Electricity')}
+        onRemove={handleElectricityRemove}
       />
       <WiFiOptionsModal
         open={wifiModalOpen}
         onOpenChange={setWifiModalOpen}
         initialValue={amenityDetails.wifi}
         onSave={handleWiFiSave}
+        isSelected={selectedAmenities.includes('WiFi')}
+        onRemove={handleWiFiRemove}
       />
       <CleaningOptionsModal
         open={cleaningModalOpen}
         onOpenChange={setCleaningModalOpen}
         initialValue={amenityDetails.cleaning}
         onSave={handleCleaningSave}
+        isSelected={selectedAmenities.includes('Cleaning Service')}
+        onRemove={handleCleaningRemove}
       />
       <WaterOptionsModal
         open={waterModalOpen}
         onOpenChange={setWaterModalOpen}
         initialValue={amenityDetails.water}
         onSave={handleWaterSave}
+        isSelected={selectedAmenities.includes('Water')}
+        onRemove={handleWaterRemove}
       />
       <LaundryOptionsModal
         open={laundryModalOpen}
         onOpenChange={setLaundryModalOpen}
         initialValue={amenityDetails.laundry}
         onSave={handleLaundrySave}
+        isSelected={selectedAmenities.includes('Laundry')}
+        onRemove={handleLaundryRemove}
       />
     </div>
   );

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Zap } from 'lucide-react';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import type { ElectricityOption } from '@/types/amenities';
 
 interface ElectricityOptionsModalProps {
@@ -12,6 +13,8 @@ interface ElectricityOptionsModalProps {
   onOpenChange: (open: boolean) => void;
   initialValue?: ElectricityOption;
   onSave: (option: ElectricityOption) => void;
+  isSelected?: boolean;
+  onRemove?: () => void;
 }
 
 export function ElectricityOptionsModal({
@@ -19,6 +22,8 @@ export function ElectricityOptionsModal({
   onOpenChange,
   initialValue,
   onSave,
+  isSelected,
+  onRemove,
 }: ElectricityOptionsModalProps) {
   const [availability, setAvailability] = useState<'24/7' | 'limited'>(initialValue?.availability || '24/7');
   const [availabilityDetails, setAvailabilityDetails] = useState(initialValue?.availabilityDetails || '');
@@ -52,6 +57,9 @@ export function ElectricityOptionsModal({
             <Zap className="w-5 h-5 text-primary" />
             Electricity Options
           </DialogTitle>
+          <VisuallyHidden>
+            <DialogDescription>Configure electricity options</DialogDescription>
+          </VisuallyHidden>
         </DialogHeader>
 
         <div className="py-4 space-y-6">
@@ -141,6 +149,11 @@ export function ElectricityOptionsModal({
         </div>
 
         <DialogFooter className="flex gap-2">
+          {isSelected && onRemove && (
+            <Button variant="ghost" onClick={onRemove} className="text-destructive hover:text-destructive mr-auto">
+              Remove
+            </Button>
+          )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

@@ -5,12 +5,14 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import type { WaterOption } from '@/types/amenities';
 
 interface WaterOptionsModalProps {
@@ -18,6 +20,8 @@ interface WaterOptionsModalProps {
   onOpenChange: (open: boolean) => void;
   initialValue?: WaterOption;
   onSave: (option: WaterOption) => void;
+  isSelected?: boolean;
+  onRemove?: () => void;
 }
 
 export function WaterOptionsModal({
@@ -25,6 +29,8 @@ export function WaterOptionsModal({
   onOpenChange,
   initialValue,
   onSave,
+  isSelected,
+  onRemove,
 }: WaterOptionsModalProps) {
   const [waterType, setWaterType] = useState<'sweet' | 'salty'>(
     initialValue?.waterType || 'sweet'
@@ -42,7 +48,7 @@ export function WaterOptionsModal({
       setHotWater(initialValue.hotWater);
       setHotWaterDetails(initialValue.hotWaterDetails || '');
     }
-  }, [initialValue]);
+  }, [initialValue, open]);
 
   const handleSave = () => {
     const option: WaterOption = {
@@ -62,6 +68,9 @@ export function WaterOptionsModal({
             <Droplets className="w-5 h-5 text-primary" />
             Water Options
           </DialogTitle>
+          <VisuallyHidden>
+            <DialogDescription>Configure water options</DialogDescription>
+          </VisuallyHidden>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
@@ -134,6 +143,11 @@ export function WaterOptionsModal({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
+          {isSelected && onRemove && (
+            <Button variant="ghost" onClick={onRemove} className="text-destructive hover:text-destructive mr-auto">
+              Remove
+            </Button>
+          )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
