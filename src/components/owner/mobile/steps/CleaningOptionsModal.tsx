@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Sparkles } from 'lucide-react';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import type { CleaningOption } from '@/types/amenities';
 
 interface CleaningOptionsModalProps {
@@ -12,6 +13,8 @@ interface CleaningOptionsModalProps {
   onOpenChange: (open: boolean) => void;
   initialValue?: CleaningOption;
   onSave: (option: CleaningOption) => void;
+  isSelected?: boolean;
+  onRemove?: () => void;
 }
 
 export function CleaningOptionsModal({
@@ -19,9 +22,18 @@ export function CleaningOptionsModal({
   onOpenChange,
   initialValue,
   onSave,
+  isSelected,
+  onRemove,
 }: CleaningOptionsModalProps) {
   const [frequency, setFrequency] = useState<CleaningOption['frequency']>(initialValue?.frequency || 'once');
   const [customSchedule, setCustomSchedule] = useState(initialValue?.customSchedule || '');
+
+  useEffect(() => {
+    if (initialValue) {
+      setFrequency(initialValue.frequency || 'once');
+      setCustomSchedule(initialValue.customSchedule || '');
+    }
+  }, [initialValue, open]);
 
   const handleSave = () => {
     onSave({
@@ -39,6 +51,9 @@ export function CleaningOptionsModal({
             <Sparkles className="w-5 h-5 text-primary" />
             Cleaning Service Frequency
           </DialogTitle>
+          <VisuallyHidden>
+            <DialogDescription>Configure cleaning service frequency</DialogDescription>
+          </VisuallyHidden>
         </DialogHeader>
 
         <div className="py-4">
@@ -89,6 +104,11 @@ export function CleaningOptionsModal({
         </div>
 
         <DialogFooter className="flex gap-2">
+          {isSelected && onRemove && (
+            <Button variant="ghost" onClick={onRemove} className="text-destructive hover:text-destructive mr-auto">
+              Remove
+            </Button>
+          )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
