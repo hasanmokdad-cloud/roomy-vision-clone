@@ -19,8 +19,15 @@ interface Filters {
   shuttle: 'all' | 'available' | 'none';
   genderPreference: string[];
   amenities: string[];
+  // Electricity sub-options
   electricity24_7?: boolean;
+  electricityIncluded?: boolean;
+  // WiFi sub-options
   wifiIncluded?: boolean;
+  // Water sub-options
+  sweetWater?: boolean;
+  hotWater24_7?: boolean;
+  // Laundry sub-options
   hasWashingMachine?: boolean;
   hasDryingMachine?: boolean;
 }
@@ -223,10 +230,32 @@ export function AirbnbFiltersModal({
   const toggleArrayFilter = (key: 'universities' | 'areas' | 'roomTypes' | 'genderPreference' | 'amenities', value: string) => {
     setLocalFilters(prev => {
       const current = prev[key] as string[];
-      const updated = current.includes(value)
+      const isRemoving = current.includes(value);
+      const updated = isRemoving
         ? current.filter(v => v !== value)
         : [...current, value];
-      return { ...prev, [key]: updated };
+      
+      let additionalUpdates = {};
+      
+      // Clear sub-options when amenity is deselected
+      if (key === 'amenities' && isRemoving) {
+        switch (value) {
+          case 'Electricity':
+            additionalUpdates = { electricity24_7: false, electricityIncluded: false };
+            break;
+          case 'WiFi':
+            additionalUpdates = { wifiIncluded: false };
+            break;
+          case 'Water':
+            additionalUpdates = { sweetWater: false, hotWater24_7: false };
+            break;
+          case 'Laundry':
+            additionalUpdates = { hasWashingMachine: false, hasDryingMachine: false };
+            break;
+        }
+      }
+      
+      return { ...prev, [key]: updated, ...additionalUpdates };
     });
   };
 
@@ -254,13 +283,16 @@ export function AirbnbFiltersModal({
       genderPreference: [],
       amenities: [],
       electricity24_7: false,
+      electricityIncluded: false,
       wifiIncluded: false,
+      sweetWater: false,
+      hotWater24_7: false,
       hasWashingMachine: false,
       hasDryingMachine: false
     };
     setLocalFilters(defaultFilters);
-    onFilterChange(defaultFilters);  // Apply to parent immediately
-    onOpenChange(false);              // Close modal
+    onFilterChange(defaultFilters);
+    onOpenChange(false);
   };
 
   const handleApply = () => {
@@ -283,9 +315,98 @@ export function AirbnbFiltersModal({
       localFilters.shuttle !== 'all' ||
       localFilters.genderPreference.length > 0 ||
       localFilters.amenities.length > 0 ||
-      localFilters.electricity24_7 === true
+      localFilters.electricity24_7 === true ||
+      localFilters.electricityIncluded === true ||
+      localFilters.wifiIncluded === true ||
+      localFilters.sweetWater === true ||
+      localFilters.hotWater24_7 === true ||
+      localFilters.hasWashingMachine === true ||
+      localFilters.hasDryingMachine === true
     );
   }, [localFilters]);
+
+  // Render sub-options for amenities with special requirements
+  const renderAmenitySubOptions = (amenityName: string) => {
+    if (!localFilters.amenities.includes(amenityName)) return null;
+    
+    switch (amenityName) {
+      case 'Electricity':
+        return (
+          <div className="ml-4 mt-2 space-y-2 animate-in slide-in-from-top-2 duration-200">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Checkbox 
+                checked={localFilters.electricity24_7}
+                onCheckedChange={(checked) => updateFilter('electricity24_7', !!checked)}
+              />
+              <span className="text-sm">24/7 Electricity</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Checkbox 
+                checked={localFilters.electricityIncluded}
+                onCheckedChange={(checked) => updateFilter('electricityIncluded', !!checked)}
+              />
+              <span className="text-sm">Included in rent</span>
+            </label>
+          </div>
+        );
+        
+      case 'WiFi':
+        return (
+          <div className="ml-4 mt-2 animate-in slide-in-from-top-2 duration-200">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Checkbox 
+                checked={localFilters.wifiIncluded}
+                onCheckedChange={(checked) => updateFilter('wifiIncluded', !!checked)}
+              />
+              <span className="text-sm">Included in rent</span>
+            </label>
+          </div>
+        );
+        
+      case 'Water':
+        return (
+          <div className="ml-4 mt-2 space-y-2 animate-in slide-in-from-top-2 duration-200">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Checkbox 
+                checked={localFilters.sweetWater}
+                onCheckedChange={(checked) => updateFilter('sweetWater', !!checked)}
+              />
+              <span className="text-sm">Sweet Water</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Checkbox 
+                checked={localFilters.hotWater24_7}
+                onCheckedChange={(checked) => updateFilter('hotWater24_7', !!checked)}
+              />
+              <span className="text-sm">Hot Water 24/7</span>
+            </label>
+          </div>
+        );
+        
+      case 'Laundry':
+        return (
+          <div className="ml-4 mt-2 space-y-2 animate-in slide-in-from-top-2 duration-200">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Checkbox 
+                checked={localFilters.hasWashingMachine}
+                onCheckedChange={(checked) => updateFilter('hasWashingMachine', !!checked)}
+              />
+              <span className="text-sm">Washing Machine</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Checkbox 
+                checked={localFilters.hasDryingMachine}
+                onCheckedChange={(checked) => updateFilter('hasDryingMachine', !!checked)}
+              />
+              <span className="text-sm">Drying Machine</span>
+            </label>
+          </div>
+        );
+        
+      default:
+        return null;
+    }
+  };
 
   const filterContent = (
     <div className="space-y-8">
@@ -575,105 +696,28 @@ export function AirbnbFiltersModal({
 
       <hr className="border-border" />
 
-      {/* Special Requirements Section */}
-      <section className="space-y-4">
-        <h3 className="text-base font-semibold">Special Requirements</h3>
-        
-        {/* 24/7 Electricity */}
-        <button
-          onClick={() => updateFilter('electricity24_7', !localFilters.electricity24_7)}
-          className={cn(
-            "flex items-center gap-3 px-4 py-3 rounded-xl border text-sm transition-colors w-full",
-            localFilters.electricity24_7
-              ? "bg-foreground text-background border-foreground"
-              : "border-border hover:border-foreground"
-          )}
-        >
-          <Zap className="h-5 w-5" />
-          <div className="text-left">
-            <span className="font-medium">24/7 Electricity</span>
-            <p className={cn(
-              "text-xs mt-0.5",
-              localFilters.electricity24_7 ? "text-background/70" : "text-muted-foreground"
-            )}>
-              Uninterrupted power supply
-            </p>
-          </div>
-        </button>
-
-        {/* WiFi Included */}
-        <button
-          onClick={() => updateFilter('wifiIncluded', !localFilters.wifiIncluded)}
-          className={cn(
-            "flex items-center gap-3 px-4 py-3 rounded-xl border text-sm transition-colors w-full",
-            localFilters.wifiIncluded
-              ? "bg-foreground text-background border-foreground"
-              : "border-border hover:border-foreground"
-          )}
-        >
-          <Wifi className="h-5 w-5" />
-          <div className="text-left">
-            <span className="font-medium">WiFi Included</span>
-            <p className={cn(
-              "text-xs mt-0.5",
-              localFilters.wifiIncluded ? "text-background/70" : "text-muted-foreground"
-            )}>
-              Internet included in rent
-            </p>
-          </div>
-        </button>
-
-        {/* Laundry machines */}
-        <div className="flex gap-3">
-          <button
-            onClick={() => updateFilter('hasWashingMachine', !localFilters.hasWashingMachine)}
-            className={cn(
-              "flex-1 flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors",
-              localFilters.hasWashingMachine
-                ? "bg-foreground text-background border-foreground"
-                : "border-border hover:border-foreground"
-            )}
-          >
-            <WashingMachine className="h-5 w-5" />
-            <span className="font-medium">Washing</span>
-          </button>
-          <button
-            onClick={() => updateFilter('hasDryingMachine', !localFilters.hasDryingMachine)}
-            className={cn(
-              "flex-1 flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors",
-              localFilters.hasDryingMachine
-                ? "bg-foreground text-background border-foreground"
-                : "border-border hover:border-foreground"
-            )}
-          >
-            <Thermometer className="h-5 w-5" />
-            <span className="font-medium">Dryer</span>
-          </button>
-        </div>
-      </section>
-
-      <hr className="border-border" />
-
       {/* Amenities Section */}
       <section className="space-y-4">
         <h3 className="text-base font-semibold">Amenities</h3>
         
-        {/* Popular amenities always visible */}
-        <div className="flex flex-wrap gap-3">
+        {/* Popular amenities always visible with inline sub-options */}
+        <div className="space-y-3">
           {popularAmenities.map(({ name, icon: Icon }) => (
-            <button
-              key={name}
-              onClick={() => toggleArrayFilter('amenities', name)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors",
-                localFilters.amenities.includes(name)
-                  ? "bg-foreground text-background border-foreground"
-                  : "border-border hover:border-foreground"
-              )}
-            >
-              <Icon className="h-5 w-5" />
-              {name}
-            </button>
+            <div key={name} className="flex flex-col">
+              <button
+                onClick={() => toggleArrayFilter('amenities', name)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors w-fit",
+                  localFilters.amenities.includes(name)
+                    ? "bg-foreground text-background border-foreground"
+                    : "border-border hover:border-foreground"
+                )}
+              >
+                <Icon className="h-5 w-5" />
+                {name}
+              </button>
+              {renderAmenitySubOptions(name)}
+            </div>
           ))}
         </div>
 
@@ -686,28 +730,30 @@ export function AirbnbFiltersModal({
           {showAllAmenities ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
 
-        {/* Expanded amenities by category */}
+        {/* Expanded amenities by category with inline sub-options */}
         {showAllAmenities && (
           <div className="space-y-6 pt-2">
             {Object.entries(amenityCategories).map(([category, amenities]) => (
               category !== 'Popular' && (
                 <div key={category} className="space-y-3">
                   <h4 className="text-sm font-medium text-muted-foreground">{category}</h4>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="space-y-3">
                     {amenities.map(({ name, icon: Icon }) => (
-                      <button
-                        key={name}
-                        onClick={() => toggleArrayFilter('amenities', name)}
-                        className={cn(
-                          "flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors",
-                          localFilters.amenities.includes(name)
-                            ? "bg-foreground text-background border-foreground"
-                            : "border-border hover:border-foreground"
-                        )}
-                      >
-                        <Icon className="h-5 w-5" />
-                        {name}
-                      </button>
+                      <div key={name} className="flex flex-col">
+                        <button
+                          onClick={() => toggleArrayFilter('amenities', name)}
+                          className={cn(
+                            "flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors w-fit",
+                            localFilters.amenities.includes(name)
+                              ? "bg-foreground text-background border-foreground"
+                              : "border-border hover:border-foreground"
+                          )}
+                        >
+                          <Icon className="h-5 w-5" />
+                          {name}
+                        </button>
+                        {renderAmenitySubOptions(name)}
+                      </div>
                     ))}
                   </div>
                 </div>
