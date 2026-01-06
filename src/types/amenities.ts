@@ -5,42 +5,54 @@ export interface AmenityWithOptions {
   label: string;
   icon: LucideIcon;
   hasOptions?: boolean;
-  optionType?: 'electricity' | 'wifi' | 'cleaning' | 'water';
+  optionType?: 'electricity' | 'wifi' | 'cleaning' | 'water' | 'laundry';
 }
 
 export interface ElectricityOption {
+  availability: '24/7' | 'limited';
+  availabilityDetails?: string;
   included: 'yes' | 'no';
-  billingInfo?: string; // How students are charged if not included
+  billingInfo?: string;
 }
 
 export interface WiFiOption {
   included: 'yes' | 'no';
-  billingInfo?: string; // e.g., "$20/month subscription"
+  billingInfo?: string;
 }
 
 export interface CleaningOption {
   frequency: 'once' | 'twice' | 'three' | 'other';
-  customSchedule?: string; // For "Other" option
+  customSchedule?: string;
 }
 
 export interface WaterOption {
   waterType: 'sweet' | 'salty';
   hotWater: '24/7' | 'other';
-  hotWaterDetails?: string; // For "Other" option - schedule or electrical heater info
+  hotWaterDetails?: string;
 }
 
-export type AmenityOptionType = ElectricityOption | WiFiOption | CleaningOption | WaterOption;
+export interface LaundryOption {
+  washingMachine: boolean;
+  dryingMachine: boolean;
+  billing: 'included' | 'per-use';
+  washingCost?: string;
+  dryingCost?: string;
+}
+
+export type AmenityOptionType = ElectricityOption | WiFiOption | CleaningOption | WaterOption | LaundryOption;
 
 export interface AmenityDetails {
   electricity?: ElectricityOption;
   wifi?: WiFiOption;
   cleaning?: CleaningOption;
   water?: WaterOption;
+  laundry?: LaundryOption;
 }
 
 export function formatElectricityOption(option: ElectricityOption): string {
-  if (option.included === 'yes') return 'Included';
-  return option.billingInfo || 'Not included';
+  const avail = option.availability === '24/7' ? '24/7' : 'Limited';
+  const bill = option.included === 'yes' ? 'Incl.' : 'Separate';
+  return `${avail}, ${bill}`;
 }
 
 export function formatWiFiOption(option: WiFiOption): string {
@@ -61,4 +73,12 @@ export function formatWaterOption(option: WaterOption): string {
   const type = option.waterType === 'sweet' ? 'Sweet' : 'Salty';
   const hot = option.hotWater === '24/7' ? 'Hot 24/7' : 'Custom';
   return `${type}, ${hot}`;
+}
+
+export function formatLaundryOption(option: LaundryOption): string {
+  const machines = [];
+  if (option.washingMachine) machines.push('Wash');
+  if (option.dryingMachine) machines.push('Dry');
+  const billing = option.billing === 'included' ? 'Incl.' : 'Per use';
+  return `${machines.join('+')} (${billing})`;
 }

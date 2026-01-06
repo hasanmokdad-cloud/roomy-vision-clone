@@ -20,6 +20,9 @@ interface Filters {
   genderPreference: string[];
   amenities: string[];
   electricity24_7?: boolean;
+  wifiIncluded?: boolean;
+  hasWashingMachine?: boolean;
+  hasDryingMachine?: boolean;
 }
 
 interface Room {
@@ -70,7 +73,9 @@ const budgetPresets = [
 
 const capacityOptions = [1, 2, 3, 4, 5, 6];
 
-// Amenity categories with icons
+import { WashingMachine } from 'lucide-react';
+
+// Amenity categories with icons - aligned with wizard config
 const amenityCategories = {
   'Popular': [
     { name: 'WiFi', icon: Wifi },
@@ -78,12 +83,13 @@ const amenityCategories = {
     { name: 'Air Conditioning', icon: Snowflake },
   ],
   'Essentials': [
-    { name: 'Laundry', icon: Droplets },
+    { name: 'Laundry', icon: WashingMachine },
     { name: 'Kitchen', icon: UtensilsCrossed },
     { name: 'Furnished', icon: Sofa },
     { name: 'Heating', icon: Thermometer },
     { name: 'TV', icon: Tv },
     { name: 'Electricity', icon: Zap },
+    { name: 'Water', icon: Droplets },
   ],
   'Facilities': [
     { name: 'Gym', icon: Dumbbell },
@@ -247,7 +253,10 @@ export function AirbnbFiltersModal({
       shuttle: 'all',
       genderPreference: [],
       amenities: [],
-      electricity24_7: false
+      electricity24_7: false,
+      wifiIncluded: false,
+      hasWashingMachine: false,
+      hasDryingMachine: false
     };
     setLocalFilters(defaultFilters);
     onFilterChange(defaultFilters);  // Apply to parent immediately
@@ -566,9 +575,11 @@ export function AirbnbFiltersModal({
 
       <hr className="border-border" />
 
-      {/* 24/7 Electricity Filter */}
+      {/* Special Requirements Section */}
       <section className="space-y-4">
         <h3 className="text-base font-semibold">Special Requirements</h3>
+        
+        {/* 24/7 Electricity */}
         <button
           onClick={() => updateFilter('electricity24_7', !localFilters.electricity24_7)}
           className={cn(
@@ -585,10 +596,60 @@ export function AirbnbFiltersModal({
               "text-xs mt-0.5",
               localFilters.electricity24_7 ? "text-background/70" : "text-muted-foreground"
             )}>
-              Only show dorms with electricity included in rent
+              Uninterrupted power supply
             </p>
           </div>
         </button>
+
+        {/* WiFi Included */}
+        <button
+          onClick={() => updateFilter('wifiIncluded', !localFilters.wifiIncluded)}
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-xl border text-sm transition-colors w-full",
+            localFilters.wifiIncluded
+              ? "bg-foreground text-background border-foreground"
+              : "border-border hover:border-foreground"
+          )}
+        >
+          <Wifi className="h-5 w-5" />
+          <div className="text-left">
+            <span className="font-medium">WiFi Included</span>
+            <p className={cn(
+              "text-xs mt-0.5",
+              localFilters.wifiIncluded ? "text-background/70" : "text-muted-foreground"
+            )}>
+              Internet included in rent
+            </p>
+          </div>
+        </button>
+
+        {/* Laundry machines */}
+        <div className="flex gap-3">
+          <button
+            onClick={() => updateFilter('hasWashingMachine', !localFilters.hasWashingMachine)}
+            className={cn(
+              "flex-1 flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors",
+              localFilters.hasWashingMachine
+                ? "bg-foreground text-background border-foreground"
+                : "border-border hover:border-foreground"
+            )}
+          >
+            <WashingMachine className="h-5 w-5" />
+            <span className="font-medium">Washing</span>
+          </button>
+          <button
+            onClick={() => updateFilter('hasDryingMachine', !localFilters.hasDryingMachine)}
+            className={cn(
+              "flex-1 flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-colors",
+              localFilters.hasDryingMachine
+                ? "bg-foreground text-background border-foreground"
+                : "border-border hover:border-foreground"
+            )}
+          >
+            <Thermometer className="h-5 w-5" />
+            <span className="font-medium">Dryer</span>
+          </button>
+        </div>
       </section>
 
       <hr className="border-border" />
