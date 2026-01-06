@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -40,8 +40,30 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
   const [compression, setCompression] = useState<CompressionSettings>({ quality: 80, maxDimension: 1920 });
   const [originalSize, setOriginalSize] = useState<number>(0);
   const [estimatedSize, setEstimatedSize] = useState<number>(0);
+  const [showStickyBar, setShowStickyBar] = useState(true);
   const imgRef = useRef<HTMLImageElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Track if any changes have been made
+  const hasChanges = useMemo(() => {
+    const hasAdjustmentChanges = 
+      adjustments.brightness !== 100 ||
+      adjustments.contrast !== 100 ||
+      adjustments.saturation !== 100 ||
+      adjustments.rotation !== 0 ||
+      adjustments.flipHorizontal ||
+      adjustments.flipVertical ||
+      adjustments.filter !== 'none';
+    
+    const hasCropChanges = completedCrop !== undefined;
+    
+    const hasCompressionChanges = 
+      compression.quality !== 80 || 
+      compression.maxDimension !== 1920;
+    
+    return hasAdjustmentChanges || hasCropChanges || hasCompressionChanges;
+  }, [adjustments, completedCrop, compression]);
 
   useEffect(() => {
     if (isOpen && imageFile) {
@@ -56,6 +78,19 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [isOpen, imageFile]);
+
+  // Intersection observer for sticky bar
+  useEffect(() => {
+    if (!bottomRef.current || !isOpen) return;
+    
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    
+    observer.observe(bottomRef.current);
+    return () => observer.disconnect();
+  }, [isOpen]);
 
   // Estimate compressed size when compression settings change
   useEffect(() => {
@@ -137,9 +172,27 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
     setAdjustments(prev => ({ ...prev, [key]: value }));
   };
 
+  const buttonText = hasChanges ? 'Apply Changes' : 'Upload';
+
+  const ActionButtons = () => (
+    <>
+      <Button variant="outline" onClick={handleReset}>
+        Reset All
+      </Button>
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button onClick={handleSave}>
+          {buttonText}
+        </Button>
+      </div>
+    </>
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto pb-20">
         <DialogHeader>
           <DialogTitle>Edit Image</DialogTitle>
         </DialogHeader>
@@ -405,21 +458,20 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
             </TabsContent>
           </Tabs>
 
-          {/* Actions */}
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={handleReset}>
-              Reset All
-            </Button>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave}>
-                Apply Changes
-              </Button>
-            </div>
+          {/* Inline Actions - at bottom of modal */}
+          <div ref={bottomRef} className="flex justify-between py-4">
+            <ActionButtons />
           </div>
         </div>
+
+        {/* Fixed sticky bar - shows when inline buttons not visible */}
+        {showStickyBar && (
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-50 shadow-lg">
+            <div className="flex justify-between max-w-5xl mx-auto">
+              <ActionButtons />
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
