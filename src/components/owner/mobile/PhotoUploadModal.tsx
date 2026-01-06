@@ -1,12 +1,14 @@
 import { useState, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, ImagePlus, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { X, Plus, ImagePlus, Trash2, Check } from 'lucide-react';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
+import { supabase } from '@/integrations/supabase/client';
+import { compressImage } from '@/utils/imageCompression';
 
 interface PhotoUploadModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpload: (files: File[]) => void;
+  onUpload: (urls: string[]) => void;
   maxFiles?: number;
   currentCount?: number;
   isCover?: boolean;
@@ -24,6 +26,14 @@ export function PhotoUploadModal({
   const [previews, setPreviews] = useState<string[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Upload state
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number[]>([]);
+  const [uploadComplete, setUploadComplete] = useState<boolean[]>([]);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [overallProgress, setOverallProgress] = useState(0);
+  const abortRef = useRef(false);
 
   const maxAllowed = isCover ? 1 : maxFiles - currentCount;
 
@@ -68,7 +78,9 @@ export function PhotoUploadModal({
   };
 
   const handleBrowseClick = () => {
-    fileInputRef.current?.click();
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,24 +95,141 @@ export function PhotoUploadModal({
     setPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleUploadClick = () => {
-    if (selectedFiles.length > 0) {
-      onUpload(selectedFiles);
+  const handleUploadClick = async () => {
+    if (selectedFiles.length === 0 || isUploading) return;
+    
+    abortRef.current = false;
+    setIsUploading(true);
+    setUploadProgress(new Array(selectedFiles.length).fill(0));
+    setUploadComplete(new Array(selectedFiles.length).fill(false));
+    setCompletedCount(0);
+    setOverallProgress(0);
+    
+    const uploadedUrls: string[] = [];
+    const totalFiles = selectedFiles.length;
+    
+    for (let i = 0; i < selectedFiles.length; i++) {
+      if (abortRef.current) break;
+      
+      try {
+        const file = selectedFiles[i];
+        
+        // Simulate progress for compression phase (0-30%)
+        for (let p = 0; p <= 30; p += 10) {
+          if (abortRef.current) break;
+          await new Promise(r => setTimeout(r, 50));
+          setUploadProgress(prev => {
+            const updated = [...prev];
+            updated[i] = p;
+            return updated;
+          });
+          updateOverallProgress(i, p, totalFiles);
+        }
+        
+        if (abortRef.current) break;
+        
+        const compressed = await compressImage(file);
+        
+        // Simulate progress for upload phase (30-90%)
+        for (let p = 30; p <= 90; p += 15) {
+          if (abortRef.current) break;
+          await new Promise(r => setTimeout(r, 100));
+          setUploadProgress(prev => {
+            const updated = [...prev];
+            updated[i] = p;
+            return updated;
+          });
+          updateOverallProgress(i, p, totalFiles);
+        }
+        
+        if (abortRef.current) break;
+        
+        const fileName = `${Date.now()}-${file.name}`;
+        const filePath = isCover ? `dorm-images/${fileName}` : `dorm-gallery/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('dorm-uploads')
+          .upload(filePath, compressed);
+        
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('dorm-uploads')
+          .getPublicUrl(filePath);
+        
+        uploadedUrls.push(publicUrl);
+        
+        // Complete this file (100%)
+        setUploadProgress(prev => {
+          const updated = [...prev];
+          updated[i] = 100;
+          return updated;
+        });
+        setUploadComplete(prev => {
+          const updated = [...prev];
+          updated[i] = true;
+          return updated;
+        });
+        setCompletedCount(prev => prev + 1);
+        updateOverallProgress(i, 100, totalFiles);
+        
+      } catch (error) {
+        console.error('Upload failed for file:', i, error);
+      }
+    }
+    
+    // Small delay to show completion state
+    await new Promise(r => setTimeout(r, 500));
+    
+    if (!abortRef.current && uploadedUrls.length > 0) {
+      onUpload(uploadedUrls);
+    }
+    
+    handleClose();
+  };
+
+  const updateOverallProgress = (currentIndex: number, currentProgress: number, total: number) => {
+    setUploadProgress(prev => {
+      const completedProgress = prev.slice(0, currentIndex).reduce((a, b) => a + b, 0);
+      const overall = Math.round((completedProgress + currentProgress) / (total * 100) * 100);
+      setOverallProgress(overall);
+      return prev;
+    });
+  };
+
+  const handleCancel = () => {
+    if (isUploading) {
+      // Abort uploads and reset to pre-upload state
+      abortRef.current = true;
+      setIsUploading(false);
+      setUploadProgress([]);
+      setUploadComplete([]);
+      setCompletedCount(0);
+      setOverallProgress(0);
+    } else {
       handleClose();
     }
   };
 
   const handleClose = () => {
+    abortRef.current = true;
     setSelectedFiles([]);
     setPreviews([]);
     setIsDragOver(false);
+    setIsUploading(false);
+    setUploadProgress([]);
+    setUploadComplete([]);
+    setCompletedCount(0);
+    setOverallProgress(0);
     onOpenChange(false);
   };
 
   const itemCount = selectedFiles.length;
-  const subtitle = itemCount === 0 
-    ? 'No items selected' 
-    : `${itemCount} item${itemCount > 1 ? 's' : ''} selected`;
+  const subtitle = isUploading
+    ? `${completedCount} of ${itemCount} items uploaded`
+    : itemCount === 0 
+      ? 'No items selected' 
+      : `${itemCount} item${itemCount > 1 ? 's' : ''} selected`;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -121,14 +250,27 @@ export function PhotoUploadModal({
           
           <button
             onClick={handleBrowseClick}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-full transition-colors"
+            disabled={isUploading}
+            className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full transition-colors
+              ${isUploading ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-100'}
+            `}
           >
             <Plus className="w-5 h-5 text-gray-800" />
           </button>
         </div>
 
+        {/* Progress bar - only visible during upload */}
+        {isUploading && (
+          <div className="h-[2px] bg-gray-200 w-full">
+            <div 
+              className="h-full bg-black transition-all duration-300 ease-out"
+              style={{ width: `${overallProgress}%` }}
+            />
+          </div>
+        )}
+
         {/* Content */}
-        <div className="flex-1 overflow-auto px-6 pb-4">
+        <div className="flex-1 overflow-auto px-6 pb-4" style={{ maxHeight: 'calc(85vh - 180px)' }}>
           {previews.length === 0 ? (
             /* Dropzone - shown when no images */
             <div
@@ -163,7 +305,6 @@ export function PhotoUploadModal({
                   key={index}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
                   className="relative rounded-lg overflow-hidden"
                 >
                   <img 
@@ -171,12 +312,53 @@ export function PhotoUploadModal({
                     alt={`Preview ${index + 1}`} 
                     className="w-full h-auto object-cover"
                   />
+                  
+                  {/* Top-right button: Trash (pre-upload) or X (during upload) */}
                   <button
-                    onClick={() => removeFile(index)}
-                    className="absolute top-2 right-2 w-8 h-8 bg-black rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors"
+                    onClick={() => isUploading ? undefined : removeFile(index)}
+                    disabled={isUploading}
+                    className={`absolute top-2 right-2 w-8 h-8 bg-black rounded-full flex items-center justify-center transition-colors
+                      ${isUploading ? 'cursor-default' : 'hover:bg-gray-800'}
+                    `}
                   >
-                    <Trash2 className="w-4 h-4 text-white" />
+                    {isUploading ? (
+                      <X className="w-4 h-4 text-white" />
+                    ) : (
+                      <Trash2 className="w-4 h-4 text-white" />
+                    )}
                   </button>
+                  
+                  {/* Center progress indicator - only during upload */}
+                  {isUploading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      {uploadComplete[index] ? (
+                        /* Checkmark when complete */
+                        <div className="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center bg-black/30">
+                          <Check className="w-6 h-6 text-white" strokeWidth={3} />
+                        </div>
+                      ) : (
+                        /* Circular progress spinner */
+                        <svg className="w-12 h-12 -rotate-90" viewBox="0 0 48 48">
+                          <circle 
+                            cx="24" cy="24" r="20" 
+                            fill="none" 
+                            stroke="rgba(255,255,255,0.3)" 
+                            strokeWidth="3"
+                          />
+                          <circle 
+                            cx="24" cy="24" r="20" 
+                            fill="none" 
+                            stroke="white" 
+                            strokeWidth="3"
+                            strokeDasharray={125.6}
+                            strokeDashoffset={125.6 - (125.6 * (uploadProgress[index] || 0) / 100)}
+                            strokeLinecap="round"
+                            className="transition-all duration-200"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </div>
@@ -196,23 +378,31 @@ export function PhotoUploadModal({
         {/* Footer */}
         <div className="border-t border-gray-200 px-4 py-4 flex justify-between items-center">
           <button
-            onClick={handleClose}
+            onClick={handleCancel}
             className="text-sm font-medium text-gray-900 hover:text-gray-700 transition-colors"
           >
             {selectedFiles.length === 0 ? 'Done' : 'Cancel'}
           </button>
           <button
             onClick={handleUploadClick}
-            disabled={selectedFiles.length === 0}
+            disabled={selectedFiles.length === 0 || isUploading}
             className={`
-              px-6 py-3 text-sm font-medium rounded-lg transition-colors
+              px-6 py-3 text-sm font-medium rounded-lg transition-colors min-w-[100px] flex items-center justify-center
               ${selectedFiles.length === 0
                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 : 'bg-gray-900 text-white hover:bg-gray-800'
               }
             `}
           >
-            Upload
+            {isUploading ? (
+              <div className="flex gap-1">
+                <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            ) : (
+              'Upload'
+            )}
           </button>
         </div>
       </DrawerContent>

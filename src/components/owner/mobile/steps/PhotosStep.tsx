@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { compressImage } from '@/utils/imageCompression';
 import { toast } from '@/hooks/use-toast';
 import CameraIcon from '@/assets/camera-icon.avif';
 import { PhotoUploadModal } from '../PhotoUploadModal';
@@ -20,66 +18,20 @@ export function PhotosStep({
   onCoverChange, 
   onGalleryChange 
 }: PhotosStepProps) {
-  const [uploading, setUploading] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadMode, setUploadMode] = useState<'cover' | 'gallery'>('gallery');
 
-  const handleUpload = async (file: File, isCover: boolean): Promise<string | null> => {
-    try {
-      const compressed = await compressImage(file);
-      const fileName = `${Date.now()}-${file.name}`;
-      const filePath = isCover ? `dorm-images/${fileName}` : `dorm-gallery/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('dorm-uploads')
-        .upload(filePath, compressed);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('dorm-uploads')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
-    } catch (error: any) {
-      toast({ 
-        title: 'Upload failed', 
-        description: error.message,
-        variant: 'destructive' 
-      });
-      return null;
-    }
-  };
-
-  const handleModalUpload = async (files: File[]) => {
-    if (files.length === 0) return;
-    
-    setUploading(true);
+  const handleModalUpload = (urls: string[]) => {
+    if (urls.length === 0) return;
     
     if (uploadMode === 'cover') {
-      const url = await handleUpload(files[0], true);
-      if (url) {
-        onCoverChange(url);
-        toast({ title: 'Cover photo uploaded!' });
-      }
+      onCoverChange(urls[0]);
+      toast({ title: 'Cover photo uploaded!' });
     } else {
-      const filesToUpload = files.slice(0, 10 - galleryImages.length);
-      const newUrls: string[] = [];
-      
-      for (const file of filesToUpload) {
-        const url = await handleUpload(file, false);
-        if (url) {
-          newUrls.push(url);
-        }
-      }
-      
-      if (newUrls.length > 0) {
-        onGalleryChange([...galleryImages, ...newUrls]);
-        toast({ title: `${newUrls.length} photo(s) uploaded!` });
-      }
+      onGalleryChange([...galleryImages, ...urls]);
+      toast({ title: `${urls.length} photo(s) uploaded!` });
     }
     
-    setUploading(false);
     setUploadModalOpen(false);
   };
 
@@ -225,19 +177,6 @@ export function PhotosStep({
         currentCount={uploadMode === 'gallery' ? galleryImages.length : 0}
         isCover={uploadMode === 'cover'}
       />
-
-      {uploading && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-background/80 flex items-center justify-center z-50"
-        >
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-foreground">Uploading...</p>
-          </div>
-        </motion.div>
-      )}
     </div>
   );
 }
