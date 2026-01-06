@@ -104,7 +104,7 @@ export function PhotoUploadModal({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="bg-white max-h-[85vh] rounded-t-[20px]">
+      <DrawerContent className="bg-white max-h-[85vh] rounded-t-[20px] [&>[data-vaul-handle-wrapper]]:hidden">
         {/* Header */}
         <div className="relative py-4 px-4 text-center">
           <button
@@ -129,66 +129,58 @@ export function PhotoUploadModal({
 
         {/* Content */}
         <div className="flex-1 overflow-auto px-6 pb-4">
-          {/* Dropzone */}
-          <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={`
-              border border-dashed rounded-xl py-12 px-6 text-center transition-all
-              ${isDragOver 
-                ? 'border-gray-800 bg-gray-50' 
-                : 'border-gray-300 bg-white'
-              }
-            `}
-          >
-            <div className="flex justify-center mb-4">
-              <ImagePlus className="w-12 h-12 text-gray-400" strokeWidth={1.5} />
-            </div>
-            <h3 className="text-base font-medium text-gray-900 mb-1">Drag and drop</h3>
-            <p className="text-sm text-gray-500 mb-4">or browse for photos</p>
-            <button
-              onClick={handleBrowseClick}
-              className="px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+          {previews.length === 0 ? (
+            /* Dropzone - shown when no images */
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`
+                border border-dashed rounded-xl py-12 px-6 text-center transition-all
+                ${isDragOver 
+                  ? 'border-gray-800 bg-gray-50' 
+                  : 'border-gray-300 bg-white'
+                }
+              `}
             >
-              Browse
-            </button>
-          </div>
-
-          {/* Preview Grid */}
-          <AnimatePresence>
-            {previews.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4"
+              <div className="flex justify-center mb-4">
+                <ImagePlus className="w-12 h-12 text-gray-400" strokeWidth={1.5} />
+              </div>
+              <h3 className="text-base font-medium text-gray-900 mb-1">Drag and drop</h3>
+              <p className="text-sm text-gray-500 mb-4">or browse for photos</p>
+              <button
+                onClick={handleBrowseClick}
+                className="px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
               >
-                <div className="grid grid-cols-3 gap-2">
-                  {previews.map((preview, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      className="relative aspect-square rounded-lg overflow-hidden group"
-                    >
-                      <img 
-                        src={preview} 
-                        alt={`Preview ${index + 1}`} 
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        onClick={() => removeFile(index)}
-                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                      >
-                        <Trash2 className="w-5 h-5 text-white" />
-                      </button>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                Browse
+              </button>
+            </div>
+          ) : (
+            /* Image Grid - shown when images are selected */
+            <div className="grid grid-cols-2 gap-3">
+              {previews.map((preview, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="relative rounded-lg overflow-hidden"
+                >
+                  <img 
+                    src={preview} 
+                    alt={`Preview ${index + 1}`} 
+                    className="w-full h-auto object-cover"
+                  />
+                  <button
+                    onClick={() => removeFile(index)}
+                    className="absolute top-2 right-2 w-8 h-8 bg-black rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4 text-white" />
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          )}
 
           {/* Hidden file input */}
           <input
@@ -207,7 +199,7 @@ export function PhotoUploadModal({
             onClick={handleClose}
             className="text-sm font-medium text-gray-900 hover:text-gray-700 transition-colors"
           >
-            Done
+            {selectedFiles.length === 0 ? 'Done' : 'Cancel'}
           </button>
           <button
             onClick={handleUploadClick}
