@@ -27,11 +27,12 @@ interface CompressionSettings {
 interface ImageEditorModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onCancel?: () => void;
   imageFile: File;
   onSave: (editedFile: File) => void;
 }
 
-export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEditorModalProps) {
+export function ImageEditorModal({ isOpen, onClose, onCancel, imageFile, onSave }: ImageEditorModalProps) {
   const [adjustments, setAdjustments] = useState<ImageAdjustments>(defaultAdjustments);
   const [crop, setCrop] = useState<CropType>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
@@ -187,13 +188,21 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
 
   const buttonText = hasChanges ? 'Apply Changes' : 'Upload';
 
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      onClose();
+    }
+  };
+
   const ActionButtons = () => (
     <>
       <Button variant="outline" onClick={handleReset}>
         Reset All
       </Button>
       <div className="flex gap-2">
-        <Button variant="outline" onClick={onClose}>
+        <Button variant="outline" onClick={handleCancel}>
           Cancel
         </Button>
         <Button onClick={handleSave}>

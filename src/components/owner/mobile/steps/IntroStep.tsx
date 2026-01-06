@@ -12,17 +12,17 @@ export function IntroStep({ onGetStarted }: IntroStepProps) {
     {
       icon: Home,
       title: 'Tell us about your dorm',
-      description: 'Share basic info, location, capacity',
+      description: 'Property type, title, gender preference, highlights & description',
     },
     {
       icon: Camera,
       title: 'Make it stand out',
-      description: 'Add photos, amenities, description',
+      description: 'Location, essential services, amenities & photos',
     },
     {
       icon: CheckCircle,
       title: 'Finish up and publish',
-      description: 'Submit for verification',
+      description: 'Room details, pricing, occupancy & media',
     },
   ];
 

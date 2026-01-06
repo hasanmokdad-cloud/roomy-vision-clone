@@ -61,6 +61,8 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
   const uploadHandlesRef = useRef<Map<string, UploadHandle>>(new Map());
   // Track cancelled files to prevent adding their URLs
   const cancelledFilesRef = useRef<Set<string>>(new Set());
+  // Track if toast has been shown to prevent duplicates
+  const toastShownRef = useRef(false);
 
   // Get unique room types
   const roomTypes = [...new Set(rooms.map(r => r.type).filter(Boolean))] as string[];
@@ -194,6 +196,14 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
     
     startUpload(pendingUpload.roomId, pendingUpload.files);
     setPendingUpload(null);
+  };
+
+  // True cancel - completely abort without uploading
+  const handleEditorCancel = () => {
+    setEditorOpen(false);
+    setEditingFile(null);
+    setPendingUpload(null);
+    // Do nothing else - user cancelled the entire operation
   };
 
   const startUpload = async (roomId: string | 'bulk', files: File[]) => {
@@ -397,10 +407,14 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
         });
         onChange(updated);
 
-        toast({
-          title: 'Upload complete',
-          description: `${uploadedImageUrls.length} image(s)${uploadedVideoUrl ? ' and 1 video' : ''} added`,
-        });
+        // Show toast only once
+        if (!toastShownRef.current) {
+          toastShownRef.current = true;
+          toast({
+            title: 'Upload complete',
+            description: `${uploadedImageUrls.length} image(s)${uploadedVideoUrl ? ' and 1 video' : ''} added`,
+          });
+        }
       } else if (cancelledFilesRef.current.size > 0) {
         // All files were cancelled - no toast needed, user did it intentionally
       }
@@ -410,6 +424,7 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
 
       // Clear progress after delay
       setTimeout(() => {
+        toastShownRef.current = false; // Reset toast flag for next upload
         if (roomId === 'bulk') {
           setBulkUploads([]);
         } else {
@@ -893,6 +908,7 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
         <ImageEditorModal
           isOpen={editorOpen}
           onClose={handleEditorSkip}
+          onCancel={handleEditorCancel}
           imageFile={editingFile}
           onSave={handleEditorSave}
         />

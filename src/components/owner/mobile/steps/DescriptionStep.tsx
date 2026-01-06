@@ -13,6 +13,7 @@ interface DescriptionStepProps {
 }
 
 const highlightOptions = [
+  // Original
   { id: 'peaceful', label: 'Peaceful' },
   { id: 'unique', label: 'Unique' },
   { id: 'student-friendly', label: 'Student-friendly' },
@@ -21,6 +22,37 @@ const highlightOptions = [
   { id: 'spacious', label: 'Spacious' },
   { id: 'cozy', label: 'Cozy' },
   { id: 'affordable', label: 'Affordable' },
+  // Additional options
+  { id: 'quiet-study', label: 'Quiet for studying' },
+  { id: 'social-atmosphere', label: 'Social atmosphere' },
+  { id: 'near-campus', label: 'Near campus' },
+  { id: 'safe-secure', label: 'Safe & secure' },
+  { id: 'well-maintained', label: 'Well-maintained' },
+  { id: 'bright-airy', label: 'Bright & airy' },
+  { id: 'pet-friendly', label: 'Pet-friendly' },
+  { id: 'fast-wifi', label: 'Fast WiFi' },
+  { id: 'fully-furnished', label: 'Fully furnished' },
+  { id: 'recently-renovated', label: 'Recently renovated' },
+  { id: 'great-views', label: 'Great views' },
+  { id: 'close-to-shops', label: 'Close to shops' },
+  { id: 'public-transport', label: 'Near public transport' },
+  { id: 'utilities-included', label: 'Utilities included' },
+  { id: 'flexible-lease', label: 'Flexible lease' },
+  { id: 'communal-kitchen', label: 'Communal kitchen' },
+  { id: 'laundry-onsite', label: 'Laundry on-site' },
+  { id: 'rooftop-access', label: 'Rooftop access' },
+  { id: 'outdoor-space', label: 'Outdoor space' },
+  { id: 'parking-available', label: 'Parking available' },
+  { id: 'generator-backup', label: 'Generator backup' },
+  { id: 'sea-view', label: 'Sea view' },
+  { id: 'mountain-view', label: 'Mountain view' },
+  { id: 'city-view', label: 'City view' },
+  { id: 'balcony', label: 'Balcony' },
+  { id: 'private-bathroom', label: 'Private bathroom' },
+  { id: 'quiet-neighborhood', label: 'Quiet neighborhood' },
+  { id: 'vibrant-area', label: 'Vibrant area' },
+  { id: 'study-room', label: 'Study room' },
+  { id: 'gym-access', label: 'Gym access' },
 ];
 
 export function DescriptionStep({
@@ -35,7 +67,7 @@ export function DescriptionStep({
   const toggleHighlight = (id: string) => {
     if (highlights.includes(id)) {
       onHighlightsChange(highlights.filter((h) => h !== id));
-    } else if (highlights.length < 2) {
+    } else {
       onHighlightsChange([...highlights, id]);
     }
   };
@@ -52,11 +84,11 @@ export function DescriptionStep({
             Let's describe your dorm
           </h1>
           <p className="text-muted-foreground">
-            Choose up to 2 highlights. We'll use these to get your description started.
+            Select highlights that describe your dorm. We'll use these to create your description.
           </p>
         </motion.div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
           {highlightOptions.map((option, index) => {
             const isSelected = highlights.includes(option.id);
             return (
@@ -64,14 +96,13 @@ export function DescriptionStep({
                 key={option.id}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: Math.min(index * 0.02, 0.3) }}
                 onClick={() => toggleHighlight(option.id)}
-                disabled={!isSelected && highlights.length >= 2}
-                className={`px-5 py-3 rounded-full border-2 font-medium transition-all ${
+                className={`px-4 py-2 rounded-full border-2 text-sm font-medium transition-all ${
                   isSelected
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border text-foreground hover:border-primary/50'
-                } ${!isSelected && highlights.length >= 2 ? 'opacity-40' : ''}`}
+                }`}
               >
                 {option.label}
               </motion.button>
@@ -85,7 +116,7 @@ export function DescriptionStep({
           transition={{ delay: 0.4 }}
           className="text-center text-sm text-muted-foreground mt-6"
         >
-          {highlights.length}/2 selected
+          {highlights.length} selected
         </motion.p>
       </div>
     );
