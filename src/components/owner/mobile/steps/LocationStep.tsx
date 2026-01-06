@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cities, areasByCity } from '@/data/dormLocations';
+import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface LocationStepProps {
   city: string;
@@ -14,6 +15,7 @@ interface LocationStepProps {
   onAreaChange: (value: string) => void;
   onAddressChange: (value: string) => void;
   onShuttleChange?: (value: boolean) => void;
+  propertyType?: string;
 }
 
 export function LocationStep({
@@ -25,7 +27,9 @@ export function LocationStep({
   onAreaChange,
   onAddressChange,
   onShuttleChange,
+  propertyType = 'dorm',
 }: LocationStepProps) {
+  const { dormLabel } = usePropertyTerminology(propertyType);
   const availableAreas = city ? areasByCity[city] || [] : [];
   const showShuttleToggle = city === 'byblos';
 
@@ -38,7 +42,7 @@ export function LocationStep({
           className="text-center mb-6"
         >
           <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground">
-            Where is your dorm located?
+            Where is your {dormLabel} located?
           </h1>
         </motion.div>
 

@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ownerRoomTypes } from '@/data/roomTypes';
+import { ownerRoomTypes, apartmentTypes } from '@/data/roomTypes';
 import { WizardRoomData } from './RoomNamesStep';
 import { Check } from 'lucide-react';
 import { usePropertyTerminology } from '@/hooks/use-property-terminology';
@@ -28,6 +28,9 @@ const getCapacityFromType = (type: string): number | null => {
 
 export function RoomTypesStep({ rooms, onChange, propertyType = 'dorm' }: RoomTypesStepProps) {
   const { roomsLabel, roomLabel } = usePropertyTerminology(propertyType);
+  const isApartment = propertyType === 'apartment';
+  const typeOptions = isApartment ? apartmentTypes : ownerRoomTypes;
+  
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkType, setBulkType] = useState('');
   const [applied, setApplied] = useState(false);
@@ -114,7 +117,7 @@ export function RoomTypesStep({ rooms, onChange, propertyType = 'dorm' }: RoomTy
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
-              {ownerRoomTypes.map(type => (
+              {typeOptions.map(type => (
                 <SelectItem key={type} value={type}>{type}</SelectItem>
               ))}
             </SelectContent>
@@ -154,7 +157,7 @@ export function RoomTypesStep({ rooms, onChange, propertyType = 'dorm' }: RoomTy
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
-              {ownerRoomTypes.map(type => (
+              {typeOptions.map(type => (
                 <SelectItem key={type} value={type}>{type}</SelectItem>
               ))}
             </SelectContent>
@@ -198,7 +201,7 @@ export function RoomTypesStep({ rooms, onChange, propertyType = 'dorm' }: RoomTy
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ownerRoomTypes.map(type => (
+                    {typeOptions.map(type => (
                       <SelectItem key={type} value={type}>{type}</SelectItem>
                     ))}
                   </SelectContent>
