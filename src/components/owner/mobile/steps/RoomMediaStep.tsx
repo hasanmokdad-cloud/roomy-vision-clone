@@ -121,8 +121,9 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
     
     const handle = uploadHandlesRef.current.get(fileName);
     if (handle) {
-      handle.abort();
+      // Delete handle first, then abort to prevent any further operations
       uploadHandlesRef.current.delete(fileName);
+      handle.abort();
     }
     
     // Remove from progress state
@@ -382,26 +383,30 @@ export function RoomMediaStep({ rooms, selectedIds, onChange }: RoomMediaStepPro
         }
       }
       
-      // Clear cancelled files after processing
+      // Only apply to rooms if we have successful uploads
+      if (uploadedImageUrls.length > 0 || uploadedVideoUrl) {
+        const updated = rooms.map(room => {
+          if (targetRoomIds.includes(room.id)) {
+            return {
+              ...room,
+              images: [...room.images, ...uploadedImageUrls],
+              ...(uploadedVideoUrl ? { video_url: uploadedVideoUrl } : {})
+            };
+          }
+          return room;
+        });
+        onChange(updated);
+
+        toast({
+          title: 'Upload complete',
+          description: `${uploadedImageUrls.length} image(s)${uploadedVideoUrl ? ' and 1 video' : ''} added`,
+        });
+      } else if (cancelledFilesRef.current.size > 0) {
+        // All files were cancelled - no toast needed, user did it intentionally
+      }
+      
+      // Clear cancelled files AFTER all processing
       cancelledFilesRef.current.clear();
-
-      // Apply to rooms
-      const updated = rooms.map(room => {
-        if (targetRoomIds.includes(room.id)) {
-          return {
-            ...room,
-            images: [...room.images, ...uploadedImageUrls],
-            ...(uploadedVideoUrl ? { video_url: uploadedVideoUrl } : {})
-          };
-        }
-        return room;
-      });
-      onChange(updated);
-
-      toast({
-        title: 'Upload complete',
-        description: `${uploadedImageUrls.length} image(s)${uploadedVideoUrl ? ' and 1 video' : ''} added`,
-      });
 
       // Clear progress after delay
       setTimeout(() => {

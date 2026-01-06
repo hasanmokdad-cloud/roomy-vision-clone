@@ -205,12 +205,14 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent ref={dialogContentRef} className="max-w-5xl max-h-[90vh] overflow-y-auto pb-20">
-        <DialogHeader>
+      <DialogContent className="max-w-5xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden">
+        <DialogHeader className="p-6 pb-4 shrink-0">
           <DialogTitle>Edit Image</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        {/* Scrollable content area */}
+        <div ref={dialogContentRef} className="flex-1 overflow-y-auto px-6">
+          <div className="space-y-4">
           {/* Preview Area */}
           <div className="relative bg-muted rounded-lg overflow-hidden flex items-center justify-center min-h-[400px]">
             {previewUrl && (
@@ -471,23 +473,22 @@ export function ImageEditorModal({ isOpen, onClose, imageFile, onSave }: ImageEd
             </TabsContent>
           </Tabs>
 
-          {/* Last content line - marks end of content for dynamic bottom bar */}
-          <div ref={lastContentLineRef} className="border-b border-border" />
+            {/* Last content line - marks end of content for dynamic bottom bar */}
+            <div ref={lastContentLineRef} className="border-b border-border" />
 
-          {/* Inline Actions - shown when sticky bar is hidden */}
-          {!showStickyBar && (
-            <div className="flex justify-between py-4">
-              <ActionButtons />
-            </div>
-          )}
+            {/* Inline Actions - shown when sticky bar is hidden */}
+            {!showStickyBar && (
+              <div className="flex justify-between py-4 pb-6">
+                <ActionButtons />
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Fixed sticky bar - shows when inline buttons not visible */}
+        {/* Fixed action bar at bottom - outside scroll container */}
         {showStickyBar && (
-          <div className="sticky bottom-0 left-0 right-0 p-4 bg-background border-t z-50 shadow-lg -mx-6 -mb-20 mt-4">
-            <div className="flex justify-between">
-              <ActionButtons />
-            </div>
+          <div className="shrink-0 p-4 bg-background border-t flex justify-between">
+            <ActionButtons />
           </div>
         )}
       </DialogContent>

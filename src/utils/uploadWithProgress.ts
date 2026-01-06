@@ -27,13 +27,14 @@ export async function uploadFileWithProgress(
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    let wasAborted = false;
     
     // Store abort function if handle provided
     if (uploadHandle) {
       uploadHandle.current = {
         abort: () => {
+          wasAborted = true;
           xhr.abort();
-          reject(new Error('Upload cancelled'));
         }
       };
     }
@@ -45,13 +46,19 @@ export async function uploadFileWithProgress(
     onProgress(0);
     
     xhr.upload.addEventListener('progress', (event) => {
-      if (event.lengthComputable) {
+      if (event.lengthComputable && !wasAborted) {
         const progress = Math.round((event.loaded / event.total) * 100);
         onProgress(progress);
       }
     });
 
     xhr.addEventListener('load', async () => {
+      // Check if aborted before resolving - prevents race condition
+      if (wasAborted) {
+        reject(new Error('Upload cancelled'));
+        return;
+      }
+      
       if (xhr.status >= 200 && xhr.status < 300) {
         // Get public URL
         const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
