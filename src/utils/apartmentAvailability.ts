@@ -12,7 +12,7 @@ interface Reservation {
   status: string;
 }
 
-interface AvailabilityState {
+export interface AvailabilityState {
   canReserveFullApartment: boolean;
   canReserveBedroom: Record<string, boolean>;
   canReserveBed: Record<string, boolean>;
