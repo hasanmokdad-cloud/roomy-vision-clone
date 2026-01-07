@@ -505,6 +505,57 @@ export type Database = {
           },
         ]
       }
+      apartment_photos: {
+        Row: {
+          apartment_id: string
+          caption: string | null
+          created_at: string | null
+          id: string
+          is_cover: boolean | null
+          sort_order: number | null
+          space_instance: string | null
+          space_type: string
+          url: string
+        }
+        Insert: {
+          apartment_id: string
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          is_cover?: boolean | null
+          sort_order?: number | null
+          space_instance?: string | null
+          space_type: string
+          url: string
+        }
+        Update: {
+          apartment_id?: string
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          is_cover?: boolean | null
+          sort_order?: number | null
+          space_instance?: string | null
+          space_type?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apartment_photos_apartment_id_fkey"
+            columns: ["apartment_id"]
+            isOneToOne: false
+            referencedRelation: "apartment_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apartment_photos_apartment_id_fkey"
+            columns: ["apartment_id"]
+            isOneToOne: false
+            referencedRelation: "apartments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apartment_pricing_tiers: {
         Row: {
           apartment_id: string
@@ -547,57 +598,126 @@ export type Database = {
           },
         ]
       }
+      apartment_spaces: {
+        Row: {
+          apartment_id: string
+          created_at: string | null
+          id: string
+          meta_json: Json | null
+          sort_order: number | null
+          space_instance: string | null
+          space_type: string
+        }
+        Insert: {
+          apartment_id: string
+          created_at?: string | null
+          id?: string
+          meta_json?: Json | null
+          sort_order?: number | null
+          space_instance?: string | null
+          space_type: string
+        }
+        Update: {
+          apartment_id?: string
+          created_at?: string | null
+          id?: string
+          meta_json?: Json | null
+          sort_order?: number | null
+          space_instance?: string | null
+          space_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apartment_spaces_apartment_id_fkey"
+            columns: ["apartment_id"]
+            isOneToOne: false
+            referencedRelation: "apartment_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apartment_spaces_apartment_id_fkey"
+            columns: ["apartment_id"]
+            isOneToOne: false
+            referencedRelation: "apartments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apartments: {
         Row: {
+          amenities: string[] | null
           area_m2: number | null
           available: boolean | null
+          bathroom_count: number | null
           building_id: string
+          cancellation_policy: string | null
           created_at: string | null
+          description: string | null
           enable_bed_reservation: boolean | null
           enable_bedroom_reservation: boolean | null
           enable_full_apartment_reservation: boolean | null
           enable_tiered_pricing: boolean | null
           enabled_capacities: number[] | null
+          guest_capacity: number | null
+          house_rules: string[] | null
           id: string
           images: string[] | null
           max_capacity: number
           name: string
+          safety_features: string[] | null
+          short_description: string | null
           type: string | null
           updated_at: string | null
           video_url: string | null
         }
         Insert: {
+          amenities?: string[] | null
           area_m2?: number | null
           available?: boolean | null
+          bathroom_count?: number | null
           building_id: string
+          cancellation_policy?: string | null
           created_at?: string | null
+          description?: string | null
           enable_bed_reservation?: boolean | null
           enable_bedroom_reservation?: boolean | null
           enable_full_apartment_reservation?: boolean | null
           enable_tiered_pricing?: boolean | null
           enabled_capacities?: number[] | null
+          guest_capacity?: number | null
+          house_rules?: string[] | null
           id?: string
           images?: string[] | null
           max_capacity?: number
           name: string
+          safety_features?: string[] | null
+          short_description?: string | null
           type?: string | null
           updated_at?: string | null
           video_url?: string | null
         }
         Update: {
+          amenities?: string[] | null
           area_m2?: number | null
           available?: boolean | null
+          bathroom_count?: number | null
           building_id?: string
+          cancellation_policy?: string | null
           created_at?: string | null
+          description?: string | null
           enable_bed_reservation?: boolean | null
           enable_bedroom_reservation?: boolean | null
           enable_full_apartment_reservation?: boolean | null
           enable_tiered_pricing?: boolean | null
           enabled_capacities?: number[] | null
+          guest_capacity?: number | null
+          house_rules?: string[] | null
           id?: string
           images?: string[] | null
           max_capacity?: number
           name?: string
+          safety_features?: string[] | null
+          short_description?: string | null
           type?: string | null
           updated_at?: string | null
           video_url?: string | null
