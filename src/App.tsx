@@ -132,6 +132,7 @@ const MockWhishAddCard = lazy(() => import("./pages/MockWhishAddCard"));
 
 const MockWhishOwnerAddCard = lazy(() => import("./pages/owner/MockWhishOwnerAddCard"));
 const OwnerStats = lazy(() => import("./pages/owner/OwnerStats"));
+const OwnerInventory = lazy(() => import("./pages/owner/OwnerInventory"));
 
 const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
 const AdminBilling = lazy(() => import("./pages/admin/AdminBilling"));
@@ -366,6 +367,7 @@ const AppRoutes = () => {
           
           <Route path="/owner/wallet" element={<Navigate to="/owner/finance" replace />} />
           <Route path="/owner/stats" element={<ProtectedRoute element={<OwnerStats />} allowedRoles={["owner", "admin"]} />} />
+          <Route path="/owner/inventory" element={<ProtectedRoute element={<OwnerInventory />} allowedRoles={["owner", "admin"]} />} />
           <Route path="/mock-whish-owner-add-card" element={<ProtectedRoute element={<MockWhishOwnerAddCard />} allowedRoles={["owner", "admin"]} />} />
 
 
