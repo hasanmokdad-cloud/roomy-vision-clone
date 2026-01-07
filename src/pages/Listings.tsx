@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Sparkles, SlidersHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { AISmartFilter } from '@/components/listings/AISmartFilter';
-import { DormComparison, DormComparisonCheckbox } from '@/components/listings/DormComparison';
+// AI Compare disabled for now
+// import { AISmartFilter } from '@/components/listings/AISmartFilter';
+// import { DormComparison, DormComparisonCheckbox } from '@/components/listings/DormComparison';
 import { AirbnbFiltersModal } from '@/components/listings/AirbnbFiltersModal';
 import { useListingsQuery, type RoomListingItem } from '@/hooks/useListingsQuery';
 import { sanitizeInput } from '@/utils/inputValidation';
@@ -50,7 +51,6 @@ export default function Listings() {
   const itemsPerPage = 6;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
   const [allRooms, setAllRooms] = useState<any[]>([]);
 
   // Enable scroll preservation
@@ -213,17 +213,6 @@ export default function Listings() {
     setCurrentPage(1);
   }, []);
 
-  const toggleComparisonSelection = useCallback((dormId: string) => {
-    setSelectedForComparison(prev => {
-      if (prev.includes(dormId)) {
-        return prev.filter(id => id !== dormId);
-      }
-      if (prev.length >= 3) {
-        return prev;
-      }
-      return [...prev, dormId];
-    });
-  }, []);
 
 
   return (
@@ -306,11 +295,6 @@ export default function Listings() {
           rooms={allRooms}
         />
 
-        {/* AI Smart Filter - collapsed into search bar area */}
-        <div className="mb-6">
-          <AISmartFilter onFiltersApplied={handleAIFilters} userId={userId} />
-        </div>
-
         <div className="flex flex-col gap-8">
           <div className="flex-1 space-y-6">
 
@@ -320,13 +304,8 @@ export default function Listings() {
               onResetPrice={handleResetPrice}
             />
 
-            {/* Dorm Comparison - only show in dorm mode */}
-            {!isRoomMode && filteredDorms.length > 0 && (
-              <DormComparison dorms={filteredDorms} userId={userId} />
-            )}
-
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
                   <DormCardSkeleton key={i} />
                 ))}
@@ -367,7 +346,7 @@ export default function Listings() {
                   {isRoomMode ? (
                     // Room-level display
                     <div 
-                      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-5"
+                      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"
                       role="list"
                       aria-label="Room listings"
                     >
@@ -383,24 +362,18 @@ export default function Listings() {
                       ))}
                     </div>
                   ) : (
-                    // Dorm-level display - denser Airbnb-like grid
+                    // Dorm-level display - max 4 cols
                     <div 
-                      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-5"
+                      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"
                       role="list"
                       aria-label="Dorm listings"
                     >
                       {paginatedDorms.map((dorm, index) => (
-                        <div key={dorm.id} className="relative">
-                          <DormComparisonCheckbox
-                            dormId={dorm.id}
-                            isSelected={selectedForComparison.includes(dorm.id)}
-                            onToggle={toggleComparisonSelection}
-                          />
-                          <CinematicDormCard 
-                            dorm={dorm} 
-                            index={index}
-                          />
-                        </div>
+                        <CinematicDormCard 
+                          key={dorm.id}
+                          dorm={dorm} 
+                          index={index}
+                        />
                       ))}
                     </div>
                   )}

@@ -353,25 +353,6 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
                   {dorm.gender_preference === 'Mixed' && '⚥ Co-ed'}
                 </Badge>
               )}
-
-              {/* CTA Buttons */}
-              <div className="flex gap-2 pt-1">
-                <Button
-                  onClick={handleViewBuilding}
-                  size="sm"
-                  className="flex-1 h-8 text-xs"
-                >
-                  View Building
-                </Button>
-                <Button
-                  onClick={handleQuickLook}
-                  size="sm"
-                  variant="outline"
-                  className="h-8 text-xs px-3"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                </Button>
-              </div>
             </div>
           </div>
 
@@ -468,24 +449,35 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
               {/* Action Buttons - Fixed at bottom */}
               <div className="pt-3 space-y-2 border-t border-border/50 mt-2">
                 <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setReviewModalOpen(true);
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="w-full h-8 text-xs"
-                >
-                  <Star className="w-3.5 h-3.5 mr-1.5" />
-                  Rate & Review
-                </Button>
-                <Button
                   onClick={handleViewBuilding}
                   size="sm"
-                  className="w-full h-8 text-xs"
+                  className="w-full h-9 text-xs bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                 >
-                  {hasMultipleRooms ? "View All Rooms" : "Learn More"}
+                  View Building
                 </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleQuickLook}
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 h-8 text-xs"
+                  >
+                    <Eye className="w-3.5 h-3.5 mr-1.5" />
+                    Quick Look
+                  </Button>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setReviewModalOpen(true);
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 h-8 text-xs"
+                  >
+                    <Star className="w-3.5 h-3.5 mr-1.5" />
+                    Review
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

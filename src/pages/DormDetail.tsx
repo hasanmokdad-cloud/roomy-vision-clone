@@ -1,31 +1,32 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
 import Footer from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home, Video, Bookmark, Images, Eye, Sparkles, Building2 } from 'lucide-react';
-import { getAmenityIcon } from '@/utils/amenityIcons';
+import { ArrowLeft, MessageSquare, Sparkles, Images, Eye, Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedRoomCard } from '@/components/listings/EnhancedRoomCard';
 import { DormDetailSkeleton } from '@/components/skeletons/DormDetailSkeleton';
 import { ImageGallery } from '@/components/shared/ImageGallery';
 import { BookTourModal } from '@/components/bookings/BookTourModal';
-import { BookingCalendar } from '@/components/bookings/BookingCalendar';
 import { VirtualTourGallery } from '@/components/rooms/VirtualTourGallery';
-import { ReviewList } from '@/components/reviews/ReviewList';
 import type { RoomType } from '@/types/RoomType';
 import { logAnalyticsEvent } from '@/utils/analytics';
 import { ThreeDViewer } from '@/components/rooms/ThreeDViewer';
 import { ScrollToTopButton } from '@/components/listings/ScrollToTopButton';
-import { ShareButton } from '@/components/shared/ShareButton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { renderMarkdown } from '@/utils/markdownRenderer';
 import { useAuth } from '@/contexts/AuthContext';
 import { ApartmentListView } from '@/components/listings/ApartmentListView';
+
+// New Building Components
+import { BuildingHero } from '@/components/building/BuildingHero';
+import { BuildingMetaHeader } from '@/components/building/BuildingMetaHeader';
+import { BuildingAmenities } from '@/components/building/BuildingAmenities';
+import { BuildingLocation } from '@/components/building/BuildingLocation';
+import { BuildingReviews } from '@/components/building/BuildingReviews';
 
 export default function DormDetail() {
   const { id } = useParams();
@@ -89,7 +90,6 @@ export default function DormDetail() {
         setDormInsight(data.response);
       }
     } catch (err) {
-      // Silently fail, insight is optional
       console.log('AI insight unavailable');
     }
   };
@@ -111,7 +111,6 @@ export default function DormDetail() {
   }, [user, dorm?.id]);
 
   useEffect(() => {
-    // Log dorm view when component mounts and user is loaded
     if (id && !loading) {
       logAnalyticsEvent({
         eventType: 'dorm_view',
@@ -154,7 +153,6 @@ export default function DormDetail() {
   };
 
   const handleChatWithRoomy = () => {
-    // Dispatch custom event to open chatbot
     window.dispatchEvent(new CustomEvent('openRoomyChatbot', {
       detail: { 
         dormContext: {
@@ -216,58 +214,6 @@ export default function DormDetail() {
     setGalleryOpen(true);
   };
 
-  const getAllRoomImages = () => {
-    const allImages: string[] = [];
-    // Get images from rooms table
-    rooms.forEach(room => {
-      if (room.images && Array.isArray(room.images)) {
-        allImages.push(...room.images);
-      }
-    });
-    // Also get images from legacy room_types_json
-    roomTypes.forEach(room => {
-      if (room.images && Array.isArray(room.images)) {
-        allImages.push(...room.images);
-      }
-    });
-    return allImages;
-  };
-
-  const handleContactOwner = async (room: any) => {
-    if (!room.available) return;
-    
-    // Fetch owner's auth user_id from owners table
-    const { data: ownerData, error: ownerError } = await supabase
-      .from('owners')
-      .select('user_id')
-      .eq('id', dorm.owner_id)
-      .single();
-
-    if (ownerError || !ownerData?.user_id) {
-      toast({
-        title: 'Error',
-        description: 'Could not find owner information. Please try again.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    navigate('/messages', {
-      state: {
-        openThreadWithUserId: ownerData.user_id,
-        initialMessage: `Hello! I am interested in ${room.name} at ${displayName}.`,
-        roomPreview: room,
-        metadata: {
-          dormId: dorm.id,
-          dormName: displayName,
-          roomId: room.id,
-          roomName: room.name,
-          price: room.price
-        }
-      }
-    });
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
@@ -281,6 +227,9 @@ export default function DormDetail() {
   if (!dorm) return null;
 
   const images = dorm.cover_image ? [dorm.cover_image] : (dorm.image_url ? [dorm.image_url] : []);
+  if (dorm.gallery_images?.length) {
+    images.push(...dorm.gallery_images);
+  }
   const displayName = dorm.dorm_name || dorm.name;
   
   // Parse room types from JSON
@@ -294,72 +243,40 @@ export default function DormDetail() {
       {!isMobile && <RoomyNavbar />}
       
       <main className="flex-1 container mx-auto px-4 py-8 mt-20">
+        {/* Back Button */}
         <Button
           variant="ghost"
           onClick={() => navigate('/listings')}
-          className="mb-6"
+          className="mb-6 hover:bg-muted/50"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Listings
         </Button>
 
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-6 animate-fade-in">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-2">
-                  {displayName}
-                </h1>
-                <div className="flex items-center gap-2 text-foreground/70">
-                  <MapPin className="w-5 h-5" />
-                  <span>{dorm.area || dorm.location}</span>
-                  {dorm.verification_status === 'Verified' && (
-                    <Badge variant="secondary" className="ml-2">
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      Verified
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold gradient-text">
-                  ${startingPrice}
-                </div>
-                <div className="text-sm text-foreground/60">
-                  {roomTypes.length > 1 ? 'starting from' : 'per month'}
-                </div>
-              </div>
-            </div>
-            
-            {/* Share and Save Buttons */}
-            <div className="flex justify-end gap-3 mt-4">
-              <ShareButton 
-                dormId={dorm.id} 
-                dormName={displayName}
-                size="lg"
-                variant="outline"
-              />
-              <button
-                onClick={toggleSave}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-background/80 backdrop-blur-sm border border-border hover:bg-background transition-colors"
-                aria-label={isSaved ? "Remove from favorites" : "Save to favorites"}
-              >
-                <Bookmark
-                  className={`w-5 h-5 transition-colors ${
-                    isSaved ? "fill-primary text-primary" : "text-muted-foreground"
-                  }`}
-                />
-                <span className="text-sm font-medium">
-                  {isSaved ? "Saved" : "Save"}
-                </span>
-              </button>
-            </div>
-          </div>
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Hero Section - Using new component */}
+          <BuildingHero 
+            images={images} 
+            displayName={displayName}
+            onImageClick={openGallery}
+          />
+
+          {/* Meta Header - Using new component */}
+          <BuildingMetaHeader
+            displayName={displayName}
+            area={dorm.area}
+            location={dorm.location}
+            verificationStatus={dorm.verification_status}
+            startingPrice={startingPrice}
+            hasMultipleRoomTypes={roomTypes.length > 1}
+            dormId={dorm.id}
+            isSaved={isSaved}
+            onToggleSave={toggleSave}
+          />
 
           {/* AI Insight Card */}
           {dormInsight && (
-            <Card className="mb-6 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-300/30 animate-fade-in">
+            <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-300/30">
               <CardContent className="p-4 flex items-start gap-3">
                 <Sparkles className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-foreground/80">{renderMarkdown(dormInsight)}</div>
@@ -367,9 +284,9 @@ export default function DormDetail() {
             </Card>
           )}
 
-          {/* Action Buttons - Only show Chat with Roomy AI for authenticated students */}
+          {/* Chat with Roomy AI - Only for students */}
           {user && role === 'student' && (
-            <div className="mb-8 flex flex-wrap gap-3 animate-fade-in">
+            <div className="flex flex-wrap gap-3">
               <Button
                 onClick={handleChatWithRoomy}
                 className="bg-gradient-to-r from-purple-600 to-blue-500 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
@@ -380,221 +297,163 @@ export default function DormDetail() {
             </div>
           )}
 
-          {/* Image Carousel */}
-          {images.length > 0 ? (
-            <div className="mb-8 animate-fade-in">
-              <Carousel className="w-full">
-                <CarouselContent>
-                  {images.map((img, idx) => (
-                    <CarouselItem key={idx}>
-                      <Card className="border-0 overflow-hidden">
-                        <CardContent className="p-0">
-                          <img
-                            src={img}
-                            alt={`${displayName} - Image ${idx + 1}`}
-                            loading="lazy"
-                            className="w-full h-[400px] md:h-[500px] object-cover"
-                          />
-                        </CardContent>
-                      </Card>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                {images.length > 1 && (
-                  <>
-                    <CarouselPrevious className="left-4" />
-                    <CarouselNext className="right-4" />
-                  </>
-                )}
-              </Carousel>
-            </div>
-          ) : (
-            <div className="mb-8 animate-fade-in">
-              <Card className="border-0 overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
-                <CardContent className="p-0 h-[400px] md:h-[500px] flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-6xl font-bold gradient-text mb-4">
-                      {displayName.charAt(0)}
-                    </div>
-                    <p className="text-xl text-foreground/60">{displayName}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
           {/* Description Section */}
           {dorm.description && (
-            <Card className="mb-8 glass-hover animate-fade-in">
+            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
               <CardContent className="p-6">
-                <h2 className="text-2xl font-bold mb-4">About This Dorm</h2>
-                <p className="text-foreground/80 whitespace-pre-line leading-relaxed">
+                <h2 className="text-2xl font-semibold text-foreground mb-4">About This Property</h2>
+                <p className="text-muted-foreground whitespace-pre-line leading-relaxed">
                   {dorm.description}
                 </p>
               </CardContent>
             </Card>
           )}
 
-          <div className="space-y-6">
+          {/* Apartment Building View */}
+          {dorm.property_type === 'apartment' && (
+            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Building2 className="w-6 h-6 text-primary" />
+                  <h2 className="text-2xl font-semibold text-foreground">Available Apartments</h2>
+                </div>
+                <ApartmentListView
+                  buildingId={dorm.id}
+                  buildingName={displayName}
+                  onReserve={(level, id, apartmentId) => {
+                    toast({
+                      title: 'Reservation',
+                      description: `Reserve ${level}: ${id}`,
+                    });
+                  }}
+                />
+              </CardContent>
+            </Card>
+          )}
 
-            {/* Apartment Building View */}
-            {dorm.property_type === 'apartment' && (
-              <Card className="glass-hover">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Building2 className="w-6 h-6 text-primary" />
-                    <h2 className="text-2xl font-bold">Available Apartments</h2>
-                  </div>
-                  <ApartmentListView
-                    buildingId={dorm.id}
-                    buildingName={displayName}
-                    onReserve={(level, id, apartmentId) => {
-                      // TODO: Implement reservation modal
-                      toast({
-                        title: 'Reservation',
-                        description: `Reserve ${level}: ${id}`,
-                      });
-                    }}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Available Room Options - Only for non-apartment buildings */}
-            {dorm.property_type !== 'apartment' && (rooms.length > 0 || roomTypes.length > 0) && (
-              <Card className="glass-hover">
-                <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold mb-4">Available Room Options</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-8">
-                    {/* Database Rooms */}
-                      {rooms.map((room, idx) => (
-                        <div
-                          key={`db-${room.id}`}
-                          ref={(el) => el && room.id && roomRefs.current.set(room.id, el)}
-                          className="transition-all duration-500 rounded-xl"
-                        >
-                          <EnhancedRoomCard
-                            room={room}
-                            dormId={dorm.id}
-                            dormName={displayName}
-                            ownerId={dorm.owner_id}
-                            isLegacy={false}
-                            index={idx}
-                          />
-                        </div>
-                      ))}
-                      
-                      {/* Legacy room_types_json Rooms */}
-                      {roomTypes.map((room, idx) => {
-                        const legacyRoomId = `legacy-${dorm.id}-${room.type.toLowerCase().replace(/\s+/g, '-')}`;
-                        
-                        return (
-                          <EnhancedRoomCard
-                            key={`legacy-${idx}`}
-                            room={{
-                              id: legacyRoomId,
-                              name: room.type,
-                              type: room.type,
-                              price: room.price,
-                              capacity: room.capacity,
-                              available: room.available !== false,
-                              images: room.images || [],
-                              amenities: room.amenities || []
-                            }}
-                            dormId={dorm.id}
-                            dormName={displayName}
-                            ownerId={dorm.owner_id}
-                            isLegacy={true}
-                            index={rooms.length + idx}
-                          />
-                        );
-                      })}
-                  </div>
+          {/* Room Options - Only for non-apartment buildings */}
+          {dorm.property_type !== 'apartment' && (rooms.length > 0 || roomTypes.length > 0) && (
+            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-semibold text-foreground mb-6">Available Room Options</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
+                  {/* Database Rooms */}
+                  {rooms.map((room, idx) => (
+                    <div
+                      key={`db-${room.id}`}
+                      ref={(el) => el && room.id && roomRefs.current.set(room.id, el)}
+                      className={`transition-all duration-500 rounded-xl ${
+                        highlightedRoomId === room.id ? 'ring-4 ring-primary ring-offset-2 ring-offset-background' : ''
+                      }`}
+                    >
+                      <EnhancedRoomCard
+                        room={room}
+                        dormId={dorm.id}
+                        dormName={displayName}
+                        ownerId={dorm.owner_id}
+                        isLegacy={false}
+                        index={idx}
+                      />
+                    </div>
+                  ))}
                   
-                  {rooms.length === 0 && roomTypes.length === 0 && (
-                    <p className="text-center text-foreground/60 py-8">
-                      No room options available yet. Contact the owner for more information.
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-            
-            {/* Common Area & Facilities Gallery */}
-            {dorm.gallery_images && dorm.gallery_images.length > 0 && (
-              <Card className="glass-hover mb-6">
-                <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                    <Images className="w-6 h-6" />
-                    Common Area & Facilities
-                  </h2>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {dorm.gallery_images.map((img: string, idx: number) => (
-                      <div
-                        key={idx}
-                        className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group"
-                        onClick={() => openGallery(dorm.gallery_images, idx)}
-                      >
-                        <img
-                          src={img}
-                          alt={`${displayName} - Facility ${idx + 1}`}
-                          loading="lazy"
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                          <Eye className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
+                  {/* Legacy room_types_json Rooms */}
+                  {roomTypes.map((room, idx) => {
+                    const legacyRoomId = `legacy-${dorm.id}-${room.type.toLowerCase().replace(/\s+/g, '-')}`;
+                    
+                    return (
+                      <EnhancedRoomCard
+                        key={`legacy-${idx}`}
+                        room={{
+                          id: legacyRoomId,
+                          name: room.type,
+                          type: room.type,
+                          price: room.price,
+                          capacity: room.capacity,
+                          available: room.available !== false,
+                          images: room.images || [],
+                          amenities: room.amenities || []
+                        }}
+                        dormId={dorm.id}
+                        dormName={displayName}
+                        ownerId={dorm.owner_id}
+                        isLegacy={true}
+                        index={rooms.length + idx}
+                      />
+                    );
+                  })}
+                </div>
+                
+                {rooms.length === 0 && roomTypes.length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">
+                    No room options available yet. Contact the owner for more information.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Common Area & Facilities Gallery */}
+          {dorm.gallery_images && dorm.gallery_images.length > 0 && (
+            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Images className="w-6 h-6" />
+                  Common Area & Facilities
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {dorm.gallery_images.map((img: string, idx: number) => (
+                    <div
+                      key={idx}
+                      className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group"
+                      onClick={() => openGallery(dorm.gallery_images, idx)}
+                    >
+                      <img
+                        src={img}
+                        alt={`${displayName} - Facility ${idx + 1}`}
+                        loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                        <Eye className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-            {/* Services & Amenities */}
-            {dorm.amenities && dorm.amenities.length > 0 && (
-              <Card className="glass-hover">
-                <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold mb-4">Services & Amenities</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {dorm.amenities.map((amenity: string, idx: number) => {
-                      const IconComponent = getAmenityIcon(amenity);
-                      return (
-                        <div key={idx} className="flex items-center gap-2 p-3 rounded-lg bg-muted/30">
-                          <IconComponent className="w-5 h-5 text-primary flex-shrink-0" />
-                          <span className="text-foreground">{amenity}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+          {/* Services & Amenities - Using new component */}
+          <BuildingAmenities amenities={dorm.amenities} />
 
-            {/* 3D Room Viewer */}
-            {rooms.length > 0 && rooms.some(r => r.three_d_model_url) && (
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold mb-4">3D Room Preview</h2>
+          {/* 3D Room Viewer */}
+          {rooms.length > 0 && rooms.some(r => r.three_d_model_url) && (
+            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-semibold text-foreground mb-4">3D Room Preview</h2>
                 {rooms
                   .filter(r => r.three_d_model_url)
                   .map((room) => (
                     <div key={room.id} className="mb-4">
-                      <h3 className="text-lg font-semibold mb-2">{room.name}</h3>
+                      <h3 className="text-lg font-medium mb-2">{room.name}</h3>
                       <ThreeDViewer modelUrl={room.three_d_model_url} alt={`${room.name} 3D Model`} />
                     </div>
                   ))}
-              </div>
-            )}
+              </CardContent>
+            </Card>
+          )}
 
-            {/* Virtual Tour for Rooms from Database */}
-            {rooms.length > 0 && rooms.some(r => r.panorama_urls && r.panorama_urls.length > 0) && (
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold mb-4">360° Virtual Tours</h2>
+          {/* Virtual Tour for Rooms */}
+          {rooms.length > 0 && rooms.some(r => r.panorama_urls && r.panorama_urls.length > 0) && (
+            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-semibold text-foreground mb-4">360° Virtual Tours</h2>
                 {rooms
                   .filter(r => r.panorama_urls && r.panorama_urls.length > 0)
                   .map((room) => (
                     <div key={room.id} className="mb-4">
-                      <h3 className="text-lg font-semibold mb-2">{room.name}</h3>
+                      <h3 className="text-lg font-medium mb-2">{room.name}</h3>
                       <VirtualTourGallery
                         roomId={room.id}
                         panoramaUrls={room.panorama_urls}
@@ -602,37 +461,17 @@ export default function DormDetail() {
                       />
                     </div>
                   ))}
-              </div>
-            )}
+              </CardContent>
+            </Card>
+          )}
 
-            {/* Location */}
-            {dorm.address && (
-              <Card className="glass-hover">
-                <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold mb-4">Location</h2>
-                  <div className="flex items-start gap-2">
-                    <MapPin className="w-5 h-5 text-primary mt-1" />
-                    <div>
-                      <p className="font-semibold">{dorm.area}</p>
-                      <p className="text-foreground/70">{dorm.address}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          {/* Location - Using new component */}
+          <BuildingLocation area={dorm.area} address={dorm.address} />
+
+          {/* Reviews & Ratings - Using new component */}
+          <BuildingReviews dormId={id!} />
         </div>
       </main>
-
-      {/* Reviews & Ratings Section */}
-      <div className="container mx-auto px-4 pb-12 max-w-6xl">
-        <Card className="glass-hover">
-          <CardContent className="p-6">
-            <h2 className="text-3xl font-bold mb-6">Reviews & Ratings</h2>
-            <ReviewList dormId={id!} />
-          </CardContent>
-        </Card>
-      </div>
 
       <ImageGallery
         images={galleryImages}
