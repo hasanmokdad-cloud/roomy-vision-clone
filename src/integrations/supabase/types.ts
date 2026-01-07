@@ -532,6 +532,9 @@ export type Database = {
           available: boolean | null
           building_id: string
           created_at: string | null
+          enable_bed_reservation: boolean | null
+          enable_bedroom_reservation: boolean | null
+          enable_full_apartment_reservation: boolean | null
           enable_tiered_pricing: boolean | null
           enabled_capacities: number[] | null
           id: string
@@ -547,6 +550,9 @@ export type Database = {
           available?: boolean | null
           building_id: string
           created_at?: string | null
+          enable_bed_reservation?: boolean | null
+          enable_bedroom_reservation?: boolean | null
+          enable_full_apartment_reservation?: boolean | null
           enable_tiered_pricing?: boolean | null
           enabled_capacities?: number[] | null
           id?: string
@@ -562,6 +568,9 @@ export type Database = {
           available?: boolean | null
           building_id?: string
           created_at?: string | null
+          enable_bed_reservation?: boolean | null
+          enable_bedroom_reservation?: boolean | null
+          enable_full_apartment_reservation?: boolean | null
           enable_tiered_pricing?: boolean | null
           enabled_capacities?: number[] | null
           id?: string
@@ -664,6 +673,53 @@ export type Database = {
             columns: ["apartment_id"]
             isOneToOne: false
             referencedRelation: "apartments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beds: {
+        Row: {
+          available: boolean | null
+          bed_type: string
+          bedroom_id: string
+          capacity_contribution: number
+          created_at: string | null
+          deposit: number | null
+          id: string
+          label: string
+          monthly_price: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          available?: boolean | null
+          bed_type?: string
+          bedroom_id: string
+          capacity_contribution?: number
+          created_at?: string | null
+          deposit?: number | null
+          id?: string
+          label?: string
+          monthly_price?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          available?: boolean | null
+          bed_type?: string
+          bedroom_id?: string
+          capacity_contribution?: number
+          created_at?: string | null
+          deposit?: number | null
+          id?: string
+          label?: string
+          monthly_price?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beds_bedroom_id_fkey"
+            columns: ["bedroom_id"]
+            isOneToOne: false
+            referencedRelation: "bedrooms"
             referencedColumns: ["id"]
           },
         ]
@@ -3052,6 +3108,9 @@ export type Database = {
       }
       reservations: {
         Row: {
+          apartment_id: string | null
+          bed_id: string | null
+          bedroom_id: string | null
           cancelled_at: string | null
           commission_amount: number | null
           created_at: string | null
@@ -3061,6 +3120,7 @@ export type Database = {
           id: string
           latest_refund_status: string | null
           meta: Json | null
+          occupancy_count: number | null
           owner_payout_amount: number | null
           owner_payout_attempts: number | null
           owner_payout_status: string | null
@@ -3069,6 +3129,7 @@ export type Database = {
           payout_batch_id: string | null
           refundable_until: string | null
           reservation_fee_amount: number
+          reservation_level: string | null
           room_id: string
           roomy_commission_captured: boolean | null
           status: string
@@ -3078,6 +3139,9 @@ export type Database = {
           whish_payment_id: string | null
         }
         Insert: {
+          apartment_id?: string | null
+          bed_id?: string | null
+          bedroom_id?: string | null
           cancelled_at?: string | null
           commission_amount?: number | null
           created_at?: string | null
@@ -3087,6 +3151,7 @@ export type Database = {
           id?: string
           latest_refund_status?: string | null
           meta?: Json | null
+          occupancy_count?: number | null
           owner_payout_amount?: number | null
           owner_payout_attempts?: number | null
           owner_payout_status?: string | null
@@ -3095,6 +3160,7 @@ export type Database = {
           payout_batch_id?: string | null
           refundable_until?: string | null
           reservation_fee_amount: number
+          reservation_level?: string | null
           room_id: string
           roomy_commission_captured?: boolean | null
           status?: string
@@ -3104,6 +3170,9 @@ export type Database = {
           whish_payment_id?: string | null
         }
         Update: {
+          apartment_id?: string | null
+          bed_id?: string | null
+          bedroom_id?: string | null
           cancelled_at?: string | null
           commission_amount?: number | null
           created_at?: string | null
@@ -3113,6 +3182,7 @@ export type Database = {
           id?: string
           latest_refund_status?: string | null
           meta?: Json | null
+          occupancy_count?: number | null
           owner_payout_amount?: number | null
           owner_payout_attempts?: number | null
           owner_payout_status?: string | null
@@ -3121,6 +3191,7 @@ export type Database = {
           payout_batch_id?: string | null
           refundable_until?: string | null
           reservation_fee_amount?: number
+          reservation_level?: string | null
           room_id?: string
           roomy_commission_captured?: boolean | null
           status?: string
@@ -3130,6 +3201,27 @@ export type Database = {
           whish_payment_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "reservations_apartment_id_fkey"
+            columns: ["apartment_id"]
+            isOneToOne: false
+            referencedRelation: "apartments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_bed_id_fkey"
+            columns: ["bed_id"]
+            isOneToOne: false
+            referencedRelation: "beds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_bedroom_id_fkey"
+            columns: ["bedroom_id"]
+            isOneToOne: false
+            referencedRelation: "bedrooms"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reservations_dorm_id_fkey"
             columns: ["dorm_id"]

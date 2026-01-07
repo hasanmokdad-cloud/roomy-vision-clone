@@ -48,8 +48,7 @@ export function BedroomConfigStep({
           bedrooms: apt.bedrooms.map(br => ({
             ...br,
             bedType: sourceBedroom.bedType,
-            baseCapacity: sourceBedroom.baseCapacity,
-            maxCapacity: sourceBedroom.maxCapacity,
+            // CRITICAL: Do NOT copy capacity - owner sets this explicitly for each bedroom
             allowExtraBeds: sourceBedroom.allowExtraBeds,
             pricingMode: sourceBedroom.pricingMode,
           })),
@@ -105,10 +104,10 @@ export function BedroomConfigStep({
                     )}
                   </div>
 
-                  {/* Bed Type */}
+                  {/* Bed Type - DESCRIPTIVE ONLY */}
                   <div className="mb-4">
                     <Label className="text-sm text-muted-foreground mb-2 block">
-                      Bed Type
+                      Bed Type <span className="text-amber-600 text-xs">(descriptive only)</span>
                     </Label>
                     <div className="flex flex-wrap gap-2">
                       {BED_TYPES.map(type => (
@@ -117,8 +116,8 @@ export function BedroomConfigStep({
                           onClick={() =>
                             updateBedroom(apt.id, bedroom.id, {
                               bedType: type.value,
-                              baseCapacity: type.defaultCapacity,
-                              maxCapacity: type.defaultCapacity,
+                              // CRITICAL: Do NOT auto-set capacity based on bed type
+                              // Capacity is ALWAYS owner-defined
                             })
                           }
                           className={`
@@ -133,6 +132,9 @@ export function BedroomConfigStep({
                         </button>
                       ))}
                     </div>
+                    <p className="text-xs text-amber-600 mt-2">
+                      ⚠️ Capacity is set by you below, not by bed type
+                    </p>
                   </div>
 
                   {/* Capacity */}
