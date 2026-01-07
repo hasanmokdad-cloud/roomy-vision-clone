@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,7 @@ const ApartmentCardComponent = ({
   onReserveApartment,
   onViewBedrooms,
 }: ApartmentCardProps) => {
+  const navigate = useNavigate();
   // Use availability counts from the strict availability engine
   const availableBedroomsCount = availability.availableBedroomsCount;
   const availableBedsCount = availability.availableBedsCount;
@@ -85,7 +87,10 @@ const ApartmentCardComponent = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
     >
-      <Card className="overflow-hidden glass-hover border-border hover:border-primary/50 transition-all duration-300 group">
+      <Card 
+        className="overflow-hidden glass-hover border-border hover:border-primary/50 transition-all duration-300 group cursor-pointer"
+        onClick={() => navigate(`/apartments/${apartment.id}`)}
+      >
         {/* Image Section */}
         <div className="relative h-48 overflow-hidden">
           <img
