@@ -3005,6 +3005,48 @@ export type Database = {
           },
         ]
       }
+      pricing_rules: {
+        Row: {
+          created_at: string | null
+          deposit: number | null
+          id: string
+          is_active: boolean | null
+          monthly_price: number
+          notes: string | null
+          occupancy_count: number
+          price_mode: string
+          scope_id: string
+          scope_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deposit?: number | null
+          id?: string
+          is_active?: boolean | null
+          monthly_price: number
+          notes?: string | null
+          occupancy_count: number
+          price_mode?: string
+          scope_id: string
+          scope_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deposit?: number | null
+          id?: string
+          is_active?: boolean | null
+          monthly_price?: number
+          notes?: string | null
+          occupancy_count?: number
+          price_mode?: string
+          scope_id?: string
+          scope_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth_key: string
@@ -3794,6 +3836,7 @@ export type Database = {
         Row: {
           area_m2: number | null
           available: boolean | null
+          bed_type: string | null
           capacity: number | null
           capacity_occupied: number | null
           created_at: string
@@ -3818,6 +3861,7 @@ export type Database = {
         Insert: {
           area_m2?: number | null
           available?: boolean | null
+          bed_type?: string | null
           capacity?: number | null
           capacity_occupied?: number | null
           created_at?: string
@@ -3842,6 +3886,7 @@ export type Database = {
         Update: {
           area_m2?: number | null
           available?: boolean | null
+          bed_type?: string | null
           capacity?: number | null
           capacity_occupied?: number | null
           created_at?: string

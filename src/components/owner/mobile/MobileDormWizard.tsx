@@ -19,6 +19,7 @@ import { UploadMethodStep } from './steps/UploadMethodStep';
 import { ExcelUploadStep } from './steps/ExcelUploadStep';
 import { RoomNamesStep, WizardRoomData } from './steps/RoomNamesStep';
 import { RoomTypesStep } from './steps/RoomTypesStep';
+import { RoomBedTypeStep } from './steps/RoomBedTypeStep';
 import { RoomBulkSelectionStep } from './steps/RoomBulkSelectionStep';
 import { RoomPricingStep } from './steps/RoomPricingStep';
 import { TieredPricingStep } from './steps/TieredPricingStep';
@@ -218,6 +219,7 @@ function createEmptyRoom(index: number): WizardRoomData {
     id: `room-${Date.now()}-${index}`,
     name: '',
     type: '',
+    bedType: 'single',  // Descriptive only - default
     price: null,
     deposit: null,
     price_1_student: null,
@@ -753,6 +755,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             dorm_id: newDormId,
             name: room.name || `Room ${formData.rooms.indexOf(room) + 1}`,
             type: room.type || 'Single',
+            bed_type: room.bedType || 'single',  // Descriptive only
             price: room.price || 0,
             deposit: room.deposit,
             price_1_student: room.price_1_student,

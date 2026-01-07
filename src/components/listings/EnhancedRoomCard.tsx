@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
-import { Calendar, MessageSquare, Home, Users, Heart, Share2, Eye, Play, AlertTriangle } from 'lucide-react';
+import { Calendar, MessageSquare, Home, Users, Heart, Share2, Eye, Play, AlertTriangle, Bed } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BookingRequestModal } from '@/components/bookings/BookingRequestModal';
 import { ReservationConfirmModal } from '@/components/reservations/ReservationConfirmModal';
@@ -15,12 +15,15 @@ import { VideoPlayerModal } from '@/components/shared/VideoPlayerModal';
 import { motion } from 'framer-motion';
 import { getStudentDisplayDeposit } from '@/lib/payments/config';
 import { useAuth } from '@/contexts/AuthContext';
+import { useReservationConflicts } from '@/hooks/useReservationConflicts';
+import { ReservationConflictWarning } from '@/components/reservations/ReservationConflictWarning';
 
 interface EnhancedRoomCardProps {
   room: {
     id?: string;
     name: string;
     type: string;
+    bed_type?: string;  // Descriptive only
     price: number;
     deposit?: number;
     price_1_student?: number;
@@ -63,6 +66,11 @@ export function EnhancedRoomCard({
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
   const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
+  
+  // Reservation conflict detection
+  const { conflict, refresh: refreshConflict } = useReservationConflicts('room', room.id);
+  const hasConflict = conflict?.hasConflict ?? false;
+  
   const isUnavailable = room.available === false;
   const isFull = room.capacity && room.capacity_occupied ? room.capacity_occupied >= room.capacity : false;
   const capacityDisplay = room.capacity && room.capacity_occupied !== undefined 
@@ -541,12 +549,28 @@ export function EnhancedRoomCard({
               </div>
             </div>
 
+            {/* Conflict Warning */}
+            {conflict && hasConflict && (
+              <ReservationConflictWarning
+                conflict={conflict}
+                onRefresh={refreshConflict}
+                className="mb-2"
+              />
+            )}
+
             {/* Details Grid */}
             <div className="grid grid-cols-2 gap-2 text-sm">
               {/* Room Type - Full width, bold */}
               {room.type && (
                 <div className="flex items-center gap-1 text-foreground font-medium col-span-2">
                   <span>{room.type}</span>
+                  {/* Bed Type Badge - Descriptive only */}
+                  {room.bed_type && room.bed_type !== 'single' && (
+                    <Badge variant="outline" className="text-xs ml-2 capitalize">
+                      <Bed className="w-3 h-3 mr-1" />
+                      {room.bed_type}
+                    </Badge>
+                  )}
                 </div>
               )}
               
@@ -606,12 +630,13 @@ export function EnhancedRoomCard({
               </Button>
               <Button
                 onClick={handleReserve}
-                disabled={isUnavailable || isFull}
+                disabled={isUnavailable || isFull || hasConflict}
                 size="sm"
                 className="flex-1"
+                title={hasConflict ? 'Another user is reserving this room' : undefined}
               >
                 <Calendar className="w-4 h-4 mr-2" />
-                {isFull ? 'Full' : 'Reserve'}
+                {isFull ? 'Full' : hasConflict ? 'In Progress' : 'Reserve'}
               </Button>
             </div>
 

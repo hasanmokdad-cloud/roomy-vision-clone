@@ -11,6 +11,7 @@ interface RoomData {
   dorm_id: string;
   name: string;
   type: string;
+  bed_type?: string; // Descriptive only - does NOT affect capacity
   price: number;
   deposit?: number;
   price_1_student?: number;
@@ -109,6 +110,7 @@ serve(async (req) => {
         .update({
           name: roomData.name,
           type: roomData.type,
+          bed_type: roomData.bed_type || 'single',
           price: roomData.price,
           deposit: roomData.deposit || null,
           price_1_student: roomData.price_1_student || null,
@@ -141,6 +143,7 @@ serve(async (req) => {
           dorm_id: roomData.dorm_id,
           name: roomData.name,
           type: roomData.type,
+          bed_type: roomData.bed_type || 'single',
           price: roomData.price,
           deposit: roomData.deposit || null,
           price_1_student: roomData.price_1_student || null,
