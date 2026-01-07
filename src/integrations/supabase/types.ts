@@ -491,6 +491,183 @@ export type Database = {
           },
         ]
       }
+      apartment_pricing_tiers: {
+        Row: {
+          apartment_id: string
+          capacity: number
+          created_at: string | null
+          deposit: number | null
+          id: string
+          monthly_price: number
+        }
+        Insert: {
+          apartment_id: string
+          capacity: number
+          created_at?: string | null
+          deposit?: number | null
+          id?: string
+          monthly_price: number
+        }
+        Update: {
+          apartment_id?: string
+          capacity?: number
+          created_at?: string | null
+          deposit?: number | null
+          id?: string
+          monthly_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apartment_pricing_tiers_apartment_id_fkey"
+            columns: ["apartment_id"]
+            isOneToOne: false
+            referencedRelation: "apartments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apartments: {
+        Row: {
+          area_m2: number | null
+          available: boolean | null
+          building_id: string
+          created_at: string | null
+          enable_tiered_pricing: boolean | null
+          enabled_capacities: number[] | null
+          id: string
+          images: string[] | null
+          max_capacity: number
+          name: string
+          type: string | null
+          updated_at: string | null
+          video_url: string | null
+        }
+        Insert: {
+          area_m2?: number | null
+          available?: boolean | null
+          building_id: string
+          created_at?: string | null
+          enable_tiered_pricing?: boolean | null
+          enabled_capacities?: number[] | null
+          id?: string
+          images?: string[] | null
+          max_capacity?: number
+          name: string
+          type?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          area_m2?: number | null
+          available?: boolean | null
+          building_id?: string
+          created_at?: string | null
+          enable_tiered_pricing?: boolean | null
+          enabled_capacities?: number[] | null
+          id?: string
+          images?: string[] | null
+          max_capacity?: number
+          name?: string
+          type?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apartments_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apartments_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apartments_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apartments_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+        ]
+      }
+      bedrooms: {
+        Row: {
+          allow_extra_beds: boolean | null
+          apartment_id: string
+          available: boolean | null
+          base_capacity: number
+          bed_deposit: number | null
+          bed_price: number | null
+          bed_type: string
+          bedroom_deposit: number | null
+          bedroom_price: number | null
+          created_at: string | null
+          id: string
+          images: string[] | null
+          max_capacity: number
+          name: string
+          pricing_mode: string
+          updated_at: string | null
+        }
+        Insert: {
+          allow_extra_beds?: boolean | null
+          apartment_id: string
+          available?: boolean | null
+          base_capacity?: number
+          bed_deposit?: number | null
+          bed_price?: number | null
+          bed_type?: string
+          bedroom_deposit?: number | null
+          bedroom_price?: number | null
+          created_at?: string | null
+          id?: string
+          images?: string[] | null
+          max_capacity?: number
+          name: string
+          pricing_mode?: string
+          updated_at?: string | null
+        }
+        Update: {
+          allow_extra_beds?: boolean | null
+          apartment_id?: string
+          available?: boolean | null
+          base_capacity?: number
+          bed_deposit?: number | null
+          bed_price?: number | null
+          bed_type?: string
+          bedroom_deposit?: number | null
+          bedroom_price?: number | null
+          created_at?: string | null
+          id?: string
+          images?: string[] | null
+          max_capacity?: number
+          name?: string
+          pricing_mode?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bedrooms_apartment_id_fkey"
+            columns: ["apartment_id"]
+            isOneToOne: false
+            referencedRelation: "apartments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billing_history: {
         Row: {
           amount: number
@@ -1234,6 +1411,7 @@ export type Database = {
           owner_id: string | null
           phone_number: string | null
           price: number | null
+          property_type: string | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -1268,6 +1446,7 @@ export type Database = {
           owner_id?: string | null
           phone_number?: string | null
           price?: number | null
+          property_type?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -1302,6 +1481,7 @@ export type Database = {
           owner_id?: string | null
           phone_number?: string | null
           price?: number | null
+          property_type?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
