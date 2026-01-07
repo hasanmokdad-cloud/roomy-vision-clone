@@ -31,6 +31,20 @@ import { ResponsiveAlertModal } from '@/components/ui/responsive-alert-modal';
 import Step1Video from '@/assets/wizard/step1-animation.mp4';
 import Step2Video from '@/assets/wizard/step2-animation.mp4';
 import type { AmenityDetails } from '@/types/amenities';
+// Apartment-specific imports
+import { WizardApartmentData, createEmptyApartment } from '@/types/apartment';
+import { ApartmentNamesStep } from './steps/ApartmentNamesStep';
+import { ApartmentTypesStep } from './steps/ApartmentTypesStep';
+import { ApartmentSelectionStep } from './steps/ApartmentSelectionStep';
+import { ApartmentReservationModesStep } from './steps/ApartmentReservationModesStep';
+import { ApartmentCapacitySetupStep } from './steps/ApartmentCapacitySetupStep';
+import { ApartmentTieredPricingStep } from './steps/ApartmentTieredPricingStep';
+import { BedroomCountStep } from './steps/BedroomCountStep';
+import { BedroomNamesStep } from './steps/BedroomNamesStep';
+import { BedroomConfigStep } from './steps/BedroomConfigStep';
+import { BedSetupStep } from './steps/BedSetupStep';
+import { BedroomPricingStep } from './steps/BedroomPricingStep';
+import { ApartmentMediaStep } from './steps/ApartmentMediaStep';
 
 interface MobileDormWizardProps {
   onBeforeSubmit?: () => Promise<string | null>;
@@ -55,11 +69,15 @@ interface WizardFormData {
   highlights: string[];
   title: string;
   description: string;
-  descriptionManuallyEdited?: boolean; // Track if user manually edited description
+  descriptionManuallyEdited?: boolean;
   uploadMethod: 'manual' | 'excel' | '';
   rooms: WizardRoomData[];
   selectedRoomIds: string[];
   completedRoomIds: string[];
+  // Apartment-specific fields
+  apartments: WizardApartmentData[];
+  selectedApartmentIds: string[];
+  completedApartmentIds: string[];
 }
 
 const INITIAL_FORM_DATA: WizardFormData = {
@@ -84,11 +102,17 @@ const INITIAL_FORM_DATA: WizardFormData = {
   rooms: [],
   selectedRoomIds: [],
   completedRoomIds: [],
+  // Apartment-specific defaults
+  apartments: [],
+  selectedApartmentIds: [],
+  completedApartmentIds: [],
 };
 
 const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 
-// Total steps: 0-25 (26 steps)
+// Total steps: 0-29 (30 steps)
+// Dorm flow: 0-25
+// Apartment flow uses alternate steps from 14 onwards
 // Step order:
 // 0: Intro
 // 1: Filler Phase 1
@@ -102,20 +126,36 @@ const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 // 9-11: Amenities (essentials, shared, safety)
 // 12: Photos
 // 13: Filler Phase 3
+// --- DORM FLOW (propertyType !== 'apartment') ---
 // 14: Capacity (How many rooms?)
-// 15: Upload Method (Manual or Excel)
-// 16: Excel Upload / Room Names (based on upload method)
+// 15: Upload Method
+// 16: Room Names / Excel Upload
 // 17: Room Types
-// 18: Bulk Selection (for pricing)
-// 19: Pricing Setup
-// 20: Tiered Pricing (skip if no Double/Triple in selection)
-// 21: Area Setup
-// 22: Capacity Setup (for non-standard types)
+// 18: Bulk Selection
+// 19: Pricing
+// 20: Tiered Pricing
+// 21: Area
+// 22: Capacity Setup
 // 23: Occupancy
 // 24: Room Media
 // 25: Review
-const TOTAL_STEPS = 26;
-
+// --- APARTMENT FLOW (propertyType === 'apartment') ---
+// 14: Apartment Count
+// 15: Upload Method (manual only for now)
+// 16: Apartment Names
+// 17: Apartment Types
+// 18: Apartment Selection
+// 19: Reservation Modes (FLEX MODE)
+// 20: Apartment Capacity Setup
+// 21: Apartment Tiered Pricing
+// 22: Bedroom Count
+// 23: Bedroom Names
+// 24: Bedroom Config
+// 25: Bed Setup
+// 26: Bedroom Pricing
+// 27: Apartment Media
+// 28: Review
+const TOTAL_STEPS = 29;
 // Transition/filler steps
 const TRANSITION_STEPS = [1, 7, 13];
 
@@ -394,6 +434,26 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     return formData.rooms.every(r => formData.completedRoomIds.includes(r.id));
   };
 
+  // Apartment-specific helpers
+  const allApartmentsComplete = (): boolean => {
+    return formData.apartments.every(a => formData.completedApartmentIds.includes(a.id));
+  };
+
+  const selectedApartmentsHaveTieredPricing = (): boolean => {
+    return formData.apartments.some(a => 
+      formData.selectedApartmentIds.includes(a.id) && a.enableTieredPricing
+    );
+  };
+
+  const selectedApartmentsNeedBedSetup = (): boolean => {
+    return formData.apartments.some(a => {
+      if (!formData.selectedApartmentIds.includes(a.id)) return false;
+      return a.enableBedReservation || a.bedrooms.some(br => br.pricingMode === 'per_bed' || br.pricingMode === 'both');
+    });
+  };
+
+  const isApartmentFlow = formData.propertyType === 'apartment';
+
   const handleNext = async () => {
     // Special handling for intro → step 1 (preload step 1 video)
     if (currentStep === 0) {
@@ -444,52 +504,126 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       setFormData(prev => ({ ...prev, description: generatedDesc }));
     }
 
-    // After capacity step, create/adjust room objects based on capacity
+    // After capacity step (14), create room/apartment objects
     if (currentStep === 14) {
-      let totalRooms: number;
-      if (formData.propertyType === 'hybrid') {
-        totalRooms = (formData.dormRoomCount || 0) + (formData.apartmentCount || 0);
-        // Update capacity to total for downstream logic
-        if (formData.capacity !== totalRooms) {
-          setFormData(prev => ({ ...prev, capacity: totalRooms }));
-        }
-      } else {
-        totalRooms = formData.capacity;
-      }
-      
-      // If room count changed, adjust rooms array (preserve existing data where possible)
-      if (formData.rooms.length !== totalRooms && totalRooms > 0) {
-        const dormCount = formData.propertyType === 'hybrid' ? (formData.dormRoomCount || 0) : 0;
-        const newRooms = Array.from({ length: totalRooms }, (_, i) => {
-          // Keep existing room data if available
-          if (i < formData.rooms.length) {
-            const existingRoom = formData.rooms[i];
-            // For hybrid, update type based on new position if needed
-            if (formData.propertyType === 'hybrid') {
-              return { ...existingRoom, type: i >= dormCount ? 'Apartment' : existingRoom.type };
+      if (isApartmentFlow) {
+        // Create apartment objects based on capacity
+        const totalApartments = formData.capacity;
+        if (formData.apartments.length !== totalApartments && totalApartments > 0) {
+          const newApartments = Array.from({ length: totalApartments }, (_, i) => {
+            if (i < formData.apartments.length) {
+              return formData.apartments[i];
             }
-            return existingRoom;
+            return createEmptyApartment(i);
+          });
+          
+          const newAptIds = new Set(newApartments.map(a => a.id));
+          const updatedSelectedIds = formData.selectedApartmentIds.filter(id => newAptIds.has(id));
+          const updatedCompletedIds = formData.completedApartmentIds.filter(id => newAptIds.has(id));
+          
+          setFormData(prev => ({ 
+            ...prev, 
+            apartments: newApartments, 
+            selectedApartmentIds: newApartments.map(a => a.id),
+            completedApartmentIds: updatedCompletedIds 
+          }));
+        }
+        // Skip upload method for apartments (manual only for now)
+        setCurrentStep(16);
+        return;
+      } else {
+        // Dorm flow - create rooms
+        let totalRooms: number;
+        if (formData.propertyType === 'hybrid') {
+          totalRooms = (formData.dormRoomCount || 0) + (formData.apartmentCount || 0);
+          if (formData.capacity !== totalRooms) {
+            setFormData(prev => ({ ...prev, capacity: totalRooms }));
           }
-          // Create new room
-          const room = createEmptyRoom(i);
-          if (formData.propertyType === 'hybrid' && i >= dormCount) {
-            room.type = 'Apartment';
-          }
-          return room;
-        });
+        } else {
+          totalRooms = formData.capacity;
+        }
         
-        // Update selected and completed IDs to only include existing rooms
-        const newRoomIds = new Set(newRooms.map(r => r.id));
-        const updatedSelectedIds = formData.selectedRoomIds.filter(id => newRoomIds.has(id));
-        const updatedCompletedIds = formData.completedRoomIds.filter(id => newRoomIds.has(id));
-        
+        if (formData.rooms.length !== totalRooms && totalRooms > 0) {
+          const dormCount = formData.propertyType === 'hybrid' ? (formData.dormRoomCount || 0) : 0;
+          const newRooms = Array.from({ length: totalRooms }, (_, i) => {
+            if (i < formData.rooms.length) {
+              const existingRoom = formData.rooms[i];
+              if (formData.propertyType === 'hybrid') {
+                return { ...existingRoom, type: i >= dormCount ? 'Apartment' : existingRoom.type };
+              }
+              return existingRoom;
+            }
+            const room = createEmptyRoom(i);
+            if (formData.propertyType === 'hybrid' && i >= dormCount) {
+              room.type = 'Apartment';
+            }
+            return room;
+          });
+          
+          const newRoomIds = new Set(newRooms.map(r => r.id));
+          const updatedSelectedIds = formData.selectedRoomIds.filter(id => newRoomIds.has(id));
+          const updatedCompletedIds = formData.completedRoomIds.filter(id => newRoomIds.has(id));
+          
+          setFormData(prev => ({ 
+            ...prev, 
+            rooms: newRooms, 
+            selectedRoomIds: newRooms.map(r => r.id), 
+            completedRoomIds: updatedCompletedIds 
+          }));
+        }
+      }
+    }
+
+    // APARTMENT FLOW NAVIGATION
+    if (isApartmentFlow) {
+      // Step 18: Apartment Selection - check if all complete
+      if (currentStep === 18) {
+        if (allApartmentsComplete()) {
+          setCurrentStep(27); // Go to media step
+          return;
+        }
+      }
+
+      // Step 21: Apartment Tiered Pricing - skip if not needed
+      if (currentStep === 20) {
+        if (!selectedApartmentsHaveTieredPricing()) {
+          setCurrentStep(22); // Skip to bedroom count
+          return;
+        }
+      }
+
+      // Step 25: Bed Setup - skip if not needed
+      if (currentStep === 24) {
+        if (!selectedApartmentsNeedBedSetup()) {
+          setCurrentStep(26); // Skip to bedroom pricing
+          return;
+        }
+      }
+
+      // Step 26: After bedroom pricing, mark apartments complete and loop or proceed
+      if (currentStep === 26) {
+        const newCompletedIds = [...new Set([...formData.completedApartmentIds, ...formData.selectedApartmentIds])];
         setFormData(prev => ({ 
           ...prev, 
-          rooms: newRooms, 
-          selectedRoomIds: newRooms.map(r => r.id), 
-          completedRoomIds: updatedCompletedIds 
+          completedApartmentIds: newCompletedIds,
+          selectedApartmentIds: []
         }));
+        
+        const allComplete = formData.apartments.every(a => newCompletedIds.includes(a.id));
+        
+        if (allComplete) {
+          setCurrentStep(27); // Media step
+        } else {
+          setCurrentStep(18); // Back to apartment selection
+        }
+        return;
       }
+
+      // Default: proceed to next step
+      if (currentStep < TOTAL_STEPS - 1) {
+        setCurrentStep(currentStep + 1);
+      }
+      return;
     }
 
     // After upload method, skip to appropriate step
@@ -664,6 +798,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
   };
 
   const isNextDisabled = () => {
+    // Common validations
     switch (currentStep) {
       case 2: return !formData.propertyType;
       case 3: return !formData.title;
@@ -676,17 +811,42 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           return totalHybrid < 1;
         }
         return formData.capacity < 1 || formData.capacity > 2000;
+    }
+
+    // Apartment flow validations
+    if (isApartmentFlow) {
+      switch (currentStep) {
+        case 16: return formData.apartments.some(a => !a.name);
+        case 18: 
+          if (allApartmentsComplete()) return false;
+          return formData.selectedApartmentIds.length === 0;
+        case 19: 
+          return formData.apartments
+            .filter(a => formData.selectedApartmentIds.includes(a.id))
+            .some(a => !a.enableFullApartmentReservation && !a.enableBedroomReservation && !a.enableBedReservation);
+        case 20: 
+          return formData.apartments
+            .filter(a => formData.selectedApartmentIds.includes(a.id))
+            .some(a => a.maxCapacity < 1);
+        case 22:
+          return formData.apartments
+            .filter(a => formData.selectedApartmentIds.includes(a.id))
+            .some(a => a.bedroomCount < 1);
+        case 28: return !formData.title || !formData.area || !agreedToOwnerTerms;
+        default: return false;
+      }
+    }
+
+    // Dorm flow validations
+    switch (currentStep) {
       case 15: return !formData.uploadMethod;
       case 16: 
-        // For manual: check room names; for excel: check if rooms were imported
         if (formData.uploadMethod === 'manual') {
           return formData.rooms.some(r => !r.name);
         }
-        // For excel: check if any rooms were imported from Excel file
         return formData.rooms.length === 0 || !formData.rooms.some(r => r.id.startsWith('excel-'));
       case 17: return formData.rooms.some(r => !r.type);
       case 18: 
-        // If all rooms complete, allow proceeding to media
         if (formData.completedRoomIds.length === formData.rooms.length && formData.rooms.length > 0) {
           return false;
         }
@@ -853,6 +1013,10 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           />
         );
       case 15:
+        if (isApartmentFlow) {
+          // Apartment flow skips this step (handled in handleNext)
+          return null;
+        }
         return (
           <UploadMethodStep
             value={formData.uploadMethod}
@@ -861,6 +1025,14 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           />
         );
       case 16:
+        if (isApartmentFlow) {
+          return (
+            <ApartmentNamesStep
+              apartments={formData.apartments}
+              onChange={(apartments) => setFormData({ ...formData, apartments })}
+            />
+          );
+        }
         if (formData.uploadMethod === 'excel') {
           return (
             <ExcelUploadStep
@@ -877,6 +1049,205 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             propertyType={formData.propertyType}
           />
         );
+      case 17:
+        if (isApartmentFlow) {
+          return (
+            <ApartmentTypesStep
+              apartments={formData.apartments}
+              onChange={(apartments) => setFormData({ ...formData, apartments })}
+            />
+          );
+        }
+        return (
+          <RoomTypesStep
+            rooms={formData.rooms}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+            propertyType={formData.propertyType}
+          />
+        );
+      case 18:
+        if (isApartmentFlow) {
+          return (
+            <ApartmentSelectionStep
+              apartments={formData.apartments}
+              selectedIds={formData.selectedApartmentIds}
+              completedIds={formData.completedApartmentIds}
+              onSelectionChange={(ids) => setFormData({ ...formData, selectedApartmentIds: ids })}
+            />
+          );
+        }
+        return (
+          <RoomBulkSelectionStep
+            rooms={formData.rooms}
+            selectedIds={formData.selectedRoomIds}
+            completedIds={formData.completedRoomIds}
+            onSelectionChange={(ids) => setFormData({ ...formData, selectedRoomIds: ids })}
+            propertyType={formData.propertyType}
+          />
+        );
+      case 19:
+        if (isApartmentFlow) {
+          return (
+            <ApartmentReservationModesStep
+              apartments={formData.apartments}
+              selectedIds={formData.selectedApartmentIds}
+              onChange={(apartments) => setFormData({ ...formData, apartments })}
+            />
+          );
+        }
+        return (
+          <RoomPricingStep
+            rooms={formData.rooms}
+            selectedIds={formData.selectedRoomIds}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+            propertyType={formData.propertyType}
+          />
+        );
+      case 20:
+        if (isApartmentFlow) {
+          return (
+            <ApartmentCapacitySetupStep
+              apartments={formData.apartments}
+              selectedIds={formData.selectedApartmentIds}
+              onChange={(apartments) => setFormData({ ...formData, apartments })}
+            />
+          );
+        }
+        return (
+          <TieredPricingStep
+            rooms={formData.rooms}
+            selectedIds={formData.selectedRoomIds}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+          />
+        );
+      case 21:
+        if (isApartmentFlow) {
+          return (
+            <ApartmentTieredPricingStep
+              apartments={formData.apartments}
+              selectedIds={formData.selectedApartmentIds}
+              onChange={(apartments) => setFormData({ ...formData, apartments })}
+            />
+          );
+        }
+        return (
+          <RoomAreaStep
+            rooms={formData.rooms}
+            selectedIds={formData.selectedRoomIds}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+            propertyType={formData.propertyType}
+          />
+        );
+      case 22:
+        if (isApartmentFlow) {
+          return (
+            <BedroomCountStep
+              apartments={formData.apartments}
+              selectedIds={formData.selectedApartmentIds}
+              onChange={(apartments) => setFormData({ ...formData, apartments })}
+            />
+          );
+        }
+        return (
+          <RoomCapacityStep
+            rooms={formData.rooms}
+            selectedIds={formData.selectedRoomIds}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+            propertyType={formData.propertyType}
+          />
+        );
+      case 23:
+        if (isApartmentFlow) {
+          return (
+            <BedroomNamesStep
+              apartments={formData.apartments}
+              selectedIds={formData.selectedApartmentIds}
+              onChange={(apartments) => setFormData({ ...formData, apartments })}
+            />
+          );
+        }
+        return (
+          <RoomOccupancyStep
+            rooms={formData.rooms}
+            selectedIds={formData.selectedRoomIds}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+            propertyType={formData.propertyType}
+          />
+        );
+      case 24:
+        if (isApartmentFlow) {
+          return (
+            <BedroomConfigStep
+              apartments={formData.apartments}
+              selectedIds={formData.selectedApartmentIds}
+              onChange={(apartments) => setFormData({ ...formData, apartments })}
+            />
+          );
+        }
+        return (
+          <RoomMediaStep
+            rooms={formData.rooms}
+            selectedIds={formData.selectedRoomIds}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+            propertyType={formData.propertyType}
+          />
+        );
+      case 25:
+        if (isApartmentFlow) {
+          return (
+            <BedSetupStep
+              apartments={formData.apartments}
+              selectedIds={formData.selectedApartmentIds}
+              onChange={(apartments) => setFormData({ ...formData, apartments })}
+            />
+          );
+        }
+        return (
+          <ReviewStep
+            formData={{...formData, shuttle: formData.shuttle || false, propertyType: formData.propertyType}}
+            onEditStep={setCurrentStep}
+            agreedToOwnerTerms={agreedToOwnerTerms}
+            onAgreedToOwnerTermsChange={setAgreedToOwnerTerms}
+            onSubmit={handleSubmit}
+            submitting={submitting}
+          />
+        );
+      case 26:
+        if (isApartmentFlow) {
+          return (
+            <BedroomPricingStep
+              apartments={formData.apartments}
+              selectedIds={formData.selectedApartmentIds}
+              onChange={(apartments) => setFormData({ ...formData, apartments })}
+            />
+          );
+        }
+        return null;
+      case 27:
+        if (isApartmentFlow) {
+          return (
+            <ApartmentMediaStep
+              apartments={formData.apartments}
+              selectedIds={formData.apartments.map(a => a.id)}
+              onChange={(apartments) => setFormData({ ...formData, apartments })}
+            />
+          );
+        }
+        return null;
+      case 28:
+        if (isApartmentFlow) {
+          return (
+            <ReviewStep
+              formData={{...formData, shuttle: formData.shuttle || false, propertyType: formData.propertyType}}
+              onEditStep={setCurrentStep}
+              agreedToOwnerTerms={agreedToOwnerTerms}
+              onAgreedToOwnerTermsChange={setAgreedToOwnerTerms}
+              onSubmit={handleSubmit}
+              submitting={submitting}
+            />
+          );
+        }
+        return null;
       case 17:
         return (
           <RoomTypesStep
