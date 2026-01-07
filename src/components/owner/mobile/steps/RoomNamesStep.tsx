@@ -9,6 +9,7 @@ export interface WizardRoomData {
   id: string;
   name: string;
   type: string;
+  bedType?: string;  // Descriptive only - does NOT affect capacity
   price: number | null;
   deposit: number | null;
   price_1_student: number | null;
