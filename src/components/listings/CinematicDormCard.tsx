@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, CheckCircle, Zap, Bookmark, Star } from "lucide-react";
+import { MapPin, CheckCircle, Zap, Bookmark, Star, Building2 } from "lucide-react";
 import { getAmenityIcon } from "@/utils/amenityIcons";
 import { useNavigate } from "react-router-dom";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -36,6 +36,8 @@ interface CinematicDormCardProps {
     address?: string;
     university?: string;
     gender_preference?: string;
+    property_type?: string;
+    apartment_count?: number;
   };
   index: number;
 }
@@ -91,9 +93,9 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
     fetchRating();
   }, [dorm.id]);
 
-  // Memoized room types calculations
   const roomTypes: RoomType[] = useMemo(() => dorm.room_types_json || [], [dorm.room_types_json]);
   const hasMultipleRooms = useMemo(() => roomTypes.length > 1, [roomTypes.length]);
+  const isApartmentBuilding = dorm.property_type === 'apartment';
 
   // Memoized starting price calculation
   const startingPrice = useMemo(
@@ -255,6 +257,12 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
 
               {/* Badges */}
               <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[calc(100%-2rem)]">
+                {isApartmentBuilding && (
+                  <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 border-purple-500/30 backdrop-blur-sm">
+                    <Building2 className="w-3 h-3 mr-1" />
+                    Apartment Building
+                  </Badge>
+                )}
                 {averageRating && (
                   <Badge variant="secondary" className="backdrop-blur-sm">
                     <Star className="w-3 h-3 mr-1 fill-primary text-primary" />
@@ -267,7 +275,7 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
                     Verified
                   </Badge>
                 )}
-                {hasMultipleRooms && (
+                {hasMultipleRooms && !isApartmentBuilding && (
                   <Badge variant="secondary" className="backdrop-blur-sm">
                     {roomTypes.length} Room Types
                   </Badge>

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home, Video, Bookmark, Images, Eye, Sparkles } from 'lucide-react';
+import { ArrowLeft, MapPin, DollarSign, Users, CheckCircle, Phone, Mail, Globe, MessageSquare, Home, Video, Bookmark, Images, Eye, Sparkles, Building2 } from 'lucide-react';
 import { getAmenityIcon } from '@/utils/amenityIcons';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedRoomCard } from '@/components/listings/EnhancedRoomCard';
@@ -25,6 +25,7 @@ import { ShareButton } from '@/components/shared/ShareButton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { renderMarkdown } from '@/utils/markdownRenderer';
 import { useAuth } from '@/contexts/AuthContext';
+import { ApartmentListView } from '@/components/listings/ApartmentListView';
 
 export default function DormDetail() {
   const { id } = useParams();
@@ -436,8 +437,31 @@ export default function DormDetail() {
 
           <div className="space-y-6">
 
-            {/* Available Room Options */}
-            {(rooms.length > 0 || roomTypes.length > 0) && (
+            {/* Apartment Building View */}
+            {dorm.property_type === 'apartment' && (
+              <Card className="glass-hover">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Building2 className="w-6 h-6 text-primary" />
+                    <h2 className="text-2xl font-bold">Available Apartments</h2>
+                  </div>
+                  <ApartmentListView
+                    buildingId={dorm.id}
+                    buildingName={displayName}
+                    onReserve={(level, id, apartmentId) => {
+                      // TODO: Implement reservation modal
+                      toast({
+                        title: 'Reservation',
+                        description: `Reserve ${level}: ${id}`,
+                      });
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Available Room Options - Only for non-apartment buildings */}
+            {dorm.property_type !== 'apartment' && (rooms.length > 0 || roomTypes.length > 0) && (
               <Card className="glass-hover">
                 <CardContent className="p-6">
                   <h2 className="text-2xl font-bold mb-4">Available Room Options</h2>
