@@ -382,6 +382,13 @@ export type Database = {
             foreignKeyName: "ai_recommendations_log_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_recommendations_log_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorm_performance_summary"
             referencedColumns: ["id"]
           },
@@ -465,6 +472,13 @@ export type Database = {
             foreignKeyName: "analytics_events_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorm_performance_summary"
             referencedColumns: ["id"]
           },
@@ -517,6 +531,13 @@ export type Database = {
           monthly_price?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "apartment_pricing_tiers_apartment_id_fkey"
+            columns: ["apartment_id"]
+            isOneToOne: false
+            referencedRelation: "apartment_inventory_summary"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "apartment_pricing_tiers_apartment_id_fkey"
             columns: ["apartment_id"]
@@ -582,6 +603,13 @@ export type Database = {
           video_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "apartments_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "apartments_building_id_fkey"
             columns: ["building_id"]
@@ -672,6 +700,13 @@ export type Database = {
             foreignKeyName: "bedrooms_apartment_id_fkey"
             columns: ["apartment_id"]
             isOneToOne: false
+            referencedRelation: "apartment_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bedrooms_apartment_id_fkey"
+            columns: ["apartment_id"]
+            isOneToOne: false
             referencedRelation: "apartments"
             referencedColumns: ["id"]
           },
@@ -679,39 +714,60 @@ export type Database = {
       }
       beds: {
         Row: {
+          availability_status: string | null
           available: boolean | null
           bed_type: string
-          bedroom_id: string
+          bedroom_id: string | null
           capacity_contribution: number
           created_at: string | null
           deposit: number | null
           id: string
+          is_active: boolean | null
           label: string
           monthly_price: number | null
+          occupied_by_user_id: string | null
+          parent_type: string | null
+          reserved_at: string | null
+          reserved_by_user_id: string | null
+          room_id: string | null
           updated_at: string | null
         }
         Insert: {
+          availability_status?: string | null
           available?: boolean | null
           bed_type?: string
-          bedroom_id: string
+          bedroom_id?: string | null
           capacity_contribution?: number
           created_at?: string | null
           deposit?: number | null
           id?: string
+          is_active?: boolean | null
           label?: string
           monthly_price?: number | null
+          occupied_by_user_id?: string | null
+          parent_type?: string | null
+          reserved_at?: string | null
+          reserved_by_user_id?: string | null
+          room_id?: string | null
           updated_at?: string | null
         }
         Update: {
+          availability_status?: string | null
           available?: boolean | null
           bed_type?: string
-          bedroom_id?: string
+          bedroom_id?: string | null
           capacity_contribution?: number
           created_at?: string | null
           deposit?: number | null
           id?: string
+          is_active?: boolean | null
           label?: string
           monthly_price?: number | null
+          occupied_by_user_id?: string | null
+          parent_type?: string | null
+          reserved_at?: string | null
+          reserved_by_user_id?: string | null
+          room_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -720,6 +776,20 @@ export type Database = {
             columns: ["bedroom_id"]
             isOneToOne: false
             referencedRelation: "bedrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beds_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beds_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
         ]
@@ -876,6 +946,13 @@ export type Database = {
             foreignKeyName: "bookings_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorm_performance_summary"
             referencedColumns: ["id"]
           },
@@ -899,6 +976,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "fk_bookings_dorm"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_bookings_dorm"
@@ -1310,6 +1394,13 @@ export type Database = {
             foreignKeyName: "conversations_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorm_performance_summary"
             referencedColumns: ["id"]
           },
@@ -1401,6 +1492,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "dorm_claims_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "dorm_claims_dorm_id_fkey"
             columns: ["dorm_id"]
@@ -1821,6 +1919,13 @@ export type Database = {
             foreignKeyName: "inquiries_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inquiries_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorm_performance_summary"
             referencedColumns: ["id"]
           },
@@ -2195,6 +2300,13 @@ export type Database = {
             foreignKeyName: "notifications_log_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_log_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorm_performance_summary"
             referencedColumns: ["id"]
           },
@@ -2277,6 +2389,13 @@ export type Database = {
             foreignKeyName: "owner_availability_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_availability_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorm_performance_summary"
             referencedColumns: ["id"]
           },
@@ -2346,6 +2465,13 @@ export type Database = {
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "owner_notifications_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "owner_notifications_dorm_id_fkey"
             columns: ["dorm_id"]
@@ -2745,6 +2871,13 @@ export type Database = {
             foreignKeyName: "payout_history_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_history_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorm_performance_summary"
             referencedColumns: ["id"]
           },
@@ -2795,6 +2928,13 @@ export type Database = {
             columns: ["reservation_id"]
             isOneToOne: false
             referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_history_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_inventory_summary"
             referencedColumns: ["id"]
           },
           {
@@ -3153,6 +3293,7 @@ export type Database = {
           apartment_id: string | null
           bed_id: string | null
           bedroom_id: string | null
+          building_id: string | null
           cancelled_at: string | null
           commission_amount: number | null
           created_at: string | null
@@ -3168,9 +3309,12 @@ export type Database = {
           owner_payout_status: string | null
           owner_payout_timestamp: string | null
           paid_at: string | null
+          payment_provider: string | null
           payout_batch_id: string | null
+          platform_fee_amount: number | null
           refundable_until: string | null
           reservation_fee_amount: number
+          reservation_group_id: string | null
           reservation_level: string | null
           room_id: string
           roomy_commission_captured: boolean | null
@@ -3184,6 +3328,7 @@ export type Database = {
           apartment_id?: string | null
           bed_id?: string | null
           bedroom_id?: string | null
+          building_id?: string | null
           cancelled_at?: string | null
           commission_amount?: number | null
           created_at?: string | null
@@ -3199,9 +3344,12 @@ export type Database = {
           owner_payout_status?: string | null
           owner_payout_timestamp?: string | null
           paid_at?: string | null
+          payment_provider?: string | null
           payout_batch_id?: string | null
+          platform_fee_amount?: number | null
           refundable_until?: string | null
           reservation_fee_amount: number
+          reservation_group_id?: string | null
           reservation_level?: string | null
           room_id: string
           roomy_commission_captured?: boolean | null
@@ -3215,6 +3363,7 @@ export type Database = {
           apartment_id?: string | null
           bed_id?: string | null
           bedroom_id?: string | null
+          building_id?: string | null
           cancelled_at?: string | null
           commission_amount?: number | null
           created_at?: string | null
@@ -3230,9 +3379,12 @@ export type Database = {
           owner_payout_status?: string | null
           owner_payout_timestamp?: string | null
           paid_at?: string | null
+          payment_provider?: string | null
           payout_batch_id?: string | null
+          platform_fee_amount?: number | null
           refundable_until?: string | null
           reservation_fee_amount?: number
+          reservation_group_id?: string | null
           reservation_level?: string | null
           room_id?: string
           roomy_commission_captured?: boolean | null
@@ -3243,6 +3395,13 @@ export type Database = {
           whish_payment_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "reservations_apartment_id_fkey"
+            columns: ["apartment_id"]
+            isOneToOne: false
+            referencedRelation: "apartment_inventory_summary"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reservations_apartment_id_fkey"
             columns: ["apartment_id"]
@@ -3262,6 +3421,48 @@ export type Database = {
             columns: ["bedroom_id"]
             isOneToOne: false
             referencedRelation: "bedrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "reservations_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "building_inventory_summary"
             referencedColumns: ["id"]
           },
           {
@@ -3291,6 +3492,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "reservations_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_inventory_summary"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "reservations_room_id_fkey"
@@ -3488,6 +3696,13 @@ export type Database = {
             foreignKeyName: "reviews_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorm_performance_summary"
             referencedColumns: ["id"]
           },
@@ -3511,6 +3726,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "reviews_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_inventory_summary"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "reviews_room_id_fkey"
@@ -3648,6 +3870,13 @@ export type Database = {
             foreignKeyName: "room_contact_tracking_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_contact_tracking_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorm_performance_summary"
             referencedColumns: ["id"]
           },
@@ -3671,6 +3900,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "room_contact_tracking_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_inventory_summary"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "room_contact_tracking_room_id_fkey"
@@ -3736,6 +3972,13 @@ export type Database = {
             foreignKeyName: "room_occupancy_claims_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_claims_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorm_performance_summary"
             referencedColumns: ["id"]
           },
@@ -3772,6 +4015,13 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_claims_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_inventory_summary"
             referencedColumns: ["id"]
           },
           {
@@ -3913,6 +4163,13 @@ export type Database = {
             foreignKeyName: "rooms_dorm_id_fkey"
             columns: ["dorm_id"]
             isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
             referencedRelation: "dorm_performance_summary"
             referencedColumns: ["id"]
           },
@@ -3989,6 +4246,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "saved_rooms_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "saved_rooms_dorm_id_fkey"
             columns: ["dorm_id"]
@@ -4219,6 +4483,8 @@ export type Database = {
       }
       students: {
         Row: {
+          accommodation_locked: boolean | null
+          accommodation_locked_at: string | null
           accommodation_status: string | null
           advanced_compatibility_enabled: boolean | null
           age: number | null
@@ -4229,6 +4495,9 @@ export type Database = {
           compatibility_test_completed: boolean | null
           confirmation_type: string | null
           created_at: string | null
+          current_apartment_id: string | null
+          current_bed_id: string | null
+          current_bedroom_id: string | null
           current_dorm_id: string | null
           current_room_id: string | null
           dealbreakers: string[] | null
@@ -4293,6 +4562,8 @@ export type Database = {
           year_of_study: number | null
         }
         Insert: {
+          accommodation_locked?: boolean | null
+          accommodation_locked_at?: string | null
           accommodation_status?: string | null
           advanced_compatibility_enabled?: boolean | null
           age?: number | null
@@ -4303,6 +4574,9 @@ export type Database = {
           compatibility_test_completed?: boolean | null
           confirmation_type?: string | null
           created_at?: string | null
+          current_apartment_id?: string | null
+          current_bed_id?: string | null
+          current_bedroom_id?: string | null
           current_dorm_id?: string | null
           current_room_id?: string | null
           dealbreakers?: string[] | null
@@ -4367,6 +4641,8 @@ export type Database = {
           year_of_study?: number | null
         }
         Update: {
+          accommodation_locked?: boolean | null
+          accommodation_locked_at?: string | null
           accommodation_status?: string | null
           advanced_compatibility_enabled?: boolean | null
           age?: number | null
@@ -4377,6 +4653,9 @@ export type Database = {
           compatibility_test_completed?: boolean | null
           confirmation_type?: string | null
           created_at?: string | null
+          current_apartment_id?: string | null
+          current_bed_id?: string | null
+          current_bedroom_id?: string | null
           current_dorm_id?: string | null
           current_room_id?: string | null
           dealbreakers?: string[] | null
@@ -4442,6 +4721,41 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "students_current_apartment_id_fkey"
+            columns: ["current_apartment_id"]
+            isOneToOne: false
+            referencedRelation: "apartment_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_current_apartment_id_fkey"
+            columns: ["current_apartment_id"]
+            isOneToOne: false
+            referencedRelation: "apartments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_current_bed_id_fkey"
+            columns: ["current_bed_id"]
+            isOneToOne: false
+            referencedRelation: "beds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_current_bedroom_id_fkey"
+            columns: ["current_bedroom_id"]
+            isOneToOne: false
+            referencedRelation: "bedrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_current_dorm_id_fkey"
+            columns: ["current_dorm_id"]
+            isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "students_current_dorm_id_fkey"
             columns: ["current_dorm_id"]
             isOneToOne: false
@@ -4468,6 +4782,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "owner_performance_view"
             referencedColumns: ["dorm_id"]
+          },
+          {
+            foreignKeyName: "students_current_room_id_fkey"
+            columns: ["current_room_id"]
+            isOneToOne: false
+            referencedRelation: "room_inventory_summary"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "students_current_room_id_fkey"
@@ -4570,6 +4891,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tour_bookings_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tour_bookings_dorm_id_fkey"
             columns: ["dorm_id"]
@@ -4840,6 +5168,86 @@ export type Database = {
       }
     }
     Views: {
+      apartment_inventory_summary: {
+        Row: {
+          availability_status: string | null
+          available_beds: number | null
+          building_id: string | null
+          can_reserve_full_apartment: boolean | null
+          id: string | null
+          name: string | null
+          occupied_beds: number | null
+          reserved_beds: number | null
+          total_bedrooms: number | null
+          total_beds: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apartments_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apartments_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apartments_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apartments_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apartments_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+        ]
+      }
+      building_inventory_summary: {
+        Row: {
+          available_beds: number | null
+          id: string | null
+          name: string | null
+          occupancy_rate: number | null
+          occupied_beds: number | null
+          owner_id: string | null
+          property_type: string | null
+          reserved_beds: number | null
+          total_beds: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dorms_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owner_messaging_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dorms_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dorm_engagement_view: {
         Row: {
           dorm_id: string | null
@@ -4848,6 +5256,13 @@ export type Database = {
           views: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "analytics_events_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "analytics_events_dorm_id_fkey"
             columns: ["dorm_id"]
@@ -5032,6 +5447,58 @@ export type Database = {
           },
         ]
       }
+      room_inventory_summary: {
+        Row: {
+          available_beds: number | null
+          building_id: string | null
+          capacity: number | null
+          id: string | null
+          is_full: boolean | null
+          is_fully_available: boolean | null
+          name: string | null
+          occupied_beds: number | null
+          reserved_beds: number | null
+          total_beds: number | null
+          type: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_dorm_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_dorm_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_dorm_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_dorm_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_dorm_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+        ]
+      }
       security_rls_overview: {
         Row: {
           delete_policies: number | null
@@ -5112,6 +5579,10 @@ export type Database = {
       }
       assert_security_baseline: { Args: never; Returns: boolean }
       assign_student_role: { Args: { p_user_id: string }; Returns: undefined }
+      can_reserve_full_apartment: {
+        Args: { p_apartment_id: string }
+        Returns: boolean
+      }
       check_booking_conflicts: {
         Args: {
           p_dorm_id: string
@@ -5151,6 +5622,7 @@ export type Database = {
         Args: { p_owner_id: string }
         Returns: boolean
       }
+      cleanup_expired_reservations: { Args: never; Returns: number }
       cleanup_expired_tokens: { Args: never; Returns: undefined }
       debug_auth_state: { Args: never; Returns: Json }
       decrement_admin_balance: {
@@ -5168,6 +5640,10 @@ export type Database = {
       decrement_roomy_confirmed_occupants: {
         Args: { p_room_id: string }
         Returns: undefined
+      }
+      finalize_reservation: {
+        Args: { p_payment_reference?: string; p_reservation_id: string }
+        Returns: Json
       }
       find_next_available_slot: {
         Args: {
@@ -5267,6 +5743,18 @@ export type Database = {
         Returns: boolean
       }
       recompute_dorm_engagement_scores: { Args: never; Returns: Json }
+      reserve_bed: {
+        Args: { p_bed_id: string; p_hold_minutes?: number; p_user_id: string }
+        Returns: Json
+      }
+      reserve_full_apartment: {
+        Args: {
+          p_apartment_id: string
+          p_hold_minutes?: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
       reset_student_ai_memory: {
         Args: { p_student_id: string }
         Returns: undefined
@@ -5282,6 +5770,7 @@ export type Database = {
           title: string
         }[]
       }
+      student_checkout_extended: { Args: { p_user_id: string }; Returns: Json }
       update_student_preference: {
         Args: {
           p_preference_type: string

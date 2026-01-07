@@ -1,4 +1,4 @@
-import { Building2, Settings, DoorOpen, Calendar, LayoutDashboard, TrendingUp, Star, Wallet } from 'lucide-react';
+import { Building2, Settings, DoorOpen, Calendar, LayoutDashboard, TrendingUp, Star, Wallet, Bed } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   Sidebar,
@@ -14,6 +14,7 @@ import {
 
 const menuItems = [
   { title: 'Dashboard', url: '/owner', icon: LayoutDashboard, exact: true },
+  { title: 'Bed Inventory', url: '/owner/inventory', icon: Bed, exact: true },
   { title: 'Finance Hub', url: '/owner/finance', icon: Wallet, exact: false },
   { title: 'Tour Management', url: '/owner/schedule', icon: Calendar, exact: false },
   { title: 'Room Management', url: '/owner/rooms', icon: DoorOpen, exact: false },
