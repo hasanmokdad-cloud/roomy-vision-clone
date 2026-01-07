@@ -306,15 +306,10 @@ export default function Listings() {
           rooms={allRooms}
         />
 
-        {/* AI Smart Filter */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="mb-8"
-        >
+        {/* AI Smart Filter - collapsed into search bar area */}
+        <div className="mb-6">
           <AISmartFilter onFiltersApplied={handleAIFilters} userId={userId} />
-        </motion.div>
+        </div>
 
         <div className="flex flex-col gap-8">
           <div className="flex-1 space-y-6">
@@ -331,8 +326,8 @@ export default function Listings() {
             )}
 
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {[1, 2, 3, 4, 5, 6].map(i => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-5">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
                   <DormCardSkeleton key={i} />
                 ))}
               </div>
@@ -372,7 +367,7 @@ export default function Listings() {
                   {isRoomMode ? (
                     // Room-level display
                     <div 
-                      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
+                      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-5"
                       role="list"
                       aria-label="Room listings"
                     >
@@ -388,9 +383,9 @@ export default function Listings() {
                       ))}
                     </div>
                   ) : (
-                    // Dorm-level display
+                    // Dorm-level display - denser Airbnb-like grid
                     <div 
-                      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
+                      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-5"
                       role="list"
                       aria-label="Dorm listings"
                     >

@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, CheckCircle, Zap, Bookmark, Star, Building2 } from "lucide-react";
+import { MapPin, CheckCircle, Zap, Bookmark, Star, Building2, Eye, Bed, DoorOpen, Share2 } from "lucide-react";
 import { getAmenityIcon } from "@/utils/amenityIcons";
 import { useNavigate } from "react-router-dom";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ShareButton } from "@/components/shared/ShareButton";
 import { ReviewFormModal } from "@/components/reviews/ReviewFormModal";
+import { BuildingQuickLookModal } from "./BuildingQuickLookModal";
 
 interface RoomType {
   type: string;
@@ -38,6 +39,7 @@ interface CinematicDormCardProps {
     gender_preference?: string;
     property_type?: string;
     apartment_count?: number;
+    gallery_images?: string[];
   };
   index: number;
 }
@@ -47,6 +49,7 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
   const [isSaved, setIsSaved] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [quickLookOpen, setQuickLookOpen] = useState(false);
   const [averageRating, setAverageRating] = useState<number | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
   const navigate = useNavigate();
@@ -110,7 +113,22 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
 
   const isVerified = useMemo(() => dorm.verification_status === "Verified", [dorm.verification_status]);
 
-  const handleLearnMore = useCallback(
+  // Amenities preview (max 4)
+  const previewAmenities = useMemo(() => {
+    return dorm.amenities?.slice(0, 4) || [];
+  }, [dorm.amenities]);
+  
+  const remainingAmenities = useMemo(() => {
+    return Math.max(0, (dorm.amenities?.length || 0) - 4);
+  }, [dorm.amenities]);
+
+  // Availability summary
+  const roomCount = useMemo(() => roomTypes.length || 1, [roomTypes]);
+  const bedCount = useMemo(() => {
+    return roomTypes.reduce((sum, r) => sum + (r.capacity || 1), 0) || roomCount;
+  }, [roomTypes, roomCount]);
+
+  const handleViewBuilding = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
       navigate(`/dorm/${dorm.id}`);
@@ -118,10 +136,15 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
     [navigate, dorm.id],
   );
 
+  const handleQuickLook = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setQuickLookOpen(true);
+  }, []);
+
   const handleCardClick = useCallback((e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
-    // Don't navigate if clicking on save or share button
-    if (target.closest('.save-button') || target.closest('.share-button')) {
+    // Don't navigate if clicking on interactive elements
+    if (target.closest('.save-button') || target.closest('.share-button') || target.closest('button')) {
       return;
     }
     navigate(`/dorm/${dorm.id}`);
@@ -141,7 +164,6 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
 
     try {
       if (isSaved) {
-        // Remove from saved
         await supabase
           .from("saved_items")
           .delete()
@@ -154,7 +176,6 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
           description: "Dorm removed from favorites.",
         });
       } else {
-        // Add to saved
         await supabase
           .from("saved_items")
           .insert({
@@ -182,21 +203,21 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
   const renderAmenityIcon = useCallback(
     (amenity: string) => {
       const IconComponent = getAmenityIcon(amenity);
-      return <IconComponent className="w-3 h-3" />;
+      return <IconComponent className="w-3.5 h-3.5" />;
     },
     [],
   );
 
   const cardVariants = useMemo(
     () => ({
-      hidden: { opacity: 0, y: 60, scale: 0.95 },
+      hidden: { opacity: 0, y: 40, scale: 0.97 },
       visible: {
         opacity: 1,
         y: 0,
         scale: 1,
         transition: {
-          delay: prefersReducedMotion ? 0 : index * 0.1,
-          duration: 0.5,
+          delay: prefersReducedMotion ? 0 : index * 0.05,
+          duration: 0.4,
           ease: [0.22, 1, 0.36, 1],
         },
       },
@@ -236,161 +257,205 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
           animate={{
             rotateX: !prefersReducedMotion && !isMobile && isFlipped ? 180 : 0,
           }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="relative w-full h-[420px] cursor-pointer"
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="relative w-full h-[360px] cursor-pointer"
           style={{ transformStyle: "preserve-3d" }}
         >
           {/* Front Face */}
           <div
-            className="absolute inset-0 flip-card-3d glass-hover rounded-3xl overflow-hidden border border-border shadow-xl card-glow-hover"
+            className="absolute inset-0 flip-card-3d rounded-2xl overflow-hidden border border-border bg-card shadow-md hover:shadow-xl transition-shadow duration-300"
             style={{ backfaceVisibility: "hidden" }}
           >
-            {/* Image */}
-            <div className="relative h-56 overflow-hidden">
+            {/* Image - 16:10 aspect ratio approximation */}
+            <div className="relative h-40 overflow-hidden">
               <img
                 src={dormImage}
                 alt={dorm.dorm_name}
                 loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
 
-              {/* Badges */}
-              <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[calc(100%-2rem)]">
-                {isApartmentBuilding && (
-                  <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 border-purple-500/30 backdrop-blur-sm">
-                    <Building2 className="w-3 h-3 mr-1" />
-                    Apartment Building
-                  </Badge>
-                )}
-                {averageRating && (
-                  <Badge variant="secondary" className="backdrop-blur-sm">
-                    <Star className="w-3 h-3 mr-1 fill-primary text-primary" />
-                    {averageRating} ({reviewCount})
-                  </Badge>
-                )}
+              {/* Badges - Top left */}
+              <div className="absolute top-2 left-2 flex flex-wrap gap-1.5">
                 {isVerified && (
-                  <Badge variant="secondary" className="neon-glow backdrop-blur-sm">
+                  <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-background/80 backdrop-blur-sm">
                     <CheckCircle className="w-3 h-3 mr-1" />
                     Verified
                   </Badge>
                 )}
-                {hasMultipleRooms && !isApartmentBuilding && (
-                  <Badge variant="secondary" className="backdrop-blur-sm">
-                    {roomTypes.length} Room Types
+                {isApartmentBuilding && (
+                  <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-400 border-purple-500/30 backdrop-blur-sm">
+                    <Building2 className="w-3 h-3 mr-1" />
+                    Apartments
                   </Badge>
                 )}
               </div>
 
+              {/* Rating badge - Top right */}
+              {averageRating && (
+                <div className="absolute top-2 right-2">
+                  <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-background/80 backdrop-blur-sm">
+                    <Star className="w-3 h-3 mr-1 fill-primary text-primary" />
+                    {averageRating}
+                  </Badge>
+                </div>
+              )}
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-4">
+            <div className="p-3 space-y-2">
+              {/* Name & Location */}
               <div>
-                <h3 className="text-2xl font-black gradient-text mb-2 line-clamp-1">{dorm.dorm_name}</h3>
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <MapPin className="w-4 h-4" />
+                <h3 className="text-base font-semibold text-foreground line-clamp-1">{dorm.dorm_name}</h3>
+                <div className="flex items-center gap-1 text-muted-foreground text-xs mt-0.5">
+                  <MapPin className="w-3 h-3" />
                   <span className="line-clamp-1">{dorm.area || dorm.location}</span>
                 </div>
               </div>
 
-              <div className="flex items-end justify-between">
+              {/* Amenities Preview Row */}
+              {previewAmenities.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {previewAmenities.map((amenity, idx) => (
+                    <div key={idx} className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                      {renderAmenityIcon(amenity)}
+                    </div>
+                  ))}
+                  {remainingAmenities > 0 && (
+                    <span className="text-xs text-muted-foreground">+{remainingAmenities}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Price & Info Row */}
+              <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">
-                    Starting Price
-                  </div>
-                  <div className="text-3xl font-black gradient-text">${startingPrice}</div>
+                  <div className="text-lg font-bold text-foreground">${startingPrice}<span className="text-xs font-normal text-muted-foreground">/mo</span></div>
                 </div>
-                
-                <div className="flex flex-col items-end gap-2">
-                  {dorm.gender_preference && (
-                    <Badge variant="outline" className="text-xs">
-                      {dorm.gender_preference === 'Male' && '♂ Male Only'}
-                      {dorm.gender_preference === 'Female' && '♀ Female Only'}
-                      {dorm.gender_preference === 'Mixed' && '⚥ Co-ed'}
-                    </Badge>
-                  )}
-                  {hasMultipleRooms && (
-                    <Badge variant="outline" className="text-xs">
-                      Click to explore
-                    </Badge>
-                  )}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-0.5">
+                    <DoorOpen className="w-3 h-3" />
+                    {roomCount}
+                  </span>
+                  <span className="flex items-center gap-0.5">
+                    <Bed className="w-3 h-3" />
+                    {bedCount}
+                  </span>
                 </div>
+              </div>
+
+              {/* Gender preference */}
+              {dorm.gender_preference && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                  {dorm.gender_preference === 'Male' && '♂ Male'}
+                  {dorm.gender_preference === 'Female' && '♀ Female'}
+                  {dorm.gender_preference === 'Mixed' && '⚥ Co-ed'}
+                </Badge>
+              )}
+
+              {/* CTA Buttons */}
+              <div className="flex gap-2 pt-1">
+                <Button
+                  onClick={handleViewBuilding}
+                  size="sm"
+                  className="flex-1 h-8 text-xs"
+                >
+                  View Building
+                </Button>
+                <Button
+                  onClick={handleQuickLook}
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs px-3"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                </Button>
               </div>
             </div>
           </div>
 
           {/* Back Face */}
           <div
-            className="absolute inset-0 flip-card-3d glass-hover rounded-3xl overflow-visible border border-border shadow-xl"
+            className="absolute inset-0 flip-card-3d rounded-2xl overflow-hidden border border-border bg-card shadow-lg"
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateX(180deg)",
             }}
           >
-            <div className="flex flex-col h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/30 p-6">
-              {/* Share and Save Buttons */}
-              <div className="flex justify-end gap-2 mb-4">
-                <ShareButton 
-                  dormId={dorm.id} 
-                  dormName={dorm.dorm_name}
-                  size="icon"
-                  variant="ghost"
-                  className="p-2 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:bg-background"
-                />
-                <button
-                  onClick={toggleSave}
-                  className="save-button p-2 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:bg-background transition-colors"
-                  aria-label={isSaved ? "Remove from favorites" : "Save to favorites"}
-                >
-                  <Bookmark
-                    className={`w-5 h-5 transition-colors ${
-                      isSaved ? "fill-primary text-primary" : "text-muted-foreground"
-                    }`}
+            <div className="flex flex-col h-full p-4">
+              {/* Header with Actions */}
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-semibold text-foreground line-clamp-1">{dorm.dorm_name}</h3>
+                  {dorm.university && <p className="text-xs text-muted-foreground">Near {dorm.university}</p>}
+                </div>
+                <div className="flex gap-1.5 ml-2">
+                  <ShareButton 
+                    dormId={dorm.id} 
+                    dormName={dorm.dorm_name}
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 rounded-full bg-muted/50 hover:bg-muted"
                   />
-                </button>
+                  <button
+                    onClick={toggleSave}
+                    className="save-button h-8 w-8 rounded-full bg-muted/50 hover:bg-muted flex items-center justify-center transition-colors"
+                    aria-label={isSaved ? "Remove from favorites" : "Save to favorites"}
+                  >
+                    <Bookmark
+                      className={`w-4 h-4 transition-colors ${
+                        isSaved ? "fill-primary text-primary" : "text-muted-foreground"
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-xl font-black gradient-text mb-2 line-clamp-2">{dorm.dorm_name}</h3>
-                  {dorm.university && <p className="text-sm text-muted-foreground">Near {dorm.university}</p>}
-                </div>
-
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto space-y-3 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted">
+                {/* Room Types */}
                 {hasMultipleRooms && (
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-muted-foreground">Available Rooms:</p>
+                  <div>
+                    <p className="text-[10px] font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">Room Options</p>
                     <div className="flex flex-wrap gap-1">
-                      {roomTypes.map((room, i) => (
-                        <Badge key={i} variant="outline" className="text-xs">
+                      {roomTypes.slice(0, 4).map((room, i) => (
+                        <Badge key={i} variant="outline" className="text-[10px] px-1.5 py-0">
                           {room.type} - ${room.price}
                         </Badge>
                       ))}
+                      {roomTypes.length > 4 && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          +{roomTypes.length - 4} more
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {/* Transportation - Only show if shuttle is available */}
+                {/* Shuttle */}
                 {dorm.shuttle && (
-                  <Badge variant="secondary" className="w-fit">
+                  <Badge variant="secondary" className="text-xs w-fit">
                     <Zap className="w-3 h-3 mr-1" />
                     Shuttle Available
                   </Badge>
                 )}
 
+                {/* Address */}
                 {dorm.address && (
-                  <div className="text-sm text-foreground">
-                    <p className="font-semibold mb-1">Address:</p>
-                    <p className="text-muted-foreground line-clamp-2">{dorm.address}</p>
+                  <div>
+                    <p className="text-[10px] font-medium text-muted-foreground mb-1 uppercase tracking-wide">Address</p>
+                    <p className="text-xs text-foreground line-clamp-2">{dorm.address}</p>
                   </div>
                 )}
 
+                {/* Amenities */}
                 {dorm.amenities && dorm.amenities.length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-muted-foreground mb-2">Services & Amenities:</p>
-                    <div className="grid grid-cols-2 gap-2">
+                    <p className="text-[10px] font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">Amenities</p>
+                    <div className="grid grid-cols-2 gap-1.5">
                       {dorm.amenities.slice(0, 6).map((amenity, i) => (
-                        <div key={i} className="flex items-center gap-2 text-xs text-foreground">
+                        <div key={i} className="flex items-center gap-1.5 text-xs text-foreground">
                           {renderAmenityIcon(amenity)}
                           <span className="truncate">{amenity}</span>
                         </div>
@@ -400,33 +465,39 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
                 )}
               </div>
 
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setReviewModalOpen(true);
-                }}
-                variant="outline"
-                className="w-full mt-4"
-              >
-                <Star className="w-4 h-4 mr-2" />
-                Rate & Review
-              </Button>
-
-              <Button
-                onClick={handleLearnMore}
-                className="w-full mt-3"
-                aria-label={
-                  hasMultipleRooms
-                    ? `View all ${roomTypes.length} room types for ${dorm.dorm_name}`
-                    : `Learn more about ${dorm.dorm_name}`
-                }
-              >
-                {hasMultipleRooms ? "View All Rooms" : "Learn More"}
-              </Button>
+              {/* Action Buttons - Fixed at bottom */}
+              <div className="pt-3 space-y-2 border-t border-border/50 mt-2">
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setReviewModalOpen(true);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="w-full h-8 text-xs"
+                >
+                  <Star className="w-3.5 h-3.5 mr-1.5" />
+                  Rate & Review
+                </Button>
+                <Button
+                  onClick={handleViewBuilding}
+                  size="sm"
+                  className="w-full h-8 text-xs"
+                >
+                  {hasMultipleRooms ? "View All Rooms" : "Learn More"}
+                </Button>
+              </div>
             </div>
           </div>
         </motion.div>
       </motion.div>
+
+      {/* Quick Look Modal */}
+      <BuildingQuickLookModal
+        open={quickLookOpen}
+        onOpenChange={setQuickLookOpen}
+        building={dorm}
+      />
 
       <ReviewFormModal
         open={reviewModalOpen}
