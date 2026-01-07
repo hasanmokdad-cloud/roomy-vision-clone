@@ -5,7 +5,7 @@ import { ArrowLeft, Building2 } from 'lucide-react';
 import { ApartmentCard } from './ApartmentCard';
 import { BedroomListView } from './BedroomListView';
 import { useApartmentDetails } from '@/hooks/useApartmentDetails';
-import { useMultipleApartmentAvailability, getAvailabilityCounts } from '@/hooks/useApartmentAvailability';
+import { useMultipleApartmentAvailability } from '@/hooks/useApartmentAvailability';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface ApartmentListViewProps {
@@ -108,16 +108,12 @@ const ApartmentListViewComponent = ({
               const availability = availabilityMap.get(apartment.id);
               if (!availability) return null;
 
-              const { availableBedrooms, availableBeds } = getAvailabilityCounts(apartment, availability);
-
               return (
                 <ApartmentCard
                   key={apartment.id}
                   apartment={apartment}
                   pricingTiers={apartment.pricingTiers}
                   bedroomCount={apartment.bedrooms.length}
-                  availableBedroomsCount={availableBedrooms}
-                  availableBedsCount={availableBeds}
                   availability={availability}
                   index={index}
                   onReserveApartment={() => onReserve?.('apartment', apartment.id, apartment.id)}

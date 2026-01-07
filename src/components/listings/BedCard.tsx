@@ -16,6 +16,7 @@ interface BedCardProps {
     capacityContribution: number;
   };
   canReserve: boolean;
+  isBedroomReservedAsWhole?: boolean;  // NEW: When bedroom is reserved, hide this bed
   index: number;
   onReserve: () => void;
 }
@@ -23,6 +24,7 @@ interface BedCardProps {
 const BedCardComponent = ({
   bed,
   canReserve,
+  isBedroomReservedAsWhole = false,
   index,
   onReserve,
 }: BedCardProps) => {
@@ -38,7 +40,8 @@ const BedCardComponent = ({
     }
   }, [bed.bedType]);
 
-  const isAvailable = bed.available && canReserve;
+  // Strict availability: bed is available only if not reserved and bedroom not reserved as whole
+  const isAvailable = bed.available && canReserve && !isBedroomReservedAsWhole;
 
   return (
     <motion.div
@@ -112,10 +115,14 @@ const BedCardComponent = ({
             </Button>
           )}
 
-          {/* Not Available Message */}
+          {/* Not Available Message - More specific */}
           {!isAvailable && (
             <p className="text-xs text-muted-foreground text-center italic">
-              {!bed.available ? 'Already reserved' : 'Bedroom reserved as whole'}
+              {isBedroomReservedAsWhole 
+                ? '🔒 Bedroom reserved as whole' 
+                : !bed.available 
+                  ? 'Already reserved' 
+                  : 'Not available'}
             </p>
           )}
         </CardContent>

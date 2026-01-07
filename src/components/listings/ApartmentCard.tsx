@@ -26,8 +26,6 @@ interface ApartmentCardProps {
   };
   pricingTiers: PricingTier[];
   bedroomCount: number;
-  availableBedroomsCount: number;
-  availableBedsCount: number;
   availability: AvailabilityState;
   index: number;
   onReserveApartment: () => void;
@@ -38,13 +36,14 @@ const ApartmentCardComponent = ({
   apartment,
   pricingTiers,
   bedroomCount,
-  availableBedroomsCount,
-  availableBedsCount,
   availability,
   index,
   onReserveApartment,
   onViewBedrooms,
 }: ApartmentCardProps) => {
+  // Use availability counts from the strict availability engine
+  const availableBedroomsCount = availability.availableBedroomsCount;
+  const availableBedsCount = availability.availableBedsCount;
   // Calculate starting price per resident
   const startingPrice = useMemo(() => {
     if (pricingTiers.length === 0) return 0;
@@ -75,8 +74,10 @@ const ApartmentCardComponent = ({
 
   const apartmentImage = apartment.images?.[0] || '/placeholder.svg';
 
-  const canReserve = availability.canReserveFullApartment && apartment.enableFullApartmentReservation;
+  // Use strict availability flags
+  const canReserve = availability.apartmentReservable;
   const hasBedrooms = bedroomCount > 0;
+  const isLocked = availability.isApartmentLocked;
 
   return (
     <motion.div
@@ -127,21 +128,32 @@ const ApartmentCardComponent = ({
             </div>
           </div>
 
-          {/* Availability Stats */}
+          {/* Availability Stats - Using strict availability counts */}
           <div className="flex items-center gap-4 text-sm">
             {apartment.enableBedroomReservation && (
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <DoorOpen className="w-4 h-4" />
-                <span>{availableBedroomsCount} bedrooms available</span>
+                <span>
+                  {availableBedroomsCount}/{availability.totalBedroomsCount} bedrooms
+                </span>
               </div>
             )}
             {apartment.enableBedReservation && (
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <BedDouble className="w-4 h-4" />
-                <span>{availableBedsCount} beds available</span>
+                <span>
+                  {availableBedsCount}/{availability.totalBedsCount} beds
+                </span>
               </div>
             )}
           </div>
+          
+          {/* Locked Status Warning */}
+          {isLocked && (
+            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">
+              <span>🔒 Apartment is fully reserved</span>
+            </div>
+          )}
 
           {/* Enabled Modes Badges */}
           <div className="flex flex-wrap gap-1.5">
@@ -190,10 +202,14 @@ const ApartmentCardComponent = ({
             )}
           </div>
 
-          {/* Availability Warning */}
-          {!canReserve && apartment.enableFullApartmentReservation && (
+          {/* Availability Warning - More specific messaging */}
+          {!canReserve && apartment.enableFullApartmentReservation && !isLocked && (
             <p className="text-xs text-muted-foreground text-center italic">
-              {availability.reason || 'Full apartment not available - beds or bedrooms already reserved'}
+              {availability.hasAnyBedReserved 
+                ? 'Beds already reserved - full apartment unavailable'
+                : availability.hasAnyBedroomReserved
+                  ? 'Bedrooms already reserved - full apartment unavailable'
+                  : availability.reason || 'Full apartment not available'}
             </p>
           )}
         </CardContent>
