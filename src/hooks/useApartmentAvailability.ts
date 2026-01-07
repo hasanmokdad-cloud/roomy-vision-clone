@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { calculateAvailability, type AvailabilityState } from '@/utils/apartmentAvailability';
+import { calculateAvailability, getAvailabilitySummary, type AvailabilityState } from '@/utils/apartmentAvailability';
 import type { ApartmentData, Reservation } from './useApartmentDetails';
 
 interface ApartmentConfig {
@@ -9,7 +9,7 @@ interface ApartmentConfig {
   enableBedReservation: boolean;
   bedrooms: Array<{
     id: string;
-    beds: Array<{ id: string }>;
+    beds: Array<{ id: string; available?: boolean }>;
   }>;
 }
 
@@ -23,12 +23,24 @@ interface ReservationForCalc {
 }
 
 /**
+ * Extended availability state with helper methods
+ */
+export interface ExtendedAvailability extends AvailabilityState {
+  // Summary for display
+  statusText: string;
+  isFullyAvailable: boolean;
+  isPartiallyAvailable: boolean;
+  isFullyBooked: boolean;
+}
+
+/**
  * Hook to calculate availability for a single apartment
+ * Returns extended availability with all exposed metrics
  */
 export function useApartmentAvailability(
   apartment: ApartmentData | null,
   reservations: Reservation[]
-): AvailabilityState | null {
+): ExtendedAvailability | null {
   return useMemo(() => {
     if (!apartment) return null;
 
@@ -39,7 +51,7 @@ export function useApartmentAvailability(
       enableBedReservation: apartment.enableBedReservation,
       bedrooms: apartment.bedrooms.map(br => ({
         id: br.id,
-        beds: br.beds.map(bed => ({ id: bed.id })),
+        beds: br.beds.map(bed => ({ id: bed.id, available: bed.available })),
       })),
     };
 
@@ -54,19 +66,26 @@ export function useApartmentAvailability(
         status: r.status,
       }));
 
-    return calculateAvailability(config, reservationsForCalc);
+    const availability = calculateAvailability(config, reservationsForCalc);
+    const summary = getAvailabilitySummary(availability);
+
+    return {
+      ...availability,
+      ...summary,
+    };
   }, [apartment, reservations]);
 }
 
 /**
  * Hook to calculate availability for multiple apartments
+ * Returns extended availability with all exposed metrics
  */
 export function useMultipleApartmentAvailability(
   apartments: ApartmentData[],
   reservations: Reservation[]
-): Map<string, AvailabilityState> {
+): Map<string, ExtendedAvailability> {
   return useMemo(() => {
-    const availabilityMap = new Map<string, AvailabilityState>();
+    const availabilityMap = new Map<string, ExtendedAvailability>();
 
     apartments.forEach(apartment => {
       const config: ApartmentConfig = {
@@ -76,7 +95,7 @@ export function useMultipleApartmentAvailability(
         enableBedReservation: apartment.enableBedReservation,
         bedrooms: apartment.bedrooms.map(br => ({
           id: br.id,
-          beds: br.beds.map(bed => ({ id: bed.id })),
+          beds: br.beds.map(bed => ({ id: bed.id, available: bed.available })),
         })),
       };
 
@@ -91,7 +110,13 @@ export function useMultipleApartmentAvailability(
           status: r.status,
         }));
 
-      availabilityMap.set(apartment.id, calculateAvailability(config, reservationsForCalc));
+      const availability = calculateAvailability(config, reservationsForCalc);
+      const summary = getAvailabilitySummary(availability);
+
+      availabilityMap.set(apartment.id, {
+        ...availability,
+        ...summary,
+      });
     });
 
     return availabilityMap;
@@ -100,25 +125,15 @@ export function useMultipleApartmentAvailability(
 
 /**
  * Calculate available bedrooms and beds count for an apartment
+ * NOTE: This now uses the counts directly from AvailabilityState
  */
 export function getAvailabilityCounts(
-  apartment: ApartmentData,
   availability: AvailabilityState
-): { availableBedrooms: number; availableBeds: number } {
-  let availableBedrooms = 0;
-  let availableBeds = 0;
-
-  apartment.bedrooms.forEach(bedroom => {
-    if (availability.canReserveBedroom[bedroom.id]) {
-      availableBedrooms++;
-    }
-
-    bedroom.beds.forEach(bed => {
-      if (availability.canReserveBed[bed.id] && bed.available) {
-        availableBeds++;
-      }
-    });
-  });
-
-  return { availableBedrooms, availableBeds };
+): { availableBedrooms: number; availableBeds: number; totalBedrooms: number; totalBeds: number } {
+  return {
+    availableBedrooms: availability.availableBedroomsCount,
+    availableBeds: availability.availableBedsCount,
+    totalBedrooms: availability.totalBedroomsCount,
+    totalBeds: availability.totalBedsCount,
+  };
 }

@@ -32,6 +32,8 @@ interface BedroomCardProps {
   beds: BedData[];
   canReserveBedroom: boolean;
   canViewBeds: boolean;
+  isBedroomReservedAsWhole?: boolean;  // NEW: For hiding beds when bedroom reserved
+  hasReservedBeds?: boolean;            // NEW: For disabling bedroom reservation
   index: number;
   onReserveBedroom: () => void;
   onViewBeds: () => void;
@@ -42,6 +44,8 @@ const BedroomCardComponent = ({
   beds,
   canReserveBedroom,
   canViewBeds,
+  isBedroomReservedAsWhole = false,
+  hasReservedBeds = false,
   index,
   onReserveBedroom,
   onViewBeds,
@@ -186,10 +190,15 @@ const BedroomCardComponent = ({
             )}
           </div>
 
-          {/* Availability Message */}
-          {!canReserveBedroom && (bedroom.pricingMode === 'per_bedroom' || bedroom.pricingMode === 'both') && (
+          {/* Availability Message - More specific based on state */}
+          {isBedroomReservedAsWhole && (
+            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">
+              <span>🔒 Bedroom is reserved as a whole</span>
+            </div>
+          )}
+          {!canReserveBedroom && !isBedroomReservedAsWhole && hasReservedBeds && (bedroom.pricingMode === 'per_bedroom' || bedroom.pricingMode === 'both') && (
             <p className="text-xs text-muted-foreground text-center italic">
-              Bedroom not available - beds already reserved
+              Beds already reserved - whole bedroom unavailable
             </p>
           )}
         </CardContent>

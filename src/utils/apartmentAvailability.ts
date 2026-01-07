@@ -1,6 +1,11 @@
 /**
  * Apartment Availability Utilities
- * Implements FLEX MODE mutual exclusivity rules
+ * Implements STRICT FLEX MODE mutual exclusivity rules
+ * 
+ * Rules:
+ * 1. If apartment.reserved == true → hide bedroom + bed reservations
+ * 2. If any bed.reserved == true → hide full apartment reservation
+ * 3. If bedroom.reserved_as_whole == true → hide its beds
  */
 
 interface Reservation {
@@ -13,10 +18,27 @@ interface Reservation {
 }
 
 export interface AvailabilityState {
+  // Per-item availability maps
   canReserveFullApartment: boolean;
   canReserveBedroom: Record<string, boolean>;
   canReserveBed: Record<string, boolean>;
   reason?: string;
+  
+  // EXPOSED: Explicit boolean flags
+  apartmentReservable: boolean;      // true if full apartment can be reserved
+  bedroomReservable: boolean;        // true if ANY bedroom is reservable
+  bedReservable: boolean;            // true if ANY bed is reservable
+  
+  // EXPOSED: Counts
+  availableBedroomsCount: number;
+  availableBedsCount: number;
+  totalBedroomsCount: number;
+  totalBedsCount: number;
+  
+  // Status flags for rule enforcement
+  isApartmentLocked: boolean;        // apartment is reserved
+  hasAnyBedReserved: boolean;        // any bed in apartment is reserved
+  hasAnyBedroomReserved: boolean;    // any bedroom is reserved as whole
 }
 
 interface ApartmentConfig {
@@ -26,15 +48,15 @@ interface ApartmentConfig {
   enableBedReservation: boolean;
   bedrooms: Array<{
     id: string;
-    beds: Array<{ id: string }>;
+    beds: Array<{ id: string; available?: boolean }>;
   }>;
 }
 
 /**
  * Calculate availability state based on current reservations
  * 
- * Rules:
- * 1. If apartment is reserved → hide bedroom & bed options
+ * STRICT Rules:
+ * 1. If apartment is reserved → hide ALL bedroom & bed options
  * 2. If ANY bed is reserved → hide full apartment reservation
  * 3. If bedroom reserved as whole → hide its beds
  * 4. If any bed in bedroom reserved → hide bedroom-as-whole option
@@ -48,18 +70,39 @@ export function calculateAvailability(
     ['active', 'confirmed', 'pending'].includes(r.status)
   );
 
+  // Initialize counts
+  const totalBedroomsCount = apartment.bedrooms.length;
+  const totalBedsCount = apartment.bedrooms.reduce((sum, br) => sum + br.beds.length, 0);
+
   // Initialize availability based on apartment config
   const result: AvailabilityState = {
     canReserveFullApartment: apartment.enableFullApartmentReservation,
     canReserveBedroom: {},
     canReserveBed: {},
+    
+    // Exposed flags - will be computed
+    apartmentReservable: apartment.enableFullApartmentReservation,
+    bedroomReservable: false,
+    bedReservable: false,
+    
+    // Counts - will be computed
+    availableBedroomsCount: 0,
+    availableBedsCount: 0,
+    totalBedroomsCount,
+    totalBedsCount,
+    
+    // Status flags
+    isApartmentLocked: false,
+    hasAnyBedReserved: false,
+    hasAnyBedroomReserved: false,
   };
 
   // Initialize bedroom and bed availability
   apartment.bedrooms.forEach(br => {
     result.canReserveBedroom[br.id] = apartment.enableBedroomReservation;
     br.beds.forEach(bed => {
-      result.canReserveBed[bed.id] = apartment.enableBedReservation;
+      // Only mark as reservable if bed itself is available
+      result.canReserveBed[bed.id] = apartment.enableBedReservation && (bed.available !== false);
     });
   });
 
@@ -69,15 +112,24 @@ export function calculateAvailability(
   );
 
   if (apartmentReservation) {
-    // Rule 1: Apartment is reserved → hide all bedroom & bed options
+    // RULE 1: Apartment is reserved → hide ALL bedroom & bed options
+    result.isApartmentLocked = true;
     result.canReserveFullApartment = false;
+    result.apartmentReservable = false;
+    
     apartment.bedrooms.forEach(br => {
       result.canReserveBedroom[br.id] = false;
       br.beds.forEach(bed => {
         result.canReserveBed[bed.id] = false;
       });
     });
+    
     result.reason = 'Apartment is fully reserved';
+    result.availableBedroomsCount = 0;
+    result.availableBedsCount = 0;
+    result.bedroomReservable = false;
+    result.bedReservable = false;
+    
     return result;
   }
 
@@ -87,8 +139,11 @@ export function calculateAvailability(
   );
 
   if (bedReservations.length > 0) {
-    // Rule 2: If ANY bed is reserved → hide full apartment reservation
+    result.hasAnyBedReserved = true;
+    
+    // RULE 2: If ANY bed is reserved → hide full apartment reservation
     result.canReserveFullApartment = false;
+    result.apartmentReservable = false;
 
     // Mark reserved beds as unavailable
     bedReservations.forEach(r => {
@@ -97,7 +152,7 @@ export function calculateAvailability(
       }
     });
 
-    // Rule 4: If any bed in bedroom reserved → hide bedroom-as-whole option
+    // RULE 4: If any bed in bedroom reserved → hide bedroom-as-whole option
     apartment.bedrooms.forEach(br => {
       const hasReservedBed = bedReservations.some(r =>
         br.beds.some(bed => bed.id === r.bedId)
@@ -114,15 +169,18 @@ export function calculateAvailability(
   );
 
   if (bedroomReservations.length > 0) {
-    // Rule 2: If any bedroom reserved → hide full apartment
+    result.hasAnyBedroomReserved = true;
+    
+    // RULE 2: If any bedroom reserved → hide full apartment
     result.canReserveFullApartment = false;
+    result.apartmentReservable = false;
 
     bedroomReservations.forEach(r => {
       if (r.bedroomId) {
         // Mark bedroom as unavailable
         result.canReserveBedroom[r.bedroomId] = false;
 
-        // Rule 3: Bedroom reserved as whole → hide its beds
+        // RULE 3: Bedroom reserved as whole → hide its beds
         const bedroom = apartment.bedrooms.find(br => br.id === r.bedroomId);
         if (bedroom) {
           bedroom.beds.forEach(bed => {
@@ -132,6 +190,20 @@ export function calculateAvailability(
       }
     });
   }
+
+  // Calculate final counts
+  result.availableBedroomsCount = Object.values(result.canReserveBedroom).filter(Boolean).length;
+  result.availableBedsCount = Object.values(result.canReserveBed).filter(Boolean).length;
+  
+  // Set exposed boolean flags
+  result.bedroomReservable = result.availableBedroomsCount > 0 && apartment.enableBedroomReservation;
+  result.bedReservable = result.availableBedsCount > 0 && apartment.enableBedReservation;
+  
+  // Final apartment reservable check
+  result.apartmentReservable = result.canReserveFullApartment && 
+    apartment.enableFullApartmentReservation && 
+    !result.hasAnyBedReserved && 
+    !result.hasAnyBedroomReserved;
 
   return result;
 }
@@ -150,10 +222,10 @@ export function canMakeReservation(
   switch (level) {
     case 'apartment':
       return {
-        allowed: availability.canReserveFullApartment,
-        reason: availability.canReserveFullApartment
+        allowed: availability.apartmentReservable,
+        reason: availability.apartmentReservable
           ? undefined
-          : 'Full apartment reservation is not available',
+          : availability.reason || 'Full apartment reservation is not available',
       };
 
     case 'bedroom':
@@ -177,4 +249,36 @@ export function canMakeReservation(
     default:
       return { allowed: false, reason: 'Invalid reservation level' };
   }
+}
+
+/**
+ * Get availability summary for display
+ */
+export function getAvailabilitySummary(availability: AvailabilityState): {
+  statusText: string;
+  isFullyAvailable: boolean;
+  isPartiallyAvailable: boolean;
+  isFullyBooked: boolean;
+} {
+  const isFullyBooked = !availability.apartmentReservable && 
+    !availability.bedroomReservable && 
+    !availability.bedReservable;
+  
+  const isFullyAvailable = availability.apartmentReservable;
+  
+  const isPartiallyAvailable = !isFullyAvailable && !isFullyBooked;
+
+  let statusText = 'Fully Available';
+  if (isFullyBooked) {
+    statusText = 'Fully Booked';
+  } else if (isPartiallyAvailable) {
+    statusText = `${availability.availableBedsCount} beds available`;
+  }
+
+  return {
+    statusText,
+    isFullyAvailable,
+    isPartiallyAvailable,
+    isFullyBooked,
+  };
 }
