@@ -194,7 +194,7 @@ export function DescriptionStep({
           className="mt-6 p-4 rounded-xl bg-muted/50"
         >
           <p className="text-sm text-muted-foreground">
-            💡 <strong>Tips:</strong> Mention nearby landmarks, transportation, what's included, and any unique features that set your {dormLabel} apart.
+            💡 <strong>Tips:</strong> Mention nearby universities, hospitals, landmarks, transportation, what's included, and any unique features that set your listing apart.
           </p>
         </motion.div>
       </div>
