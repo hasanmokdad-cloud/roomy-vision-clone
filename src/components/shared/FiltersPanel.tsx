@@ -36,42 +36,11 @@ const universities = [
   'NDU'
 ];
 
-const byblosAreas = [
-  'Nahr Ibrahim',
-  'Byblos',
-  'Halat',
-  'Jeddayel',
-  'Mastita',
-  'Fidar',
-  'Habboub'
-];
+import { areasByCity } from '@/data/listingLocations';
 
-const beirutAreas = [
-  'Hamra',
-  'Manara',
-  'Ain El Mraisseh',
-  'Raoucheh',
-  'Ras Beirut',
-  'UNESCO',
-  'Geitawi',
-  'Dora',
-  'Badaro',
-  'Ashrafieh',
-  'Verdun',
-  'Sin El Fil',
-  'Dekwaneh',
-  'Jdeideh',
-  'Mar Elias',
-  'Borj Hammoud',
-  'Hazmieh',
-  'Furn El Chebbak',
-  'Tayouneh',
-  'Jnah',
-  'Ras Al Naba\'a',
-  'Gemmayze',
-  'Clemenceau',
-  'Khalde'
-];
+// Use centralized location data
+const byblosAreas = areasByCity.byblos;
+const beirutAreas = areasByCity.beirut;
 
 const areas = [...byblosAreas, ...beirutAreas].sort();
 

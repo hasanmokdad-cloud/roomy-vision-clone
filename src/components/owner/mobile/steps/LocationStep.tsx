@@ -1,18 +1,20 @@
 import { motion } from 'framer-motion';
-import { MapPin, Bus } from 'lucide-react';
+import { MapPin, Bus, Lightbulb } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { cities, areasByCity } from '@/data/dormLocations';
+import { cities, areasByCity, hasSubAreas, getSubAreas } from '@/data/listingLocations';
 import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface LocationStepProps {
   city: string;
   area: string;
+  subArea?: string;
   address: string;
   shuttle?: boolean;
   onCityChange: (value: string) => void;
   onAreaChange: (value: string) => void;
+  onSubAreaChange?: (value: string) => void;
   onAddressChange: (value: string) => void;
   onShuttleChange?: (value: boolean) => void;
   propertyType?: string;
@@ -21,10 +23,12 @@ interface LocationStepProps {
 export function LocationStep({
   city,
   area,
+  subArea = '',
   address,
   shuttle = false,
   onCityChange,
   onAreaChange,
+  onSubAreaChange,
   onAddressChange,
   onShuttleChange,
   propertyType = 'dorm',
@@ -32,6 +36,8 @@ export function LocationStep({
   const { dormLabel } = usePropertyTerminology(propertyType);
   const availableAreas = city ? areasByCity[city] || [] : [];
   const showShuttleToggle = city === 'byblos';
+  const showSubAreas = area && hasSubAreas(area);
+  const availableSubAreas = area ? getSubAreas(area) : [];
 
   return (
     <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
@@ -110,6 +116,37 @@ export function LocationStep({
             </motion.div>
           )}
 
+          {/* Sub-Area Selection */}
+          {showSubAreas && onSubAreaChange && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Label className="text-sm font-medium mb-3 block">
+                Sub-Area / Street
+              </Label>
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                {availableSubAreas.map((subAreaOption) => (
+                  <button
+                    key={subAreaOption}
+                    onClick={() => onSubAreaChange(subAreaOption)}
+                    className={`p-3 rounded-xl border transition-all text-left ${
+                      subArea === subAreaOption
+                        ? 'border-foreground bg-background shadow-sm'
+                        : 'border-border hover:border-foreground/50'
+                    }`}
+                  >
+                    <span className={`font-medium text-sm ${
+                      subArea === subAreaOption ? 'text-foreground' : 'text-foreground'
+                    }`}>
+                      {subAreaOption}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
           {/* Shuttle Service Toggle */}
           {showShuttleToggle && onShuttleChange && (
             <motion.div
@@ -149,6 +186,13 @@ export function LocationStep({
               placeholder="e.g., Main Street, Building 5"
               className="mt-2 h-12 text-base"
             />
+            {/* Tip Box */}
+            <div className="mt-3 p-3 rounded-xl bg-muted/50 flex items-start gap-2">
+              <Lightbulb className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                <strong>Tip:</strong> Mention nearby landmarks.
+              </p>
+            </div>
           </div>
         </motion.div>
       </div>

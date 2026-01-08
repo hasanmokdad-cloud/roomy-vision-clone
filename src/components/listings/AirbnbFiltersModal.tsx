@@ -48,17 +48,11 @@ interface AirbnbFiltersModalProps {
   rooms: Room[]; // For accurate room-level filtering
 }
 
-// Data
-const byblosAreas = [
-  'Blat', 'Nahr Ibrahim', 'Halat', 'Jeddayel', 'Mastita', 'Fidar', 'Habboub'
-];
+import { areasByCity } from '@/data/listingLocations';
 
-const beirutAreas = [
-  'Hamra', 'Manara', 'Ain El Mraisseh', 'Raoucheh', 'Ras Beirut', 'UNESCO',
-  'Geitawi', 'Dora', 'Badaro', 'Ashrafieh', 'Verdun', 'Sin El Fil', 'Dekwaneh',
-  'Jdeideh', 'Mar Elias', 'Borj Hammoud', 'Hazmieh', 'Furn El Chebbak',
-  'Tayouneh', 'Jnah', "Ras Al Naba'a", 'Gemmayze', 'Clemenceau', 'Khalde'
-];
+// Data from centralized location file
+const byblosAreas = areasByCity.byblos;
+const beirutAreas = areasByCity.beirut;
 
 const byblosUniversities = ['LAU Byblos'];
 const beirutUniversities = ['LAU Beirut', 'AUB', 'NDU', 'USJ', 'BAU', 'LU Hadat', 'Balamand Dekwaneh', 'Balamand ALBA', 'Haigazian', 'USEK'];

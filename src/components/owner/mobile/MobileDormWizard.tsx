@@ -57,6 +57,7 @@ interface WizardFormData {
   propertyType: string;
   city: string;
   area: string;
+  subArea: string;
   address: string;
   shuttle: boolean;
   capacity: number;
@@ -85,6 +86,7 @@ const INITIAL_FORM_DATA: WizardFormData = {
   propertyType: 'dorm',
   city: '',
   area: '',
+  subArea: '',
   address: '',
   shuttle: false,
   capacity: 1,
@@ -202,7 +204,7 @@ const highlightDescriptions: Record<string, string> = {
   'gym-access': 'Access to gym facilities to stay active.',
 };
 
-function generateDescriptionFromHighlights(highlights: string[]): string {
+function generateDescriptionFromHighlights(highlights: string[], propertyType: string): string {
   if (highlights.length === 0) return '';
   
   const descriptions = highlights
@@ -211,7 +213,10 @@ function generateDescriptionFromHighlights(highlights: string[]): string {
   
   if (descriptions.length === 0) return '';
   
-  return `Welcome to this wonderful dorm! ${descriptions.join(' ')}`;
+  // Use "student housing" for apartment type, "dorm" for dorm and hybrid
+  const accommodationType = propertyType === 'apartment' ? 'student housing' : 'dorm';
+  
+  return `Welcome to this wonderful ${accommodationType}! ${descriptions.join(' ')}`;
 }
 
 function createEmptyRoom(index: number): WizardRoomData {
@@ -502,7 +507,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     // When moving from highlights step (step 5) to description step (step 6),
     // generate description if not already set AND not manually edited
     if (currentStep === 5 && formData.highlights.length > 0 && !formData.description && !formData.descriptionManuallyEdited) {
-      const generatedDesc = generateDescriptionFromHighlights(formData.highlights);
+      const generatedDesc = generateDescriptionFromHighlights(formData.highlights, formData.propertyType);
       setFormData(prev => ({ ...prev, description: generatedDesc }));
     }
 
@@ -943,10 +948,22 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           <LocationStep
             city={formData.city}
             area={formData.area}
+            subArea={formData.subArea}
             address={formData.address}
             shuttle={formData.shuttle}
-            onCityChange={(v) => setFormData({ ...formData, city: v, area: '', shuttle: false })}
-            onAreaChange={(v) => setFormData({ ...formData, area: v })}
+            onCityChange={(v) => setFormData({ ...formData, city: v, area: '', subArea: '', shuttle: false })}
+            onAreaChange={(v) => {
+              // Auto-generate address when area changes
+              const cityLabel = formData.city === 'beirut' ? 'Beirut' : formData.city === 'byblos' ? 'Byblos' : formData.city;
+              const newAddress = `${v}, ${cityLabel}`;
+              setFormData({ ...formData, area: v, subArea: '', address: newAddress });
+            }}
+            onSubAreaChange={(v) => {
+              // Auto-generate address when sub-area changes
+              const cityLabel = formData.city === 'beirut' ? 'Beirut' : formData.city === 'byblos' ? 'Byblos' : formData.city;
+              const newAddress = v ? `${v}, ${formData.area}, ${cityLabel}` : `${formData.area}, ${cityLabel}`;
+              setFormData({ ...formData, subArea: v, address: newAddress });
+            }}
             onAddressChange={(v) => setFormData({ ...formData, address: v })}
             onShuttleChange={(v) => setFormData({ ...formData, shuttle: v })}
             propertyType={formData.propertyType}
