@@ -48,14 +48,13 @@ interface AirbnbFiltersModalProps {
   rooms: Room[]; // For accurate room-level filtering
 }
 
-import { areasByCity } from '@/data/listingLocations';
+import { areasByLocation, primaryLocations } from '@/data/listingLocations';
+import { getSelectableUniversitiesForLocation } from '@/data/universitiesData';
 
 // Data from centralized location file
-const byblosAreas = areasByCity.byblos;
-const beirutAreas = areasByCity.beirut;
-
-const byblosUniversities = ['LAU Byblos'];
-const beirutUniversities = ['LAU Beirut', 'AUB', 'NDU', 'USJ', 'BAU', 'LU Hadat', 'Balamand Dekwaneh', 'Balamand ALBA', 'Haigazian', 'USEK'];
+const byblosAreas = areasByLocation.byblos || [];
+const beirutAreas = areasByLocation.beirut || [];
+const keserwanAreas = areasByLocation.keserwan || [];
 
 import { studentRoomTypes, matchesRoomTypeFilter } from '@/data/roomTypes';
 
@@ -209,9 +208,10 @@ export function AirbnbFiltersModal({
   const selectedCity = localFilters.cities.length === 1 ? localFilters.cities[0] : null;
   const isByblos = selectedCity === 'Byblos';
   const isBeirut = selectedCity === 'Beirut';
+  const isKeserwan = selectedCity === 'Keserwan';
 
-  const visibleAreas = isByblos ? byblosAreas : isBeirut ? beirutAreas : [];
-  const visibleUniversities = isByblos ? byblosUniversities : isBeirut ? beirutUniversities : [];
+  const visibleAreas = isByblos ? byblosAreas : isBeirut ? beirutAreas : isKeserwan ? keserwanAreas : [];
+  const visibleUniversities = selectedCity ? getSelectableUniversitiesForLocation(selectedCity.toLowerCase()) : [];
 
   const updateFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => {
     setLocalFilters(prev => ({ ...prev, [key]: value }));
@@ -416,16 +416,16 @@ export function AirbnbFiltersModal({
 
       <hr className="border-border" />
 
-      {/* City Section - comes right after Budget */}
+      {/* Primary Location Section - comes right after Budget */}
       <section className="space-y-4">
-        <h3 className="text-base font-semibold">City</h3>
+        <h3 className="text-base font-semibold">Primary Location</h3>
         <div className="flex gap-3">
-          {['Byblos', 'Beirut'].map((city) => (
+          {['Byblos', 'Beirut', 'Keserwan'].map((city) => (
             <button
               key={city}
               onClick={() => handleCitySelect(city)}
               className={cn(
-                "flex-1 px-6 py-3 rounded-xl border text-sm font-medium transition-colors",
+                "flex-1 px-4 py-3 rounded-xl border text-sm font-medium transition-colors",
                 localFilters.cities.includes(city)
                   ? "bg-foreground text-background border-foreground"
                   : "border-border hover:border-foreground"
@@ -627,16 +627,16 @@ export function AirbnbFiltersModal({
             <div className="flex flex-wrap gap-2">
               {visibleUniversities.map((uni) => (
                 <button
-                  key={uni}
-                  onClick={() => toggleArrayFilter('universities', uni)}
+                  key={uni.id}
+                  onClick={() => toggleArrayFilter('universities', uni.shortName)}
                   className={cn(
                     "px-4 py-2 rounded-full border text-sm transition-colors",
-                    localFilters.universities.includes(uni)
+                    localFilters.universities.includes(uni.shortName)
                       ? "bg-foreground text-background border-foreground"
                       : "border-border hover:border-foreground"
                   )}
                 >
-                  {uni}
+                  {uni.shortName}
                 </button>
               ))}
             </div>

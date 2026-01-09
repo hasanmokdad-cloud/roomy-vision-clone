@@ -28,6 +28,7 @@ import { RoomCapacityStep } from './steps/RoomCapacityStep';
 import { RoomOccupancyStep } from './steps/RoomOccupancyStep';
 import { RoomMediaStep } from './steps/RoomMediaStep';
 import { HybridCapacityStep } from './steps/HybridCapacityStep';
+import { NearbyUniversitiesStep } from './steps/NearbyUniversitiesStep';
 import { ResponsiveAlertModal } from '@/components/ui/responsive-alert-modal';
 import Step1Video from '@/assets/wizard/step1-animation.mp4';
 import Step2Video from '@/assets/wizard/step2-animation.mp4';
@@ -60,6 +61,7 @@ interface WizardFormData {
   subArea: string;
   address: string;
   shuttle: boolean;
+  nearbyUniversities: string[];
   capacity: number;
   dormRoomCount?: number;    // For hybrid properties
   apartmentCount?: number;   // For hybrid properties
@@ -89,6 +91,7 @@ const INITIAL_FORM_DATA: WizardFormData = {
   subArea: '',
   address: '',
   shuttle: false,
+  nearbyUniversities: [],
   capacity: 1,
   dormRoomCount: undefined,
   apartmentCount: undefined,
@@ -951,16 +954,16 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             subArea={formData.subArea}
             address={formData.address}
             shuttle={formData.shuttle}
-            onCityChange={(v) => setFormData({ ...formData, city: v, area: '', subArea: '', shuttle: false })}
+            onCityChange={(v) => setFormData({ ...formData, city: v, area: '', subArea: '', shuttle: false, nearbyUniversities: [] })}
             onAreaChange={(v) => {
               // Auto-generate address when area changes
-              const cityLabel = formData.city === 'beirut' ? 'Beirut' : formData.city === 'byblos' ? 'Byblos' : formData.city;
+              const cityLabel = formData.city === 'beirut' ? 'Beirut' : formData.city === 'byblos' ? 'Byblos' : formData.city === 'keserwan' ? 'Keserwan' : formData.city;
               const newAddress = `${v}, ${cityLabel}`;
               setFormData({ ...formData, area: v, subArea: '', address: newAddress });
             }}
             onSubAreaChange={(v) => {
               // Auto-generate address when sub-area changes
-              const cityLabel = formData.city === 'beirut' ? 'Beirut' : formData.city === 'byblos' ? 'Byblos' : formData.city;
+              const cityLabel = formData.city === 'beirut' ? 'Beirut' : formData.city === 'byblos' ? 'Byblos' : formData.city === 'keserwan' ? 'Keserwan' : formData.city;
               const newAddress = v ? `${v}, ${formData.area}, ${cityLabel}` : `${formData.area}, ${cityLabel}`;
               setFormData({ ...formData, subArea: v, address: newAddress });
             }}
@@ -969,7 +972,17 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             propertyType={formData.propertyType}
           />
         );
+      // Nearby Universities (optional step after Location)
       case 9:
+        return (
+          <NearbyUniversitiesStep
+            selectedUniversities={formData.nearbyUniversities}
+            primaryLocation={formData.city}
+            onUniversitiesChange={(unis) => setFormData({ ...formData, nearbyUniversities: unis })}
+            propertyType={formData.propertyType}
+          />
+        );
+      case 10:
         return (
           <AmenitiesStep
             category="essentials"
@@ -980,7 +993,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             propertyType={formData.propertyType}
           />
         );
-      case 10:
+      case 11:
         return (
           <AmenitiesStep
             category="shared"
@@ -991,7 +1004,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             propertyType={formData.propertyType}
           />
         );
-      case 11:
+      case 12:
         return (
           <AmenitiesStep
             category="safety"
@@ -1002,7 +1015,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             propertyType={formData.propertyType}
           />
         );
-      case 12:
+      case 13:
         return (
           <PhotosStep
             coverImage={formData.coverImage}
@@ -1012,9 +1025,9 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             propertyType={formData.propertyType}
           />
         );
-      case 13:
-        return <AirbnbStepTransition phase={3} />;
       case 14:
+        return <AirbnbStepTransition phase={3} />;
+      case 15:
         if (formData.propertyType === 'hybrid') {
           return (
             <HybridCapacityStep
@@ -1032,7 +1045,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             propertyType={formData.propertyType}
           />
         );
-      case 15:
+      case 16:
         if (isApartmentFlow) {
           // Apartment flow skips this step (handled in handleNext)
           return null;
@@ -1044,7 +1057,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             propertyType={formData.propertyType}
           />
         );
-      case 16:
+      case 17:
         if (isApartmentFlow) {
           return (
             <ApartmentNamesStep
