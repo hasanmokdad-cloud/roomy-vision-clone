@@ -14,7 +14,7 @@ import { RoomUploadProgressBar, RoomUploadProgress } from '../RoomUploadProgress
 import { MediaDropZone } from '../MediaDropZone';
 import { DraggableRoomImages } from '../DraggableRoomImages';
 import { ImageEditorModal } from '@/components/owner/ImageEditorModal';
-import { VideoTrimmerModal } from '../VideoTrimmerModal';
+
 import { uploadFileWithProgress, generateFilePath, UploadHandle } from '@/utils/uploadWithProgress';
 import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
@@ -50,12 +50,6 @@ export function RoomMediaStep({ rooms, selectedIds, onChange, propertyType = 'do
     currentIndex: number;
   } | null>(null);
   
-  // Video Trimmer state
-  const [videoTrimmerOpen, setVideoTrimmerOpen] = useState(false);
-  const [trimmingVideoFile, setTrimmingVideoFile] = useState<File | null>(null);
-  const [pendingVideoUpload, setPendingVideoUpload] = useState<{
-    roomId: string | 'bulk';
-  } | null>(null);
 
   // File input refs for each room
   const imageInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -455,63 +449,18 @@ export function RoomMediaStep({ rooms, selectedIds, onChange, propertyType = 'do
     const imageFiles = files.filter(f => f.type.startsWith('image/'));
     const videoFiles = files.filter(f => f.type.startsWith('video/'));
     
-    // Handle video files first with trimmer
-    if (videoFiles.length > 0) {
-      setTrimmingVideoFile(videoFiles[0]);
-      setPendingVideoUpload({ roomId });
-      setVideoTrimmerOpen(true);
-      // If there are also images, we'll handle them after video
-      if (imageFiles.length > 0) {
-        setPendingUpload({ roomId, files: imageFiles, currentIndex: 0 });
-      }
-      return;
-    }
+    // Combine all files - images first, then videos
+    const allFiles = [...imageFiles, ...videoFiles];
     
-    // If there are images and we're not skipping editor, open editor
+    // If there are images and we're not skipping editor, open editor for first image
     if (imageFiles.length > 0 && !skipEditor) {
-      openEditorForFile(roomId, imageFiles, 0);
-    } else if (imageFiles.length > 0) {
-      startUpload(roomId, imageFiles);
+      openEditorForFile(roomId, allFiles, 0);
+    } else {
+      // No images or skipping editor - upload directly
+      startUpload(roomId, allFiles);
     }
   };
 
-  const handleVideoTrimSave = (trimmedFile: File) => {
-    setVideoTrimmerOpen(false);
-    setTrimmingVideoFile(null);
-    
-    if (pendingVideoUpload) {
-      // Upload the trimmed video
-      startUpload(pendingVideoUpload.roomId, [trimmedFile]);
-      
-      // If there are pending images, open editor for them
-      if (pendingUpload) {
-        setTimeout(() => {
-          openEditorForFile(pendingUpload.roomId, pendingUpload.files, 0);
-        }, 100);
-      }
-    }
-    
-    setPendingVideoUpload(null);
-  };
-
-  const handleVideoTrimSkip = () => {
-    setVideoTrimmerOpen(false);
-    
-    if (pendingVideoUpload && trimmingVideoFile) {
-      // Upload original video without trimming
-      startUpload(pendingVideoUpload.roomId, [trimmingVideoFile]);
-      
-      // If there are pending images, open editor for them
-      if (pendingUpload) {
-        setTimeout(() => {
-          openEditorForFile(pendingUpload.roomId, pendingUpload.files, 0);
-        }, 100);
-      }
-    }
-    
-    setTrimmingVideoFile(null);
-    setPendingVideoUpload(null);
-  };
 
   const handleReorderImages = (roomId: string, newOrder: string[]) => {
     const updated = rooms.map(room =>
@@ -647,62 +596,33 @@ export function RoomMediaStep({ rooms, selectedIds, onChange, propertyType = 'do
               />
             )}
 
-            <div className="flex gap-3">
-              {/* Bulk Image Upload */}
-              <label className="flex-1">
-                <Input
-                  type="file"
-                  accept={IMAGE_ACCEPT}
-                  multiple
-                  onChange={handleBulkImageUpload}
-                  disabled={isBulkUploading || effectiveSelectedIds.length === 0}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full rounded-xl gap-2"
-                  disabled={isBulkUploading || effectiveSelectedIds.length === 0}
-                  asChild
-                >
-                  <span>
-                    {isBulkUploading && bulkUploads.some(u => u.type === 'image' && u.status === 'uploading') ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <ImagePlus className="w-4 h-4" />
-                    )}
-                    Images
-                  </span>
-                </Button>
-              </label>
-
-              {/* Bulk Video Upload */}
-              <label className="flex-1">
-                <Input
-                  type="file"
-                  accept={VIDEO_ACCEPT}
-                  onChange={handleBulkVideoUpload}
-                  disabled={isBulkUploading || effectiveSelectedIds.length === 0}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full rounded-xl gap-2"
-                  disabled={isBulkUploading || effectiveSelectedIds.length === 0}
-                  asChild
-                >
-                  <span>
-                    {isBulkUploading && bulkUploads.some(u => u.type === 'video' && u.status === 'uploading') ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Video className="w-4 h-4" />
-                    )}
-                    Video
-                  </span>
-                </Button>
-              </label>
-            </div>
+            {/* Unified Add Media Button */}
+            <label className="w-full">
+              <Input
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                onChange={handleBulkImageUpload}
+                disabled={isBulkUploading || effectiveSelectedIds.length === 0}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full rounded-xl gap-2"
+                disabled={isBulkUploading || effectiveSelectedIds.length === 0}
+                asChild
+              >
+                <span>
+                  {isBulkUploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  Add media
+                </span>
+              </Button>
+            </label>
           </div>
         </MediaDropZone>
       </motion.div>
@@ -828,67 +748,35 @@ export function RoomMediaStep({ rooms, selectedIds, onChange, propertyType = 'do
                           </div>
                         )}
 
-                        {/* Upload buttons */}
-                        <div className="flex gap-2">
-                          <label className="flex-1">
-                            <Input
-                              type="file"
-                              accept={IMAGE_ACCEPT}
-                              multiple
-                              onChange={(e) => handleSingleRoomImageUpload(room.id, e)}
-                              disabled={roomIsUploading}
-                              className="hidden"
-                              ref={(el) => { imageInputRefs.current[room.id] = el; }}
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="w-full rounded-lg gap-2"
-                              disabled={roomIsUploading}
-                              asChild
-                            >
-                              <span>
-                                {roomIsUploading && uploads.some(u => u.type === 'image' && u.status === 'uploading') ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                  <ImagePlus className="w-4 h-4" />
-                                )}
-                                Add Images
-                              </span>
-                            </Button>
-                          </label>
-
-                          {!room.video_url && (
-                            <label className="flex-1">
-                              <Input
-                                type="file"
-                                accept={VIDEO_ACCEPT}
-                                onChange={(e) => handleSingleRoomVideoUpload(room.id, e)}
-                                disabled={roomIsUploading}
-                                className="hidden"
-                                ref={(el) => { videoInputRefs.current[room.id] = el; }}
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="w-full rounded-lg gap-2"
-                                disabled={roomIsUploading}
-                                asChild
-                              >
-                                <span>
-                                  {roomIsUploading && uploads.some(u => u.type === 'video' && u.status === 'uploading') ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                  ) : (
-                                    <Video className="w-4 h-4" />
-                                  )}
-                                  Add Video
-                                </span>
-                              </Button>
-                            </label>
-                          )}
-                        </div>
+                        {/* Unified Add Media Button */}
+                        <label className="w-full">
+                          <Input
+                            type="file"
+                            accept="image/*,video/*"
+                            multiple
+                            onChange={(e) => handleSingleRoomImageUpload(room.id, e)}
+                            disabled={roomIsUploading}
+                            className="hidden"
+                            ref={(el) => { imageInputRefs.current[room.id] = el; }}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full rounded-lg gap-2"
+                            disabled={roomIsUploading}
+                            asChild
+                          >
+                            <span>
+                              {roomIsUploading ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Upload className="w-4 h-4" />
+                              )}
+                              Add media
+                            </span>
+                          </Button>
+                        </label>
                       </div>
                     )}
                   </div>
@@ -919,20 +807,6 @@ export function RoomMediaStep({ rooms, selectedIds, onChange, propertyType = 'do
         />
       )}
       
-      {/* Video Trimmer Modal */}
-      {trimmingVideoFile && (
-        <VideoTrimmerModal
-          isOpen={videoTrimmerOpen}
-          onClose={() => {
-            setVideoTrimmerOpen(false);
-            setTrimmingVideoFile(null);
-            setPendingVideoUpload(null);
-          }}
-          videoFile={trimmingVideoFile}
-          onSave={handleVideoTrimSave}
-          onSkip={handleVideoTrimSkip}
-        />
-      )}
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Upload, X, Images, Image as ImageIcon, MapPin, Bus } from 'lucide-react';
 import { EnhancedImageUploader } from '@/components/owner/EnhancedImageUploader';
-import { cities, areasByCity } from '@/data/dormLocations';
+import { cities, areasByCity } from '@/data/listingLocations';
 
 interface DormEditModalProps {
   dorm: any;
