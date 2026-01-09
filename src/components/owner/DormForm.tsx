@@ -15,7 +15,7 @@ import { DormPreviewModal } from "./DormPreviewModal";
 import { validateEmail, validatePhone, validateUrl, sanitizeInput } from "@/utils/inputValidation";
 import { ImageDropzone } from "./ImageDropzone";
 import { DraggableImageList } from "./DraggableImageList";
-import { cities, areasByCity } from "@/data/dormLocations";
+import { cities, areasByCity } from "@/data/listingLocations";
 import { AMENITIES_LIST } from "@/config/amenities";
 
 // Use shared amenities config
