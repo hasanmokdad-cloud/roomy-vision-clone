@@ -1,12 +1,17 @@
 // Centralized location data for buildings/listings (NOT for student residential areas/hometown)
 // This is used by: LocationStep, AirbnbFiltersModal, FiltersPanel, LocationPreferencesStep
 
-export const cities = [
+// Primary locations (renamed from "cities" to be more accurate for areas like Keserwan)
+export const primaryLocations = [
   { value: 'beirut', label: 'Beirut' },
   { value: 'byblos', label: 'Byblos' },
+  { value: 'keserwan', label: 'Keserwan' },
 ];
 
-export const areasByCity: Record<string, string[]> = {
+// Backward compatibility alias
+export const cities = primaryLocations;
+
+export const areasByLocation: Record<string, string[]> = {
   beirut: [
     'Hamra',
     'Kraytem',
@@ -41,13 +46,22 @@ export const areasByCity: Record<string, string[]> = {
     'Fidar',
     'Habboub',
   ],
+  keserwan: [
+    'Zouk Mosbeh',
+    'Zouk Mikael',
+    'Jounieh',
+  ],
 };
+
+// Backward compatibility alias
+export const areasByCity = areasByLocation;
 
 // Sub-areas for specific areas
 export const subAreasByArea: Record<string, string[]> = {
   'Achrafieh': ['Damascus Street', 'Geitawi Street', 'Sodeco Square', 'Alfred Naccash Street'],
   'Ain El Mraisseh': ['Clemenceau Street'],
   'Hamra': ['Bliss Street'],
+  'Jounieh': ['Kaslik'],
 };
 
 export function hasSubAreas(area: string): boolean {

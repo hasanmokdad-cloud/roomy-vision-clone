@@ -3,7 +3,7 @@ import { MapPin, Bus, Lightbulb } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { cities, areasByCity, hasSubAreas, getSubAreas } from '@/data/listingLocations';
+import { primaryLocations, areasByLocation, hasSubAreas, getSubAreas } from '@/data/listingLocations';
 import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
 interface LocationStepProps {
@@ -34,7 +34,7 @@ export function LocationStep({
   propertyType = 'dorm',
 }: LocationStepProps) {
   const { dormLabel } = usePropertyTerminology(propertyType);
-  const availableAreas = city ? areasByCity[city] || [] : [];
+  const availableAreas = city ? areasByLocation[city] || [] : [];
   const showShuttleToggle = city === 'byblos';
   const showSubAreas = area && hasSubAreas(area);
   const availableSubAreas = area ? getSubAreas(area) : [];
@@ -58,14 +58,14 @@ export function LocationStep({
           transition={{ delay: 0.1 }}
           className="space-y-6"
         >
-          {/* City Selection */}
+          {/* Primary Location Selection */}
           <div>
             <Label className="text-sm font-medium mb-3 flex items-center gap-2">
               <MapPin className="w-4 h-4" />
-              City
+              Primary Location
             </Label>
-            <div className="grid grid-cols-2 gap-3 mt-3">
-              {cities.map((cityOption) => (
+            <div className="grid grid-cols-3 gap-3 mt-3">
+              {primaryLocations.map((cityOption) => (
                 <button
                   key={cityOption.value}
                   onClick={() => onCityChange(cityOption.value)}

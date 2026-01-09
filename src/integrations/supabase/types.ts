@@ -1682,6 +1682,7 @@ export type Database = {
           location: string
           monthly_price: number | null
           name: string
+          nearby_universities: string[] | null
           owner_id: string | null
           phone_number: string | null
           price: number | null
@@ -1717,6 +1718,7 @@ export type Database = {
           location: string
           monthly_price?: number | null
           name: string
+          nearby_universities?: string[] | null
           owner_id?: string | null
           phone_number?: string | null
           price?: number | null
@@ -1752,6 +1754,7 @@ export type Database = {
           location?: string
           monthly_price?: number | null
           name?: string
+          nearby_universities?: string[] | null
           owner_id?: string | null
           phone_number?: string | null
           price?: number | null
