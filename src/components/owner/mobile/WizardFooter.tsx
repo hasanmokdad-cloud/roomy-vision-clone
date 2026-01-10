@@ -43,12 +43,12 @@ export function WizardFooter({
   const FILLER_STEPS: Record<number, number> = {
     1: 0,       // Phase 1 filler at 0%
     7: 1/3,     // Phase 2 filler at 33%
-    13: 2/3,    // Phase 3 filler at 66%
+    14: 2/3,    // Phase 3 filler at 66% (updated from 13)
   };
   
   const phase1Steps = [2, 3, 4, 5, 6];
-  const phase2Steps = [8, 9, 10, 11, 12];
-  const phase3Steps = [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25];
+  const phase2Steps = [8, 9, 10, 11, 12, 13]; // Added 9 (NearbyUniversities), Photos now at 13
+  const phase3Steps = [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]; // Starts at 15 now
   
   let progressPercentage: number;
   

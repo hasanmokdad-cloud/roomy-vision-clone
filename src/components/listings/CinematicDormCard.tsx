@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, CheckCircle, Zap, Bookmark, Star, Building2, Eye, Bed, DoorOpen, Share2 } from "lucide-react";
+import { MapPin, CheckCircle, Zap, Bookmark, Star, Building2, Eye, Bed, DoorOpen, Share2, GraduationCap } from "lucide-react";
 import { getAmenityIcon } from "@/utils/amenityIcons";
 import { useNavigate } from "react-router-dom";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -40,6 +40,7 @@ interface CinematicDormCardProps {
     property_type?: string;
     apartment_count?: number;
     gallery_images?: string[];
+    nearby_universities?: string[];
   };
   index: number;
 }
@@ -312,6 +313,16 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
                   <MapPin className="w-3 h-3" />
                   <span className="line-clamp-1">{dorm.area || dorm.location}</span>
                 </div>
+                {/* Nearby Universities */}
+                {dorm.nearby_universities && dorm.nearby_universities.length > 0 && (
+                  <div className="flex items-center gap-1 text-muted-foreground text-xs mt-0.5">
+                    <GraduationCap className="w-3 h-3" />
+                    <span className="line-clamp-1">
+                      Near {dorm.nearby_universities[0]}
+                      {dorm.nearby_universities.length > 1 && ` +${dorm.nearby_universities.length - 1}`}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Amenities Preview Row */}
@@ -369,7 +380,14 @@ const CinematicDormCardComponent = ({ dorm, index }: CinematicDormCardProps) => 
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg font-semibold text-foreground line-clamp-1">{dorm.dorm_name}</h3>
-                  {dorm.university && <p className="text-xs text-muted-foreground">Near {dorm.university}</p>}
+                  {/* Show nearby universities on back face */}
+                  {dorm.nearby_universities && dorm.nearby_universities.length > 0 ? (
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      Near {dorm.nearby_universities.join(', ')}
+                    </p>
+                  ) : dorm.university ? (
+                    <p className="text-xs text-muted-foreground">Near {dorm.university}</p>
+                  ) : null}
                 </div>
                 <div className="flex gap-1.5 ml-2">
                   <ShareButton 
