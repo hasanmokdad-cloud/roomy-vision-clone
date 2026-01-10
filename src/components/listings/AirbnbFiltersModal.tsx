@@ -564,10 +564,32 @@ export function AirbnbFiltersModal({
         </>
       )}
 
-      {/* Gender Preference - when no city selected */}
-      {!isByblos && !isBeirut && (
+      {/* Gender Preference - when no city selected or Keserwan selected */}
+      {(!isByblos && !isBeirut) && (
         <>
           <hr className="border-border" />
+          {/* Keserwan Area section */}
+          {isKeserwan && (
+            <section className="space-y-4 mb-6">
+              <h3 className="text-base font-semibold">Area</h3>
+              <div className="flex flex-wrap gap-2">
+                {keserwanAreas.map((area) => (
+                  <button
+                    key={area}
+                    onClick={() => toggleArrayFilter('areas', area)}
+                    className={cn(
+                      "px-4 py-2 rounded-full border text-sm transition-colors",
+                      localFilters.areas.includes(area)
+                        ? "bg-foreground text-background border-foreground"
+                        : "border-border hover:border-foreground"
+                    )}
+                  >
+                    {area}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
           <section className="space-y-4">
             <h3 className="text-base font-semibold">Gender Preference</h3>
             <div className="flex flex-wrap gap-2">
@@ -619,7 +641,7 @@ export function AirbnbFiltersModal({
 
 
       {/* Universities Section - Conditional on City */}
-      {(isByblos || isBeirut) && visibleUniversities.length > 0 && (
+      {(isByblos || isBeirut || isKeserwan) && visibleUniversities.length > 0 && (
         <>
           <hr className="border-border" />
           <section className="space-y-4">
