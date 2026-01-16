@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import Step1Video from '@/assets/wizard/step1-animation.mp4';
 import Step2Video from '@/assets/wizard/step2-animation.mp4';
-import Step3Image from '@/assets/wizard/step3-image.png';
+import Step3Video from '@/assets/wizard/step3-animation.mp4';
 
 interface AirbnbStepTransitionProps {
   phase: 1 | 2 | 3;
@@ -98,10 +98,23 @@ export function AirbnbStepTransition({ phase }: AirbnbStepTransitionProps) {
               className="w-[320px] h-[320px] md:w-[420px] md:h-[420px] lg:w-[550px] lg:h-[550px] xl:w-[600px] xl:h-[600px] object-contain"
             />
           ) : (
-            <img
-              key="step3-image"
-              src={Step3Image}
-              alt="Step 3 Illustration"
+            <video
+              key="step3-video"
+              src={Step3Video}
+              autoPlay
+              muted
+              playsInline
+              preload="auto"
+              onLoadedData={(e) => {
+                const video = e.currentTarget;
+                video.play().catch(() => {});
+              }}
+              onTimeUpdate={(e) => {
+                const video = e.currentTarget;
+                if (video.duration - video.currentTime < 0.1) {
+                  video.pause();
+                }
+              }}
               className="w-[320px] h-[320px] md:w-[420px] md:h-[420px] lg:w-[550px] lg:h-[550px] xl:w-[600px] xl:h-[600px] object-contain"
             />
           )}
