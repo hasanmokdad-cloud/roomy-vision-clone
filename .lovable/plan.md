@@ -1,5 +1,10 @@
-
 # Roomy Platform Complete Rebuild Plan
+
+**Status:** ✅ APPROVED  
+**Last Updated:** January 30, 2026  
+**Total Timeline:** 36 weeks (9 months)
+
+---
 
 ## Executive Summary
 This document provides a comprehensive cost estimate and step-by-step implementation plan for rebuilding Roomy as a globally-scalable platform across three separate subdomains, with native mobile apps and enterprise-grade AWS infrastructure.
@@ -41,13 +46,6 @@ This document provides a comprehensive cost estimate and step-by-step implementa
 | **Apple Developer Program** | $99 | Annual |
 | **Google Play Developer** | $25 | One-time |
 
-### Domain & Hosting
-
-| Item | Cost |
-|------|------|
-| **Domain (roomylb.com)** | $12-20/year |
-| **Additional subdomains** | Included |
-
 ### Total Monthly Cost Estimates
 
 | Phase | Monthly Range | Annual Range |
@@ -62,7 +60,7 @@ This document provides a comprehensive cost estimate and step-by-step implementa
 
 ### Three-Subdomain Structure
 
-```text
+```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        roomylb.com (Main Domain)                     │
 ├─────────────────────┬─────────────────────┬─────────────────────────┤
@@ -165,26 +163,26 @@ This document provides a comprehensive cost estimate and step-by-step implementa
 #### Week 1: Project Setup
 
 **1.1 Create Lovable Workspaces**
-- Create workspace: `roomy-waitlist`
-- Create workspace: `roomy-app`
-- Create workspace: `roomy-admin`
+- [ ] Create workspace: `roomy-waitlist`
+- [ ] Create workspace: `roomy-app`
+- [ ] Create workspace: `roomy-admin`
 
 **1.2 Domain Configuration**
-- Configure DNS for `roomylb.com`
-- Set up subdomains: `waitlist.`, `app.`, `admin.`
-- Obtain SSL certificates (ACM)
+- [ ] Configure DNS for `roomylb.com`
+- [ ] Set up subdomains: `waitlist.`, `app.`, `admin.`
+- [ ] Obtain SSL certificates (ACM)
 
 **1.3 Shared Supabase Setup**
-- Create ONE Supabase project for all 3 apps
-- Note the project URL and anon key
-- You will connect this same Supabase project to all 3 Lovable workspaces
+- [ ] Create ONE Supabase project for all 3 apps
+- [ ] Note the project URL and anon key
+- [ ] Connect same Supabase project to all 3 Lovable workspaces
 
 #### Week 2: Waitlist Project (waitlist.roomylb.com)
 
 **Languages:** TypeScript, CSS, HTML
 
 **Components to Build:**
-```text
+```
 src/
 ├── components/
 │   ├── Hero.tsx                 # Main landing section
@@ -200,26 +198,28 @@ src/
 ```
 
 **Mailchimp Integration:**
-- Create Mailchimp account and audience list
-- Create Edge Function to handle signups securely
-- Implement double opt-in for GDPR compliance
+- [ ] Create Mailchimp account and audience list
+- [ ] Create Edge Function to handle signups securely
+- [ ] Implement double opt-in for GDPR compliance
 
 #### Week 3-4: Database Schema Recreation
 
 **Recreate all 76+ tables in Supabase:**
 
 Core Tables:
-- `roles`, `user_roles` - Role-based access control
-- `students`, `owners`, `admins` - User profiles
-- `dorms`, `rooms`, `beds`, `bedrooms` - Property hierarchy
-- `reservations`, `payments`, `bookings` - Transactions
-- `conversations`, `messages` - Messaging system
-- `friendships`, `notifications` - Social features
+- [ ] `roles`, `user_roles` - Role-based access control
+- [ ] `students`, `owners`, `admins` - User profiles
+- [ ] `dorms`, `rooms`, `beds`, `bedrooms` - Property hierarchy
+- [ ] `apartments`, `apartment_spaces`, `apartment_photos` - Apartment system
+- [ ] `reservations`, `payments`, `bookings` - Transactions
+- [ ] `conversations`, `messages` - Messaging system
+- [ ] `friendships`, `notifications` - Social features
+- [ ] `ai_*` tables - AI matching and recommendations
 
 Security:
-- Recreate all RLS policies
-- Recreate all database functions
-- Recreate all triggers
+- [ ] Recreate all RLS policies
+- [ ] Recreate all database functions (`is_admin`, `has_role`, etc.)
+- [ ] Recreate all triggers (timestamps, notifications, etc.)
 
 ### Phase 2: Main App (Weeks 5-12)
 
@@ -228,7 +228,7 @@ Security:
 **Languages:** TypeScript
 
 **Folder Structure for app.roomylb.com:**
-```text
+```
 src/
 ├── components/
 │   ├── auth/           # Login, signup, password reset
@@ -247,31 +247,35 @@ src/
 
 #### Weeks 7-8: Authentication & Roles
 
-- Email/password authentication
-- Email verification flow
-- Device fingerprinting and security
-- Role-based routing (student, owner, admin)
+- [ ] Email/password authentication
+- [ ] Email verification flow
+- [ ] Device fingerprinting and security
+- [ ] Role-based routing (student, owner, admin)
+- [ ] GlobalAuthModal (Airbnb-style, no /auth route)
 
 #### Weeks 9-10: Messaging System
 
 **WhatsApp-style features to implement:**
-- Real-time message delivery
-- Read receipts (sent/delivered/seen)
-- Typing indicators
-- Message reactions
-- Message editing/deletion
-- Voice notes (record/playback)
-- Reply threading
-- Pinned messages
-- Online presence indicators
+- [ ] Real-time message delivery
+- [ ] Read receipts (sent/delivered/seen)
+- [ ] Typing indicators
+- [ ] Message reactions
+- [ ] Message editing/deletion
+- [ ] Voice notes (record/playback)
+- [ ] Reply threading
+- [ ] Pinned messages
+- [ ] Online presence indicators
+- [ ] Hold-to-record gesture (mobile)
+- [ ] Swipe-to-cancel/lock gesture (mobile)
 
 #### Weeks 11-12: Reservation System
 
-- Tour booking flow
-- Payment integration (Whish/Stripe)
-- Reservation status management
-- Owner notifications
-- Student receipts
+- [ ] Tour booking flow
+- [ ] Payment integration (Whish/Stripe)
+- [ ] Reservation status management
+- [ ] Owner notifications
+- [ ] Student receipts
+- [ ] Cancellation policies
 
 ### Phase 3: Admin Dashboard (Weeks 13-16)
 
@@ -280,7 +284,7 @@ src/
 **Languages:** TypeScript
 
 **admin.roomylb.com Structure:**
-```text
+```
 src/
 ├── components/
 │   ├── dashboard/      # Overview widgets
@@ -301,10 +305,11 @@ src/
 
 #### Weeks 15-16: Analytics & Reporting
 
-- Real-time user activity monitoring
-- Revenue tracking and forecasting
-- Dorm performance metrics
-- User growth charts
+- [ ] Real-time user activity monitoring
+- [ ] Revenue tracking and forecasting
+- [ ] Dorm performance metrics
+- [ ] User growth charts
+- [ ] AI match analytics
 
 ### Phase 4: Native Mobile Apps (Weeks 17-28)
 
@@ -313,7 +318,7 @@ src/
 **Languages:** Kotlin
 
 **Shared Module Structure:**
-```text
+```
 shared/
 ├── src/
 │   ├── commonMain/
@@ -330,7 +335,7 @@ shared/
 **Languages:** Swift, SwiftUI
 
 **Structure:**
-```text
+```
 RoomyiOS/
 ├── App/
 │   └── RoomyApp.swift
@@ -352,7 +357,7 @@ RoomyiOS/
 **Languages:** Kotlin, Jetpack Compose
 
 **Structure:**
-```text
+```
 RoomyAndroid/
 ├── app/
 │   ├── ui/
@@ -373,7 +378,7 @@ RoomyAndroid/
 **Languages:** Terraform (HCL), YAML
 
 **Terraform Modules:**
-```text
+```
 infrastructure/
 ├── terraform/
 │   ├── main.tf
@@ -396,7 +401,7 @@ infrastructure/
 **Language:** Go
 
 **Structure:**
-```text
+```
 services/api-gateway/
 ├── cmd/
 │   └── server/
@@ -417,7 +422,7 @@ services/api-gateway/
 **Language:** Kotlin
 
 **Structure:**
-```text
+```
 services/business-logic/
 ├── src/main/kotlin/
 │   ├── reservations/
@@ -433,11 +438,11 @@ services/business-logic/
 **Language:** Go or Rust
 
 **Features:**
-- WebSocket connection management
-- Presence system (online/offline)
-- Message routing
-- Typing indicators
-- Read receipt tracking
+- [ ] WebSocket connection management
+- [ ] Presence system (online/offline)
+- [ ] Message routing
+- [ ] Typing indicators
+- [ ] Read receipt tracking
 
 ---
 
@@ -603,3 +608,92 @@ This assumes a single developer working full-time. With a team:
 - 2 developers: ~5-6 months
 - 3-4 developers: ~3-4 months
 
+---
+
+## Part 9: Key Architecture Decisions from Current Roomy
+
+### Authentication Architecture
+- GlobalAuthModal (Airbnb-style modal, not /auth route)
+- AuthContext as single source of truth
+- 100ms delay before getSession() for Supabase hydration
+- Synchronous onAuthStateChange listener (no async keyword)
+- sessionStorage flag to prevent rogue SIGNED_IN events during sign-out
+
+### Mobile-First Design
+- Bottom navbar Instagram/Airbnb style (24px icons, no text)
+- Role-based tabs for different user types
+- WhatsApp-style voice recording gestures
+- Capacitor for web-to-native bridge (current), Swift/Kotlin native (new)
+
+### Database Security
+- RLS policies on all tables
+- `is_admin()` and `has_role()` SECURITY DEFINER functions
+- Role-based access control via `user_roles` table
+- Device fingerprinting and security logs
+
+### Real-time Features
+- Supabase Realtime for messaging
+- Presence indicators for online status
+- Typing indicators
+- Read receipts (sent/delivered/seen)
+
+---
+
+## Part 10: Current Database Tables Reference
+
+### Core Tables (76+)
+1. `roles` - Role definitions
+2. `user_roles` - User-role assignments
+3. `students` - Student profiles
+4. `owners` - Owner profiles
+5. `admins` - Admin profiles
+6. `dorms` - Building/dorm listings
+7. `rooms` - Traditional room hierarchy
+8. `beds` - Individual bed units
+9. `apartments` - Apartment units
+10. `bedrooms` - Apartment bedrooms
+11. `apartment_spaces` - Apartment space definitions
+12. `apartment_photos` - Apartment images
+13. `apartment_pricing_tiers` - Tiered pricing
+14. `reservations` - Booking reservations
+15. `payments` - Payment records
+16. `bookings` - Tour bookings
+17. `conversations` - Chat conversations
+18. `messages` - Chat messages
+19. `message_reactions` - Emoji reactions
+20. `friendships` - Friend connections
+21. `notifications` - User notifications
+22. `wishlists` - Saved listings
+23. `ai_chat_sessions` - AI chat history
+24. `ai_events` - AI interaction logs
+25. `ai_feedback` - AI quality feedback
+26. `ai_match_logs` - Matching algorithm logs
+27. `analytics_events` - Usage analytics
+28. `contact_messages` - Contact form submissions
+29. `admin_audit_log` - Admin action logs
+30. `admin_notifications` - Admin alerts
+31. `admin_wallet` - Admin financials
+32. `billing_history` - Payment history
+33. `booking_reminders` - Scheduled reminders
+34. `chat_settings` - User chat preferences
+35. `device_security_logs` - Security tracking
+36. `dorm_claims` - Ownership claims
+37. `email_verification_tokens` - Email verification
+38. `group_members` - Group chat members
+39. `calls` - Voice/video call records
+40. `call_participants` - Call participant tracking
+... and 36+ more tables
+
+---
+
+## Notes
+
+- This plan is saved at `.lovable/plan.md` and can be referenced across all Lovable workspaces
+- Copy this file to each new workspace to maintain context
+- Update checkboxes as you complete each task
+- The same Supabase backend should be connected to all 3 web projects
+- When you ask Lovable to "continue working on the plan", it will read this file
+
+---
+
+*Last approved: January 30, 2026*
