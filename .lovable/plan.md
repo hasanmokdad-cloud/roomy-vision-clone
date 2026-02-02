@@ -1,66 +1,647 @@
-# Roomy Platform Complete Rebuild Plan
-
-**Status:** ✅ APPROVED  
-**Last Updated:** January 30, 2026  
-**Total Timeline:** 36 weeks (9 months)
+` tags since you're asking for explanations and understanding, not just implementation steps.
 
 ---
 
-## Executive Summary
-This document provides a comprehensive cost estimate and step-by-step implementation plan for rebuilding Roomy as a globally-scalable platform across three separate subdomains, with native mobile apps and enterprise-grade AWS infrastructure.
+## Complete Web Development Education Guide for Roomy Platform
+
+Let me answer ALL your questions in detail, teaching you from zero knowledge.
 
 ---
 
-## Part 1: Monthly Cost Estimates
+### 🎯 FIRST: Your Key Questions Answered
 
-### AWS Infrastructure Costs
-
-| Service | Purpose | Startup Phase (0-10K users) | Growth Phase (10K-100K users) | Scale Phase (100K+ users) |
-|---------|---------|----------------------------|------------------------------|---------------------------|
-| **Aurora PostgreSQL** | Primary Database | $60-150/mo (db.t3.medium) | $400-800/mo (db.r5.large) | $2,000-5,000/mo (Multi-AZ) |
-| **ElastiCache Redis** | Real-time/Caching | $25-50/mo (cache.t3.micro) | $150-300/mo (cache.r5.large) | $600-1,500/mo (cluster) |
-| **ECS Fargate / Lambda** | Backend Services | $50-100/mo | $300-600/mo | $1,500-4,000/mo |
-| **S3 + CloudFront** | Storage/CDN | $20-50/mo | $100-300/mo | $500-2,000/mo |
-| **Route 53** | DNS Management | $5/mo | $10/mo | $20-50/mo |
-| **ACM** | SSL Certificates | Free | Free | Free |
-| **CloudWatch** | Monitoring/Logs | $10-30/mo | $50-150/mo | $200-500/mo |
-| **WAF** | Security/Firewall | $5-20/mo | $50-100/mo | $200-400/mo |
-| **Secrets Manager** | API Keys/Secrets | $5/mo | $10/mo | $25/mo |
-
-### Third-Party Services
-
-| Service | Purpose | Startup | Growth | Scale |
-|---------|---------|---------|--------|-------|
-| **Supabase** (optional) | Auth/Realtime | $25/mo (Pro) | $599/mo (Team) | Custom pricing |
-| **Mailchimp** | Waitlist/Email | Free (500 contacts) | $20-50/mo | $100-300/mo |
-| **Twilio** | Voice/Video Calls | $50-100/mo | $500-1,500/mo | $3,000-10,000/mo |
-| **SendGrid/Resend** | Transactional Email | $20/mo | $50-100/mo | $200-500/mo |
-| **Stripe** | Payments | 2.9% + $0.30/txn | Same | Volume discounts |
-| **Sentry** | Error Tracking | Free | $26/mo | $80-200/mo |
-| **Algolia/Typesense** | Search | $0-50/mo | $100-300/mo | $500-1,500/mo |
-
-### Apple & Google Developer Accounts
-
-| Account | Cost | Frequency |
-|---------|------|-----------|
-| **Apple Developer Program** | $99 | Annual |
-| **Google Play Developer** | $25 | One-time |
-
-### Total Monthly Cost Estimates
-
-| Phase | Monthly Range | Annual Range |
-|-------|---------------|--------------|
-| **Startup (0-10K users)** | $250-600/mo | $3,000-7,200/yr |
-| **Growth (10K-100K users)** | $1,500-4,000/mo | $18,000-48,000/yr |
-| **Scale (100K+ users)** | $8,000-25,000/mo | $96,000-300,000/yr |
-
----
-
-## Part 2: Platform Architecture
-
-### Three-Subdomain Structure
+#### ✅ **Question 1: Is your workflow correct?**
+**YES, 100% correct.** Here's the flow:
 
 ```
+Lovable (AI builds code) → GitHub (stores code) → Vercel/AWS (hosts & serves to users)
+```
+
+Nobody will know Lovable was used. It's like using any code editor—the output is standard code.
+
+#### ✅ **Question 2: Can I migrate from Vercel to AWS later?**
+**YES, absolutely.** Here's why:
+
+| Component | Vercel | AWS | Migration Possible? |
+|-----------|--------|-----|---------------------|
+| **Frontend** | Automatic | S3 + CloudFront | ✅ Just re-deploy same files |
+| **Database** | Supabase (PostgreSQL) | Aurora (PostgreSQL) | ✅ Same database type, use pg_dump |
+| **Backend Functions** | Supabase Edge Functions | AWS Lambda/ECS | ⚠️ Needs rewrite (different runtime) |
+| **Auth** | Supabase Auth | AWS Cognito | ⚠️ Users can be migrated |
+
+**Key insight:** The frontend code is 100% portable. The backend requires some work but is fully migratable.
+
+#### ✅ **Question 3: Can I use Supabase with AWS?**
+**YES!** Supabase and AWS are NOT mutually exclusive:
+- **Option A:** Keep Supabase for database + auth, use AWS only for hosting frontend
+- **Option B:** Migrate everything to AWS (Aurora + Cognito + Lambda)
+
+---
+
+### 📚 COMPLETE WEB DEVELOPMENT GLOSSARY
+
+Let me explain EVERYTHING from scratch:
+
+---
+
+## 🔷 PART 1: WHAT IS "FRONTEND" vs "BACKEND" vs "DATABASE"?
+
+Think of a restaurant:
+
+| Concept | Restaurant Analogy | Web Development |
+|---------|-------------------|-----------------|
+| **Frontend** | The dining room (what customers see) | The website/app you see and click |
+| **Backend** | The kitchen (where food is made) | Server code that processes requests |
+| **Database** | The pantry/storage (where ingredients are kept) | Where all data is stored |
+| **API** | The waiter (takes orders, brings food) | Communication between frontend and backend |
+
+### What exactly IS the backend?
+
+The "backend" includes:
+1. **API Endpoints** - URLs that receive requests (like `/api/login`)
+2. **Business Logic** - Code that processes data (calculate price, validate booking)
+3. **Authentication** - Verifying who the user is
+4. **Authorization** - Checking what the user can do
+5. **Database Queries** - Getting/saving data
+6. **Edge Functions** - Small serverless functions that run on demand
+7. **Middleware** - Code that runs between request and response (like checking login)
+8. **Caching** - Storing frequently-used data in memory (Redis)
+9. **File Processing** - Handling uploads, resizing images
+10. **Email/SMS Sending** - Notifications
+
+**Database** is SEPARATE from backend—it's just the storage. The backend TALKS to the database.
+
+---
+
+## 🔷 PART 2: PROGRAMMING LANGUAGE vs FRAMEWORK vs BUILD TOOL
+
+### What's a Programming Language?
+
+The actual code you write. Like human languages (English, Arabic), but for computers.
+
+| Language | What it's used for | Example syntax |
+|----------|-------------------|----------------|
+| **JavaScript** | Web browsers, frontend | `const x = 5;` |
+| **TypeScript** | JavaScript + types (safer) | `const x: number = 5;` |
+| **Python** | AI, data science, backends | `x = 5` |
+| **Go** | High-performance servers | `var x int = 5` |
+| **Kotlin** | Android apps, backends | `val x: Int = 5` |
+| **Swift** | iOS/Mac apps | `let x: Int = 5` |
+| **Rust** | Ultra-fast, safe systems | `let x: i32 = 5;` |
+| **SQL** | Database queries | `SELECT * FROM users` |
+
+### What's a Framework?
+
+Pre-written code that gives you structure and shortcuts. Instead of building from scratch, you use someone else's foundation.
+
+| Framework | For Language | Purpose |
+|-----------|-------------|---------|
+| **React** | JavaScript/TypeScript | Building user interfaces |
+| **Vue** | JavaScript | Alternative to React |
+| **Angular** | TypeScript | Enterprise web apps |
+| **Next.js** | React | React + server-side features |
+| **Express** | JavaScript (Node.js) | Backend API servers |
+| **Django** | Python | Full web framework |
+| **Spring Boot** | Java/Kotlin | Enterprise backends |
+| **SwiftUI** | Swift | iOS user interfaces |
+| **Jetpack Compose** | Kotlin | Android user interfaces |
+
+### What's a Build Tool?
+
+Converts your code into something browsers/phones can run.
+
+| Build Tool | Purpose |
+|------------|---------|
+| **Vite** | Bundles React/Vue apps, very fast |
+| **Webpack** | Older bundler, more configurable |
+| **esbuild** | Ultra-fast JavaScript bundler |
+| **Gradle** | Builds Android/Kotlin apps |
+| **Xcode** | Builds iOS apps |
+
+### Framework vs Build Tool
+
+- **Framework** = The blueprint for HOW to write your code
+- **Build Tool** = The machine that COMPILES your code into the final product
+
+---
+
+## 🔷 PART 3: YOUR 8 CATEGORIES EXPLAINED
+
+### 1️⃣ WEB FRONTEND
+
+| Component | What it is | For Roomy |
+|-----------|-----------|-----------|
+| **Language** | TypeScript | ✅ All 3 websites |
+| **Framework** | React | ✅ Component-based UI |
+| **Build Tool** | Vite | ✅ Fast bundling |
+| **Styling** | Tailwind CSS | ✅ Utility-first CSS |
+| **UI Components** | Radix UI, shadcn/ui | ✅ Pre-built buttons, dialogs |
+
+**React vs Next.js:**
+- **React + Vite** = Client-side rendering (browser does everything)
+- **Next.js** = Server-side rendering (server pre-renders pages)
+
+For Roomy: **React + Vite is fine.** Next.js is overkill for your use case.
+
+---
+
+### 2️⃣ BACKEND
+
+| Component | What it is | For Roomy |
+|-----------|-----------|-----------|
+| **Language** | TypeScript (Supabase), Go/Kotlin (AWS) | ✅ Edge Functions now, Go later |
+| **Runtime** | Deno (Supabase), Node.js, AWS Lambda | ✅ Where code runs |
+| **API Style** | REST API | ✅ Standard request/response |
+| **Middleware** | Redis (caching), Auth checks | ✅ For real-time features |
+| **Serverless** | Edge Functions / Lambda | ✅ Functions that scale automatically |
+
+**What is REST API?**
+A way to communicate between frontend and backend using HTTP:
+- `GET /api/dorms` → Get list of dorms
+- `POST /api/bookings` → Create a booking
+- `PUT /api/users/123` → Update user 123
+- `DELETE /api/messages/456` → Delete message 456
+
+**What is Middleware?**
+Code that runs BETWEEN receiving a request and sending a response:
+```
+Request → [Auth Middleware] → [Rate Limit Middleware] → Your Code → Response
+```
+
+**What is Redis?**
+A super-fast in-memory database used for:
+- Caching (storing frequently accessed data)
+- Real-time features (who's online, typing indicators)
+- Session storage (keeping users logged in)
+
+---
+
+### 3️⃣ MOBILE
+
+| Option | Language | Pros | Cons |
+|--------|----------|------|------|
+| **Native iOS** | Swift + SwiftUI | Best performance, Apple features | iOS only |
+| **Native Android** | Kotlin + Jetpack Compose | Best performance, Google features | Android only |
+| **Cross-platform: Flutter** | Dart | One codebase, both platforms | Less native feel |
+| **Cross-platform: React Native** | JavaScript/TypeScript | Use existing React skills | Less native feel |
+| **Hybrid: Capacitor** | TypeScript | Wrap web app in native shell | Web view, not truly native |
+
+**For Roomy (your choice: Native):**
+- iOS: Swift + SwiftUI
+- Android: Kotlin + Jetpack Compose
+- Shared logic: Kotlin Multiplatform (KMP)
+
+**What is Kotlin Multiplatform (KMP)?**
+Write business logic ONCE in Kotlin, share between iOS/Android/Backend:
+```
+┌─────────────────────────────────────────┐
+│         Shared Kotlin Code              │
+│  (Data models, API calls, validation)   │
+└──────────────┬───────────┬──────────────┘
+               │           │
+     ┌─────────▼───┐   ┌───▼─────────┐
+     │ iOS App     │   │ Android App │
+     │ (SwiftUI)   │   │ (Compose)   │
+     └─────────────┘   └─────────────┘
+```
+
+---
+
+### 4️⃣ CLOUD (Hosting)
+
+| Provider | What it is | Best for |
+|----------|-----------|----------|
+| **Vercel** | Frontend hosting platform | React/Next.js apps, simple deployment |
+| **AWS** | Full cloud infrastructure | Enterprise, global scale, custom setups |
+| **Supabase** | Backend-as-a-Service | Database, Auth, Functions (what you have now) |
+| **Cloudflare** | CDN + DNS + Security | Domain management, DDoS protection |
+
+**Vercel vs AWS:**
+
+| Feature | Vercel | AWS |
+|---------|--------|-----|
+| **Ease of use** | Very easy | Complex |
+| **Cost** | Free-$20/mo for small | Pay-per-use |
+| **Scale** | Good for most apps | Unlimited global scale |
+| **Control** | Limited | Full control |
+| **Learning curve** | Minutes | Weeks/months |
+
+**What is Docker?**
+A way to package your code + all dependencies into a "container" that runs the same everywhere:
+```
+Your code + Node.js + libraries = Docker Container
+```
+AWS ECS (Elastic Container Service) runs these containers.
+
+**What is a CDN (Content Delivery Network)?**
+Servers around the world that cache your files:
+```
+User in Japan → Tokyo CDN server (fast!)
+User in Brazil → São Paulo CDN server (fast!)
+Instead of everyone hitting one server in the US
+```
+
+---
+
+### 5️⃣ DATABASE
+
+| Type | What it is | Examples |
+|------|-----------|----------|
+| **RDBMS** | Relational Database (tables, rows, columns) | PostgreSQL, MySQL, Aurora |
+| **NoSQL** | Document/Key-value store | MongoDB, DynamoDB |
+| **In-memory** | Super fast, temporary storage | Redis |
+
+**RDBMS = Relational Database Management System**
+
+Think of it like Excel spreadsheets that can reference each other:
+```
+┌─────────────────────────────────┐
+│ students table                  │
+├─────┬─────────────┬─────────────┤
+│ id  │ name        │ email       │
+├─────┼─────────────┼─────────────┤
+│ 1   │ Ahmad       │ a@mail.com  │
+│ 2   │ Sarah       │ s@mail.com  │
+└─────┴─────────────┴─────────────┘
+
+┌──────────────────────────────────────┐
+│ reservations table                   │
+├─────┬────────────┬─────────┬─────────┤
+│ id  │ student_id │ dorm_id │ status  │
+├─────┼────────────┼─────────┼─────────┤
+│ 101 │ 1          │ 50      │ active  │
+│ 102 │ 2          │ 51      │ pending │
+└─────┴────────────┴─────────┴─────────┘
+```
+
+**PostgreSQL vs Aurora:**
+- PostgreSQL = The database software (open source)
+- Aurora = AWS's managed PostgreSQL (same SQL, but AWS handles scaling/backups)
+
+**SQL = Structured Query Language**
+The language to talk to databases:
+```sql
+SELECT * FROM students WHERE name = 'Ahmad';
+INSERT INTO reservations (student_id, dorm_id) VALUES (1, 50);
+UPDATE reservations SET status = 'confirmed' WHERE id = 101;
+DELETE FROM reservations WHERE id = 102;
+```
+
+---
+
+### 6️⃣ UI/UX
+
+| Tool | Purpose |
+|------|---------|
+| **Figma** | Design mockups before coding |
+| **CSS** | Basic styling language |
+| **Tailwind CSS** | Utility classes for CSS |
+| **shadcn/ui** | Pre-built React components |
+
+For Roomy: You're building UI directly in code with React + Tailwind. No Figma needed if you design as you code.
+
+---
+
+### 7️⃣ INFRASTRUCTURE & DOMAIN
+
+| Service | Purpose |
+|---------|---------|
+| **Cloudflare** | DNS management, SSL, DDoS protection |
+| **Route 53** | AWS's DNS service |
+| **ACM** | AWS SSL certificates (free) |
+| **VPC** | Virtual Private Cloud (network isolation) |
+
+**DNS (Domain Name System):**
+Translates `roomylb.com` → `192.168.1.1` (IP address)
+
+**SSL/HTTPS:**
+Encrypts data between browser and server (the lock icon 🔒)
+
+---
+
+### 8️⃣ CI/CD & DevOps
+
+**CI = Continuous Integration**
+Automatically test code when developers push changes.
+
+**CD = Continuous Deployment**
+Automatically deploy code to production after tests pass.
+
+```
+Developer pushes code → GitHub → Tests run → Deploy to Vercel/AWS
+```
+
+| Tool | Purpose |
+|------|---------|
+| **Git** | Version control (track code changes) |
+| **GitHub** | Hosts Git repositories online |
+| **GitHub Actions** | Runs CI/CD pipelines |
+| **Terraform** | Infrastructure as Code (define AWS resources in code) |
+| **Docker** | Package apps in containers |
+
+**IaC = Infrastructure as Code**
+Instead of clicking buttons in AWS console, you write code that creates servers:
+```hcl
+# Terraform example
+resource "aws_instance" "roomy_server" {
+  ami           = "ami-12345"
+  instance_type = "t3.medium"
+}
+```
+
+---
+
+## 🔷 PART 4: COMPLETE ROOMY TECH STACK
+
+Based on everything above, here's your FULL stack:
+
+### Phase 1: Launch on Vercel + Supabase (Now)
+
+| Layer | Technology | Language |
+|-------|------------|----------|
+| **Frontend** | React + Vite | TypeScript |
+| **Styling** | Tailwind CSS + shadcn/ui | CSS |
+| **Backend** | Supabase Edge Functions | TypeScript (Deno) |
+| **Database** | Supabase PostgreSQL | SQL |
+| **Auth** | Supabase Auth | - |
+| **Storage** | Supabase Storage | - |
+| **Real-time** | Supabase Realtime | - |
+| **Email** | Mailchimp (waitlist), SendGrid (transactional) | - |
+| **Hosting** | Vercel | - |
+| **DNS/CDN** | Cloudflare | - |
+| **CI/CD** | GitHub + GitHub Actions | YAML |
+
+### Phase 2: Migrate to AWS (Later)
+
+| Layer | Technology | Language |
+|-------|------------|----------|
+| **Frontend Hosting** | S3 + CloudFront | - |
+| **Backend API** | API Gateway + Lambda | Go |
+| **Business Logic** | ECS Fargate | Kotlin |
+| **Real-time** | WebSocket service | Go or Rust |
+| **Database** | Aurora PostgreSQL | SQL |
+| **Caching** | ElastiCache Redis | - |
+| **Auth** | Cognito or self-hosted | - |
+| **Storage** | S3 | - |
+| **Search** | Typesense or Elasticsearch | - |
+| **Infrastructure** | Terraform | HCL |
+| **Containers** | Docker + ECS | YAML |
+| **Monitoring** | CloudWatch | - |
+
+### Phase 3: Native Mobile Apps
+
+| Platform | Language | UI Framework | Shared Logic |
+|----------|----------|--------------|--------------|
+| **iOS** | Swift | SwiftUI | Kotlin Multiplatform |
+| **Android** | Kotlin | Jetpack Compose | Kotlin Multiplatform |
+
+---
+
+## 🔷 PART 5: MIGRATION PATHS
+
+### Frontend Migration (Easy)
+```
+Vercel → AWS
+Same React code, just deploy to S3 + CloudFront instead
+5 minutes of work
+```
+
+### Database Migration (Medium)
+```
+Supabase PostgreSQL → AWS Aurora PostgreSQL
+Use pg_dump to export, pg_restore to import
+Same SQL, same schema, just different host
+1-2 hours of work
+```
+
+### Backend Migration (Harder)
+```
+Supabase Edge Functions (Deno/TypeScript) → AWS Lambda (Go/Node)
+Need to rewrite functions in new language
+But logic stays the same
+1-2 weeks of work
+```
+
+### Auth Migration (Medium)
+```
+Supabase Auth → AWS Cognito
+Export user emails + hashed passwords
+Import into Cognito user pool
+Users may need to reset passwords
+1 day of work
+```
+
+---
+
+## 🔷 KEY RECOMMENDATION
+
+**Start with Vercel + Supabase.** Here's why:
+
+1. **Cost:** $0-25/month vs $250+/month for AWS
+2. **Speed:** Deploy in minutes vs days of AWS setup
+3. **Focus:** Build features, not infrastructure
+4. **Migration:** 100% possible later when you have budget
+
+**When to migrate to AWS:**
+- 10,000+ monthly active users
+- Need voice/video calls (Twilio works with either)
+- Need custom real-time infrastructure
+- Have $500+/month infrastructure budget
+
+---
+
+I'll now create a comprehensive `plan2.md` file with everything organized:
+
+<lov-plan>
+
+# Roomy Platform Complete Technical Guide & Implementation Plan v2
+
+## Document Purpose
+This is a comprehensive educational document that explains ALL web development concepts from scratch, plus the complete implementation plan for the Roomy platform.
+
+---
+
+## PART 1: Web Development Fundamentals (Education)
+
+### 1.1 The Three Core Layers
+
+Every web application has three main parts:
+
+| Layer | Restaurant Analogy | What It Does |
+|-------|-------------------|--------------|
+| **Frontend** | The dining room | What users see and interact with (buttons, forms, pages) |
+| **Backend** | The kitchen | Processes requests, runs business logic, talks to database |
+| **Database** | The pantry/storage | Stores all data permanently (users, bookings, messages) |
+
+### 1.2 What "Backend" Actually Includes
+
+The backend is NOT just the database. It includes:
+
+1. **API Endpoints** - URLs that receive requests (`POST /api/login`)
+2. **Business Logic** - Code that processes data (calculate price, validate dates)
+3. **Authentication** - Verify WHO the user is (email + password check)
+4. **Authorization** - Check WHAT the user can do (is this an admin?)
+5. **Database Queries** - Getting/saving data to PostgreSQL
+6. **Edge Functions** - Serverless functions that run on demand
+7. **Middleware** - Code that runs between request and response
+8. **Caching** - Storing frequently-used data in memory (Redis)
+9. **File Processing** - Handling image uploads, resizing
+10. **Notifications** - Sending emails, SMS, push notifications
+
+### 1.3 Programming Language vs Framework vs Build Tool
+
+| Term | Definition | Examples |
+|------|------------|----------|
+| **Language** | The actual syntax you write code in | TypeScript, Go, Swift, Kotlin, Python |
+| **Framework** | Pre-written code that gives structure | React, SwiftUI, Spring Boot |
+| **Build Tool** | Converts source code into runnable output | Vite, Webpack, Gradle, Xcode |
+| **Runtime** | Environment where code executes | Node.js, Deno, JVM, iOS |
+| **Library** | Reusable code you import | Tailwind CSS, date-fns, lodash |
+
+### 1.4 Complete Glossary
+
+| Term | What It Means |
+|------|---------------|
+| **API** | Application Programming Interface - how frontend talks to backend |
+| **REST** | Representational State Transfer - API style using HTTP methods |
+| **CRUD** | Create, Read, Update, Delete - basic database operations |
+| **SQL** | Structured Query Language - language for databases |
+| **RDBMS** | Relational Database Management System (PostgreSQL, MySQL) |
+| **ORM** | Object-Relational Mapping - code that generates SQL for you |
+| **CDN** | Content Delivery Network - servers worldwide for fast loading |
+| **SSL/TLS** | Encryption for HTTPS (the lock icon) |
+| **DNS** | Domain Name System - translates domain.com to IP address |
+| **CI/CD** | Continuous Integration/Deployment - automated testing and deployment |
+| **Docker** | Containerization - package code with all dependencies |
+| **Kubernetes** | Container orchestration - managing many Docker containers |
+| **Terraform** | Infrastructure as Code - define cloud resources in code |
+| **WebSocket** | Real-time two-way communication (for messaging) |
+| **OAuth** | Authentication using third-party (Google, Facebook login) |
+| **JWT** | JSON Web Token - secure authentication tokens |
+| **RLS** | Row Level Security - database access control |
+
+---
+
+## PART 2: Complete Technology Stack for Roomy
+
+### 2.1 All Languages Used
+
+| Language | Where Used | Purpose |
+|----------|------------|---------|
+| **TypeScript** | All 3 web frontends | Type-safe JavaScript for React |
+| **SQL** | Database queries, migrations | Interacting with PostgreSQL |
+| **Swift** | iOS native app | Apple mobile development |
+| **Kotlin** | Android app + shared logic + backend | Cross-platform business logic |
+| **Go** | API Gateway, real-time services | High-performance backend |
+| **Python** | AI/ML services | Machine learning, recommendations |
+| **HCL** | Terraform infrastructure | Defining AWS resources |
+| **YAML** | CI/CD pipelines, Docker | Configuration files |
+| **Rust** | (Optional) Real-time messaging | Maximum performance |
+
+### 2.2 Stack by Phase
+
+#### Phase 1: Vercel + Supabase (Launch)
+
+| Component | Technology | Why |
+|-----------|------------|-----|
+| **Frontend** | React + Vite + TypeScript | Fast, component-based UI |
+| **Styling** | Tailwind CSS + shadcn/ui | Rapid UI development |
+| **Backend** | Supabase Edge Functions | Serverless, auto-scaling |
+| **Database** | Supabase PostgreSQL | Managed, with built-in RLS |
+| **Auth** | Supabase Auth | Email, OAuth, secure |
+| **Real-time** | Supabase Realtime | WebSocket subscriptions |
+| **Storage** | Supabase Storage | Image/file uploads |
+| **Hosting** | Vercel | Automatic deployments |
+| **DNS/CDN** | Cloudflare | Fast, secure |
+| **Email** | Mailchimp + SendGrid | Marketing + transactional |
+| **Payments** | Stripe | Global payment processing |
+
+**Monthly Cost: $50-150/month**
+
+#### Phase 2: AWS Migration (Scale)
+
+| Component | Technology | Why |
+|-----------|------------|-----|
+| **Frontend Hosting** | S3 + CloudFront | Global CDN |
+| **API Gateway** | AWS API Gateway + Lambda | Request routing |
+| **Backend Services** | ECS Fargate (Go/Kotlin) | Containerized microservices |
+| **Database** | Aurora PostgreSQL | Managed, auto-scaling |
+| **Caching** | ElastiCache Redis | Real-time presence, caching |
+| **Auth** | Cognito or custom | Enterprise-grade |
+| **Storage** | S3 | Unlimited file storage |
+| **Search** | Typesense/Elasticsearch | Full-text search |
+| **Monitoring** | CloudWatch + Sentry | Logs, errors, metrics |
+| **Security** | WAF + Shield | DDoS protection |
+
+**Monthly Cost: $500-2000/month**
+
+#### Phase 3: Native Mobile
+
+| Platform | Language | UI Framework | Shared Code |
+|----------|----------|--------------|-------------|
+| **iOS** | Swift | SwiftUI | Kotlin Multiplatform |
+| **Android** | Kotlin | Jetpack Compose | Kotlin Multiplatform |
+
+### 2.3 Vercel vs AWS Comparison
+
+| Feature | Vercel | AWS |
+|---------|--------|-----|
+| **Setup Time** | 5 minutes | 2-5 days |
+| **Cost (startup)** | $0-20/month | $200-600/month |
+| **Learning Curve** | Easy | Steep |
+| **Control** | Limited | Full |
+| **Global Regions** | 30+ | 30+ |
+| **Scaling** | Automatic | Manual/Automatic |
+| **Best For** | Launch fast | Enterprise scale |
+
+---
+
+## PART 3: Migration Strategy
+
+### 3.1 Can You Migrate? YES!
+
+| Component | From | To | Difficulty | Time |
+|-----------|------|----|----|------|
+| **Frontend Code** | Vercel | S3/CloudFront | Easy | 1 hour |
+| **Database** | Supabase PostgreSQL | Aurora PostgreSQL | Medium | 2-4 hours |
+| **Backend Functions** | Edge Functions | Lambda/ECS | Hard | 1-2 weeks |
+| **Auth Users** | Supabase Auth | Cognito | Medium | 1 day |
+| **File Storage** | Supabase Storage | S3 | Easy | 2-4 hours |
+
+### 3.2 Data Preservation
+
+**All user data is preserved during migration:**
+- User accounts (emails, passwords)
+- Dorm listings
+- Reservations and payments
+- Messages and conversations
+- All 76+ database tables
+
+**Migration Process:**
+1. Create Aurora database on AWS
+2. `pg_dump` from Supabase PostgreSQL
+3. `pg_restore` to Aurora PostgreSQL
+4. Update connection strings in code
+5. Test thoroughly
+6. Switch DNS to new servers
+7. Maintenance window: 1-4 hours
+
+### 3.3 When to Migrate to AWS
+
+Migrate when you have:
+- 10,000+ monthly active users
+- Need for voice/video calling infrastructure
+- Regulatory requirements (GDPR data residency)
+- Budget of $500+/month for infrastructure
+- Technical team to manage AWS
+
+---
+
+## PART 4: Three-Subdomain Architecture
+
+### 4.1 Structure
+
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        roomylb.com (Main Domain)                     │
 ├─────────────────────┬─────────────────────┬─────────────────────────┤
@@ -68,632 +649,172 @@ This document provides a comprehensive cost estimate and step-by-step implementa
 │     .com            │       .com          │        .com             │
 ├─────────────────────┼─────────────────────┼─────────────────────────┤
 │  • Landing page     │  • Student/Owner    │  • Admin dashboard      │
-│  • Waitlist signup  │    marketplace      │  • Analytics            │
-│  • Mailchimp int.   │  • Messaging        │  • User management      │
-│  • Launch countdown │  • Reservations     │  • Dorm verification    │
+│  • Email signup     │    marketplace      │  • User management      │
+│  • Countdown timer  │  • Messaging        │  • Analytics            │
+│  • Mailchimp        │  • Reservations     │  • Dorm verification    │
 │                     │  • AI Matching      │  • Financial reports    │
-│                     │  • Tours            │  • Support tickets      │
+│                     │  • Tours/Bookings   │  • Support tickets      │
 └─────────────────────┴─────────────────────┴─────────────────────────┘
                               │
                               ▼
               ┌───────────────────────────────┐
-              │   Shared Supabase Backend     │
-              │   (Connected to all 3 apps)   │
+              │   Shared Backend (Supabase)   │
               │                               │
-              │  • PostgreSQL Database        │
-              │  • Authentication             │
-              │  • Edge Functions             │
-              │  • Realtime Subscriptions     │
-              │  • Storage Buckets            │
-              └───────────────────────────────┘
-                              │
-                              ▼ (Migration when ready)
-              ┌───────────────────────────────┐
-              │      AWS Infrastructure       │
-              │                               │
-              │  • Aurora PostgreSQL          │
-              │  • ECS/Lambda (Go/Kotlin)     │
-              │  • ElastiCache Redis          │
-              │  • S3 + CloudFront            │
+              │  • One PostgreSQL Database    │
+              │  • One Auth System            │
+              │  • Shared Edge Functions      │
+              │  • Shared Storage Buckets     │
               └───────────────────────────────┘
 ```
 
----
+### 4.2 Why Three Separate Projects?
 
-## Part 3: Programming Languages by Component
+| Reason | Benefit |
+|--------|---------|
+| **Security** | Admin dashboard isolated from public app |
+| **Performance** | Each site loads only what it needs |
+| **Teams** | Different developers can work independently |
+| **Deployment** | Update admin without affecting main app |
+| **Scaling** | Scale each independently based on traffic |
 
-### Frontend (Web Applications)
+### 4.3 Shared Backend Connection
 
-| Project | Language | Framework | Styling |
-|---------|----------|-----------|---------|
-| **waitlist.roomylb.com** | TypeScript | React + Vite | Tailwind CSS |
-| **app.roomylb.com** | TypeScript | React + Vite | Tailwind CSS |
-| **admin.roomylb.com** | TypeScript | React + Vite | Tailwind CSS |
-
-### Backend Services (AWS Migration)
-
-| Service | Language | Runtime | Purpose |
-|---------|----------|---------|---------|
-| **API Gateway** | Go | AWS Lambda/ECS | High-concurrency request handling |
-| **Business Logic** | Kotlin | AWS ECS | Reservations, payments, matching |
-| **Real-time Messaging** | Go or Rust | AWS ECS | WebSocket connections, presence |
-| **AI/ML Services** | Python | AWS Lambda/SageMaker | Recommendations, matching |
-| **Scheduled Jobs** | Go | AWS Lambda | Reminders, cleanups, reports |
-
-### Database Layer
-
-| Component | Technology | Language |
-|-----------|------------|----------|
-| **Primary Database** | PostgreSQL (Aurora) | SQL |
-| **Migrations** | Flyway or golang-migrate | SQL |
-| **Stored Procedures** | PL/pgSQL | SQL |
-| **Caching** | Redis | - |
-
-### Native Mobile Apps
-
-| Platform | Language | UI Framework | Shared Logic |
-|----------|----------|--------------|--------------|
-| **iOS** | Swift | SwiftUI | Kotlin Multiplatform |
-| **Android** | Kotlin | Jetpack Compose | Kotlin Multiplatform |
-
-### Shared Business Logic (KMP)
-
-| Component | Language | Shared Between |
-|-----------|----------|----------------|
-| **Data Models** | Kotlin | iOS, Android, Backend |
-| **Networking** | Kotlin (Ktor) | iOS, Android |
-| **Validation** | Kotlin | iOS, Android, Backend |
-| **Business Rules** | Kotlin | All platforms |
-
-### Infrastructure as Code
-
-| Component | Tool/Language |
-|-----------|---------------|
-| **AWS Resources** | Terraform (HCL) |
-| **Container Orchestration** | Docker + ECS Task Definitions (JSON/YAML) |
-| **CI/CD Pipelines** | GitHub Actions (YAML) |
-| **Kubernetes (optional)** | YAML manifests |
+All three Lovable projects connect to the SAME Supabase backend:
+1. Create Supabase project in `app.roomylb.com` workspace
+2. Get Project URL and Anon Key
+3. Connect same credentials to `waitlist` and `admin` workspaces
+4. All three share: database, auth, functions, storage
 
 ---
 
-## Part 4: Step-by-Step Implementation Plan
+## PART 5: Implementation Timeline
 
 ### Phase 1: Foundation (Weeks 1-4)
 
-#### Week 1: Project Setup
+**Week 1: Project Setup**
+- Create 3 Lovable workspaces (waitlist, app, admin)
+- Configure DNS for subdomains via Cloudflare
+- Set up shared Supabase backend
 
-**1.1 Create Lovable Workspaces**
-- [ ] Create workspace: `roomy-waitlist`
-- [ ] Create workspace: `roomy-app`
-- [ ] Create workspace: `roomy-admin`
+**Week 2: Waitlist Website**
+- Build landing page with Hero, Features, Countdown
+- Integrate Mailchimp for email collection
+- Deploy to Vercel with custom domain
 
-**1.2 Domain Configuration**
-- [ ] Configure DNS for `roomylb.com`
-- [ ] Set up subdomains: `waitlist.`, `app.`, `admin.`
-- [ ] Obtain SSL certificates (ACM)
-
-**1.3 Shared Supabase Setup**
-- [ ] Create ONE Supabase project for all 3 apps
-- [ ] Note the project URL and anon key
-- [ ] Connect same Supabase project to all 3 Lovable workspaces
-
-#### Week 2: Waitlist Project (waitlist.roomylb.com)
-
-**Languages:** TypeScript, CSS, HTML
-
-**Components to Build:**
-```
-src/
-├── components/
-│   ├── Hero.tsx                 # Main landing section
-│   ├── Features.tsx             # Platform features preview
-│   ├── WaitlistForm.tsx         # Email signup form
-│   ├── CountdownTimer.tsx       # Launch countdown
-│   ├── Testimonials.tsx         # Early user feedback
-│   └── Footer.tsx               # Links and social
-├── lib/
-│   └── mailchimp.ts             # Mailchimp API integration
-└── pages/
-    └── index.tsx                # Landing page
-```
-
-**Mailchimp Integration:**
-- [ ] Create Mailchimp account and audience list
-- [ ] Create Edge Function to handle signups securely
-- [ ] Implement double opt-in for GDPR compliance
-
-#### Week 3-4: Database Schema Recreation
-
-**Recreate all 76+ tables in Supabase:**
-
-Core Tables:
-- [ ] `roles`, `user_roles` - Role-based access control
-- [ ] `students`, `owners`, `admins` - User profiles
-- [ ] `dorms`, `rooms`, `beds`, `bedrooms` - Property hierarchy
-- [ ] `apartments`, `apartment_spaces`, `apartment_photos` - Apartment system
-- [ ] `reservations`, `payments`, `bookings` - Transactions
-- [ ] `conversations`, `messages` - Messaging system
-- [ ] `friendships`, `notifications` - Social features
-- [ ] `ai_*` tables - AI matching and recommendations
-
-Security:
-- [ ] Recreate all RLS policies
-- [ ] Recreate all database functions (`is_admin`, `has_role`, etc.)
-- [ ] Recreate all triggers (timestamps, notifications, etc.)
+**Weeks 3-4: Database Schema**
+- Recreate all 76+ tables from current project
+- Implement all RLS policies
+- Create database functions and triggers
 
 ### Phase 2: Main App (Weeks 5-12)
 
-#### Weeks 5-6: Core Architecture
+**Weeks 5-6: Core Architecture**
+- Set up React + Vite + TypeScript structure
+- Implement routing and layouts
+- Connect to shared Supabase
 
-**Languages:** TypeScript
+**Weeks 7-8: Authentication**
+- Email/password signup/login
+- Email verification flow
+- Role-based access (student, owner, admin)
+- GlobalAuthModal (Airbnb-style)
 
-**Folder Structure for app.roomylb.com:**
-```
-src/
-├── components/
-│   ├── auth/           # Login, signup, password reset
-│   ├── listings/       # Dorm cards, filters, search
-│   ├── messaging/      # Chat UI, reactions, voice notes
-│   ├── bookings/       # Reservation flow
-│   ├── owner/          # Become owner wizard
-│   ├── student/        # Student profiles, AI match
-│   └── shared/         # Reusable UI components
-├── hooks/              # Custom React hooks
-├── lib/                # Utilities and helpers
-├── pages/              # Route components
-└── integrations/
-    └── supabase/       # Auto-generated client
-```
+**Weeks 9-10: Messaging System**
+- Real-time message delivery
+- Read receipts and typing indicators
+- Voice notes and reactions
+- Message editing/deletion
 
-#### Weeks 7-8: Authentication & Roles
-
-- [ ] Email/password authentication
-- [ ] Email verification flow
-- [ ] Device fingerprinting and security
-- [ ] Role-based routing (student, owner, admin)
-- [ ] GlobalAuthModal (Airbnb-style, no /auth route)
-
-#### Weeks 9-10: Messaging System
-
-**WhatsApp-style features to implement:**
-- [ ] Real-time message delivery
-- [ ] Read receipts (sent/delivered/seen)
-- [ ] Typing indicators
-- [ ] Message reactions
-- [ ] Message editing/deletion
-- [ ] Voice notes (record/playback)
-- [ ] Reply threading
-- [ ] Pinned messages
-- [ ] Online presence indicators
-- [ ] Hold-to-record gesture (mobile)
-- [ ] Swipe-to-cancel/lock gesture (mobile)
-
-#### Weeks 11-12: Reservation System
-
-- [ ] Tour booking flow
-- [ ] Payment integration (Whish/Stripe)
-- [ ] Reservation status management
-- [ ] Owner notifications
-- [ ] Student receipts
-- [ ] Cancellation policies
+**Weeks 11-12: Reservations**
+- Tour booking flow
+- Payment integration (Stripe)
+- Status management and notifications
 
 ### Phase 3: Admin Dashboard (Weeks 13-16)
 
-#### Weeks 13-14: Admin Core
+**Weeks 13-14: Admin Core**
+- Dashboard with key metrics
+- User management interface
+- Dorm verification workflow
 
-**Languages:** TypeScript
+**Weeks 15-16: Analytics**
+- Revenue tracking
+- User growth charts
+- Real-time activity monitoring
 
-**admin.roomylb.com Structure:**
-```
-src/
-├── components/
-│   ├── dashboard/      # Overview widgets
-│   ├── users/          # User management
-│   ├── dorms/          # Dorm verification
-│   ├── analytics/      # Charts and reports
-│   ├── finance/        # Payments and payouts
-│   └── support/        # Ticket management
-├── hooks/
-│   └── useAdminAuth.ts # Admin-only auth
-└── pages/
-    ├── Dashboard.tsx
-    ├── Users.tsx
-    ├── Dorms.tsx
-    ├── Analytics.tsx
-    └── Settings.tsx
-```
+### Phase 4: Native Mobile (Weeks 17-28)
 
-#### Weeks 15-16: Analytics & Reporting
+**Weeks 17-20: Kotlin Multiplatform Setup**
+- Create shared module for business logic
+- Data models, networking, validation
 
-- [ ] Real-time user activity monitoring
-- [ ] Revenue tracking and forecasting
-- [ ] Dorm performance metrics
-- [ ] User growth charts
-- [ ] AI match analytics
+**Weeks 21-24: iOS App**
+- Swift + SwiftUI implementation
+- All core features (auth, listings, messaging)
 
-### Phase 4: Native Mobile Apps (Weeks 17-28)
-
-#### Weeks 17-20: Kotlin Multiplatform Setup
-
-**Languages:** Kotlin
-
-**Shared Module Structure:**
-```
-shared/
-├── src/
-│   ├── commonMain/
-│   │   ├── models/          # Data classes
-│   │   ├── network/         # Ktor HTTP client
-│   │   ├── repository/      # Data repositories
-│   │   └── validation/      # Business rules
-│   ├── androidMain/         # Android-specific
-│   └── iosMain/             # iOS-specific
-```
-
-#### Weeks 21-24: iOS App
-
-**Languages:** Swift, SwiftUI
-
-**Structure:**
-```
-RoomyiOS/
-├── App/
-│   └── RoomyApp.swift
-├── Features/
-│   ├── Auth/
-│   ├── Listings/
-│   ├── Messaging/
-│   ├── Bookings/
-│   └── Profile/
-├── Core/
-│   ├── Network/
-│   ├── Storage/
-│   └── Push/
-└── Resources/
-```
-
-#### Weeks 25-28: Android App
-
-**Languages:** Kotlin, Jetpack Compose
-
-**Structure:**
-```
-RoomyAndroid/
-├── app/
-│   ├── ui/
-│   │   ├── auth/
-│   │   ├── listings/
-│   │   ├── messaging/
-│   │   └── bookings/
-│   ├── data/
-│   │   ├── repository/
-│   │   └── remote/
-│   └── di/               # Dependency Injection
-```
+**Weeks 25-28: Android App**
+- Kotlin + Jetpack Compose implementation
+- Push notifications setup
 
 ### Phase 5: AWS Migration (Weeks 29-36)
 
-#### Weeks 29-30: Infrastructure Setup
+**Weeks 29-30: Infrastructure**
+- Set up Terraform configurations
+- Deploy Aurora, Redis, ECS
 
-**Languages:** Terraform (HCL), YAML
+**Weeks 31-34: Backend Services**
+- Rewrite Edge Functions in Go/Kotlin
+- Deploy to AWS Lambda/ECS
 
-**Terraform Modules:**
-```
-infrastructure/
-├── terraform/
-│   ├── main.tf
-│   ├── variables.tf
-│   ├── modules/
-│   │   ├── vpc/
-│   │   ├── aurora/
-│   │   ├── elasticache/
-│   │   ├── ecs/
-│   │   ├── s3/
-│   │   └── cloudfront/
-│   └── environments/
-│       ├── dev/
-│       ├── staging/
-│       └── production/
-```
-
-#### Weeks 31-32: Go API Gateway
-
-**Language:** Go
-
-**Structure:**
-```
-services/api-gateway/
-├── cmd/
-│   └── server/
-│       └── main.go
-├── internal/
-│   ├── handlers/
-│   ├── middleware/
-│   ├── auth/
-│   └── routes/
-├── pkg/
-│   └── response/
-├── Dockerfile
-└── go.mod
-```
-
-#### Weeks 33-34: Kotlin Business Services
-
-**Language:** Kotlin
-
-**Structure:**
-```
-services/business-logic/
-├── src/main/kotlin/
-│   ├── reservations/
-│   ├── payments/
-│   ├── matching/
-│   └── notifications/
-├── build.gradle.kts
-└── Dockerfile
-```
-
-#### Weeks 35-36: Real-time Messaging Service
-
-**Language:** Go or Rust
-
-**Features:**
-- [ ] WebSocket connection management
-- [ ] Presence system (online/offline)
-- [ ] Message routing
-- [ ] Typing indicators
-- [ ] Read receipt tracking
+**Weeks 35-36: Cutover**
+- Migrate database
+- Switch DNS
+- Monitor and optimize
 
 ---
 
-## Part 5: Supabase Connection Guide
+## PART 6: Cost Estimates
 
-### Connecting Same Supabase to All 3 Lovable Projects
+### Development Phase (Using Lovable + Supabase + Vercel)
 
-**Step 1: Create Supabase Project**
-- Go to your first Lovable project (app.roomylb.com)
-- Enable Lovable Cloud (this creates the Supabase project)
-- Note the Project URL and Anon Key from Cloud settings
+| Service | Monthly Cost |
+|---------|-------------|
+| Supabase Pro | $25 |
+| Vercel (3 projects) | $0-60 |
+| Cloudflare | $0-20 |
+| Mailchimp | $0-20 |
+| SendGrid | $0-20 |
+| **Total** | **$25-145/month** |
 
-**Step 2: Connect to Waitlist Project**
-- In waitlist Lovable project, go to Settings → Supabase
-- Choose "Connect existing project"
-- Enter the same Project URL and Anon Key
-- The waitlist will now share the same database
+### Production Phase (Vercel + Supabase)
 
-**Step 3: Connect to Admin Project**
-- Repeat Step 2 for admin.roomylb.com
-- All 3 projects now share:
-  - Same database tables
-  - Same authentication users
-  - Same Edge Functions
-  - Same Storage buckets
+| Users | Monthly Cost |
+|-------|-------------|
+| 0-10K | $100-300 |
+| 10K-50K | $300-800 |
+| 50K-100K | $800-1500 |
 
-**Important RLS Considerations:**
-```sql
--- Example: Admin-only access policy
-CREATE POLICY "Admins can view all users"
-ON public.students
-FOR SELECT
-USING (public.is_admin(auth.uid()));
+### Enterprise Phase (AWS)
 
--- Example: App-only access (students/owners)
-CREATE POLICY "Users can view own profile"
-ON public.students
-FOR SELECT
-USING (auth.uid() = user_id);
-```
+| Users | Monthly Cost |
+|-------|-------------|
+| 0-10K | $500-800 |
+| 10K-100K | $1,500-4,000 |
+| 100K+ | $8,000-25,000 |
 
 ---
 
-## Part 6: Complete Technology Stack Summary
+## PART 7: File to Create
 
-### By Layer
+I will create `.lovable/plan2.md` containing:
+1. Complete educational glossary
+2. Full technology stack explanation
+3. Migration strategies
+4. Updated implementation timeline
+5. Cost breakdowns for each phase
+6. All programming languages with purposes
+7. Vercel vs AWS comparison
+8. Database schema overview from current project
 
-| Layer | Technologies |
-|-------|--------------|
-| **Frontend Web** | TypeScript, React, Vite, Tailwind CSS, Radix UI |
-| **Frontend Mobile iOS** | Swift, SwiftUI, Combine |
-| **Frontend Mobile Android** | Kotlin, Jetpack Compose, Coroutines |
-| **Shared Mobile Logic** | Kotlin Multiplatform, Ktor |
-| **Backend API** | Go, Gin/Echo framework |
-| **Backend Business Logic** | Kotlin, Spring Boot or Ktor |
-| **Backend Real-time** | Go or Rust, WebSockets |
-| **Backend AI/ML** | Python, TensorFlow/PyTorch |
-| **Database** | PostgreSQL, SQL, PL/pgSQL |
-| **Caching** | Redis |
-| **Search** | Elasticsearch or Typesense |
-| **Infrastructure** | Terraform (HCL), Docker, YAML |
-| **CI/CD** | GitHub Actions (YAML), Shell scripts |
+This document will be approximately 1500 lines covering everything from A to Z for someone with zero web development knowledge.
 
-### Full Language Count
-
-| Language | Usage |
-|----------|-------|
-| **TypeScript** | All 3 web frontends |
-| **Swift** | iOS native app |
-| **Kotlin** | Android app + shared logic + backend services |
-| **Go** | API Gateway + real-time messaging |
-| **Rust** | (Optional) High-performance real-time |
-| **Python** | AI/ML services |
-| **SQL** | Database schema, migrations, procedures |
-| **HCL** | Terraform infrastructure |
-| **YAML** | Docker Compose, GitHub Actions, K8s |
-| **Shell** | Deployment scripts |
-
----
-
-## Part 7: Project Tracking Checklist
-
-### Lovable Project: waitlist.roomylb.com
-- [ ] Create Lovable workspace
-- [ ] Build landing page with hero section
-- [ ] Implement Mailchimp waitlist signup
-- [ ] Add countdown timer to launch
-- [ ] Configure custom domain
-- [ ] Deploy to production
-
-### Lovable Project: app.roomylb.com
-- [ ] Create Lovable workspace
-- [ ] Enable Lovable Cloud (Supabase)
-- [ ] Recreate all 76+ database tables
-- [ ] Implement all RLS policies
-- [ ] Build authentication system
-- [ ] Build listings/marketplace
-- [ ] Build messaging system
-- [ ] Build reservation system
-- [ ] Build owner wizard
-- [ ] Build AI matching
-- [ ] Configure custom domain
-- [ ] Deploy to production
-
-### Lovable Project: admin.roomylb.com
-- [ ] Create Lovable workspace
-- [ ] Connect to shared Supabase
-- [ ] Build admin dashboard
-- [ ] Build user management
-- [ ] Build dorm verification
-- [ ] Build analytics
-- [ ] Build financial reports
-- [ ] Configure custom domain
-- [ ] Deploy to production
-
-### Native Mobile: iOS
-- [ ] Set up Xcode project
-- [ ] Configure Kotlin Multiplatform
-- [ ] Build authentication flow
-- [ ] Build listings UI
-- [ ] Build messaging UI
-- [ ] Build booking flow
-- [ ] Implement push notifications
-- [ ] Submit to App Store
-
-### Native Mobile: Android
-- [ ] Set up Android Studio project
-- [ ] Configure Kotlin Multiplatform
-- [ ] Build authentication flow
-- [ ] Build listings UI
-- [ ] Build messaging UI
-- [ ] Build booking flow
-- [ ] Implement push notifications
-- [ ] Submit to Play Store
-
-### AWS Migration
-- [ ] Set up AWS account
-- [ ] Create Terraform configurations
-- [ ] Deploy Aurora PostgreSQL
-- [ ] Deploy ElastiCache Redis
-- [ ] Build Go API Gateway
-- [ ] Build Kotlin business services
-- [ ] Build real-time messaging service
-- [ ] Configure CloudFront CDN
-- [ ] Set up monitoring and alerts
-- [ ] Migrate data from Supabase
-
----
-
-## Part 8: Timeline Summary
-
-| Phase | Duration | Deliverables |
-|-------|----------|--------------|
-| **Phase 1: Foundation** | Weeks 1-4 | Waitlist site + Database schema |
-| **Phase 2: Main App** | Weeks 5-12 | Full app.roomylb.com |
-| **Phase 3: Admin** | Weeks 13-16 | Full admin.roomylb.com |
-| **Phase 4: Mobile** | Weeks 17-28 | iOS + Android native apps |
-| **Phase 5: AWS** | Weeks 29-36 | Full AWS infrastructure |
-
-**Total Timeline: 36 weeks (9 months)**
-
-This assumes a single developer working full-time. With a team:
-- 2 developers: ~5-6 months
-- 3-4 developers: ~3-4 months
-
----
-
-## Part 9: Key Architecture Decisions from Current Roomy
-
-### Authentication Architecture
-- GlobalAuthModal (Airbnb-style modal, not /auth route)
-- AuthContext as single source of truth
-- 100ms delay before getSession() for Supabase hydration
-- Synchronous onAuthStateChange listener (no async keyword)
-- sessionStorage flag to prevent rogue SIGNED_IN events during sign-out
-
-### Mobile-First Design
-- Bottom navbar Instagram/Airbnb style (24px icons, no text)
-- Role-based tabs for different user types
-- WhatsApp-style voice recording gestures
-- Capacitor for web-to-native bridge (current), Swift/Kotlin native (new)
-
-### Database Security
-- RLS policies on all tables
-- `is_admin()` and `has_role()` SECURITY DEFINER functions
-- Role-based access control via `user_roles` table
-- Device fingerprinting and security logs
-
-### Real-time Features
-- Supabase Realtime for messaging
-- Presence indicators for online status
-- Typing indicators
-- Read receipts (sent/delivered/seen)
-
----
-
-## Part 10: Current Database Tables Reference
-
-### Core Tables (76+)
-1. `roles` - Role definitions
-2. `user_roles` - User-role assignments
-3. `students` - Student profiles
-4. `owners` - Owner profiles
-5. `admins` - Admin profiles
-6. `dorms` - Building/dorm listings
-7. `rooms` - Traditional room hierarchy
-8. `beds` - Individual bed units
-9. `apartments` - Apartment units
-10. `bedrooms` - Apartment bedrooms
-11. `apartment_spaces` - Apartment space definitions
-12. `apartment_photos` - Apartment images
-13. `apartment_pricing_tiers` - Tiered pricing
-14. `reservations` - Booking reservations
-15. `payments` - Payment records
-16. `bookings` - Tour bookings
-17. `conversations` - Chat conversations
-18. `messages` - Chat messages
-19. `message_reactions` - Emoji reactions
-20. `friendships` - Friend connections
-21. `notifications` - User notifications
-22. `wishlists` - Saved listings
-23. `ai_chat_sessions` - AI chat history
-24. `ai_events` - AI interaction logs
-25. `ai_feedback` - AI quality feedback
-26. `ai_match_logs` - Matching algorithm logs
-27. `analytics_events` - Usage analytics
-28. `contact_messages` - Contact form submissions
-29. `admin_audit_log` - Admin action logs
-30. `admin_notifications` - Admin alerts
-31. `admin_wallet` - Admin financials
-32. `billing_history` - Payment history
-33. `booking_reminders` - Scheduled reminders
-34. `chat_settings` - User chat preferences
-35. `device_security_logs` - Security tracking
-36. `dorm_claims` - Ownership claims
-37. `email_verification_tokens` - Email verification
-38. `group_members` - Group chat members
-39. `calls` - Voice/video call records
-40. `call_participants` - Call participant tracking
-... and 36+ more tables
-
----
-
-## Notes
-
-- This plan is saved at `.lovable/plan.md` and can be referenced across all Lovable workspaces
-- Copy this file to each new workspace to maintain context
-- Update checkboxes as you complete each task
-- The same Supabase backend should be connected to all 3 web projects
-- When you ask Lovable to "continue working on the plan", it will read this file
-
----
-
-*Last approved: January 30, 2026*
