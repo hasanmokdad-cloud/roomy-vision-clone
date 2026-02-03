@@ -1,40 +1,124 @@
-# Roomy Platform Complete Technical Guide & Implementation Plan v2
+# Roomy Platform Complete Educational Guide & Architecture Plan v3
 
-> **Document Version:** 2.0  
-> **Created:** February 2026  
+> **Document Version:** 3.0  
+> **Updated:** February 2026  
 > **Purpose:** Comprehensive educational guide + implementation roadmap for the Roomy student housing platform
 
 ---
 
 ## TABLE OF CONTENTS
 
-1. [Web Development Fundamentals](#part-1-web-development-fundamentals)
-2. [Complete Technology Stack](#part-2-complete-technology-stack)
-3. [Migration Strategy](#part-3-migration-strategy)
-4. [Three-Subdomain Architecture](#part-4-three-subdomain-architecture)
-5. [Implementation Timeline](#part-5-implementation-timeline)
-6. [Cost Estimates](#part-6-cost-estimates)
-7. [Database Schema Reference](#part-7-database-schema-reference)
-8. [Security Implementation](#part-8-security-implementation)
-9. [Deployment Workflows](#part-9-deployment-workflows)
+1. [Executive Summary](#executive-summary)
+2. [Web Development Fundamentals](#part-1-web-development-fundamentals)
+3. [Master Technology Classification](#part-2-master-technology-classification)
+4. [Web Application Architecture Types](#part-3-web-application-architecture-types)
+5. [Roomy Architecture Decisions](#part-4-roomy-architecture-decisions)
+6. [Software Company Structure](#part-5-software-company-structure)
+7. [Feature Production Line](#part-6-feature-production-line)
+8. [Complete Technology Stack](#part-7-complete-technology-stack)
+9. [Three-Subdomain Architecture](#part-8-three-subdomain-architecture)
+10. [Deployment Strategy](#part-9-deployment-strategy)
+11. [Migration Strategy](#part-10-migration-strategy)
+12. [Implementation Timeline](#part-11-implementation-timeline)
+13. [DevOps Engineer Hiring Guide](#part-12-devops-engineer-hiring-guide)
+14. [Lovable Capabilities](#part-13-lovable-capabilities)
+15. [AWS Education](#part-14-aws-education)
+16. [Cost Estimates](#part-15-cost-estimates)
+17. [Database Schema Reference](#part-16-database-schema-reference)
+18. [Security Implementation](#part-17-security-implementation)
+19. [CI/CD Workflows](#part-18-cicd-workflows)
+
+---
+
+## EXECUTIVE SUMMARY
+
+### What This Document Is
+
+This is a **comprehensive educational guide** that explains every aspect of building a modern web and mobile platform from scratch. It's designed for founders, product managers, and aspiring developers who want to understand:
+
+- **What each technology does** (not just what it's called)
+- **How a software company is organized** (departments, roles, responsibilities)
+- **How a feature moves from idea to user's screen** (the complete production pipeline)
+- **What architecture decisions Roomy should make** (and why)
+
+### Key Architecture Decisions for Roomy
+
+| Decision | Recommendation | Rationale |
+|----------|----------------|-----------|
+| **Web App Type** | SPA + PWA | Interactive app with offline capability |
+| **Architecture** | Modular Monolith → Microservices | Fast launch, scale later |
+| **Hosting: Waitlist** | Vercel | Simple, fast, cheap |
+| **Hosting: App + Admin** | AWS S3 + CloudFront | Enterprise-grade from day 1 |
+| **Backend: Development** | Supabase | Rapid development with Lovable |
+| **Backend: Production** | AWS (Aurora, Lambda, Cognito) | Full control, unlimited scale |
+| **Mobile Strategy** | Native (Swift + Kotlin) with KMP | Best UX, shared business logic |
+| **DevOps** | Hire freelancer | $1,500-4,000 for AWS setup |
 
 ---
 
 ## PART 1: Web Development Fundamentals
 
-### 1.1 The Three Core Layers
+### 1.1 The Three Core Layers of Every Application
 
-Every web application has three main parts:
+Every web application consists of three fundamental layers. Understanding these is essential before diving into any technology:
 
 | Layer | Restaurant Analogy | What It Does | Roomy Example |
 |-------|-------------------|--------------|---------------|
 | **Frontend** | The dining room | What users see and interact with | React app at app.roomylb.com |
-| **Backend** | The kitchen | Processes requests, runs business logic | Supabase Edge Functions |
+| **Backend** | The kitchen | Processes requests, runs business logic | Supabase Edge Functions / AWS Lambda |
 | **Database** | The pantry/storage | Stores all data permanently | PostgreSQL (76+ tables) |
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              USER                                            │
+│                     (Student, Owner, or Admin)                               │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │ Opens browser/app
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           FRONTEND LAYER                                     │
+│                                                                              │
+│  • Displays the UI (buttons, forms, pages)                                  │
+│  • Handles user interactions (clicks, typing)                               │
+│  • Sends requests to backend when user takes action                         │
+│  • Receives data from backend and displays it                               │
+│                                                                              │
+│  Languages: HTML, CSS, TypeScript                                           │
+│  Frameworks: React, Tailwind CSS, shadcn/ui                                 │
+│  Build Tool: Vite                                                           │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │ HTTPS Request (API Call)
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           BACKEND LAYER                                      │
+│                                                                              │
+│  • Receives requests from frontend                                          │
+│  • Validates and processes data                                             │
+│  • Runs business logic (calculate prices, check permissions)                │
+│  • Talks to database to get/save data                                       │
+│  • Sends response back to frontend                                          │
+│                                                                              │
+│  Languages: TypeScript (Deno), Go, Kotlin                                   │
+│  Platforms: Supabase Edge Functions, AWS Lambda, ECS                        │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │ SQL Query
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           DATABASE LAYER                                     │
+│                                                                              │
+│  • Stores all permanent data                                                │
+│  • Handles relationships between data (student → reservation → dorm)        │
+│  • Ensures data integrity (no duplicate emails, valid references)           │
+│  • Controls access (RLS policies)                                           │
+│                                                                              │
+│  Language: SQL                                                              │
+│  Systems: PostgreSQL (Supabase), Aurora PostgreSQL (AWS)                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
 ### 1.2 What "Backend" Actually Includes
 
-The backend is NOT just the database. It includes:
+Many beginners think "backend = database". This is wrong. The backend includes MANY components:
 
 | Component | What It Does | Roomy Implementation |
 |-----------|--------------|---------------------|
@@ -43,1301 +127,2812 @@ The backend is NOT just the database. It includes:
 | **Authentication** | Verify WHO the user is | Supabase Auth + custom email verification |
 | **Authorization** | Check WHAT the user can do | RLS policies, role-based access |
 | **Database Queries** | Getting/saving data | Supabase client queries |
-| **Edge Functions** | Serverless functions on demand | 20+ functions (check-email-verified, etc.) |
+| **Edge Functions** | Serverless functions on demand | 20+ functions |
 | **Middleware** | Code between request and response | CORS headers, auth checks |
 | **Caching** | Store frequently-used data in memory | Redis (future: real-time presence) |
 | **File Processing** | Handle uploads, resize images | Supabase Storage buckets |
 | **Notifications** | Send emails, SMS, push | SendGrid, push notifications |
+| **Scheduled Jobs** | Run tasks at specific times | Cron functions for reminders |
+| **Webhooks** | Receive events from other services | Payment confirmations |
 
-### 1.3 Programming Languages Explained
+### 1.3 How Data Flows in a Web Application
 
-| Language | What It's For | Syntax Example | Used In Roomy |
-|----------|---------------|----------------|---------------|
-| **JavaScript** | Web browsers, frontend | `const x = 5;` | Legacy code |
-| **TypeScript** | JavaScript + types (safer) | `const x: number = 5;` | ✅ All frontend |
-| **SQL** | Database queries | `SELECT * FROM users` | ✅ Migrations |
-| **Python** | AI, data science, backends | `x = 5` | Future AI services |
-| **Go** | High-performance servers | `var x int = 5` | Future AWS backend |
-| **Kotlin** | Android apps, backends | `val x: Int = 5` | Future mobile + backend |
-| **Swift** | iOS/Mac apps | `let x: Int = 5` | Future iOS app |
-| **Rust** | Ultra-fast, safe systems | `let x: i32 = 5;` | Optional real-time |
-| **HCL** | Infrastructure as Code | `resource "aws_instance"` | Future Terraform |
-| **YAML** | Configuration files | `key: value` | CI/CD pipelines |
+Let's trace exactly what happens when a user clicks "Book Tour" on a dorm listing:
 
-### 1.4 Framework vs Build Tool vs Runtime
+```text
+STEP 1: User Action
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  User clicks "Book Tour" button on dorm listing page                        │
+│  Location: app.roomylb.com/listings/abc123                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+STEP 2: Frontend Prepares Request
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  React component handles the click:                                          │
+│                                                                              │
+│  const handleBookTour = async () => {                                        │
+│    const { error } = await supabase                                          │
+│      .from('bookings')                                                       │
+│      .insert({                                                               │
+│        student_id: currentUser.studentId,                                    │
+│        dorm_id: 'abc123',                                                    │
+│        requested_date: '2026-03-15',                                        │
+│        requested_time: '14:00',                                             │
+│        message: 'I would like to see the dorm'                              │
+│      });                                                                     │
+│  };                                                                          │
+│                                                                              │
+│  This creates an HTTP POST request to the Supabase API                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      │ HTTP POST request with:
+                                      │ - Headers (Authorization: Bearer <JWT>)
+                                      │ - Body (JSON data)
+                                      ▼
+STEP 3: Backend Receives Request
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Supabase PostgREST receives the request:                                   │
+│                                                                              │
+│  1. Validates the JWT token (is user logged in?)                            │
+│  2. Extracts user ID from token                                             │
+│  3. Checks RLS policy: "Can this user insert into bookings?"                │
+│  4. If allowed, proceeds to database                                        │
+│  5. If denied, returns 403 Forbidden                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      │ SQL: INSERT INTO bookings...
+                                      ▼
+STEP 4: Database Processes Query
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PostgreSQL executes:                                                        │
+│                                                                              │
+│  INSERT INTO bookings (                                                      │
+│    student_id,                                                               │
+│    dorm_id,                                                                  │
+│    owner_id,          -- auto-filled from dorm's owner                      │
+│    requested_date,                                                           │
+│    requested_time,                                                           │
+│    message,                                                                  │
+│    status,            -- default: 'pending'                                 │
+│    created_at         -- default: now()                                     │
+│  ) VALUES (...);                                                             │
+│                                                                              │
+│  Triggers fire:                                                              │
+│  1. create_booking_reminders() - schedules reminder notifications           │
+│  2. notify_owner_new_booking() - queues notification to owner               │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      │ Response: { data: {...}, error: null }
+                                      ▼
+STEP 5: Backend Sends Response
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Supabase returns to frontend:                                               │
+│                                                                              │
+│  {                                                                           │
+│    "data": {                                                                 │
+│      "id": "new-booking-uuid",                                              │
+│      "student_id": "student-uuid",                                          │
+│      "dorm_id": "abc123",                                                   │
+│      "status": "pending",                                                   │
+│      "created_at": "2026-02-03T10:30:00Z"                                   │
+│    },                                                                        │
+│    "error": null                                                             │
+│  }                                                                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+STEP 6: Frontend Updates UI
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  React receives response and updates state:                                  │
+│                                                                              │
+│  if (!error) {                                                               │
+│    toast.success("Tour requested! The owner will confirm soon.");           │
+│    queryClient.invalidateQueries(['bookings']);  // refresh booking list    │
+│    navigate('/student/bookings');  // go to bookings page                   │
+│  } else {                                                                    │
+│    toast.error("Failed to request tour. Please try again.");                │
+│  }                                                                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+STEP 7: Background Processes Run
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Meanwhile, in the background:                                               │
+│                                                                              │
+│  1. Edge Function "send-owner-notification" is triggered                    │
+│  2. Function fetches owner's email and notification preferences             │
+│  3. Sends email via SendGrid: "You have a new tour request!"                │
+│  4. Optionally sends push notification if owner has app installed           │
+│  5. Reminder scheduled for 24h before tour                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-| Term | Definition | Examples |
-|------|------------|----------|
-| **Language** | The actual syntax you write | TypeScript, Go, Swift |
-| **Framework** | Pre-written code giving structure | React, SwiftUI, Spring Boot |
-| **Build Tool** | Compiles source to runnable output | Vite, Webpack, Gradle |
-| **Runtime** | Environment where code executes | Node.js, Deno, JVM |
-| **Library** | Reusable code you import | Tailwind CSS, date-fns |
+### 1.4 HTTP Methods Explained
+
+HTTP methods are the "verbs" of the web. They tell the server what action to perform:
+
+| Method | Purpose | Example | Roomy Usage |
+|--------|---------|---------|-------------|
+| **GET** | Read data (no changes) | `GET /api/dorms` | Fetch dorm listings |
+| **POST** | Create new data | `POST /api/bookings` | Create a new booking |
+| **PUT** | Replace data entirely | `PUT /api/users/123` | Full profile update |
+| **PATCH** | Update part of data | `PATCH /api/users/123` | Change just email |
+| **DELETE** | Remove data | `DELETE /api/messages/456` | Delete a message |
+| **OPTIONS** | CORS preflight check | `OPTIONS /api/*` | Browser security |
 
 ### 1.5 Complete Technical Glossary
+
+This glossary defines every technical term you might encounter:
+
+#### Core Concepts
 
 | Term | What It Means |
 |------|---------------|
 | **API** | Application Programming Interface - how frontend talks to backend |
-| **REST** | Representational State Transfer - API style using HTTP methods (GET, POST, PUT, DELETE) |
-| **GraphQL** | Alternative to REST - query exactly what you need |
-| **CRUD** | Create, Read, Update, Delete - basic database operations |
+| **REST** | Representational State Transfer - API style using HTTP methods |
+| **GraphQL** | Alternative to REST - query exactly what you need in one request |
+| **CRUD** | Create, Read, Update, Delete - the four basic database operations |
 | **SQL** | Structured Query Language - language for relational databases |
-| **RDBMS** | Relational Database Management System (PostgreSQL, MySQL, Aurora) |
-| **NoSQL** | Non-relational databases (MongoDB, DynamoDB) |
+| **NoSQL** | Non-relational databases (document, key-value, graph) |
 | **ORM** | Object-Relational Mapping - code that generates SQL for you |
+
+#### Web & Security
+
+| Term | What It Means |
+|------|---------------|
 | **CDN** | Content Delivery Network - servers worldwide for fast loading |
 | **SSL/TLS** | Encryption for HTTPS (the lock icon 🔒) |
 | **DNS** | Domain Name System - translates domain.com to IP address |
+| **CORS** | Cross-Origin Resource Sharing - browser security for API calls |
+| **JWT** | JSON Web Token - secure authentication tokens |
+| **OAuth** | Authentication using third-party (Google, Facebook login) |
+| **RLS** | Row Level Security - database access control per user |
+| **RBAC** | Role-Based Access Control - permissions based on user role |
+
+#### DevOps & Infrastructure
+
+| Term | What It Means |
+|------|---------------|
 | **CI/CD** | Continuous Integration/Deployment - automated testing and deployment |
 | **Docker** | Containerization - package code with all dependencies |
 | **Kubernetes** | Container orchestration - managing many Docker containers |
 | **Terraform** | Infrastructure as Code - define cloud resources in code |
-| **WebSocket** | Real-time two-way communication (for messaging) |
-| **OAuth** | Authentication using third-party (Google, Facebook login) |
-| **JWT** | JSON Web Token - secure authentication tokens |
-| **RLS** | Row Level Security - database access control per user |
-| **CORS** | Cross-Origin Resource Sharing - browser security for API calls |
+| **IaC** | Infrastructure as Code - managing infrastructure through code files |
+
+#### Architecture Patterns
+
+| Term | What It Means |
+|------|---------------|
 | **Serverless** | Functions that run on demand, no server management |
 | **Edge Function** | Serverless function running close to users globally |
 | **Microservices** | Architecture where each feature is a separate service |
 | **Monolith** | Architecture where everything is in one codebase |
+| **WebSocket** | Real-time two-way communication (for messaging) |
+
+#### Rendering Strategies
+
+| Term | What It Means |
+|------|---------------|
 | **SSR** | Server-Side Rendering - server generates HTML |
-| **CSR** | Client-Side Rendering - browser generates HTML (what Roomy uses) |
+| **CSR** | Client-Side Rendering - browser generates HTML |
 | **SSG** | Static Site Generation - pre-build all pages at deploy time |
+| **ISR** | Incremental Static Regeneration - rebuild pages on demand |
 | **SPA** | Single Page Application - one HTML file, JS handles routing |
+| **MPA** | Multi-Page Application - traditional websites with page reloads |
+
+#### Mobile Development
+
+| Term | What It Means |
+|------|---------------|
 | **PWA** | Progressive Web App - website that works like a native app |
 | **Native App** | App built specifically for iOS or Android |
-| **Hybrid App** | Web app wrapped in native shell (Capacitor) |
+| **Hybrid App** | Web app wrapped in native shell (Capacitor, Cordova) |
 | **Cross-Platform** | One codebase for multiple platforms (Flutter, React Native) |
-
-### 1.6 HTTP Methods Explained
-
-| Method | Purpose | Example | Roomy Usage |
-|--------|---------|---------|-------------|
-| **GET** | Read data | `GET /api/dorms` | Fetch listings |
-| **POST** | Create data | `POST /api/bookings` | Create reservation |
-| **PUT** | Replace data entirely | `PUT /api/users/123` | Full profile update |
-| **PATCH** | Update part of data | `PATCH /api/users/123` | Change email only |
-| **DELETE** | Remove data | `DELETE /api/messages/456` | Delete message |
-| **OPTIONS** | CORS preflight check | `OPTIONS /api/*` | Browser security |
-
-### 1.7 Database Concepts
-
-#### Relational vs Non-Relational
-
-| Type | Structure | Best For | Example |
-|------|-----------|----------|---------|
-| **Relational (SQL)** | Tables with rows/columns | Structured data with relationships | PostgreSQL (Roomy) |
-| **Document (NoSQL)** | JSON-like documents | Flexible, schema-less data | MongoDB |
-| **Key-Value** | Simple key→value pairs | Caching, sessions | Redis |
-| **Graph** | Nodes and relationships | Social networks, recommendations | Neo4j |
-
-#### SQL Example for Roomy
-
-```sql
--- Get all dorms for an owner
-SELECT * FROM dorms WHERE owner_id = '123';
-
--- Create a reservation
-INSERT INTO reservations (student_id, dorm_id, status)
-VALUES ('456', '789', 'pending');
-
--- Update reservation status
-UPDATE reservations SET status = 'confirmed' WHERE id = '101';
-
--- Delete a message
-DELETE FROM messages WHERE id = '202';
-
--- Join students with their reservations
-SELECT s.full_name, r.status, d.name as dorm_name
-FROM students s
-JOIN reservations r ON s.id = r.student_id
-JOIN dorms d ON r.dorm_id = d.id
-WHERE s.user_id = auth.uid();
-```
+| **KMP** | Kotlin Multiplatform - share Kotlin code across platforms |
 
 ---
 
-## PART 2: Complete Technology Stack
+## PART 2: Master Technology Classification
 
-### 2.1 All Technologies by Category
+This section definitively categorizes every technology mentioned. This corrects the confusion from various online sources.
 
-#### Frontend Technologies
+### 2.1 The Correct Classification
 
-| Technology | Category | Purpose | Version |
-|------------|----------|---------|---------|
-| TypeScript | Language | Type-safe JavaScript | 5.x |
-| React | Framework | Component-based UI | 18.x |
-| Vite | Build Tool | Fast bundling & dev server | 5.x |
-| Tailwind CSS | Styling | Utility-first CSS | 3.x |
-| shadcn/ui | Component Library | Pre-built UI components | Latest |
-| Radix UI | Primitives | Accessible component primitives | 1.x |
-| React Router | Routing | Client-side navigation | 6.x |
-| TanStack Query | Data Fetching | Server state management | 5.x |
-| React Hook Form | Forms | Form handling & validation | 7.x |
-| Zod | Validation | Schema validation | 3.x |
-| Framer Motion | Animation | Motion library | 11.x |
-| Recharts | Charts | Data visualization | 3.x |
-| date-fns | Utilities | Date manipulation | 3.x |
-| i18next | i18n | Internationalization | 25.x |
+Many sources incorrectly classify technologies. Here is the **definitive, correct** classification:
 
-#### Backend Technologies (Current - Supabase)
+#### Programming Languages
 
-| Technology | Category | Purpose |
-|------------|----------|---------|
-| Supabase | BaaS | Complete backend platform |
-| PostgreSQL | Database | Relational database |
-| Deno | Runtime | Edge function execution |
-| PostgREST | API | Auto-generated REST API |
-| GoTrue | Auth | Authentication service |
-| Realtime | WebSocket | Real-time subscriptions |
-| Storage | Files | Object storage |
+Languages are what you actually write code in. They have syntax, rules, and compile/run.
 
-#### Backend Technologies (Future - AWS)
+| Language | Purpose | Syntax Example | Used in Roomy |
+|----------|---------|----------------|---------------|
+| **JavaScript** | Web browsers, frontend | `const x = 5;` | Legacy code only |
+| **TypeScript** | JavaScript + types (safer) | `const x: number = 5;` | ✅ All frontend code |
+| **Swift** | iOS/macOS apps | `let x: Int = 5` | ✅ Future iOS app |
+| **Kotlin** | Android apps, backends | `val x: Int = 5` | ✅ Future Android + backend |
+| **Python** | AI, data science, backends | `x = 5` | ✅ Future AI services |
+| **Go** | High-performance servers | `var x int = 5` | ✅ Future AWS Lambda |
+| **Rust** | Ultra-fast, safe systems | `let x: i32 = 5;` | OPTIONAL - Real-time messaging |
+| **Java** | Enterprise backends | `int x = 5;` | NO - Using Kotlin instead |
+| **C#** | Microsoft ecosystem | `int x = 5;` | NO |
+| **PHP** | Legacy web backends | `$x = 5;` | NO |
+| **Ruby** | Web backends | `x = 5` | NO |
 
-| Technology | Category | Purpose |
-|------------|----------|---------|
-| Aurora PostgreSQL | Database | Managed PostgreSQL |
-| Lambda | Compute | Serverless functions |
-| ECS Fargate | Compute | Container orchestration |
-| API Gateway | Routing | API management |
-| ElastiCache | Caching | Redis caching |
-| S3 | Storage | Object storage |
-| CloudFront | CDN | Content delivery |
-| Cognito | Auth | User management |
-| SES | Email | Email service |
-| SNS | Notifications | Push notifications |
+#### Query Languages
 
-#### Mobile Technologies (Future)
+Languages specifically for database operations:
 
-| Technology | Platform | Purpose |
-|------------|----------|---------|
-| Swift | iOS | Native iOS language |
-| SwiftUI | iOS | Declarative UI framework |
-| Kotlin | Android | Native Android language |
-| Jetpack Compose | Android | Modern UI toolkit |
-| Kotlin Multiplatform | Shared | Cross-platform business logic |
+| Language | Purpose | Example | Used in Roomy |
+|----------|---------|---------|---------------|
+| **SQL** | Relational databases | `SELECT * FROM users` | ✅ All database queries |
+| **PL/pgSQL** | PostgreSQL procedures | `CREATE FUNCTION...` | ✅ Database functions |
+| **GraphQL** | API queries | `query { user { name } }` | NO - Using REST |
 
-#### DevOps & Infrastructure
+#### Markup & Styling Languages
 
-| Technology | Category | Purpose |
-|------------|----------|---------|
-| GitHub | Version Control | Code repository |
-| GitHub Actions | CI/CD | Automated pipelines |
-| Vercel | Hosting | Frontend deployment |
-| Cloudflare | DNS/CDN | Domain & security |
-| Docker | Containerization | Package applications |
-| Terraform | IaC | Infrastructure as Code |
+Not programming languages - they define structure and appearance:
 
-### 2.2 Stack by Phase
+| Language | Purpose | Example | Used in Roomy |
+|----------|---------|---------|---------------|
+| **HTML** | Structure of web pages | `<div>content</div>` | ✅ Via React JSX |
+| **CSS** | Visual styles | `color: red;` | ✅ Via Tailwind |
+| **Markdown** | Documentation | `# Heading` | ✅ This document |
+| **XML** | Data structure | `<user><name>John</name></user>` | Rare |
 
-#### Phase 1: Launch (Vercel + Supabase)
+#### Configuration & Data Formats
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         FRONTEND                                 │
-│  React + Vite + TypeScript + Tailwind CSS + shadcn/ui           │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ HTTPS
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    HOSTING (Vercel)                              │
-│  • Automatic deployments from GitHub                            │
-│  • Global CDN                                                    │
-│  • SSL certificates                                             │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ API calls
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    BACKEND (Supabase)                            │
-├─────────────────────────────────────────────────────────────────┤
-│  Edge Functions (Deno)     │  Auth (GoTrue)                     │
-│  • send-auth-email         │  • Email/password                  │
-│  • check-email-verified    │  • Email verification              │
-│  • ai-match                │  • Session management              │
-│  • send-notification       │  • Role-based access               │
-├────────────────────────────┼────────────────────────────────────┤
-│  Database (PostgreSQL)     │  Storage                           │
-│  • 76+ tables              │  • profile-photos                  │
-│  • RLS policies            │  • dorm-images                     │
-│  • Functions & triggers    │  • chat-attachments                │
-├────────────────────────────┼────────────────────────────────────┤
-│  Realtime                  │  PostgREST                         │
-│  • Message subscriptions   │  • Auto-generated API              │
-│  • Presence (typing)       │  • Row-level filtering             │
-└─────────────────────────────────────────────────────────────────┘
-```
+Languages for configuration files:
 
-**Monthly Cost: $50-150**
+| Format | Purpose | Example | Used in Roomy |
+|--------|---------|---------|---------------|
+| **JSON** | Data interchange | `{"name": "John"}` | ✅ API responses |
+| **YAML** | Configuration files | `name: John` | ✅ CI/CD configs |
+| **TOML** | Configuration | `[database]\nhost = "localhost"` | ✅ Supabase config |
+| **HCL** | Terraform configs | `resource "aws_instance" {}` | ✅ Future AWS infra |
 
-#### Phase 2: Scale (AWS)
+### 2.2 Frameworks & Libraries
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         FRONTEND                                 │
-│  Same React codebase (no changes needed)                        │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ HTTPS
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              HOSTING (S3 + CloudFront)                           │
-│  • Static file hosting                                          │
-│  • Global CDN with 200+ edge locations                          │
-│  • WAF for security                                             │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ API calls
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    API GATEWAY                                   │
-│  • Request routing                                              │
-│  • Rate limiting                                                │
-│  • API key management                                           │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-           ┌───────────────┼───────────────┐
-           ▼               ▼               ▼
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│   Lambda     │  │  ECS Fargate │  │   Cognito    │
-│  (Go/Node)   │  │   (Kotlin)   │  │   (Auth)     │
-│              │  │              │  │              │
-│ • Simple API │  │ • Complex    │  │ • User mgmt  │
-│   endpoints  │  │   services   │  │ • OAuth      │
-│ • Webhooks   │  │ • AI/ML      │  │ • MFA        │
-└──────┬───────┘  └──────┬───────┘  └──────────────┘
-       │                 │
-       └────────┬────────┘
-                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    DATA LAYER                                    │
-├─────────────────────────────────────────────────────────────────┤
-│  Aurora PostgreSQL       │  ElastiCache (Redis)                 │
-│  • Same schema           │  • Session caching                   │
-│  • Auto-scaling          │  • Real-time presence                │
-│  • Read replicas         │  • Rate limiting                     │
-├────────────────────────────────────────────────────────────────┤
-│  S3 Storage              │  Elasticsearch                       │
-│  • File uploads          │  • Full-text search                  │
-│  • CDN integration       │  • Dorm search                       │
-└─────────────────────────────────────────────────────────────────┘
-```
+Frameworks provide structure. Libraries provide utilities. Know the difference:
 
-**Monthly Cost: $500-2000**
+#### UI Frameworks (Frontend)
 
-### 2.3 Vercel vs AWS Detailed Comparison
+| Technology | Category | Purpose | Used in Roomy |
+|------------|----------|---------|---------------|
+| **React** | UI Library | Component-based UI building | ✅ All web apps |
+| **Vue** | UI Framework | Alternative to React | NO |
+| **Angular** | UI Framework | Enterprise React alternative | NO |
+| **Svelte** | UI Framework | Compile-time framework | NO |
+| **Next.js** | Full-Stack Framework | React + server features | NO - Not needed |
+| **Nuxt** | Full-Stack Framework | Vue + server features | NO |
+| **SvelteKit** | Full-Stack Framework | Svelte + server features | NO |
 
-| Feature | Vercel | AWS |
-|---------|--------|-----|
-| **Setup Time** | 5 minutes | 2-5 days |
-| **Cost (0-1K users)** | $0-20/month | $200-400/month |
-| **Cost (10K users)** | $50-100/month | $600-1200/month |
-| **Cost (100K users)** | $200-500/month | $2000-5000/month |
-| **Learning Curve** | Easy (1 day) | Steep (1-3 months) |
-| **Control** | Limited | Full |
-| **Regions** | 30+ | 30+ |
-| **Scaling** | Automatic | Manual + Automatic |
-| **Custom Domains** | ✅ Easy | ✅ Via Route 53 |
-| **SSL Certificates** | ✅ Free, automatic | ✅ Free via ACM |
-| **Serverless Functions** | ✅ Built-in | ✅ Lambda |
-| **Database** | ❌ Use external | ✅ Aurora, RDS, DynamoDB |
-| **CDN** | ✅ Built-in | ✅ CloudFront |
-| **DDoS Protection** | ✅ Basic | ✅ Shield + WAF |
-| **Best For** | Launch fast | Enterprise scale |
+**IMPORTANT CLARIFICATION:**
+- **React is a UI LIBRARY**, not a framework. It only handles the view layer.
+- **Next.js is a FRAMEWORK** built on top of React. It adds routing, SSR, and backend features.
+- Roomy uses **React + Vite** (SPA), not Next.js (which would be SSR/SSG).
 
----
+#### Mobile UI Frameworks
 
-## PART 3: Migration Strategy
+| Technology | Platform | Purpose | Used in Roomy |
+|------------|----------|---------|---------------|
+| **SwiftUI** | iOS only | Apple's declarative UI | ✅ Future iOS |
+| **UIKit** | iOS only | Apple's older imperative UI | NO - Using SwiftUI |
+| **Jetpack Compose** | Android only | Google's modern UI toolkit | ✅ Future Android |
+| **XML Layouts** | Android only | Older Android UI | NO - Using Compose |
+| **Flutter** | Cross-platform | Google's cross-platform UI | NO - Going native |
+| **React Native** | Cross-platform | React for mobile | NO - Going native |
 
-### 3.1 Migration Feasibility Matrix
+#### Backend Frameworks
 
-| Component | Source | Target | Difficulty | Time | Data Loss |
-|-----------|--------|--------|------------|------|-----------|
-| Frontend Code | Vercel | S3/CloudFront | 🟢 Easy | 1 hour | None |
-| Database | Supabase PostgreSQL | Aurora PostgreSQL | 🟡 Medium | 2-4 hours | None |
-| Backend Functions | Edge Functions (Deno) | Lambda (Go/Node) | 🔴 Hard | 1-2 weeks | None |
-| Auth Users | Supabase Auth | Cognito | 🟡 Medium | 1 day | None* |
-| File Storage | Supabase Storage | S3 | 🟢 Easy | 2-4 hours | None |
-| Real-time | Supabase Realtime | Custom WebSocket | 🔴 Hard | 1-2 weeks | None |
+| Technology | Language | Purpose | Used in Roomy |
+|------------|----------|---------|---------------|
+| **Express** | Node.js | Minimal web framework | NO - Using serverless |
+| **Nest.js** | Node.js | Enterprise Node framework | NO |
+| **Django** | Python | Full-featured Python framework | NO |
+| **Flask** | Python | Minimal Python framework | NO |
+| **FastAPI** | Python | Modern async Python API | MAYBE - Future AI |
+| **Spring Boot** | Java/Kotlin | Enterprise Java framework | MAYBE - Future backend |
+| **Ktor** | Kotlin | Lightweight Kotlin framework | MAYBE - Future backend |
+| **Gin** | Go | Fast Go framework | MAYBE - Future Lambda |
+| **Rails** | Ruby | Full-featured Ruby framework | NO |
 
-*Users may need to reset passwords depending on migration approach
+### 2.3 Build Tools
 
-### 3.2 Database Migration Process
+Build tools transform source code into runnable applications:
 
-```bash
-# Step 1: Export from Supabase PostgreSQL
-pg_dump \
-  --host=db.vtdtmhgzisigtqryojwl.supabase.co \
-  --port=5432 \
-  --username=postgres \
-  --dbname=postgres \
-  --file=roomy_backup.sql \
-  --format=plain \
-  --no-owner
+| Tool | Purpose | Used For | Used in Roomy |
+|------|---------|----------|---------------|
+| **Vite** | Fast bundler + dev server | React, Vue, Svelte | ✅ All frontend |
+| **Webpack** | Traditional bundler | Legacy projects | NO - Using Vite |
+| **Rollup** | Library bundling | npm packages | NO |
+| **esbuild** | Ultra-fast bundler | Behind Vite | ✅ (via Vite) |
+| **Parcel** | Zero-config bundler | Simple projects | NO |
+| **Turbopack** | Next.js bundler | Next.js projects | NO |
+| **Gradle** | Android/JVM builds | Android apps | ✅ Future Android |
+| **Xcode Build** | iOS builds | iOS apps | ✅ Future iOS |
+| **Swift Package Manager** | Swift dependencies | iOS libraries | ✅ Future iOS |
 
-# Step 2: Create Aurora cluster on AWS
-aws rds create-db-cluster \
-  --db-cluster-identifier roomy-production \
-  --engine aurora-postgresql \
-  --engine-version 15.4 \
-  --master-username roomy_admin \
-  --master-user-password <secure-password>
+**IMPORTANT CLARIFICATION:**
+- **Vite is a BUILD TOOL**, not a framework
+- **React is a UI LIBRARY**, not a build tool
+- You use React to write components, Vite to bundle them into a runnable app
 
-# Step 3: Import to Aurora
-psql \
-  --host=roomy-production.cluster-xxxxx.us-east-1.rds.amazonaws.com \
-  --port=5432 \
-  --username=roomy_admin \
-  --dbname=postgres \
-  --file=roomy_backup.sql
+### 2.4 Runtimes
 
-# Step 4: Verify data integrity
-psql -c "SELECT COUNT(*) FROM students;"
-psql -c "SELECT COUNT(*) FROM dorms;"
-psql -c "SELECT COUNT(*) FROM messages;"
-```
+Runtimes execute code:
 
-### 3.3 Auth Migration Process
+| Runtime | Purpose | Used In Roomy |
+|---------|---------|---------------|
+| **Node.js** | JavaScript server execution | ✅ Some tooling |
+| **Deno** | Modern JS/TS runtime | ✅ Edge Functions |
+| **Bun** | Fast JS/TS runtime | ✅ Local development |
+| **JVM** | Java/Kotlin execution | ✅ Future backend |
+| **V8** | JavaScript in Chrome | ✅ (in browsers) |
 
-```javascript
-// Export users from Supabase (via Edge Function)
-const { data: users } = await supabaseAdmin.auth.admin.listUsers();
+### 2.5 Styling Systems
 
-// Format for Cognito import
-const cognitoUsers = users.map(user => ({
-  Username: user.email,
-  Attributes: [
-    { Name: 'email', Value: user.email },
-    { Name: 'email_verified', Value: 'true' },
-    { Name: 'custom:role', Value: user.app_metadata?.role || 'student' },
-    { Name: 'custom:supabase_id', Value: user.id }
-  ],
-  // Note: Passwords cannot be migrated directly
-  // Users will need to reset passwords
-}));
+| Technology | Category | Purpose | Used in Roomy |
+|------------|----------|---------|---------------|
+| **Tailwind CSS** | CSS Framework | Utility-first styling | ✅ All styling |
+| **Bootstrap** | CSS Framework | Pre-built components | NO |
+| **Material UI** | Component Library | Google's design system | NO |
+| **Chakra UI** | Component Library | Accessible components | NO |
+| **shadcn/ui** | Component Collection | Copy-paste components | ✅ All components |
+| **Radix UI** | UI Primitives | Unstyled accessible components | ✅ (via shadcn) |
+| **CSS Modules** | CSS Methodology | Scoped CSS classes | NO |
+| **Styled Components** | CSS-in-JS | CSS in JavaScript | NO |
+| **Sass/SCSS** | CSS Preprocessor | CSS with features | NO |
 
-// Import to Cognito via AWS SDK
-await cognito.adminCreateUser({
-  UserPoolId: 'us-east-1_xxxxx',
-  Username: user.email,
-  UserAttributes: cognitoUsers[0].Attributes,
-  MessageAction: 'SUPPRESS' // Don't send welcome email
-});
-```
+### 2.6 Databases
 
-### 3.4 Zero-Downtime Migration Checklist
+| Technology | Type | Purpose | Used in Roomy |
+|------------|------|---------|---------------|
+| **PostgreSQL** | Relational (SQL) | Primary data storage | ✅ Current (Supabase) |
+| **Aurora PostgreSQL** | Managed Relational | AWS-managed PostgreSQL | ✅ Future (AWS) |
+| **MySQL** | Relational (SQL) | Alternative to PostgreSQL | NO |
+| **SQLite** | Embedded Relational | Local/mobile databases | MAYBE - Mobile |
+| **MongoDB** | Document (NoSQL) | Flexible schema | NO |
+| **DynamoDB** | Key-Value (NoSQL) | High-scale simple data | NO |
+| **Redis** | In-Memory | Caching, sessions, real-time | ✅ Future caching |
+| **Elasticsearch** | Search Engine | Full-text search | MAYBE - Future search |
 
-```markdown
-## Pre-Migration (1 week before)
-- [ ] Create Aurora cluster and test connectivity
-- [ ] Set up Cognito user pool with matching attributes
-- [ ] Deploy Lambda functions (parallel to Edge Functions)
-- [ ] Configure S3 buckets with same folder structure
-- [ ] Set up CloudFront distribution
-- [ ] Test all endpoints on staging
+### 2.7 Cloud Providers & Hosting
 
-## Migration Day
-- [ ] Put app in maintenance mode (show banner)
-- [ ] Export final database snapshot
-- [ ] Export all Storage files to S3
-- [ ] Export auth users to Cognito
-- [ ] Import data to Aurora
-- [ ] Update environment variables
-- [ ] Switch DNS from Vercel to CloudFront
-- [ ] Monitor for 2 hours
+| Technology | Category | Purpose | Used in Roomy |
+|------------|----------|---------|---------------|
+| **AWS** | Cloud Provider | Full cloud platform | ✅ Future production |
+| **Google Cloud** | Cloud Provider | Alternative to AWS | NO |
+| **Azure** | Cloud Provider | Microsoft's cloud | NO |
+| **Vercel** | Hosting Platform | Frontend deployment | ✅ Waitlist site |
+| **Netlify** | Hosting Platform | Alternative to Vercel | NO |
+| **Cloudflare** | CDN/DNS | Domain + DDoS protection | ✅ All domains |
+| **Supabase** | Backend-as-a-Service | Complete backend | ✅ Current backend |
+| **Firebase** | Backend-as-a-Service | Google's alternative | NO |
 
-## Post-Migration
-- [ ] Send email to users about password reset (if needed)
-- [ ] Monitor error rates for 48 hours
-- [ ] Keep Supabase running for 1 week (fallback)
-- [ ] Decommission Supabase after successful migration
-```
+### 2.8 DevOps & Infrastructure Tools
 
-### 3.5 When to Migrate
+| Technology | Category | Purpose | Used in Roomy |
+|------------|----------|---------|---------------|
+| **Docker** | Containerization | Package applications | ✅ Future AWS |
+| **Kubernetes** | Container Orchestration | Manage containers | MAYBE - At scale |
+| **Terraform** | Infrastructure as Code | Define cloud resources | ✅ Future AWS |
+| **Pulumi** | Infrastructure as Code | Alternative to Terraform | NO |
+| **GitHub** | Code Hosting | Repository management | ✅ All code |
+| **GitHub Actions** | CI/CD | Automated pipelines | ✅ Future pipelines |
+| **GitLab CI** | CI/CD | Alternative to GH Actions | NO |
+| **Jenkins** | CI/CD | Self-hosted CI/CD | NO |
 
-| Trigger | Current State | Action |
-|---------|---------------|--------|
-| **< 1,000 users** | Stay on Supabase | No migration needed |
-| **1,000 - 10,000 users** | Evaluate | Migrate if hitting limits |
-| **> 10,000 users** | Migrate to AWS | Full infrastructure move |
-| **Voice/Video calls** | Migrate | Need custom WebSocket servers |
-| **GDPR compliance** | Migrate | Need EU data residency |
-| **$500+/mo budget** | Migrate | Can afford AWS |
-| **Technical team available** | Migrate | Can manage complexity |
+### 2.9 External Services
+
+| Service | Category | Purpose | Used in Roomy |
+|---------|----------|---------|---------------|
+| **Stripe** | Payments | Payment processing | ✅ Future payments |
+| **SendGrid** | Email | Transactional emails | ✅ Notifications |
+| **Twilio** | SMS | Text messaging | MAYBE - SMS alerts |
+| **Mailchimp** | Marketing | Email campaigns | ✅ Waitlist |
+| **Sentry** | Monitoring | Error tracking | ✅ Future monitoring |
+| **DataDog** | Monitoring | Full observability | MAYBE - At scale |
+| **Figma** | Design | UI/UX design tool | OPTIONAL |
 
 ---
 
-## PART 4: Three-Subdomain Architecture
+## PART 3: Web Application Architecture Types
 
-### 4.1 Domain Structure
+Understanding architecture types is essential for choosing how to build Roomy. Here's what each option means:
 
-```
-roomylb.com (root domain)
-├── waitlist.roomylb.com  → Lovable Project 1
-├── app.roomylb.com       → Lovable Project 2 (this project)
-└── admin.roomylb.com     → Lovable Project 3
-```
+### 3.1 Client-Side Architectures
 
-### 4.2 Detailed Architecture Diagram
+These determine how the user interface is delivered to the browser:
 
-```
+#### Single-Page Application (SPA)
+
+**What It Is:** One HTML file is loaded initially. JavaScript handles all navigation and UI updates without full page reloads.
+
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           CLOUDFLARE (DNS + CDN)                             │
+│                         SINGLE-PAGE APPLICATION                              │
+├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  roomylb.com                                                                 │
-│  ├── A     → Vercel IP (waitlist)                                           │
-│  ├── CNAME → app.roomylb.com → Vercel (main app)                            │
-│  └── CNAME → admin.roomylb.com → Vercel (admin dashboard)                   │
-└──────────────────────────────────┬──────────────────────────────────────────┘
-                                   │
-         ┌─────────────────────────┼─────────────────────────┐
-         │                         │                         │
-         ▼                         ▼                         ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│    WAITLIST     │    │    MAIN APP     │    │     ADMIN       │
-│                 │    │                 │    │                 │
-│ • Landing page  │    │ • Student UI    │    │ • Dashboard     │
-│ • Email signup  │    │ • Owner UI      │    │ • User mgmt     │
-│ • Countdown     │    │ • Messaging     │    │ • Analytics     │
-│ • Features      │    │ • Reservations  │    │ • Verification  │
-│                 │    │ • AI Matching   │    │ • Financials    │
-│                 │    │ • Tour Booking  │    │ • Audit logs    │
-├─────────────────┤    ├─────────────────┤    ├─────────────────┤
-│ Tech:           │    │ Tech:           │    │ Tech:           │
-│ • React + Vite  │    │ • React + Vite  │    │ • React + Vite  │
-│ • Mailchimp     │    │ • Full features │    │ • Admin-only    │
-│ • Minimal DB    │    │ • All 76 tables │    │ • Read all data │
-└────────┬────────┘    └────────┬────────┘    └────────┬────────┘
-         │                      │                      │
-         └──────────────────────┼──────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                      SHARED SUPABASE BACKEND                                 │
+│  Browser loads ONE HTML file + JavaScript bundle                             │
 │                                                                              │
-│  Project ID: vtdtmhgzisigtqryojwl                                           │
-│  URL: https://vtdtmhgzisigtqryojwl.supabase.co                              │
+│  [index.html] ──loads──> [bundle.js] ──renders──> [App]                     │
 │                                                                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                        DATABASE                                      │    │
-│  │  • 76+ tables (students, owners, dorms, messages, etc.)             │    │
-│  │  • Full RLS policies                                                │    │
-│  │  • 20+ database functions                                           │    │
-│  │  • Triggers for updated_at, notifications                           │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
+│  When user clicks a link:                                                    │
+│  • URL changes (browser history API)                                        │
+│  • JavaScript renders new component                                         │
+│  • NO server request for HTML                                               │
+│  • API calls fetch data as needed                                           │
 │                                                                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                        EDGE FUNCTIONS                                │    │
-│  │  • send-auth-email (custom email verification)                      │    │
-│  │  • check-email-verified (token validation)                          │    │
-│  │  • ai-match (roommate/dorm matching)                                │    │
-│  │  • send-notification (push notifications)                           │    │
-│  │  • process-payment (Whish/Stripe integration)                       │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
+│  Example URLs (all same HTML, different components):                         │
+│  • /listings → renders ListingsPage component                               │
+│  • /listings/abc123 → renders DormDetailPage component                      │
+│  • /messages → renders MessagesPage component                               │
 │                                                                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                        STORAGE BUCKETS                               │    │
-│  │  • profile-photos (avatars)                                         │    │
-│  │  • dorm-images (listings)                                           │    │
-│  │  • chat-attachments (messages)                                      │    │
-│  │  • documents (verification docs)                                    │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                                                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                        AUTH                                          │    │
-│  │  • Email/password authentication                                    │    │
-│  │  • Custom email verification flow                                   │    │
-│  │  • Role-based access (student, owner, admin)                        │    │
-│  │  • Session management (PKCE flow)                                   │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                                                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                        REALTIME                                      │    │
-│  │  • Message subscriptions (instant delivery)                         │    │
-│  │  • Presence (typing indicators, online status)                      │    │
-│  │  • Broadcast (notifications)                                        │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.3 Why Separate Projects?
+**Pros:**
+- ✅ Fast navigation after initial load
+- ✅ Smooth, app-like user experience
+- ✅ Rich interactivity
+- ✅ Works great for logged-in applications
+
+**Cons:**
+- ❌ Slower initial load (large JS bundle)
+- ❌ SEO challenges (empty HTML initially)
+- ❌ Requires JavaScript to function
+
+**Best For:** Interactive applications with logged-in users (dashboards, messaging, forms)
+
+**Roomy Decision:** ✅ **YES - Primary architecture for app.roomylb.com**
+
+#### Server-Side Rendering (SSR)
+
+**What It Is:** Server generates complete HTML for each page request. JavaScript "hydrates" the HTML to make it interactive.
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         SERVER-SIDE RENDERING                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Each page request:                                                          │
+│                                                                              │
+│  Browser ──GET /listings──> Server                                          │
+│                              │                                               │
+│                              ├── Fetches data from database                 │
+│                              ├── Renders React to HTML                      │
+│                              └── Sends complete HTML + JS                   │
+│                                                                              │
+│  Browser receives:                                                           │
+│  • Complete HTML (can be displayed immediately)                             │
+│  • JavaScript bundle (makes it interactive)                                 │
+│                                                                              │
+│  "Hydration": JS attaches event listeners to existing HTML                  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Pros:**
+- ✅ Great for SEO (complete HTML for crawlers)
+- ✅ Fast First Contentful Paint
+- ✅ Works without JavaScript initially
+
+**Cons:**
+- ❌ Slower navigation (each page requires server)
+- ❌ More complex infrastructure
+- ❌ Higher server costs
+
+**Best For:** Content-focused sites, SEO-critical pages, marketing sites
+
+**Roomy Decision:** ❌ **NO - Overkill for Roomy's interactive app**
+
+#### Progressive Web App (PWA)
+
+**What It Is:** A web app that can be "installed" on devices and work offline, with features like push notifications.
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         PROGRESSIVE WEB APP                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Same as SPA, but adds:                                                      │
+│                                                                              │
+│  ┌─────────────────────┐     ┌─────────────────────┐                        │
+│  │   manifest.json     │     │   service-worker.js │                        │
+│  │                     │     │                     │                        │
+│  │  • App name/icon    │     │  • Cache assets     │                        │
+│  │  • Theme colors     │     │  • Offline support  │                        │
+│  │  • Display mode     │     │  • Background sync  │                        │
+│  │  • Start URL        │     │  • Push notifications│                       │
+│  └─────────────────────┘     └─────────────────────┘                        │
+│                                                                              │
+│  Results in:                                                                 │
+│  • "Add to Home Screen" prompt                                              │
+│  • App-like experience on mobile                                            │
+│  • Works without internet (cached pages)                                    │
+│  • Push notifications even when closed                                      │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Pros:**
+- ✅ Installable without app stores
+- ✅ Works offline
+- ✅ Push notifications
+- ✅ Lower development cost than native apps
+
+**Cons:**
+- ❌ Limited access to device features
+- ❌ iOS support is limited
+- ❌ Not discoverable in app stores
+
+**Best For:** Apps that need to reach mobile users quickly before native apps are ready
+
+**Roomy Decision:** ✅ **YES - Add PWA capabilities for mobile users**
+
+### 3.2 Server-Side Architectures
+
+These determine how the backend is organized:
+
+#### Monolithic Architecture
+
+**What It Is:** All code lives in one codebase. All features share the same deployment.
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         MONOLITHIC ARCHITECTURE                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ONE CODEBASE contains EVERYTHING:                                           │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                        Single Application                            │    │
+│  ├─────────────────────────────────────────────────────────────────────┤    │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐   │    │
+│  │  │ User Auth   │ │  Listings   │ │  Bookings   │ │  Messages   │   │    │
+│  │  │  Module     │ │   Module    │ │   Module    │ │   Module    │   │    │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘   │    │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐   │    │
+│  │  │  Payments   │ │    AI       │ │   Admin     │ │Notifications│   │    │
+│  │  │  Module     │ │   Module    │ │   Module    │ │   Module    │   │    │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘   │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  Deploys as: ONE unit                                                        │
+│  Scales by: Running more copies of entire app                               │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Pros:**
+- ✅ Simple to develop and debug
+- ✅ Easy to deploy (one thing to deploy)
+- ✅ No inter-service communication overhead
+- ✅ Easier to test end-to-end
+
+**Cons:**
+- ❌ Hard to scale individual features
+- ❌ One bug can crash everything
+- ❌ Large codebase becomes unwieldy
+- ❌ Difficult for large teams (merge conflicts)
+
+**Best For:** Startups, small teams, rapid prototyping, launch phase
+
+**Roomy Decision:** ✅ **YES for launch - "Modular Monolith"**
+
+#### Microservices Architecture
+
+**What It Is:** Each feature is a separate, independently deployable service. Services communicate via APIs.
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       MICROSERVICES ARCHITECTURE                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  SEPARATE CODEBASES, each deploys independently:                             │
+│                                                                              │
+│  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐                │
+│  │   Auth    │  │ Listings  │  │ Bookings  │  │ Messages  │                │
+│  │  Service  │  │  Service  │  │  Service  │  │  Service  │                │
+│  │           │  │           │  │           │  │           │                │
+│  │ (Go/Node) │  │ (Kotlin)  │  │ (Kotlin)  │  │  (Rust)   │                │
+│  │           │  │           │  │           │  │           │                │
+│  │ Postgres  │  │ Postgres  │  │ Postgres  │  │  Redis    │                │
+│  └─────┬─────┘  └─────┬─────┘  └─────┬─────┘  └─────┬─────┘                │
+│        │              │              │              │                       │
+│        └──────────────┴──────────────┴──────────────┘                       │
+│                              │                                               │
+│                     API Gateway / Message Queue                             │
+│                                                                              │
+│  Each service:                                                               │
+│  • Has its own database (or shares one carefully)                           │
+│  • Can be written in different languages                                    │
+│  • Deploys independently                                                    │
+│  • Scales independently                                                     │
+│  • Can fail without affecting others                                        │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Pros:**
+- ✅ Scale individual services based on demand
+- ✅ Independent deployments
+- ✅ Technology flexibility per service
+- ✅ Fault isolation (one service crashes, others continue)
+- ✅ Better for large teams
+
+**Cons:**
+- ❌ Complex infrastructure
+- ❌ Network latency between services
+- ❌ Difficult debugging (distributed tracing needed)
+- ❌ Data consistency challenges
+
+**Best For:** Large organizations, high-scale applications, 50K+ users
+
+**Roomy Decision:** ❌ **NOT YET - After 50K+ users**
+
+#### Serverless Architecture
+
+**What It Is:** Functions run on-demand in the cloud. No servers to manage. Pay only for execution time.
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       SERVERLESS ARCHITECTURE                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  NO LONG-RUNNING SERVERS - Functions execute on demand:                      │
+│                                                                              │
+│  User Request                                                                │
+│       │                                                                      │
+│       ▼                                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                        API Gateway                                   │    │
+│  └───────────────────────────────┬─────────────────────────────────────┘    │
+│                                  │                                           │
+│           ┌──────────────────────┼──────────────────────┐                   │
+│           │                      │                      │                   │
+│           ▼                      ▼                      ▼                   │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐              │
+│  │   Function A    │  │   Function B    │  │   Function C    │              │
+│  │  (send-email)   │  │  (ai-match)     │  │ (process-pay)   │              │
+│  │                 │  │                 │  │                 │              │
+│  │ Spins up on     │  │ Runs for 1-5    │  │ Shuts down when │              │
+│  │ request         │  │ seconds         │  │ done            │              │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘              │
+│                                                                              │
+│  Characteristics:                                                            │
+│  • Pay per execution (not per hour)                                         │
+│  • Auto-scales to any demand                                                │
+│  • No server management                                                     │
+│  • "Cold starts" can add latency                                            │
+│                                                                              │
+│  Examples:                                                                   │
+│  • Supabase Edge Functions                                                  │
+│  • AWS Lambda                                                               │
+│  • Cloudflare Workers                                                       │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Pros:**
+- ✅ No server management
+- ✅ Infinite scalability
+- ✅ Pay only for usage
+- ✅ Deploys instantly
+
+**Cons:**
+- ❌ Cold start latency
+- ❌ Limited execution time (typically 30s-5min)
+- ❌ Vendor lock-in
+- ❌ Harder to debug locally
+
+**Best For:** Event-driven tasks, APIs, background jobs
+
+**Roomy Decision:** ✅ **YES - Using serverless for backend (Edge Functions → Lambda)**
+
+### 3.3 Roomy's Chosen Architecture
+
+Based on all requirements (messaging, real-time, payments, AI matching), Roomy will use:
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     ROOMY ARCHITECTURE DECISIONS                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  CLIENT ARCHITECTURE:                                                        │
+│  ───────────────────                                                         │
+│  ✅ Single-Page Application (SPA)                                           │
+│     → Fast navigation, app-like experience                                  │
+│     → React + Vite + TypeScript                                             │
+│                                                                              │
+│  ✅ Progressive Web App (PWA) capabilities                                  │
+│     → "Add to Home Screen" for mobile users                                 │
+│     → Push notifications                                                    │
+│     → Before native apps are ready                                          │
+│                                                                              │
+│  SERVER ARCHITECTURE:                                                        │
+│  ────────────────────                                                        │
+│  ✅ Modular Monolith (Phase 1: Launch)                                      │
+│     → Single codebase with clear module boundaries                          │
+│     → Easy to develop and debug                                             │
+│     → Supabase Edge Functions for serverless operations                     │
+│                                                                              │
+│  ✅ Serverless Functions                                                     │
+│     → Edge Functions (Supabase) → Lambda (AWS)                              │
+│     → No server management                                                  │
+│     → Auto-scaling                                                          │
+│                                                                              │
+│  ❌ Microservices (Phase 2: After 50K+ users)                               │
+│     → Will migrate when scaling demands it                                  │
+│     → Only if team size justifies complexity                                │
+│                                                                              │
+│  DATABASE ARCHITECTURE:                                                      │
+│  ─────────────────────                                                       │
+│  ✅ Relational (PostgreSQL)                                                 │
+│     → 76+ tables with proper relationships                                  │
+│     → Row Level Security for access control                                 │
+│     → Supabase → Aurora PostgreSQL migration                                │
+│                                                                              │
+│  ✅ Caching Layer (Redis - Future)                                          │
+│     → Session caching                                                       │
+│     → Real-time presence                                                    │
+│     → Rate limiting                                                         │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## PART 4: Roomy Architecture Decisions
+
+This section details the specific architecture choices for Roomy with rationale:
+
+### 4.1 The 3-Tier Architecture for Roomy
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PRESENTATION LAYER (Frontend)                             │
+│                                                                              │
+│  waitlist.roomylb.com   │   app.roomylb.com    │   admin.roomylb.com        │
+│  (Vercel)               │   (AWS S3+CloudFront)│   (AWS S3+CloudFront)      │
+│                         │                      │                            │
+│  ┌───────────────────┐  │  ┌───────────────────┐  ┌───────────────────┐    │
+│  │ React + Vite      │  │  │ React + Vite      │  │ React + Vite      │    │
+│  │ TypeScript        │  │  │ TypeScript        │  │ TypeScript        │    │
+│  │ Tailwind CSS      │  │  │ Tailwind CSS      │  │ Tailwind CSS      │    │
+│  │ shadcn/ui         │  │  │ shadcn/ui         │  │ shadcn/ui         │    │
+│  │ Framer Motion     │  │  │ Framer Motion     │  │ Recharts          │    │
+│  │ i18next           │  │  │ i18next           │  │                   │    │
+│  └───────────────────┘  │  └───────────────────┘  └───────────────────┘    │
+│                         │                      │                            │
+│  Purpose:               │  Purpose:            │  Purpose:                  │
+│  • Collect emails       │  • Student app       │  • Admin dashboard         │
+│  • Marketing content    │  • Owner app         │  • User management         │
+│  • Launch countdown     │  • Bookings, chat    │  • Content moderation      │
+│  • Waitlist management  │  • AI matching       │  • Analytics               │
+│                         │  • Payments          │  • System settings         │
+└───────────────────────────────────┬─────────────────────────────────────────┘
+                                    │ HTTPS / REST API
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    APPLICATION LAYER (Backend)                               │
+│                                                                              │
+│  Development (Supabase)  │  Production (AWS)                                 │
+│  ────────────────────────│───────────────────────────────────────────────   │
+│                          │                                                   │
+│  ┌──────────────────┐    │   ┌──────────────────┐  ┌──────────────────┐     │
+│  │   Edge Functions │    │   │   API Gateway    │  │   Cognito        │     │
+│  │   (Deno)         │    │   │   (Routing)      │  │   (Auth)         │     │
+│  │                  │    │   └────────┬─────────┘  └──────────────────┘     │
+│  │ • send-email     │    │            │                                      │
+│  │ • ai-match       │    │   ┌────────▼─────────────────────────────┐       │
+│  │ • verify-device  │    │   │    AWS Lambda (Node.js / Go)         │       │
+│  │ • process-pay    │    │   │    OR ECS Fargate (Kotlin)           │       │
+│  │ • notifications  │    │   │                                      │       │
+│  │                  │    │   │  • User authentication              │       │
+│  └──────────────────┘    │   │  • Reservation processing            │       │
+│                          │   │  • AI matching algorithms            │       │
+│  ┌──────────────────┐    │   │  • Message delivery                  │       │
+│  │   Supabase Auth  │    │   │  • Payment handling                  │       │
+│  │   (GoTrue)       │    │   │  • Email/SMS notifications           │       │
+│  └──────────────────┘    │   └──────────────────────────────────────┘       │
+│                          │                                                   │
+│  ┌──────────────────┐    │   ┌──────────────────┐                           │
+│  │ Supabase Realtime│    │   │ API Gateway       │                           │
+│  │ (WebSocket)      │    │   │ WebSocket        │                           │
+│  └──────────────────┘    │   └──────────────────┘                           │
+│                          │                                                   │
+└───────────────────────────────────┬─────────────────────────────────────────┘
+                                    │ SQL / Redis
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    DATA LAYER (Database & Storage)                           │
+│                                                                              │
+│  Development (Supabase)  │  Production (AWS)                                 │
+│  ────────────────────────│───────────────────────────────────────────────   │
+│                          │                                                   │
+│  ┌──────────────────┐    │   ┌──────────────────┐                           │
+│  │ Supabase         │    │   │   Aurora         │                           │
+│  │ PostgreSQL       │    │   │   PostgreSQL     │                           │
+│  │                  │    │   │                  │                           │
+│  │  76+ tables      │◀──migration──▶  Same schema  │                        │
+│  │  • students      │    │   │  • Auto-scaling  │                           │
+│  │  • dorms         │    │   │  • Read replicas │                           │
+│  │  • messages      │    │   │  • Point-in-time │                           │
+│  │  • payments      │    │   │    recovery      │                           │
+│  │  • bookings      │    │   │                  │                           │
+│  └──────────────────┘    │   └──────────────────┘                           │
+│                          │                                                   │
+│  ┌──────────────────┐    │   ┌──────────────────┐                           │
+│  │ Supabase Storage │    │   │   AWS S3         │                           │
+│  │                  │    │   │                  │                           │
+│  │  • profile-photos│    │   │  • Same buckets  │                           │
+│  │  • dorm-images   │    │   │  • CDN delivery  │                           │
+│  │  • chat-media    │    │   │  • Lambda image  │                           │
+│  │                  │    │   │    processing    │                           │
+│  └──────────────────┘    │   └──────────────────┘                           │
+│                          │                                                   │
+│                          │   ┌──────────────────┐                           │
+│                          │   │   ElastiCache    │                           │
+│                          │   │   (Redis)        │                           │
+│                          │   │                  │                           │
+│                          │   │  • Sessions      │                           │
+│                          │   │  • Caching       │                           │
+│                          │   │  • Real-time     │                           │
+│                          │   │    presence      │                           │
+│                          │   │  • Rate limiting │                           │
+│                          │   └──────────────────┘                           │
+│                          │                                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 4.2 Why This Architecture?
+
+| Requirement | Architecture Choice | Rationale |
+|-------------|---------------------|-----------|
+| **Fast Launch** | Supabase + Vercel | Ready-made auth, database, hosting |
+| **Interactive UI** | SPA (React) | App-like experience for booking/messaging |
+| **Real-time Messaging** | WebSockets | Instant message delivery |
+| **Mobile Users** | PWA first, Native later | Quick mobile reach, then full apps |
+| **AI Features** | Serverless functions | Scale AI processing on demand |
+| **Payments** | External provider (Stripe) | Don't build payment infrastructure |
+| **Scale to 1M Users** | AWS migration path | Supabase to Aurora migration prepared |
+| **Security** | RLS + IAM | Database-level and infrastructure security |
+
+### 4.3 Technology Choices Explained
+
+#### Why React (not Vue, Angular, Svelte)?
+
+| Factor | React | Vue | Angular | Svelte |
+|--------|-------|-----|---------|--------|
+| **Ecosystem** | Largest | Good | Good | Growing |
+| **Job Market** | Best | Good | Good | Small |
+| **Learning Resources** | Most | Good | Good | Limited |
+| **Lovable Support** | ✅ Native | ❌ No | ❌ No | ❌ No |
+| **Component Libraries** | shadcn/ui ✅ | Vuetify | Material | Limited |
+| **Mobile via React Native** | ✅ Possible | ❌ No | ❌ No | ❌ No |
+
+**Decision:** React is the best choice for Roomy because of Lovable support, ecosystem, and future React Native option if needed.
+
+#### Why TypeScript (not JavaScript)?
+
+| Factor | TypeScript | JavaScript |
+|--------|------------|------------|
+| **Type Safety** | ✅ Catches errors at compile time | ❌ Errors only at runtime |
+| **IDE Support** | ✅ Excellent autocomplete | Limited |
+| **Refactoring** | ✅ Safe large-scale changes | ❌ Dangerous |
+| **Team Scalability** | ✅ Self-documenting | ❌ Requires more docs |
+| **Learning Curve** | Slightly higher | Lower |
+
+**Decision:** TypeScript prevents bugs and makes the codebase maintainable. Worth the small learning curve.
+
+#### Why Tailwind CSS (not Bootstrap, Material UI)?
+
+| Factor | Tailwind | Bootstrap | Material UI |
+|--------|----------|-----------|-------------|
+| **Customization** | ✅ Full control | Limited | Google's design |
+| **Bundle Size** | Small (purges unused) | Large | Large |
+| **Design System** | Build your own | Predefined | Google's system |
+| **With shadcn/ui** | ✅ Perfect match | ❌ Conflicts | ❌ Conflicts |
+| **Utility-first** | ✅ Yes | ❌ Component-first | ❌ Component-first |
+
+**Decision:** Tailwind + shadcn/ui gives us complete design control with pre-built accessible components.
+
+#### Why PostgreSQL (not MongoDB, DynamoDB)?
+
+| Factor | PostgreSQL | MongoDB | DynamoDB |
+|--------|------------|---------|----------|
+| **Data Relationships** | ✅ Excellent (JOINs) | ❌ Poor | ❌ Poor |
+| **Data Integrity** | ✅ Strong (constraints) | Flexible | Key-value |
+| **Row Level Security** | ✅ Native | ❌ No | IAM-based |
+| **Supabase Support** | ✅ Native | ❌ No | ❌ No |
+| **AWS Migration** | ✅ Aurora PostgreSQL | DocumentDB | Native |
+
+**Decision:** PostgreSQL is perfect for Roomy's complex relationships (students→reservations→dorms→owners).
+
+---
+
+## PART 5: Software Company Structure
+
+Understanding how a software company is organized helps you understand who does what and how work flows:
+
+### 5.1 Department Overview
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           ROOMY COMPANY STRUCTURE                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                          EXECUTIVE                                   │    │
+│  │                        (CEO/Founder)                                 │    │
+│  │                                                                      │    │
+│  │  • Sets vision and strategy                                         │    │
+│  │  • Makes final decisions on product direction                       │    │
+│  │  • Manages budget and hiring                                        │    │
+│  │  • Represents company externally                                    │    │
+│  └─────────────────────────────────┬───────────────────────────────────┘    │
+│                                    │                                         │
+│  ┌─────────────────────────────────┴───────────────────────────────────┐    │
+│  │                                                                      │    │
+│  ▼                                 ▼                                    ▼    │
+│  ┌───────────────┐  ┌───────────────────────┐  ┌───────────────────────┐    │
+│  │   PRODUCT     │  │        DESIGN         │  │     ENGINEERING       │    │
+│  │               │  │       (UI/UX)         │  │                       │    │
+│  │ • Roadmap     │  │                       │  │ • Frontend            │    │
+│  │ • Features    │  │ • User research       │  │ • Backend             │    │
+│  │ • Priorities  │  │ • Wireframes          │  │ • Mobile              │    │
+│  │ • User stories│  │ • Visual design       │  │ • DevOps              │    │
+│  │ • Success     │  │ • Prototypes          │  │ • QA                  │    │
+│  │   metrics     │  │ • Design system       │  │ • Data                │    │
+│  └───────────────┘  └───────────────────────┘  └───────────────────────┘    │
+│                                                                              │
+│  ┌───────────────┐  ┌───────────────────────┐  ┌───────────────────────┐    │
+│  │   MARKETING   │  │        SUPPORT        │  │       SECURITY        │    │
+│  │               │  │                       │  │                       │    │
+│  │ • User growth │  │ • Customer success    │  │ • Security audits     │    │
+│  │ • Content     │  │ • Bug reports         │  │ • Compliance          │    │
+│  │ • SEO         │  │ • Feedback loop       │  │ • Incident response   │    │
+│  │ • Campaigns   │  │ • Onboarding          │  │ • Penetration testing │    │
+│  └───────────────┘  └───────────────────────┘  └───────────────────────┘    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 5.2 Engineering Team Breakdown
+
+| Role | What They Build | Languages/Tools | Roomy Needs |
+|------|-----------------|-----------------|-------------|
+| **Frontend Engineer** | Web UI (buttons, pages, forms) | TypeScript, React, CSS, Tailwind | ✅ 1-2 people |
+| **Backend Engineer** | Server logic, APIs, database | TypeScript/Go/Kotlin, SQL, PostgreSQL | ✅ 1 person |
+| **Mobile Engineer (iOS)** | iPhone/iPad app | Swift, SwiftUI, Xcode | LATER - 1 person |
+| **Mobile Engineer (Android)** | Android app | Kotlin, Jetpack Compose, Android Studio | LATER - 1 person |
+| **Full-Stack Engineer** | Both frontend and backend | All of the above | ✅ Lovable acts as this |
+| **DevOps Engineer** | Servers, deployment, CI/CD | AWS, Docker, Terraform, GitHub Actions | ✅ Hire for AWS setup |
+| **QA Engineer** | Testing, quality assurance | Testing frameworks, Playwright, Jest | LATER |
+| **Data Engineer** | Analytics, data pipelines | SQL, Python, dbt | LATER |
+| **Security Engineer** | Security audits, compliance | Varies | LATER (or outsource) |
+
+### 5.3 What Each Role Actually Does
+
+#### Frontend Engineer
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         FRONTEND ENGINEER                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  DAILY WORK:                                                                 │
+│  • Write React components for UI features                                   │
+│  • Style components with Tailwind CSS                                       │
+│  • Connect UI to backend APIs using React Query                             │
+│  • Handle form validation and user input                                    │
+│  • Ensure responsive design (mobile + desktop)                              │
+│  • Write unit tests for components                                          │
+│  • Fix UI bugs reported by users                                            │
+│                                                                              │
+│  TECHNOLOGIES:                                                               │
+│  • Languages: TypeScript, HTML, CSS                                         │
+│  • Framework: React                                                         │
+│  • Styling: Tailwind CSS, shadcn/ui                                         │
+│  • State: React Query, React Context                                        │
+│  • Build: Vite                                                              │
+│  • Testing: Jest, React Testing Library                                     │
+│                                                                              │
+│  EXAMPLE TASK:                                                               │
+│  "Build the tour booking modal that shows available times and lets          │
+│   students submit a booking request"                                        │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Backend Engineer
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         BACKEND ENGINEER                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  DAILY WORK:                                                                 │
+│  • Design database schemas and write migrations                             │
+│  • Build API endpoints (REST or GraphQL)                                    │
+│  • Implement business logic (calculations, validations)                     │
+│  • Write RLS policies for data security                                     │
+│  • Create serverless functions for async tasks                              │
+│  • Set up authentication and authorization                                  │
+│  • Integrate with external services (Stripe, SendGrid)                      │
+│  • Optimize database queries for performance                                │
+│                                                                              │
+│  TECHNOLOGIES:                                                               │
+│  • Languages: TypeScript (Deno), Go, Kotlin, SQL                            │
+│  • Database: PostgreSQL, Redis                                              │
+│  • Serverless: Edge Functions, Lambda                                       │
+│  • Auth: Supabase Auth, Cognito                                             │
+│  • APIs: REST, WebSocket                                                    │
+│  • Testing: Unit tests, integration tests                                   │
+│                                                                              │
+│  EXAMPLE TASK:                                                               │
+│  "Create an endpoint that calculates the total price for a reservation      │
+│   including the 10% platform fee, validates payment, and creates the        │
+│   reservation record"                                                        │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### DevOps Engineer
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         DEVOPS ENGINEER                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  DAILY WORK:                                                                 │
+│  • Set up and manage cloud infrastructure (AWS)                             │
+│  • Write Infrastructure as Code (Terraform)                                 │
+│  • Configure CI/CD pipelines for automated deployment                       │
+│  • Monitor application performance and uptime                               │
+│  • Handle incidents and outages                                             │
+│  • Manage secrets and environment variables                                 │
+│  • Optimize costs (right-sizing resources)                                  │
+│  • Ensure security compliance                                               │
+│                                                                              │
+│  TECHNOLOGIES:                                                               │
+│  • Cloud: AWS (EC2, S3, Lambda, RDS, CloudFront)                            │
+│  • IaC: Terraform, CloudFormation                                           │
+│  • Containers: Docker, Kubernetes                                           │
+│  • CI/CD: GitHub Actions, Jenkins                                           │
+│  • Monitoring: CloudWatch, DataDog, Sentry                                  │
+│  • Security: IAM, VPC, Security Groups                                      │
+│                                                                              │
+│  EXAMPLE TASK:                                                               │
+│  "Set up the production environment on AWS with Aurora database,            │
+│   S3 for static files, CloudFront CDN, and automated deployment             │
+│   from GitHub"                                                               │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 5.4 Roomy Current Team Structure
+
+| Role | Filled By | Status |
+|------|-----------|--------|
+| CEO/Founder | You | ✅ Active |
+| Product Manager | You (using Lovable) | ✅ Active |
+| Designer | You (using Lovable + Figma) | ✅ Active |
+| Full-Stack Engineer | Lovable AI | ✅ Active |
+| Frontend Engineer | Lovable AI | ✅ Active |
+| Backend Engineer | Lovable AI | ✅ Active |
+| DevOps Engineer | **NEED TO HIRE** | ❌ Gap |
+| Mobile Engineer (iOS) | Future hire | ⏳ Later |
+| Mobile Engineer (Android) | Future hire | ⏳ Later |
+| QA Engineer | Manual testing by you | ⚠️ Limited |
+
+**Key Gap:** DevOps engineer needed for AWS setup and production deployment.
+
+---
+
+## PART 6: Feature Production Line
+
+This is the complete journey of how a feature moves from an idea in the CEO's brain to showing up on a user's screen:
+
+### 6.1 The Complete 12-Stage Process
+
+```text
+╔═════════════════════════════════════════════════════════════════════════════╗
+║                    FEATURE PRODUCTION LINE                                   ║
+║             From CEO's Idea to User's Screen                                 ║
+╚═════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 1: IDEATION                                                           │
+│  ────────────────                                                            │
+│  Who: CEO/Founder                                                            │
+│  What: Identify a problem or opportunity                                     │
+│                                                                              │
+│  Example:                                                                    │
+│  "Students are missing tours because they forget. We need reminders."       │
+│                                                                              │
+│  Output: Informal idea (discussion, note, or message)                        │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+                                                                            ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 2: PRODUCT SPECIFICATION                                              │
+│  ──────────────────────────────                                              │
+│  Who: Product Manager (or CEO at small startup)                             │
+│  What: Define the feature in detail                                          │
+│                                                                              │
+│  Document Created: PRD (Product Requirements Document)                       │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ PRD: Tour Reminders Feature                                          │    │
+│  │                                                                      │    │
+│  │ Problem: 30% of booked tours are no-shows                           │    │
+│  │                                                                      │    │
+│  │ Solution: Send reminders before scheduled tours                     │    │
+│  │                                                                      │    │
+│  │ Requirements:                                                        │    │
+│  │ 1. Email reminder 24 hours before tour                              │    │
+│  │ 2. Email reminder 1 hour before tour                                │    │
+│  │ 3. Push notification 30 minutes before (if app installed)          │    │
+│  │ 4. Reminder includes: date, time, dorm name, directions             │    │
+│  │ 5. "Cancel" button in reminder to free up slot                      │    │
+│  │                                                                      │    │
+│  │ Success Metrics:                                                     │    │
+│  │ - Reduce no-show rate from 30% to <10%                              │    │
+│  │ - 90%+ email open rate on reminders                                 │    │
+│  │                                                                      │    │
+│  │ Out of Scope:                                                        │    │
+│  │ - SMS reminders (Phase 2)                                           │    │
+│  │ - Calendar integration (Phase 2)                                    │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  Output: Approved PRD document                                               │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+                                                                            ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 3: DESIGN                                                             │
+│  ──────────────                                                              │
+│  Who: UI/UX Designer (or using Lovable directly)                            │
+│  What: Create visual mockups and user flows                                  │
+│                                                                              │
+│  Deliverables:                                                               │
+│  1. User flow diagram (how user interacts)                                  │
+│  2. Wireframes (rough layouts)                                              │
+│  3. High-fidelity mockups (pixel-perfect designs)                           │
+│  4. Component states (loading, error, success, empty)                       │
+│  5. Mobile and desktop versions                                              │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ Email Reminder Design                                                │    │
+│  │ ┌───────────────────────────────────────────────┐                   │    │
+│  │ │  [Roomy Logo]                                 │                   │    │
+│  │ │                                               │                   │    │
+│  │ │  Your tour is tomorrow! 🏠                    │                   │    │
+│  │ │                                               │                   │    │
+│  │ │  Hi {student_name},                          │                   │    │
+│  │ │                                               │                   │    │
+│  │ │  You have a tour scheduled at:               │                   │    │
+│  │ │  📍 {dorm_name}                              │                   │    │
+│  │ │  📅 {date} at {time}                         │                   │    │
+│  │ │  📞 Contact: {owner_phone}                   │                   │    │
+│  │ │                                               │                   │    │
+│  │ │  [View Tour Details]  [Cancel Tour]          │                   │    │
+│  │ └───────────────────────────────────────────────┘                   │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  Tools: Figma, or directly in Lovable                                       │
+│  Output: Approved design mockups                                             │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+                                                                            ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 4: TECHNICAL PLANNING                                                 │
+│  ──────────────────────────                                                  │
+│  Who: Engineering Team (or Lovable with your guidance)                      │
+│  What: Break down the feature into technical tasks                          │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ Technical Breakdown                                                  │    │
+│  │                                                                      │    │
+│  │ DATABASE CHANGES:                                                    │    │
+│  │ □ Create booking_reminders table                                    │    │
+│  │ □ Add RLS policies                                                  │    │
+│  │ □ Create trigger to auto-create reminders on booking                │    │
+│  │                                                                      │    │
+│  │ BACKEND TASKS:                                                       │    │
+│  │ □ Create process-booking-reminders edge function                    │    │
+│  │ □ Configure cron job to run every 15 minutes                        │    │
+│  │ □ Create email template for reminders                               │    │
+│  │ □ Add SendGrid integration for sending                              │    │
+│  │                                                                      │    │
+│  │ FRONTEND TASKS:                                                      │    │
+│  │ □ Add "Cancel" deep link handler                                    │    │
+│  │ □ Show reminder status in booking details                           │    │
+│  │ □ Toast notification when reminder is sent                          │    │
+│  │                                                                      │    │
+│  │ TESTING:                                                             │    │
+│  │ □ Unit tests for reminder logic                                     │    │
+│  │ □ Integration test for full flow                                    │    │
+│  │ □ Manual test with real booking                                     │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  Output: Task list in project management (GitHub Issues, Linear, etc.)      │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+                                                                            ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 5: IMPLEMENTATION                                                     │
+│  ───────────────────────                                                     │
+│  Who: Engineers (or Lovable)                                                │
+│  What: Write the actual code                                                 │
+│                                                                              │
+│  DATABASE (SQL):                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ CREATE TABLE booking_reminders (                                     │    │
+│  │   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),                    │    │
+│  │   booking_id UUID REFERENCES bookings(id),                          │    │
+│  │   reminder_type TEXT NOT NULL, -- '24h', '1h', '30m'               │    │
+│  │   scheduled_at TIMESTAMPTZ NOT NULL,                                │    │
+│  │   sent_at TIMESTAMPTZ,                                              │    │
+│  │   status TEXT DEFAULT 'pending'                                     │    │
+│  │ );                                                                   │    │
+│  │                                                                      │    │
+│  │ -- Trigger to create reminders when booking is created              │    │
+│  │ CREATE FUNCTION create_booking_reminders()                          │    │
+│  │ RETURNS TRIGGER AS $$                                               │    │
+│  │ BEGIN                                                                │    │
+│  │   INSERT INTO booking_reminders (booking_id, reminder_type,         │    │
+│  │     scheduled_at)                                                   │    │
+│  │   VALUES                                                             │    │
+│  │     (NEW.id, '24h', NEW.scheduled_at - INTERVAL '24 hours'),       │    │
+│  │     (NEW.id, '1h', NEW.scheduled_at - INTERVAL '1 hour');          │    │
+│  │   RETURN NEW;                                                        │    │
+│  │ END;                                                                 │    │
+│  │ $$ LANGUAGE plpgsql;                                                │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  BACKEND (TypeScript Edge Function):                                        │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ // supabase/functions/process-booking-reminders/index.ts            │    │
+│  │                                                                      │    │
+│  │ Deno.serve(async () => {                                            │    │
+│  │   const { data: pendingReminders } = await supabaseAdmin            │    │
+│  │     .from('booking_reminders')                                      │    │
+│  │     .select('*, bookings(*, students(*), dorms(*))')               │    │
+│  │     .eq('status', 'pending')                                        │    │
+│  │     .lte('scheduled_at', new Date().toISOString());                │    │
+│  │                                                                      │    │
+│  │   for (const reminder of pendingReminders) {                        │    │
+│  │     await sendReminderEmail(reminder);                              │    │
+│  │     await supabaseAdmin.from('booking_reminders')                   │    │
+│  │       .update({ status: 'sent', sent_at: new Date() })             │    │
+│  │       .eq('id', reminder.id);                                       │    │
+│  │   }                                                                  │    │
+│  │                                                                      │    │
+│  │   return new Response(JSON.stringify({ sent: pendingReminders.length}));│ │
+│  │ });                                                                  │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  FRONTEND (React Component):                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ // src/components/booking/ReminderStatus.tsx                        │    │
+│  │                                                                      │    │
+│  │ const ReminderStatus = ({ bookingId }: { bookingId: string }) => {  │    │
+│  │   const { data: reminders } = useQuery({                            │    │
+│  │     queryKey: ['booking-reminders', bookingId],                     │    │
+│  │     queryFn: () => supabase                                         │    │
+│  │       .from('booking_reminders')                                    │    │
+│  │       .select('*')                                                  │    │
+│  │       .eq('booking_id', bookingId)                                  │    │
+│  │   });                                                                │    │
+│  │                                                                      │    │
+│  │   return (                                                           │    │
+│  │     <div className="flex items-center gap-2">                       │    │
+│  │       <Bell className="h-4 w-4" />                                  │    │
+│  │       <span>Reminders: {reminders?.length ?? 0} scheduled</span>    │    │
+│  │     </div>                                                           │    │
+│  │   );                                                                 │    │
+│  │ };                                                                   │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  Output: Working code in feature branch                                      │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+                                                                            ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 6: CODE REVIEW                                                        │
+│  ──────────────────                                                          │
+│  Who: Other engineers (or self-review with Lovable's help)                  │
+│  What: Check code quality, security, and correctness                        │
+│                                                                              │
+│  Review Checklist:                                                           │
+│  ✓ Code is readable and follows conventions                                │
+│  ✓ No security vulnerabilities (SQL injection, XSS)                        │
+│  ✓ RLS policies are correct                                                │
+│  ✓ Error handling is comprehensive                                         │
+│  ✓ Edge cases are handled                                                  │
+│  ✓ Tests are included                                                      │
+│  ✓ No performance issues                                                   │
+│                                                                              │
+│  Output: Approved code (or request changes)                                  │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+                                                                            ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 7: TESTING                                                            │
+│  ──────────────                                                              │
+│  Who: QA Engineer (or you + Lovable)                                        │
+│  What: Verify everything works correctly                                     │
+│                                                                              │
+│  Test Types:                                                                 │
+│                                                                              │
+│  UNIT TESTS (Automated):                                                     │
+│  • Test createBookingReminders() function in isolation                      │
+│  • Test email template generation                                           │
+│  • Test date calculations                                                   │
+│                                                                              │
+│  INTEGRATION TESTS (Automated):                                              │
+│  • Test: Create booking → reminders created → cron picks up → email sent   │
+│  • Test: Cancel booking → reminders cancelled                               │
+│                                                                              │
+│  END-TO-END TESTS (Manual or Automated):                                    │
+│  • Book a tour as a student                                                 │
+│  • Wait for reminder (or adjust time for testing)                           │
+│  • Verify email received with correct content                               │
+│  • Click cancel link → verify booking cancelled                             │
+│                                                                              │
+│  EDGE CASES:                                                                 │
+│  • What if tour is booked for less than 24 hours from now?                 │
+│  • What if student's email is invalid?                                      │
+│  • What if SendGrid is down?                                                │
+│  • What if booking is cancelled after reminders are created?               │
+│                                                                              │
+│  Output: Test report, bug list                                               │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+                                                                            ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 8: CI/CD PIPELINE                                                     │
+│  ───────────────────────                                                     │
+│  Who: Automated (GitHub Actions)                                            │
+│  What: Build, test, and prepare for deployment                              │
+│                                                                              │
+│  Pipeline Steps:                                                             │
+│                                                                              │
+│  1. Developer pushes code to GitHub                                          │
+│     └──> git push origin feature/booking-reminders                          │
+│                                                                              │
+│  2. GitHub Actions triggered automatically                                   │
+│     └──> .github/workflows/ci.yml runs                                      │
+│                                                                              │
+│  3. Pipeline executes:                                                       │
+│     a. ✓ Checkout code                                                      │
+│     b. ✓ Install dependencies (npm ci)                                      │
+│     c. ✓ Run linter (eslint)                                               │
+│     d. ✓ Run type checker (tsc --noEmit)                                   │
+│     e. ✓ Run unit tests (npm test)                                         │
+│     f. ✓ Build production bundle (npm run build)                           │
+│     g. ✓ Run integration tests                                             │
+│     h. ✓ Deploy to staging (if on develop branch)                          │
+│                                                                              │
+│  4. If all pass: Ready for merge                                            │
+│     If any fail: Block merge, notify developer                              │
+│                                                                              │
+│  Output: Green pipeline (or failure notification)                            │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+                                                                            ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 9: STAGING VERIFICATION                                               │
+│  ────────────────────────────                                                │
+│  Who: Product Manager, QA, Designer                                         │
+│  What: Final review on staging environment                                   │
+│                                                                              │
+│  Staging Environment: staging.roomylb.com (copy of production)              │
+│                                                                              │
+│  Verification Steps:                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ □ Product Manager: Does it match the PRD requirements?              │    │
+│  │ □ Designer: Does it match the approved designs?                     │    │
+│  │ □ QA: All test cases passed?                                        │    │
+│  │ □ Engineer: No errors in logs?                                      │    │
+│  │ □ Performance: Acceptable load times?                               │    │
+│  │ □ Security: RLS policies working correctly?                         │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  Output: Sign-off to deploy to production                                    │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+                                                                            ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 10: PRODUCTION DEPLOYMENT                                             │
+│  ──────────────────────────────                                              │
+│  Who: DevOps (or automated via CI/CD)                                       │
+│  What: Deploy to live environment                                            │
+│                                                                              │
+│  Deployment Process:                                                         │
+│                                                                              │
+│  1. Merge feature branch to main                                            │
+│     └──> git merge feature/booking-reminders                                │
+│                                                                              │
+│  2. CI/CD pipeline triggers production deployment                            │
+│     └──> GitHub Actions runs deploy workflow                                │
+│                                                                              │
+│  3. Frontend deployed:                                                       │
+│     a. Build production bundle                                              │
+│     b. Upload to hosting (Vercel/S3)                                        │
+│     c. Invalidate CDN cache                                                 │
+│     d. New version live!                                                    │
+│                                                                              │
+│  4. Backend deployed:                                                        │
+│     a. Database migration runs                                              │
+│     b. Edge functions deployed                                              │
+│     c. Cron job configured                                                  │
+│                                                                              │
+│  5. Deployment complete!                                                     │
+│     └──> Users see new feature                                              │
+│                                                                              │
+│  Output: Feature live at app.roomylb.com                                     │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+                                                                            ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 11: MONITORING                                                        │
+│  ──────────────────                                                          │
+│  Who: DevOps + Engineering                                                  │
+│  What: Watch for issues after deployment                                     │
+│                                                                              │
+│  Monitoring Points:                                                          │
+│                                                                              │
+│  ERROR TRACKING (Sentry):                                                    │
+│  • Any JavaScript errors in browser?                                        │
+│  • Any edge function failures?                                              │
+│  • Unusual error spike?                                                     │
+│                                                                              │
+│  PERFORMANCE (CloudWatch/DataDog):                                           │
+│  • Page load times normal?                                                  │
+│  • API response times normal?                                               │
+│  • Database query times normal?                                             │
+│                                                                              │
+│  ANALYTICS:                                                                  │
+│  • Are users using the new feature?                                         │
+│  • What's the reminder open rate?                                           │
+│  • Has no-show rate decreased?                                              │
+│                                                                              │
+│  USER FEEDBACK:                                                              │
+│  • Support tickets related to feature?                                      │
+│  • Social media mentions?                                                   │
+│  • In-app feedback?                                                         │
+│                                                                              │
+│  Output: Dashboard of metrics, alerts for issues                             │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+                                                                            ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 12: ITERATION                                                         │
+│  ──────────────────                                                          │
+│  Who: Product + Engineering                                                 │
+│  What: Improve based on feedback                                             │
+│                                                                              │
+│  Based on data and feedback:                                                 │
+│                                                                              │
+│  "Users are still missing some tours. Let's add SMS reminders."             │
+│  └──> Back to Stage 1: New feature idea                                     │
+│                                                                              │
+│  "Email open rate is only 40%. Let's improve subject lines."                │
+│  └──> Quick iteration, smaller scope                                        │
+│                                                                              │
+│  "Users love it! No-show rate dropped to 8%."                               │
+│  └──> Success! Move to next feature                                         │
+│                                                                              │
+│  The cycle never ends - continuous improvement                               │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 6.2 Timeline for Each Stage
+
+| Stage | Typical Duration | Can Be Parallelized? |
+|-------|------------------|----------------------|
+| 1. Ideation | 1 hour - 1 day | No |
+| 2. Product Spec | 2-8 hours | No |
+| 3. Design | 4-16 hours | No |
+| 4. Technical Planning | 1-4 hours | No |
+| 5. Implementation | 1-5 days | Yes (frontend + backend) |
+| 6. Code Review | 1-4 hours | No |
+| 7. Testing | 2-8 hours | Partially |
+| 8. CI/CD Pipeline | 10-30 minutes | Automated |
+| 9. Staging Verification | 1-4 hours | No |
+| 10. Production Deployment | 5-15 minutes | Automated |
+| 11. Monitoring | Ongoing | Automated + manual |
+| 12. Iteration | Varies | New cycle |
+
+**Total for Medium Feature:** 3-10 days from idea to production
+
+---
+
+## PART 7: Complete Technology Stack
+
+### 7.1 Current Stack (Supabase + Lovable)
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    CURRENT STACK (DEVELOPMENT)                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  FRONTEND                                                                    │
+│  ────────                                                                    │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Framework:     React 18                                             │    │
+│  │  Language:      TypeScript 5.x                                       │    │
+│  │  Build Tool:    Vite 5.x                                             │    │
+│  │  Styling:       Tailwind CSS 3.x                                     │    │
+│  │  Components:    shadcn/ui (Radix primitives)                         │    │
+│  │  Routing:       React Router 6.x                                     │    │
+│  │  Data Fetching: TanStack React Query 5.x                             │    │
+│  │  Forms:         React Hook Form + Zod                                │    │
+│  │  Animation:     Framer Motion 11.x                                   │    │
+│  │  Charts:        Recharts 3.x                                         │    │
+│  │  i18n:          i18next 25.x                                         │    │
+│  │  State:         React Context + React Query cache                    │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  BACKEND                                                                     │
+│  ───────                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Platform:      Supabase                                             │    │
+│  │  Database:      PostgreSQL 15                                        │    │
+│  │  Auth:          Supabase Auth (GoTrue)                               │    │
+│  │  Functions:     Edge Functions (Deno runtime)                        │    │
+│  │  Realtime:      Supabase Realtime (WebSocket)                        │    │
+│  │  Storage:       Supabase Storage (S3-compatible)                     │    │
+│  │  API:           PostgREST (auto-generated REST)                      │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  INFRASTRUCTURE                                                              │
+│  ──────────────                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Hosting:       Lovable Preview (development)                        │    │
+│  │  CDN:           Included with Lovable                                │    │
+│  │  DNS:           Cloudflare (roomylb.com)                             │    │
+│  │  SSL:           Automatic via Lovable/Cloudflare                     │    │
+│  │  Version Ctrl:  GitHub                                               │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 7.2 Production Stack (AWS)
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PRODUCTION STACK (AWS)                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  FRONTEND (Same codebase, different hosting)                                 │
+│  ────────────────────────────────────────────                                │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Same React + Vite + TypeScript stack                                │    │
+│  │  Hosted on: AWS S3 + CloudFront                                      │    │
+│  │  Build: GitHub Actions → S3 upload → CloudFront invalidation         │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  BACKEND                                                                     │
+│  ───────                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  API:           AWS API Gateway                                      │    │
+│  │  Compute:       AWS Lambda (Node.js / Go)                            │    │
+│  │                 OR ECS Fargate (Kotlin) for complex services         │    │
+│  │  Auth:          AWS Cognito                                          │    │
+│  │  Realtime:      API Gateway WebSocket                                │    │
+│  │  Email:         AWS SES + SendGrid                                   │    │
+│  │  Push:          AWS SNS                                              │    │
+│  │  Queues:        AWS SQS (for async jobs)                             │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  DATA                                                                        │
+│  ────                                                                        │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Database:      Aurora PostgreSQL (Serverless v2)                    │    │
+│  │  Cache:         ElastiCache (Redis)                                  │    │
+│  │  Storage:       S3 (files, images)                                   │    │
+│  │  Search:        OpenSearch (full-text search)                        │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  INFRASTRUCTURE                                                              │
+│  ──────────────                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  CDN:           CloudFront (global edge locations)                   │    │
+│  │  DNS:           Cloudflare (roomylb.com)                             │    │
+│  │  SSL:           AWS ACM (free certificates)                          │    │
+│  │  WAF:           AWS WAF (DDoS protection)                            │    │
+│  │  Monitoring:    CloudWatch + Sentry                                  │    │
+│  │  Logging:       CloudWatch Logs                                      │    │
+│  │  IaC:           Terraform                                            │    │
+│  │  CI/CD:         GitHub Actions                                       │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  SECURITY                                                                    │
+│  ────────                                                                    │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  IAM:           Role-based access control                            │    │
+│  │  VPC:           Private subnets for databases                        │    │
+│  │  Security Grps: Firewall rules                                       │    │
+│  │  Secrets:       AWS Secrets Manager                                  │    │
+│  │  Encryption:    At rest (KMS) + in transit (TLS)                     │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 7.3 Mobile Stack (Future)
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    MOBILE STACK (FUTURE)                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  iOS APP                                                                     │
+│  ───────                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Language:      Swift 5.x                                            │    │
+│  │  UI Framework:  SwiftUI                                              │    │
+│  │  Architecture:  MVVM + Clean Architecture                            │    │
+│  │  Networking:    URLSession + Combine                                 │    │
+│  │  Storage:       Core Data / SwiftData                                │    │
+│  │  Build:         Xcode + SPM                                          │    │
+│  │  Distribution:  App Store (TestFlight for beta)                      │    │
+│  │  Min iOS:       iOS 16+                                              │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  ANDROID APP                                                                 │
+│  ───────────                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Language:      Kotlin                                               │    │
+│  │  UI Framework:  Jetpack Compose                                      │    │
+│  │  Architecture:  MVVM + Clean Architecture                            │    │
+│  │  Networking:    Ktor Client / Retrofit                               │    │
+│  │  Storage:       Room Database                                        │    │
+│  │  Build:         Gradle + Android Studio                              │    │
+│  │  Distribution:  Play Store (Internal testing for beta)              │    │
+│  │  Min SDK:       API 26 (Android 8.0)                                 │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  SHARED LOGIC (Kotlin Multiplatform)                                        │
+│  ────────────────────────────────────                                        │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Language:      Kotlin                                               │    │
+│  │  Shared:        Business logic, data models, API clients            │    │
+│  │  Platform-spec: UI, platform APIs                                    │    │
+│  │  Benefits:      Write once, use on iOS + Android + backend          │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## PART 8: Three-Subdomain Architecture
+
+Roomy uses three separate subdomains for different purposes:
+
+### 8.1 Subdomain Overview
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ROOMY SUBDOMAIN ARCHITECTURE                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                     waitlist.roomylb.com                              │   │
+│  │                          (Vercel)                                     │   │
+│  │                                                                       │   │
+│  │  Purpose: Collect emails before launch                               │   │
+│  │  Users: Anyone interested in Roomy                                   │   │
+│  │  Features:                                                            │   │
+│  │  • Email signup form                                                 │   │
+│  │  • Launch countdown                                                  │   │
+│  │  • Feature preview                                                   │   │
+│  │  • Referral program                                                  │   │
+│  │                                                                       │   │
+│  │  Tech: React + Vite + Mailchimp/Supabase                             │   │
+│  │  Hosting: Vercel (simple, fast, free tier)                           │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                       app.roomylb.com                                 │   │
+│  │                    (AWS S3 + CloudFront)                              │   │
+│  │                                                                       │   │
+│  │  Purpose: Main user-facing application                               │   │
+│  │  Users: Students & Dorm Owners                                       │   │
+│  │  Features:                                                            │   │
+│  │  • Dorm listings & search                                            │   │
+│  │  • User profiles (students & owners)                                 │   │
+│  │  • Booking & reservations                                            │   │
+│  │  • Messaging system                                                  │   │
+│  │  • AI matching                                                       │   │
+│  │  • Payments                                                          │   │
+│  │  • Reviews & ratings                                                 │   │
+│  │  • Wishlists                                                         │   │
+│  │  • Tour scheduling                                                   │   │
+│  │  • Notifications                                                     │   │
+│  │                                                                       │   │
+│  │  Tech: React + Vite + AWS backend                                    │   │
+│  │  Hosting: AWS S3 + CloudFront (enterprise-grade)                     │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                      admin.roomylb.com                                │   │
+│  │                    (AWS S3 + CloudFront)                              │   │
+│  │                                                                       │   │
+│  │  Purpose: Internal administration                                    │   │
+│  │  Users: Roomy team only                                              │   │
+│  │  Features:                                                            │   │
+│  │  • User management                                                   │   │
+│  │  • Dorm verification                                                 │   │
+│  │  • Content moderation                                                │   │
+│  │  • Analytics dashboard                                               │   │
+│  │  • Payment oversight                                                 │   │
+│  │  • Support tools                                                     │   │
+│  │  • System settings                                                   │   │
+│  │  • Security monitoring                                               │   │
+│  │                                                                       │   │
+│  │  Tech: React + Vite + AWS backend                                    │   │
+│  │  Hosting: AWS S3 + CloudFront (separate from app)                    │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  SHARED BACKEND                                                              │
+│  ──────────────                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  All three subdomains share:                                          │   │
+│  │  • Same database (Aurora PostgreSQL)                                 │   │
+│  │  • Same auth system (Cognito)                                        │   │
+│  │  • Same API (API Gateway + Lambda)                                   │   │
+│  │  • Same file storage (S3)                                            │   │
+│  │                                                                       │   │
+│  │  Separation is at the frontend level only                            │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 8.2 Why Separate Subdomains?
 
 | Reason | Benefit |
 |--------|---------|
-| **Security** | Admin dashboard isolated from public app |
-| **Performance** | Each site loads only what it needs |
-| **Team Separation** | Different developers can work independently |
-| **Deployment** | Update admin without affecting main app |
-| **Scaling** | Scale each independently based on traffic |
-| **Code Organization** | Smaller, focused codebases |
+| **Security** | Admin panel has no public-facing code in same bundle |
+| **Independent Deployments** | Update waitlist without touching app |
+| **Different Optimization** | Waitlist is tiny, app is complex |
+| **Team Separation** | Marketing updates waitlist, engineers update app |
+| **Scaling** | App can scale independently of admin |
+| **Access Control** | Admin subdomain can have IP restrictions |
 
-### 4.4 Connecting Multiple Projects to Same Backend
+### 8.3 DNS Configuration (Cloudflare)
 
-```typescript
-// All three projects use the same Supabase credentials
-// In each project's .env file:
+```text
+DNS RECORDS (Cloudflare)
+────────────────────────
 
-VITE_SUPABASE_URL=https://vtdtmhgzisigtqryojwl.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-
-// The Supabase client is identical in all projects:
-import { createClient } from '@supabase/supabase-js';
-
-export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-);
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  roomylb.com (root domain)                                                   │
+│  └──> Redirects to app.roomylb.com                                          │
+│                                                                              │
+│  www.roomylb.com                                                             │
+│  └──> CNAME to roomylb.com (redirects to app)                               │
+│                                                                              │
+│  waitlist.roomylb.com                                                        │
+│  └──> CNAME to cname.vercel-dns.com                                         │
+│                                                                              │
+│  app.roomylb.com                                                             │
+│  └──> CNAME to d1234567890.cloudfront.net                                   │
+│                                                                              │
+│  admin.roomylb.com                                                           │
+│  └──> CNAME to d0987654321.cloudfront.net                                   │
+│                                                                              │
+│  api.roomylb.com                                                             │
+│  └──> CNAME to abc123.execute-api.us-east-1.amazonaws.com                   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## PART 5: Implementation Timeline
+## PART 9: Deployment Strategy
 
-### 5.1 Overview Gantt Chart
+### 9.1 The Two Paths
 
-```
-Week:    1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17-28  29-36
-         ├──┴──┴──┴──┼──┴──┴──┴──┴──┴──┴──┴──┼──┴──┴──┴──┼──────┼──────┤
-Phase 1: ████████████                                                    Foundation
-Phase 2:             ████████████████████████                            Main App
-Phase 3:                                     ████████████                Admin
-Phase 4:                                                 ████████████    Mobile
-Phase 5:                                                          ██████ AWS
-```
+You have two options for production deployment:
 
-### 5.2 Phase 1: Foundation (Weeks 1-4)
+#### Path A: Hybrid (Recommended for Fastest Launch)
 
-#### Week 1: Project Setup
-
-```markdown
-## Day 1-2: Lovable Workspaces
-- [ ] Create waitlist.roomylb.com workspace
-- [ ] Create app.roomylb.com workspace (current project)
-- [ ] Create admin.roomylb.com workspace
-- [ ] Set up GitHub repository for each
-
-## Day 3-4: DNS & Hosting
-- [ ] Configure Cloudflare DNS for roomylb.com
-- [ ] Add CNAME records for subdomains
-- [ ] Connect Vercel to each workspace
-- [ ] Set up SSL certificates
-
-## Day 5-7: Shared Backend
-- [ ] Document current Supabase configuration
-- [ ] Export Supabase credentials
-- [ ] Connect all three projects to same Supabase
-- [ ] Verify auth works across projects
-```
-
-#### Week 2: Waitlist Website
-
-```markdown
-## Components to Build
-- [ ] Hero section with value proposition
-- [ ] Features grid (6-8 key features)
-- [ ] Countdown timer to launch
-- [ ] Email signup form
-- [ ] University selector
-- [ ] Social proof section
-- [ ] Footer with links
-
-## Integrations
-- [ ] Mailchimp API for email collection
-- [ ] Analytics (Google Analytics/Plausible)
-- [ ] Meta pixel for marketing
-
-## Deployment
-- [ ] Deploy to Vercel
-- [ ] Connect custom domain
-- [ ] Set up redirects (roomylb.com → waitlist.roomylb.com)
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PATH A: HYBRID APPROACH                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  STEP 1: Launch Waitlist (Week 1)                                           │
+│  ────────────────────────────────                                            │
+│  waitlist.roomylb.com → Vercel                                              │
+│  • Create separate Vite project for waitlist                                │
+│  • Connect to Supabase for email collection                                 │
+│  • Deploy to Vercel in minutes                                              │
+│  • Cost: $0 (Vercel free tier)                                              │
+│                                                                              │
+│  STEP 2: Continue Building App (Weeks 2-12)                                 │
+│  ─────────────────────────────────────────                                   │
+│  app.roomylb.com → Vercel (initially)                                       │
+│  admin.roomylb.com → Vercel (initially)                                     │
+│  Backend → Supabase                                                         │
+│  • Keep building with Lovable                                               │
+│  • Test with real users via Vercel preview                                  │
+│  • Cost: ~$20/month (Vercel Pro)                                            │
+│                                                                              │
+│  STEP 3: Migrate to AWS (Week 13-16)                                        │
+│  ────────────────────────────────────                                        │
+│  • Hire DevOps engineer                                                     │
+│  • Set up AWS infrastructure with Terraform                                 │
+│  • Migrate database from Supabase to Aurora                                 │
+│  • Deploy frontend to S3 + CloudFront                                       │
+│  • Rewrite Edge Functions as Lambda                                         │
+│  • Cost: $500-800/month (AWS)                                               │
+│                                                                              │
+│  TIMELINE: ~16 weeks to full AWS production                                 │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Weeks 3-4: Database Schema (Already Complete)
+#### Path B: AWS from Day 1 (Your Preference)
 
-Current database has 76+ tables. Key tables:
-
-| Table | Purpose | Rows (Est.) |
-|-------|---------|-------------|
-| students | Student profiles | 10,000+ |
-| owners | Property owner profiles | 500+ |
-| admins | Admin users | 10 |
-| dorms | Property listings | 1,000+ |
-| rooms | Individual rooms | 5,000+ |
-| beds | Individual beds | 15,000+ |
-| apartments | Apartment listings | 2,000+ |
-| bedrooms | Apartment bedrooms | 6,000+ |
-| reservations | Booking records | 20,000+ |
-| payments | Payment records | 20,000+ |
-| conversations | Chat threads | 50,000+ |
-| messages | Chat messages | 500,000+ |
-| bookings | Tour bookings | 10,000+ |
-| friendships | Student connections | 30,000+ |
-| user_roles | Role assignments | 15,000+ |
-
-### 5.3 Phase 2: Main App (Weeks 5-12)
-
-#### Weeks 5-6: Core Architecture
-
-```markdown
-## Project Structure
-src/
-├── components/           # Reusable UI components
-│   ├── ui/              # shadcn/ui components
-│   ├── auth/            # Authentication components
-│   ├── listings/        # Dorm listing components
-│   ├── messaging/       # Chat components
-│   └── reservations/    # Booking components
-├── contexts/            # React contexts
-│   ├── AuthContext.tsx  # Authentication state
-│   └── ThemeContext.tsx # Theme preferences
-├── hooks/               # Custom React hooks
-│   ├── useAuth.tsx      # Auth utilities
-│   ├── useRealtime.tsx  # Supabase subscriptions
-│   └── useDebounce.tsx  # Debounce utility
-├── lib/                 # Utility functions
-│   ├── supabase/        # Supabase client
-│   ├── payments/        # Payment utilities
-│   └── utils.ts         # General utilities
-├── pages/               # Route pages
-│   ├── Listings.tsx     # Dorm listings
-│   ├── DormDetails.tsx  # Single listing
-│   ├── Messages.tsx     # Chat interface
-│   └── Profile.tsx      # User profile
-└── integrations/        # External integrations
-    └── supabase/        # Generated types
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PATH B: AWS FROM DAY 1                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  STEP 1: Launch Waitlist (Week 1)                                           │
+│  ────────────────────────────────                                            │
+│  waitlist.roomylb.com → Vercel                                              │
+│  (Same as Path A - Vercel is fine for marketing site)                       │
+│                                                                              │
+│  STEP 2: Set Up AWS Infrastructure (Weeks 2-5)                              │
+│  ─────────────────────────────────────────────                               │
+│  REQUIRED BEFORE APP CAN DEPLOY:                                             │
+│  □ Hire DevOps engineer                                                     │
+│  □ Create AWS account and set up billing                                    │
+│  □ Configure VPC, subnets, security groups                                  │
+│  □ Set up Aurora PostgreSQL                                                 │
+│  □ Configure S3 buckets                                                     │
+│  □ Set up CloudFront distributions                                          │
+│  □ Configure API Gateway                                                    │
+│  □ Set up Cognito for auth                                                  │
+│  □ Create IAM roles and policies                                            │
+│  □ Write Terraform for all above                                            │
+│  □ Set up GitHub Actions for deployment                                     │
+│                                                                              │
+│  Cost: ~$1,500-4,000 (DevOps project) + $500/month (AWS)                    │
+│                                                                              │
+│  STEP 3: Build App with AWS Backend (Weeks 6-16)                            │
+│  ────────────────────────────────────────────────                            │
+│  • Can't use Lovable Cloud features directly                                │
+│  • Lovable writes React code → You deploy to AWS                            │
+│  • Backend must be written separately (Lambda functions)                    │
+│  • More manual work, slower iteration                                       │
+│                                                                              │
+│  CHALLENGE: Lovable's backend tools work with Supabase, not AWS             │
+│  SOLUTION: Build frontend with Lovable, backend manually                    │
+│                                                                              │
+│  TIMELINE: ~16 weeks, but more upfront work and cost                        │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Weeks 7-8: Authentication
+### 9.2 Recommended Hybrid Approach
 
-```markdown
-## Features to Implement
-- [ ] GlobalAuthModal (Airbnb-style overlay)
-- [ ] Email/password signup
-- [ ] Email verification flow (custom tokens)
-- [ ] Password reset
-- [ ] Session management
-- [ ] Role detection (student/owner/admin)
-- [ ] Protected route guards
-- [ ] OAuth integration (Google, optional)
+Given that:
+1. You don't know AWS yet
+2. You want to launch fast
+3. Lovable works best with Supabase
 
-## Security Requirements
-- [ ] PKCE flow for token exchange
-- [ ] Secure session storage
-- [ ] CSRF protection
-- [ ] Rate limiting on auth endpoints
-- [ ] Password strength validation
+**I recommend Path A with this timeline:**
+
+| Phase | Duration | Focus | Platform |
+|-------|----------|-------|----------|
+| **Phase 1** | Weeks 1-4 | Build waitlist + core app features | Lovable + Supabase |
+| **Phase 2** | Weeks 5-12 | Complete app, test with beta users | Lovable + Supabase + Vercel |
+| **Phase 3** | Weeks 13-16 | Hire DevOps, migrate to AWS | AWS (with DevOps engineer) |
+| **Phase 4** | Weeks 17+ | Scale and grow on AWS | AWS |
+
+This gives you:
+- **Fast launch** with Lovable + Supabase
+- **Real users** providing feedback early
+- **Professional infrastructure** when you're ready
+- **No wasted time** learning AWS when you should be building
+
+---
+
+## PART 10: Migration Strategy
+
+### 10.1 Supabase → AWS Migration
+
+When ready to move from Supabase to AWS:
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    MIGRATION STRATEGY                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  COMPONENT          SUPABASE              AWS                 EFFORT         │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│                                                                              │
+│  Database           PostgreSQL      →     Aurora PostgreSQL   MEDIUM         │
+│  • Export: pg_dump                                                          │
+│  • Import: pg_restore                                                       │
+│  • 76+ tables migrate directly                                              │
+│  • RLS policies need conversion                                             │
+│                                                                              │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│                                                                              │
+│  Authentication     Supabase Auth   →     AWS Cognito         HARD           │
+│  • User accounts need migration                                             │
+│  • Password hashes may not transfer                                         │
+│  • May need to ask users to reset passwords                                 │
+│  • OR keep Supabase Auth temporarily                                        │
+│                                                                              │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│                                                                              │
+│  Edge Functions     Deno runtime    →     AWS Lambda          HARD           │
+│  • Rewrite from Deno to Node.js or Go                                       │
+│  • 20+ functions to convert                                                 │
+│  • Different environment/secrets handling                                   │
+│                                                                              │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│                                                                              │
+│  Realtime           Supabase        →     API Gateway WS      HARD           │
+│  • WebSocket infrastructure needed                                          │
+│  • Message delivery logic rebuild                                           │
+│  • Connection management                                                    │
+│                                                                              │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│                                                                              │
+│  File Storage       Supabase Store  →     AWS S3               EASY          │
+│  • Copy files with aws s3 sync                                              │
+│  • Update URLs in database                                                  │
+│  • Keep same bucket structure                                               │
+│                                                                              │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│                                                                              │
+│  REST API           PostgREST       →     API Gateway + Lambda  HARD         │
+│  • Auto-generated API → manually built API                                  │
+│  • Define all endpoints explicitly                                          │
+│  • More control, more work                                                  │
+│                                                                              │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│                                                                              │
+│  TOTAL MIGRATION EFFORT: 4-8 weeks with DevOps engineer                     │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Weeks 9-10: Messaging System
+### 10.2 Migration Steps
 
-```markdown
-## Core Features
-- [ ] Real-time message delivery
-- [ ] Conversation list with last message preview
-- [ ] Unread message counts
-- [ ] Typing indicators
-- [ ] Read receipts (double check marks)
-- [ ] Message reactions
-- [ ] Message editing
-- [ ] Message deletion
-- [ ] Voice notes
-- [ ] Image/file attachments
-- [ ] Message search
+1. **Parallel Infrastructure** (Week 1)
+   - Set up AWS while Supabase still running
+   - No downtime for users
 
-## WhatsApp-like Features
-- [ ] Reply to specific messages
-- [ ] Forward messages
-- [ ] Star important messages
-- [ ] Archive conversations
-- [ ] Mute notifications
-- [ ] Block users
-- [ ] Group chats
+2. **Database Migration** (Week 2)
+   - Export Supabase database
+   - Import to Aurora
+   - Verify data integrity
 
-## Technical Implementation
-- [ ] Supabase Realtime subscriptions
-- [ ] Optimistic UI updates
-- [ ] Infinite scroll for history
-- [ ] Attachment upload with progress
-- [ ] Voice note recording (MediaRecorder API)
-```
+3. **Backend Migration** (Weeks 3-4)
+   - Rewrite Edge Functions as Lambda
+   - Deploy new API Gateway
+   - Test thoroughly
 
-#### Weeks 11-12: Reservations
+4. **Auth Migration** (Week 5)
+   - Set up Cognito
+   - Migrate user accounts
+   - Handle password reset if needed
 
-```markdown
-## Booking Flow
-1. Student browses listings
-2. Student views dorm/room details
-3. Student selects bed/room/apartment
-4. Student initiates reservation
-5. System calculates deposit (10% commission)
-6. Student makes payment (Stripe/Whish)
-7. Owner receives notification
-8. Owner approves/declines
-9. System updates availability
-10. Student receives confirmation
+5. **Frontend Switch** (Week 6)
+   - Update API endpoints in React code
+   - Deploy frontend to S3 + CloudFront
+   - Verify all features work
 
-## Payment Integration
-- [ ] Stripe Connect for owner payouts
-- [ ] Whish Money integration (Lebanon)
-- [ ] Payment status tracking
-- [ ] Refund processing
-- [ ] Commission calculation
-- [ ] Financial reporting
+6. **Cutover** (Week 7)
+   - Switch DNS to new infrastructure
+   - Monitor for issues
+   - Keep Supabase as backup
 
-## Status Management
-- pending_payment → paid → confirmed → active → completed
-                        ↓
-                   cancelled/refunded
-```
+7. **Cleanup** (Week 8)
+   - Decommission Supabase after 30 days stable
+   - Finalize AWS cost optimization
 
-### 5.4 Phase 3: Admin Dashboard (Weeks 13-16)
+---
 
-#### Weeks 13-14: Admin Core
+## PART 11: Implementation Timeline
 
-```markdown
-## Dashboard Components
-- [ ] Key metrics cards (users, revenue, bookings)
-- [ ] Recent activity feed
-- [ ] Pending verifications count
-- [ ] Support tickets queue
-- [ ] System health status
+### 11.1 36-Week Master Timeline
 
-## User Management
-- [ ] User list with search/filter
-- [ ] User profile viewer
-- [ ] Role assignment (student ↔ owner)
-- [ ] Account suspension
-- [ ] Email verification override
-- [ ] Password reset for users
+```text
+╔═════════════════════════════════════════════════════════════════════════════╗
+║                    36-WEEK ROOMY IMPLEMENTATION TIMELINE                     ║
+╚═════════════════════════════════════════════════════════════════════════════╝
 
-## Dorm Verification
-- [ ] Pending verification queue
-- [ ] Document viewer
-- [ ] Approve/reject actions
-- [ ] Request additional documents
-- [ ] Verification history
-- [ ] Bulk operations
-```
+PHASE 1: FOUNDATION (Weeks 1-8)
+════════════════════════════════
 
-#### Weeks 15-16: Analytics & Reporting
+Week 1-2: Waitlist Launch
+├── Create waitlist.roomylb.com
+├── Email collection with Mailchimp/Supabase
+├── Landing page with feature preview
+├── Deploy to Vercel
+└── Start marketing
 
-```markdown
-## Analytics Dashboard
-- [ ] User growth chart (daily/weekly/monthly)
-- [ ] Revenue chart with period comparison
-- [ ] Booking funnel visualization
-- [ ] Geographic distribution map
-- [ ] Popular dorms ranking
-- [ ] User engagement metrics
+Week 3-4: Core App Features
+├── Authentication system (email + password)
+├── Student profile creation
+├── Owner profile creation
+├── Basic dorm listing CRUD
+└── Photo upload for dorms
 
-## Financial Reports
-- [ ] Revenue summary
-- [ ] Commission breakdown
-- [ ] Payout history to owners
-- [ ] Refund tracking
-- [ ] Tax report export
+Week 5-6: Search & Discovery
+├── Dorm search with filters
+├── Map integration
+├── Wishlist/favorites
+├── Dorm detail pages
+└── Responsive mobile design
 
-## Audit Logging
-- [ ] Admin action log
-- [ ] User activity timeline
-- [ ] Security events
-- [ ] Error tracking
-```
+Week 7-8: Booking System
+├── Tour booking flow
+├── Owner availability calendar
+├── Booking notifications
+├── Email confirmations
+└── Booking management
 
-### 5.5 Phase 4: Native Mobile (Weeks 17-28)
+PHASE 2: FEATURES (Weeks 9-16)
+═══════════════════════════════
 
-#### Weeks 17-20: Kotlin Multiplatform Setup
+Week 9-10: Messaging System
+├── Real-time chat
+├── Message reactions
+├── Read receipts
+├── Media attachments
+└── Group conversations
 
-```kotlin
-// Shared module structure
-shared/
-├── src/
-│   ├── commonMain/
-│   │   ├── kotlin/
-│   │   │   ├── models/        // Data classes
-│   │   │   │   ├── User.kt
-│   │   │   │   ├── Dorm.kt
-│   │   │   │   └── Message.kt
-│   │   │   ├── repository/    // Data access
-│   │   │   │   ├── AuthRepository.kt
-│   │   │   │   ├── DormRepository.kt
-│   │   │   │   └── MessageRepository.kt
-│   │   │   ├── network/       // API client
-│   │   │   │   ├── ApiClient.kt
-│   │   │   │   └── ApiConfig.kt
-│   │   │   └── utils/         // Utilities
-│   │   │       └── DateUtils.kt
-│   ├── androidMain/           // Android-specific
-│   │   └── kotlin/
-│   │       └── Platform.kt
-│   └── iosMain/               // iOS-specific
-│       └── kotlin/
-│           └── Platform.kt
-```
+Week 11-12: AI Matching
+├── Personality questionnaire
+├── AI match algorithm
+├── Match results display
+├── Match insights
+└── VIP tier features
 
-```kotlin
-// ApiConfig.kt - Easy to update when migrating to AWS
-object ApiConfig {
-    // Phase 1: Supabase
-    val baseUrl = "https://vtdtmhgzisigtqryojwl.supabase.co"
-    
-    // Phase 2: After AWS migration, just change to:
-    // val baseUrl = "https://api.roomylb.com"
-}
-```
+Week 13-14: Reservations & Payments
+├── Reservation flow
+├── Payment integration (Stripe)
+├── 10% platform fee
+├── Receipt generation
+└── Refund handling
 
-#### Weeks 21-24: iOS App
+Week 15-16: Owner Dashboard
+├── Dorm management
+├── Room/bed inventory
+├── Booking calendar
+├── Revenue analytics
+└── Payout setup
 
-```swift
-// Project structure
-RoomyiOS/
-├── App/
-│   ├── RoomyApp.swift
-│   └── ContentView.swift
-├── Features/
-│   ├── Auth/
-│   │   ├── LoginView.swift
-│   │   └── SignupView.swift
-│   ├── Listings/
-│   │   ├── ListingsView.swift
-│   │   └── DormDetailView.swift
-│   ├── Messaging/
-│   │   ├── ConversationsView.swift
-│   │   └── ChatView.swift
-│   └── Profile/
-│       └── ProfileView.swift
-├── Core/
-│   ├── Network/
-│   ├── Storage/
-│   └── Utilities/
-└── Shared/              // KMP module
-```
+PHASE 3: POLISH (Weeks 17-24)
+═════════════════════════════
 
-#### Weeks 25-28: Android App
+Week 17-18: Admin Dashboard
+├── User management
+├── Dorm verification
+├── Content moderation
+├── Analytics dashboard
+└── Security monitoring
 
-```kotlin
-// Project structure
-RoomyAndroid/
-├── app/
-│   ├── src/main/
-│   │   ├── kotlin/com/roomy/
-│   │   │   ├── MainActivity.kt
-│   │   │   ├── features/
-│   │   │   │   ├── auth/
-│   │   │   │   ├── listings/
-│   │   │   │   ├── messaging/
-│   │   │   │   └── profile/
-│   │   │   └── core/
-│   │   │       ├── navigation/
-│   │   │       └── ui/
-│   │   └── res/
-│   └── build.gradle.kts
-└── shared/              // KMP module
-```
+Week 19-20: PWA & Notifications
+├── PWA setup (manifest, service worker)
+├── Push notifications
+├── Offline support
+├── App-like experience
+└── Install prompts
 
-### 5.6 Phase 5: AWS Migration (Weeks 29-36)
+Week 21-22: i18n & Accessibility
+├── Arabic language support
+├── RTL layout
+├── Accessibility audit
+├── Screen reader support
+└── Keyboard navigation
 
-#### Weeks 29-30: Infrastructure Setup
+Week 23-24: Testing & Bug Fixes
+├── Comprehensive QA
+├── Performance optimization
+├── Security audit
+├── Load testing
+└── Beta user feedback
 
-```hcl
-# terraform/main.tf
+PHASE 4: AWS MIGRATION (Weeks 25-32)
+═════════════════════════════════════
 
-# VPC for network isolation
-resource "aws_vpc" "roomy" {
-  cidr_block           = "10.0.0.0/16"
-  enable_dns_hostnames = true
-  tags = { Name = "roomy-vpc" }
-}
+Week 25-26: DevOps Onboarding
+├── Hire DevOps engineer
+├── AWS account setup
+├── VPC and networking
+├── Terraform foundations
+└── CI/CD pipeline setup
 
-# Aurora PostgreSQL cluster
-resource "aws_rds_cluster" "roomy_db" {
-  cluster_identifier  = "roomy-production"
-  engine              = "aurora-postgresql"
-  engine_version      = "15.4"
-  database_name       = "roomy"
-  master_username     = "roomy_admin"
-  master_password     = var.db_password
-  skip_final_snapshot = false
-  
-  serverlessv2_scaling_configuration {
-    min_capacity = 0.5
-    max_capacity = 16
-  }
-}
+Week 27-28: AWS Infrastructure
+├── Aurora PostgreSQL
+├── S3 buckets
+├── CloudFront distributions
+├── API Gateway
+└── Lambda functions start
 
-# ElastiCache Redis
-resource "aws_elasticache_cluster" "roomy_cache" {
-  cluster_id           = "roomy-cache"
-  engine               = "redis"
-  node_type            = "cache.t3.micro"
-  num_cache_nodes      = 1
-  parameter_group_name = "default.redis7"
-}
+Week 29-30: Backend Migration
+├── Rewrite Edge Functions as Lambda
+├── Auth migration (Cognito)
+├── Realtime migration
+├── Storage migration
+└── API testing
 
-# S3 bucket for file storage
-resource "aws_s3_bucket" "roomy_storage" {
-  bucket = "roomy-storage-production"
-}
+Week 31-32: Cutover & Stabilization
+├── DNS switch
+├── Traffic migration
+├── Performance monitoring
+├── Bug fixes
+└── Supabase decommission
 
-# CloudFront distribution
-resource "aws_cloudfront_distribution" "roomy_cdn" {
-  origin {
-    domain_name = aws_s3_bucket.roomy_frontend.bucket_regional_domain_name
-    origin_id   = "S3-roomy-frontend"
-  }
-  
-  default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-roomy-frontend"
-    
-    viewer_protocol_policy = "redirect-to-https"
-  }
-  
-  price_class = "PriceClass_100"
-  
-  restrictions {
-    geo_restriction {
-      restriction_type = "none"
-    }
-  }
-  
-  viewer_certificate {
-    acm_certificate_arn = aws_acm_certificate.roomy.arn
-    ssl_support_method  = "sni-only"
-  }
-}
-```
+PHASE 5: MOBILE APPS (Weeks 33-52)
+═══════════════════════════════════
 
-#### Weeks 31-34: Backend Services
+Week 33-36: Mobile Foundation
+├── KMP shared module setup
+├── iOS project creation (Swift/SwiftUI)
+├── Android project creation (Kotlin/Compose)
+├── API client (shared)
+└── Auth flow (shared)
 
-```go
-// lambda/handlers/auth.go
-package handlers
+Week 37-44: Core Mobile Features
+├── All features from web app
+├── Native navigation
+├── Push notifications (native)
+├── Camera integration
+└── Location services
 
-import (
-    "github.com/aws/aws-lambda-go/events"
-    "github.com/roomy/shared/auth"
-)
+Week 45-48: Testing & Polish
+├── Beta testing (TestFlight/Internal)
+├── Performance optimization
+├── Accessibility
+├── Crash monitoring
+└── User feedback
 
-func HandleLogin(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-    // Parse request body
-    var loginReq auth.LoginRequest
-    json.Unmarshal([]byte(request.Body), &loginReq)
-    
-    // Validate credentials against Cognito
-    result, err := auth.ValidateCredentials(loginReq)
-    if err != nil {
-        return events.APIGatewayProxyResponse{
-            StatusCode: 401,
-            Body:       `{"error": "Invalid credentials"}`,
-        }, nil
-    }
-    
-    return events.APIGatewayProxyResponse{
-        StatusCode: 200,
-        Body:       result.ToJSON(),
-    }, nil
-}
-```
+Week 49-52: App Store Launch
+├── App Store review preparation
+├── Play Store review preparation
+├── Marketing assets
+├── Launch coordination
+└── Post-launch support
 
-#### Weeks 35-36: Cutover
-
-```markdown
-## Migration Day Checklist
-
-### T-24 hours
-- [ ] Final database backup from Supabase
-- [ ] Verify all Lambda functions deployed
-- [ ] Test all API endpoints on staging
-- [ ] Prepare maintenance page
-
-### T-0 (Migration Start)
-- [ ] Enable maintenance mode
-- [ ] Stop accepting new signups
-- [ ] Export final data snapshot
-- [ ] Begin database migration
-
-### T+2 hours
-- [ ] Database migration complete
-- [ ] File migration complete
-- [ ] Update DNS to point to CloudFront
-- [ ] Wait for DNS propagation (15-60 min)
-
-### T+4 hours
-- [ ] Disable maintenance mode
-- [ ] Monitor error rates
-- [ ] Test critical flows manually
-- [ ] Send "We're back" email to users
-
-### T+48 hours
-- [ ] Review all monitoring dashboards
-- [ ] Address any issues found
-- [ ] Keep Supabase as fallback
-
-### T+7 days
-- [ ] Final verification
-- [ ] Decommission Supabase project
-- [ ] Update documentation
+═════════════════════════════════════════════════════════════════════════════
+MILESTONE SUMMARY:
+• Week 2:  Waitlist live at waitlist.roomylb.com
+• Week 16: Full web app on Vercel + Supabase
+• Week 24: Production-ready on Vercel
+• Week 32: Migrated to AWS
+• Week 52: Native mobile apps in stores
+═════════════════════════════════════════════════════════════════════════════
 ```
 
 ---
 
-## PART 6: Cost Estimates
+## PART 12: DevOps Engineer Hiring Guide
 
-### 6.1 Development Phase
+### 12.1 Why You Need a DevOps Engineer
 
-| Service | Monthly Cost | Notes |
-|---------|-------------|-------|
-| Lovable | $0-100 | Depending on plan |
-| Supabase Pro | $25 | Database + Auth + Functions |
-| Vercel | $0-20 | Free tier usually sufficient |
-| Cloudflare | $0 | Free tier for DNS |
-| GitHub | $0 | Free for public repos |
-| **Total** | **$25-145/month** | |
+You cannot do AWS setup alone without months of learning. A DevOps engineer:
+- Knows AWS services and how to configure them
+- Writes Infrastructure as Code (Terraform)
+- Sets up secure, scalable architecture
+- Configures CI/CD pipelines
+- Handles database migration
+- Monitors and troubleshoots production
 
-### 6.2 Production Phase (Vercel + Supabase)
+### 12.2 Skills to Look For
 
-| Users | Supabase | Vercel | Cloudflare | Email | Total |
-|-------|----------|--------|------------|-------|-------|
-| 0-1K | $25 | $0 | $0 | $0 | $25 |
-| 1K-5K | $25 | $20 | $0 | $20 | $65 |
-| 5K-10K | $75 | $20 | $20 | $50 | $165 |
-| 10K-25K | $150 | $50 | $20 | $100 | $320 |
-| 25K-50K | $300 | $100 | $50 | $200 | $650 |
-| 50K-100K | $600 | $200 | $100 | $400 | $1,300 |
+| Skill | Priority | Why |
+|-------|----------|-----|
+| **AWS Experience** | REQUIRED | Core requirement for your infrastructure |
+| **Terraform** | REQUIRED | Infrastructure as Code for reproducible setup |
+| **Docker** | HIGH | May be needed for certain services |
+| **CI/CD (GitHub Actions)** | REQUIRED | Automated deployments |
+| **PostgreSQL** | HIGH | Database migration experience |
+| **Security** | HIGH | IAM, VPC, encryption best practices |
+| **Cost Optimization** | MEDIUM | Avoid surprise AWS bills |
+| **Kubernetes** | LOW | Not needed initially |
 
-### 6.3 Enterprise Phase (AWS)
+### 12.3 Interview Questions
 
-| Component | 0-10K Users | 10K-50K Users | 50K-100K Users | 100K+ Users |
-|-----------|-------------|---------------|----------------|-------------|
-| Aurora | $100 | $400 | $1,000 | $3,000 |
-| Lambda | $50 | $200 | $500 | $1,500 |
-| ECS | $0 | $200 | $600 | $2,000 |
-| ElastiCache | $50 | $100 | $300 | $800 |
-| S3 | $20 | $50 | $150 | $500 |
-| CloudFront | $50 | $150 | $400 | $1,200 |
-| Cognito | $20 | $100 | $400 | $1,500 |
-| SES | $10 | $50 | $150 | $500 |
-| CloudWatch | $30 | $100 | $300 | $800 |
-| WAF | $50 | $50 | $100 | $200 |
-| **Total** | **$380** | **$1,400** | **$3,900** | **$12,000** |
+Use these questions to evaluate candidates:
 
-### 6.4 Cost Optimization Tips
+**Technical Questions:**
 
-```markdown
-## Supabase Optimizations
-1. Use row-level limits on queries
-2. Implement caching for frequent reads
-3. Compress images before upload
-4. Clean up unused data periodically
+1. "We have a React app built with Vite that needs to be deployed to AWS. Walk me through how you would set up S3 and CloudFront for hosting."
 
-## AWS Optimizations
-1. Use Reserved Instances for Aurora (up to 60% savings)
-2. Enable Aurora Serverless v2 for variable workloads
-3. Use S3 Intelligent-Tiering for storage
-4. Set up Lambda Provisioned Concurrency only where needed
-5. Use CloudFront caching aggressively
-6. Enable Compute Savings Plans
+   *Good answer includes:* S3 bucket with static website hosting disabled (CloudFront handles it), CloudFront distribution with custom domain, ACM certificate, origin access identity, cache behaviors, and CI/CD for deployments.
+
+2. "Our backend is currently on Supabase (PostgreSQL + Edge Functions + Auth). How would you migrate to AWS Aurora, Lambda, and Cognito?"
+
+   *Good answer includes:* phased approach, pg_dump/restore for database, user migration strategy for auth, rewriting Deno functions to Node.js/Go, API Gateway setup, and rollback plan.
+
+3. "We need real-time messaging. How would you implement WebSockets on AWS?"
+
+   *Good answer includes:* API Gateway WebSocket API, Lambda for connection handling, DynamoDB for connection state, SNS/SQS for message routing, and scaling considerations.
+
+4. "How would you set up separate staging and production environments on AWS?"
+
+   *Good answer includes:* separate AWS accounts or separate VPCs, Terraform workspaces or modules, environment-specific variables, CI/CD branching strategy.
+
+5. "Walk me through your approach to AWS cost optimization for a startup."
+
+   *Good answer includes:* right-sizing instances, reserved capacity analysis, S3 lifecycle policies, CloudWatch billing alarms, spot instances where appropriate.
+
+**Red Flags:**
+- Can't explain basic networking (VPC, subnets, security groups)
+- No experience with Infrastructure as Code
+- Never done a database migration
+- Can't discuss security beyond basic concepts
+- No CI/CD experience
+
+### 12.4 Expected Costs
+
+| Engagement Type | Cost Range | Best For | Timeline |
+|-----------------|------------|----------|----------|
+| **Project-Based Freelancer** | $1,500 - $4,000 | Initial AWS setup | 2-4 weeks |
+| **Hourly Freelancer** | $30 - $80/hour | Ongoing support | As needed |
+| **Part-Time Contractor** | $3,000 - $6,000/month | Continuous work | Monthly |
+| **Full-Time Hire** | $80,000 - $150,000/year | Long-term growth | Ongoing |
+
+**Recommendation for Roomy:**
+1. **Start with project-based** ($2,000 - $3,500) for initial AWS setup
+2. **Switch to hourly** ($40-60/hour, ~5-10 hours/month) for ongoing support
+3. **Hire full-time** when you reach 50K+ users or have $10K+/month revenue
+
+### 12.5 Where to Find DevOps Engineers
+
+| Platform | Pros | Cons | Cost |
+|----------|------|------|------|
+| **Upwork** | Large pool, reviews | Variable quality | $$-$$$ |
+| **Toptal** | Pre-vetted, high quality | Expensive | $$$$$ |
+| **AWS Partner Network** | AWS-certified | Enterprise-focused | $$$$$ |
+| **LinkedIn** | Direct outreach | Time-consuming | $$-$$$$ |
+| **X (Twitter)** | DevOps community | Hit or miss | $$-$$$ |
+
+### 12.6 Job Description Template
+
+```text
+Title: DevOps Engineer (Contract) - AWS Infrastructure Setup
+
+About Us:
+Roomy is a student housing platform launching in Lebanon. We need to migrate 
+from our development environment (Supabase) to production-grade AWS infrastructure.
+
+Scope of Work:
+• Set up AWS infrastructure using Terraform
+• Configure Aurora PostgreSQL (migrate from Supabase)
+• Set up S3 + CloudFront for static site hosting
+• Configure API Gateway + Lambda
+• Implement CI/CD with GitHub Actions
+• Set up monitoring and alerting (CloudWatch)
+• Document all infrastructure
+
+Requirements:
+• 3+ years AWS experience
+• Strong Terraform skills
+• PostgreSQL migration experience
+• GitHub Actions experience
+• Security best practices knowledge
+
+Nice to Have:
+• Experience with Supabase
+• Previous startup experience
+• Arabic language support experience
+
+Timeline: 3-4 weeks
+Budget: $2,000 - $3,500 (fixed price)
+
+Deliverables:
+• Working AWS infrastructure
+• Terraform codebase
+• CI/CD pipelines
+• Documentation
+• 2 hours of handoff/training
 ```
 
 ---
 
-## PART 7: Database Schema Reference
+## PART 13: Lovable Capabilities
 
-### 7.1 Core Tables Overview
+### 13.1 What Lovable CAN Do
+
+| Task | Description | How |
+|------|-------------|-----|
+| **Write Frontend Code** | React components, pages, hooks | Direct file writing |
+| **Write Styling** | Tailwind CSS, animations | Component styling |
+| **Database Migrations** | Create/modify tables, RLS policies | SQL migrations |
+| **Edge Functions** | Supabase serverless functions | Deno/TypeScript |
+| **API Integration** | Connect to external services | Edge Functions |
+| **Debugging** | Read logs, find issues | Log analysis |
+| **Write AWS Lambda Code** | Node.js/Go functions | Code files (you deploy) |
+| **Write Terraform** | Infrastructure as Code | HCL files (you run) |
+| **Write CI/CD Pipelines** | GitHub Actions YAML | Workflow files |
+| **Write Mobile Code** | Swift/Kotlin code | Code files (you compile) |
+| **Design Architecture** | Plan system structure | Documentation |
+| **Security Review** | Check RLS policies, security | Analysis |
+
+### 13.2 What Lovable CANNOT Do
+
+| Task | Why | Who Does It |
+|------|-----|-------------|
+| **Provision AWS Resources** | No AWS console access | You or DevOps engineer |
+| **Run Terraform** | No CLI access | You or DevOps engineer |
+| **Deploy to AWS** | No AWS credentials | CI/CD pipeline |
+| **Compile Mobile Apps** | No Xcode/Android Studio | You (need Mac for iOS) |
+| **Submit to App Stores** | No developer accounts | You |
+| **Configure DNS** | No Cloudflare access | You |
+| **Set Up Stripe Account** | No financial access | You |
+| **Access Production Logs** | No server access | You or monitoring tools |
+| **Make Purchases** | No financial authority | You |
+| **Hire People** | No HR authority | You |
+
+### 13.3 The Collaboration Model
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    HOW LOVABLE + YOU WORK TOGETHER                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  YOU (CEO/Founder):                                                          │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ • Describe features you want                                         │    │
+│  │ • Review and approve changes                                         │    │
+│  │ • Test features in preview                                           │    │
+│  │ • Make business decisions                                            │    │
+│  │ • Click "Publish" to deploy                                          │    │
+│  │ • Manage accounts (Cloudflare, Stripe, AWS)                         │    │
+│  │ • Hire DevOps engineer                                               │    │
+│  │ • Handle app store submissions                                       │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                              │                                               │
+│                              ▼                                               │
+│  LOVABLE (AI Full-Stack Engineer):                                          │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ • Translate requests into code                                       │    │
+│  │ • Write React components                                             │    │
+│  │ • Create database schemas                                            │    │
+│  │ • Write Edge Functions                                               │    │
+│  │ • Fix bugs and errors                                                │    │
+│  │ • Suggest improvements                                               │    │
+│  │ • Document architecture                                              │    │
+│  │ • Prepare code for external deployment                               │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                              │                                               │
+│                              ▼                                               │
+│  DEVOPS ENGINEER (When hired):                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ • Set up AWS infrastructure                                          │    │
+│  │ • Run Terraform                                                      │    │
+│  │ • Configure CI/CD                                                    │    │
+│  │ • Handle database migration                                          │    │
+│  │ • Monitor production                                                 │    │
+│  │ • Troubleshoot infrastructure issues                                 │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## PART 14: AWS Education
+
+This section provides a learning path for understanding AWS services:
+
+### 14.1 AWS Services Overview
+
+AWS has 200+ services. Roomy needs only ~15 of them:
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    AWS SERVICES FOR ROOMY                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  COMPUTE (Running Code)                                                      │
+│  ─────────────────────                                                       │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐              │
+│  │   Lambda        │  │   ECS Fargate   │  │   EC2           │              │
+│  │                 │  │                 │  │                 │              │
+│  │  Serverless     │  │  Containers     │  │  Virtual servers│              │
+│  │  functions      │  │  without        │  │  (not needed    │              │
+│  │                 │  │  managing       │  │  for Roomy)     │              │
+│  │  ✅ Use for:   │  │  servers        │  │                 │              │
+│  │  • API endpoints│  │                 │  │  ❌ Skip        │              │
+│  │  • Async jobs   │  │  ✅ Use for:   │  │                 │              │
+│  │  • Webhooks     │  │  • Complex      │  │                 │              │
+│  │                 │  │    services     │  │                 │              │
+│  │  Cost: Per      │  │  • Long-running │  │                 │              │
+│  │  execution      │  │    jobs         │  │                 │              │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘              │
+│                                                                              │
+│  DATABASE                                                                    │
+│  ────────                                                                    │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐              │
+│  │   Aurora        │  │   ElastiCache   │  │   DynamoDB      │              │
+│  │   PostgreSQL    │  │   (Redis)       │  │                 │              │
+│  │                 │  │                 │  │  NoSQL key-     │              │
+│  │  Managed        │  │  In-memory      │  │  value store    │              │
+│  │  PostgreSQL     │  │  cache          │  │                 │              │
+│  │                 │  │                 │  │  ❌ Skip        │              │
+│  │  ✅ Use for:   │  │  ✅ Use for:   │  │  (PostgreSQL    │              │
+│  │  • All app      │  │  • Sessions     │  │  is better for  │              │
+│  │    data         │  │  • Caching      │  │  relational     │              │
+│  │  • 76+ tables   │  │  • Real-time    │  │  data)          │              │
+│  │  • Same schema  │  │    presence     │  │                 │              │
+│  │    as Supabase  │  │                 │  │                 │              │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘              │
+│                                                                              │
+│  STORAGE                                                                     │
+│  ───────                                                                     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐              │
+│  │   S3            │  │   CloudFront    │  │   EBS           │              │
+│  │                 │  │                 │  │                 │              │
+│  │  Object storage │  │  CDN (Content   │  │  Block storage  │              │
+│  │  (files)        │  │  Delivery       │  │  for EC2        │              │
+│  │                 │  │  Network)       │  │                 │              │
+│  │  ✅ Use for:   │  │                 │  │  ❌ Skip        │              │
+│  │  • Images       │  │  ✅ Use for:   │  │                 │              │
+│  │  • Documents    │  │  • Static site  │  │                 │              │
+│  │  • Uploads      │  │    hosting      │  │                 │              │
+│  │  • Static       │  │  • Fast global  │  │                 │              │
+│  │    website      │  │    delivery     │  │                 │              │
+│  │    files        │  │  • DDoS         │  │                 │              │
+│  │                 │  │    protection   │  │                 │              │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘              │
+│                                                                              │
+│  NETWORKING & API                                                            │
+│  ────────────────                                                            │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐              │
+│  │   API Gateway   │  │   VPC           │  │   Route 53      │              │
+│  │                 │  │                 │  │                 │              │
+│  │  API management │  │  Virtual        │  │  DNS service    │              │
+│  │  + WebSocket    │  │  Private Cloud  │  │                 │              │
+│  │                 │  │                 │  │  ❌ Skip        │              │
+│  │  ✅ Use for:   │  │  ✅ Use for:   │  │  (Using         │              │
+│  │  • REST API     │  │  • Private      │  │  Cloudflare     │              │
+│  │    routing      │  │    network      │  │  instead)       │              │
+│  │  • WebSocket    │  │  • Security     │  │                 │              │
+│  │    for chat     │  │    isolation    │  │                 │              │
+│  │  • Rate         │  │  • Firewall     │  │                 │              │
+│  │    limiting     │  │    rules        │  │                 │              │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘              │
+│                                                                              │
+│  AUTHENTICATION & SECURITY                                                   │
+│  ─────────────────────────                                                   │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐              │
+│  │   Cognito       │  │   IAM           │  │   WAF           │              │
+│  │                 │  │                 │  │                 │              │
+│  │  User auth      │  │  Access         │  │  Web Application│              │
+│  │  service        │  │  management     │  │  Firewall       │              │
+│  │                 │  │                 │  │                 │              │
+│  │  ✅ Use for:   │  │  ✅ Use for:   │  │  ✅ Use for:   │              │
+│  │  • User signup  │  │  • Service      │  │  • DDoS         │              │
+│  │  • Login        │  │    permissions  │  │    protection   │              │
+│  │  • OAuth        │  │  • Lambda       │  │  • SQL injection│              │
+│  │  • MFA          │  │    roles        │  │    blocking     │              │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘              │
+│                                                                              │
+│  MESSAGING & NOTIFICATIONS                                                   │
+│  ────────────────────────                                                    │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐              │
+│  │   SES           │  │   SNS           │  │   SQS           │              │
+│  │                 │  │                 │  │                 │              │
+│  │  Simple Email   │  │  Simple         │  │  Simple Queue   │              │
+│  │  Service        │  │  Notification   │  │  Service        │              │
+│  │                 │  │  Service        │  │                 │              │
+│  │  ✅ Use for:   │  │                 │  │  ✅ Use for:   │              │
+│  │  • Transactional│  │  ✅ Use for:   │  │  • Async job    │              │
+│  │    emails       │  │  • Push         │  │    processing   │              │
+│  │  • Verification │  │    notifications│  │  • Decoupling   │              │
+│  │    emails       │  │  • SMS alerts   │  │    services     │              │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘              │
+│                                                                              │
+│  MONITORING                                                                  │
+│  ──────────                                                                  │
+│  ┌─────────────────┐  ┌─────────────────┐                                   │
+│  │   CloudWatch    │  │   X-Ray         │                                   │
+│  │                 │  │                 │                                   │
+│  │  Logs, metrics, │  │  Distributed    │                                   │
+│  │  alarms         │  │  tracing        │                                   │
+│  │                 │  │                 │                                   │
+│  │  ✅ Use for:   │  │  MAYBE later:   │                                   │
+│  │  • Log storage  │  │  • Debug slow   │                                   │
+│  │  • Metrics      │  │    requests     │                                   │
+│  │  • Alerts       │  │  • Find         │                                   │
+│  │  • Dashboards   │  │    bottlenecks  │                                   │
+│  └─────────────────┘  └─────────────────┘                                   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 14.2 AWS Cost Estimates for Roomy
+
+| Service | Usage | Monthly Cost |
+|---------|-------|--------------|
+| **Aurora PostgreSQL** | Serverless v2, ~10GB | $50-150 |
+| **Lambda** | ~1M requests | $10-30 |
+| **API Gateway** | ~1M requests | $5-20 |
+| **S3** | ~50GB storage + requests | $5-15 |
+| **CloudFront** | ~100GB transfer | $10-30 |
+| **Cognito** | ~10K users | $0-50 (free tier) |
+| **ElastiCache** | t3.micro (1 node) | $15-30 |
+| **SES** | ~10K emails | $1-5 |
+| **CloudWatch** | Logs + metrics | $5-20 |
+| **Data Transfer** | ~100GB | $5-15 |
+
+**Total: ~$100-400/month** (depending on traffic)
+
+### 14.3 AWS Learning Path
+
+If you want to learn AWS yourself (not required but helpful):
+
+| Week | Topic | Resources |
+|------|-------|-----------|
+| 1 | AWS Fundamentals | AWS Cloud Practitioner course (free) |
+| 2 | S3 + CloudFront | "Host a Static Website" tutorial |
+| 3 | Lambda Basics | "Building Serverless Applications" course |
+| 4 | API Gateway | AWS Documentation + tutorials |
+| 5 | RDS/Aurora | "Working with Aurora" documentation |
+| 6 | Cognito | "Building User Authentication" tutorial |
+| 7 | Terraform | Terraform AWS tutorial |
+| 8 | CI/CD | GitHub Actions + AWS deploy tutorials |
+
+**Note:** This is optional. The DevOps engineer will handle AWS, but understanding basics helps you communicate with them.
+
+---
+
+## PART 15: Cost Estimates
+
+### 15.1 Development Phase Costs
+
+| Item | Monthly | Notes |
+|------|---------|-------|
+| **Lovable Pro** | $0-100 | Included in your plan |
+| **Supabase** | $25-50 | Pro plan for more resources |
+| **Vercel** | $0-20 | Free or Pro for more bandwidth |
+| **Cloudflare** | $0 | Free tier sufficient |
+| **Domain** | ~$2/month | Yearly payment |
+| **SendGrid** | $0-20 | Free tier initially |
+
+**Development Total: ~$50-200/month**
+
+### 15.2 Production Phase Costs (AWS)
+
+| Item | Monthly | Notes |
+|------|---------|-------|
+| **Aurora PostgreSQL** | $100-200 | Serverless v2 |
+| **Lambda + API Gateway** | $20-50 | Pay per request |
+| **S3 + CloudFront** | $20-50 | Storage + CDN |
+| **ElastiCache** | $30-60 | Redis for caching |
+| **Cognito** | $0-50 | Free tier for first 50K users |
+| **SES + SNS** | $10-30 | Emails + notifications |
+| **CloudWatch** | $10-30 | Monitoring |
+| **WAF** | $10-20 | Security |
+
+**Production Total: ~$200-500/month** (with growth path)
+
+### 15.3 One-Time Costs
+
+| Item | Cost | Notes |
+|------|------|-------|
+| **DevOps Engineer (setup)** | $1,500-4,000 | One-time project |
+| **App Store Developer Account** | $99/year | Apple |
+| **Play Store Developer Account** | $25 one-time | Google |
+| **SSL Certificates** | $0 | Free via AWS ACM |
+
+### 15.4 Scaling Costs
+
+| Users | AWS Cost | Notes |
+|-------|----------|-------|
+| 1,000 | $200-400 | Initial launch |
+| 10,000 | $400-800 | Growth phase |
+| 50,000 | $800-1,500 | Scale phase |
+| 100,000 | $1,500-3,000 | May need optimization |
+| 500,000 | $5,000-10,000 | Enterprise level |
+
+---
+
+## PART 16: Database Schema Reference
+
+### 16.1 Core Tables Overview
+
+Roomy has 76+ database tables. Here are the most important ones:
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    CORE DATABASE TABLES                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  USER TABLES                                                                 │
+│  ───────────                                                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐              │
+│  │   students      │  │   owners        │  │   admins        │              │
+│  │   (user_id)     │  │   (user_id)     │  │   (user_id)     │              │
+│  │   full_name     │  │   full_name     │  │   full_name     │              │
+│  │   email         │  │   email         │  │   email         │              │
+│  │   phone         │  │   phone         │  │   role          │              │
+│  │   university    │  │   whatsapp      │  │                 │              │
+│  │   profile_photo │  │   profile_photo │  │                 │              │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘              │
+│                                                                              │
+│  PROPERTY TABLES                                                             │
+│  ───────────────                                                             │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐              │
+│  │   dorms         │  │   rooms         │  │   beds          │              │
+│  │   (owner_id)    │  │   (dorm_id)     │  │   (room_id)     │              │
+│  │   name          │  │   name          │  │   label         │              │
+│  │   address       │  │   type          │  │   type          │              │
+│  │   price         │  │   price         │  │   price         │              │
+│  │   amenities[]   │  │   capacity      │  │   available     │              │
+│  │   gallery[]     │  │   available     │  │                 │              │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘              │
+│                                                                              │
+│  BOOKING TABLES                                                              │
+│  ──────────────                                                              │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐              │
+│  │   bookings      │  │   reservations  │  │   payments      │              │
+│  │   (student_id)  │  │   (student_id)  │  │   (reservation) │              │
+│  │   (dorm_id)     │  │   (room_id)     │  │   amount        │              │
+│  │   date/time     │  │   (bed_id)      │  │   status        │              │
+│  │   status        │  │   start_date    │  │   method        │              │
+│  │   message       │  │   end_date      │  │   fee           │              │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘              │
+│                                                                              │
+│  MESSAGING TABLES                                                            │
+│  ────────────────                                                            │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐              │
+│  │   conversations │  │   messages      │  │   message_      │              │
+│  │   (user_a_id)   │  │   (convo_id)    │  │   reactions     │              │
+│  │   (user_b_id)   │  │   (sender_id)   │  │   (message_id)  │              │
+│  │   is_group      │  │   content       │  │   (user_id)     │              │
+│  │   group_name    │  │   type          │  │   emoji         │              │
+│  │                 │  │   read_at       │  │                 │              │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘              │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 16.2 Key Relationships
 
 ```sql
--- User-related tables
-students          -- Student profiles
-owners            -- Property owner profiles  
-admins            -- Admin users
-user_roles        -- Role assignments (CRITICAL for security)
+-- Student books a tour at a dorm
+students → bookings → dorms
 
--- Property tables
-dorms             -- Building/property listings
-rooms             -- Individual rooms
-beds              -- Individual beds
-apartments        -- Apartment listings
-bedrooms          -- Apartment bedrooms
-apartment_spaces  -- Apartment room configurations
-apartment_photos  -- Apartment images
+-- Student makes a reservation for a bed
+students → reservations → beds → rooms → dorms → owners
 
--- Booking tables
-reservations      -- Booking records
-payments          -- Payment transactions
-bookings          -- Tour bookings
-booking_reminders -- Scheduled reminders
+-- Student messages an owner
+students → conversations → messages → owners
 
--- Messaging tables
-conversations     -- Chat threads
-messages          -- Chat messages
-group_members     -- Group chat participants
-calls             -- Voice/video calls
-call_participants -- Call attendees
+-- Owner owns multiple dorms
+owners → dorms → rooms → beds
 
--- Social tables
-friendships       -- Student connections
-ai_match_logs     -- AI matching history
-
--- Analytics tables
-analytics_events  -- User activity tracking
-ai_events         -- AI system events
-admin_audit_log   -- Admin action history
+-- Payment for a reservation
+reservations → payments → students
 ```
 
-### 7.2 Key Relationships
+---
 
+## PART 17: Security Implementation
+
+### 17.1 Security Layers
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ROOMY SECURITY ARCHITECTURE                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  LAYER 1: NETWORK SECURITY                                                   │
+│  ─────────────────────────                                                   │
+│  • CloudFlare DDoS protection                                               │
+│  • AWS WAF (SQL injection, XSS blocking)                                    │
+│  • HTTPS everywhere (TLS 1.3)                                               │
+│  • VPC with private subnets for database                                    │
+│  • Security groups as virtual firewalls                                     │
+│                                                                              │
+│  LAYER 2: APPLICATION SECURITY                                               │
+│  ─────────────────────────────                                               │
+│  • JWT token authentication                                                 │
+│  • CORS configuration                                                       │
+│  • Rate limiting on all endpoints                                           │
+│  • Input validation (Zod schemas)                                           │
+│  • Output sanitization (DOMPurify)                                          │
+│                                                                              │
+│  LAYER 3: DATA SECURITY                                                      │
+│  ──────────────────────                                                      │
+│  • Row Level Security (RLS) on all tables                                   │
+│  • Encryption at rest (Aurora, S3)                                          │
+│  • Encryption in transit (TLS)                                              │
+│  • Password hashing (bcrypt)                                                │
+│  • PII protection policies                                                  │
+│                                                                              │
+│  LAYER 4: ACCESS CONTROL                                                     │
+│  ────────────────────────                                                    │
+│  • Role-based access (student, owner, admin)                                │
+│  • IAM policies (least privilege)                                           │
+│  • Admin action audit logging                                               │
+│  • Device verification                                                      │
+│  • Session management                                                       │
+│                                                                              │
+│  LAYER 5: MONITORING                                                         │
+│  ───────────────────                                                         │
+│  • Security event logging                                                   │
+│  • Suspicious activity detection                                            │
+│  • Failed login monitoring                                                  │
+│  • Rate limit violation alerts                                              │
+│  • Admin security dashboard                                                 │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
-students ──────┬──> user_roles
-               ├──> reservations
-               ├──> messages (as sender)
-               ├──> friendships (as requester/receiver)
-               └──> conversations (as participant)
 
-owners ────────┬──> dorms
-               ├──> conversations (as owner)
-               └──> bookings (as owner)
+### 17.2 RLS Policy Examples
 
-dorms ─────────┬──> rooms ──────> beds
-               ├──> apartments ──> bedrooms ──> beds
-               ├──> reservations
-               └──> bookings
-
-conversations ─┬──> messages
-               └──> group_members
-```
-
-### 7.3 RLS Policy Pattern
+All tables have Row Level Security. Here's how it works:
 
 ```sql
--- Example: Students can only see their own data
-CREATE POLICY "Students can view own profile"
-ON public.students
-FOR SELECT
-TO authenticated
-USING (user_id = auth.uid());
+-- Students can only see their own data
+CREATE POLICY "Students view own profile"
+ON students FOR SELECT
+USING (auth.uid() = user_id);
 
--- Example: Messages visible to conversation participants
-CREATE POLICY "Messages visible to participants"
-ON public.messages
-FOR SELECT
-TO authenticated
+-- Students can only update their own data
+CREATE POLICY "Students update own profile"
+ON students FOR UPDATE
+USING (auth.uid() = user_id);
+
+-- Owners can only see their own dorms
+CREATE POLICY "Owners view own dorms"
+ON dorms FOR SELECT
 USING (
-  EXISTS (
-    SELECT 1 FROM conversations c
-    WHERE c.id = messages.conversation_id
-    AND (c.user_a_id = auth.uid() OR c.user_b_id = auth.uid())
+  owner_id IN (
+    SELECT id FROM owners WHERE user_id = auth.uid()
   )
 );
 
--- Example: Admins can view everything
-CREATE POLICY "Admins can view all dorms"
-ON public.dorms
-FOR SELECT
-TO authenticated
-USING (public.has_role(auth.uid(), 'admin'));
+-- Anyone can view public dorm listings
+CREATE POLICY "Public view verified dorms"
+ON dorms FOR SELECT
+USING (verification_status = 'verified');
+
+-- Admins can view everything
+CREATE POLICY "Admins view all"
+ON students FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM admins WHERE user_id = auth.uid()
+  )
+);
 ```
 
 ---
 
-## PART 8: Security Implementation
+## PART 18: CI/CD Workflows
 
-### 8.1 Security Layers
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    LAYER 1: NETWORK                                  │
-│  • Cloudflare DDoS protection                                       │
-│  • SSL/TLS encryption                                               │
-│  • Rate limiting at edge                                            │
-└───────────────────────────────────────────────────────────────────┬─┘
-                                                                    │
-┌─────────────────────────────────────────────────────────────────────┐
-│                    LAYER 2: APPLICATION                              │
-│  • CORS configuration                                               │
-│  • Input validation (Zod schemas)                                   │
-│  • XSS prevention (DOMPurify)                                       │
-│  • CSRF tokens                                                      │
-└───────────────────────────────────────────────────────────────────┬─┘
-                                                                    │
-┌─────────────────────────────────────────────────────────────────────┐
-│                    LAYER 3: AUTHENTICATION                           │
-│  • Supabase Auth (GoTrue)                                           │
-│  • PKCE flow for tokens                                             │
-│  • Custom email verification                                        │
-│  • Session management                                               │
-└───────────────────────────────────────────────────────────────────┬─┘
-                                                                    │
-┌─────────────────────────────────────────────────────────────────────┐
-│                    LAYER 4: AUTHORIZATION                            │
-│  • Row Level Security (RLS) on all tables                           │
-│  • Role-based access control                                        │
-│  • SECURITY DEFINER functions                                       │
-│  • Separate user_roles table                                        │
-└───────────────────────────────────────────────────────────────────┬─┘
-                                                                    │
-┌─────────────────────────────────────────────────────────────────────┐
-│                    LAYER 5: DATA                                     │
-│  • Encrypted at rest (AES-256)                                      │
-│  • Encrypted in transit (TLS 1.3)                                   │
-│  • Password hashing (bcrypt)                                        │
-│  • PII data isolation                                               │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### 8.2 Security Checklist
-
-```markdown
-## Authentication
-- [x] Email verification required
-- [x] Password strength validation
-- [x] Rate limiting on login (5 attempts/hour)
-- [x] Session timeout (7 days)
-- [x] PKCE flow for token exchange
-- [x] Secure cookie settings
-
-## Authorization
-- [x] RLS enabled on all 76+ tables
-- [x] Separate user_roles table (not on profiles)
-- [x] SECURITY DEFINER for role checks
-- [x] Admin actions audit logged
-
-## Data Protection
-- [x] Encryption at rest
-- [x] HTTPS enforced
-- [x] Sensitive data masked in logs
-- [x] PII export capability (GDPR)
-
-## Infrastructure
-- [x] DDoS protection (Cloudflare)
-- [x] WAF rules configured
-- [x] Secrets in environment variables
-- [x] No hardcoded credentials
-```
-
----
-
-## PART 9: Deployment Workflows
-
-### 9.1 Current Workflow (Lovable → Vercel)
-
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Lovable   │────>│   GitHub    │────>│   Vercel    │────>│    Users    │
-│   (Build)   │     │   (Store)   │     │   (Host)    │     │  (Access)   │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
-      │                   │                   │
-      │                   │                   │
-      ▼                   ▼                   ▼
- Edit code in       Auto-push on       Auto-deploy on
- Lovable UI         every save         every push
-```
-
-### 9.2 CI/CD Pipeline (GitHub Actions)
+### 18.1 GitHub Actions Pipeline
 
 ```yaml
 # .github/workflows/deploy.yml
-name: Deploy to Vercel
+name: Deploy to Production
 
 on:
   push:
@@ -1351,98 +2946,139 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v1
-      - run: bun install
-      - run: bun run lint
-      - run: bun run test
+      
+      - name: Install dependencies
+        run: bun install
+      
+      - name: Lint
+        run: bun run lint
+      
+      - name: Type check
+        run: bun run typecheck
+      
+      - name: Unit tests
+        run: bun test
 
-  deploy:
+  build:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - uses: amondnet/vercel-action@v25
+      - uses: oven-sh/setup-bun@v1
+      
+      - name: Install dependencies
+        run: bun install
+      
+      - name: Build
+        run: bun run build
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.ORG_ID }}
-          vercel-project-id: ${{ secrets.PROJECT_ID }}
-          vercel-args: '--prod'
-```
+          name: dist
+          path: dist
 
-### 9.3 Database Migration Workflow
-
-```yaml
-# .github/workflows/migration.yml
-name: Run Database Migration
-
-on:
-  push:
-    paths:
-      - 'supabase/migrations/**'
-    branches: [main]
-
-jobs:
-  migrate:
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
       
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        
-      - name: Run Migrations
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      
+      - name: Deploy to S3
+        run: aws s3 sync dist/ s3://app.roomylb.com --delete
+      
+      - name: Invalidate CloudFront
         run: |
-          supabase db push \
-            --db-url "${{ secrets.SUPABASE_DB_URL }}"
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+```
+
+### 18.2 Deployment Flow
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    DEPLOYMENT FLOW                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Developer pushes code to GitHub                                             │
+│       │                                                                      │
+│       ▼                                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                    GitHub Actions Triggered                          │    │
+│  │                                                                      │    │
+│  │   1. Checkout code                                                   │    │
+│  │   2. Install dependencies                                            │    │
+│  │   3. Run ESLint                                                      │    │
+│  │   4. Run TypeScript type check                                       │    │
+│  │   5. Run unit tests                                                  │    │
+│  │   6. Run integration tests                                           │    │
+│  └────────────────────────────────┬────────────────────────────────────┘    │
+│                                   │                                          │
+│                          All tests pass?                                     │
+│                          │             │                                     │
+│                         YES           NO                                     │
+│                          │             │                                     │
+│                          ▼             ▼                                     │
+│  ┌────────────────────────┐  ┌────────────────────────┐                     │
+│  │   Build Production     │  │   Block Merge          │                     │
+│  │   Bundle               │  │   Notify Developer     │                     │
+│  │                        │  │                        │                     │
+│  │   • bun run build      │  │   "Tests failed!"      │                     │
+│  │   • Optimize assets    │  │                        │                     │
+│  │   • Tree shaking       │  │                        │                     │
+│  └───────────┬────────────┘  └────────────────────────┘                     │
+│              │                                                               │
+│              ▼                                                               │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                    Deploy to AWS                                     │    │
+│  │                                                                      │    │
+│  │   1. Upload to S3 bucket                                            │    │
+│  │   2. Invalidate CloudFront cache                                    │    │
+│  │   3. Run database migrations (if any)                               │    │
+│  │   4. Deploy Lambda functions (if changed)                           │    │
+│  └────────────────────────────────┬────────────────────────────────────┘    │
+│                                   │                                          │
+│                                   ▼                                          │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                    Post-Deployment                                   │    │
+│  │                                                                      │    │
+│  │   1. Run smoke tests                                                │    │
+│  │   2. Check error monitoring (Sentry)                                │    │
+│  │   3. Notify team (Slack/Discord)                                    │    │
+│  │   4. Update deployment log                                          │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  Total time: ~5-10 minutes                                                  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## APPENDIX A: Quick Reference Commands
+## CONCLUSION
 
-```bash
-# Development
-npm run dev          # Start local dev server
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
-npm run test         # Run tests
+This document provides the complete educational foundation for understanding how to build and deploy the Roomy platform. Key takeaways:
 
-# Supabase CLI
-supabase start       # Start local Supabase
-supabase db reset    # Reset local database
-supabase functions serve  # Run functions locally
-supabase gen types typescript  # Generate types
+1. **Architecture**: SPA + PWA + Modular Monolith → Microservices
+2. **Technology**: React + TypeScript + Tailwind + Supabase → AWS
+3. **Strategy**: Build fast with Lovable, migrate to AWS for production
+4. **Timeline**: 36 weeks to full platform with mobile apps
+5. **Team**: Hire DevOps engineer for AWS setup ($1,500-4,000)
 
-# Git
-git pull origin main           # Get latest changes
-git checkout -b feature/name   # Create feature branch
-git push origin feature/name   # Push branch
-git merge main                 # Merge main into branch
-
-# Vercel CLI
-vercel                # Deploy preview
-vercel --prod         # Deploy production
-vercel env pull       # Pull environment variables
-```
+This plan will be continuously updated as the project evolves.
 
 ---
 
-## APPENDIX B: Contact & Resources
-
-| Resource | Link |
-|----------|------|
-| Supabase Docs | https://supabase.com/docs |
-| React Docs | https://react.dev |
-| Tailwind CSS | https://tailwindcss.com |
-| Vercel Docs | https://vercel.com/docs |
-| AWS Docs | https://docs.aws.amazon.com |
-| Kotlin Multiplatform | https://kotlinlang.org/docs/multiplatform.html |
-| SwiftUI | https://developer.apple.com/xcode/swiftui |
-| Jetpack Compose | https://developer.android.com/compose |
-
----
-
-*Document last updated: February 2026*
-*Version: 2.0*
-*Status: Approved*
+*Document maintained by Lovable AI. Last updated: February 2026.*
