@@ -1,820 +1,569 @@
-` tags since you're asking for explanations and understanding, not just implementation steps.
+
+
+# Roomy Platform Complete Educational Guide & Architecture Plan v3
+
+## Overview
+
+This plan update will transform the existing `plan2.md` into a comprehensive **4,000+ line educational document** that covers:
+
+1. **Complete Master Classification Table** - Every technology categorized correctly (Language, Framework, Build Tool, etc.)
+2. **Full Software Company Architecture** - Departments, roles, responsibilities, and languages
+3. **Feature Production Line** - How an idea moves from CEO's brain to user's screen
+4. **Web Application Architecture Types** - Which one Roomy should use
+5. **Roomy-Specific Recommendations** - Based on your exact requirements
+6. **Updated Deployment Strategy** - Vercel (waitlist) + AWS (app/admin from day 1)
+7. **DevOps Engineer Hiring Guide** - What to look for, what to ask
+8. **AWS Education Section** - Complete learning path
 
 ---
 
-## Complete Web Development Education Guide for Roomy Platform
+## Part 1: Roomy's Architecture Decisions
 
-Let me answer ALL your questions in detail, teaching you from zero knowledge.
+Based on all the requirements (messaging system, real-time features, payments, AI matching, reservation system), here are the **specific recommendations**:
 
----
+### Web Application Type
 
-### 🎯 FIRST: Your Key Questions Answered
+| Option | Definition | Roomy Recommendation |
+|--------|------------|---------------------|
+| **Server-Side Rendered (SSR)** | Server generates HTML | **NO** - Overkill for Roomy |
+| **Single-Page Application (SPA)** | Client-side rendering | **YES** - Current approach, ideal for interactive apps |
+| **Progressive Web App (PWA)** | Installable web app | **YES** - Add for mobile users before native app |
 
-#### ✅ **Question 1: Is your workflow correct?**
-**YES, 100% correct.** Here's the flow:
+**Roomy Should Use: SPA + PWA hybrid** (React + Vite with PWA capabilities)
 
-```
-Lovable (AI builds code) → GitHub (stores code) → Vercel/AWS (hosts & serves to users)
-```
+### Architecture Model
 
-Nobody will know Lovable was used. It's like using any code editor—the output is standard code.
+| Option | Definition | Roomy Recommendation |
+|--------|------------|---------------------|
+| **Monolithic** | All code in one place | **YES for launch** - Simpler, faster to ship |
+| **Microservices** | Separate services per feature | **LATER** - After 50K+ users |
+| **Serverless** | Functions as a Service | **YES for backend** - Edge Functions / Lambda |
 
-#### ✅ **Question 2: Can I migrate from Vercel to AWS later?**
-**YES, absolutely.** Here's why:
+**Roomy Should Use: "Modular Monolith transitioning to Microservices"**
+- Start as well-organized single codebase
+- Design with clear module boundaries
+- Migrate to microservices only when scaling demands it
 
-| Component | Vercel | AWS | Migration Possible? |
-|-----------|--------|-----|---------------------|
-| **Frontend** | Automatic | S3 + CloudFront | ✅ Just re-deploy same files |
-| **Database** | Supabase (PostgreSQL) | Aurora (PostgreSQL) | ✅ Same database type, use pg_dump |
-| **Backend Functions** | Supabase Edge Functions | AWS Lambda/ECS | ⚠️ Needs rewrite (different runtime) |
-| **Auth** | Supabase Auth | AWS Cognito | ⚠️ Users can be migrated |
-
-**Key insight:** The frontend code is 100% portable. The backend requires some work but is fully migratable.
-
-#### ✅ **Question 3: Can I use Supabase with AWS?**
-**YES!** Supabase and AWS are NOT mutually exclusive:
-- **Option A:** Keep Supabase for database + auth, use AWS only for hosting frontend
-- **Option B:** Migrate everything to AWS (Aurora + Cognito + Lambda)
-
----
-
-### 📚 COMPLETE WEB DEVELOPMENT GLOSSARY
-
-Let me explain EVERYTHING from scratch:
-
----
-
-## 🔷 PART 1: WHAT IS "FRONTEND" vs "BACKEND" vs "DATABASE"?
-
-Think of a restaurant:
-
-| Concept | Restaurant Analogy | Web Development |
-|---------|-------------------|-----------------|
-| **Frontend** | The dining room (what customers see) | The website/app you see and click |
-| **Backend** | The kitchen (where food is made) | Server code that processes requests |
-| **Database** | The pantry/storage (where ingredients are kept) | Where all data is stored |
-| **API** | The waiter (takes orders, brings food) | Communication between frontend and backend |
-
-### What exactly IS the backend?
-
-The "backend" includes:
-1. **API Endpoints** - URLs that receive requests (like `/api/login`)
-2. **Business Logic** - Code that processes data (calculate price, validate booking)
-3. **Authentication** - Verifying who the user is
-4. **Authorization** - Checking what the user can do
-5. **Database Queries** - Getting/saving data
-6. **Edge Functions** - Small serverless functions that run on demand
-7. **Middleware** - Code that runs between request and response (like checking login)
-8. **Caching** - Storing frequently-used data in memory (Redis)
-9. **File Processing** - Handling uploads, resizing images
-10. **Email/SMS Sending** - Notifications
-
-**Database** is SEPARATE from backend—it's just the storage. The backend TALKS to the database.
-
----
-
-## 🔷 PART 2: PROGRAMMING LANGUAGE vs FRAMEWORK vs BUILD TOOL
-
-### What's a Programming Language?
-
-The actual code you write. Like human languages (English, Arabic), but for computers.
-
-| Language | What it's used for | Example syntax |
-|----------|-------------------|----------------|
-| **JavaScript** | Web browsers, frontend | `const x = 5;` |
-| **TypeScript** | JavaScript + types (safer) | `const x: number = 5;` |
-| **Python** | AI, data science, backends | `x = 5` |
-| **Go** | High-performance servers | `var x int = 5` |
-| **Kotlin** | Android apps, backends | `val x: Int = 5` |
-| **Swift** | iOS/Mac apps | `let x: Int = 5` |
-| **Rust** | Ultra-fast, safe systems | `let x: i32 = 5;` |
-| **SQL** | Database queries | `SELECT * FROM users` |
-
-### What's a Framework?
-
-Pre-written code that gives you structure and shortcuts. Instead of building from scratch, you use someone else's foundation.
-
-| Framework | For Language | Purpose |
-|-----------|-------------|---------|
-| **React** | JavaScript/TypeScript | Building user interfaces |
-| **Vue** | JavaScript | Alternative to React |
-| **Angular** | TypeScript | Enterprise web apps |
-| **Next.js** | React | React + server-side features |
-| **Express** | JavaScript (Node.js) | Backend API servers |
-| **Django** | Python | Full web framework |
-| **Spring Boot** | Java/Kotlin | Enterprise backends |
-| **SwiftUI** | Swift | iOS user interfaces |
-| **Jetpack Compose** | Kotlin | Android user interfaces |
-
-### What's a Build Tool?
-
-Converts your code into something browsers/phones can run.
-
-| Build Tool | Purpose |
-|------------|---------|
-| **Vite** | Bundles React/Vue apps, very fast |
-| **Webpack** | Older bundler, more configurable |
-| **esbuild** | Ultra-fast JavaScript bundler |
-| **Gradle** | Builds Android/Kotlin apps |
-| **Xcode** | Builds iOS apps |
-
-### Framework vs Build Tool
-
-- **Framework** = The blueprint for HOW to write your code
-- **Build Tool** = The machine that COMPILES your code into the final product
-
----
-
-## 🔷 PART 3: YOUR 8 CATEGORIES EXPLAINED
-
-### 1️⃣ WEB FRONTEND
-
-| Component | What it is | For Roomy |
-|-----------|-----------|-----------|
-| **Language** | TypeScript | ✅ All 3 websites |
-| **Framework** | React | ✅ Component-based UI |
-| **Build Tool** | Vite | ✅ Fast bundling |
-| **Styling** | Tailwind CSS | ✅ Utility-first CSS |
-| **UI Components** | Radix UI, shadcn/ui | ✅ Pre-built buttons, dialogs |
-
-**React vs Next.js:**
-- **React + Vite** = Client-side rendering (browser does everything)
-- **Next.js** = Server-side rendering (server pre-renders pages)
-
-For Roomy: **React + Vite is fine.** Next.js is overkill for your use case.
-
----
-
-### 2️⃣ BACKEND
-
-| Component | What it is | For Roomy |
-|-----------|-----------|-----------|
-| **Language** | TypeScript (Supabase), Go/Kotlin (AWS) | ✅ Edge Functions now, Go later |
-| **Runtime** | Deno (Supabase), Node.js, AWS Lambda | ✅ Where code runs |
-| **API Style** | REST API | ✅ Standard request/response |
-| **Middleware** | Redis (caching), Auth checks | ✅ For real-time features |
-| **Serverless** | Edge Functions / Lambda | ✅ Functions that scale automatically |
-
-**What is REST API?**
-A way to communicate between frontend and backend using HTTP:
-- `GET /api/dorms` → Get list of dorms
-- `POST /api/bookings` → Create a booking
-- `PUT /api/users/123` → Update user 123
-- `DELETE /api/messages/456` → Delete message 456
-
-**What is Middleware?**
-Code that runs BETWEEN receiving a request and sending a response:
-```
-Request → [Auth Middleware] → [Rate Limit Middleware] → Your Code → Response
-```
-
-**What is Redis?**
-A super-fast in-memory database used for:
-- Caching (storing frequently accessed data)
-- Real-time features (who's online, typing indicators)
-- Session storage (keeping users logged in)
-
----
-
-### 3️⃣ MOBILE
-
-| Option | Language | Pros | Cons |
-|--------|----------|------|------|
-| **Native iOS** | Swift + SwiftUI | Best performance, Apple features | iOS only |
-| **Native Android** | Kotlin + Jetpack Compose | Best performance, Google features | Android only |
-| **Cross-platform: Flutter** | Dart | One codebase, both platforms | Less native feel |
-| **Cross-platform: React Native** | JavaScript/TypeScript | Use existing React skills | Less native feel |
-| **Hybrid: Capacitor** | TypeScript | Wrap web app in native shell | Web view, not truly native |
-
-**For Roomy (your choice: Native):**
-- iOS: Swift + SwiftUI
-- Android: Kotlin + Jetpack Compose
-- Shared logic: Kotlin Multiplatform (KMP)
-
-**What is Kotlin Multiplatform (KMP)?**
-Write business logic ONCE in Kotlin, share between iOS/Android/Backend:
-```
-┌─────────────────────────────────────────┐
-│         Shared Kotlin Code              │
-│  (Data models, API calls, validation)   │
-└──────────────┬───────────┬──────────────┘
-               │           │
-     ┌─────────▼───┐   ┌───▼─────────┐
-     │ iOS App     │   │ Android App │
-     │ (SwiftUI)   │   │ (Compose)   │
-     └─────────────┘   └─────────────┘
-```
-
----
-
-### 4️⃣ CLOUD (Hosting)
-
-| Provider | What it is | Best for |
-|----------|-----------|----------|
-| **Vercel** | Frontend hosting platform | React/Next.js apps, simple deployment |
-| **AWS** | Full cloud infrastructure | Enterprise, global scale, custom setups |
-| **Supabase** | Backend-as-a-Service | Database, Auth, Functions (what you have now) |
-| **Cloudflare** | CDN + DNS + Security | Domain management, DDoS protection |
-
-**Vercel vs AWS:**
-
-| Feature | Vercel | AWS |
-|---------|--------|-----|
-| **Ease of use** | Very easy | Complex |
-| **Cost** | Free-$20/mo for small | Pay-per-use |
-| **Scale** | Good for most apps | Unlimited global scale |
-| **Control** | Limited | Full control |
-| **Learning curve** | Minutes | Weeks/months |
-
-**What is Docker?**
-A way to package your code + all dependencies into a "container" that runs the same everywhere:
-```
-Your code + Node.js + libraries = Docker Container
-```
-AWS ECS (Elastic Container Service) runs these containers.
-
-**What is a CDN (Content Delivery Network)?**
-Servers around the world that cache your files:
-```
-User in Japan → Tokyo CDN server (fast!)
-User in Brazil → São Paulo CDN server (fast!)
-Instead of everyone hitting one server in the US
-```
-
----
-
-### 5️⃣ DATABASE
-
-| Type | What it is | Examples |
-|------|-----------|----------|
-| **RDBMS** | Relational Database (tables, rows, columns) | PostgreSQL, MySQL, Aurora |
-| **NoSQL** | Document/Key-value store | MongoDB, DynamoDB |
-| **In-memory** | Super fast, temporary storage | Redis |
-
-**RDBMS = Relational Database Management System**
-
-Think of it like Excel spreadsheets that can reference each other:
-```
-┌─────────────────────────────────┐
-│ students table                  │
-├─────┬─────────────┬─────────────┤
-│ id  │ name        │ email       │
-├─────┼─────────────┼─────────────┤
-│ 1   │ Ahmad       │ a@mail.com  │
-│ 2   │ Sarah       │ s@mail.com  │
-└─────┴─────────────┴─────────────┘
-
-┌──────────────────────────────────────┐
-│ reservations table                   │
-├─────┬────────────┬─────────┬─────────┤
-│ id  │ student_id │ dorm_id │ status  │
-├─────┼────────────┼─────────┼─────────┤
-│ 101 │ 1          │ 50      │ active  │
-│ 102 │ 2          │ 51      │ pending │
-└─────┴────────────┴─────────┴─────────┘
-```
-
-**PostgreSQL vs Aurora:**
-- PostgreSQL = The database software (open source)
-- Aurora = AWS's managed PostgreSQL (same SQL, but AWS handles scaling/backups)
-
-**SQL = Structured Query Language**
-The language to talk to databases:
-```sql
-SELECT * FROM students WHERE name = 'Ahmad';
-INSERT INTO reservations (student_id, dorm_id) VALUES (1, 50);
-UPDATE reservations SET status = 'confirmed' WHERE id = 101;
-DELETE FROM reservations WHERE id = 102;
-```
-
----
-
-### 6️⃣ UI/UX
-
-| Tool | Purpose |
-|------|---------|
-| **Figma** | Design mockups before coding |
-| **CSS** | Basic styling language |
-| **Tailwind CSS** | Utility classes for CSS |
-| **shadcn/ui** | Pre-built React components |
-
-For Roomy: You're building UI directly in code with React + Tailwind. No Figma needed if you design as you code.
-
----
-
-### 7️⃣ INFRASTRUCTURE & DOMAIN
-
-| Service | Purpose |
-|---------|---------|
-| **Cloudflare** | DNS management, SSL, DDoS protection |
-| **Route 53** | AWS's DNS service |
-| **ACM** | AWS SSL certificates (free) |
-| **VPC** | Virtual Private Cloud (network isolation) |
-
-**DNS (Domain Name System):**
-Translates `roomylb.com` → `192.168.1.1` (IP address)
-
-**SSL/HTTPS:**
-Encrypts data between browser and server (the lock icon 🔒)
-
----
-
-### 8️⃣ CI/CD & DevOps
-
-**CI = Continuous Integration**
-Automatically test code when developers push changes.
-
-**CD = Continuous Deployment**
-Automatically deploy code to production after tests pass.
-
-```
-Developer pushes code → GitHub → Tests run → Deploy to Vercel/AWS
-```
-
-| Tool | Purpose |
-|------|---------|
-| **Git** | Version control (track code changes) |
-| **GitHub** | Hosts Git repositories online |
-| **GitHub Actions** | Runs CI/CD pipelines |
-| **Terraform** | Infrastructure as Code (define AWS resources in code) |
-| **Docker** | Package apps in containers |
-
-**IaC = Infrastructure as Code**
-Instead of clicking buttons in AWS console, you write code that creates servers:
-```hcl
-# Terraform example
-resource "aws_instance" "roomy_server" {
-  ami           = "ami-12345"
-  instance_type = "t3.medium"
-}
-```
-
----
-
-## 🔷 PART 4: COMPLETE ROOMY TECH STACK
-
-Based on everything above, here's your FULL stack:
-
-### Phase 1: Launch on Vercel + Supabase (Now)
-
-| Layer | Technology | Language |
-|-------|------------|----------|
-| **Frontend** | React + Vite | TypeScript |
-| **Styling** | Tailwind CSS + shadcn/ui | CSS |
-| **Backend** | Supabase Edge Functions | TypeScript (Deno) |
-| **Database** | Supabase PostgreSQL | SQL |
-| **Auth** | Supabase Auth | - |
-| **Storage** | Supabase Storage | - |
-| **Real-time** | Supabase Realtime | - |
-| **Email** | Mailchimp (waitlist), SendGrid (transactional) | - |
-| **Hosting** | Vercel | - |
-| **DNS/CDN** | Cloudflare | - |
-| **CI/CD** | GitHub + GitHub Actions | YAML |
-
-### Phase 2: Migrate to AWS (Later)
-
-| Layer | Technology | Language |
-|-------|------------|----------|
-| **Frontend Hosting** | S3 + CloudFront | - |
-| **Backend API** | API Gateway + Lambda | Go |
-| **Business Logic** | ECS Fargate | Kotlin |
-| **Real-time** | WebSocket service | Go or Rust |
-| **Database** | Aurora PostgreSQL | SQL |
-| **Caching** | ElastiCache Redis | - |
-| **Auth** | Cognito or self-hosted | - |
-| **Storage** | S3 | - |
-| **Search** | Typesense or Elasticsearch | - |
-| **Infrastructure** | Terraform | HCL |
-| **Containers** | Docker + ECS | YAML |
-| **Monitoring** | CloudWatch | - |
-
-### Phase 3: Native Mobile Apps
-
-| Platform | Language | UI Framework | Shared Logic |
-|----------|----------|--------------|--------------|
-| **iOS** | Swift | SwiftUI | Kotlin Multiplatform |
-| **Android** | Kotlin | Jetpack Compose | Kotlin Multiplatform |
-
----
-
-## 🔷 PART 5: MIGRATION PATHS
-
-### Frontend Migration (Easy)
-```
-Vercel → AWS
-Same React code, just deploy to S3 + CloudFront instead
-5 minutes of work
-```
-
-### Database Migration (Medium)
-```
-Supabase PostgreSQL → AWS Aurora PostgreSQL
-Use pg_dump to export, pg_restore to import
-Same SQL, same schema, just different host
-1-2 hours of work
-```
-
-### Backend Migration (Harder)
-```
-Supabase Edge Functions (Deno/TypeScript) → AWS Lambda (Go/Node)
-Need to rewrite functions in new language
-But logic stays the same
-1-2 weeks of work
-```
-
-### Auth Migration (Medium)
-```
-Supabase Auth → AWS Cognito
-Export user emails + hashed passwords
-Import into Cognito user pool
-Users may need to reset passwords
-1 day of work
-```
-
----
-
-## 🔷 KEY RECOMMENDATION
-
-**Start with Vercel + Supabase.** Here's why:
-
-1. **Cost:** $0-25/month vs $250+/month for AWS
-2. **Speed:** Deploy in minutes vs days of AWS setup
-3. **Focus:** Build features, not infrastructure
-4. **Migration:** 100% possible later when you have budget
-
-**When to migrate to AWS:**
-- 10,000+ monthly active users
-- Need voice/video calls (Twilio works with either)
-- Need custom real-time infrastructure
-- Have $500+/month infrastructure budget
-
----
-
-I'll now create a comprehensive `plan2.md` file with everything organized:
-
-<lov-plan>
-
-# Roomy Platform Complete Technical Guide & Implementation Plan v2
-
-## Document Purpose
-This is a comprehensive educational document that explains ALL web development concepts from scratch, plus the complete implementation plan for the Roomy platform.
-
----
-
-## PART 1: Web Development Fundamentals (Education)
-
-### 1.1 The Three Core Layers
-
-Every web application has three main parts:
-
-| Layer | Restaurant Analogy | What It Does |
-|-------|-------------------|--------------|
-| **Frontend** | The dining room | What users see and interact with (buttons, forms, pages) |
-| **Backend** | The kitchen | Processes requests, runs business logic, talks to database |
-| **Database** | The pantry/storage | Stores all data permanently (users, bookings, messages) |
-
-### 1.2 What "Backend" Actually Includes
-
-The backend is NOT just the database. It includes:
-
-1. **API Endpoints** - URLs that receive requests (`POST /api/login`)
-2. **Business Logic** - Code that processes data (calculate price, validate dates)
-3. **Authentication** - Verify WHO the user is (email + password check)
-4. **Authorization** - Check WHAT the user can do (is this an admin?)
-5. **Database Queries** - Getting/saving data to PostgreSQL
-6. **Edge Functions** - Serverless functions that run on demand
-7. **Middleware** - Code that runs between request and response
-8. **Caching** - Storing frequently-used data in memory (Redis)
-9. **File Processing** - Handling image uploads, resizing
-10. **Notifications** - Sending emails, SMS, push notifications
-
-### 1.3 Programming Language vs Framework vs Build Tool
-
-| Term | Definition | Examples |
-|------|------------|----------|
-| **Language** | The actual syntax you write code in | TypeScript, Go, Swift, Kotlin, Python |
-| **Framework** | Pre-written code that gives structure | React, SwiftUI, Spring Boot |
-| **Build Tool** | Converts source code into runnable output | Vite, Webpack, Gradle, Xcode |
-| **Runtime** | Environment where code executes | Node.js, Deno, JVM, iOS |
-| **Library** | Reusable code you import | Tailwind CSS, date-fns, lodash |
-
-### 1.4 Complete Glossary
-
-| Term | What It Means |
-|------|---------------|
-| **API** | Application Programming Interface - how frontend talks to backend |
-| **REST** | Representational State Transfer - API style using HTTP methods |
-| **CRUD** | Create, Read, Update, Delete - basic database operations |
-| **SQL** | Structured Query Language - language for databases |
-| **RDBMS** | Relational Database Management System (PostgreSQL, MySQL) |
-| **ORM** | Object-Relational Mapping - code that generates SQL for you |
-| **CDN** | Content Delivery Network - servers worldwide for fast loading |
-| **SSL/TLS** | Encryption for HTTPS (the lock icon) |
-| **DNS** | Domain Name System - translates domain.com to IP address |
-| **CI/CD** | Continuous Integration/Deployment - automated testing and deployment |
-| **Docker** | Containerization - package code with all dependencies |
-| **Kubernetes** | Container orchestration - managing many Docker containers |
-| **Terraform** | Infrastructure as Code - define cloud resources in code |
-| **WebSocket** | Real-time two-way communication (for messaging) |
-| **OAuth** | Authentication using third-party (Google, Facebook login) |
-| **JWT** | JSON Web Token - secure authentication tokens |
-| **RLS** | Row Level Security - database access control |
-
----
-
-## PART 2: Complete Technology Stack for Roomy
-
-### 2.1 All Languages Used
-
-| Language | Where Used | Purpose |
-|----------|------------|---------|
-| **TypeScript** | All 3 web frontends | Type-safe JavaScript for React |
-| **SQL** | Database queries, migrations | Interacting with PostgreSQL |
-| **Swift** | iOS native app | Apple mobile development |
-| **Kotlin** | Android app + shared logic + backend | Cross-platform business logic |
-| **Go** | API Gateway, real-time services | High-performance backend |
-| **Python** | AI/ML services | Machine learning, recommendations |
-| **HCL** | Terraform infrastructure | Defining AWS resources |
-| **YAML** | CI/CD pipelines, Docker | Configuration files |
-| **Rust** | (Optional) Real-time messaging | Maximum performance |
-
-### 2.2 Stack by Phase
-
-#### Phase 1: Vercel + Supabase (Launch)
-
-| Component | Technology | Why |
-|-----------|------------|-----|
-| **Frontend** | React + Vite + TypeScript | Fast, component-based UI |
-| **Styling** | Tailwind CSS + shadcn/ui | Rapid UI development |
-| **Backend** | Supabase Edge Functions | Serverless, auto-scaling |
-| **Database** | Supabase PostgreSQL | Managed, with built-in RLS |
-| **Auth** | Supabase Auth | Email, OAuth, secure |
-| **Real-time** | Supabase Realtime | WebSocket subscriptions |
-| **Storage** | Supabase Storage | Image/file uploads |
-| **Hosting** | Vercel | Automatic deployments |
-| **DNS/CDN** | Cloudflare | Fast, secure |
-| **Email** | Mailchimp + SendGrid | Marketing + transactional |
-| **Payments** | Stripe | Global payment processing |
-
-**Monthly Cost: $50-150/month**
-
-#### Phase 2: AWS Migration (Scale)
-
-| Component | Technology | Why |
-|-----------|------------|-----|
-| **Frontend Hosting** | S3 + CloudFront | Global CDN |
-| **API Gateway** | AWS API Gateway + Lambda | Request routing |
-| **Backend Services** | ECS Fargate (Go/Kotlin) | Containerized microservices |
-| **Database** | Aurora PostgreSQL | Managed, auto-scaling |
-| **Caching** | ElastiCache Redis | Real-time presence, caching |
-| **Auth** | Cognito or custom | Enterprise-grade |
-| **Storage** | S3 | Unlimited file storage |
-| **Search** | Typesense/Elasticsearch | Full-text search |
-| **Monitoring** | CloudWatch + Sentry | Logs, errors, metrics |
-| **Security** | WAF + Shield | DDoS protection |
-
-**Monthly Cost: $500-2000/month**
-
-#### Phase 3: Native Mobile
-
-| Platform | Language | UI Framework | Shared Code |
-|----------|----------|--------------|-------------|
-| **iOS** | Swift | SwiftUI | Kotlin Multiplatform |
-| **Android** | Kotlin | Jetpack Compose | Kotlin Multiplatform |
-
-### 2.3 Vercel vs AWS Comparison
-
-| Feature | Vercel | AWS |
-|---------|--------|-----|
-| **Setup Time** | 5 minutes | 2-5 days |
-| **Cost (startup)** | $0-20/month | $200-600/month |
-| **Learning Curve** | Easy | Steep |
-| **Control** | Limited | Full |
-| **Global Regions** | 30+ | 30+ |
-| **Scaling** | Automatic | Manual/Automatic |
-| **Best For** | Launch fast | Enterprise scale |
-
----
-
-## PART 3: Migration Strategy
-
-### 3.1 Can You Migrate? YES!
-
-| Component | From | To | Difficulty | Time |
-|-----------|------|----|----|------|
-| **Frontend Code** | Vercel | S3/CloudFront | Easy | 1 hour |
-| **Database** | Supabase PostgreSQL | Aurora PostgreSQL | Medium | 2-4 hours |
-| **Backend Functions** | Edge Functions | Lambda/ECS | Hard | 1-2 weeks |
-| **Auth Users** | Supabase Auth | Cognito | Medium | 1 day |
-| **File Storage** | Supabase Storage | S3 | Easy | 2-4 hours |
-
-### 3.2 Data Preservation
-
-**All user data is preserved during migration:**
-- User accounts (emails, passwords)
-- Dorm listings
-- Reservations and payments
-- Messages and conversations
-- All 76+ database tables
-
-**Migration Process:**
-1. Create Aurora database on AWS
-2. `pg_dump` from Supabase PostgreSQL
-3. `pg_restore` to Aurora PostgreSQL
-4. Update connection strings in code
-5. Test thoroughly
-6. Switch DNS to new servers
-7. Maintenance window: 1-4 hours
-
-### 3.3 When to Migrate to AWS
-
-Migrate when you have:
-- 10,000+ monthly active users
-- Need for voice/video calling infrastructure
-- Regulatory requirements (GDPR data residency)
-- Budget of $500+/month for infrastructure
-- Technical team to manage AWS
-
----
-
-## PART 4: Three-Subdomain Architecture
-
-### 4.1 Structure
+### 3-Tier Architecture for Roomy
 
 ```text
-┌─────────────────────────────────────────────────────────────────────┐
-│                        roomylb.com (Main Domain)                     │
-├─────────────────────┬─────────────────────┬─────────────────────────┤
-│  waitlist.roomylb   │    app.roomylb      │    admin.roomylb        │
-│     .com            │       .com          │        .com             │
-├─────────────────────┼─────────────────────┼─────────────────────────┤
-│  • Landing page     │  • Student/Owner    │  • Admin dashboard      │
-│  • Email signup     │    marketplace      │  • User management      │
-│  • Countdown timer  │  • Messaging        │  • Analytics            │
-│  • Mailchimp        │  • Reservations     │  • Dorm verification    │
-│                     │  • AI Matching      │  • Financial reports    │
-│                     │  • Tours/Bookings   │  • Support tickets      │
-└─────────────────────┴─────────────────────┴─────────────────────────┘
-                              │
-                              ▼
-              ┌───────────────────────────────┐
-              │   Shared Backend (Supabase)   │
-              │                               │
-              │  • One PostgreSQL Database    │
-              │  • One Auth System            │
-              │  • Shared Edge Functions      │
-              │  • Shared Storage Buckets     │
-              └───────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PRESENTATION LAYER (Frontend)                             │
+│                                                                              │
+│  waitlist.roomylb.com   │   app.roomylb.com    │   admin.roomylb.com        │
+│  (Vercel)               │   (AWS S3+CloudFront)│   (AWS S3+CloudFront)      │
+│                         │                      │                            │
+│  React + Vite           │   React + Vite       │   React + Vite             │
+│  TypeScript             │   TypeScript         │   TypeScript               │
+│  Tailwind CSS           │   Tailwind CSS       │   Tailwind CSS             │
+└───────────────────────────────────┬─────────────────────────────────────────┘
+                                    │ HTTPS / REST API
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    APPLICATION LAYER (Backend)                               │
+│                                                                              │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐           │
+│  │   API Gateway    │  │  Lambda/ECS      │  │   Cognito        │           │
+│  │   (Routing)      │  │  (Business Logic)│  │   (Auth)         │           │
+│  └────────┬─────────┘  └────────┬─────────┘  └──────────────────┘           │
+│           │                     │                                            │
+│  ┌────────▼─────────────────────▼────────────────────────────────┐          │
+│  │                       Business Logic                           │          │
+│  │  • User authentication & authorization                        │          │
+│  │  • Reservation processing & payment handling                  │          │
+│  │  • AI matching algorithms                                     │          │
+│  │  • Message delivery & real-time notifications                 │          │
+│  │  • Tour booking management                                    │          │
+│  │  • Email/SMS notifications                                    │          │
+│  └───────────────────────────────────────────────────────────────┘          │
+└───────────────────────────────────┬─────────────────────────────────────────┘
+                                    │ SQL / Redis
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    DATA LAYER (Database)                                     │
+│                                                                              │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐           │
+│  │   Aurora         │  │   ElastiCache    │  │   S3             │           │
+│  │   PostgreSQL     │  │   (Redis)        │  │   (Files)        │           │
+│  │                  │  │                  │  │                  │           │
+│  │  76+ tables      │  │  • Sessions      │  │  • Images        │           │
+│  │  • students      │  │  • Caching       │  │  • Documents     │           │
+│  │  • dorms         │  │  • Real-time     │  │  • Voice notes   │           │
+│  │  • messages      │  │    presence      │  │                  │           │
+│  │  • payments      │  │                  │  │                  │           │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘           │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 Why Three Separate Projects?
+---
 
-| Reason | Benefit |
-|--------|---------|
-| **Security** | Admin dashboard isolated from public app |
-| **Performance** | Each site loads only what it needs |
-| **Teams** | Different developers can work independently |
-| **Deployment** | Update admin without affecting main app |
-| **Scaling** | Scale each independently based on traffic |
+## Part 2: Updated Deployment Strategy
 
-### 4.3 Shared Backend Connection
+### The Two-Path Approach
 
-All three Lovable projects connect to the SAME Supabase backend:
-1. Create Supabase project in `app.roomylb.com` workspace
-2. Get Project URL and Anon Key
-3. Connect same credentials to `waitlist` and `admin` workspaces
-4. All three share: database, auth, functions, storage
+**Path A (Recommended): Hybrid Approach**
+- `waitlist.roomylb.com` → Vercel (fast launch, simple)
+- `app.roomylb.com` → Vercel initially, migrate to AWS when ready
+- `admin.roomylb.com` → Vercel initially, migrate to AWS when ready
+
+**Path B (Your Preference): AWS from Day 1**
+- `waitlist.roomylb.com` → Vercel (marketing site, simple)
+- `app.roomylb.com` → AWS S3 + CloudFront (from production day 1)
+- `admin.roomylb.com` → AWS S3 + CloudFront (from production day 1)
+
+**Choosing Path B requires:**
+1. **Hiring a DevOps engineer** ($30-80/hour freelance, or $1,500-4,000 project-based)
+2. **2-4 weeks** for initial AWS setup before first deployment
+3. **Higher monthly costs** (~$500-800/month minimum vs ~$50/month on Vercel)
+4. **Backend migration from Supabase** since you want AWS from day 1
+
+### Backend Strategy for AWS from Day 1
+
+If you want AWS completely (no Supabase), here's what changes:
+
+| Component | Supabase (Current) | AWS Replacement | Migration Effort |
+|-----------|-------------------|-----------------|------------------|
+| Database | Supabase PostgreSQL | Aurora PostgreSQL | Medium (pg_dump/restore) |
+| Auth | Supabase Auth | AWS Cognito | Hard (user migration) |
+| Edge Functions | Deno runtime | AWS Lambda (Node/Go) | Hard (rewrite) |
+| Realtime | Supabase Realtime | AWS API Gateway WebSocket | Hard (rebuild) |
+| Storage | Supabase Storage | AWS S3 | Easy (file copy) |
+| API | PostgREST auto-generated | AWS API Gateway + Lambda | Hard (build from scratch) |
+
+**My Recommendation:** Build everything in Lovable with Supabase backend, then when ready to launch:
+1. Export the React frontend code to GitHub
+2. Hire DevOps engineer to set up AWS infrastructure
+3. Migrate database to Aurora
+4. Rewrite Edge Functions as Lambda functions
+5. Deploy frontend to S3 + CloudFront
+
+This approach lets you **build fast** with Lovable, then **deploy professionally** with AWS.
 
 ---
 
-## PART 5: Implementation Timeline
+## Part 3: Complete Master Classification Table
 
-### Phase 1: Foundation (Weeks 1-4)
+This table definitively categorizes every technology mentioned in your screenshots and ChatGPT responses:
 
-**Week 1: Project Setup**
-- Create 3 Lovable workspaces (waitlist, app, admin)
-- Configure DNS for subdomains via Cloudflare
-- Set up shared Supabase backend
-
-**Week 2: Waitlist Website**
-- Build landing page with Hero, Features, Countdown
-- Integrate Mailchimp for email collection
-- Deploy to Vercel with custom domain
-
-**Weeks 3-4: Database Schema**
-- Recreate all 76+ tables from current project
-- Implement all RLS policies
-- Create database functions and triggers
-
-### Phase 2: Main App (Weeks 5-12)
-
-**Weeks 5-6: Core Architecture**
-- Set up React + Vite + TypeScript structure
-- Implement routing and layouts
-- Connect to shared Supabase
-
-**Weeks 7-8: Authentication**
-- Email/password signup/login
-- Email verification flow
-- Role-based access (student, owner, admin)
-- GlobalAuthModal (Airbnb-style)
-
-**Weeks 9-10: Messaging System**
-- Real-time message delivery
-- Read receipts and typing indicators
-- Voice notes and reactions
-- Message editing/deletion
-
-**Weeks 11-12: Reservations**
-- Tour booking flow
-- Payment integration (Stripe)
-- Status management and notifications
-
-### Phase 3: Admin Dashboard (Weeks 13-16)
-
-**Weeks 13-14: Admin Core**
-- Dashboard with key metrics
-- User management interface
-- Dorm verification workflow
-
-**Weeks 15-16: Analytics**
-- Revenue tracking
-- User growth charts
-- Real-time activity monitoring
-
-### Phase 4: Native Mobile (Weeks 17-28)
-
-**Weeks 17-20: Kotlin Multiplatform Setup**
-- Create shared module for business logic
-- Data models, networking, validation
-
-**Weeks 21-24: iOS App**
-- Swift + SwiftUI implementation
-- All core features (auth, listings, messaging)
-
-**Weeks 25-28: Android App**
-- Kotlin + Jetpack Compose implementation
-- Push notifications setup
-
-### Phase 5: AWS Migration (Weeks 29-36)
-
-**Weeks 29-30: Infrastructure**
-- Set up Terraform configurations
-- Deploy Aurora, Redis, ECS
-
-**Weeks 31-34: Backend Services**
-- Rewrite Edge Functions in Go/Kotlin
-- Deploy to AWS Lambda/ECS
-
-**Weeks 35-36: Cutover**
-- Migrate database
-- Switch DNS
-- Monitor and optimize
+| Term | Category | Definition | Used in Roomy |
+|------|----------|------------|---------------|
+| **JavaScript** | Programming Language | The core language of the web, runs in browsers | Legacy code |
+| **TypeScript** | Programming Language | JavaScript with type safety, catches errors before runtime | YES - All frontend |
+| **Swift** | Programming Language | Apple's language for iOS/macOS apps | YES - Future iOS app |
+| **Kotlin** | Programming Language | JetBrains language for Android apps and backend | YES - Future Android + shared logic |
+| **Python** | Programming Language | General-purpose language, popular for AI/ML | YES - Future AI services |
+| **Go** | Programming Language | Google's language for high-performance backends | YES - Future AWS Lambda |
+| **Rust** | Programming Language | Systems language, extremely fast and safe | OPTIONAL - Real-time messaging |
+| **SQL** | Query Language | Language for relational databases | YES - Database queries |
+| **HTML** | Markup Language | Structure of web pages | YES - Via React JSX |
+| **CSS** | Styling Language | Visual presentation of web pages | YES - Via Tailwind |
+| **HCL** | Configuration Language | HashiCorp Configuration Language for Terraform | YES - Future AWS infra |
+| **YAML** | Data Format | Human-readable data serialization | YES - CI/CD configs |
+| **React** | UI Library/Framework | Component-based UI building for web | YES - All 3 websites |
+| **Next.js** | Full-Stack Framework | React + server-side features (routing, SSR) | NO - Not needed for Roomy |
+| **Vue** | UI Framework | Alternative to React | NO |
+| **Angular** | UI Framework | Enterprise React alternative | NO |
+| **SwiftUI** | UI Framework | Apple's declarative UI framework | YES - Future iOS |
+| **Jetpack Compose** | UI Framework | Android's modern UI toolkit | YES - Future Android |
+| **Django** | Backend Framework | Python full-stack framework | NO |
+| **Express** | Backend Framework | Node.js minimal web framework | NO - Using Edge Functions |
+| **Spring Boot** | Backend Framework | Java/Kotlin enterprise framework | MAYBE - Future backend |
+| **Vite** | Build Tool | Fast bundler and dev server for React | YES - All projects |
+| **Webpack** | Build Tool | Older bundler, more complex | NO - Using Vite |
+| **Gradle** | Build Tool | Android/Kotlin project builder | YES - Future mobile |
+| **Xcode** | Build Tool + IDE | Apple's development environment | YES - Future iOS |
+| **Tailwind CSS** | CSS Framework | Utility-first styling system | YES - All projects |
+| **Bootstrap** | CSS Framework | Pre-built component styles | NO - Using Tailwind |
+| **shadcn/ui** | Component Library | Pre-built React components | YES - All projects |
+| **Radix UI** | Component Library | Accessible UI primitives | YES - Via shadcn |
+| **PostgreSQL** | Database (RDBMS) | Relational database system | YES - Primary database |
+| **MySQL** | Database (RDBMS) | Alternative relational database | NO |
+| **MongoDB** | Database (NoSQL) | Document database | NO |
+| **Redis** | Database (In-Memory) | Fast cache and session store | YES - Future caching |
+| **Aurora** | Managed Database | AWS-managed PostgreSQL | YES - Future AWS |
+| **Node.js** | Runtime | JavaScript server execution | YES - Some tooling |
+| **Deno** | Runtime | Modern JavaScript/TypeScript runtime | YES - Edge Functions |
+| **Docker** | Container Technology | Package apps with dependencies | YES - Future AWS |
+| **Kubernetes** | Container Orchestration | Manage many containers | MAYBE - At scale |
+| **AWS** | Cloud Provider | Amazon's cloud platform | YES - Future hosting |
+| **Vercel** | Hosting Platform | Simple frontend deployment | YES - Waitlist |
+| **Cloudflare** | DNS/CDN Provider | Domain management, DDoS protection | YES - All projects |
+| **Supabase** | Backend-as-a-Service | Complete backend platform | YES - Current backend |
+| **REST** | API Architecture | Standard request/response pattern | YES - All APIs |
+| **GraphQL** | API Architecture | Query-based API alternative | NO |
+| **WebSocket** | Protocol | Real-time bidirectional communication | YES - Messaging |
+| **Git** | Version Control | Track code changes | YES - All projects |
+| **GitHub** | Code Hosting | Store repositories online | YES - All projects |
+| **GitHub Actions** | CI/CD | Automated testing and deployment | YES - Future pipelines |
+| **Terraform** | Infrastructure as Code | Define cloud resources in code | YES - Future AWS |
+| **Figma** | Design Tool | UI/UX design software | OPTIONAL |
+| **Stripe** | Payment Service | Payment processing | YES - Payments |
+| **SendGrid** | Email Service | Transactional emails | YES - Notifications |
+| **Mailchimp** | Marketing Service | Email marketing | YES - Waitlist |
 
 ---
 
-## PART 6: Cost Estimates
+## Part 4: Software Company Department Structure
 
-### Development Phase (Using Lovable + Supabase + Vercel)
+### Full Department Breakdown for Roomy
 
-| Service | Monthly Cost |
-|---------|-------------|
-| Supabase Pro | $25 |
-| Vercel (3 projects) | $0-60 |
-| Cloudflare | $0-20 |
-| Mailchimp | $0-20 |
-| SendGrid | $0-20 |
-| **Total** | **$25-145/month** |
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           ROOMY COMPANY STRUCTURE                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─────────────────────┐                                                    │
+│  │    EXECUTIVE        │                                                    │
+│  │    (CEO/Founder)    │─────────────────────────────────────────────────┐  │
+│  │                     │                                                 │  │
+│  │  Responsibilities:  │                                                 │  │
+│  │  • Vision & strategy│                                                 │  │
+│  │  • Feature ideas    │                                                 │  │
+│  │  • Final decisions  │                                                 │  │
+│  └─────────┬───────────┘                                                 │  │
+│            │                                                             │  │
+│  ┌─────────▼───────────┐  ┌───────────────────┐  ┌───────────────────┐  │  │
+│  │    PRODUCT          │  │    DESIGN         │  │   ENGINEERING     │  │  │
+│  │    (PM)             │  │    (UI/UX)        │  │                   │  │  │
+│  │                     │  │                   │  │                   │  │  │
+│  │  • Feature specs    │  │  • Wireframes     │  │  Frontend, Backend│  │  │
+│  │  • Requirements     │  │  • Visual design  │  │  Mobile, DevOps   │  │  │
+│  │  • Roadmap          │  │  • Prototypes     │  │                   │  │  │
+│  └─────────────────────┘  └───────────────────┘  └───────────────────┘  │  │
+│                                                                          │  │
+│  ┌───────────────────┐  ┌───────────────────┐  ┌───────────────────┐    │  │
+│  │    QA/TESTING     │  │   DATA/ANALYTICS  │  │   MARKETING       │    │  │
+│  │                   │  │                   │  │                   │    │  │
+│  │  • Test plans     │  │  • Metrics        │  │  • User growth    │    │  │
+│  │  • Bug reports    │  │  • Dashboards     │  │  • Content        │    │  │
+│  │  • Quality gates  │  │  • Insights       │  │  • Campaigns      │    │  │
+│  └───────────────────┘  └───────────────────┘  └───────────────────┘    │  │
+│                                                                          │  │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-### Production Phase (Vercel + Supabase)
+### Engineering Team Breakdown
 
-| Users | Monthly Cost |
-|-------|-------------|
-| 0-10K | $100-300 |
-| 10K-50K | $300-800 |
-| 50K-100K | $800-1500 |
-
-### Enterprise Phase (AWS)
-
-| Users | Monthly Cost |
-|-------|-------------|
-| 0-10K | $500-800 |
-| 10K-100K | $1,500-4,000 |
-| 100K+ | $8,000-25,000 |
+| Role | What They Build | Languages/Tools | Roomy Needs |
+|------|-----------------|-----------------|-------------|
+| **Frontend Engineer** | Web UI (buttons, pages, forms) | TypeScript, React, CSS, Tailwind | YES - 1-2 people |
+| **Backend Engineer** | Server logic, APIs, database | TypeScript/Go, SQL, PostgreSQL | YES - 1 person |
+| **Mobile Engineer (iOS)** | iPhone/iPad app | Swift, SwiftUI, Xcode | LATER - 1 person |
+| **Mobile Engineer (Android)** | Android app | Kotlin, Jetpack Compose | LATER - 1 person |
+| **Full-Stack Engineer** | Both frontend and backend | All of the above | YES - Lovable acts as this |
+| **DevOps Engineer** | Servers, deployment, CI/CD | AWS, Docker, Terraform, GitHub Actions | YES - Hire for AWS setup |
+| **QA Engineer** | Testing, quality assurance | Testing frameworks | LATER |
+| **Data Engineer** | Analytics, data pipelines | SQL, Python | LATER |
 
 ---
 
-## PART 7: File to Create
+## Part 5: Feature Production Line (Idea → User's Screen)
 
-I will create `.lovable/plan2.md` containing:
-1. Complete educational glossary
-2. Full technology stack explanation
-3. Migration strategies
-4. Updated implementation timeline
-5. Cost breakdowns for each phase
-6. All programming languages with purposes
-7. Vercel vs AWS comparison
-8. Database schema overview from current project
+This is the complete journey of how a feature goes from concept to production:
 
-This document will be approximately 1500 lines covering everything from A to Z for someone with zero web development knowledge.
+```text
+STAGE 1: IDEATION
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  CEO/Founder has an idea:                                                    │
+│  "Users should be able to book tours of dorms before reserving"             │
+│                                                                              │
+│  Output: Informal idea, written down or discussed                            │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+STAGE 2: PRODUCT SPECIFICATION                                              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Product Manager writes PRD (Product Requirements Document):                 │
+│                                                                              │
+│  • What problem does this solve? (Students want to see dorms in person)     │
+│  • Who is the user? (Students looking to rent)                              │
+│  • What are the requirements?                                                │
+│    - Students can request tour times                                         │
+│    - Owners can accept/decline                                              │
+│    - Both receive notifications                                              │
+│    - Reminders sent 24h before                                              │
+│  • Success metrics? (10% of users book tours, 80% show up)                  │
+│                                                                              │
+│  Output: PRD document                                                        │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+STAGE 3: DESIGN                                                             ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  UI/UX Designer creates visual designs:                                      │
+│                                                                              │
+│  • Wireframes (rough layouts)                                               │
+│  • High-fidelity mockups (pixel-perfect designs)                            │
+│  • User flows (how user navigates)                                          │
+│  • States: loading, error, empty, success                                   │
+│  • Mobile and desktop versions                                              │
+│                                                                              │
+│  Tools: Figma, Sketch, or directly in code (Lovable)                        │
+│  Output: Design files or approved mockups                                    │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+STAGE 4: TECHNICAL PLANNING                                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Engineering team breaks down work:                                          │
+│                                                                              │
+│  FRONTEND TASKS:                                                             │
+│  - Create BookTourButton component                                          │
+│  - Build TourSchedulerModal                                                 │
+│  - Add TourConfirmationPage                                                 │
+│  - Integrate with API endpoints                                             │
+│                                                                              │
+│  BACKEND TASKS:                                                              │
+│  - Create bookings table (SQL migration)                                    │
+│  - Create POST /api/bookings endpoint                                       │
+│  - Create GET /api/bookings endpoint                                        │
+│  - Add booking notification function                                        │
+│  - Create reminder scheduler                                                │
+│                                                                              │
+│  DATABASE CHANGES:                                                           │
+│  - New table: bookings                                                       │
+│  - New table: booking_reminders                                             │
+│  - RLS policies for both                                                    │
+│                                                                              │
+│  Output: Task list in project management tool                                │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+STAGE 5: IMPLEMENTATION                                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Developers write code:                                                      │
+│                                                                              │
+│  FRONTEND (TypeScript + React):                                              │
+│  ```tsx                                                                      │
+│  const BookTourButton = ({ dormId }: { dormId: string }) => {               │
+│    const { mutate: bookTour } = useMutation({                               │
+│      mutationFn: async (data) => {                                          │
+│        const { error } = await supabase                                     │
+│          .from('bookings')                                                  │
+│          .insert({ dorm_id: dormId, ...data });                             │
+│        if (error) throw error;                                              │
+│      }                                                                       │
+│    });                                                                       │
+│    return <Button onClick={() => bookTour(...)}>Book Tour</Button>;         │
+│  };                                                                          │
+│  ```                                                                         │
+│                                                                              │
+│  BACKEND (SQL):                                                              │
+│  ```sql                                                                      │
+│  CREATE TABLE bookings (                                                     │
+│    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),                           │
+│    student_id UUID REFERENCES students(id),                                 │
+│    dorm_id UUID REFERENCES dorms(id),                                       │
+│    scheduled_at TIMESTAMPTZ NOT NULL,                                       │
+│    status TEXT DEFAULT 'pending',                                           │
+│    created_at TIMESTAMPTZ DEFAULT now()                                     │
+│  );                                                                          │
+│  ```                                                                         │
+│                                                                              │
+│  Output: Working code in feature branch                                      │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+STAGE 6: CODE REVIEW                                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Other developers review the code:                                           │
+│                                                                              │
+│  • Is the code readable and maintainable?                                   │
+│  • Are there any bugs or security issues?                                   │
+│  • Does it follow our coding standards?                                     │
+│  • Are there tests?                                                          │
+│                                                                              │
+│  Output: Approved or request changes                                         │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+STAGE 7: TESTING                                                            ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  QA team tests the feature:                                                  │
+│                                                                              │
+│  UNIT TESTS (automated):                                                     │
+│  - Test individual functions work correctly                                  │
+│                                                                              │
+│  INTEGRATION TESTS (automated):                                              │
+│  - Test frontend talks to backend correctly                                 │
+│                                                                              │
+│  END-TO-END TESTS (automated or manual):                                    │
+│  - Test complete user flow                                                  │
+│  - "As a student, I can book a tour and receive confirmation"               │
+│                                                                              │
+│  EDGE CASES:                                                                 │
+│  - What if student books two tours at same time?                            │
+│  - What if owner declines?                                                  │
+│  - What if payment fails?                                                   │
+│                                                                              │
+│  Output: Test report, bug list                                               │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+STAGE 8: CI/CD PIPELINE                                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Automated pipeline runs:                                                    │
+│                                                                              │
+│  1. Developer pushes code to GitHub                                          │
+│  2. GitHub Actions triggers automatically                                    │
+│  3. Pipeline runs:                                                           │
+│     a. Install dependencies (npm install)                                    │
+│     b. Run linter (check code style)                                        │
+│     c. Run tests (verify nothing broke)                                      │
+│     d. Build production bundle (npm run build)                              │
+│     e. Deploy to staging environment                                        │
+│                                                                              │
+│  Output: Deployed to staging (test environment)                              │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+STAGE 9: STAGING VERIFICATION                                               ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Team verifies on staging:                                                   │
+│                                                                              │
+│  • Product Manager: Does it match requirements?                              │
+│  • Designer: Does it match designs?                                         │
+│  • QA: Does it pass all test cases?                                         │
+│  • Developer: No errors in logs?                                            │
+│                                                                              │
+│  Output: Approval to deploy to production                                    │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+STAGE 10: PRODUCTION DEPLOYMENT                                             ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Deploy to production (live users):                                          │
+│                                                                              │
+│  VERCEL: Automatic on merge to main branch                                   │
+│  AWS: Pipeline deploys to S3 + CloudFront                                   │
+│                                                                              │
+│  Steps:                                                                      │
+│  1. Merge feature branch to main                                            │
+│  2. CI/CD builds production bundle                                          │
+│  3. Bundle uploaded to hosting (Vercel/S3)                                  │
+│  4. CDN cache invalidated                                                   │
+│  5. Users see new feature!                                                  │
+│                                                                              │
+│  Output: Feature live for all users                                          │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+STAGE 11: MONITORING                                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Monitor feature performance:                                                │
+│                                                                              │
+│  • Error tracking (Sentry): Any crashes?                                    │
+│  • Analytics: Are users using the feature?                                  │
+│  • Performance: Is it fast enough?                                          │
+│  • Feedback: What are users saying?                                         │
+│                                                                              │
+│  Output: Insights for future improvements                                    │
+└───────────────────────────────────────────────────────────────────────────┬─┘
+                                                                            │
+STAGE 12: ITERATION                                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Based on feedback, create new ideas:                                        │
+│                                                                              │
+│  "Users are missing tours - we should add SMS reminders"                    │
+│  → Back to Stage 1                                                          │
+│                                                                              │
+│  The cycle continues forever!                                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Part 6: DevOps Engineer Hiring Guide
+
+Since you'll need to hire a DevOps engineer for AWS setup, here's what to look for:
+
+### What to Look For
+
+| Skill | Why It Matters | How to Verify |
+|-------|----------------|---------------|
+| **AWS Experience** | Core requirement | "Walk me through a project you deployed on AWS" |
+| **Terraform** | Infrastructure as Code | "Show me a Terraform config you wrote" |
+| **Docker** | Containerization | "Explain how you would containerize our app" |
+| **CI/CD** | Automation | "How would you set up GitHub Actions for us?" |
+| **PostgreSQL** | Database management | "Have you done database migrations before?" |
+| **Security** | Protect user data | "How do you secure an AWS environment?" |
+| **Cost Optimization** | Save money | "How do you keep AWS costs down?" |
+
+### Interview Questions
+
+1. "We have a React app built with Vite. How would you deploy it to AWS S3 and CloudFront?"
+2. "Our backend currently uses Supabase. How would you migrate to AWS Aurora and Lambda?"
+3. "We need real-time messaging. How would you implement WebSockets on AWS?"
+4. "How would you set up a staging environment separate from production?"
+5. "What's your approach to setting up monitoring and alerting?"
+
+### Expected Costs
+
+| Engagement Type | Cost | Best For |
+|-----------------|------|----------|
+| **Hourly freelancer** | $30-80/hour | Ongoing support |
+| **Project-based** | $1,500-4,000 | Initial setup |
+| **Full-time hire** | $80,000-150,000/year | Long-term growth |
+
+**Recommendation:** Start with project-based engagement for initial AWS setup, then switch to hourly for ongoing support.
+
+---
+
+## Part 7: What I (Lovable) Can and Cannot Do
+
+### What I CAN Do
+
+| Task | Description |
+|------|-------------|
+| Write all frontend code | React, TypeScript, Tailwind, components, pages |
+| Write database migrations | SQL schemas, tables, RLS policies, functions |
+| Write Edge Functions | Supabase/Deno serverless functions |
+| Write AWS Lambda code | Node.js or Go functions (you deploy) |
+| Write Terraform configs | Infrastructure as Code (you run) |
+| Write CI/CD pipelines | GitHub Actions YAML files |
+| Write mobile app code | Swift/Kotlin code (you compile) |
+| Design architecture | Plan how systems connect |
+| Debug issues | Read logs, fix errors |
+
+### What I CANNOT Do
+
+| Task | Why | Who Does It |
+|------|-----|-------------|
+| **Provision AWS resources** | No AWS console access | You or DevOps engineer |
+| **Run Terraform** | No CLI access | You or DevOps engineer |
+| **Compile mobile apps** | No Xcode/Android Studio | You (need Mac for iOS) |
+| **Submit to App Stores** | No developer accounts | You (need accounts) |
+| **Configure DNS** | No Cloudflare access | You |
+| **Set up Stripe account** | No financial access | You |
+| **Monitor production** | No server access | You or DevOps engineer |
+
+---
+
+## Part 8: Complete Updated Plan Structure
+
+The updated plan2.md will include these new sections:
+
+### New Sections to Add
+
+1. **Master Classification Table** (complete categorization of all technologies)
+2. **Web Application Architecture Types** (SPA, SSR, PWA, Monolithic, Microservices, Serverless)
+3. **Roomy Architecture Decisions** (which types we're using and why)
+4. **3-Tier Architecture for Roomy** (detailed diagram)
+5. **Software Company Departments** (roles, responsibilities, languages)
+6. **Feature Production Line** (14 stages from idea to production)
+7. **DevOps Engineer Hiring Guide** (skills, questions, costs)
+8. **Lovable Capabilities** (what I can/cannot do)
+9. **Updated Deployment Strategy** (Vercel waitlist + AWS app/admin)
+10. **AWS Education Section** (services, costs, learning path)
+
+### Files to Update
+
+**`.lovable/plan2.md`** - Complete rewrite with all educational content, expanding from 1,448 lines to ~4,000+ lines
+
+---
+
+## Implementation Summary
+
+| Decision | Recommendation |
+|----------|----------------|
+| **Web App Type** | SPA + PWA (React + Vite with service worker) |
+| **Architecture** | Modular Monolith → Microservices (later) |
+| **Hosting: Waitlist** | Vercel (simple, fast launch) |
+| **Hosting: App + Admin** | AWS S3 + CloudFront (from production day 1) |
+| **Backend: During Development** | Supabase (fast to build with) |
+| **Backend: Production** | Migrate to AWS (Aurora, Lambda, Cognito) |
+| **DevOps** | Hire freelancer for AWS setup ($1,500-4,000) |
+| **Mobile Strategy** | Native (Swift + Kotlin) with KMP shared logic |
+
+This plan provides the complete educational foundation and architectural decisions for Roomy. Shall I proceed with updating the plan2.md file with all this content?
 
