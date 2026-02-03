@@ -1,418 +1,403 @@
 
-
-# Plan: Update plan2.md with Airbnb Architecture Case Study & Advanced System Design Education
+# Plan: Integrate Waitlist Project + Email/DNS Infrastructure into plan2.md
 
 ## Overview
 
-This update will **add approximately 1,500+ new lines** to the existing plan2.md file, integrating comprehensive Airbnb architecture insights adapted for Roomy. The update will preserve all existing content while adding new sections and expanding relevant existing sections.
+This update will add approximately **400-500 new lines** to plan2.md, integrating:
+1. Complete waitlist project technical documentation
+2. Email infrastructure strategy (Resend → AWS SES)
+3. Domain/DNS migration strategy (Namecheap → Cloudflare)
+4. Email migration (Zoho → Google Workspace)
 
 ---
 
 ## New Sections to Add
 
-### 1. NEW SECTION: "PART 19: Airbnb Architecture Case Study (Applied to Roomy)"
+### 1. NEW SECTION: "PART 24: Waitlist Project Technical Specification"
 
-This will be the largest new addition, covering Airbnb's architecture evolution and how it applies to Roomy's current and future state:
+This will be a detailed section documenting the waitlist project that was built in the separate Lovable workspace:
 
-#### 19.1 Airbnb's Architecture Evolution Journey
+#### 24.1 Project Identity & Context
+
+| Property | Value |
+|----------|-------|
+| **Project Name** | Roomy Waitlist |
+| **Lovable Preview** | roomy-waitlist-2.lovable.app |
+| **Vercel Production** | roomy-waitlist-2.vercel.app |
+| **Future Domain** | waitlist.roomylb.com |
+| **Status** | Frontend Complete, Backend Pending |
+| **Tech Stack** | React + Vite + TypeScript + Tailwind CSS |
+
+#### 24.2 Project Structure
 
 ```text
-Version 1 (Monolith):
-- Single Ruby on Rails application (they called it "monorail")
-- Model, View, Controller in one repository
-- Good for startup phase
-
-Version 2 (Hybrid - Monolith + SOA):
-- Monorail handles routing and view layer
-- New services handle business logic, data model, access
-
-Version 3 (Full SOA - No Monolith):
-- API Gateway handles all routing, middleware, session
-- Presentation Services aggregate data
-- Data Services handle database access
-- Derived Data Services apply business logic
+roomy-waitlist/
+├── .lovable/
+│   └── waitlist-project-overview.md
+├── public/
+│   ├── favicon.ico, robots.txt
+│   └── images/ (university WebP images)
+├── src/
+│   ├── assets/ (logos, university photos)
+│   ├── components/
+│   │   ├── ui/ (50+ shadcn/ui components)
+│   │   ├── layout/ (Navbar, Footer, Layout)
+│   │   ├── landing/ (HeroSection, CTAs, etc.)
+│   │   ├── about/, contact/, faq/, legal/
+│   ├── pages/ (11 routes)
+│   ├── hooks/ (use-mobile, useScrollAnimation)
+│   ├── lib/ (utils, contactSchema)
+│   └── data/ (faqData, legalContent)
+├── tailwind.config.ts
+└── vite.config.ts
 ```
 
-Detailed ASCII diagrams recreating the reference images (Service-Oriented Architecture, Version 3 Without Monorail, etc.)
+#### 24.3 All Routes
 
-#### 19.2 Airbnb's Service Types (Adapted for Roomy)
+| Route | Component | Status | Description |
+|-------|-----------|--------|-------------|
+| `/` | Home | ✅ | Landing with hero, features, waitlist input |
+| `/about` | About | ✅ | Company story, problems/solutions, vision |
+| `/contact` | Contact | ✅ | Contact form (pending backend) |
+| `/faq` | FAQ | ✅ | Searchable accordion |
+| `/legal` | LegalHub | ✅ | Legal documents index |
+| `/legal/terms` | Terms | ✅ | Terms of Service |
+| `/legal/privacy` | Privacy | ✅ | Privacy Policy |
+| `/legal/payments-disclaimer` | PaymentsDisclaimer | ✅ | Payments disclaimer |
+| `/legal/owner-agreement` | OwnerAgreement | ✅ | Property owner agreement |
+| `/legal/community-guidelines` | CommunityGuidelines | ✅ | Community standards |
+| `/legal/data-rights` | DataRights | ✅ | User data rights (GDPR-style) |
+| `*` | NotFound | ✅ | 404 error page |
 
-| Service Type | Airbnb Purpose | Roomy Equivalent |
-|--------------|----------------|------------------|
-| Data Service | Entry-point for all reads/writes | Supabase tables + RLS |
-| Derived Data Service | Business logic on top of data | Edge Functions |
-| Mid-Tier Service | Complex business logic | Future Lambda services |
-| Presentation Service | Aggregate for frontend | React Query hooks |
+#### 24.4 Key Components Inventory
 
-#### 19.3 Roomy's Current vs Future Architecture
+**Landing Page Components:**
+- HeroSection (parallax university images)
+- AnimatedWaitlistInput (typing animation)
+- InfiniteLogoSlider (24 tech logos, 2 rows on mobile)
+- VelocityScroll feature grid
+- VisionSection with nested card styling
+- FinalCTASection
 
-**Current State (Lovable + Supabase):**
-```text
-React Frontend → Supabase (PostgREST + Edge Functions) → PostgreSQL
-```
+**Design System (CSS Variables):**
+- Primary: #4285F4 (Roomy Blue)
+- Background: warm off-white
+- Gradients: pill-active, button-primary, cta-block
+- Typography: System sans + Playfair Display (serif)
+- Animations: blur-in, slide-up, ken-burns, float
 
-**Future State (AWS):**
-```text
-React Frontend → API Gateway → Lambda/ECS → Aurora PostgreSQL
-         ↓
-    Presentation Services → Mid-Tier Services → Data Services
-```
+**Key Dependencies:**
+- @radix-ui/* (20+ packages)
+- motion (Framer Motion)
+- react-hook-form + zod
+- embla-carousel-react
+- sonner (toasts)
+- lucide-react + react-icons
 
-#### 19.4 Core Domain Services for Roomy
+#### 24.5 Pending Backend Integrations
 
-Based on the Airbnb microservices system diagram (Image 1), adapted for Roomy:
-
-**User Management Service:**
-- Multi-role Authentication (Student, Owner, Admin)
-- Secure Registration Flow
-- Session Management
-- Admin Controls
-
-**Property Management Service (Dorm/Apartment):**
-- Complete Property Lifecycle
-- Media Handling (images, 360 tours, videos)
-- Availability Calendar
-- Smart Search with filters
-
-**Booking Service:**
-- Tour booking flow
-- Reservation processing
-- Payment integration (Stripe)
-- Status management
-
-**Messaging Service:**
-- Real-time message delivery
-- Read receipts and reactions
-- Voice notes
-- Support conversations
-
-**Notification Service:**
-- Email notifications (SendGrid/SES)
-- Push notifications
-- In-app notifications
-- SMS (future)
-
-**Review Service (Future):**
-- Student reviews of dorms
-- Owner responses
-- Rating aggregation
+| Integration | Purpose | Flow | Env Var |
+|-------------|---------|------|---------|
+| **Mailchimp** | Waitlist signups | Form → Edge Function → Mailchimp API | `MAILCHIMP_API_KEY`, `MAILCHIMP_AUDIENCE_ID` |
+| **Resend** | Contact form emails | Form → Edge Function → Resend API → team@roomylb.com | `RESEND_API_KEY` |
 
 ---
 
-### 2. NEW SECTION: "PART 20: Event-Driven Architecture"
+### 2. NEW SECTION: "PART 25: Email Infrastructure Strategy"
 
-Based on Airbnb's event-driven design:
+#### 25.1 Email Types and Services
 
-#### 20.1 Why Events Matter
+| Email Type | Service | Purpose | Example |
+|------------|---------|---------|---------|
+| **Business Inbox** | Google Workspace | Send/receive manual emails | team@roomylb.com |
+| **Transactional API** | Resend → AWS SES | Automated app notifications | "Your booking is confirmed" |
+| **Marketing** | Mailchimp | Campaigns, newsletters | "Roomy is launching!" |
 
-- Loose coupling between services
-- Complete audit trail for debugging
-- Enables analytics from event streams
-- Compliance and regulatory requirements
-
-#### 20.2 Roomy Event Flow Diagram
+#### 25.2 Why Google Workspace Cannot Replace Resend
 
 ```text
-User Action → Edge Function → Database Insert → Trigger → Event Queue
-                                                            ↓
-    ┌──────────────────────────────────────────────────────┴──────────────┐
-    │                                                                     │
-    ▼                                   ▼                                 ▼
-Notification Service           Analytics Service              Audit Log Service
-(sends emails/push)            (tracks metrics)              (stores for compliance)
+Google Workspace vs Transactional Email API
+─────────────────────────────────────────────
+
+Google Workspace ($6-18/user/month):
+├── ✅ Manual inbox (read/write emails)
+├── ✅ Calendar, Drive, Meet
+├── ❌ NO programmatic API for sending
+├── ❌ SMTP limits (500/day, 100/hour)
+├── ❌ Will get flagged as spam if used for bulk
+
+Resend ($0-20/month):
+├── ✅ API for automated sending
+├── ✅ 3,000 free emails/month
+├── ✅ 100/second sending rate
+├── ✅ Delivery analytics, webhooks
+├── ❌ NOT an inbox (cannot receive emails)
+
+CONCLUSION: You need BOTH
+├── Google Workspace: Your team's inbox
+└── Resend: Your app's email API
 ```
 
-#### 20.3 Current Implementation (Supabase Realtime)
+#### 25.3 Cost Comparison (Transactional Email)
 
-- PostgreSQL triggers for events
-- Supabase Realtime for WebSocket subscriptions
-- Edge Functions for async processing
+| Volume | Resend | SendGrid | AWS SES |
+|--------|--------|----------|---------|
+| 3,000/month | **$0** | $0 | $0 |
+| 10,000/month | **$0** | $0 | $1 |
+| 50,000/month | $20 | $15 | $5 |
+| 100,000/month | $40 | $35 | $10 |
+| 1,000,000/month | $400 | $350 | **$100** |
 
-#### 20.4 Future Implementation (AWS)
+**Recommendation:**
+- **Phase 1 (Launch):** Resend - best DX, free tier covers needs
+- **Phase 2 (Scale):** AWS SES - cheapest at high volume
 
-- Amazon EventBridge for event routing
-- SQS for queue processing
-- SNS for fan-out notifications
-
----
-
-### 3. NEW SECTION: "PART 21: Migration Strategies (Monolith to Services)"
-
-Based on Airbnb's migration journey (Images 3-6):
-
-#### 21.1 Re-routing Queries to Data Services
-
-Diagram showing how Airbnb intercepted ActiveRecord queries and routed them to new services. For Roomy:
-- Current: React → Supabase Client → PostgREST → PostgreSQL
-- Future: React → API Gateway → Lambda → Aurora
-
-#### 21.2 Migrating Reads Safely
-
-**Dual Read Pattern:**
-```text
-1. Issue reads to both old path (Supabase) and new path (AWS)
-2. Compare responses in background
-3. Once 100% match, switch all traffic to new path
-```
-
-#### 21.3 Migrating Writes Safely
-
-**Shadow Database Pattern:**
-```text
-1. Write to production database via old path
-2. Write to shadow database via new path
-3. Compare shadow vs production reads
-4. Once clean, switch writes to new path
-```
-
-#### 21.4 Roomy Migration Phases
-
-**Phase 1: Keep Supabase for Development**
-- Build fast with Lovable
-- All 76+ tables in Supabase
-- Edge Functions for backend logic
-
-**Phase 2: Hybrid (Production Launch)**
-- Frontend deployed to AWS (S3 + CloudFront)
-- Backend remains on Supabase (no change)
-- Monitor performance and scale needs
-
-**Phase 3: Database Migration (When Needed)**
-- Set up Aurora PostgreSQL
-- Use pg_dump/pg_restore
-- Dual reads for validation
-- Switch after 100% match
-
-**Phase 4: Backend Migration (When Needed)**
-- Rewrite Edge Functions as Lambda
-- Deploy API Gateway
-- Gradual traffic shift
-
----
-
-### 4. NEW SECTION: "PART 22: Advanced Infrastructure Tools"
-
-Based on Airbnb's internal tools (Images 7-10):
-
-#### 22.1 API Framework Concept
-
-How Airbnb uses Thrift for inter-service communication. For Roomy:
-- Current: REST APIs with JSON
-- Future: Consider gRPC or remain with REST + OpenAPI
-
-#### 22.2 Canary Deployments
+#### 25.4 Email Flow Architecture
 
 ```text
-Traffic Router → Production (95%) → Metrics
-              → Canary (5%)     → Compare
-              
-If canary metrics are good, promote to 100%
-If canary metrics are bad, rollback automatically
-```
+CONTACT FORM FLOW (waitlist.roomylb.com/contact)
+───────────────────────────────────────────────
 
-Implementation with GitHub Actions + AWS CodeDeploy.
+User fills form → Frontend validates (Zod)
+                       │
+                       ▼
+              Supabase Edge Function
+              (contact-form-email)
+                       │
+                       ▼
+              Resend API (send email)
+                       │
+                       ▼
+              team@roomylb.com (Google Workspace inbox)
 
-#### 22.3 Parallel Task Execution (Powergrid Concept)
 
-For operations requiring multiple validations:
-```text
-Special Offer Request
-        ↓
-   Fetch Listing Data
-        ↓
-┌───────┬───────┬───────┐
-│       │       │       │
-▼       ▼       ▼       ▼
-Security  Availability  User    (parallel)
-Validate  Validate      Validate
-        ↓
-   Aggregate Results
-        ↓
-   Send Response
-```
+WAITLIST SIGNUP FLOW (waitlist.roomylb.com)
+─────────────────────────────────────────────
 
-#### 22.4 Service Blocks / Facades
-
-Simplifying complex service dependencies:
-```text
-Presentation Services
-        ↓
-┌───────────────┬───────────────┬───────────────┐
-│ User Entity   │ Listing Entity│ Availability  │
-│ Facade        │ Facade        │ Entity Facade │
-└───────────────┴───────────────┴───────────────┘
-
-Each facade encapsulates multiple internal services
+User enters email → Frontend validates
+                       │
+                       ▼
+              Supabase Edge Function
+              (waitlist-signup)
+                       │
+                       ├───────────────────────────┐
+                       │                           │
+                       ▼                           ▼
+              Mailchimp API               Resend API
+              (add to audience)           (send welcome email)
 ```
 
 ---
 
-### 5. NEW SECTION: "PART 23: Production-Ready Backend Design"
+### 3. NEW SECTION: "PART 26: Domain & DNS Infrastructure"
 
-#### 23.1 Three Core Domains for Roomy
+#### 26.1 Domain Strategy
 
-| Domain | Services | Data Stores |
-|--------|----------|-------------|
-| **Users** | Auth, Profiles, Roles | users, students, owners, admins |
-| **Listings** | Dorms, Rooms, Beds, Search | dorms, rooms, beds, dorm_photos |
-| **Transactions** | Bookings, Payments, Reviews | bookings, reservations, payments |
+| Domain | Purpose | Status |
+|--------|---------|--------|
+| `roomylb.com` | Root domain | Owned (Namecheap) |
+| `waitlist.roomylb.com` | Pre-launch waitlist | Pending config |
+| `app.roomylb.com` | Main user application | Pending config |
+| `admin.roomylb.com` | Internal admin panel | Pending config |
 
-#### 23.2 API Design Principles
+#### 26.2 Root Domain Redirect Logic
 
-- RESTful endpoints with comprehensive input validation
-- Error handling with consistent error codes
-- Rate limiting per endpoint
-- Versioning strategy (v1, v2)
+```text
+PRE-LAUNCH (Current State):
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  roomylb.com → REDIRECT (301) → waitlist.roomylb.com                        │
+│  www.roomylb.com → REDIRECT (301) → waitlist.roomylb.com                    │
+└─────────────────────────────────────────────────────────────────────────────┘
 
-#### 23.3 Multi-Database Strategy
-
-| Data Type | Database | Reason |
-|-----------|----------|--------|
-| User Data | PostgreSQL | Consistency, relationships |
-| Property Data | PostgreSQL | Complex queries, joins |
-| Booking Data | PostgreSQL | ACID transactions |
-| Cache | Redis | Speed, sessions |
-| Events | Append-only log | Audit trail |
-
-#### 23.4 Observability
-
-- Structured logging (CloudWatch)
-- Metrics collection (CloudWatch Metrics)
-- Distributed tracing (X-Ray) - for future microservices
-- Alerting (CloudWatch Alarms)
-
----
-
-### 6. UPDATE EXISTING SECTION: "PART 4: Roomy Architecture Decisions"
-
-Add comparison table:
-
-| Architecture Aspect | Airbnb (at scale) | Roomy (current) | Roomy (future) |
-|---------------------|-------------------|-----------------|----------------|
-| Backend | 500+ microservices | Supabase (modular monolith) | AWS (service-oriented) |
-| Database | Multiple DBs per service | Single PostgreSQL | Aurora + Redis |
-| Event System | Custom event bus | PostgreSQL triggers | EventBridge + SQS |
-| API Style | Thrift RPC + REST | REST (PostgREST) | REST + WebSocket |
-
----
-
-### 7. UPDATE EXISTING SECTION: "PART 14: AWS Education"
-
-Add new subsection on Airbnb's AWS-like patterns:
-
-#### 14.4 Airbnb-Style Patterns on AWS
-
-- Event-driven with EventBridge
-- Service mesh with App Mesh (future)
-- Canary deployments with CodeDeploy
-
----
-
-## Mermaid Diagrams to Add
-
-### Diagram 1: Roomy Service Architecture (Future State)
-
-```mermaid
-flowchart TD
-    subgraph Clients["Client Layer"]
-        Web[Web App<br/>React + Vite]
-        Mobile[Mobile App<br/>Swift/Kotlin]
-    end
-    
-    subgraph Gateway["API Gateway Layer"]
-        APIGateway[AWS API Gateway<br/>Routing + Auth + Rate Limiting]
-    end
-    
-    subgraph Services["Service Layer"]
-        UserSvc[User Service]
-        ListingSvc[Listing Service]
-        BookingSvc[Booking Service]
-        MessageSvc[Message Service]
-        NotifSvc[Notification Service]
-    end
-    
-    subgraph Data["Data Layer"]
-        Aurora[(Aurora PostgreSQL)]
-        Redis[(ElastiCache Redis)]
-        S3[(S3 Storage)]
-    end
-    
-    subgraph External["External Services"]
-        Stripe[Stripe Payments]
-        SendGrid[SendGrid Email]
-        Cognito[AWS Cognito]
-    end
-    
-    Web --> APIGateway
-    Mobile --> APIGateway
-    APIGateway --> UserSvc
-    APIGateway --> ListingSvc
-    APIGateway --> BookingSvc
-    APIGateway --> MessageSvc
-    
-    UserSvc --> Aurora
-    UserSvc --> Cognito
-    ListingSvc --> Aurora
-    ListingSvc --> S3
-    BookingSvc --> Aurora
-    BookingSvc --> Stripe
-    MessageSvc --> Aurora
-    MessageSvc --> Redis
-    NotifSvc --> SendGrid
+POST-LAUNCH (After app.roomylb.com is live):
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  roomylb.com → REDIRECT (301) → app.roomylb.com                             │
+│  www.roomylb.com → REDIRECT (301) → app.roomylb.com                         │
+│  waitlist.roomylb.com → "We're live!" page OR redirect to app              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Diagram 2: Event Flow for Booking
+#### 26.3 DNS Migration: Namecheap → Cloudflare
 
-```mermaid
-sequenceDiagram
-    participant Student
-    participant Frontend
-    participant API as API Gateway
-    participant Booking as Booking Service
-    participant DB as Database
-    participant Events as Event Queue
-    participant Notif as Notification Service
-    participant Owner
-    
-    Student->>Frontend: Click "Book Tour"
-    Frontend->>API: POST /bookings
-    API->>Booking: Create booking
-    Booking->>DB: INSERT booking
-    DB-->>Booking: Success
-    Booking->>Events: Emit BookingCreated
-    Booking-->>API: 201 Created
-    API-->>Frontend: Booking confirmed
-    Frontend-->>Student: Show success
-    
-    Events->>Notif: BookingCreated event
-    Notif->>Owner: Send email notification
-    Notif->>Owner: Send push notification
+**Why Cloudflare?**
+- Free CDN + DDoS protection
+- Faster DNS propagation (seconds vs hours)
+- Better analytics
+- Page Rules for redirects
+- Easy subdomain management
+
+**Migration Steps:**
+
+```text
+STEP 1: Create Cloudflare Account (10 min)
+────────────────────────────────────────────
+1. Go to cloudflare.com, sign up
+2. Add site: roomylb.com
+3. Select Free plan
+4. Cloudflare scans existing DNS records
+
+STEP 2: Update Nameservers in Namecheap (5 min)
+────────────────────────────────────────────
+1. Log into Namecheap
+2. Go to Domain List → roomylb.com → Manage
+3. Under "Nameservers", select "Custom DNS"
+4. Enter Cloudflare nameservers:
+   • ava.ns.cloudflare.com
+   • dan.ns.cloudflare.com
+5. Save changes
+
+STEP 3: Wait for Propagation (1-24 hours)
+────────────────────────────────────────────
+• Usually completes in 1-4 hours
+• Cloudflare shows "Active" when done
 ```
 
-### Diagram 3: Roomy Architecture Migration Path
+#### 26.4 Complete DNS Records (Cloudflare)
 
-```mermaid
-flowchart LR
-    subgraph Phase1["Phase 1: Current (Development)"]
-        Lovable1[Lovable AI] --> Supabase1[(Supabase)]
-        Supabase1 --> Preview1[Preview URL]
-    end
-    
-    subgraph Phase2["Phase 2: Launch (Hybrid)"]
-        GitHub2[GitHub] --> Vercel2[Vercel<br/>waitlist]
-        GitHub2 --> AWS2[AWS S3/CF<br/>app + admin]
-        AWS2 --> Supabase2[(Supabase<br/>Backend)]
-    end
-    
-    subgraph Phase3["Phase 3: Scale (Full AWS)"]
-        GitHub3[GitHub] --> Vercel3[Vercel<br/>waitlist]
-        GitHub3 --> AWS3[AWS S3/CF]
-        AWS3 --> Lambda3[Lambda/ECS]
-        Lambda3 --> Aurora3[(Aurora)]
-    end
-    
-    Phase1 -->|Export to GitHub| Phase2
-    Phase2 -->|Migrate backend| Phase3
+```text
+DNS RECORDS TO CONFIGURE
+════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  TYPE    NAME        VALUE                                   TTL    PROXY   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  A       @           Redirect Rule (see below)              Auto   -       │
+│  CNAME   www         roomylb.com                            Auto   ✓       │
+│  CNAME   waitlist    cname.vercel-dns.com                   Auto   ✗ (DNS) │
+│  CNAME   app         d1234.cloudfront.net (AWS)             Auto   ✗ (DNS) │
+│  CNAME   admin       d5678.cloudfront.net (AWS)             Auto   ✗ (DNS) │
+│  CNAME   api         abc123.execute-api.us-east-1.aws.com   Auto   ✗ (DNS) │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  MX RECORDS (Google Workspace)                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  MX      @           ASPMX.L.GOOGLE.COM                     Auto   1       │
+│  MX      @           ALT1.ASPMX.L.GOOGLE.COM                Auto   5       │
+│  MX      @           ALT2.ASPMX.L.GOOGLE.COM                Auto   5       │
+│  MX      @           ALT3.ASPMX.L.GOOGLE.COM                Auto   10      │
+│  MX      @           ALT4.ASPMX.L.GOOGLE.COM                Auto   10      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  EMAIL AUTHENTICATION (Resend)                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  TXT     @           v=spf1 include:_spf.google.com         Auto   -       │
+│                      include:_spf.resend.com ~all                          │
+│  TXT     resend._d   [DKIM record from Resend dashboard]    Auto   -       │
+│  TXT     _dmarc      v=DMARC1; p=quarantine; rua=...        Auto   -       │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 4. NEW SECTION: "PART 27: Email Migration (Zoho → Google Workspace)"
+
+#### 27.1 Pre-Migration Checklist
+
+```text
+BEFORE MIGRATION
+────────────────
+☐ Export all emails from Zoho (Settings → Import/Export)
+☐ Export contacts from Zoho
+☐ Note all aliases and forwarding rules
+☐ Inform team of migration date
+☐ Cancel Zoho billing AFTER migration complete
+```
+
+#### 27.2 Migration Sequence
+
+```text
+CORRECT ORDER OF OPERATIONS
+═══════════════════════════
+
+1. MIGRATE DOMAIN TO CLOUDFLARE (Day 1)
+   └── Do NOT change MX records yet
+   └── Let existing Zoho emails continue working
+
+2. SIGN UP FOR GOOGLE WORKSPACE (Day 2)
+   └── Start at: workspace.google.com
+   └── Verify domain ownership (TXT record in Cloudflare)
+   └── Do NOT change MX records yet
+   └── Import emails from Zoho to Gmail
+
+3. VERIFY RESEND DOMAIN (Day 2)
+   └── Add domain: resend.com/domains
+   └── Add SPF, DKIM records to Cloudflare
+   └── Verify in Resend dashboard
+
+4. SWITCH MX RECORDS TO GOOGLE (Day 3)
+   └── Remove old Zoho MX records
+   └── Add Google MX records
+   └── Wait 1-4 hours for propagation
+   └── Test by sending email to team@roomylb.com
+
+5. TEST RESEND SENDING (Day 3)
+   └── Send test email via Resend API
+   └── Verify delivery to Gmail inbox
+   └── Check SPF/DKIM pass in email headers
+
+6. CANCEL ZOHO SUBSCRIPTION (Day 7)
+   └── After confirming everything works
+   └── Keep backup of exported emails
+```
+
+#### 27.3 Google Workspace Setup
+
+```text
+GOOGLE WORKSPACE CONFIGURATION
+═══════════════════════════════
+
+PLAN: Business Starter ($6/user/month)
+├── 30GB storage per user
+├── Custom email (team@roomylb.com)
+├── Google Meet (100 participants)
+├── Security and management controls
+
+ACCOUNTS TO CREATE:
+├── team@roomylb.com (primary inbox)
+├── support@roomylb.com (alias → team)
+├── security@roomylb.com (alias → team)
+├── noreply@roomylb.com (for Resend sending)
+
+MX RECORDS (add in Cloudflare):
+Priority  Server
+1         ASPMX.L.GOOGLE.COM
+5         ALT1.ASPMX.L.GOOGLE.COM
+5         ALT2.ASPMX.L.GOOGLE.COM
+10        ALT3.ASPMX.L.GOOGLE.COM
+10        ALT4.ASPMX.L.GOOGLE.COM
+
+SPF RECORD (TXT):
+v=spf1 include:_spf.google.com include:_spf.resend.com ~all
+```
+
+---
+
+## Updates to Existing Sections
+
+### Update: PART 8 (Three-Subdomain Architecture)
+
+Add reference to the detailed waitlist documentation:
+
+```text
+### 8.4 Waitlist Subdomain Details
+
+For complete technical specification of the waitlist project, see PART 24.
+
+Summary:
+- 11 routes (/, /about, /contact, /faq, /legal/*)
+- 50+ components
+- Frontend: Complete ✅
+- Backend: Mailchimp + Resend pending
+```
+
+### Update: TABLE OF CONTENTS
+
+Add new parts:
+
+```text
+### Infrastructure & Operations (Parts 24-27) - NEW
+25. [Waitlist Project Specification](#part-24-waitlist-project-specification)
+26. [Email Infrastructure Strategy](#part-25-email-infrastructure-strategy)
+27. [Domain & DNS Infrastructure](#part-26-domain-dns-infrastructure)
+28. [Email Migration (Zoho → Google)](#part-27-email-migration)
 ```
 
 ---
@@ -421,18 +406,15 @@ flowchart LR
 
 | File | Action | Lines Added |
 |------|--------|-------------|
-| `.lovable/plan2.md` | Update with new sections | ~1,500+ |
+| `.lovable/plan2.md` | Add Parts 24-27, update TOC and Part 8 | ~450 |
 
 ## Execution Summary
 
-1. **Preserve** all existing content in plan2.md
-2. **Add** 5 new major sections (Parts 19-23)
-3. **Update** 2 existing sections with new content
-4. **Include** 3+ Mermaid diagrams
-5. **Include** 10+ ASCII architecture diagrams recreating the reference images
-6. **Include** detailed tables comparing Airbnb vs Roomy architecture
+1. **Add** PART 24: Complete waitlist project technical spec
+2. **Add** PART 25: Email infrastructure strategy (Resend → SES)
+3. **Add** PART 26: Domain & DNS infrastructure (Cloudflare migration)
+4. **Add** PART 27: Email migration guide (Zoho → Google Workspace)
+5. **Update** Table of Contents
+6. **Update** PART 8 with reference to Part 24
 
-This update will make plan2.md a comprehensive 4,500+ line document serving as both:
-- Educational guide for founders/team understanding web architecture
-- Technical blueprint for future engineers joining Roomy
-
+This update ensures the master plan document captures all operational infrastructure decisions alongside the application architecture.
