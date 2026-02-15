@@ -694,7 +694,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       return;
     }
     
-    if (currentStep < TOTAL_STEPS - 1) {
+    const maxStep = isApartmentFlow ? TOTAL_STEPS - 1 : 26;
+    if (currentStep < maxStep) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -1286,7 +1287,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     }
   };
 
-  const isLastStep = currentStep === TOTAL_STEPS - 1;
+  const lastStepForFlow = isApartmentFlow ? TOTAL_STEPS - 1 : 26;
+  const isLastStep = currentStep === lastStepForFlow;
   const showFooter = currentStep > 0;
   const showTopBar = currentStep > 0;
 
