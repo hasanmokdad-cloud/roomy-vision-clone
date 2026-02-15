@@ -34,7 +34,7 @@ export function usePushNotifications() {
     // Check for existing subscription
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       navigator.serviceWorker.ready.then(async (registration) => {
-        const existingSubscription = await registration.pushManager.getSubscription();
+        const existingSubscription = await (registration as any).pushManager.getSubscription();
         setSubscription(existingSubscription);
       });
     }
@@ -136,7 +136,7 @@ export function usePushNotifications() {
       const registration = await registerServiceWorker();
 
       // Subscribe to push notifications
-      const pushSubscription = await registration.pushManager.subscribe({
+      const pushSubscription = await (registration as any).pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
       });
