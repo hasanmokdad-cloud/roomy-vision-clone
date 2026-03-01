@@ -110,7 +110,7 @@ self.addEventListener('push', function(event) {
       ...data.data
     },
     actions: data.actions || [],
-    tag: data.tag || 'roomy-notification',
+    tag: data.tag || 'tenanters-notification',
     renotify: true,
     vibrate: [200, 100, 200],
     requireInteraction: data.requireInteraction || false
@@ -119,7 +119,7 @@ self.addEventListener('push', function(event) {
   // Show notification AND trigger delivery marking
   event.waitUntil(
     Promise.all([
-      self.registration.showNotification(data.title || 'Roomy', options),
+      self.registration.showNotification(data.title || 'Tenanters', options),
       markMessagesAsDelivered()
     ])
   );

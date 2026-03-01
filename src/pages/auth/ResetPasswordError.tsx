@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { EmailProviderButtons } from "@/components/auth/EmailProviderButtons";
 import { RoomyNavbar } from "@/components/RoomyNavbar";
 import Footer from "@/components/shared/Footer";
-import RoomyLogo from "@/assets/roomy-logo.png";
+
 
 export default function ResetPasswordError() {
   const navigate = useNavigate();
@@ -30,11 +30,7 @@ export default function ResetPasswordError() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <img 
-                  src={RoomyLogo} 
-                  alt="Roomy Logo" 
-                  className="h-24 w-24 mx-auto mb-4 drop-shadow-lg"
-                />
+                <h1 className="text-3xl font-bold gradient-text">Tenanters</h1>
               </motion.div>
 
               {/* Error Icon with Shake */}

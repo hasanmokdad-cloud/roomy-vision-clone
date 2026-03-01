@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 
 export const WhatsAppButton = () => {
   const phoneNumber = '+1234567890'; // Placeholder
-  const message = encodeURIComponent('Hello! I want to inquire about Roomy dorms.');
+  const message = encodeURIComponent('Hello! I want to inquire about Tenanters dorms.');
   
   return (
     <motion.a

@@ -29,7 +29,7 @@ export const MatchLoadingSkeleton = () => {
               />
             </motion.div>
             <div className="space-y-1">
-              <h3 className="font-bold text-lg">Roomy AI is analyzing...</h3>
+              <h3 className="font-bold text-lg">Tenanters AI is analyzing...</h3>
               <p className="text-sm text-muted-foreground">Finding your perfect matches</p>
             </div>
           </div>

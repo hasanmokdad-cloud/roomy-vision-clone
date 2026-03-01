@@ -45,7 +45,7 @@ export function IntroStep({ onGetStarted }: IntroStepProps) {
         className="text-center mb-8"
       >
         <h1 className="text-3xl font-bold text-foreground mb-2">
-          List your property on Roomy
+          List your property on Tenanters
         </h1>
         <p className="text-muted-foreground">
           It takes about 5–7 minutes. You can save and finish later.

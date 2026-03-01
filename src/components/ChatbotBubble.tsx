@@ -22,7 +22,7 @@ export const ChatbotBubble = () => {
     {
       role: "assistant",
       content:
-        "Hi 👋 I'm Roomy AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
+        "Hi 👋 I'm Tenanters AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
     },
   ]);
   const [input, setInput] = useState("");

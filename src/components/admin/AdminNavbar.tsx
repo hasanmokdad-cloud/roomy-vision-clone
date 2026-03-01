@@ -75,11 +75,9 @@ export function AdminNavbar({ sidebarOpen, onToggleSidebar }: AdminNavbarProps) 
 
         {/* Logo */}
         <Link to="/admin" className="flex items-center gap-2">
-          <img 
-            src="/roomy-logo.png" 
-            alt="Roomy" 
-            className="h-8 w-auto"
-          />
+          <span className="text-lg font-semibold bg-gradient-to-r from-primary via-purple-500 to-primary bg-clip-text text-transparent">
+            Tenanters
+          </span>
         </Link>
 
         {/* Spacer */}
