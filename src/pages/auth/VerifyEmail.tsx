@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import RoomyLogo from "@/assets/roomy-logo.png";
+
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Loader2 } from "lucide-react";
@@ -276,11 +276,7 @@ export default function VerifyEmail() {
         <Card className="w-full max-w-md bg-background/95 backdrop-blur-sm border-border/50 shadow-2xl">
           <CardContent className="pt-8 pb-8 px-6 text-center space-y-6">
             {/* Logo */}
-            <img 
-              src={RoomyLogo} 
-              alt="Roomy Logo" 
-              className="h-24 w-24 mx-auto mb-4 drop-shadow-lg"
-            />
+            <h1 className="text-3xl font-bold gradient-text">Tenanters</h1>
             
             {/* Icon */}
             <div className="flex justify-center">

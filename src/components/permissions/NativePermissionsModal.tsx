@@ -145,7 +145,7 @@ export function NativePermissionsModal({ open, onComplete }: NativePermissionsMo
             Enable App Permissions
           </DrawerTitle>
           <DrawerDescription className="text-muted-foreground">
-            Roomy needs these permissions for the best experience
+            Tenanters needs these permissions for the best experience
           </DrawerDescription>
         </DrawerHeader>
         
@@ -182,7 +182,7 @@ export function NativePermissionsModal({ open, onComplete }: NativePermissionsMo
               className="w-full py-6 text-lg font-semibold"
               variant={allGranted ? 'default' : 'outline'}
             >
-              {allGranted ? 'Continue to Roomy' : 'Skip for Now'}
+              {allGranted ? 'Continue to Tenanters' : 'Skip for Now'}
             </Button>
             
             {!allGranted && (

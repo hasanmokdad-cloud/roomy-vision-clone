@@ -342,7 +342,7 @@ export default function AiChat() {
                       <span className="text-3xl">🏠</span>
                     </motion.div>
                     <h2 className="text-xl font-semibold text-foreground mb-2">
-                      👋 Hi! I'm Roomy AI
+                      👋 Hi! I'm Tenanters AI
                     </h2>
                     <p className="text-muted-foreground mb-6">
                       Ask me anything about finding your perfect dorm or roommate!

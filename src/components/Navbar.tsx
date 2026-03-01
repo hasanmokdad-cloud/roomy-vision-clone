@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Home, Sparkles, Info, Phone, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import RoomyLogo from '@/assets/roomy-logo.png';
+
 import { useAuth } from '@/contexts/AuthContext';
 
 export const Navbar = () => {
@@ -31,12 +31,7 @@ export const Navbar = () => {
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
           >
-            <img 
-              src={RoomyLogo} 
-              alt="Roomy" 
-              className="w-10 h-10 rounded-xl"
-            />
-            <span className="text-2xl font-bold gradient-text">Roomy</span>
+            <span className="text-2xl font-bold gradient-text">Tenanters</span>
           </motion.div>
         </Link>
 

@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { getEmailProviderInfo } from "@/utils/emailProvider";
-import RoomyLogo from "@/assets/roomy-logo.png";
+
 import { RoomyNavbar } from "@/components/RoomyNavbar";
 import Footer from "@/components/shared/Footer";
 
@@ -85,11 +85,7 @@ export default function PasswordReset() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <img 
-                  src={RoomyLogo} 
-                  alt="Roomy Logo" 
-                  className="h-24 w-24 mx-auto mb-4 drop-shadow-lg"
-                />
+                <h1 className="text-3xl font-bold gradient-text">Tenanters</h1>
               </motion.div>
 
               <AnimatePresence mode="wait">

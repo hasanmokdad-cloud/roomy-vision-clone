@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import RoomyLogo from '@/assets/roomy-logo.png';
+
 import Step1Graphic from '@/assets/wizard/step-1-graphic.avif';
 import Step2Graphic from '@/assets/wizard/step-2-graphic.avif';
 import Step3Graphic from '@/assets/wizard/step-3-graphic.avif';
@@ -47,11 +47,9 @@ export function StudentAirbnbIntroStep({ onGetStarted, hasSavedProgress, onResum
       {/* Top bar with Roomy logo and Exit button */}
       <div className="flex items-center justify-between px-8 lg:px-16 xl:px-24 py-4">
         <button onClick={handleExit} className="focus:outline-none">
-          <img 
-            src={RoomyLogo} 
-            alt="Roomy" 
-            className="w-8 h-8 rounded-lg object-contain"
-          />
+          <span className="text-lg font-semibold bg-gradient-to-r from-primary via-purple-500 to-primary bg-clip-text text-transparent">
+            Tenanters
+          </span>
         </button>
         <button
           onClick={handleExit}

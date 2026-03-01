@@ -28,7 +28,7 @@ export default function Legal() {
         <Scale className="w-12 h-12 mx-auto text-primary mb-4" />
         <h1 className="text-3xl font-bold mb-2">Legal Information</h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Review our policies and agreements that govern the use of Roomy. Select a document from the sidebar or click below to learn more.
+          Review our policies and agreements that govern the use of Tenanters. Select a document from the sidebar or click below to learn more.
         </p>
       </div>
 

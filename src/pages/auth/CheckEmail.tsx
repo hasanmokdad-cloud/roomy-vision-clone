@@ -1,6 +1,6 @@
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import RoomyLogo from "@/assets/roomy-logo.png";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Mail, ExternalLink, CheckCircle } from "lucide-react";
@@ -175,11 +175,7 @@ export default function CheckEmail() {
         <Card className="w-full max-w-md border-border/50 shadow-xl">
           <CardContent className="pt-8 pb-8 px-6 text-center space-y-6">
             {/* Logo */}
-            <img 
-              src={RoomyLogo} 
-              alt="Roomy Logo" 
-              className="h-24 w-24 mx-auto mb-4 drop-shadow-lg"
-            />
+            <h1 className="text-3xl font-bold gradient-text">Tenanters</h1>
             
             {isVerified ? (
               // Verified state (cross-device verification detected)
@@ -202,7 +198,7 @@ export default function CheckEmail() {
                   className="w-full bg-gradient-to-r from-[#00E0FF] to-[#BD00FF] hover:opacity-90 text-white"
                   size="lg"
                 >
-                  Continue to Roomy
+                  Continue to Tenanters
                 </Button>
               </>
             ) : (

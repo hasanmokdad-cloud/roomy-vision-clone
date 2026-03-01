@@ -61,7 +61,7 @@ export function LanguageModal({ open, onOpenChange }: LanguageModalProps) {
   const content = (
     <>
       <p className="text-sm text-muted-foreground mb-4 px-2">
-        {t('language.subtitle', 'Select your preferred language for Roomy')}
+        {t('language.subtitle', 'Select your preferred language for Tenanters')}
       </p>
       
       <div className="grid grid-cols-1 gap-2">

@@ -53,7 +53,7 @@ export const AIInsightsCard = ({ insights, isLoading }: AIInsightsCardProps) => 
           </div>
           <div className="flex-1 space-y-2">
             <h3 className="font-bold text-lg flex items-center gap-2">
-              Roomy AI Insights
+              Tenanters AI Insights
               <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-normal">
                 Powered by Gemini
               </span>

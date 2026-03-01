@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import FluidBackground from "@/components/FluidBackground";
-import RoomyLogo from "@/assets/roomy-logo.png";
+
 import { Loader2, CheckCircle } from "lucide-react";
 
 type CallbackState = "processing" | "success" | "error";
@@ -73,11 +73,7 @@ export default function AuthCallback() {
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <FluidBackground />
       <div className="relative z-10 text-center">
-        <img
-          src={RoomyLogo}
-          alt="Roomy"
-          className="w-24 h-24 mx-auto mb-6 drop-shadow-2xl"
-        />
+        <h1 className="text-3xl font-bold gradient-text mb-6">Tenanters</h1>
         <div className="flex flex-col items-center gap-4">
           {state === "processing" && (
             <Loader2 className="w-8 h-8 animate-spin text-primary" />

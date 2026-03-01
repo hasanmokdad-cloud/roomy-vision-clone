@@ -29,7 +29,7 @@ export default function DormCard({ dorm }: DormCardProps) {
 
   const openWhatsApp = () => {
     const phone = '96181858026';
-    const message = `Hi! I'm interested in "${dorm.dorm_name}" on Roomy.`;
+    const message = `Hi! I'm interested in "${dorm.dorm_name}" on Tenanters.`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 

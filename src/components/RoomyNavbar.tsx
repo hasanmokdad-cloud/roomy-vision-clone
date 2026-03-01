@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { LanguageModal } from '@/components/LanguageModal';
-import RoomyLogo from '@/assets/roomy-logo.png';
+
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -83,16 +83,11 @@ export function RoomyNavbar() {
               to={role === 'owner' ? '/owner' : role === 'admin' ? '/admin' : '/listings'} 
               className="flex items-center gap-2 shrink-0"
             >
-              <img 
-                src={RoomyLogo} 
-                alt="Roomy" 
-                className="w-8 h-8 md:w-10 md:h-10 rounded-xl"
-              />
               <span 
-                className="text-xl md:text-[22px] font-semibold bg-gradient-to-r from-primary via-purple-500 to-primary bg-clip-text text-transparent hidden sm:block"
+                className="text-xl md:text-[22px] font-semibold bg-gradient-to-r from-primary via-purple-500 to-primary bg-clip-text text-transparent"
                 style={{ fontFamily: 'Circular, -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif' }}
               >
-                Roomy
+                Tenanters
               </span>
             </Link>
 

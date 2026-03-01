@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Building2, Home, Sparkles, Info, Phone, MessageSquare, Menu, User, LogOut, LayoutDashboard } from 'lucide-react';
-import RoomyLogo from '@/assets/roomy-logo.png';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link, useNavigate } from 'react-router-dom';
@@ -114,12 +114,7 @@ export default function Navbar() {
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}
             >
-              <img 
-                src={RoomyLogo} 
-                alt="Roomy" 
-                className="w-10 h-10 rounded-xl"
-              />
-              <span className="text-2xl font-bold gradient-text">Roomy</span>
+              <span className="text-2xl font-bold gradient-text">Tenanters</span>
             </motion.div>
           </Link>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import RoomyLogo from '@/assets/roomy-logo.png';
+
 import Step1Graphic from '@/assets/wizard/step-1-graphic.avif';
 import Step2Graphic from '@/assets/wizard/step-2-graphic.avif';
 import Step3Graphic from '@/assets/wizard/step-3-graphic.avif';
@@ -83,11 +83,9 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress, hasSavedProgres
       {/* Top bar with Roomy logo and Exit button */}
       <div className="flex items-center justify-between px-6 py-4 lg:px-12">
         <button onClick={handleExit} className="focus:outline-none">
-          <img 
-            src={RoomyLogo} 
-            alt="Roomy" 
-            className="w-8 h-8 rounded-lg object-contain"
-          />
+          <span className="text-lg font-semibold bg-gradient-to-r from-primary via-purple-500 to-primary bg-clip-text text-transparent">
+            Tenanters
+          </span>
         </button>
         <button
           onClick={handleExit}
@@ -107,7 +105,7 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress, hasSavedProgres
             transition={{ duration: 0.5 }}
             className="text-[32px] lg:text-[48px] xl:text-[56px] font-semibold text-[#222222] leading-tight tracking-tight max-w-md"
           >
-            It's easy to get started on Roomy
+            It's easy to get started on Tenanters
           </motion.h1>
         </div>
 

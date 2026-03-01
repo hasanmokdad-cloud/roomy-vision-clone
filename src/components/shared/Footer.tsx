@@ -1,22 +1,14 @@
 import { Link } from 'react-router-dom';
 import { Mail, MapPin, Phone } from 'lucide-react';
-import RoomyLogo from '@/assets/roomy-logo.png';
 
 export default function Footer() {
   return (
     <footer className="border-t border-gray-200 bg-white py-16 px-4">
       <div className="container mx-auto max-w-7xl">
         <div className="grid md:grid-cols-4 gap-12 mb-12">
-          {/* Roomy Section */}
+          {/* Tenanters Section */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <img 
-                src={RoomyLogo} 
-                alt="Roomy" 
-                className="w-10 h-10 rounded-xl"
-              />
-              <span className="text-2xl font-bold gradient-text">Roomy</span>
-            </div>
+            <span className="text-2xl font-bold gradient-text">Tenanters</span>
             <p className="text-sm text-gray-600 leading-relaxed">
               AI-powered smart student living platform. Find verified dorms instantly.
             </p>
@@ -38,7 +30,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link to="/about" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
-                  About Roomy
+                  About Tenanters
                 </Link>
               </li>
             </ul>
@@ -111,7 +103,7 @@ export default function Footer() {
         {/* Bottom Line */}
         <div className="pt-8 border-t border-gray-200">
           <p className="text-sm text-gray-500 text-center">
-            © 2025 Roomy. Making student living smarter and simpler in Lebanon.
+            © 2026 Tenanters. All rights reserved.
           </p>
         </div>
       </div>

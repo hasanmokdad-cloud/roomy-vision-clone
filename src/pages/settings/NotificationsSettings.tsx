@@ -224,7 +224,7 @@ export default function NotificationsSettings() {
             <div className="text-xs text-muted-foreground">
               <p className="font-medium text-foreground">About notifications</p>
               <p className="mt-1">
-                Push notifications keep you updated even when Roomy is closed. 
+                Push notifications keep you updated even when Tenanters is closed. 
                 You can change these settings anytime or manage notifications 
                 in your device settings.
               </p>

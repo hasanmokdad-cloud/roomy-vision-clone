@@ -53,9 +53,9 @@ export default function EntryAnimation({ onComplete }: EntryAnimationProps) {
                   className="text-center"
                 >
                   <h1 className="text-6xl md:text-8xl font-bold text-gradient-hero relative">
-                    Roomy
+                    Tenanters
                     <div className="absolute inset-0 blur-3xl opacity-50 text-gradient-hero pointer-events-none select-none">
-                      Roomy
+                      Tenanters
                     </div>
                   </h1>
                 </motion.div>

@@ -105,7 +105,7 @@ export default function FAQ() {
         Can't find what you're looking for?
       </h3>
       <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-        Our support team is here to help you with any questions about Roomy.
+        Our support team is here to help you with any questions about Tenanters.
       </p>
       <Button onClick={() => navigate('/contact')} className="gap-2">
         <MessageCircle className="w-4 h-4" />
@@ -129,7 +129,7 @@ export default function FAQ() {
             >
               <h1 className="text-2xl font-bold text-foreground mb-2">FAQ</h1>
               <p className="text-muted-foreground text-sm">
-                Find answers to common questions about Roomy
+                Find answers to common questions about Tenanters
               </p>
             </motion.div>
           </div>
@@ -174,7 +174,7 @@ export default function FAQ() {
           >
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">FAQ</h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Find answers to common questions about Roomy
+              Find answers to common questions about Tenanters
             </p>
           </motion.div>
         </div>

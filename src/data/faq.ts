@@ -15,19 +15,19 @@ export const faqData: FAQCategory[] = [
     category: 'General',
     items: [
       {
-        q: "What is Roomy?",
-        a: "Roomy is an AI-powered student housing platform that connects university students in Lebanon with verified dorm listings and compatible roommates. Our platform uses advanced matching algorithms to help you find the perfect living situation near your university."
+        q: "What is Tenanters?",
+        a: "Tenanters is an AI-powered student housing platform that connects university students in Lebanon with verified dorm listings and compatible roommates. Our platform uses advanced matching algorithms to help you find the perfect living situation near your university."
       },
       {
-        q: "Who can use Roomy?",
-        a: "Any university student in Lebanon can use Roomy to search for dorms and find roommates. Property owners can also register to list their dorms on our platform after agreeing to our Owner Agreement."
+        q: "Who can use Tenanters?",
+        a: "Any university student in Lebanon can use Tenanters to search for dorms and find roommates. Property owners can also register to list their dorms on our platform after agreeing to our Owner Agreement."
       },
       {
-        q: "Where is Roomy available?",
-        a: "Roomy is currently available near major universities in Lebanon, including areas around Beirut, Byblos, Jounieh, and other university towns. We're continuously expanding our coverage."
+        q: "Where is Tenanters available?",
+        a: "Tenanters is currently available near major universities in Lebanon, including areas around Beirut, Byblos, Jounieh, and other university towns. We're continuously expanding our coverage."
       },
       {
-        q: "Is Roomy free to use?",
+        q: "Is Tenanters free to use?",
         a: "Yes, browsing dorm listings and basic searching is completely free. Some premium features like advanced AI matching and priority access may require a subscription or one-time payment."
       },
       {
@@ -68,7 +68,7 @@ export const faqData: FAQCategory[] = [
     items: [
       {
         q: "How do payments work?",
-        a: "All payments, including deposits and rent, are made directly to the dorm owner through our secure payment partner Whish. Roomy facilitates the transaction but does not hold or manage the funds."
+        a: "All payments, including deposits and rent, are made directly to the dorm owner through our secure payment partner Whish. Tenanters facilitates the transaction but does not hold or manage the funds."
       },
       {
         q: "Are deposits refundable?",
@@ -80,11 +80,11 @@ export const faqData: FAQCategory[] = [
       },
       {
         q: "Is my payment information secure?",
-        a: "Yes, all payment processing is handled by Whish using industry-standard encryption. Roomy never stores your full card details on our servers."
+        a: "Yes, all payment processing is handled by Whish using industry-standard encryption. Tenanters never stores your full card details on our servers."
       },
       {
         q: "What if I have a payment dispute?",
-        a: "Payment disputes must be resolved directly with the dorm owner. Roomy is not a party to the rental agreement. We may voluntarily assist at our discretion, but have no obligation to mediate disputes."
+        a: "Payment disputes must be resolved directly with the dorm owner. Tenanters is not a party to the rental agreement. We may voluntarily assist at our discretion, but have no obligation to mediate disputes."
       }
     ]
   },
@@ -93,12 +93,12 @@ export const faqData: FAQCategory[] = [
     category: 'Owners',
     items: [
       {
-        q: "How do I list my property on Roomy?",
+        q: "How do I list my property on Tenanters?",
         a: "Click 'Become an Owner' in the app, complete the registration process, agree to the Owner Agreement, and submit your property details for verification. Once approved, your listing will be visible to students."
       },
       {
         q: "What is the Owner Agreement?",
-        a: "The Owner Agreement outlines your responsibilities as a property owner on Roomy, including providing accurate listings, maintaining safety standards, responding to inquiries promptly, and complying with local housing regulations."
+        a: "The Owner Agreement outlines your responsibilities as a property owner on Tenanters, including providing accurate listings, maintaining safety standards, responding to inquiries promptly, and complying with local housing regulations."
       },
       {
         q: "How do I receive payments from students?",
@@ -145,20 +145,20 @@ export const faqData: FAQCategory[] = [
     category: 'Legal',
     items: [
       {
-        q: "Is Roomy responsible for housing safety?",
-        a: "No, Roomy is a digital marketplace that connects students with property owners. We verify listings to reduce scams, but we do not inspect properties or guarantee safety standards. Property owners are responsible for maintaining safe living conditions."
+        q: "Is Tenanters responsible for housing safety?",
+        a: "No, Tenanters is a digital marketplace that connects students with property owners. We verify listings to reduce scams, but we do not inspect properties or guarantee safety standards. Property owners are responsible for maintaining safe living conditions."
       },
       {
         q: "Who handles disputes between students and owners?",
-        a: "Disputes must be resolved directly between students and property owners. Roomy is not a party to rental agreements. We may voluntarily assist at our discretion but have no obligation to mediate or resolve disputes."
+        a: "Disputes must be resolved directly between students and property owners. Tenanters is not a party to rental agreements. We may voluntarily assist at our discretion but have no obligation to mediate or resolve disputes."
       },
       {
-        q: "What data does Roomy collect about me?",
+        q: "What data does Tenanters collect about me?",
         a: "We collect information you provide (profile, preferences), usage data (how you use the app), and device information. See our Privacy Policy for full details on data collection, use, and your rights."
       },
       {
-        q: "Can I use Roomy if I'm under 18?",
-        a: "Roomy is intended for university students who are typically 18 or older. Users under 18 may need parental consent depending on local regulations."
+        q: "Can I use Tenanters if I'm under 18?",
+        a: "Tenanters is intended for university students who are typically 18 or older. Users under 18 may need parental consent depending on local regulations."
       },
       {
         q: "Where can I read the full terms and policies?",
@@ -180,7 +180,7 @@ export const faqData: FAQCategory[] = [
       },
       {
         q: "I'm not receiving match notifications",
-        a: "Check your notification settings in Settings > Notifications and ensure notifications are enabled. Also check your device's notification permissions for the Roomy app or browser."
+        a: "Check your notification settings in Settings > Notifications and ensure notifications are enabled. Also check your device's notification permissions for the Tenanters app or browser."
       },
       {
         q: "The app is running slowly",
