@@ -188,7 +188,7 @@ export default function AdminEarnings() {
                     <th className="text-left p-4 font-semibold">Owner</th>
                     <th className="text-left p-4 font-semibold">Student</th>
                     <th className="text-right p-4 font-semibold">Deposit</th>
-                    <th className="text-right p-4 font-semibold">Roomy Fee</th>
+                    <th className="text-right p-4 font-semibold">Tenanters Fee</th>
                     <th className="text-right p-4 font-semibold">Owner Payout</th>
                     <th className="text-center p-4 font-semibold">Payment</th>
                     <th className="text-center p-4 font-semibold">Payout Status</th>

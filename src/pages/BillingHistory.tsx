@@ -117,7 +117,7 @@ export default function BillingHistory() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold gradient-text">Billing History</h1>
           <p className="text-muted-foreground mt-2">
-            Track all your Roomy transactions
+            Track all your Tenanters transactions
           </p>
         </div>
 
@@ -128,7 +128,7 @@ export default function BillingHistory() {
               Transaction History
             </CardTitle>
             <CardDescription>
-              All your payments and purchases on Roomy
+              All your payments and purchases on Tenanters
             </CardDescription>
           </CardHeader>
           <CardContent>

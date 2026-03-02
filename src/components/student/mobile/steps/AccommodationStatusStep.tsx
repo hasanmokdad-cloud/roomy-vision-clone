@@ -97,7 +97,7 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
     fetchRooms();
   }, [data.current_dorm_id]);
 
-  // Check if room can be selected (not fully booked via Roomy)
+  // Check if room can be selected (not fully booked via Tenanters)
   const canSelectRoom = (room: Room): boolean => {
     const capacity = room.capacity || 1;
     const roomyConfirmed = room.roomy_confirmed_occupants || 0;
@@ -109,7 +109,7 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
     const capacity = room.capacity || 1;
     const roomyConfirmed = room.roomy_confirmed_occupants || 0;
     const typeLabel = room.type ? ` - ${room.type}` : '';
-    return `${room.name}${typeLabel} (${roomyConfirmed}/${capacity} via Roomy)`;
+    return `${room.name}${typeLabel} (${roomyConfirmed}/${capacity} via Tenanters)`;
   };
 
   // Check if selected room is single
@@ -276,7 +276,7 @@ const AccommodationStatusStep = ({ data, onChange }: AccommodationStatusStepProp
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Rooms showing (occupied/capacity). Rooms fully reserved via Roomy are disabled.
+                    Rooms showing (occupied/capacity). Rooms fully reserved via Tenanters are disabled.
                   </p>
                 </div>
               )}

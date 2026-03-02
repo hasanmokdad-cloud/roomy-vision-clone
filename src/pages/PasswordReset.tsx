@@ -50,14 +50,14 @@ export default function PasswordReset() {
       setIsSent(true);
       toast({
         title: "Reset link sent",
-        description: "If an account exists, you'll receive an email from noreply@roomylb.com",
+        description: "If an account exists, you'll receive an email from noreply@tenanters.com",
       });
     } catch (error: any) {
       // Always show success to prevent email enumeration attacks
       setIsSent(true);
       toast({
         title: "Reset link sent",
-        description: "If an account exists, you'll receive an email from noreply@roomylb.com",
+        description: "If an account exists, you'll receive an email from noreply@tenanters.com",
       });
     } finally {
       setIsLoading(false);

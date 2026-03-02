@@ -23,7 +23,7 @@ export function CommunityCommitmentDrawer({ open, onAccept, onDecline }: Communi
 
       <div className="text-center space-y-3">
         <h3 className="text-xl font-semibold text-foreground">
-          Roomy is a community where everyone can belong
+          Tenanters is a community where everyone can belong
         </h3>
         <p className="text-muted-foreground text-sm leading-relaxed">
           To ensure this, we're asking you to commit to the following:
@@ -32,7 +32,7 @@ export function CommunityCommitmentDrawer({ open, onAccept, onDecline }: Communi
 
       <div className="bg-muted/50 rounded-xl p-4 space-y-3">
         <p className="text-sm text-foreground leading-relaxed">
-          I agree to treat everyone in the Roomy community—regardless of their race, religion, 
+          I agree to treat everyone in the Tenanters community—regardless of their race, religion, 
           national origin, ethnicity, skin color, disability, sex, gender identity, sexual orientation, 
           or age—with respect, and without judgment or bias.
         </p>

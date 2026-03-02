@@ -206,7 +206,7 @@ const BuildingQuickLookContent = memo(({
         </Button>
         <Button onClick={handleContact} variant="outline" className="w-full" size="lg">
           <MessageSquare className="w-4 h-4 mr-2" />
-          Chat with Roomy AI
+          Chat with Tenanters AI
         </Button>
       </div>
     </div>

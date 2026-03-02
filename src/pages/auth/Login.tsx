@@ -185,7 +185,7 @@ export default function Login() {
 
       toast({
         title: 'Check your email',
-        description: 'We sent you a verification link from noreply@roomylb.com',
+        description: 'We sent you a verification link from noreply@tenanters.com',
       });
       
       resetForm();
@@ -223,8 +223,8 @@ export default function Login() {
             </CardTitle>
             <CardDescription>
               {activeTab === 'login' 
-                ? 'Sign in to your Roomy account' 
-                : 'Join Roomy to find your perfect dorm'}
+                ? 'Sign in to your Tenanters account' 
+                : 'Join Tenanters to find your perfect dorm'}
             </CardDescription>
           </CardHeader>
           

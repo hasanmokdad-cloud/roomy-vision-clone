@@ -129,7 +129,7 @@ export const Hero = () => {
             >
               <div className="flex items-center gap-2 text-sm text-foreground/70 font-medium">
                 <Search className="w-4 h-4" aria-hidden="true" />
-                <span>Ask Roomy AI:</span>
+                <span>Ask Tenanters AI:</span>
               </div>
               <div className="flex gap-3">
                 <Input

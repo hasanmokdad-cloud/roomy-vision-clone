@@ -28,7 +28,7 @@ export const ChatModal = ({ isOpen, onClose, userId }: ChatModalProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Hi 👋 I'm Roomy AI! I can help you find dorms that fit your budget, university, and preferences.",
+      content: "Hi 👋 I'm Tenanters AI! I can help you find dorms that fit your budget, university, and preferences.",
     },
   ]);
   const [input, setInput] = useState('');
@@ -109,7 +109,7 @@ export const ChatModal = ({ isOpen, onClose, userId }: ChatModalProps) => {
           ...prev,
           {
             role: 'assistant',
-            content: '⚠️ Roomy AI is receiving too many requests right now. Please try again in a moment.',
+            content: '⚠️ Tenanters AI is receiving too many requests right now. Please try again in a moment.',
           },
         ]);
         setIsLoading(false);
@@ -127,7 +127,7 @@ export const ChatModal = ({ isOpen, onClose, userId }: ChatModalProps) => {
           ...prev,
           {
             role: 'assistant',
-            content: '⚠️ Roomy AI service is temporarily unavailable. Please contact support.',
+            content: '⚠️ Tenanters AI service is temporarily unavailable. Please contact support.',
           },
         ]);
         setIsLoading(false);
@@ -136,12 +136,12 @@ export const ChatModal = ({ isOpen, onClose, userId }: ChatModalProps) => {
 
       if (response.status === 500) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Roomy AI backend error:', errorData);
-        throw new Error('Roomy AI is having trouble responding right now. Please try again in a moment.');
+        console.error('Tenanters AI backend error:', errorData);
+        throw new Error('Tenanters AI is having trouble responding right now. Please try again in a moment.');
       }
 
       if (!response.ok || !response.body) {
-        throw new Error('Unable to reach Roomy AI. Please check your connection and try again.');
+        throw new Error('Unable to reach Tenanters AI. Please check your connection and try again.');
       }
 
       const reader = response.body.getReader();
@@ -191,7 +191,7 @@ export const ChatModal = ({ isOpen, onClose, userId }: ChatModalProps) => {
 
       // Validate we received content
       if (!assistantMessage.trim()) {
-        throw new Error('Roomy AI is having trouble responding right now. Please try again in a moment.');
+        throw new Error('Tenanters AI is having trouble responding right now. Please try again in a moment.');
       }
 
       // Save to database

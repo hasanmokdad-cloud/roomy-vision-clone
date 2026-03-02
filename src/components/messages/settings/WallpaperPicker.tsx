@@ -71,7 +71,7 @@ export function WallpaperPicker({ onBack, currentWallpaper, onSelect }: Wallpape
               htmlFor="doodles"
               className="text-[15px] text-[#111b21] dark:text-[#e9edef] cursor-pointer"
             >
-              Add Roomy doodles
+              Add Tenanters doodles
             </label>
           </div>
 

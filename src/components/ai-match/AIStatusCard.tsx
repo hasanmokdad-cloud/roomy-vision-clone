@@ -61,7 +61,7 @@ export function AIStatusCard({ isLoading, matchCount = 0, matchMode = 'apartment
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-foreground">
-              {isLoading ? 'Roomy AI is analyzing...' : `Found ${matchCount} ${getModeText()}`}
+              {isLoading ? 'Tenanters AI is analyzing...' : `Found ${matchCount} ${getModeText()}`}
             </h3>
             {!isLoading && matchCount > 0 && (
               <Sparkles className="w-4 h-4 text-amber-500" />
