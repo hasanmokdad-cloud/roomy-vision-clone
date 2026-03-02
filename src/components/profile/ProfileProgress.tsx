@@ -51,7 +51,7 @@ export const ProfileProgress: React.FC<ProfileProgressProps> = ({ percentage }) 
       >
         <p className="text-xs text-foreground/60 flex items-center gap-2">
           <Sparkles className="w-3 h-3 text-primary" />
-          Roomy AI uses your profile data to personalize dorm matches
+          Tenanters AI uses your profile data to personalize dorm matches
         </p>
       </motion.div>
     </motion.div>

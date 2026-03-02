@@ -160,7 +160,7 @@ export function AccountSecurityCard({ profile, userId, onSignOut }: AccountSecur
           const userName = profile?.full_name || 'User';
           const subject = encodeURIComponent(`Account Deletion Request – ${userName}`);
           const body = encodeURIComponent('Please permanently delete my account and all stored data.');
-          window.location.href = `mailto:security@roomylb.com?subject=${subject}&body=${body}`;
+          window.location.href = `mailto:security@tenanters.com?subject=${subject}&body=${body}`;
           setShowDeletionModal(false);
         }}
         variant="destructive"

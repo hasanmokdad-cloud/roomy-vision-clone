@@ -80,7 +80,7 @@ export function AirbnbIntroStep({ onGetStarted, onClearProgress, hasSavedProgres
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      {/* Top bar with Roomy logo and Exit button */}
+      {/* Top bar with Tenanters logo and Exit button */}
       <div className="flex items-center justify-between px-6 py-4 lg:px-12">
         <button onClick={handleExit} className="focus:outline-none">
           <span className="text-lg font-semibold bg-gradient-to-r from-primary via-purple-500 to-primary bg-clip-text text-transparent">

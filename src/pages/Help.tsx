@@ -239,7 +239,7 @@ export default function Help() {
               <div className="max-w-4xl mx-auto px-8 py-12">
                 <h1 className="text-3xl font-bold text-foreground mb-2">Help Center</h1>
                 <p className="text-muted-foreground">
-                  Find answers to common questions and learn how to use Roomy
+                  Find answers to common questions and learn how to use Tenanters
                 </p>
               </div>
             </div>

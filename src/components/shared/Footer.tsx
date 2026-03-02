@@ -1,112 +1,249 @@
-import { Link } from 'react-router-dom';
-import { Mail, MapPin, Phone } from 'lucide-react';
+import { Link } from "react-router-dom";
+import { MapPin, Mail, Phone, Instagram, Linkedin, Music2, Facebook } from "lucide-react";
 
-export default function Footer() {
+const Footer = () => {
+  const quickLinks = [
+    { to: "/listings", label: "Home" },
+    { to: "/about", label: "About" },
+    { to: "/contact", label: "Contact" },
+    { to: "/faq", label: "FAQ" },
+  ];
+  const legalLinks = [
+    { to: "/legal/terms", label: "Terms of Service" },
+    { to: "/legal/privacy", label: "Privacy Policy" },
+    { to: "/legal/payments", label: "Payments Disclaimer" },
+    { to: "/legal/community", label: "Community Guidelines" },
+    { to: "/legal/data-rights", label: "Data Rights" },
+  ];
+  const contactItems = [
+    { icon: Mail, label: "info@tenanters.com" },
+    { icon: Phone, label: "Coming Soon" },
+    { icon: MapPin, label: "Beirut, Lebanon" },
+  ];
+  const socialLinks = [
+    { name: "Instagram", icon: Instagram, href: "https://www.instagram.com/tenanters/" },
+    { name: "LinkedIn", icon: Linkedin, href: "#" },
+    { name: "TikTok", icon: Music2, href: "#" },
+    { name: "Facebook", icon: Facebook, href: "#" },
+  ];
+
+  const headerStyle: React.CSSProperties = {
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
+    fontSize: "11px",
+    fontWeight: 700,
+    letterSpacing: "0.10em",
+    textTransform: "uppercase",
+    color: "rgba(255,255,255,0.50)",
+    marginBottom: "20px",
+  };
+
+  const linkStyle: React.CSSProperties = {
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
+    fontSize: "15px",
+    fontWeight: 400,
+    color: "rgba(255,255,255,0.70)",
+  };
+
   return (
-    <footer className="border-t border-gray-200 bg-white py-16 px-4">
-      <div className="container mx-auto max-w-7xl">
-        <div className="grid md:grid-cols-4 gap-12 mb-12">
-          {/* Tenanters Section */}
-          <div className="space-y-4">
-            <span className="text-2xl font-bold gradient-text">Tenanters</span>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              AI-powered smart student living platform. Find verified dorms instantly.
-            </p>
-          </div>
+    <footer style={{ backgroundColor: "#1E3A5F", width: "100%" }}>
+      {/* Mobile Footer */}
+      <div className="block md:hidden" style={{ padding: "40px 20px 24px" }}>
+        <div style={{ marginBottom: "32px" }}>
+          <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "22px", fontWeight: 800, color: "#FFFFFF" }}>
+            Tenanters
+          </span>
+          <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "14px", color: "rgba(255,255,255,0.55)", marginTop: "8px" }}>
+            Your home away from home.
+          </p>
+        </div>
 
-          {/* Quick Links */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px" }}>
           <div>
-            <h3 className="font-bold text-lg mb-4">Quick Links</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/listings" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
-                  Browse Dorms
+            <p style={headerStyle}>QUICK LINKS</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {quickLinks.map((link) => (
+                <Link key={link.to} to={link.to} style={linkStyle} className="hover:text-white transition-colors">
+                  {link.label}
                 </Link>
-              </li>
-              <li>
-                <Link to="/ai-match" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
-                  AI Match
-                </Link>
-              </li>
-              <li>
-                <Link to="/about" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
-                  About Tenanters
-                </Link>
-              </li>
-            </ul>
+              ))}
+            </div>
           </div>
-
-          {/* Legal */}
           <div>
-            <h3 className="font-bold text-lg mb-4">Legal</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/legal/terms" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <Link to="/legal/privacy" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link to="/legal/payments" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
-                  Payments Disclaimer
-                </Link>
-              </li>
-              <li>
-                <Link to="/legal/community" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
-                  Community Guidelines
-                </Link>
-              </li>
-              <li>
-                <Link to="/legal/data-rights" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
-                  Data Rights
-                </Link>
-              </li>
-              <li>
-                <Link to="/faq" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
-                  FAQ
-                </Link>
-              </li>
-              <li>
-                <Link to="/help" className="text-sm text-gray-600 hover:text-primary transition-colors story-link">
-                  Help Center
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h3 className="font-bold text-lg mb-4">Contact</h3>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-2 text-sm text-gray-600">
-                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span>Beirut, Lebanon</span>
-              </li>
-              <li className="flex items-start gap-2 text-sm text-gray-600">
-                <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <a href="mailto:info@roomylb.com" className="hover:text-primary transition-colors">
-                  info@roomylb.com
+            <p style={headerStyle}>FOLLOW US</p>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              {socialLinks.map((social) => (
+                <a
+                  key={social.name}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={social.name}
+                  className="flex items-center justify-center transition-all duration-200"
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "8px",
+                    background: "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(37,99,235,0.35)";
+                    e.currentTarget.style.borderColor = "rgba(37,99,235,0.50)";
+                    (e.currentTarget.querySelector("svg") as SVGElement).style.color = "#FFFFFF";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)";
+                    (e.currentTarget.querySelector("svg") as SVGElement).style.color = "rgba(255,255,255,0.60)";
+                  }}
+                >
+                  <social.icon size={16} style={{ color: "rgba(255,255,255,0.60)" }} />
                 </a>
-              </li>
-              <li className="flex items-start gap-2 text-sm text-gray-600">
-                <Phone className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span className="italic">Coming Soon</span>
-              </li>
-            </ul>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p style={headerStyle}>LEGAL</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {legalLinks.map((link) => (
+                <Link key={link.to} to={link.to} style={linkStyle} className="hover:text-white transition-colors">
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p style={headerStyle}>CONTACT</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {contactItems.map((item, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", ...linkStyle, fontSize: "13px" }}>
+                  <item.icon size={14} style={{ color: "rgba(255,255,255,0.45)", flexShrink: 0 }} />
+                  {item.label}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Bottom Line */}
-        <div className="pt-8 border-t border-gray-200">
-          <p className="text-sm text-gray-500 text-center">
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.10)", marginTop: "32px", paddingTop: "20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+          <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>
             © 2026 Tenanters. All rights reserved.
           </p>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "12px" }}>
+            <Link to="/legal/privacy" style={{ color: "rgba(255,255,255,0.35)" }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.60)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.35)"; }}
+            >Privacy Policy</Link>
+            <span style={{ color: "rgba(255,255,255,0.20)" }}>·</span>
+            <Link to="/legal/terms" style={{ color: "rgba(255,255,255,0.35)" }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.60)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.35)"; }}
+            >Terms of Service</Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Footer */}
+      <div className="hidden md:block" style={{ maxWidth: "1200px", margin: "0 auto", padding: "56px 40px 32px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr 1fr", gap: "48px", marginBottom: "48px" }}>
+          <div>
+            <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "24px", fontWeight: 800, color: "#FFFFFF", display: "block", marginBottom: "10px" }}>
+              Tenanters
+            </span>
+            <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "14px", color: "rgba(255,255,255,0.55)", lineHeight: "1.6", marginBottom: "24px" }}>
+              Your home away from home.
+            </p>
+
+            <div>
+              <p style={headerStyle}>FOLLOW US</p>
+              <div style={{ display: "flex", gap: "10px" }}>
+                {socialLinks.map((social) => (
+                  <a
+                    key={social.name}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={social.name}
+                    className="flex items-center justify-center transition-all duration-200"
+                    style={{
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "8px",
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(37,99,235,0.35)";
+                      e.currentTarget.style.borderColor = "rgba(37,99,235,0.50)";
+                      (e.currentTarget.querySelector("svg") as SVGElement).style.color = "#FFFFFF";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)";
+                      (e.currentTarget.querySelector("svg") as SVGElement).style.color = "rgba(255,255,255,0.60)";
+                    }}
+                  >
+                    <social.icon size={16} style={{ color: "rgba(255,255,255,0.60)" }} />
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <p style={headerStyle}>QUICK LINKS</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {quickLinks.map((link) => (
+                <Link key={link.to} to={link.to} style={linkStyle} className="hover:text-white transition-colors">
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p style={headerStyle}>LEGAL</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {legalLinks.map((link) => (
+                <Link key={link.to} to={link.to} style={linkStyle} className="hover:text-white transition-colors">
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p style={headerStyle}>CONTACT</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              {contactItems.map((item, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", ...linkStyle, fontSize: "14px" }}>
+                  <item.icon size={15} style={{ color: "rgba(255,255,255,0.45)", flexShrink: 0 }} />
+                  {item.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.10)", paddingTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "13px", color: "rgba(255,255,255,0.35)" }}>
+            © 2026 Tenanters. All rights reserved.
+          </p>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center", fontSize: "13px" }}>
+            <Link to="/legal/privacy" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.60)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.35)"; }}
+            >Privacy Policy</Link>
+            <span style={{ color: "rgba(255,255,255,0.20)" }}>·</span>
+            <Link to="/legal/terms" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.60)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.35)"; }}
+            >Terms of Service</Link>
+          </div>
         </div>
       </div>
     </footer>
   );
-}
+};
+
+export default Footer;

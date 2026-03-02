@@ -87,7 +87,7 @@ export function AboutMeTab({
             Complete your profile
           </h3>
           <p className="text-base text-[#717171] mb-6 leading-relaxed">
-            Your Roomy profile is an important part of every reservation. Complete yours to help other students get to know you.
+            Your Tenanters profile is an important part of every reservation. Complete yours to help other students get to know you.
           </p>
           <Button
             onClick={onGetStartedClick}

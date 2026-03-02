@@ -61,7 +61,7 @@ export function usePushNotifications() {
       if (isIOSDevice) {
         toast({
           title: 'iOS Notifications',
-          description: 'To enable notifications on iPhone/iPad, first add Roomy to your Home Screen, then enable notifications in Settings.',
+          description: 'To enable notifications on iPhone/iPad, first add Tenanters to your Home Screen, then enable notifications in Settings.',
         });
       } else {
         toast({
@@ -103,12 +103,12 @@ export function usePushNotifications() {
         if (!isInstalledPWA) {
           toast({
             title: 'Add to Home Screen First',
-            description: 'To enable notifications on iPhone/iPad: tap the Share button, then "Add to Home Screen", then open Roomy from there.',
+            description: 'To enable notifications on iPhone/iPad: tap the Share button, then "Add to Home Screen", then open Tenanters from there.',
           });
         } else {
           toast({
             title: 'Enable in Settings',
-            description: 'Go to Settings → Notifications → Roomy to enable notifications.',
+            description: 'Go to Settings → Notifications → Tenanters to enable notifications.',
           });
         }
       } else {

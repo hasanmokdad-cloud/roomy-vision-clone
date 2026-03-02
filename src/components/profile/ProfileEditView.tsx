@@ -159,7 +159,7 @@ export function ProfileEditView({
               My profile
             </h2>
             <p className="text-base text-[#717171] leading-relaxed">
-              Hosts and guests can see your profile and it may appear across Roomy to help us build trust in our community.{' '}
+              Hosts and guests can see your profile and it may appear across Tenanters to help us build trust in our community.{' '}
               <button className="underline font-medium text-[#222222]">Learn more</button>
             </p>
           </div>

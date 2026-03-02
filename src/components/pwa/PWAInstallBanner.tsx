@@ -90,7 +90,7 @@ export function PWAInstallBanner({ className }: PWAInstallBannerProps) {
         
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-foreground text-sm">
-            Install Roomy for notifications
+            Install Tenanters for notifications
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
             Get instant alerts for messages, tours, and reservations
@@ -132,7 +132,7 @@ export function PWAInstallBanner({ className }: PWAInstallBannerProps) {
           </div>
 
           <p className="text-[10px] text-muted-foreground/70 mt-2">
-            After installing, open Roomy from your home screen to enable notifications
+            After installing, open Tenanters from your home screen to enable notifications
           </p>
         </div>
       </div>

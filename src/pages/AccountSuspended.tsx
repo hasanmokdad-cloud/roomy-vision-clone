@@ -38,7 +38,7 @@ export default function AccountSuspended() {
             <Button 
               variant="outline" 
               className="w-full gap-2"
-              onClick={() => window.location.href = 'mailto:support@roomylb.com'}
+              onClick={() => window.location.href = 'mailto:support@tenanters.com'}
             >
               <Mail className="w-4 h-4" />
               Contact Support

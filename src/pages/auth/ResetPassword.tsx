@@ -49,7 +49,7 @@ export default function ResetPassword() {
       setStep('loading');
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Get token from URL query params (sent from roomylb.com email links)
+      // Get token from URL query params (sent from tenanters.com email links)
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get('token');
       const type = urlParams.get('type');

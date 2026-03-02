@@ -100,7 +100,7 @@ export const ChatbotBubble = () => {
           setMessages([
             {
               role: "assistant",
-              content: "Hi 👋 I'm Roomy AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
+              content: "Hi 👋 I'm Tenanters AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
             },
             ...formattedMessages
           ]);
@@ -225,7 +225,7 @@ export const ChatbotBubble = () => {
           {
             role: "assistant",
             content:
-              "Hi 👋 I'm Roomy AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
+              "Hi 👋 I'm Tenanters AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
           },
           { role: "assistant", content: responseText, followUpActions },
         ]);
@@ -245,7 +245,7 @@ export const ChatbotBubble = () => {
         ...prev,
         {
           role: "assistant",
-          content: "Sorry, I encountered an error while connecting to Roomy AI. Please try again later.",
+          content: "Sorry, I encountered an error while connecting to Tenanters AI. Please try again later.",
         },
       ]);
     } finally {
@@ -259,7 +259,7 @@ export const ChatbotBubble = () => {
       {
         role: "assistant",
         content:
-          "Hi 👋 I'm Roomy AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
+          "Hi 👋 I'm Tenanters AI! I can help you find dorms by budget, area, university, and room type. I'll remember our conversation to help you better!",
       },
     ]);
     setSessionId(null);
@@ -337,7 +337,7 @@ export const ChatbotBubble = () => {
             <div className="flex items-center justify-between p-4 border-b border-border">
               <div className="flex flex-col">
                 <h3 className="font-bold text-lg flex items-center gap-2">
-                  💬 Roomy AI
+                  💬 Tenanters AI
                   {hasContext && (
                     <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
                       Memory Active
@@ -450,7 +450,7 @@ export const ChatbotBubble = () => {
             style={{
               marginBottom: 'env(safe-area-inset-bottom)',
             }}
-            aria-label="Open Roomy AI Chat"
+            aria-label="Open Tenanters AI Chat"
           >
             <MessageCircle className="w-6 h-6 text-white" />
           </motion.button>

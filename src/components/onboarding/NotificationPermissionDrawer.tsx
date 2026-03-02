@@ -85,7 +85,7 @@ export function NotificationPermissionDrawer({ open, onAllow, onSkip }: Notifica
         <DialogHeader>
           <DialogTitle className="sr-only">Turn on notifications</DialogTitle>
           <DialogDescription className="sr-only">
-            Allow Roomy to send you notifications about messages and updates
+            Allow Tenanters to send you notifications about messages and updates
           </DialogDescription>
         </DialogHeader>
         {content}

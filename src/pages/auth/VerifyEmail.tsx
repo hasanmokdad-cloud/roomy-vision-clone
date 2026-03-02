@@ -58,7 +58,7 @@ export default function VerifyEmail() {
         
         let user = null;
         
-        // Method 1: Handle custom Roomy token (from security@roomylb.com emails)
+        // Method 1: Handle custom Tenanters token (from security@tenanters.com emails)
         if (customToken) {
           console.log('[VerifyEmail] Verifying custom Roomy token...');
           const { data, error } = await supabase.functions.invoke('verify-email-token', {
