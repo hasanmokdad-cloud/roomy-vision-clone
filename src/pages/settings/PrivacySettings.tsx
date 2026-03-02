@@ -72,7 +72,7 @@ export default function PrivacySettings() {
     const body = encodeURIComponent(
       'Hello,\n\nI would like to request a copy of all personal data associated with my account.\n\nThank you.'
     );
-    window.location.href = `mailto:security@roomylb.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:security@tenanters.com?subject=${subject}&body=${body}`;
     toast.success('Opening email to request data export');
   };
 
@@ -96,7 +96,7 @@ export default function PrivacySettings() {
     const body = encodeURIComponent(
       'Please permanently delete my account and all stored data.'
     );
-    window.location.href = `mailto:security@roomylb.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:security@tenanters.com?subject=${subject}&body=${body}`;
     setShowDeletionModal(false);
     toast.success('Opening email to request account deletion');
   };
