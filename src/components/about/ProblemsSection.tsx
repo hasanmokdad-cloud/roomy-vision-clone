@@ -4,13 +4,16 @@ import { cn } from "@/lib/utils";
 import { Layers, Clock, MapPin, Users, Receipt, ChevronRight } from "lucide-react";
 import { ResponsiveModal } from "@/components/ui/responsive-modal";
 
+const BLUE = "#2563eb";
+const BLUE_BG = "rgba(37,99,235,0.08)";
+
 const problems = [
   {
     icon: Layers,
     title: "No Centralized Platform",
     subtitle: "Everything is scattered, nothing is clear",
     content: (
-      <div className="space-y-3 text-sm md:text-base leading-relaxed text-muted-foreground">
+      <div className="space-y-3 text-sm md:text-base leading-relaxed" style={{ color: "#6b7280" }}>
         <p>People search across WhatsApp groups, Facebook posts, brokers, and word-of-mouth just to find available housing.</p>
         <p>Information is fragmented, outdated, and inconsistent. There's no single place to compare options, understand pricing, or verify what's real.</p>
         <p>What should be a straightforward search turns into weeks of confusion and wasted effort.</p>
@@ -22,7 +25,7 @@ const problems = [
     title: "Time & Uncertainty",
     subtitle: "Endless searching with no real answers",
     content: (
-      <div className="space-y-3 text-sm md:text-base leading-relaxed text-muted-foreground">
+      <div className="space-y-3 text-sm md:text-base leading-relaxed" style={{ color: "#6b7280" }}>
         <p>Finding housing often turns into weeks of searching, messaging, and waiting, only to hear "it's no longer available" or "come check it out and we'll see."</p>
         <p>People waste time chasing unclear listings, outdated information, and vague promises, all while juggling work, studies, deadlines, and transportation.</p>
         <p>What should be a simple decision becomes exhausting and stressful, especially when time is running out.</p>
@@ -34,7 +37,7 @@ const problems = [
     title: "Wasted Travel & Effort",
     subtitle: "Too many trips for too little clarity",
     content: (
-      <div className="space-y-3 text-sm md:text-base leading-relaxed text-muted-foreground">
+      <div className="space-y-3 text-sm md:text-base leading-relaxed" style={{ color: "#6b7280" }}>
         <p>People are often forced to physically visit multiple places just to understand basic details: location accuracy, room condition, or whether the listing is even the same as the one shown in photos.</p>
         <p>Many visits end in disappointment, misleading photos, missing services, or conditions never mentioned upfront.</p>
         <p>Every unnecessary trip costs time, money, and energy, resources people don't have to spare.</p>
@@ -46,7 +49,7 @@ const problems = [
     title: "Desperate Roommate Decisions",
     subtitle: "Choosing fast instead of choosing right",
     content: (
-      <div className="space-y-3 text-sm md:text-base leading-relaxed text-muted-foreground">
+      <div className="space-y-3 text-sm md:text-base leading-relaxed" style={{ color: "#6b7280" }}>
         <p>When single rooms are unavailable or unaffordable, people are pushed into shared units with strangers.</p>
         <p>Under pressure and limited by budget, they rush to find roommates without properly considering compatibility, lifestyle, or expectations.</p>
         <p>These rushed decisions often lead to conflicts, uncomfortable living situations, and broken leases, but people feel they have no better option.</p>
@@ -58,7 +61,7 @@ const problems = [
     title: "Confusing Prices & Expectations",
     subtitle: "What you see is rarely what you get",
     content: (
-      <div className="space-y-3 text-sm md:text-base leading-relaxed text-muted-foreground">
+      <div className="space-y-3 text-sm md:text-base leading-relaxed" style={{ color: "#6b7280" }}>
         <p>Pricing is often unclear. Utilities, deposits, house rules, and extra fees are rarely explained properly until late in the process.</p>
         <p>People commit emotionally to a place, only to discover unexpected costs or conditions after it's too late.</p>
         <p>This lack of transparency creates frustration, mistrust, and rushed decisions people later regret.</p>
@@ -72,13 +75,13 @@ const ProblemsSection = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <section ref={ref} className="py-16 md:py-24 px-4 bg-muted/30">
+    <section ref={ref} className="py-16 md:py-24 px-4">
       <div className="max-w-3xl mx-auto">
         <div className={cn("text-center mb-10 transition-all duration-700", isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8")}>
-          <h2 className="text-2xl md:text-4xl font-bold text-foreground mb-3">
+          <h2 className="text-2xl md:text-4xl font-bold mb-3 italic" style={{ color: BLUE }}>
             The problems
           </h2>
-          <p className="text-sm md:text-base text-muted-foreground max-w-xl mx-auto">
+          <p className="text-sm md:text-base max-w-xl mx-auto" style={{ color: "#6b7280" }}>
             Finding housing shouldn't feel this stressful, but for many people, it does.
           </p>
         </div>
@@ -90,24 +93,24 @@ const ProblemsSection = () => {
               <div key={index}>
                 <button
                   onClick={() => setOpenIndex(index)}
-                  className="w-full bg-white rounded-2xl p-4 md:p-5 flex items-center justify-between hover:shadow-lg transition-all duration-300 group border border-border hover:border-primary/30 pointer-events-auto"
+                  className="w-full bg-white rounded-2xl p-4 md:p-5 flex items-center justify-between hover:shadow-lg transition-all duration-300 group border border-gray-200 pointer-events-auto"
                   style={{ gap: '12px' }}
                 >
                   <div className="flex items-center gap-3 md:gap-4 text-left">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                      <Icon className="w-5 h-5 text-primary" />
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: BLUE_BG }}>
+                      <Icon className="w-5 h-5" style={{ color: BLUE }} />
                     </div>
                     <div>
-                      <h3 className="text-sm md:text-base font-semibold text-foreground">
+                      <h3 className="text-sm md:text-base font-semibold" style={{ color: BLUE }}>
                         {problem.title}
                       </h3>
-                      <p className="text-xs md:text-sm text-muted-foreground">
+                      <p className="text-xs md:text-sm" style={{ color: "#6b7280" }}>
                         {problem.subtitle}
                       </p>
                     </div>
                   </div>
-                  <div className="shrink-0">
-                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: BLUE }}>
+                    <ChevronRight className="w-4 h-4 text-white" />
                   </div>
                 </button>
 
