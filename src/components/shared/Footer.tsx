@@ -7,6 +7,7 @@ const Footer = () => {
     { to: "/about", label: "About" },
     { to: "/contact", label: "Contact" },
     { to: "/faq", label: "FAQ" },
+    { to: "/help", label: "Help Center" },
   ];
   const legalLinks = [
     { to: "/legal/terms", label: "Terms of Service" },
