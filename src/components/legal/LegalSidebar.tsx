@@ -1,74 +1,59 @@
 import { Link, useParams } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { legalDocuments, formatLastUpdated } from '@/data/legalDocuments';
+import { legalDocuments } from '@/data/legalDocuments';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Menu, Scale } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-interface LegalSidebarProps {
-  className?: string;
-}
+const BLUE = '#1D4ED8';
+const BLUE_BG = 'rgba(29,78,216,0.08)';
 
 function SidebarContent({ currentPage }: { currentPage: string | undefined }) {
   return (
-    <div className="space-y-1">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
       {/* Hub Link */}
       <Link
         to="/legal"
-        className={cn(
-          "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
-          !currentPage
-            ? "bg-primary/10 text-primary border border-primary/20"
-            : "hover:bg-muted text-muted-foreground hover:text-foreground"
-        )}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '8px',
+          textDecoration: 'none', transition: 'all 0.2s',
+          backgroundColor: !currentPage ? BLUE_BG : 'transparent',
+          borderLeft: !currentPage ? `3px solid ${BLUE}` : '3px solid transparent',
+        }}
       >
-        <div className={cn(
-          "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-          !currentPage ? "bg-primary/20" : "bg-muted"
-        )}>
-          <Scale className="w-4 h-4" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm">Legal Hub</p>
-          <p className="text-xs text-muted-foreground truncate">Overview</p>
-        </div>
+        <Scale size={16} style={{ color: !currentPage ? BLUE : '#6B7280', flexShrink: 0 }} />
+        <span style={{ fontSize: '14px', fontWeight: !currentPage ? 600 : 500, color: !currentPage ? BLUE : '#374151' }}>
+          Legal Hub Overview
+        </span>
       </Link>
 
-      <div className="h-px bg-border my-3" />
-
       {/* Document Links */}
-      {legalDocuments.map((doc) => (
-        <Link
-          key={doc.id}
-          to={`/legal/${doc.id}`}
-          className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
-            currentPage === doc.id
-              ? "bg-primary/10 text-primary border border-primary/20"
-              : "hover:bg-muted text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <div className={cn(
-            "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-            currentPage === doc.id ? "bg-primary/20" : "bg-muted"
-          )}>
-            {doc.icon}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm">{doc.shortTitle}</p>
-            <p className="text-xs text-muted-foreground truncate">
-              Updated {formatLastUpdated(doc.lastUpdated)}
-            </p>
-          </div>
-        </Link>
-      ))}
+      {legalDocuments.map((doc) => {
+        const isActive = currentPage === doc.id;
+        return (
+          <Link
+            key={doc.id}
+            to={`/legal/${doc.id}`}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '8px',
+              textDecoration: 'none', transition: 'all 0.2s',
+              backgroundColor: isActive ? BLUE_BG : 'transparent',
+              borderLeft: isActive ? `3px solid ${BLUE}` : '3px solid transparent',
+            }}
+          >
+            <span style={{ color: isActive ? BLUE : '#6B7280', flexShrink: 0 }}>{doc.icon}</span>
+            <span style={{ fontSize: '14px', fontWeight: isActive ? 600 : 500, color: isActive ? BLUE : '#374151' }}>
+              {doc.shortTitle}
+            </span>
+          </Link>
+        );
+      })}
     </div>
   );
 }
 
-export function LegalSidebar({ className }: LegalSidebarProps) {
+export function LegalSidebar() {
   const { page } = useParams();
   const isMobile = useIsMobile();
 
@@ -93,9 +78,16 @@ export function LegalSidebar({ className }: LegalSidebarProps) {
   }
 
   return (
-    <aside className={cn("w-72 shrink-0", className)}>
-      <div className="sticky top-24 bg-card border border-border rounded-xl p-4">
-        <h2 className="font-bold text-lg mb-4 px-3">Legal Documents</h2>
+    <aside style={{ width: '280px', flexShrink: 0 }}>
+      <div style={{
+        position: 'sticky', top: '96px',
+        backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px',
+        padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', padding: '0 12px' }}>
+          <Scale size={18} style={{ color: BLUE }} />
+          <h2 style={{ fontWeight: 700, fontSize: '16px', color: '#111827' }}>Legal Documents</h2>
+        </div>
         <ScrollArea className="h-[calc(100vh-200px)]">
           <SidebarContent currentPage={page} />
         </ScrollArea>

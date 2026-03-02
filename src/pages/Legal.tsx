@@ -1,68 +1,70 @@
 import { useParams, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { RoomyNavbar } from '@/components/RoomyNavbar';
+import Footer from '@/components/shared/Footer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SubPageHeader } from '@/components/mobile/SubPageHeader';
 import { SwipeBackWrapper } from '@/components/mobile/SwipeBackWrapper';
-import { AppBreadcrumb } from '@/components/ui/app-breadcrumb';
 import { LegalSidebar } from '@/components/legal/LegalSidebar';
 import { legalDocuments, getLegalDocument, formatLastUpdated } from '@/data/legalDocuments';
-import { Card } from '@/components/ui/card';
-import { FileText, Shield, CreditCard, Cookie, Users, Scale, Trash2, Clock } from 'lucide-react';
+import { Scale, Clock, ArrowRight } from 'lucide-react';
+
+const BLUE = '#1D4ED8';
+const BLUE_BG = 'rgba(29,78,216,0.08)';
 
 export default function Legal() {
   const { page } = useParams();
   const isMobile = useIsMobile();
-
   const currentDocument = page ? getLegalDocument(page) : null;
 
-  // Build breadcrumb items
-  const breadcrumbItems = [
-    { label: 'Legal', href: '/legal' },
-    ...(currentDocument ? [{ label: currentDocument.shortTitle }] : []),
-  ];
-
-  // Render hub content when no page is selected
   const renderHubContent = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <Scale className="w-12 h-12 mx-auto text-primary mb-4" />
-        <h1 className="text-3xl font-bold mb-2">Legal Information</h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Review our policies and agreements that govern the use of Tenanters. Select a document from the sidebar or click below to learn more.
-        </p>
+    <div className="space-y-8">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', paddingBottom: '24px', borderBottom: '1px solid #E5E7EB' }}>
+        <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: BLUE_BG, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Scale size={24} style={{ color: BLUE }} />
+        </div>
+        <div>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#111827', marginBottom: '4px' }}>Legal Documents</h1>
+          <p style={{ fontSize: '14px', color: '#6B7280' }}>
+            Review our policies and terms that govern the use of Tenanters' platform.
+          </p>
+        </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-1">
         {legalDocuments.map((doc) => (
           <Link
             key={doc.id}
             to={`/legal/${doc.id}`}
-            className="flex flex-col gap-3 p-5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-muted/50 transition-all group"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '16px', padding: '20px',
+              backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E5E7EB',
+              textDecoration: 'none', transition: 'all 0.2s',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            }}
+            className="hover:shadow-md hover:border-blue-200"
           >
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-              {doc.icon}
+            <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: BLUE_BG, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ color: BLUE }}>{doc.icon}</span>
             </div>
-            <div>
-              <h3 className="font-semibold text-foreground mb-1">{doc.title}</h3>
-              <p className="text-sm text-muted-foreground mb-2">{doc.description}</p>
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                Updated {formatLastUpdated(doc.lastUpdated)}
-              </p>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h3 style={{ fontWeight: 600, color: '#111827', fontSize: '16px', marginBottom: '2px' }}>{doc.title}</h3>
+              <p style={{ fontSize: '13px', color: '#6B7280', marginBottom: '2px' }}>{doc.description}</p>
+              <p style={{ fontSize: '12px', color: '#9CA3AF' }}>Last Updated: {formatLastUpdated(doc.lastUpdated)}</p>
             </div>
+            <ArrowRight size={18} style={{ color: '#9CA3AF', flexShrink: 0 }} />
           </Link>
         ))}
       </div>
     </div>
   );
 
-  // Render document content
   const renderDocumentContent = () => {
     if (!currentDocument) {
       return (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Document not found</p>
-          <Link to="/legal" className="text-primary hover:underline mt-2 inline-block">
+        <div style={{ textAlign: 'center', padding: '48px 0' }}>
+          <p style={{ color: '#6B7280' }}>Document not found</p>
+          <Link to="/legal" style={{ color: BLUE, marginTop: '8px', display: 'inline-block' }} className="hover:underline">
             Return to Legal Hub
           </Link>
         </div>
@@ -71,31 +73,23 @@ export default function Legal() {
 
     return (
       <div className="space-y-6">
-        {/* Document Header */}
-        <div className="flex items-start gap-4 pb-6 border-b border-border">
-          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-            {currentDocument.icon}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', paddingBottom: '24px', borderBottom: '1px solid #E5E7EB' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: BLUE_BG, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ color: BLUE }}>{currentDocument.icon}</span>
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold mb-1">{currentDocument.title}</h1>
-            <p className="text-sm text-muted-foreground flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
+            <h1 style={{ fontSize: '26px', fontWeight: 700, color: '#111827', marginBottom: '4px' }}>{currentDocument.title}</h1>
+            <p style={{ fontSize: '13px', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Clock size={14} />
               Last Updated: {formatLastUpdated(currentDocument.lastUpdated)}
             </p>
           </div>
         </div>
 
-        {/* Document Content */}
-        <div className="prose prose-sm max-w-none dark:prose-invert">
-          {currentDocument.content}
-        </div>
+        <div>{currentDocument.content}</div>
 
-        {/* Back to Hub Link */}
-        <div className="pt-6 border-t border-border">
-          <Link 
-            to="/legal" 
-            className="text-primary hover:underline text-sm flex items-center gap-1"
-          >
+        <div style={{ paddingTop: '24px', borderTop: '1px solid #E5E7EB' }}>
+          <Link to="/legal" style={{ color: BLUE, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px' }} className="hover:underline">
             ← Back to Legal Hub
           </Link>
         </div>
@@ -105,41 +99,36 @@ export default function Legal() {
 
   return (
     <SwipeBackWrapper>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F0F4F8' }}>
+        <Helmet>
+          <title>{currentDocument ? `${currentDocument.title} | Tenanters` : 'Legal Documents | Tenanters'}</title>
+          <meta name="description" content={currentDocument?.description || "Review our policies and terms that govern the use of Tenanters' platform."} />
+        </Helmet>
+
         {isMobile ? (
-          <SubPageHeader 
-            title={currentDocument?.shortTitle || "Legal"} 
-          />
+          <SubPageHeader title={currentDocument?.shortTitle || "Legal"} />
         ) : (
           <RoomyNavbar />
         )}
 
-        <main className={`${isMobile ? 'pt-4 pb-24' : 'pt-24 pb-16'} px-4`}>
+        <main className={`flex-1 ${isMobile ? 'pt-4 pb-24' : 'pt-24 pb-16'} px-4`}>
           <div className="max-w-7xl mx-auto">
-            {/* Breadcrumb - Desktop only */}
-            {!isMobile && (
-              <div className="mb-6">
-                <AppBreadcrumb items={breadcrumbItems} />
-              </div>
-            )}
-
-            {/* Main Layout */}
-            <div className="flex gap-8">
-              {/* Sidebar - Desktop */}
+            <div style={{ display: 'flex', gap: '32px' }}>
               {!isMobile && <LegalSidebar />}
-
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <Card className="p-6 sm:p-8">
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E5E7EB',
+                  padding: isMobile ? '20px' : '32px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                }}>
                   {page ? renderDocumentContent() : renderHubContent()}
-                </Card>
+                </div>
               </div>
             </div>
           </div>
         </main>
 
-        {/* Mobile Sidebar Trigger */}
         {isMobile && <LegalSidebar />}
+        {!isMobile && <Footer />}
       </div>
     </SwipeBackWrapper>
   );
