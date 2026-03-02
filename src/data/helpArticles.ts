@@ -22,7 +22,7 @@ export const helpCategories: HelpCategory[] = [
         id: 'creating-profile',
         title: 'Creating your profile',
         category: 'Getting Started',
-        content: `Set up your profile to get started with Roomy.
+        content: `Set up your profile to get started with Tenanters.
 
 ## Steps to create your profile
 
@@ -80,7 +80,7 @@ Tap the heart icon to save a dorm to your wishlist. Access your saved dorms anyt
 ## Important notes
 
 - Deposits are non-refundable and paid directly to owners
-- Always communicate through the Roomy platform for safety
+- Always communicate through the Tenanters platform for safety
 - Review the dorm's policies before booking`
       }
     ]
@@ -92,11 +92,11 @@ Tap the heart icon to save a dorm to your wishlist. Access your saved dorms anyt
     articles: [
       {
         id: 'how-roomy-matching-works',
-        title: 'How Roomy Matching Works',
+        title: 'How Tenanters Matching Works',
         category: 'AI Matching',
         content: `Our AI-powered matching system helps you find the perfect dorm and compatible roommates.
 
-## The Roomy Algorithm
+## The Tenanters Algorithm
 
 Our proprietary matching algorithm analyzes multiple factors to find your ideal living situation:
 
@@ -215,7 +215,7 @@ Our AI considers:
 
 ## About Whish
 
-Roomy partners with Whish, a trusted payment provider, to securely process all transactions.
+Tenanters partners with Whish, a trusted payment provider, to securely process all transactions.
 
 ## Payment flow
 
@@ -242,16 +242,16 @@ Roomy partners with Whish, a trusted payment provider, to securely process all t
         id: 'why-deposits-non-refundable',
         title: 'Why Deposits Are Non-Refundable',
         category: 'Payments & Deposits',
-        content: `Understanding Roomy's marketplace model and deposit policies.
+        content: `Understanding Tenanters' marketplace model and deposit policies.
 
-## Roomy is a marketplace
+## Tenanters is a marketplace
 
-Roomy connects students with property owners. We are not a hotel booking service and do not manage properties directly.
+Tenanters connects students with property owners. We are not a hotel booking service and do not manage properties directly.
 
 ## How deposits work
 
 - Deposits are paid **directly to the property owner**
-- Roomy facilitates the payment but does not hold the funds
+- Tenanters facilitates the payment but does not hold the funds
 - The owner sets their own deposit amount and policies
 
 ## Why non-refundable?
@@ -272,17 +272,17 @@ For more details, see our [Payments & Security](/legal/payments) policy.`
         id: 'payments-handling',
         title: 'Who handles payments and refunds?',
         category: 'Payments & Deposits',
-        content: `Roomy is a marketplace platform that connects students with property owners. Here's how payments work:
+        content: `Tenanters is a marketplace platform that connects students with property owners. Here's how payments work:
 
 ## Payment Flow
 
-All payments, including deposits, are made directly to the dorm owner. Roomy facilitates the transaction through our secure payment partner (Whish) but does not hold or manage the funds.
+All payments, including deposits, are made directly to the dorm owner. Tenanters facilitates the transaction through our secure payment partner (Whish) but does not hold or manage the funds.
 
 ## Important Notice
 
 - **Deposits are non-refundable** and are paid directly to the dorm owner
 - Any refund requests must be directed to the property owner
-- Roomy is not a party to the rental agreement between you and the owner
+- Tenanters is not a party to the rental agreement between you and the owner
 
 ## For More Information
 
@@ -299,7 +299,7 @@ See our [Payments & Security](/legal/payments) policy for complete details on ho
         id: 'how-to-list-property',
         title: 'How to list your property',
         category: 'Listing as an Owner',
-        content: `Get your property listed on Roomy and start connecting with students.
+        content: `Get your property listed on Tenanters and start connecting with students.
 
 ## Steps to list
 
@@ -326,7 +326,7 @@ See our [Payments & Security](/legal/payments) policy for complete details on ho
         id: 'owner-agreement-overview',
         title: 'Owner Agreement overview',
         category: 'Listing as an Owner',
-        content: `Understand the terms that govern property listings on Roomy.
+        content: `Understand the terms that govern property listings on Tenanters.
 
 ## What the agreement covers
 
@@ -343,7 +343,7 @@ See our [Payments & Security](/legal/payments) policy for complete details on ho
 - Respond to student inquiries promptly
 - Honor confirmed reservations
 
-## Roomy's role
+## Tenanters' role
 
 - Verify listings for authenticity
 - Provide platform and payment processing
@@ -463,7 +463,7 @@ You have control over the information displayed on your profile. While some basi
         id: 'legal-rights-data-control',
         title: 'Legal Rights & Data Control',
         category: 'Privacy & Profile Visibility',
-        content: `Understanding your rights regarding your personal data on Roomy.
+        content: `Understanding your rights regarding your personal data on Tenanters.
 
 ## Your data rights
 
@@ -501,9 +501,9 @@ See our [Privacy Policy](/legal/privacy) for complete details.`
       },
       {
         id: 'how-roomy-protects-your-data',
-        title: 'How Roomy protects your data',
+        title: 'How Tenanters protects your data',
         category: 'Privacy & Profile Visibility',
-        content: `Roomy is committed to protecting your personal information. Here's a simple breakdown of how we handle your data.
+        content: `Tenanters is committed to protecting your personal information. Here's a simple breakdown of how we handle your data.
 
 ## What data we collect
 
@@ -515,7 +515,7 @@ We collect only what's needed to help you find housing:
 
 ## What we don't collect
 
-Currently, Roomy does not collect:
+Currently, Tenanters does not collect:
 
 - Behavioral analytics or tracking cookies
 - Third-party advertising identifiers
@@ -542,7 +542,7 @@ You have the right to:
 
 ## How to delete your account
 
-To request account deletion, email **security@roomylb.com** with the subject line "Account Deletion Request" followed by your full name. We'll process your request within 30 days.
+To request account deletion, email **security@tenanters.com** with the subject line "Account Deletion Request" followed by your full name. We'll process your request within 30 days.
 
 ## Data security
 
@@ -565,14 +565,14 @@ For complete legal details, read our [Privacy Policy](/legal/privacy).`
         id: 'terms-overview',
         title: 'Terms of Service',
         category: 'Legal',
-        content: `Overview of Roomy's Terms of Service.
+        content: `Overview of Tenanters' Terms of Service.
 
 ## Key points
 
-- Roomy is a marketplace connecting students with property owners
+- Tenanters is a marketplace connecting students with property owners
 - Users must be 18+ or have parental consent
 - All payments are processed through our secure payment partner
-- Roomy is not responsible for property conditions or disputes
+- Tenanters is not responsible for property conditions or disputes
 
 ## User responsibilities
 
@@ -589,7 +589,7 @@ Visit our [Terms of Service](/legal/terms) page for the complete legal document.
         id: 'privacy-policy-overview',
         title: 'Privacy Policy',
         category: 'Legal',
-        content: `How Roomy collects, uses, and protects your personal information.
+        content: `How Tenanters collects, uses, and protects your personal information.
 
 ## What we collect
 
@@ -618,7 +618,7 @@ Read our full [Privacy Policy](/legal/privacy).`
         id: 'owner-agreement-info',
         title: 'What is the Owner Agreement?',
         category: 'Legal',
-        content: `The Owner Agreement is a set of terms that property owners must accept before listing on Roomy.
+        content: `The Owner Agreement is a set of terms that property owners must accept before listing on Tenanters.
 
 ## What It Covers
 
@@ -642,13 +642,13 @@ Read the full [Owner Agreement](/legal/owner-agreement) or visit our [Privacy Po
       },
       {
         id: 'housing-safety',
-        title: 'Is Roomy responsible for housing safety?',
+        title: 'Is Tenanters responsible for housing safety?',
         category: 'Legal',
-        content: `Roomy is a digital marketplace that connects students with property owners. Here's what you need to know about safety responsibilities:
+        content: `Tenanters is a digital marketplace that connects students with property owners. Here's what you need to know about safety responsibilities:
 
-## Roomy's Role
+## Tenanters' Role
 
-Roomy verifies listings to reduce scams and fake postings. However, Roomy does not:
+Tenanters verifies listings to reduce scams and fake postings. However, Tenanters does not:
 - Inspect physical properties
 - Guarantee safety or maintenance standards
 - Serve as a landlord or property manager
@@ -665,7 +665,7 @@ Property owners are responsible for:
 If you encounter safety issues:
 1. Contact the property owner directly
 2. Report the issue to local authorities if necessary
-3. You may report unsafe conditions to Roomy, and we may take action at our discretion
+3. You may report unsafe conditions to Tenanters, and we may take action at our discretion
 
 ## For More Information
 
@@ -820,7 +820,7 @@ Some reservations require owner approval before they appear as confirmed.
         id: 'how-to-delete-account',
         title: 'How to Delete My Account',
         category: 'Troubleshooting',
-        content: `Learn how to permanently delete your Roomy account.
+        content: `Learn how to permanently delete your Tenanters account.
 
 ## Before you delete
 
