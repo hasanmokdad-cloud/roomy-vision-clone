@@ -1,40 +1,33 @@
 
 
-## Bug: "Submit for verification" button missing on dorm flow
+## Bug Analysis
 
-### Root Cause
-
-The wizard has two flows:
-- **Apartment flow**: Steps go up to 29 (ReviewStep at step 29)
-- **Dorm flow**: Steps end at 26 (ReviewStep at step 26), steps 27-29 return `null`
-
-The `isLastStep` check on line 1289 is:
-```typescript
-const isLastStep = currentStep === TOTAL_STEPS - 1; // always checks step 29
-```
-
-This means for the dorm flow, step 26 (which IS the last real step) shows "Next" instead of "Submit for verification". Clicking "Next" advances to step 27, which renders nothing (blank page).
-
-### Fix
-
-Make `isLastStep` flow-aware:
+The root cause is in `MobileStudentWizard.tsx` line 200:
 
 ```typescript
-const isLastStep = isApartmentFlow 
-  ? currentStep === TOTAL_STEPS - 1  // step 29 for apartments
-  : currentStep === 26;               // step 26 for dorms
+if (currentStep === totalSteps) {
+  await handleSubmit();
+}
 ```
 
-Also update `handleNext` to not advance past step 26 for dorm flow (it currently goes to 27+ because the generic `currentStep < TOTAL_STEPS - 1` check passes).
+`getTotalSteps()` returns 6-8 (count of form steps), but `currentStep` uses actual step indices (0-11). This comparison is wrong:
 
-### Files to Change
+- **have_dorm, no personality**: `totalSteps=6`, so at step 6 (Accommodation Status), `currentStep === totalSteps` is TRUE → submits immediately, skipping Profile Extras and Review.
+- **need_dorm, no personality**: `totalSteps=7`, so at step 7 (Housing Preferences), it submits immediately.
+- **need_dorm, with personality**: `totalSteps=8`, so at step 8 (Phase 3 transition), it submits immediately.
+- **have_dorm, with personality**: `totalSteps=7`, submit never triggers because step 11 never equals 7 → wizard gets stuck.
 
-| File | Change |
-|------|--------|
-| `src/components/owner/mobile/MobileDormWizard.tsx` | Update `isLastStep` logic on line 1289 to be flow-aware |
+## Fix
 
-### Technical Details
+**File: `src/components/student/mobile/MobileStudentWizard.tsx`**
 
-- Line 1289: Change `isLastStep` to check step 26 for dorm flow, step 29 for apartment flow
-- The `isApartmentFlow` variable already exists in the component and correctly identifies the flow type
-- No other files need changes -- `WizardFooter` already handles `isLastStep` prop correctly
+One change — line 200: replace `currentStep === totalSteps` with `currentStep === 11`, since step 11 (Review & Submit) is always the final step regardless of which conditional branches were taken.
+
+```typescript
+if (currentStep === 11) {
+  await handleSubmit();
+}
+```
+
+The `isLastStep={currentStep === 11}` prop on the footer (line 502) is already correct, so the button label will display "Complete setup" at the right time. No other files need changes.
+
