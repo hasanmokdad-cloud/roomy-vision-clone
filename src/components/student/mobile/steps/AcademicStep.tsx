@@ -31,73 +31,77 @@ const AcademicStep = ({ data, onChange }: AcademicStepProps) => {
   ];
 
   return (
-    <div className="px-6 pt-20 pb-32">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <h2 className="text-2xl font-bold text-foreground mb-2">
-          Academic information
-        </h2>
-        <p className="text-muted-foreground mb-8">
-          Connect with students from your university
-        </p>
+    <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
+      <div className="w-full max-w-xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <div className="text-center mb-10">
+            <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground mb-2">
+              Academic information
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Connect with students from your university
+            </p>
+          </div>
 
-        {/* University */}
-        <div className="mb-6">
-          <Label className="text-base font-medium">University</Label>
-          <Select
-            value={data.university}
-            onValueChange={(value) => onChange({ university: value })}
-          >
-            <SelectTrigger className="mt-2 h-12 text-base">
-              <SelectValue placeholder="Select your university" />
-            </SelectTrigger>
-            <SelectContent className="bg-background z-50 max-h-[300px]">
-              {universities.map((uni) => (
-                <SelectItem key={uni} value={uni}>
-                  {uni}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+          {/* University */}
+          <div className="mb-8">
+            <Label className="text-base font-medium">University</Label>
+            <Select
+              value={data.university}
+              onValueChange={(value) => onChange({ university: value })}
+            >
+              <SelectTrigger className="mt-2 h-12 text-base">
+                <SelectValue placeholder="Select your university" />
+              </SelectTrigger>
+              <SelectContent className="bg-background z-50 max-h-[300px]">
+                {universities.map((uni) => (
+                  <SelectItem key={uni} value={uni}>
+                    {uni}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        {/* Major */}
-        <div className="mb-6">
-          <Label htmlFor="major" className="text-base font-medium">
-            Major / Field of Study
-          </Label>
-          <Input
-            id="major"
-            value={data.major}
-            onChange={(e) => onChange({ major: e.target.value })}
-            placeholder="e.g. Computer Science"
-            className="mt-2 h-12 text-base"
-          />
-        </div>
+          {/* Major */}
+          <div className="mb-8">
+            <Label htmlFor="major" className="text-base font-medium">
+              Major / Field of Study
+            </Label>
+            <Input
+              id="major"
+              value={data.major}
+              onChange={(e) => onChange({ major: e.target.value })}
+              placeholder="e.g. Computer Science"
+              className="mt-2 h-12 text-base"
+            />
+          </div>
 
-        {/* Year of Study */}
-        <div>
-          <Label className="text-base font-medium">Year of Study</Label>
-          <Select
-            value={data.year_of_study?.toString()}
-            onValueChange={(value) => onChange({ year_of_study: parseInt(value) })}
-          >
-            <SelectTrigger className="mt-2 h-12 text-base">
-              <SelectValue placeholder="Select your year" />
-            </SelectTrigger>
-            <SelectContent className="bg-background z-50">
-              {years.map((year) => (
-                <SelectItem key={year.value} value={year.value.toString()}>
-                  {year.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </motion.div>
+          {/* Year of Study */}
+          <div>
+            <Label className="text-base font-medium">Year of Study</Label>
+            <Select
+              value={data.year_of_study?.toString()}
+              onValueChange={(value) => onChange({ year_of_study: parseInt(value) })}
+            >
+              <SelectTrigger className="mt-2 h-12 text-base">
+                <SelectValue placeholder="Select your year" />
+              </SelectTrigger>
+              <SelectContent className="bg-background z-50">
+                {years.map((year) => (
+                  <SelectItem key={year.value} value={year.value.toString()}>
+                    {year.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };
