@@ -197,7 +197,7 @@ const MobileStudentWizard = ({ isDrawerMode = false, onComplete }: MobileStudent
   const handleNext = async () => {
     const totalSteps = getTotalSteps();
     
-    if (currentStep === totalSteps) {
+    if (currentStep === 11) {
       await handleSubmit();
     } else {
       // Skip housing preferences step if have_dorm
