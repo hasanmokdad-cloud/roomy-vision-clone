@@ -1,40 +1,49 @@
 
 
-## Bug: "Submit for verification" button missing on dorm flow
+## Student Wizard UI Alignment Plan
 
-### Root Cause
+### Problem
+Every student wizard step uses left-aligned, edge-to-edge layout (`px-6 pt-20 pb-32`) while the owner wizard uses centered, constrained layout (`min-h-screen flex flex-col items-center pt-24 pb-32 px-6` with `max-w-xl mx-auto` inner wrapper and `text-center` headings).
 
-The wizard has two flows:
-- **Apartment flow**: Steps go up to 29 (ReviewStep at step 29)
-- **Dorm flow**: Steps end at 26 (ReviewStep at step 26), steps 27-29 return `null`
+### Approach
+Update each student step component's outer wrapper and heading styles to match the owner wizard pattern. There is no shared step wrapper component, so each step file must be updated individually (8 step files + review step).
 
-The `isLastStep` check on line 1289 is:
-```typescript
-const isLastStep = currentStep === TOTAL_STEPS - 1; // always checks step 29
+### Changes per file
+
+**Pattern to apply to all step files** — replace the outer div + heading structure:
+
+From:
+```html
+<div className="px-6 pt-20 pb-32">
+  <motion.div ...>
+    <h2 className="text-2xl font-bold ...">
+    <p className="text-muted-foreground mb-8">
 ```
 
-This means for the dorm flow, step 26 (which IS the last real step) shows "Next" instead of "Submit for verification". Clicking "Next" advances to step 27, which renders nothing (blank page).
-
-### Fix
-
-Make `isLastStep` flow-aware:
-
-```typescript
-const isLastStep = isApartmentFlow 
-  ? currentStep === TOTAL_STEPS - 1  // step 29 for apartments
-  : currentStep === 26;               // step 26 for dorms
+To:
+```html
+<div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
+  <div className="w-full max-w-xl mx-auto">
+    <motion.div ...>
+      <div className="text-center mb-6">
+        <h1 className="text-2xl lg:text-[32px] font-semibold ...">
+        <p className="text-muted-foreground mt-2">
+      </div>
 ```
 
-Also update `handleNext` to not advance past step 26 for dorm flow (it currently goes to 27+ because the generic `currentStep < TOTAL_STEPS - 1` check passes).
+Close with extra `</div>` for the `max-w-xl` wrapper.
 
-### Files to Change
+**Files to update (8 total):**
 
-| File | Change |
-|------|--------|
-| `src/components/owner/mobile/MobileDormWizard.tsx` | Update `isLastStep` logic on line 1289 to be flow-aware |
+1. `BasicInfoStep.tsx` — wrap in centered container, center heading/subtitle
+2. `HometownStep.tsx` — same pattern
+3. `AcademicStep.tsx` — same pattern
+4. `AccommodationStatusStep.tsx` — same pattern; status option cards: change from `grid-cols-1` full-width to `grid-cols-1 lg:grid-cols-2` compact cards
+5. `HousingPreferencesStep.tsx` — same pattern
+6. `PersonalityMatchingStep.tsx` — already centered heading; just needs outer wrapper alignment
+7. `ProfileExtrasStep.tsx` — same pattern
+8. `StudentReviewStep.tsx` — same pattern
 
-### Technical Details
+### No text/label/functionality changes
+Only CSS class changes: container centering, max-width constraint, heading size/weight, text alignment, and spacing.
 
-- Line 1289: Change `isLastStep` to check step 26 for dorm flow, step 29 for apartment flow
-- The `isApartmentFlow` variable already exists in the component and correctly identifies the flow type
-- No other files need changes -- `WizardFooter` already handles `isLastStep` prop correctly
