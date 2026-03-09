@@ -253,7 +253,7 @@ export default function Listings() {
             <SlidersHorizontal className="w-5 h-5 mr-2" />
             {t('common.filter', 'Filters')}
           </Button>
-        </motion.div>
+        </div>
 
         {/* Airbnb-style Filters Modal */}
         <AirbnbFiltersModal
