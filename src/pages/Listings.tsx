@@ -221,39 +221,9 @@ export default function Listings() {
       {!isMobile && <RoomyNavbar />}
       
       <ScrollImmersion>
-        <main id="main-content" className="flex-1 container mx-auto px-4 py-8 mt-20" role="main">
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="mb-12 text-center"
-        >
-          <Badge variant="secondary" className="mb-4 neon-glow">
-            <Sparkles className="w-4 h-4 mr-2" />
-            {isRoomMode 
-              ? t('listings.browseRooms', 'Browse Available Rooms')
-              : t('listings.browseVerified', 'Browse Verified Dorms')
-            }
-          </Badge>
-          <h1 className="text-5xl md:text-6xl font-black gradient-text mb-6">
-            {isRoomMode
-              ? t('listings.roomsTitle', 'Available Rooms in Lebanon')
-              : t('listings.title', 'Available Dorms in Lebanon')
-            }
-          </h1>
-          <p className="text-xl text-foreground/80">
-            {isRoomMode
-              ? t('listings.roomsSubtitle', 'Showing rooms that match your criteria.')
-              : t('listings.subtitle', 'Explore verified dorms and find your perfect stay near campus.')
-            }
-          </p>
-        </motion.div>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="relative mb-8 flex gap-3"
+      <main id="main-content" className="flex-1 container mx-auto px-4 pt-6 mt-20" role="main">
+        <div 
+          className="relative mb-8 flex gap-3 max-w-2xl mx-auto"
           role="search"
         >
           <div className="relative flex-1">
