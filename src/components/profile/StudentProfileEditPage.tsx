@@ -46,6 +46,7 @@ interface StudentProfile {
   current_room_id?: string;
   profile_photo_url?: string;
   room_confirmed?: boolean;
+  tenant_role?: string;
 }
 
 // Area data by city
