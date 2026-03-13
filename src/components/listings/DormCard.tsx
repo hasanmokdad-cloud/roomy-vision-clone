@@ -38,7 +38,7 @@ export default function DormCard({ dorm, index = 0 }: DormCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleContactOwner = async (e: React.MouseEvent) => {
     e.stopPropagation();

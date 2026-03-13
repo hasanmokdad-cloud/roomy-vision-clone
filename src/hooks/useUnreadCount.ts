@@ -14,7 +14,7 @@ export function getGlobalActiveConversation(): string | null {
 
 export function useUnreadCount(userId: string | null) {
   const [unreadCount, setUnreadCount] = useState(0);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const lastLoadTimeRef = useRef<number>(0);
 
   // Memoize loadUnreadCount so it can be called externally

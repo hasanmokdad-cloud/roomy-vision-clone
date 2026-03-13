@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useOnlineStatus(userId: string | null, conversationId?: string) {
-  const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
+  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval>>();
   const isActiveRef = useRef(true);
 
   useEffect(() => {

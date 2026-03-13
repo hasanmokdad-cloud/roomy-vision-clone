@@ -121,7 +121,7 @@ export function MessageBubble({
   const [selectedSummaryEmoji, setSelectedSummaryEmoji] = useState<string | null>(null);
   const [celebrationEmoji, setCelebrationEmoji] = useState<string | null>(null);
   const [newReactionEmojis, setNewReactionEmojis] = useState<Set<string>>(new Set());
-  const longPressTimerRef = useRef<NodeJS.Timeout>();
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const touchStartPosRef = useRef({ x: 0, y: 0 });
 
   // Close emoji picker/reaction bar when clicking outside

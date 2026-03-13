@@ -253,7 +253,7 @@ export default function Messages() {
   const [previewProgress, setPreviewProgress] = useState(0);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
-  const previewIntervalRef = useRef<NodeJS.Timeout>();
+  const previewIntervalRef = useRef<ReturnType<typeof setInterval>>();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
@@ -286,7 +286,7 @@ export default function Messages() {
   // Track if user was trying to record when permission modal appeared
   const pendingRecordingRef = useRef(false);
   // Safety timeout ref to reset stuck states
-  const stuckResetTimeoutRef = useRef<NodeJS.Timeout>();
+  const stuckResetTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
   // In-conversation search state
   const [showConversationSearch, setShowConversationSearch] = useState(false);
@@ -303,11 +303,11 @@ export default function Messages() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const recordingTimerRef = useRef<NodeJS.Timeout>();
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval>>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const touchStartTimeRef = useRef<number>(0);
   const touchStartPosRef = useRef({ x: 0, y: 0 });
@@ -340,7 +340,7 @@ export default function Messages() {
   // Sticky date header state
   const [stickyDate, setStickyDate] = useState<Date | null>(null);
   const [showStickyDate, setShowStickyDate] = useState(false);
-  const stickyDateTimeoutRef = useRef<NodeJS.Timeout>();
+  const stickyDateTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Unauthenticated state - Airbnb style (both mobile and desktop)
   if (isAuthReady && !isAuthenticated) {
@@ -2317,7 +2317,7 @@ export default function Messages() {
   const attachMicTouchHandlers = useCallback((micButton: HTMLButtonElement | null) => {
     if (!isMobile || !micButton) return () => {};
     
-    let pressTimer: NodeJS.Timeout;
+    let pressTimer: ReturnType<typeof setTimeout>;
     
     const handleTouchStart = (e: TouchEvent) => {
       e.preventDefault();

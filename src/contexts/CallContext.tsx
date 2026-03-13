@@ -80,7 +80,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const signalingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const iceCandidatesQueue = useRef<RTCIceCandidateInit[]>([]);
-  const callTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const callTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ringtoneRef = useRef<HTMLAudioElement | null>(null);
 
   // Cleanup function
