@@ -21,6 +21,7 @@ interface AboutMeTabProps {
   userName: string;
   profilePhotoUrl: string | null;
   hasCompletedProfile: boolean;
+  tenantRole: string | null;
   onEditClick: () => void;
   onGetStartedClick: () => void;
 }
