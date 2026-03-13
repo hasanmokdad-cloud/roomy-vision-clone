@@ -85,7 +85,7 @@ export default function Profile() {
       if (role === 'student' || role === null) {
         const { data: student } = await supabase
           .from('students')
-          .select('id, profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed, age, major, year_of_study, preferred_housing_area')
+          .select('id, profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed, age, major, year_of_study, preferred_housing_area, tenant_role')
           .eq('user_id', userId)
           .maybeSingle(); // Use maybeSingle for new accounts that may not have a record
         
