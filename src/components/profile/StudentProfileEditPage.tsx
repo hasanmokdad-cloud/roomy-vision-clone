@@ -579,22 +579,22 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
                       : 'border-[#DDDDDD] hover:border-[#222222]'
                   } ${isRoomConfirmed ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <Search className="w-6 h-6 mx-auto mb-2 text-[#222222]" />
-                  <span className="block text-sm font-medium text-[#222222]">Need Dorm</span>
-                  <span className="block text-xs text-[#717171] mt-1">I'm looking for a dorm</span>
-                </button>
-                <button
-                  onClick={() => handleAccommodationStatusChange('have_dorm')}
-                  disabled={isRoomConfirmed}
-                  className={`flex-1 py-4 px-6 rounded-xl border-2 transition-all ${
-                    accommodationStatus === 'have_dorm'
-                      ? 'border-[#222222] bg-[#F7F7F7]'
-                      : 'border-[#DDDDDD] hover:border-[#222222]'
-                  } ${isRoomConfirmed ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <Building2 className="w-6 h-6 mx-auto mb-2 text-[#222222]" />
-                  <span className="block text-sm font-medium text-[#222222]">Have Dorm</span>
-                  <span className="block text-xs text-[#717171] mt-1">I already have a dorm</span>
+                   <Search className="w-6 h-6 mx-auto mb-2 text-[#222222]" />
+                   <span className="block text-sm font-medium text-[#222222]">Need a Place</span>
+                   <span className="block text-xs text-[#717171] mt-1">I'm looking for accommodation</span>
+                 </button>
+                 <button
+                   onClick={() => handleAccommodationStatusChange('have_dorm')}
+                   disabled={isRoomConfirmed}
+                   className={`flex-1 py-4 px-6 rounded-xl border-2 transition-all ${
+                     accommodationStatus === 'have_dorm'
+                       ? 'border-[#222222] bg-[#F7F7F7]'
+                       : 'border-[#DDDDDD] hover:border-[#222222]'
+                   } ${isRoomConfirmed ? 'opacity-50 cursor-not-allowed' : ''}`}
+                 >
+                   <Building2 className="w-6 h-6 mx-auto mb-2 text-[#222222]" />
+                   <span className="block text-sm font-medium text-[#222222]">Have a Place</span>
+                   <span className="block text-xs text-[#717171] mt-1">I already have accommodation</span>
                 </button>
               </div>
 
