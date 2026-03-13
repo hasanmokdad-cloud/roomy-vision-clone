@@ -31,6 +31,7 @@ export function AboutMeTab({
   userName,
   profilePhotoUrl,
   hasCompletedProfile,
+  tenantRole,
   onEditClick,
   onGetStartedClick,
 }: AboutMeTabProps) {
