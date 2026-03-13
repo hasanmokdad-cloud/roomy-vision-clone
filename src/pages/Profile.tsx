@@ -642,11 +642,12 @@ export default function Profile() {
               onProfileUpdated={handleProfileUpdated}
             />
           ) : activeProfileTab === 'about' ? (
-            <AboutMeTab
+          <AboutMeTab
               profileData={studentProfileData}
               userName={userName}
               profilePhotoUrl={profilePhotoUrl}
               hasCompletedProfile={hasCompletedProfile}
+              tenantRole={studentProfileData?.tenant_role || null}
               onEditClick={() => navigate('/profile?editMode=true')}
               onGetStartedClick={() => navigate('/onboarding/tenant')}
             />
