@@ -639,18 +639,28 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
                         <div>
                           <p className="text-[15px] text-[#222222]">AI Personality Matching</p>
                           <p className="text-sm text-[#717171]">
-                            {personalityTestCompleted ? 'Survey completed' : 'Take the personality survey'}
+                            {personalityFilledCount === 17 
+                              ? 'Survey completed' 
+                              : personalityFilledCount > 0 
+                                ? `${personalityFilledCount}/17 questions answered`
+                                : 'Take the personality survey'}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <Button
-                          variant="outline"
                           size="sm"
                           onClick={() => setShowPersonalitySurvey(true)}
-                          className="text-[#222222] border-[#222222] hover:bg-[#F7F7F7] font-medium"
+                          variant={personalityFilledCount === 17 ? 'ghost' : personalityFilledCount > 0 ? 'outline' : 'default'}
+                          className={
+                            personalityFilledCount === 0 
+                              ? 'bg-gradient-to-r from-primary to-primary/80 text-white font-medium' 
+                              : personalityFilledCount === 17
+                                ? 'text-[#222222] font-medium'
+                                : 'text-[#222222] border-[#222222] hover:bg-[#F7F7F7] font-medium'
+                          }
                         >
-                          {personalityTestCompleted ? 'Edit' : 'Start'}
+                          {personalityFilledCount === 0 ? 'Start' : personalityFilledCount === 17 ? 'Edit' : `Continue (${personalityFilledCount}/17)`}
                         </Button>
                         <Switch
                           checked={enablePersonalityMatching}
