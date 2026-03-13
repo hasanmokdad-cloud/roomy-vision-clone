@@ -76,7 +76,12 @@ export function AboutMeTab({
               {userName || 'Guest'}
             </h3>
             {/* Role Label */}
-            <p className="text-base text-[#717171]">Student</p>
+            {tenantRole === 'student' && (
+              <p className="text-base text-[#717171]">🎓 Student</p>
+            )}
+            {tenantRole === 'non_student' && (
+              <p className="text-base text-[#717171]">💼 Non-student</p>
+            )}
           </div>
         </div>
 
