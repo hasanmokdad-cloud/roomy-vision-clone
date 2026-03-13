@@ -1011,6 +1011,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
         onOpenChange={setShowPersonalitySurvey}
         userId={userId}
         onComplete={handlePersonalitySurveyComplete}
+        openedFrom="profile"
       />
     </div>
   );
