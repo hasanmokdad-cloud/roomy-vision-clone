@@ -389,12 +389,12 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
   };
 
   const getCurrentDormDisplay = () => {
-    if (!currentDormId) return 'Select your dorm';
+    if (!currentDormId) return 'Select your housing';
     const dorm = availableDorms.find(d => d.id === currentDormId);
     const room = availableRooms.find(r => r.id === currentRoomId);
     if (dorm && room) return `${dorm.name} · ${room.name}`;
     if (dorm) return dorm.name;
-    return 'Select your dorm';
+    return 'Select your housing';
   };
 
   const getMatchButtonText = () => {
