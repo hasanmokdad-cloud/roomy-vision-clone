@@ -359,7 +359,7 @@ export default function Profile() {
                     <div className="flex-1">
                       <h3 className="font-semibold text-white mb-1">Complete Your Profile</h3>
                       <p className="text-sm text-white/80 mb-3">
-                        Set up your profile to get personalized dorm matches
+                        Set up your profile to get personalized rental matches
                       </p>
                       <Button
                         onClick={() => setShowOnboardingDrawer(true)}
