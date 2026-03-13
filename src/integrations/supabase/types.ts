@@ -4644,13 +4644,19 @@ export type Database = {
           needs_roommate_new_dorm: boolean | null
           onboarding_completed: boolean | null
           personality_cleanliness_level: string | null
+          personality_conflict_address_method: string | null
           personality_conflict_style: string | null
           personality_cooking_frequency: string | null
           personality_data: Json | null
+          personality_expense_handling: string | null
           personality_guests_frequency: string | null
+          personality_home_frequency: string | null
           personality_intro_extro: string | null
           personality_last_updated_at: string | null
           personality_noise_tolerance: string | null
+          personality_partner_overnight: string | null
+          personality_pet_comfort: string | null
+          personality_pet_ownership: string | null
           personality_shared_space_cleanliness_importance: number | null
           personality_sharing_preferences: string | null
           personality_sleep_schedule: string | null
@@ -4663,9 +4669,11 @@ export type Database = {
           phone_number: string | null
           phone_verified: boolean | null
           preferred_amenities: string[] | null
+          preferred_apartment_type: string | null
           preferred_areas: string[] | null
           preferred_city: string | null
           preferred_housing_area: string | null
+          preferred_housing_type: string | null
           preferred_room_types: string[] | null
           preferred_university: string | null
           profile_completion_score: number | null
@@ -4677,6 +4685,7 @@ export type Database = {
           roommate_needed: boolean | null
           roommates_needed: number | null
           status: string | null
+          tenant_role: string | null
           town_village: string | null
           university: string | null
           updated_at: string | null
@@ -4723,13 +4732,19 @@ export type Database = {
           needs_roommate_new_dorm?: boolean | null
           onboarding_completed?: boolean | null
           personality_cleanliness_level?: string | null
+          personality_conflict_address_method?: string | null
           personality_conflict_style?: string | null
           personality_cooking_frequency?: string | null
           personality_data?: Json | null
+          personality_expense_handling?: string | null
           personality_guests_frequency?: string | null
+          personality_home_frequency?: string | null
           personality_intro_extro?: string | null
           personality_last_updated_at?: string | null
           personality_noise_tolerance?: string | null
+          personality_partner_overnight?: string | null
+          personality_pet_comfort?: string | null
+          personality_pet_ownership?: string | null
           personality_shared_space_cleanliness_importance?: number | null
           personality_sharing_preferences?: string | null
           personality_sleep_schedule?: string | null
@@ -4742,9 +4757,11 @@ export type Database = {
           phone_number?: string | null
           phone_verified?: boolean | null
           preferred_amenities?: string[] | null
+          preferred_apartment_type?: string | null
           preferred_areas?: string[] | null
           preferred_city?: string | null
           preferred_housing_area?: string | null
+          preferred_housing_type?: string | null
           preferred_room_types?: string[] | null
           preferred_university?: string | null
           profile_completion_score?: number | null
@@ -4756,6 +4773,7 @@ export type Database = {
           roommate_needed?: boolean | null
           roommates_needed?: number | null
           status?: string | null
+          tenant_role?: string | null
           town_village?: string | null
           university?: string | null
           updated_at?: string | null
@@ -4802,13 +4820,19 @@ export type Database = {
           needs_roommate_new_dorm?: boolean | null
           onboarding_completed?: boolean | null
           personality_cleanliness_level?: string | null
+          personality_conflict_address_method?: string | null
           personality_conflict_style?: string | null
           personality_cooking_frequency?: string | null
           personality_data?: Json | null
+          personality_expense_handling?: string | null
           personality_guests_frequency?: string | null
+          personality_home_frequency?: string | null
           personality_intro_extro?: string | null
           personality_last_updated_at?: string | null
           personality_noise_tolerance?: string | null
+          personality_partner_overnight?: string | null
+          personality_pet_comfort?: string | null
+          personality_pet_ownership?: string | null
           personality_shared_space_cleanliness_importance?: number | null
           personality_sharing_preferences?: string | null
           personality_sleep_schedule?: string | null
@@ -4821,9 +4845,11 @@ export type Database = {
           phone_number?: string | null
           phone_verified?: boolean | null
           preferred_amenities?: string[] | null
+          preferred_apartment_type?: string | null
           preferred_areas?: string[] | null
           preferred_city?: string | null
           preferred_housing_area?: string | null
+          preferred_housing_type?: string | null
           preferred_room_types?: string[] | null
           preferred_university?: string | null
           profile_completion_score?: number | null
@@ -4835,6 +4861,7 @@ export type Database = {
           roommate_needed?: boolean | null
           roommates_needed?: number | null
           status?: string | null
+          tenant_role?: string | null
           town_village?: string | null
           university?: string | null
           updated_at?: string | null
