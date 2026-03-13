@@ -643,7 +643,7 @@ export default function Profile() {
               profilePhotoUrl={profilePhotoUrl}
               hasCompletedProfile={hasCompletedProfile}
               onEditClick={() => navigate('/profile?editMode=true')}
-              onGetStartedClick={() => navigate('/onboarding/student')}
+              onGetStartedClick={() => navigate('/onboarding/tenant')}
             />
           ) : (
             studentId && <FriendsProfileTab studentId={studentId} />

@@ -29,7 +29,7 @@ export function StudentAirbnbIntroStep({ onGetStarted, hasSavedProgress, onResum
     {
       number: 2,
       title: 'Set your preferences',
-      description: "Tell us what you're looking for in a dorm and whether you need a roommate match.",
+      description: "Tell us what you're looking for in a rental and your housing preferences.",
     },
     {
       number: 3,
