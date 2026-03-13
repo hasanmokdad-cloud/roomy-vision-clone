@@ -336,7 +336,12 @@ export default function Profile() {
                 <h2 className="text-xl font-semibold text-foreground">
                   {userName || 'Your Name'}
                 </h2>
-                <p className="text-muted-foreground text-sm">Student</p>
+                {studentProfileData?.tenant_role === 'student' && (
+                  <span className="text-muted-foreground text-sm">🎓 Student</span>
+                )}
+                {studentProfileData?.tenant_role === 'non_student' && (
+                  <span className="text-muted-foreground text-sm">💼 Non-student</span>
+                )}
               </button>
 
               {/* Profile Visibility Notice */}
