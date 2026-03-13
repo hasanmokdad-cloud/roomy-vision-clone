@@ -340,7 +340,7 @@ export default function Messages() {
   // Sticky date header state
   const [stickyDate, setStickyDate] = useState<Date | null>(null);
   const [showStickyDate, setShowStickyDate] = useState(false);
-  const stickyDateTimeoutRef = useRef<NodeJS.Timeout>();
+  const stickyDateTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Unauthenticated state - Airbnb style (both mobile and desktop)
   if (isAuthReady && !isAuthenticated) {
