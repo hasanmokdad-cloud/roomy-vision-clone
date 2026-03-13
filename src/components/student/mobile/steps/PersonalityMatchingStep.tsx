@@ -100,7 +100,7 @@ const PersonalityMatchingStep = ({ onSurveyComplete }: PersonalityMatchingStepPr
                     Take Personality Survey
                   </span>
                   <span className="text-sm text-muted-foreground">
-                    13 quick questions about your lifestyle
+                    17 quick questions about your lifestyle
                   </span>
                 </div>
               </motion.button>

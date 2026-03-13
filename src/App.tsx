@@ -318,7 +318,7 @@ const AppRoutes = () => {
           {/* Protected Routes - Requires authentication */}
           <Route path="/my-tours" element={<ProtectedRoute element={<StudentTours />} forbiddenRoles={["owner"]} />} />
           <Route path="/onboarding" element={<ProtectedRoute element={<Onboarding />} />} />
-          <Route path="/onboarding/student" element={<ProtectedRoute element={<StudentOnboarding />} requiredRole="student" />} />
+          <Route path="/onboarding/tenant" element={<ProtectedRoute element={<StudentOnboarding />} requiredRole="student" />} />
           <Route path="/profile" element={<MobileSwipeLayout><Profile /></MobileSwipeLayout>} />
           <Route path="/settings" element={<ProtectedRoute element={<Settings />} />} />
           <Route path="/settings/devices" element={<ProtectedRoute element={<DevicesPage />} />} />

@@ -17,19 +17,28 @@ interface PersonalitySurveyModalProps {
 }
 
 interface PersonalityAnswers {
+  // Step 1: Lifestyle & Daily Rhythm
   personality_sleep_schedule: string;
   personality_noise_tolerance: string;
   personality_guests_frequency: string;
+  personality_partner_overnight: string;
   personality_cleanliness_level: string;
   personality_shared_space_cleanliness_importance: number;
+  // Step 2: Work & Daily Routine
   personality_study_time: string;
-  personality_study_environment: string;
-  personality_sleep_sensitivity: string;
+  personality_home_frequency: string;
+  // Step 3: Social & Compatibility
   personality_intro_extro: string;
   personality_conflict_style: string;
+  personality_conflict_address_method: string;
   personality_sharing_preferences: string;
+  // Step 4: Habits & Preferences
   personality_smoking: string;
   personality_cooking_frequency: string;
+  personality_expense_handling: string;
+  // Step 5: Pets & Dealbreakers
+  personality_pet_ownership: string;
+  personality_pet_comfort: string;
 }
 
 export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete }: PersonalitySurveyModalProps) => {
@@ -42,7 +51,7 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete 
   });
 
   const questions = [
-    // Lifestyle & Daily Rhythm
+    // Step 1: Lifestyle & Daily Rhythm
     {
       section: "Lifestyle & Daily Rhythm",
       questions: [
@@ -79,6 +88,17 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete 
           ]
         },
         {
+          id: "personality_partner_overnight",
+          question: "How often does your significant other / partner stay overnight?",
+          type: "radio",
+          options: [
+            { value: "never", label: "Never / I'm not in a relationship" },
+            { value: "occasionally", label: "Occasionally (once a month or less)" },
+            { value: "few_nights", label: "A few nights a week" },
+            { value: "very_often", label: "Very often (essentially lives here)" }
+          ]
+        },
+        {
           id: "personality_cleanliness_level",
           question: "How would you describe your cleanliness level?",
           type: "radio",
@@ -99,13 +119,13 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete 
         }
       ]
     },
-    // Study & Work Style
+    // Step 2: Work & Daily Routine
     {
-      section: "Study & Work Style",
+      section: "Work & Daily Routine",
       questions: [
         {
           id: "personality_study_time",
-          question: "When do you typically study or work?",
+          question: "When do you typically work or spend most of your active day?",
           type: "radio",
           options: [
             { value: "morning", label: "Morning (before noon)" },
@@ -115,30 +135,19 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete 
           ]
         },
         {
-          id: "personality_study_environment",
-          question: "What study environment do you prefer?",
+          id: "personality_home_frequency",
+          question: "How often are you home during the day on weekdays?",
           type: "radio",
           options: [
-            { value: "silent", label: "Complete silence" },
-            { value: "quiet", label: "Quiet with minimal background noise" },
-            { value: "moderate_noise", label: "Moderate noise is okay" },
-            { value: "flexible", label: "Flexible - I can adapt" }
-          ]
-        },
-        {
-          id: "personality_sleep_sensitivity",
-          question: "How easily does noise wake you up?",
-          type: "radio",
-          options: [
-            { value: "very_light", label: "Very light - any noise wakes me" },
-            { value: "light", label: "Light - small noises disturb me" },
-            { value: "normal", label: "Normal - only loud noises wake me" },
-            { value: "heavy", label: "Heavy - I sleep through anything" }
+            { value: "rarely", label: "Rarely — I'm mostly out" },
+            { value: "few_days", label: "A few days a week" },
+            { value: "most_days", label: "Most days" },
+            { value: "almost_always", label: "Almost always home (remote work / work from home)" }
           ]
         }
       ]
     },
-    // Social & Compatibility
+    // Step 3: Social & Compatibility
     {
       section: "Social & Compatibility",
       questions: [
@@ -164,6 +173,17 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete 
           ]
         },
         {
+          id: "personality_conflict_address_method",
+          question: "When there's an issue with a roommate, how do you prefer to address it?",
+          type: "radio",
+          options: [
+            { value: "in_person", label: "In person, right away" },
+            { value: "text_first", label: "Via text or message first" },
+            { value: "wait_calm", label: "Wait for a calm, good moment" },
+            { value: "let_go", label: "I prefer to let small things go" }
+          ]
+        },
+        {
           id: "personality_sharing_preferences",
           question: "How comfortable are you sharing personal items?",
           type: "radio",
@@ -175,9 +195,9 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete 
         }
       ]
     },
-    // Habits
+    // Step 4: Habits & Preferences
     {
-      section: "Habits",
+      section: "Habits & Preferences",
       questions: [
         {
           id: "personality_smoking",
@@ -185,7 +205,8 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete 
           type: "radio",
           options: [
             { value: "no", label: "No" },
-            { value: "yes", label: "Yes" }
+            { value: "outside_only", label: "Yes, but only outside" },
+            { value: "yes_indoors", label: "Yes, including indoors" }
           ]
         },
         {
@@ -197,6 +218,45 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete 
             { value: "rarely", label: "Rarely - once a week or less" },
             { value: "sometimes", label: "Sometimes - a few times a week" },
             { value: "often", label: "Often - daily or almost daily" }
+          ]
+        },
+        {
+          id: "personality_expense_handling",
+          question: "How do you prefer to handle shared household expenses?",
+          type: "radio",
+          options: [
+            { value: "split_track", label: "Split equally and track carefully" },
+            { value: "split_trust", label: "Split equally and trust it evens out" },
+            { value: "pay_own", label: "Pay for what I personally use" },
+            { value: "flexible", label: "Flexible — discuss case by case" }
+          ]
+        }
+      ]
+    },
+    // Step 5: Pets & Dealbreakers
+    {
+      section: "Pets & Dealbreakers",
+      questions: [
+        {
+          id: "personality_pet_ownership",
+          question: "Do you have or plan to get a pet?",
+          type: "radio",
+          options: [
+            { value: "no", label: "No, and I don't plan to" },
+            { value: "open", label: "No, but I'm open to it in the future" },
+            { value: "yes", label: "Yes, I have a pet" }
+          ]
+        },
+        {
+          id: "personality_pet_comfort",
+          question: "Are you comfortable living with someone who has a pet?",
+          type: "radio",
+          options: [
+            { value: "love_animals", label: "Yes, I love animals" },
+            { value: "if_clean", label: "Yes, as long as it's kept clean" },
+            { value: "depends", label: "Depends on the type of pet" },
+            { value: "no_pets", label: "No, I prefer a pet-free home" },
+            { value: "allergies", label: "I have allergies — pet-free is required" }
           ]
         }
       ]
@@ -228,34 +288,39 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete 
   };
 
   const computePersonalityVector = (answers: Partial<PersonalityAnswers>) => {
-    // Create a normalized vector for ML/matching purposes
     const vector: Record<string, number> = {};
     
-    // Sleep schedule: early=0, regular=0.5, late=1
     const sleepMap = { early: 0, regular: 0.5, late: 1 };
     vector.sleep_schedule = sleepMap[answers.personality_sleep_schedule as keyof typeof sleepMap] ?? 0.5;
     
-    // Noise tolerance: very_quiet=0, quiet=0.33, normal=0.66, loud=1
     const noiseMap = { very_quiet: 0, quiet: 0.33, normal: 0.66, loud: 1 };
     vector.noise_tolerance = noiseMap[answers.personality_noise_tolerance as keyof typeof noiseMap] ?? 0.5;
     
-    // Guests frequency: never=0, rarely=0.33, sometimes=0.66, often=1
     const guestsMap = { never: 0, rarely: 0.33, sometimes: 0.66, often: 1 };
     vector.guests_frequency = guestsMap[answers.personality_guests_frequency as keyof typeof guestsMap] ?? 0.5;
+
+    const partnerMap = { never: 0, occasionally: 0.33, few_nights: 0.66, very_often: 1 };
+    vector.partner_overnight = partnerMap[answers.personality_partner_overnight as keyof typeof partnerMap] ?? 0;
     
-    // Cleanliness: very_clean=1, clean=0.75, average=0.5, messy=0.25
     const cleanMap = { very_clean: 1, clean: 0.75, average: 0.5, messy: 0.25 };
     vector.cleanliness_level = cleanMap[answers.personality_cleanliness_level as keyof typeof cleanMap] ?? 0.5;
     
-    // Shared space importance: 1-5 scale, normalize to 0-1
     vector.shared_space_importance = ((answers.personality_shared_space_cleanliness_importance || 3) - 1) / 4;
     
-    // Intro/extro: introvert=0, ambivert=0.5, extrovert=1
     const socialMap = { introvert: 0, ambivert: 0.5, extrovert: 1 };
     vector.social_energy = socialMap[answers.personality_intro_extro as keyof typeof socialMap] ?? 0.5;
     
-    // Smoking: no=0, yes=1
-    vector.smoking = answers.personality_smoking === 'yes' ? 1 : 0;
+    const smokingMap = { no: 0, outside_only: 0.5, yes_indoors: 1 };
+    vector.smoking = smokingMap[answers.personality_smoking as keyof typeof smokingMap] ?? 0;
+
+    const homeMap = { rarely: 0, few_days: 0.33, most_days: 0.66, almost_always: 1 };
+    vector.home_frequency = homeMap[answers.personality_home_frequency as keyof typeof homeMap] ?? 0.5;
+
+    const petOwnershipMap = { no: 0, open: 0.5, yes: 1 };
+    vector.pet_ownership = petOwnershipMap[answers.personality_pet_ownership as keyof typeof petOwnershipMap] ?? 0;
+
+    const petComfortMap = { love_animals: 1, if_clean: 0.75, depends: 0.5, no_pets: 0.25, allergies: 0 };
+    vector.pet_comfort = petComfortMap[answers.personality_pet_comfort as keyof typeof petComfortMap] ?? 0.5;
     
     return vector;
   };
@@ -272,10 +337,8 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete 
 
     setSaving(true);
     try {
-      // Compute personality vector
       const personalityVector = computePersonalityVector(answers);
 
-      // Save to database
       const { data: studentData, error: fetchError } = await supabase
         .from('students')
         .select('id')

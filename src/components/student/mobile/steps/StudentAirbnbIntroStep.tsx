@@ -24,12 +24,12 @@ export function StudentAirbnbIntroStep({ onGetStarted, hasSavedProgress, onResum
     {
       number: 1,
       title: 'Tell us about yourself',
-      description: 'Share your name, hometown, and academic background to help us personalize your experience.',
+      description: 'Share your name, hometown, and background to help us personalize your experience.',
     },
     {
       number: 2,
       title: 'Set your preferences',
-      description: "Tell us what you're looking for in a dorm and whether you need a roommate match.",
+      description: "Tell us what you're looking for in a rental and your housing preferences.",
     },
     {
       number: 3,

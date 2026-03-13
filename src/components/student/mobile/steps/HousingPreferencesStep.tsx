@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { DollarSign, Users, Sparkles, MapPin } from 'lucide-react';
+import { DollarSign, Users, Sparkles, MapPin, Home, Building2 } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -18,6 +18,8 @@ interface HousingPreferencesStepProps {
     room_type: string;
     city: string;
     preferred_housing_area: string;
+    preferred_housing_type: string;
+    preferred_apartment_type: string;
     needs_roommate: boolean;
     enable_personality_matching: boolean;
   };
@@ -72,6 +74,18 @@ const HousingPreferencesStep = ({ data, onChange }: HousingPreferencesStepProps)
 
   const areas = data.city ? areasByCity[data.city] || [] : [];
   const isSingleRoomType = isSingleRoom(data.room_type || '');
+  const isRoomType = data.preferred_housing_type === 'room';
+  const isApartmentType = data.preferred_housing_type === 'apartment';
+
+  // Roommate toggle visibility
+  const showRoommateToggle = isRoomType 
+    ? (!!data.room_type && !isSingleRoomType)
+    : isApartmentType; // Always show for apartment type
+
+  const housingTypeOptions = [
+    { value: 'room', label: 'Room', icon: Home },
+    { value: 'apartment', label: 'Apartment', icon: Building2 }
+  ];
 
   return (
     <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
@@ -86,7 +100,7 @@ const HousingPreferencesStep = ({ data, onChange }: HousingPreferencesStepProps)
               Housing preferences
             </h1>
             <p className="text-muted-foreground mt-2">
-              Find dorms that fit your needs
+              Find rentals that fit your needs
             </p>
           </div>
 
@@ -180,26 +194,78 @@ const HousingPreferencesStep = ({ data, onChange }: HousingPreferencesStepProps)
             </Select>
           </div>
 
-          {/* Room Type */}
+          {/* Preferred Housing Type */}
           <div className="mb-8">
-            <Label className="text-base font-medium mb-3 block">Preferred room type</Label>
-            <Select
-              value={data.room_type}
-              onValueChange={(value) => onChange({ room_type: value })}
-            >
-              <SelectTrigger className="h-12 text-base">
-                <SelectValue placeholder="Select room type" />
-              </SelectTrigger>
-              <SelectContent className="bg-background z-50 max-h-[300px]">
-                {studentRoomTypes.map((type) => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-base font-medium mb-3 block">Preferred housing type</Label>
+            <div className="grid grid-cols-2 gap-3">
+              {housingTypeOptions.map((option) => (
+                <motion.button
+                  key={option.value}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => onChange({ 
+                    preferred_housing_type: option.value,
+                    // Reset dependent fields
+                    room_type: '',
+                    preferred_apartment_type: '',
+                    needs_roommate: false,
+                    enable_personality_matching: false
+                  })}
+                  className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${
+                    data.preferred_housing_type === option.value
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-background hover:border-primary/50'
+                  }`}
+                >
+                  <option.icon className={`w-6 h-6 ${
+                    data.preferred_housing_type === option.value ? 'text-primary' : 'text-muted-foreground'
+                  }`} />
+                  <span className="font-medium text-foreground">{option.label}</span>
+                </motion.button>
+              ))}
+            </div>
           </div>
 
+          {/* Room Type - only if housing type = room */}
+          {isRoomType && (
+            <div className="mb-8">
+              <Label className="text-base font-medium mb-3 block">Preferred room type</Label>
+              <Select
+                value={data.room_type}
+                onValueChange={(value) => onChange({ room_type: value })}
+              >
+                <SelectTrigger className="h-12 text-base">
+                  <SelectValue placeholder="Select room type" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50 max-h-[300px]">
+                  {studentRoomTypes.map((type) => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Apartment Type - only if housing type = apartment */}
+          {isApartmentType && (
+            <div className="mb-8">
+              <Label className="text-base font-medium mb-3 block">Preferred apartment type</Label>
+              <Select
+                value={data.preferred_apartment_type}
+                onValueChange={(value) => onChange({ preferred_apartment_type: value })}
+              >
+                <SelectTrigger className="h-12 text-base">
+                  <SelectValue placeholder="Select apartment type" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="family_style">Family-style apartment</SelectItem>
+                  <SelectItem value="shared">Shared apartment</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Roommate Search Toggle */}
-          {data.room_type && !isSingleRoomType && (
+          {showRoommateToggle && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
