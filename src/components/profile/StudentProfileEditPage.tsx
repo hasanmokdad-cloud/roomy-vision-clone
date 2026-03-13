@@ -956,13 +956,13 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
       <ProfileFieldModal
         open={editingField === 'current_dorm'}
         onOpenChange={(open) => !open && setEditingField(null)}
-        title="Current dorm & room"
+        title="Current housing"
         onSave={saveFieldValue}
         isSaving={saving}
       >
         <div className="space-y-4">
           <div>
-            <label className="text-sm text-[#717171] mb-1 block">Dorm</label>
+            <label className="text-sm text-[#717171] mb-1 block">Housing building</label>
             <Select 
               value={tempValue?.dormId || ''} 
               onValueChange={(val) => {
@@ -971,7 +971,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
               }}
             >
               <SelectTrigger className="border-[#DDDDDD]">
-                <SelectValue placeholder="Select dorm" />
+                <SelectValue placeholder="Select housing" />
               </SelectTrigger>
               <SelectContent>
                 {availableDorms.map((dorm) => (
