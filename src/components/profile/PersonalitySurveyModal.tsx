@@ -411,6 +411,44 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete,
     }
   };
 
+  const handleSaveAndClose = async () => {
+    setSaving(true);
+    try {
+      const { data: studentData, error: fetchError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      if (fetchError || !studentData) throw new Error('Student profile not found');
+
+      // Save only the current step's answers
+      const currentQuestionIds = currentSection.questions.map(q => q.id);
+      const stepAnswers: Record<string, any> = {};
+      currentQuestionIds.forEach(id => {
+        if (answers[id as keyof PersonalityAnswers] !== undefined) {
+          stepAnswers[id] = answers[id as keyof PersonalityAnswers];
+        }
+      });
+
+      const { error: updateError } = await supabase
+        .from('students')
+        .update(stepAnswers)
+        .eq('id', studentData.id);
+
+      if (updateError) throw updateError;
+
+      toast({ title: "Saved", description: "Your answers have been saved" });
+      onComplete();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error saving personality survey:', error);
+      toast({ title: "Error", description: "Failed to save. Please try again.", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
