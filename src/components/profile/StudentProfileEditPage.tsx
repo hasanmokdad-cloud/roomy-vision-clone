@@ -85,9 +85,36 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
   const lastContentLineRef = useRef<HTMLDivElement>(null);
   const bottomBarRef = useRef<HTMLDivElement>(null);
 
+  const PERSONALITY_COLUMNS = [
+    'personality_sleep_schedule', 'personality_noise_tolerance', 'personality_guests_frequency',
+    'personality_cleanliness_level', 'personality_shared_space_cleanliness_importance',
+    'personality_study_time', 'personality_intro_extro', 'personality_conflict_style',
+    'personality_sharing_preferences', 'personality_smoking', 'personality_cooking_frequency',
+    'personality_partner_overnight', 'personality_home_frequency',
+    'personality_conflict_address_method', 'personality_expense_handling',
+    'personality_pet_ownership', 'personality_pet_comfort'
+  ];
+
+  const computePersonalityFilledCount = (data: any) => {
+    return PERSONALITY_COLUMNS.filter(col => data[col] != null && data[col] !== '').length;
+  };
+
+  const reloadPersonalityState = async () => {
+    const { data } = await supabase
+      .from('students')
+      .select(PERSONALITY_COLUMNS.join(', '))
+      .eq('user_id', userId)
+      .single();
+    if (data) {
+      const count = computePersonalityFilledCount(data);
+      setPersonalityFilledCount(count);
+      setPersonalityTestCompleted(count === 17);
+    }
+  };
+
   const handlePersonalitySurveyComplete = () => {
-    setPersonalityTestCompleted(true);
     setShowPersonalitySurvey(false);
+    reloadPersonalityState();
   };
   
   // Scroll handler for dynamic bottom bar (Airbnb style)
