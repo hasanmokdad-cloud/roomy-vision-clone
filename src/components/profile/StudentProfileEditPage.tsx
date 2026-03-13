@@ -609,7 +609,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
 
               {accommodationStatus === 'have_dorm' && (
                 <div className="divide-y divide-[#EBEBEB]">
-                  <FieldRow icon={<Building2 className="w-5 h-5" />} label="Current dorm & room" value={getCurrentDormDisplay()} onClick={() => openFieldModal('current_dorm')} />
+                  <FieldRow icon={<Building2 className="w-5 h-5" />} label="Current housing" value={getCurrentDormDisplay()} onClick={() => openFieldModal('current_dorm')} />
                 </div>
               )}
             </div>
