@@ -423,8 +423,8 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
         if (profileData.room_type && !isSingleRoom(profileData.room_type) && needsRoommateNewDorm) {
           return 'Find Matches';
         }
-        // Otherwise just looking for dorm -> "Find Dorm Matches"
-        return 'Find Dorm Matches';
+        // Otherwise just looking for dorm -> "Find Matches"
+        return 'Find Matches';
       }
     }
     
