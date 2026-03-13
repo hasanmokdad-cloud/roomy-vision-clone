@@ -226,6 +226,11 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
       setCurrentRoomId(data.current_room_id || '');
       setSelectedCity((data.preferred_city as 'Byblos' | 'Beirut' | '') || '');
       setSelectedAreas(data.preferred_areas || []);
+      setTenantRole(data.tenant_role || null);
+      setPersonalityFilledCount(computePersonalityFilledCount(data));
+      if (computePersonalityFilledCount(data) === 17) {
+        setPersonalityTestCompleted(true);
+      }
     }
     setLoading(false);
   };
