@@ -500,7 +500,8 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
                 My profile
               </h2>
               <p className="text-base text-[#717171] leading-relaxed">
-                Students can see your profile when looking for roommates or dorms.
+                Other tenants can see your profile when looking for rentals or roommates.
+              </p>
               </p>
             </div>
 
