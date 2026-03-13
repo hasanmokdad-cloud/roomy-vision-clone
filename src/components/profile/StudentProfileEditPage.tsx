@@ -78,6 +78,8 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
   const [isRoomConfirmed, setIsRoomConfirmed] = useState(false);
   const [showPersonalitySurvey, setShowPersonalitySurvey] = useState(false);
   const [showFixedBottomBar, setShowFixedBottomBar] = useState(true);
+  const [tenantRole, setTenantRole] = useState<string | null>(null);
+  const [personalityFilledCount, setPersonalityFilledCount] = useState(0);
   
   // Refs for dynamic bottom bar behavior
   const lastContentLineRef = useRef<HTMLDivElement>(null);
