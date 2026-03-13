@@ -286,7 +286,7 @@ export default function Messages() {
   // Track if user was trying to record when permission modal appeared
   const pendingRecordingRef = useRef(false);
   // Safety timeout ref to reset stuck states
-  const stuckResetTimeoutRef = useRef<NodeJS.Timeout>();
+  const stuckResetTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
   // In-conversation search state
   const [showConversationSearch, setShowConversationSearch] = useState(false);
