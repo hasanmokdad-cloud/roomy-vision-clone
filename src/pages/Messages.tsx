@@ -253,7 +253,7 @@ export default function Messages() {
   const [previewProgress, setPreviewProgress] = useState(0);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
-  const previewIntervalRef = useRef<NodeJS.Timeout>();
+  const previewIntervalRef = useRef<ReturnType<typeof setInterval>>();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
