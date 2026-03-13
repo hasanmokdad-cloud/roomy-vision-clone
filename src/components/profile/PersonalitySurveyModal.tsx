@@ -526,35 +526,47 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete,
               variant="outline"
               onClick={handleBack}
               disabled={currentStep === 0}
-              className="flex-1"
+              className={openedFrom === 'profile' ? '' : 'flex-1'}
             >
               <ChevronLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
             
-            {currentStep < totalSteps - 1 ? (
-              <Button
-                onClick={handleNext}
-                disabled={!isStepComplete()}
-                className="flex-1"
-              >
-                Next
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleSubmit}
-                disabled={!isStepComplete() || saving}
-                className="flex-1"
-              >
-                {saving ? "Saving..." : (
-                  <>
-                    Complete
-                    <Check className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            )}
+            <div className="flex gap-2 flex-1 justify-end">
+              {openedFrom === 'profile' && (
+                <Button
+                  variant="outline"
+                  onClick={handleSaveAndClose}
+                  disabled={saving}
+                >
+                  {saving ? "Saving..." : "Save"}
+                </Button>
+              )}
+              
+              {currentStep < totalSteps - 1 ? (
+                <Button
+                  onClick={handleNext}
+                  disabled={!isStepComplete()}
+                  className={openedFrom === 'profile' ? '' : 'flex-1'}
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!isStepComplete() || saving}
+                  className={openedFrom === 'profile' ? '' : 'flex-1'}
+                >
+                  {saving ? "Saving..." : (
+                    <>
+                      Complete
+                      <Check className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>
