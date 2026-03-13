@@ -516,7 +516,46 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
               </div>
             </div>
 
-            {/* Academic Information */}
+            {/* Your Role */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-[#222222] mb-1">Your Role</h3>
+              <p className="text-sm text-[#717171] mb-4">This helps us personalize your experience and show relevant listings.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={async () => {
+                    setTenantRole('student');
+                    await supabase.from('students').update({ tenant_role: 'student' }).eq('user_id', userId);
+                  }}
+                  className={`flex-1 py-4 px-6 rounded-xl border-2 transition-all ${
+                    tenantRole === 'student'
+                      ? 'border-[#222222] bg-[#F7F7F7]'
+                      : 'border-[#DDDDDD] hover:border-[#222222]'
+                  }`}
+                >
+                  <span className="block text-2xl mb-1">🎓</span>
+                  <span className="block text-sm font-medium text-[#222222]">Student</span>
+                  <span className="block text-xs text-[#717171] mt-1">I'm currently enrolled at a university</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    setTenantRole('non_student');
+                    await supabase.from('students').update({ tenant_role: 'non_student' }).eq('user_id', userId);
+                  }}
+                  className={`flex-1 py-4 px-6 rounded-xl border-2 transition-all ${
+                    tenantRole === 'non_student'
+                      ? 'border-[#222222] bg-[#F7F7F7]'
+                      : 'border-[#DDDDDD] hover:border-[#222222]'
+                  }`}
+                >
+                  <span className="block text-2xl mb-1">💼</span>
+                  <span className="block text-sm font-medium text-[#222222]">Non-student</span>
+                  <span className="block text-xs text-[#717171] mt-1">I'm a professional, graduate, or working resident</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Academic Information - only show for students */}
+            {tenantRole === 'student' && (
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-[#222222] mb-4">Academic Information</h3>
               <div className="divide-y divide-[#EBEBEB]">
@@ -525,6 +564,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
                 <FieldRow icon={<BookOpen className="w-5 h-5" />} label="Year of study" value={profileData.year_of_study?.toString()} onClick={() => openFieldModal('year_of_study')} />
               </div>
             </div>
+            )}
 
             {/* Accommodation Status */}
             <div className="mb-8">
