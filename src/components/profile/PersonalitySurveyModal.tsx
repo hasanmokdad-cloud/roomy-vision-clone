@@ -14,6 +14,7 @@ interface PersonalitySurveyModalProps {
   onOpenChange: (open: boolean) => void;
   userId: string;
   onComplete: () => void;
+  openedFrom?: 'wizard' | 'profile';
 }
 
 interface PersonalityAnswers {
