@@ -42,7 +42,7 @@ interface PersonalityAnswers {
   personality_pet_comfort: string;
 }
 
-export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete }: PersonalitySurveyModalProps) => {
+export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete, openedFrom = 'wizard' }: PersonalitySurveyModalProps) => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -50,6 +50,36 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete 
   const [answers, setAnswers] = useState<Partial<PersonalityAnswers>>({
     personality_shared_space_cleanliness_importance: 3
   });
+
+  // Pre-fill answers from DB when opened from profile
+  useEffect(() => {
+    if (open && openedFrom === 'profile') {
+      const loadExistingAnswers = async () => {
+        const { data } = await supabase
+          .from('students')
+          .select('personality_sleep_schedule, personality_noise_tolerance, personality_guests_frequency, personality_partner_overnight, personality_cleanliness_level, personality_shared_space_cleanliness_importance, personality_study_time, personality_home_frequency, personality_intro_extro, personality_conflict_style, personality_conflict_address_method, personality_sharing_preferences, personality_smoking, personality_cooking_frequency, personality_expense_handling, personality_pet_ownership, personality_pet_comfort')
+          .eq('user_id', userId)
+          .single();
+        
+        if (data) {
+          const prefilled: Partial<PersonalityAnswers> = {};
+          Object.entries(data).forEach(([key, value]) => {
+            if (value != null && value !== '') {
+              (prefilled as any)[key] = value;
+            }
+          });
+          if (!prefilled.personality_shared_space_cleanliness_importance) {
+            prefilled.personality_shared_space_cleanliness_importance = 3;
+          }
+          setAnswers(prefilled);
+        }
+      };
+      loadExistingAnswers();
+    }
+    if (!open) {
+      setCurrentStep(0);
+    }
+  }, [open, openedFrom, userId]);
 
   const questions = [
     // Step 1: Lifestyle & Daily Rhythm
