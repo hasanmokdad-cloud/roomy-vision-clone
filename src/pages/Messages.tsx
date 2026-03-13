@@ -2317,7 +2317,7 @@ export default function Messages() {
   const attachMicTouchHandlers = useCallback((micButton: HTMLButtonElement | null) => {
     if (!isMobile || !micButton) return () => {};
     
-    let pressTimer: NodeJS.Timeout;
+    let pressTimer: ReturnType<typeof setTimeout>;
     
     const handleTouchStart = (e: TouchEvent) => {
       e.preventDefault();

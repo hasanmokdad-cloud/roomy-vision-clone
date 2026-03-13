@@ -10,7 +10,7 @@ export { setGlobalActiveConversation };
 export function useUnreadMessagesCount(userId?: string, role?: string) {
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const loadUnreadCount = useCallback(async () => {
     if (!userId || !role) return;
