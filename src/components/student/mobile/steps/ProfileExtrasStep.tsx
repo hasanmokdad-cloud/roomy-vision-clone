@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Camera, Phone } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Phone } from 'lucide-react';
+import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
 
 interface ProfileExtrasStepProps {
   data: {
@@ -10,9 +10,11 @@ interface ProfileExtrasStepProps {
     phone_number: string;
   };
   onChange: (data: Partial<ProfileExtrasStepProps['data']>) => void;
+  userId: string;
+  userInitial: string;
 }
 
-const ProfileExtrasStep = ({ data, onChange }: ProfileExtrasStepProps) => {
+const ProfileExtrasStep = ({ data, onChange, userId, userInitial }: ProfileExtrasStepProps) => {
   return (
     <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
       <div className="w-full max-w-xl mx-auto">
@@ -32,27 +34,19 @@ const ProfileExtrasStep = ({ data, onChange }: ProfileExtrasStepProps) => {
 
           {/* Profile Photo */}
           <div className="mb-8">
-            <Label className="text-base font-medium mb-3 block">Profile photo</Label>
-            <div className="flex items-center gap-4">
-              <Avatar className="w-20 h-20">
-                <AvatarImage src={data.profile_photo_url} />
-                <AvatarFallback className="bg-muted">
-                  <Camera className="w-8 h-8 text-muted-foreground" />
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <Input
-                  type="url"
-                  value={data.profile_photo_url}
-                  onChange={(e) => onChange({ profile_photo_url: e.target.value })}
-                  placeholder="Paste image URL or skip"
-                  className="h-12"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  A photo helps roommates recognize you
-                </p>
-              </div>
+            <Label className="text-base font-medium mb-3 block text-center">Profile photo</Label>
+            <div className="flex justify-center">
+              <ProfilePhotoUpload
+                userId={userId}
+                currentUrl={data.profile_photo_url || null}
+                onUploaded={(url) => onChange({ profile_photo_url: url })}
+                tableName="students"
+                userInitial={userInitial}
+              />
             </div>
+            <p className="text-sm text-muted-foreground mt-4 text-center">
+              A photo helps other tenants, including potential roommates, and owners to recognize you
+            </p>
           </div>
 
           {/* Phone Number */}

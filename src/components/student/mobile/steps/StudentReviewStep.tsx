@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { User, MapPin, GraduationCap, Home, DollarSign, Edit2, CheckCircle } from 'lucide-react';
+import { User, MapPin, GraduationCap, Home, DollarSign, Edit2, CheckCircle, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface StudentReviewStepProps {
@@ -7,6 +7,7 @@ interface StudentReviewStepProps {
     full_name: string;
     age: number;
     gender: string;
+    tenant_role: string;
     governorate: string;
     district: string;
     university: string;
@@ -16,6 +17,8 @@ interface StudentReviewStepProps {
     preferred_housing_area: string;
     budget: number;
     room_type: string;
+    preferred_housing_type: string;
+    preferred_apartment_type: string;
     accommodation_status: string;
     needs_roommate: boolean;
   };
@@ -23,6 +26,10 @@ interface StudentReviewStepProps {
 }
 
 const StudentReviewStep = ({ data, onEdit }: StudentReviewStepProps) => {
+  const isNonStudent = data.tenant_role === 'non_student';
+
+  const roleDisplay = data.tenant_role === 'student' ? 'Student' : data.tenant_role === 'non_student' ? 'Non-student' : 'Not set';
+
   const sections = [
     {
       title: 'Personal Info',
@@ -35,6 +42,14 @@ const StudentReviewStep = ({ data, onEdit }: StudentReviewStepProps) => {
       ]
     },
     {
+      title: 'Role',
+      icon: Briefcase,
+      step: 2,
+      items: [
+        { label: 'Role', value: roleDisplay }
+      ]
+    },
+    {
       title: 'Location',
       icon: MapPin,
       step: 3,
@@ -42,7 +57,7 @@ const StudentReviewStep = ({ data, onEdit }: StudentReviewStepProps) => {
         { label: 'From', value: [data.district, data.governorate].filter(Boolean).join(', ') || 'Not set' }
       ]
     },
-    {
+    ...(!isNonStudent ? [{
       title: 'Academic',
       icon: GraduationCap,
       step: 4,
@@ -51,26 +66,34 @@ const StudentReviewStep = ({ data, onEdit }: StudentReviewStepProps) => {
         { label: 'Major', value: data.major || 'Not set' },
         { label: 'Year', value: data.year_of_study ? `Year ${data.year_of_study}` : 'Not set' }
       ]
-    },
+    }] : []),
     {
       title: 'Preferences',
       icon: Home,
-      step: 8,
+      step: 6,
       items: [
-        { label: 'City', value: data.city ? data.city.charAt(0).toUpperCase() + data.city.slice(1) : 'Not set' },
-        { label: 'Area', value: data.preferred_housing_area?.replace(/_/g, ' ') || 'Not set' }
+        { label: 'Status', value: data.accommodation_status === 'need_dorm' ? 'Need Housing' : data.accommodation_status === 'have_dorm' ? 'Have Housing' : 'Not set' },
+        ...(data.accommodation_status === 'need_dorm' ? [
+          { label: 'City', value: data.city ? data.city.charAt(0).toUpperCase() + data.city.slice(1) : 'Not set' },
+          { label: 'Area', value: data.preferred_housing_area?.replace(/_/g, ' ') || 'Not set' },
+          { label: 'Housing type', value: data.preferred_housing_type ? data.preferred_housing_type.charAt(0).toUpperCase() + data.preferred_housing_type.slice(1) : 'Not set' },
+        ] : [])
       ]
     },
-    {
+    ...(data.accommodation_status === 'need_dorm' ? [{
       title: 'Budget & Type',
       icon: DollarSign,
-      step: 9,
+      step: 7,
       items: [
         { label: 'Budget', value: data.budget ? `$${data.budget}/mo` : 'Not set' },
-        { label: 'Room type', value: data.room_type || 'Not set' },
-        { label: 'Status', value: data.accommodation_status?.replace(/_/g, ' ') || 'Not set' }
+        ...(data.preferred_housing_type === 'room' ? [
+          { label: 'Room type', value: data.room_type || 'Not set' }
+        ] : []),
+        ...(data.preferred_housing_type === 'apartment' ? [
+          { label: 'Apartment type', value: data.preferred_apartment_type?.replace(/_/g, ' ') || 'Not set' }
+        ] : []),
       ]
-    }
+    }] : [])
   ];
 
   const isComplete = (items: { value: string }[]) => {
@@ -150,7 +173,7 @@ const StudentReviewStep = ({ data, onEdit }: StudentReviewStepProps) => {
             className="mt-8 p-4 rounded-xl bg-primary/5 border border-primary/20"
           >
             <p className="text-sm text-foreground">
-              <strong>Ready to go!</strong> Your profile will help us find the perfect dorms and roommates for you.
+              <strong>Ready to go!</strong> Your profile will help us find the perfect rentals and roommates for you.
             </p>
           </motion.div>
         </motion.div>

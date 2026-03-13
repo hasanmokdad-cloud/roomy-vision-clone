@@ -9,6 +9,7 @@ interface BasicInfoStepProps {
     full_name: string;
     age: number;
     gender: string;
+    tenant_role: string;
   };
   onChange: (data: Partial<BasicInfoStepProps['data']>) => void;
 }
@@ -17,6 +18,11 @@ const BasicInfoStep = ({ data, onChange }: BasicInfoStepProps) => {
   const genderOptions = [
     { value: 'Male', label: 'Male', emoji: '👨' },
     { value: 'Female', label: 'Female', emoji: '👩' }
+  ];
+
+  const roleOptions = [
+    { value: 'student', label: 'Student', emoji: '🎓' },
+    { value: 'non_student', label: 'Non-student', emoji: '💼' }
   ];
 
   return (
@@ -32,7 +38,7 @@ const BasicInfoStep = ({ data, onChange }: BasicInfoStepProps) => {
               Tell us about yourself
             </h1>
             <p className="text-muted-foreground mt-2">
-              This helps match you with compatible dorms and roommates
+              This helps us personalize your experience
             </p>
           </div>
 
@@ -79,7 +85,7 @@ const BasicInfoStep = ({ data, onChange }: BasicInfoStepProps) => {
           </div>
 
           {/* Gender */}
-          <div>
+          <div className="mb-8">
             <Label className="text-base font-medium">Gender</Label>
             <div className="grid grid-cols-2 gap-3 mt-2">
               {genderOptions.map((option) => (
@@ -89,6 +95,28 @@ const BasicInfoStep = ({ data, onChange }: BasicInfoStepProps) => {
                   onClick={() => onChange({ gender: option.value })}
                   className={`p-4 rounded-xl border-2 transition-all ${
                     data.gender === option.value
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-background hover:border-primary/50'
+                  }`}
+                >
+                  <span className="text-3xl mb-2 block">{option.emoji}</span>
+                  <span className="font-medium text-foreground">{option.label}</span>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+
+          {/* Role */}
+          <div>
+            <Label className="text-base font-medium">Role</Label>
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              {roleOptions.map((option) => (
+                <motion.button
+                  key={option.value}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => onChange({ tenant_role: option.value })}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    data.tenant_role === option.value
                       ? 'border-primary bg-primary/5'
                       : 'border-border bg-background hover:border-primary/50'
                   }`}
