@@ -307,7 +307,7 @@ export default function Messages() {
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const recordingTimerRef = useRef<NodeJS.Timeout>();
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval>>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const touchStartTimeRef = useRef<number>(0);
   const touchStartPosRef = useRef({ x: 0, y: 0 });
