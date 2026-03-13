@@ -21,6 +21,7 @@ interface AboutMeTabProps {
   userName: string;
   profilePhotoUrl: string | null;
   hasCompletedProfile: boolean;
+  tenantRole: string | null;
   onEditClick: () => void;
   onGetStartedClick: () => void;
 }
@@ -30,6 +31,7 @@ export function AboutMeTab({
   userName,
   profilePhotoUrl,
   hasCompletedProfile,
+  tenantRole,
   onEditClick,
   onGetStartedClick,
 }: AboutMeTabProps) {
@@ -74,7 +76,12 @@ export function AboutMeTab({
               {userName || 'Guest'}
             </h3>
             {/* Role Label */}
-            <p className="text-base text-[#717171]">Student</p>
+            {tenantRole === 'student' && (
+              <p className="text-base text-[#717171]">🎓 Student</p>
+            )}
+            {tenantRole === 'non_student' && (
+              <p className="text-base text-[#717171]">💼 Non-student</p>
+            )}
           </div>
         </div>
 
@@ -87,7 +94,7 @@ export function AboutMeTab({
             Complete your profile
           </h3>
           <p className="text-base text-[#717171] mb-6 leading-relaxed">
-            Your Tenanters profile is an important part of every reservation. Complete yours to help other students get to know you.
+            Your Tenanters profile is an important part of every reservation. Complete yours to help other tenants get to know you.
           </p>
           <Button
             onClick={onGetStartedClick}

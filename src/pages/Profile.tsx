@@ -85,7 +85,7 @@ export default function Profile() {
       if (role === 'student' || role === null) {
         const { data: student } = await supabase
           .from('students')
-          .select('id, profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed, age, major, year_of_study, preferred_housing_area')
+          .select('id, profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed, age, major, year_of_study, preferred_housing_area, tenant_role')
           .eq('user_id', userId)
           .maybeSingle(); // Use maybeSingle for new accounts that may not have a record
         
@@ -154,7 +154,7 @@ export default function Profile() {
     
     const { data: student } = await supabase
       .from('students')
-      .select('id, profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed, age, major, year_of_study, preferred_housing_area')
+      .select('id, profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed, age, major, year_of_study, preferred_housing_area, tenant_role')
       .eq('user_id', userId)
       .maybeSingle();
     
@@ -336,7 +336,12 @@ export default function Profile() {
                 <h2 className="text-xl font-semibold text-foreground">
                   {userName || 'Your Name'}
                 </h2>
-                <p className="text-muted-foreground text-sm">Student</p>
+                {studentProfileData?.tenant_role === 'student' && (
+                  <span className="text-muted-foreground text-sm">🎓 Student</span>
+                )}
+                {studentProfileData?.tenant_role === 'non_student' && (
+                  <span className="text-muted-foreground text-sm">💼 Non-student</span>
+                )}
               </button>
 
               {/* Profile Visibility Notice */}
@@ -354,7 +359,7 @@ export default function Profile() {
                     <div className="flex-1">
                       <h3 className="font-semibold text-white mb-1">Complete Your Profile</h3>
                       <p className="text-sm text-white/80 mb-3">
-                        Set up your profile to get personalized dorm matches
+                        Set up your profile to get personalized rental matches
                       </p>
                       <Button
                         onClick={() => setShowOnboardingDrawer(true)}
@@ -591,7 +596,7 @@ export default function Profile() {
       if (!userId) return;
       const { data: student } = await supabase
         .from('students')
-        .select('id, profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed, age, major, year_of_study, preferred_housing_area')
+        .select('id, profile_photo_url, full_name, university, gender, governorate, district, accommodation_status, budget, room_type, personality_test_completed, age, major, year_of_study, preferred_housing_area, tenant_role')
         .eq('user_id', userId)
         .maybeSingle();
       
@@ -637,11 +642,12 @@ export default function Profile() {
               onProfileUpdated={handleProfileUpdated}
             />
           ) : activeProfileTab === 'about' ? (
-            <AboutMeTab
+          <AboutMeTab
               profileData={studentProfileData}
               userName={userName}
               profilePhotoUrl={profilePhotoUrl}
               hasCompletedProfile={hasCompletedProfile}
+              tenantRole={studentProfileData?.tenant_role || null}
               onEditClick={() => navigate('/profile?editMode=true')}
               onGetStartedClick={() => navigate('/onboarding/tenant')}
             />

@@ -46,6 +46,7 @@ interface StudentProfile {
   current_room_id?: string;
   profile_photo_url?: string;
   room_confirmed?: boolean;
+  tenant_role?: string;
 }
 
 // Area data by city
@@ -77,14 +78,43 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
   const [isRoomConfirmed, setIsRoomConfirmed] = useState(false);
   const [showPersonalitySurvey, setShowPersonalitySurvey] = useState(false);
   const [showFixedBottomBar, setShowFixedBottomBar] = useState(true);
+  const [tenantRole, setTenantRole] = useState<string | null>(null);
+  const [personalityFilledCount, setPersonalityFilledCount] = useState(0);
   
   // Refs for dynamic bottom bar behavior
   const lastContentLineRef = useRef<HTMLDivElement>(null);
   const bottomBarRef = useRef<HTMLDivElement>(null);
 
+  const PERSONALITY_COLUMNS = [
+    'personality_sleep_schedule', 'personality_noise_tolerance', 'personality_guests_frequency',
+    'personality_cleanliness_level', 'personality_shared_space_cleanliness_importance',
+    'personality_study_time', 'personality_intro_extro', 'personality_conflict_style',
+    'personality_sharing_preferences', 'personality_smoking', 'personality_cooking_frequency',
+    'personality_partner_overnight', 'personality_home_frequency',
+    'personality_conflict_address_method', 'personality_expense_handling',
+    'personality_pet_ownership', 'personality_pet_comfort'
+  ];
+
+  const computePersonalityFilledCount = (data: any) => {
+    return PERSONALITY_COLUMNS.filter(col => data[col] != null && data[col] !== '').length;
+  };
+
+  const reloadPersonalityState = async () => {
+    const { data } = await supabase
+      .from('students')
+      .select(PERSONALITY_COLUMNS.join(', '))
+      .eq('user_id', userId)
+      .single();
+    if (data) {
+      const count = computePersonalityFilledCount(data);
+      setPersonalityFilledCount(count);
+      setPersonalityTestCompleted(count === 17);
+    }
+  };
+
   const handlePersonalitySurveyComplete = () => {
-    setPersonalityTestCompleted(true);
     setShowPersonalitySurvey(false);
+    reloadPersonalityState();
   };
   
   // Scroll handler for dynamic bottom bar (Airbnb style)
@@ -196,6 +226,11 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
       setCurrentRoomId(data.current_room_id || '');
       setSelectedCity((data.preferred_city as 'Byblos' | 'Beirut' | '') || '');
       setSelectedAreas(data.preferred_areas || []);
+      setTenantRole(data.tenant_role || null);
+      setPersonalityFilledCount(computePersonalityFilledCount(data));
+      if (computePersonalityFilledCount(data) === 17) {
+        setPersonalityTestCompleted(true);
+      }
     }
     setLoading(false);
   };
@@ -354,12 +389,12 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
   };
 
   const getCurrentDormDisplay = () => {
-    if (!currentDormId) return 'Select your dorm';
+    if (!currentDormId) return 'Select your housing';
     const dorm = availableDorms.find(d => d.id === currentDormId);
     const room = availableRooms.find(r => r.id === currentRoomId);
     if (dorm && room) return `${dorm.name} · ${room.name}`;
     if (dorm) return dorm.name;
-    return 'Select your dorm';
+    return 'Select your housing';
   };
 
   const getMatchButtonText = () => {
@@ -388,8 +423,8 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
         if (profileData.room_type && !isSingleRoom(profileData.room_type) && needsRoommateNewDorm) {
           return 'Find Matches';
         }
-        // Otherwise just looking for dorm -> "Find Dorm Matches"
-        return 'Find Dorm Matches';
+        // Otherwise just looking for dorm -> "Find Matches"
+        return 'Find Matches';
       }
     }
     
@@ -465,7 +500,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
                 My profile
               </h2>
               <p className="text-base text-[#717171] leading-relaxed">
-                Students can see your profile when looking for roommates or dorms.
+                Other tenants can see your profile when looking for rentals or roommates.
               </p>
             </div>
 
@@ -480,7 +515,46 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
               </div>
             </div>
 
-            {/* Academic Information */}
+            {/* Your Role */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-[#222222] mb-1">Your Role</h3>
+              <p className="text-sm text-[#717171] mb-4">This helps us personalize your experience and show relevant listings.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={async () => {
+                    setTenantRole('student');
+                    await supabase.from('students').update({ tenant_role: 'student' }).eq('user_id', userId);
+                  }}
+                  className={`flex-1 py-4 px-6 rounded-xl border-2 transition-all ${
+                    tenantRole === 'student'
+                      ? 'border-[#222222] bg-[#F7F7F7]'
+                      : 'border-[#DDDDDD] hover:border-[#222222]'
+                  }`}
+                >
+                  <span className="block text-2xl mb-1">🎓</span>
+                  <span className="block text-sm font-medium text-[#222222]">Student</span>
+                  <span className="block text-xs text-[#717171] mt-1">I'm currently enrolled at a university</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    setTenantRole('non_student');
+                    await supabase.from('students').update({ tenant_role: 'non_student' }).eq('user_id', userId);
+                  }}
+                  className={`flex-1 py-4 px-6 rounded-xl border-2 transition-all ${
+                    tenantRole === 'non_student'
+                      ? 'border-[#222222] bg-[#F7F7F7]'
+                      : 'border-[#DDDDDD] hover:border-[#222222]'
+                  }`}
+                >
+                  <span className="block text-2xl mb-1">💼</span>
+                  <span className="block text-sm font-medium text-[#222222]">Non-student</span>
+                  <span className="block text-xs text-[#717171] mt-1">I'm a professional, graduate, or working resident</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Academic Information - only show for students */}
+            {tenantRole === 'student' && (
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-[#222222] mb-4">Academic Information</h3>
               <div className="divide-y divide-[#EBEBEB]">
@@ -489,6 +563,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
                 <FieldRow icon={<BookOpen className="w-5 h-5" />} label="Year of study" value={profileData.year_of_study?.toString()} onClick={() => openFieldModal('year_of_study')} />
               </div>
             </div>
+            )}
 
             {/* Accommodation Status */}
             <div className="mb-8">
@@ -503,22 +578,22 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
                       : 'border-[#DDDDDD] hover:border-[#222222]'
                   } ${isRoomConfirmed ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <Search className="w-6 h-6 mx-auto mb-2 text-[#222222]" />
-                  <span className="block text-sm font-medium text-[#222222]">Need Dorm</span>
-                  <span className="block text-xs text-[#717171] mt-1">I'm looking for a dorm</span>
-                </button>
-                <button
-                  onClick={() => handleAccommodationStatusChange('have_dorm')}
-                  disabled={isRoomConfirmed}
-                  className={`flex-1 py-4 px-6 rounded-xl border-2 transition-all ${
-                    accommodationStatus === 'have_dorm'
-                      ? 'border-[#222222] bg-[#F7F7F7]'
-                      : 'border-[#DDDDDD] hover:border-[#222222]'
-                  } ${isRoomConfirmed ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <Building2 className="w-6 h-6 mx-auto mb-2 text-[#222222]" />
-                  <span className="block text-sm font-medium text-[#222222]">Have Dorm</span>
-                  <span className="block text-xs text-[#717171] mt-1">I already have a dorm</span>
+                   <Search className="w-6 h-6 mx-auto mb-2 text-[#222222]" />
+                   <span className="block text-sm font-medium text-[#222222]">Need a Place</span>
+                   <span className="block text-xs text-[#717171] mt-1">I'm looking for accommodation</span>
+                 </button>
+                 <button
+                   onClick={() => handleAccommodationStatusChange('have_dorm')}
+                   disabled={isRoomConfirmed}
+                   className={`flex-1 py-4 px-6 rounded-xl border-2 transition-all ${
+                     accommodationStatus === 'have_dorm'
+                       ? 'border-[#222222] bg-[#F7F7F7]'
+                       : 'border-[#DDDDDD] hover:border-[#222222]'
+                   } ${isRoomConfirmed ? 'opacity-50 cursor-not-allowed' : ''}`}
+                 >
+                   <Building2 className="w-6 h-6 mx-auto mb-2 text-[#222222]" />
+                   <span className="block text-sm font-medium text-[#222222]">Have a Place</span>
+                   <span className="block text-xs text-[#717171] mt-1">I already have accommodation</span>
                 </button>
               </div>
 
@@ -533,7 +608,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
 
               {accommodationStatus === 'have_dorm' && (
                 <div className="divide-y divide-[#EBEBEB]">
-                  <FieldRow icon={<Building2 className="w-5 h-5" />} label="Current dorm & room" value={getCurrentDormDisplay()} onClick={() => openFieldModal('current_dorm')} />
+                  <FieldRow icon={<Building2 className="w-5 h-5" />} label="Current housing" value={getCurrentDormDisplay()} onClick={() => openFieldModal('current_dorm')} />
                 </div>
               )}
             </div>
@@ -564,18 +639,28 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
                         <div>
                           <p className="text-[15px] text-[#222222]">AI Personality Matching</p>
                           <p className="text-sm text-[#717171]">
-                            {personalityTestCompleted ? 'Survey completed' : 'Take the personality survey'}
+                            {personalityFilledCount === 17 
+                              ? 'Survey completed' 
+                              : personalityFilledCount > 0 
+                                ? `${personalityFilledCount}/17 questions answered`
+                                : 'Take the personality survey'}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <Button
-                          variant="outline"
                           size="sm"
                           onClick={() => setShowPersonalitySurvey(true)}
-                          className="text-[#222222] border-[#222222] hover:bg-[#F7F7F7] font-medium"
+                          variant={personalityFilledCount === 17 ? 'ghost' : personalityFilledCount > 0 ? 'outline' : 'default'}
+                          className={
+                            personalityFilledCount === 0 
+                              ? 'bg-gradient-to-r from-primary to-primary/80 text-white font-medium' 
+                              : personalityFilledCount === 17
+                                ? 'text-[#222222] font-medium'
+                                : 'text-[#222222] border-[#222222] hover:bg-[#F7F7F7] font-medium'
+                          }
                         >
-                          {personalityTestCompleted ? 'Edit' : 'Start'}
+                          {personalityFilledCount === 0 ? 'Start' : personalityFilledCount === 17 ? 'Edit' : `Continue (${personalityFilledCount}/17)`}
                         </Button>
                         <Switch
                           checked={enablePersonalityMatching}
@@ -871,13 +956,13 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
       <ProfileFieldModal
         open={editingField === 'current_dorm'}
         onOpenChange={(open) => !open && setEditingField(null)}
-        title="Current dorm & room"
+        title="Current housing"
         onSave={saveFieldValue}
         isSaving={saving}
       >
         <div className="space-y-4">
           <div>
-            <label className="text-sm text-[#717171] mb-1 block">Dorm</label>
+            <label className="text-sm text-[#717171] mb-1 block">Housing building</label>
             <Select 
               value={tempValue?.dormId || ''} 
               onValueChange={(val) => {
@@ -886,7 +971,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
               }}
             >
               <SelectTrigger className="border-[#DDDDDD]">
-                <SelectValue placeholder="Select dorm" />
+                <SelectValue placeholder="Select housing" />
               </SelectTrigger>
               <SelectContent>
                 {availableDorms.map((dorm) => (
@@ -926,6 +1011,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
         onOpenChange={setShowPersonalitySurvey}
         userId={userId}
         onComplete={handlePersonalitySurveyComplete}
+        openedFrom="profile"
       />
     </div>
   );

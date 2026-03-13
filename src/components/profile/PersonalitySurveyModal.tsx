@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ interface PersonalitySurveyModalProps {
   onOpenChange: (open: boolean) => void;
   userId: string;
   onComplete: () => void;
+  openedFrom?: 'wizard' | 'profile';
 }
 
 interface PersonalityAnswers {
@@ -41,7 +42,7 @@ interface PersonalityAnswers {
   personality_pet_comfort: string;
 }
 
-export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete }: PersonalitySurveyModalProps) => {
+export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete, openedFrom = 'wizard' }: PersonalitySurveyModalProps) => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -49,6 +50,36 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete 
   const [answers, setAnswers] = useState<Partial<PersonalityAnswers>>({
     personality_shared_space_cleanliness_importance: 3
   });
+
+  // Pre-fill answers from DB when opened from profile
+  useEffect(() => {
+    if (open && openedFrom === 'profile') {
+      const loadExistingAnswers = async () => {
+        const { data } = await supabase
+          .from('students')
+          .select('personality_sleep_schedule, personality_noise_tolerance, personality_guests_frequency, personality_partner_overnight, personality_cleanliness_level, personality_shared_space_cleanliness_importance, personality_study_time, personality_home_frequency, personality_intro_extro, personality_conflict_style, personality_conflict_address_method, personality_sharing_preferences, personality_smoking, personality_cooking_frequency, personality_expense_handling, personality_pet_ownership, personality_pet_comfort')
+          .eq('user_id', userId)
+          .single();
+        
+        if (data) {
+          const prefilled: Partial<PersonalityAnswers> = {};
+          Object.entries(data).forEach(([key, value]) => {
+            if (value != null && value !== '') {
+              (prefilled as any)[key] = value;
+            }
+          });
+          if (!prefilled.personality_shared_space_cleanliness_importance) {
+            prefilled.personality_shared_space_cleanliness_importance = 3;
+          }
+          setAnswers(prefilled);
+        }
+      };
+      loadExistingAnswers();
+    }
+    if (!open) {
+      setCurrentStep(0);
+    }
+  }, [open, openedFrom, userId]);
 
   const questions = [
     // Step 1: Lifestyle & Daily Rhythm
@@ -380,6 +411,44 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete 
     }
   };
 
+  const handleSaveAndClose = async () => {
+    setSaving(true);
+    try {
+      const { data: studentData, error: fetchError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      if (fetchError || !studentData) throw new Error('Student profile not found');
+
+      // Save only the current step's answers
+      const currentQuestionIds = currentSection.questions.map(q => q.id);
+      const stepAnswers: Record<string, any> = {};
+      currentQuestionIds.forEach(id => {
+        if (answers[id as keyof PersonalityAnswers] !== undefined) {
+          stepAnswers[id] = answers[id as keyof PersonalityAnswers];
+        }
+      });
+
+      const { error: updateError } = await supabase
+        .from('students')
+        .update(stepAnswers)
+        .eq('id', studentData.id);
+
+      if (updateError) throw updateError;
+
+      toast({ title: "Saved", description: "Your answers have been saved" });
+      onComplete();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error saving personality survey:', error);
+      toast({ title: "Error", description: "Failed to save. Please try again.", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -457,35 +526,47 @@ export const PersonalitySurveyModal = ({ open, onOpenChange, userId, onComplete 
               variant="outline"
               onClick={handleBack}
               disabled={currentStep === 0}
-              className="flex-1"
+              className={openedFrom === 'profile' ? '' : 'flex-1'}
             >
               <ChevronLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
             
-            {currentStep < totalSteps - 1 ? (
-              <Button
-                onClick={handleNext}
-                disabled={!isStepComplete()}
-                className="flex-1"
-              >
-                Next
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleSubmit}
-                disabled={!isStepComplete() || saving}
-                className="flex-1"
-              >
-                {saving ? "Saving..." : (
-                  <>
-                    Complete
-                    <Check className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            )}
+            <div className="flex gap-2 flex-1 justify-end">
+              {openedFrom === 'profile' && (
+                <Button
+                  variant="outline"
+                  onClick={handleSaveAndClose}
+                  disabled={saving}
+                >
+                  {saving ? "Saving..." : "Save"}
+                </Button>
+              )}
+              
+              {currentStep < totalSteps - 1 ? (
+                <Button
+                  onClick={handleNext}
+                  disabled={!isStepComplete()}
+                  className={openedFrom === 'profile' ? '' : 'flex-1'}
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!isStepComplete() || saving}
+                  className={openedFrom === 'profile' ? '' : 'flex-1'}
+                >
+                  {saving ? "Saving..." : (
+                    <>
+                      Complete
+                      <Check className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>
