@@ -1225,7 +1225,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
             </div>
           )}
 
-          {tempValue?.dormId && (getTempBuildingType() === 'apartment' || getTempBuildingType() === 'shared_apartment') && (
+          {tempValue?.dormId && (selectedBuildingType === 'apartment' || selectedBuildingType === 'shared_apartment') && (
             <>
               <div>
                 <label className="text-sm text-[#717171] mb-1 block">Select apartment</label>
