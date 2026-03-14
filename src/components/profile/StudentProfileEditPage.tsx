@@ -345,6 +345,12 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
       setTempAreas([...selectedAreas]);
     } else if (field === 'current_dorm') {
       setTempValue({ dormId: currentDormId, roomId: currentRoomId, apartmentId: currentApartmentId, bedroomId: currentBedroomId });
+      if (currentDormId) {
+        const dorm = availableDorms.find(d => d.id === currentDormId);
+        setSelectedBuildingType(dorm?.property_type || 'dormitory');
+      } else {
+        setSelectedBuildingType('');
+      }
     } else if (field === 'apartment_type') {
       setTempValue(preferredApartmentType);
     } else {
