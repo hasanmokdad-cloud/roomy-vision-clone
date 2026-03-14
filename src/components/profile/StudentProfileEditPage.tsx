@@ -345,6 +345,12 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
       setTempAreas([...selectedAreas]);
     } else if (field === 'current_dorm') {
       setTempValue({ dormId: currentDormId, roomId: currentRoomId, apartmentId: currentApartmentId, bedroomId: currentBedroomId });
+      if (currentDormId) {
+        const dorm = availableDorms.find(d => d.id === currentDormId);
+        setSelectedBuildingType(dorm?.property_type || 'dormitory');
+      } else {
+        setSelectedBuildingType('');
+      }
     } else if (field === 'apartment_type') {
       setTempValue(preferredApartmentType);
     } else {
@@ -1198,7 +1204,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
           </div>
 
           {/* Dropdown 2: Depends on building type */}
-          {tempValue?.dormId && getTempBuildingType() === 'dormitory' && (
+          {tempValue?.dormId && selectedBuildingType === 'dormitory' && (
             <div>
               <label className="text-sm text-[#717171] mb-1 block">Select room</label>
               <Select 
@@ -1219,7 +1225,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
             </div>
           )}
 
-          {tempValue?.dormId && (getTempBuildingType() === 'apartment' || getTempBuildingType() === 'shared_apartment') && (
+          {tempValue?.dormId && (selectedBuildingType === 'apartment' || selectedBuildingType === 'shared_apartment') && (
             <>
               <div>
                 <label className="text-sm text-[#717171] mb-1 block">Select apartment</label>
@@ -1265,7 +1271,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
             </>
           )}
 
-          {tempValue?.dormId && getTempBuildingType() === 'hybrid' && (
+          {tempValue?.dormId && selectedBuildingType === 'hybrid' && (
             <>
               <div>
                 <label className="text-sm text-[#717171] mb-1 block">Select your rental</label>
