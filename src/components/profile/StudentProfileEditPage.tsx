@@ -1271,7 +1271,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
             </>
           )}
 
-          {tempValue?.dormId && getTempBuildingType() === 'hybrid' && (
+          {tempValue?.dormId && selectedBuildingType === 'hybrid' && (
             <>
               <div>
                 <label className="text-sm text-[#717171] mb-1 block">Select your rental</label>
