@@ -1,40 +1,81 @@
 
 
-## Bug: "Submit for verification" button missing on dorm flow
+# Surgical Fix — Current Housing Modal Dropdowns Race Condition
 
-### Root Cause
+## Problem Diagnosis ✓
 
-The wizard has two flows:
-- **Apartment flow**: Steps go up to 29 (ReviewStep at step 29)
-- **Dorm flow**: Steps end at 26 (ReviewStep at step 26), steps 27-29 return `null`
+The user's diagnosis is **correct**. The cascading dropdowns are fully implemented but never render due to a race condition:
 
-The `isLastStep` check on line 1289 is:
-```typescript
-const isLastStep = currentStep === TOTAL_STEPS - 1; // always checks step 29
+1. **`getTempBuildingType()`** (line 587) is a plain function that reads from `availableDorms` array
+2. The conditional rendering blocks (lines 1201, 1222, 1268) call `getTempBuildingType()` to determine which dropdowns to show
+3. When the modal opens, `openFieldModal('current_dorm')` (line 346-347) sets `tempValue` with the selected IDs, but **does not set `selectedBuildingType`**
+4. Even though `selectedBuildingType` is correctly set in the building dropdown's `onValueChange` handler (line 1174), it's **not initialized** when the modal opens with existing data
+5. The conditional blocks use function calls instead of state variables, so they don't trigger re-renders when `availableDorms` loads
+
+## Solution
+
+Replace all `getTempBuildingType()` calls in conditional rendering with the `selectedBuildingType` state variable, and initialize `selectedBuildingType` when the modal opens.
+
+### Changes Required
+
+**File:** `src/components/profile/StudentProfileEditPage.tsx`
+
+**1. Line 1201** — Dormitory condition:
+```tsx
+// BEFORE:
+{tempValue?.dormId && getTempBuildingType() === 'dormitory' && (
+
+// AFTER:
+{tempValue?.dormId && selectedBuildingType === 'dormitory' && (
 ```
 
-This means for the dorm flow, step 26 (which IS the last real step) shows "Next" instead of "Submit for verification". Clicking "Next" advances to step 27, which renders nothing (blank page).
+**2. Line 1222** — Apartment/Shared Apartment condition:
+```tsx
+// BEFORE:
+{tempValue?.dormId && (getTempBuildingType() === 'apartment' || getTempBuildingType() === 'shared_apartment') && (
 
-### Fix
-
-Make `isLastStep` flow-aware:
-
-```typescript
-const isLastStep = isApartmentFlow 
-  ? currentStep === TOTAL_STEPS - 1  // step 29 for apartments
-  : currentStep === 26;               // step 26 for dorms
+// AFTER:
+{tempValue?.dormId && (selectedBuildingType === 'apartment' || selectedBuildingType === 'shared_apartment') && (
 ```
 
-Also update `handleNext` to not advance past step 26 for dorm flow (it currently goes to 27+ because the generic `currentStep < TOTAL_STEPS - 1` check passes).
+**3. Line 1268** — Hybrid condition:
+```tsx
+// BEFORE:
+{tempValue?.dormId && getTempBuildingType() === 'hybrid' && (
 
-### Files to Change
+// AFTER:
+{tempValue?.dormId && selectedBuildingType === 'hybrid' && (
+```
 
-| File | Change |
-|------|--------|
-| `src/components/owner/mobile/MobileDormWizard.tsx` | Update `isLastStep` logic on line 1289 to be flow-aware |
+**4. Lines 346-347** — Initialize `selectedBuildingType` in `openFieldModal`:
+```tsx
+// BEFORE:
+} else if (field === 'current_dorm') {
+  setTempValue({ dormId: currentDormId, roomId: currentRoomId, apartmentId: currentApartmentId, bedroomId: currentBedroomId });
+}
 
-### Technical Details
+// AFTER:
+} else if (field === 'current_dorm') {
+  setTempValue({ dormId: currentDormId, roomId: currentRoomId, apartmentId: currentApartmentId, bedroomId: currentBedroomId });
+  if (currentDormId) {
+    const dorm = availableDorms.find(d => d.id === currentDormId);
+    setSelectedBuildingType(dorm?.property_type || 'dormitory');
+  } else {
+    setSelectedBuildingType('');
+  }
+}
+```
 
-- Line 1289: Change `isLastStep` to check step 26 for dorm flow, step 29 for apartment flow
-- The `isApartmentFlow` variable already exists in the component and correctly identifies the flow type
-- No other files need changes -- `WizardFooter` already handles `isLastStep` prop correctly
+## Why This Works
+
+- `selectedBuildingType` is a React state variable that triggers re-renders when updated
+- It's already being set correctly in the building dropdown's `onValueChange` (line 1174)
+- By also setting it in `openFieldModal`, it will have the correct value from the moment the modal opens
+- The conditional rendering blocks will now respond to state changes instead of calling a function that reads stale data
+
+## No Side Effects
+
+- `getTempBuildingType()` can remain in the code (it's not harmful, just unused after this fix)
+- All other modal logic (apartment/bedroom loaders, save behavior) is already correct
+- No changes to database queries, state structure, or other components needed
+
