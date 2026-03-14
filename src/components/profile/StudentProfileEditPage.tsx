@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Calendar, Users, GraduationCap, BookOpen, DollarSign, MapPin, Home, Building2, Sparkles, Search } from 'lucide-react';
+import { ArrowLeft, User, Calendar, Users, GraduationCap, BookOpen, DollarSign, MapPin, Home, Building2, Sparkles, Search, BedDouble } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -21,7 +21,7 @@ interface StudentProfileEditPageProps {
   onClose: () => void;
 }
 
-type EditableField = 'full_name' | 'age' | 'gender' | 'location' | 'university' | 'major' | 'year_of_study' | 'budget' | 'preferred_location' | 'room_type' | 'current_dorm';
+type EditableField = 'full_name' | 'age' | 'gender' | 'location' | 'university' | 'major' | 'year_of_study' | 'budget' | 'preferred_location' | 'room_type' | 'current_dorm' | 'apartment_type';
 
 interface StudentProfile {
   full_name?: string;
@@ -44,9 +44,13 @@ interface StudentProfile {
   personality_test_completed?: boolean;
   current_dorm_id?: string;
   current_room_id?: string;
+  current_apartment_id?: string;
+  current_bedroom_id?: string;
   profile_photo_url?: string;
   room_confirmed?: boolean;
   tenant_role?: string;
+  preferred_housing_type?: string;
+  preferred_apartment_type?: string;
 }
 
 // Area data by city
@@ -80,6 +84,18 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
   const [showFixedBottomBar, setShowFixedBottomBar] = useState(true);
   const [tenantRole, setTenantRole] = useState<string | null>(null);
   const [personalityFilledCount, setPersonalityFilledCount] = useState(0);
+  
+  // Housing type state (Fix 5)
+  const [preferredHousingType, setPreferredHousingType] = useState<'room' | 'apartment' | ''>('');
+  const [preferredApartmentType, setPreferredApartmentType] = useState<string>('');
+  
+  // Building type & apartment/bedroom state (Fix 3, 4)
+  const [selectedBuildingType, setSelectedBuildingType] = useState<string>('');
+  const [currentApartmentId, setCurrentApartmentId] = useState<string>('');
+  const [currentBedroomId, setCurrentBedroomId] = useState<string>('');
+  const [availableApartments, setAvailableApartments] = useState<any[]>([]);
+  const [availableBedrooms, setAvailableBedrooms] = useState<any[]>([]);
+  const [currentApartmentData, setCurrentApartmentData] = useState<any>(null);
   
   // Refs for dynamic bottom bar behavior
   const lastContentLineRef = useRef<HTMLDivElement>(null);
@@ -126,7 +142,6 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
       const bottomBarHeight = 72;
       const windowHeight = window.innerHeight;
       
-      // When the last grey line is above where bottom bar would be, hide the fixed bar
       if (lastLineRect.bottom <= windowHeight - bottomBarHeight) {
         setShowFixedBottomBar(false);
       } else {
@@ -135,7 +150,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
     };
 
     window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial check
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   
@@ -169,10 +184,35 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
   useEffect(() => {
     if (currentDormId) {
       loadRoomsForDorm(currentDormId);
+      // Determine building type from selected dorm
+      const dorm = availableDorms.find(d => d.id === currentDormId);
+      if (dorm) {
+        setSelectedBuildingType(dorm.property_type || 'dormitory');
+        // Load apartments for apartment/shared_apartment/hybrid buildings
+        if (['apartment', 'shared_apartment', 'hybrid'].includes(dorm.property_type || '')) {
+          loadApartmentsForBuilding(currentDormId);
+        }
+      }
     } else {
       setAvailableRooms([]);
+      setAvailableApartments([]);
+      setAvailableBedrooms([]);
+      setSelectedBuildingType('');
     }
-  }, [currentDormId]);
+  }, [currentDormId, availableDorms]);
+
+  // Load bedrooms when apartment changes
+  useEffect(() => {
+    if (currentApartmentId) {
+      loadBedroomsForApartment(currentApartmentId);
+      // Load apartment data for capacity check
+      const apt = availableApartments.find(a => a.id === currentApartmentId);
+      setCurrentApartmentData(apt || null);
+    } else {
+      setAvailableBedrooms([]);
+      setCurrentApartmentData(null);
+    }
+  }, [currentApartmentId, availableApartments]);
 
   // Update room fullness when room changes
   useEffect(() => {
@@ -224,9 +264,13 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
       setIsRoomConfirmed(data.room_confirmed || false);
       setCurrentDormId(data.current_dorm_id || '');
       setCurrentRoomId(data.current_room_id || '');
+      setCurrentApartmentId(data.current_apartment_id || '');
+      setCurrentBedroomId(data.current_bedroom_id || '');
       setSelectedCity((data.preferred_city as 'Byblos' | 'Beirut' | '') || '');
       setSelectedAreas(data.preferred_areas || []);
       setTenantRole(data.tenant_role || null);
+      setPreferredHousingType((data.preferred_housing_type as 'room' | 'apartment' | '') || '');
+      setPreferredApartmentType(data.preferred_apartment_type || '');
       setPersonalityFilledCount(computePersonalityFilledCount(data));
       if (computePersonalityFilledCount(data) === 17) {
         setPersonalityTestCompleted(true);
@@ -238,7 +282,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
   const loadDorms = async () => {
     const { data } = await supabase
       .from('dorms')
-      .select('id, name, area')
+      .select('id, name, area, property_type')
       .eq('verification_status', 'Verified')
       .order('name');
     if (data) setAvailableDorms(data);
@@ -271,6 +315,24 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
     }
   };
 
+  const loadApartmentsForBuilding = async (buildingId: string) => {
+    const { data } = await supabase
+      .from('apartments')
+      .select('id, name, type, max_capacity, guest_capacity')
+      .eq('building_id', buildingId)
+      .order('name');
+    if (data) setAvailableApartments(data);
+  };
+
+  const loadBedroomsForApartment = async (apartmentId: string) => {
+    const { data } = await supabase
+      .from('bedrooms')
+      .select('id, name, base_capacity, max_capacity, bed_type, available')
+      .eq('apartment_id', apartmentId)
+      .order('name');
+    if (data) setAvailableBedrooms(data);
+  };
+
   const openFieldModal = (field: EditableField) => {
     setEditingField(field);
     
@@ -282,7 +344,9 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
       setTempValue(selectedCity);
       setTempAreas([...selectedAreas]);
     } else if (field === 'current_dorm') {
-      setTempValue({ dormId: currentDormId, roomId: currentRoomId });
+      setTempValue({ dormId: currentDormId, roomId: currentRoomId, apartmentId: currentApartmentId, bedroomId: currentBedroomId });
+    } else if (field === 'apartment_type') {
+      setTempValue(preferredApartmentType);
     } else {
       setTempValue(profileData[field as keyof StudentProfile]);
     }
@@ -314,9 +378,17 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
         updateData = {
           current_dorm_id: tempValue.dormId || null,
           current_room_id: tempValue.roomId || null,
+          current_apartment_id: tempValue.apartmentId || null,
+          current_bedroom_id: tempValue.bedroomId || null,
         };
         setCurrentDormId(tempValue.dormId || '');
         setCurrentRoomId(tempValue.roomId || '');
+        setCurrentApartmentId(tempValue.apartmentId || '');
+        setCurrentBedroomId(tempValue.bedroomId || '');
+        setProfileData(prev => ({ ...prev, ...updateData }));
+      } else if (editingField === 'apartment_type') {
+        updateData = { preferred_apartment_type: tempValue || null };
+        setPreferredApartmentType(tempValue || '');
         setProfileData(prev => ({ ...prev, ...updateData }));
       } else {
         updateData = { [editingField]: tempValue };
@@ -346,12 +418,21 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
     if (status === 'need_dorm') {
       updateData.current_dorm_id = null;
       updateData.current_room_id = null;
+      updateData.current_apartment_id = null;
+      updateData.current_bedroom_id = null;
       setCurrentDormId('');
       setCurrentRoomId('');
+      setCurrentApartmentId('');
+      setCurrentBedroomId('');
     }
 
     await supabase.from('students').update(updateData).eq('user_id', userId);
     setProfileData(prev => ({ ...prev, ...updateData }));
+  };
+
+  const handlePreferredHousingTypeChange = async (type: 'room' | 'apartment') => {
+    setPreferredHousingType(type);
+    await supabase.from('students').update({ preferred_housing_type: type }).eq('user_id', userId);
   };
 
   const handleToggleChange = async (field: string, value: boolean) => {
@@ -392,43 +473,40 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
     if (!currentDormId) return 'Select your housing';
     const dorm = availableDorms.find(d => d.id === currentDormId);
     const room = availableRooms.find(r => r.id === currentRoomId);
-    if (dorm && room) return `${dorm.name} · ${room.name}`;
-    if (dorm) return dorm.name;
+    const apt = availableApartments.find(a => a.id === currentApartmentId);
+    const bed = availableBedrooms.find(b => b.id === currentBedroomId);
+    
+    if (dorm) {
+      if (room) return `${dorm.name} · ${room.name}`;
+      if (apt && bed) return `${dorm.name} · ${apt.name} · ${bed.name}`;
+      if (apt) return `${dorm.name} · ${apt.name}`;
+      return dorm.name;
+    }
     return 'Select your housing';
   };
 
   const getMatchButtonText = () => {
-    // HAVE DORM path
     if (accommodationStatus === 'have_dorm') {
-      // Only show "Find Roommate Matches" if:
-      // - Student has selected a non-single room
-      // - Room is not at full capacity
-      // - Student enabled "Need a Roommate" toggle
       if (currentRoomData && !isSingleRoom(currentRoomData.type) && !projectedRoomFull && needsRoommateCurrentPlace) {
         return 'Find Roommate Matches';
       }
       return 'Done';
     }
     
-    // NEED DORM path
     if (accommodationStatus === 'need_dorm') {
-      // Check if student has entered any dorm-search info
       const hasDormSearchInfo = 
         profileData.budget || 
         (selectedAreas && selectedAreas.length > 0) || 
         profileData.room_type;
       
       if (hasDormSearchInfo) {
-        // If non-single room type AND roommate toggle enabled -> "Find Matches"
         if (profileData.room_type && !isSingleRoom(profileData.room_type) && needsRoommateNewDorm) {
           return 'Find Matches';
         }
-        // Otherwise just looking for dorm -> "Find Matches"
         return 'Find Matches';
       }
     }
     
-    // Default: no accommodation status selected or no info entered
     return 'Done';
   };
 
@@ -441,25 +519,61 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
     }
   };
 
-  // Determine if roommate toggle should be shown
-  const showRoommateToggle = (() => {
+  // Determine if roommate toggle should be shown (Fix 3 + Fix 5)
+  const showRoommateToggle = useMemo(() => {
     if (accommodationStatus === 'need_dorm') {
-      // Need Dorm: show toggle when room type is selected and not single
-      return profileData.room_type && !isSingleRoom(profileData.room_type);
+      // Fix 5: Must have a housing type selected first
+      if (preferredHousingType === 'apartment') {
+        // Apartment: always show roommate toggle
+        return true;
+      }
+      if (preferredHousingType === 'room') {
+        // Room: show only if room type selected and not single
+        return !!profileData.room_type && !isSingleRoom(profileData.room_type);
+      }
+      // No housing type selected → hide
+      return false;
     }
     
     if (accommodationStatus === 'have_dorm') {
-      // Have Dorm: show toggle ONLY when:
-      // 1. A room is actually selected (currentRoomData exists)
-      // 2. Room type is non-single
-      // 3. Room is NOT at full capacity (has space for roommate)
-      return currentRoomData && 
-             !isSingleRoom(currentRoomData.type) && 
-             !projectedRoomFull;
+      // Fix 3: Capacity-aware visibility
+      const buildingType = selectedBuildingType || 'dormitory';
+      
+      if (buildingType === 'dormitory') {
+        // For rooms: non-single AND not full
+        return !!currentRoomData && 
+               !isSingleRoom(currentRoomData.type) && 
+               !projectedRoomFull;
+      }
+      
+      if (buildingType === 'apartment' || buildingType === 'shared_apartment') {
+        // For apartments: check apartment-level capacity
+        if (currentApartmentData) {
+          return (currentApartmentData.max_capacity || 1) > 1;
+        }
+        return false;
+      }
+      
+      if (buildingType === 'hybrid') {
+        // If a room is selected, use room logic
+        if (currentRoomId && currentRoomData) {
+          return !isSingleRoom(currentRoomData.type) && !projectedRoomFull;
+        }
+        // If an apartment is selected, use apartment logic
+        if (currentApartmentId && currentApartmentData) {
+          return (currentApartmentData.max_capacity || 1) > 1;
+        }
+        return false;
+      }
+      
+      return false;
     }
     
     return false;
-  })();
+  }, [accommodationStatus, preferredHousingType, profileData.room_type, selectedBuildingType, currentRoomData, projectedRoomFull, currentApartmentData, currentRoomId, currentApartmentId]);
+
+  // Determine if the actual needsRoommate value is true (for gating AI row)
+  const needsRoommate = accommodationStatus === 'have_dorm' ? needsRoommateCurrentPlace : needsRoommateNewDorm;
 
   if (loading) {
     return (
@@ -469,11 +583,26 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
     );
   }
 
+  // Helper to get the building type for the current temp dorm selection in the modal
+  const getTempBuildingType = () => {
+    if (!tempValue?.dormId) return '';
+    const dorm = availableDorms.find(d => d.id === tempValue.dormId);
+    return dorm?.property_type || 'dormitory';
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <RoomyNavbar />
       
-      <div className="max-w-[1200px] mx-auto px-6 pt-[160px] pb-32">
+      <div className="max-w-[1200px] mx-auto px-6 pt-[160px] pb-32 relative">
+        {/* Fix 1: Back Navigation Arrow */}
+        <button
+          onClick={() => navigate('/profile')}
+          className="absolute top-[100px] left-6 p-2 rounded-full hover:bg-[#F7F7F7] transition-colors z-20"
+        >
+          <ArrowLeft className="w-5 h-5 text-[#717171]" />
+        </button>
+
         {/* Two-column layout */}
         <div className="flex gap-32">
           {/* Left Column - Avatar (Sticky, no white box) */}
@@ -599,10 +728,61 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
 
               {/* Conditional fields based on status */}
               {accommodationStatus === 'need_dorm' && (
-                <div className="divide-y divide-[#EBEBEB]">
-                  <FieldRow icon={<DollarSign className="w-5 h-5" />} label="Monthly budget" value={profileData.budget ? `$${profileData.budget}` : undefined} onClick={() => openFieldModal('budget')} />
-                  <FieldRow icon={<MapPin className="w-5 h-5" />} label="Preferred areas" value={getPreferredLocationDisplay()} onClick={() => openFieldModal('preferred_location')} />
-                  <FieldRow icon={<Home className="w-5 h-5" />} label="Room type" value={profileData.room_type} onClick={() => openFieldModal('room_type')} />
+                <div>
+                  <p className="text-sm text-[#717171] mb-4">Find rentals that fit your needs</p>
+                  <div className="divide-y divide-[#EBEBEB]">
+                    <FieldRow icon={<DollarSign className="w-5 h-5" />} label="Monthly budget" value={profileData.budget ? `$${profileData.budget}` : undefined} onClick={() => openFieldModal('budget')} />
+                    <FieldRow icon={<MapPin className="w-5 h-5" />} label="Preferred areas" value={getPreferredLocationDisplay()} onClick={() => openFieldModal('preferred_location')} />
+                  </div>
+
+                  {/* Fix 5: Preferred housing type cards */}
+                  <div className="mt-6 mb-4">
+                    <h4 className="text-[15px] font-medium text-[#222222] mb-3">Preferred housing type</h4>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => handlePreferredHousingTypeChange('room')}
+                        className={`flex-1 py-4 px-6 rounded-xl border-2 transition-all ${
+                          preferredHousingType === 'room'
+                            ? 'border-[#222222] bg-[#F7F7F7]'
+                            : 'border-[#DDDDDD] hover:border-[#222222]'
+                        }`}
+                      >
+                        <span className="block text-2xl mb-1">🛏</span>
+                        <span className="block text-sm font-medium text-[#222222]">Room</span>
+                        <span className="block text-xs text-[#717171] mt-1">I'm looking for a room</span>
+                      </button>
+                      <button
+                        onClick={() => handlePreferredHousingTypeChange('apartment')}
+                        className={`flex-1 py-4 px-6 rounded-xl border-2 transition-all ${
+                          preferredHousingType === 'apartment'
+                            ? 'border-[#222222] bg-[#F7F7F7]'
+                            : 'border-[#DDDDDD] hover:border-[#222222]'
+                        }`}
+                      >
+                        <span className="block text-2xl mb-1">🏠</span>
+                        <span className="block text-sm font-medium text-[#222222]">Apartment</span>
+                        <span className="block text-xs text-[#717171] mt-1">I'm looking for an apartment</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Conditional type fields based on housing type */}
+                  {preferredHousingType === 'room' && (
+                    <div className="divide-y divide-[#EBEBEB]">
+                      <FieldRow icon={<Home className="w-5 h-5" />} label="Preferred room type" value={profileData.room_type} onClick={() => openFieldModal('room_type')} />
+                    </div>
+                  )}
+
+                  {preferredHousingType === 'apartment' && (
+                    <div className="divide-y divide-[#EBEBEB]">
+                      <FieldRow 
+                        icon={<Building2 className="w-5 h-5" />} 
+                        label="Preferred apartment type" 
+                        value={preferredApartmentType === 'family_style' ? 'Family-style apartment' : preferredApartmentType === 'shared_apartment' ? 'Shared apartment' : undefined} 
+                        onClick={() => openFieldModal('apartment_type')} 
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -632,7 +812,8 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
                     />
                   </div>
 
-                  {(needsRoommateCurrentPlace || needsRoommateNewDorm) && (
+                  {/* Fix 2: AI row only when needsRoommate is ON */}
+                  {needsRoommate && (
                     <div className="flex items-center justify-between py-4">
                       <div className="flex items-center gap-3">
                         <Sparkles className="w-5 h-5 text-primary" />
@@ -953,6 +1134,26 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
         </Select>
       </ProfileFieldModal>
 
+      {/* Fix 5: Apartment type modal */}
+      <ProfileFieldModal
+        open={editingField === 'apartment_type'}
+        onOpenChange={(open) => !open && setEditingField(null)}
+        title="Apartment type"
+        onSave={saveFieldValue}
+        isSaving={saving}
+      >
+        <Select value={tempValue || ''} onValueChange={setTempValue}>
+          <SelectTrigger className="border-[#DDDDDD]">
+            <SelectValue placeholder="Select apartment type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="family_style">Family-style apartment</SelectItem>
+            <SelectItem value="shared_apartment">Shared apartment</SelectItem>
+          </SelectContent>
+        </Select>
+      </ProfileFieldModal>
+
+      {/* Fix 4: Current housing modal with building-type-aware dropdowns */}
       <ProfileFieldModal
         open={editingField === 'current_dorm'}
         onOpenChange={(open) => !open && setEditingField(null)}
@@ -961,13 +1162,26 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
         isSaving={saving}
       >
         <div className="space-y-4">
+          {/* Dropdown 1: Building */}
           <div>
             <label className="text-sm text-[#717171] mb-1 block">Housing building</label>
             <Select 
               value={tempValue?.dormId || ''} 
               onValueChange={(val) => {
-                setTempValue({ dormId: val, roomId: '' });
-                loadRoomsForDorm(val);
+                const dorm = availableDorms.find(d => d.id === val);
+                const buildingType = dorm?.property_type || 'dormitory';
+                setTempValue({ dormId: val, roomId: '', apartmentId: '', bedroomId: '' });
+                setSelectedBuildingType(buildingType);
+                
+                // Load appropriate sub-units
+                if (buildingType === 'dormitory') {
+                  loadRoomsForDorm(val);
+                } else if (buildingType === 'apartment' || buildingType === 'shared_apartment') {
+                  loadApartmentsForBuilding(val);
+                } else if (buildingType === 'hybrid') {
+                  loadRoomsForDorm(val);
+                  loadApartmentsForBuilding(val);
+                }
               }}
             >
               <SelectTrigger className="border-[#DDDDDD]">
@@ -982,12 +1196,14 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
               </SelectContent>
             </Select>
           </div>
-          {tempValue?.dormId && (
+
+          {/* Dropdown 2: Depends on building type */}
+          {tempValue?.dormId && getTempBuildingType() === 'dormitory' && (
             <div>
-              <label className="text-sm text-[#717171] mb-1 block">Room</label>
+              <label className="text-sm text-[#717171] mb-1 block">Select room</label>
               <Select 
                 value={tempValue?.roomId || ''} 
-                onValueChange={(val) => setTempValue({ ...tempValue, roomId: val })}
+                onValueChange={(val) => setTempValue({ ...tempValue, roomId: val, apartmentId: '', bedroomId: '' })}
               >
                 <SelectTrigger className="border-[#DDDDDD]">
                   <SelectValue placeholder="Select room" />
@@ -1001,6 +1217,118 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
                 </SelectContent>
               </Select>
             </div>
+          )}
+
+          {tempValue?.dormId && (getTempBuildingType() === 'apartment' || getTempBuildingType() === 'shared_apartment') && (
+            <>
+              <div>
+                <label className="text-sm text-[#717171] mb-1 block">Select apartment</label>
+                <Select 
+                  value={tempValue?.apartmentId || ''} 
+                  onValueChange={(val) => {
+                    setTempValue({ ...tempValue, apartmentId: val, roomId: '', bedroomId: '' });
+                    loadBedroomsForApartment(val);
+                  }}
+                >
+                  <SelectTrigger className="border-[#DDDDDD]">
+                    <SelectValue placeholder="Select apartment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableApartments.map((apt) => (
+                      <SelectItem key={apt.id} value={apt.id}>
+                        {apt.name} {apt.type && `(${apt.type})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {tempValue?.apartmentId && availableBedrooms.length > 0 && (
+                <div>
+                  <label className="text-sm text-[#717171] mb-1 block">Select bedroom</label>
+                  <Select 
+                    value={tempValue?.bedroomId || ''} 
+                    onValueChange={(val) => setTempValue({ ...tempValue, bedroomId: val })}
+                  >
+                    <SelectTrigger className="border-[#DDDDDD]">
+                      <SelectValue placeholder="Select bedroom" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableBedrooms.map((bed) => (
+                        <SelectItem key={bed.id} value={bed.id}>
+                          {bed.name} ({bed.bed_type})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </>
+          )}
+
+          {tempValue?.dormId && getTempBuildingType() === 'hybrid' && (
+            <>
+              <div>
+                <label className="text-sm text-[#717171] mb-1 block">Select your rental</label>
+                <Select 
+                  value={tempValue?.roomId || tempValue?.apartmentId ? (tempValue?.roomId ? `room:${tempValue.roomId}` : `apt:${tempValue.apartmentId}`) : ''} 
+                  onValueChange={(val) => {
+                    if (val.startsWith('room:')) {
+                      const roomId = val.replace('room:', '');
+                      setTempValue({ ...tempValue, roomId, apartmentId: '', bedroomId: '' });
+                    } else if (val.startsWith('apt:')) {
+                      const aptId = val.replace('apt:', '');
+                      setTempValue({ ...tempValue, roomId: '', apartmentId: aptId, bedroomId: '' });
+                      loadBedroomsForApartment(aptId);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="border-[#DDDDDD]">
+                    <SelectValue placeholder="Select rental" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRooms.length > 0 && (
+                      <>
+                        {availableRooms.map((room) => (
+                          <SelectItem key={`room:${room.id}`} value={`room:${room.id}`}>
+                            🛏 {room.name} ({room.type})
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                    {availableApartments.length > 0 && (
+                      <>
+                        {availableApartments.map((apt) => (
+                          <SelectItem key={`apt:${apt.id}`} value={`apt:${apt.id}`}>
+                            🏠 {apt.name} {apt.type && `(${apt.type})`}
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* If apartment selected in hybrid, show bedroom dropdown */}
+              {tempValue?.apartmentId && availableBedrooms.length > 0 && (
+                <div>
+                  <label className="text-sm text-[#717171] mb-1 block">Select bedroom</label>
+                  <Select 
+                    value={tempValue?.bedroomId || ''} 
+                    onValueChange={(val) => setTempValue({ ...tempValue, bedroomId: val })}
+                  >
+                    <SelectTrigger className="border-[#DDDDDD]">
+                      <SelectValue placeholder="Select bedroom" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableBedrooms.map((bed) => (
+                        <SelectItem key={bed.id} value={bed.id}>
+                          {bed.name} ({bed.bed_type})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </>
           )}
         </div>
       </ProfileFieldModal>
