@@ -1204,7 +1204,7 @@ export function StudentProfileEditPage({ userId, onClose }: StudentProfileEditPa
           </div>
 
           {/* Dropdown 2: Depends on building type */}
-          {tempValue?.dormId && getTempBuildingType() === 'dormitory' && (
+          {tempValue?.dormId && selectedBuildingType === 'dormitory' && (
             <div>
               <label className="text-sm text-[#717171] mb-1 block">Select room</label>
               <Select 
