@@ -1021,9 +1021,391 @@ Lovable is being used as a **rapid prototyping tool** to build the complete fron
 
 ---
 
-## PARTS 15-23
+## PART 15: Cost Estimates — Complete Breakdown
 
-Cost Estimates, Database Schema, Security, CI/CD, Airbnb Case Study, Event-Driven Architecture, Migration Strategies, Advanced Infrastructure, Production-Ready Backend — replace all "Roomy" with "Tenanters", "roomylb.com" with "tenanters.com", "app.roomylb.com" with "www.tenanters.com", "admin.roomylb.com" with "admin.tenanters.com" throughout.
+> **Methodology:** All estimates are in USD. Costs are organized by growth phase. "Launch" = first 3-6 months (0-1,000 users). "Growth" = 1K-50K users. "Scale" = 50K+ users. Prices reflect March 2026 public pricing.
+
+---
+
+### 15.1 Domain & DNS — Cloudflare
+
+| Item | Cost | Billing | Notes |
+|------|------|---------|-------|
+| Domain registration (tenanters.com) | $10-12/yr | Annual | .com via Cloudflare Registrar (at-cost, no markup) |
+| Cloudflare Free plan | $0 | — | DNS, basic DDoS protection, SSL, CDN |
+| Cloudflare Pro plan (recommended) | $20/mo | Monthly | WAF, image optimization, analytics, better DDoS |
+| Cloudflare Business plan (scale) | $200/mo | Monthly | Custom WAF rules, 100% SLA, priority support |
+
+**Recommendation:**
+- **Launch:** Free plan ($0/mo) — DNS + basic CDN is sufficient
+- **Growth:** Pro plan ($20/mo) — WAF and analytics
+- **Scale:** Business plan ($200/mo) — SLA guarantees
+
+| Phase | Monthly | Annual |
+|-------|---------|--------|
+| Launch | **$1/mo** (domain amortized) | **$12/yr** |
+| Growth | **$21/mo** | **$252/yr** |
+| Scale | **$201/mo** | **$2,412/yr** |
+
+---
+
+### 15.2 Email Inbox — Google Workspace
+
+| Item | Cost | Billing | Notes |
+|------|------|---------|-------|
+| Business Starter (per user) | $7.20/user/mo | Monthly (or $6/user/mo annual) | 30 GB storage, custom email, Google Meet |
+| Business Standard (per user) | $14.40/user/mo | Monthly (or $12/user/mo annual) | 2 TB storage, recording, app management |
+
+**Current setup:** 1 admin user + 8 group aliases (free — aliases don't count as users).
+
+| Phase | Users | Plan | Monthly | Annual |
+|-------|-------|------|---------|--------|
+| Launch | 1 user | Starter | **$7.20/mo** | **$72/yr** (annual billing: $6/mo = $72) |
+| Growth | 3-5 users | Starter | **$21.60-$36/mo** | **$216-$360/yr** |
+| Scale | 10-20 users | Standard | **$144-$288/mo** | **$1,440-$2,880/yr** |
+
+**What you get:** info@, support@, contact@, hr@, partnerships@, press@, security@, no-reply@ — all as free group aliases under 1 paid user account.
+
+---
+
+### 15.3 Transactional Email — Resend → AWS SES
+
+#### Resend (Launch & Growth phases)
+
+| Plan | Price | Emails/month | Emails/day | Custom domain | Notes |
+|------|-------|-------------|------------|---------------|-------|
+| Free | $0 | 3,000 | 100 | 1 | Single sender domain |
+| Pro | $20/mo | 50,000 | — | Unlimited | Team members, webhooks, analytics |
+| Business | $90/mo | 200,000 | — | Unlimited | Dedicated IP, priority support |
+| Enterprise | Custom | 500K+ | — | Unlimited | SLA, dedicated account manager |
+
+#### AWS SES (Scale phase — 100K+ emails/month)
+
+| Item | Cost | Notes |
+|------|------|-------|
+| First 62,000 emails/mo (from EC2) | $0 | Free if sent from EC2/Lambda |
+| Additional emails | $0.10 per 1,000 | Extremely cheap at volume |
+| Dedicated IP | $24.95/mo per IP | Better deliverability at high volume |
+| 100K emails/month | ~$3.80/mo | vs $90/mo on Resend |
+| 500K emails/month | ~$43.80/mo | vs custom pricing on Resend |
+| 1M emails/month | ~$93.80/mo | Massive savings |
+
+**Recommendation & Cost by Phase:**
+
+| Phase | Service | Emails/mo | Monthly Cost |
+|-------|---------|-----------|-------------|
+| Launch (0-1K users) | Resend Free | < 3,000 | **$0/mo** |
+| Growth (1K-10K users) | Resend Pro | 10K-50K | **$20/mo** |
+| Growth (10K-50K users) | Resend Business | 50K-200K | **$90/mo** |
+| Scale (50K+ users) | AWS SES | 200K-1M+ | **$4-$94/mo** |
+
+---
+
+### 15.4 Marketing Email — Mailchimp
+
+| Plan | Price | Contacts | Emails/mo | Notes |
+|------|-------|----------|-----------|-------|
+| Free | $0 | 500 | 1,000 | Basic templates, 1 audience |
+| Essentials | $13/mo | 500 | 5,000 | A/B testing, email scheduling |
+| Essentials (5K contacts) | $67/mo | 5,000 | 50,000 | Scales with contacts |
+| Essentials (10K contacts) | $100/mo | 10,000 | 100,000 | |
+| Standard | $20/mo | 500 | 6,000 | Automations, predictive insights |
+| Standard (5K contacts) | $100/mo | 5,000 | 60,000 | |
+| Standard (10K contacts) | $135/mo | 10,000 | 120,000 | |
+
+**Recommendation:**
+
+| Phase | Plan | Contacts | Monthly Cost |
+|-------|------|----------|-------------|
+| Pre-launch (waitlist) | Free | < 500 | **$0/mo** |
+| Launch | Essentials | 500-2K | **$13-$35/mo** |
+| Growth | Standard | 5K-10K | **$100-$135/mo** |
+| Scale | Standard | 25K-50K | **$260-$400/mo** |
+
+---
+
+### 15.5 Hosting — Vercel (Waitlist Only)
+
+| Plan | Price | Notes |
+|------|-------|-------|
+| Hobby (free) | $0 | 100 GB bandwidth, 1 project, no commercial use |
+| Pro | $20/mo per member | 1 TB bandwidth, commercial use, analytics |
+
+**Recommendation:**
+
+| Phase | Plan | Monthly Cost |
+|-------|------|-------------|
+| Pre-launch & Launch | Pro (1 member) | **$20/mo** |
+| Growth & Scale | Pro (1 member) | **$20/mo** (waitlist stays simple) |
+
+---
+
+### 15.6 AWS Infrastructure — Complete Breakdown
+
+This is the largest cost center. AWS hosts the main app (www.tenanters.com), admin panel (admin.tenanters.com), API (api.tenanters.com), and all backend services.
+
+#### 15.6.1 Compute — ECS Fargate (Containerized Services)
+
+| Service | vCPU | Memory | Tasks | Cost/hr | Monthly |
+|---------|------|--------|-------|---------|---------|
+| Node.js API | 0.5 vCPU | 1 GB | 2 (HA) | $0.025/task | ~$36/mo |
+| Go WebSocket Server | 0.25 vCPU | 0.5 GB | 2 (HA) | $0.013/task | ~$19/mo |
+| Python AI Service | 0.5 vCPU | 1 GB | 1 | $0.025/task | ~$18/mo |
+| **ECS Total (Launch)** | | | | | **~$73/mo** |
+
+At scale (auto-scaling):
+| Phase | Tasks | Monthly |
+|-------|-------|---------|
+| Launch | 5 tasks | **$73/mo** |
+| Growth | 10-20 tasks | **$150-$300/mo** |
+| Scale | 30-60 tasks | **$450-$900/mo** |
+
+#### 15.6.2 Database — Aurora PostgreSQL Serverless v2
+
+| Config | ACU Range | Storage | Monthly |
+|--------|-----------|---------|---------|
+| Launch | 0.5-2 ACU | 20 GB | **$55-$80/mo** |
+| Growth | 2-8 ACU | 100 GB | **$150-$350/mo** |
+| Scale | 8-32 ACU | 500 GB+ | **$500-$1,500/mo** |
+
+Breakdown:
+- ACU pricing: $0.12/ACU-hour
+- Storage: $0.10/GB/month
+- I/O: $0.20 per 1M requests
+- Backups: $0.021/GB/month (free up to DB size)
+
+#### 15.6.3 Caching — ElastiCache (Redis)
+
+| Config | Node Type | Monthly |
+|--------|-----------|---------|
+| Launch | cache.t4g.micro (single) | **$12/mo** |
+| Growth | cache.t4g.small (2 nodes, HA) | **$48/mo** |
+| Scale | cache.r7g.large (cluster) | **$200-$500/mo** |
+
+#### 15.6.4 CDN & Frontend Hosting — CloudFront + S3
+
+| Item | Free Tier | After Free Tier | Notes |
+|------|-----------|-----------------|-------|
+| CloudFront | 1 TB/mo free (first year) | $0.085/GB (US/EU) | Serves frontend + static assets |
+| S3 storage | 5 GB free | $0.023/GB/mo | Next.js build output, images |
+| S3 requests | 20K GET free | $0.0004/1K GET | |
+
+| Phase | Bandwidth | Monthly |
+|-------|-----------|---------|
+| Launch | < 100 GB | **$5-$10/mo** (mostly free tier) |
+| Growth | 500 GB-1 TB | **$40-$85/mo** |
+| Scale | 2-5 TB | **$170-$425/mo** |
+
+#### 15.6.5 API Gateway
+
+| Item | Cost | Notes |
+|------|------|-------|
+| HTTP API | $1.00 per 1M requests | Cheaper, good for REST |
+| WebSocket API | $1.00 per 1M messages | For real-time features |
+| Data transfer | $0.09/GB | |
+
+| Phase | Requests/mo | Monthly |
+|-------|------------|---------|
+| Launch | < 10M | **$10/mo** |
+| Growth | 10-50M | **$10-$50/mo** |
+| Scale | 50-200M | **$50-$200/mo** |
+
+#### 15.6.6 Authentication — Cognito
+
+| Item | Cost | Notes |
+|------|------|-------|
+| First 50,000 MAUs | $0 | Free tier (monthly active users) |
+| 50,001-100,000 MAUs | $0.0055/MAU | |
+| 100,001+ MAUs | $0.0046/MAU | |
+
+| Phase | MAUs | Monthly |
+|-------|------|---------|
+| Launch | < 1,000 | **$0/mo** |
+| Growth | 5K-50K | **$0/mo** (still free tier) |
+| Scale | 50K-200K | **$275-$825/mo** |
+
+#### 15.6.7 File Storage — S3 (User Uploads: Photos, Documents)
+
+| Item | Cost | Notes |
+|------|------|-------|
+| Storage | $0.023/GB/mo | Standard tier |
+| PUT/POST requests | $0.005/1K | Uploads |
+| GET requests | $0.0004/1K | Downloads/views |
+| Data transfer out | $0.09/GB | Via CloudFront is cheaper |
+
+| Phase | Storage | Monthly |
+|-------|---------|---------|
+| Launch | 10 GB | **$1/mo** |
+| Growth | 100 GB | **$5-$10/mo** |
+| Scale | 1 TB | **$30-$50/mo** |
+
+#### 15.6.8 Monitoring & Logging — CloudWatch
+
+| Item | Cost | Notes |
+|------|------|-------|
+| Basic monitoring | $0 | 5-min intervals, 10 metrics |
+| Detailed monitoring | $3/instance/mo | 1-min intervals |
+| Log ingestion | $0.50/GB | Application logs |
+| Log storage | $0.03/GB/mo | Retention |
+| Dashboards | $3/dashboard/mo | Custom dashboards |
+
+| Phase | Monthly |
+|-------|---------|
+| Launch | **$10-$20/mo** |
+| Growth | **$30-$60/mo** |
+| Scale | **$80-$200/mo** |
+
+#### 15.6.9 Other AWS Services
+
+| Service | Purpose | Launch | Growth | Scale |
+|---------|---------|--------|--------|-------|
+| **ACM** (SSL Certificates) | HTTPS for all subdomains | $0 | $0 | $0 |
+| **Route 53** (if used) | DNS hosting (alternative to Cloudflare) | N/A | N/A | N/A |
+| **WAF** | Web Application Firewall | $5/mo + $1/rule | $10-$20/mo | $20-$50/mo |
+| **Secrets Manager** | API keys, DB credentials | $0.40/secret/mo | $2-$5/mo | $5-$10/mo |
+| **ECR** (Container Registry) | Docker image storage | $1/mo | $2-$5/mo | $5-$10/mo |
+| **Lambda** (serverless functions) | Cron jobs, webhooks, image processing | $0 (free tier) | $1-$5/mo | $5-$20/mo |
+| **SQS** (Message Queue) | Async job processing | $0 (free tier) | $1-$2/mo | $5-$10/mo |
+| **SNS** (Push Notifications) | Mobile push via APNs/FCM | $0 (free tier) | $1-$5/mo | $5-$20/mo |
+
+#### 15.6.10 AWS Total by Phase
+
+| Component | Launch | Growth | Scale |
+|-----------|--------|--------|-------|
+| ECS Fargate (compute) | $73 | $150-$300 | $450-$900 |
+| Aurora PostgreSQL (database) | $55-$80 | $150-$350 | $500-$1,500 |
+| ElastiCache Redis (caching) | $12 | $48 | $200-$500 |
+| CloudFront + S3 (CDN/hosting) | $5-$10 | $40-$85 | $170-$425 |
+| API Gateway | $10 | $10-$50 | $50-$200 |
+| Cognito (auth) | $0 | $0 | $275-$825 |
+| S3 (user uploads) | $1 | $5-$10 | $30-$50 |
+| CloudWatch (monitoring) | $10-$20 | $30-$60 | $80-$200 |
+| WAF + Secrets + ECR + misc | $7 | $15-$35 | $40-$120 |
+| **AWS TOTAL** | **$173-$213/mo** | **$448-$940/mo** | **$1,795-$4,720/mo** |
+
+---
+
+### 15.7 Mobile App — Apple & Google Developer Accounts
+
+| Item | Cost | Billing | Notes |
+|------|------|---------|-------|
+| Apple Developer Program | $99/yr | Annual | Required to publish to App Store |
+| Google Play Developer | $25 (one-time) | One-time | Lifetime access to publish |
+
+| Phase | Annual Cost |
+|-------|------------|
+| All phases | **$99/yr + $25 one-time** |
+
+---
+
+### 15.8 Development Tools & Software
+
+| Tool | Cost | Purpose | Notes |
+|------|------|---------|-------|
+| GitHub (Team) | $4/user/mo | Code repository, CI/CD | Free for public repos |
+| GitHub Actions | $0 (2,000 min/mo free) | CI/CD pipelines | Paid: $0.008/min Linux |
+| Figma (Professional) | $15/editor/mo | UI/UX design | Free for 3 files |
+| Sentry (error tracking) | $0 (free tier) | Error monitoring | 5K errors/mo free |
+| Postman (free) | $0 | API testing | Free for individuals |
+| Docker Desktop | $0 | Local development | Free for small business |
+
+| Phase | Team Size | Monthly Cost |
+|-------|-----------|-------------|
+| Launch | 2-3 devs | **$8-$12/mo** (GitHub) + **$15/mo** (Figma) = **$23-$27/mo** |
+| Growth | 5-8 devs | **$20-$32/mo** + **$30-$45/mo** = **$50-$77/mo** |
+| Scale | 10-15 devs | **$40-$60/mo** + **$60-$90/mo** = **$100-$150/mo** |
+
+---
+
+### 15.9 Third-Party APIs & Services (Future)
+
+| Service | Purpose | Free Tier | Paid | When Needed |
+|---------|---------|-----------|------|-------------|
+| Google Maps API | Map views, geocoding | $200/mo credit | $7/1K loads | Growth phase |
+| Stripe | Payment processing | No monthly fee | 2.9% + $0.30/txn | When payments launch |
+| Twilio (SMS) | Phone verification | Free trial credits | $0.0079/SMS | Growth phase |
+| OpenAI API | AI matching enhancement | — | $0.002-$0.06/1K tokens | If using GPT for matching |
+
+---
+
+### 15.10 GRAND TOTAL — All Services Combined
+
+#### Launch Phase (0-1,000 users, months 1-6)
+
+| Service | Monthly | Annual |
+|---------|---------|--------|
+| Cloudflare (Free) | $1 | $12 |
+| Google Workspace (1 user) | $7 | $72 |
+| Resend (Free) | $0 | $0 |
+| Mailchimp (Free/Essentials) | $0-$13 | $0-$156 |
+| Vercel (Pro, 1 member) | $20 | $240 |
+| AWS Infrastructure | $173-$213 | $2,076-$2,556 |
+| Apple Developer | $8 | $99 |
+| Google Play Developer | $2 (amortized) | $25 (one-time) |
+| Dev Tools (GitHub + Figma) | $23-$27 | $276-$324 |
+| **LAUNCH TOTAL** | **$234-$291/mo** | **$2,800-$3,484/yr** |
+
+#### Growth Phase (1K-50K users, months 6-18)
+
+| Service | Monthly | Annual |
+|---------|---------|--------|
+| Cloudflare (Pro) | $20 | $240 |
+| Google Workspace (3-5 users) | $22-$36 | $264-$432 |
+| Resend (Pro/Business) | $20-$90 | $240-$1,080 |
+| Mailchimp (Standard) | $100-$135 | $1,200-$1,620 |
+| Vercel (Pro) | $20 | $240 |
+| AWS Infrastructure | $448-$940 | $5,376-$11,280 |
+| Apple Developer | $8 | $99 |
+| Dev Tools | $50-$77 | $600-$924 |
+| Google Maps API | $0-$50 | $0-$600 |
+| **GROWTH TOTAL** | **$688-$1,376/mo** | **$8,259-$16,515/yr** |
+
+#### Scale Phase (50K+ users, months 18+)
+
+| Service | Monthly | Annual |
+|---------|---------|--------|
+| Cloudflare (Business) | $200 | $2,400 |
+| Google Workspace (10-20 users) | $144-$288 | $1,728-$3,456 |
+| AWS SES (replaces Resend) | $4-$94 | $48-$1,128 |
+| Mailchimp (Standard, large list) | $260-$400 | $3,120-$4,800 |
+| Vercel (Pro) | $20 | $240 |
+| AWS Infrastructure | $1,795-$4,720 | $21,540-$56,640 |
+| Apple Developer | $8 | $99 |
+| Dev Tools | $100-$150 | $1,200-$1,800 |
+| Google Maps API | $50-$200 | $600-$2,400 |
+| Stripe fees | Variable (2.9% + $0.30/txn) | Depends on revenue |
+| **SCALE TOTAL** | **$2,581-$6,080/mo** | **$30,975-$72,963/yr** |
+
+---
+
+### 15.11 Cost Comparison: What We Avoided
+
+| Alternative | Their Cost | Our Choice | Our Cost | Savings |
+|-------------|-----------|------------|----------|---------|
+| Namecheap + separate CDN | $15/yr + $20/mo CDN | Cloudflare (registrar + CDN + DNS) | $12/yr + $0-$20/mo | Simpler, cheaper, integrated |
+| Zoho Mail | $1-$3/user/mo | Google Workspace | $6-$7/user/mo | More expensive but 10x better: Drive, Meet, Calendar, ecosystem |
+| SendGrid (transactional) | $20-$90/mo | Resend → AWS SES | $0-$94/mo | Better DX with Resend, cheapest at scale with SES |
+| Heroku (hosting) | $25-$250/mo | AWS ECS Fargate | $73-$900/mo | More complex but infinitely more scalable |
+| Firebase (backend) | $25-$250/mo | AWS (Aurora + Cognito + S3) | $70-$2,000/mo | Full control, no vendor lock-in, enterprise-grade |
+| Supabase (production) | $25-$599/mo | AWS Aurora + custom API | $55-$1,500/mo | Full control, custom schema, no RLS limitations |
+
+---
+
+### 15.12 Key Cost Insights
+
+1. **AWS is ~70% of total cost** — this is normal for a production SaaS platform
+2. **Biggest cost drivers at scale:** Database (Aurora) and Compute (ECS) — optimize queries and use caching (Redis) to keep these low
+3. **Free tiers save ~$100/mo at launch** — Cognito, SES from EC2, Lambda, SQS, SNS, CloudFront (1st year) all have generous free tiers
+4. **Resend → SES migration saves $800+/yr** at 200K emails/month
+5. **Google Workspace is a fixed cost** — doesn't scale with users, only with team size
+6. **Mailchimp is the fastest-growing cost** — consider alternatives (Loops, Brevo) if contact list exceeds 25K
+7. **Stripe fees are pass-through** — 2.9% + $0.30 per transaction, not a fixed cost; factor into pricing model
+
+---
+
+## PARTS 16-23
+
+Database Schema, Security, CI/CD, Airbnb Case Study, Event-Driven Architecture, Migration Strategies, Advanced Infrastructure, Production-Ready Backend — replace all "Roomy" with "Tenanters", "roomylb.com" with "tenanters.com", "app.roomylb.com" with "www.tenanters.com", "admin.roomylb.com" with "admin.tenanters.com" throughout.
 
 ---
 
