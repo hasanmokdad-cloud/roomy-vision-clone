@@ -894,7 +894,12 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
     // Dorm flow validations
     switch (currentStep) {
-      case 17: return formData.rooms.some(r => !r.name);
+      case 16: {
+        const blockKey = String(formData.currentBlockNumber);
+        const bs = formData.blockSettings[blockKey];
+        return !bs || !bs.kitchenette_type || !bs.balcony_type || !bs.furnished_type;
+      }
+      case 17: return formData.rooms.some(r => !r.name.trim());
       case 18: return formData.rooms.some(r => !r.type);
       case 19: 
         if (formData.completedRoomIds.length === formData.rooms.length && formData.rooms.length > 0) {
