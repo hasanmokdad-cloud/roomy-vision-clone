@@ -1038,10 +1038,12 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       case 13:
         return (
           <PhotosStep
-            coverImage={formData.coverImage}
-            galleryImages={formData.galleryImages}
-            onCoverChange={(v) => setFormData({ ...formData, coverImage: v })}
-            onGalleryChange={(v) => setFormData({ ...formData, galleryImages: v })}
+            buildingImages={formData.buildingImages}
+            onBuildingImagesChange={(v) => setFormData({ ...formData, buildingImages: v })}
+            selectedAmenities={formData.amenities}
+            hasReception={formData.hasReception}
+            receptionPerBlock={formData.receptionPerBlock}
+            blockCount={formData.blockCount}
             propertyType={formData.propertyType}
           />
         );
