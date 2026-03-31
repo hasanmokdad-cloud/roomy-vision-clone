@@ -10,13 +10,12 @@ import { AirbnbStepTransition } from './AirbnbStepTransition';
 import { LocationStep } from './steps/LocationStep';
 import { CapacityStep } from './steps/CapacityStep';
 import { AmenitiesStep } from './steps/AmenitiesStep';
-import { GenderPreferenceStep } from './steps/GenderPreferenceStep';
 import { PhotosStep } from './steps/PhotosStep';
 import { DescriptionStep } from './steps/DescriptionStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { PropertyTypeStep } from './steps/PropertyTypeStep';
-import { UploadMethodStep } from './steps/UploadMethodStep';
-import { ExcelUploadStep } from './steps/ExcelUploadStep';
+import { PropertyDetailsStep } from './steps/PropertyDetailsStep';
+import { TenantPreferenceStep } from './steps/TenantPreferenceStep';
 import { RoomNamesStep, WizardRoomData } from './steps/RoomNamesStep';
 import { RoomTypesStep } from './steps/RoomTypesStep';
 import { RoomBedTypeStep } from './steps/RoomBedTypeStep';
@@ -68,13 +67,15 @@ interface WizardFormData {
   amenities: string[];
   amenityDetails: AmenityDetails;
   genderPreference: string;
+  tenantSelection: string;
+  hasMultipleBlocks: boolean;
+  blockCount: number;
   coverImage: string;
   galleryImages: string[];
   highlights: string[];
   title: string;
   description: string;
   descriptionManuallyEdited?: boolean;
-  uploadMethod: 'manual' | 'excel' | '';
   rooms: WizardRoomData[];
   selectedRoomIds: string[];
   completedRoomIds: string[];
@@ -98,13 +99,15 @@ const INITIAL_FORM_DATA: WizardFormData = {
   amenities: [],
   amenityDetails: {},
   genderPreference: '',
+  tenantSelection: '',
+  hasMultipleBlocks: false,
+  blockCount: 1,
   coverImage: '',
   galleryImages: [],
   highlights: [],
   title: '',
   description: '',
   descriptionManuallyEdited: false,
-  uploadMethod: '',
   rooms: [],
   selectedRoomIds: [],
   completedRoomIds: [],
@@ -117,12 +120,12 @@ const INITIAL_FORM_DATA: WizardFormData = {
 const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 
 // Total steps: 0-29 (30 steps total)
-// Step order (with NearbyUniversities inserted at step 9):
+// Step order:
 // 0: Intro
 // 1: Filler Phase 1
 // 2: Property Type
-// 3: Title
-// 4: Gender Preference
+// 3: Property Details (name + building blocks)
+// 4: Tenant Preference (tenant type + gender)
 // 5: Highlights
 // 6: Description
 // 7: Filler Phase 2
@@ -133,8 +136,8 @@ const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 // 14: Filler Phase 3
 // --- DORM FLOW (propertyType !== 'apartment') ---
 // 15: Capacity (How many rooms?)
-// 16: Upload Method
-// 17: Room Names / Excel Upload
+// 16: (skipped — was Upload Method, now deleted)
+// 17: Room Names
 // 18: Room Types
 // 19: Bulk Selection
 // 20: Pricing
@@ -146,7 +149,7 @@ const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 // 26: Review
 // --- APARTMENT FLOW (propertyType === 'apartment') ---
 // 15: Apartment Count
-// 16: Upload Method (manual only for now)
+// 16: (skipped)
 // 17: Apartment Names
 // 18: Apartment Types
 // 19: Apartment Selection
@@ -406,9 +409,15 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       return;
     }
     
-    // Skip Excel upload step when going back if manual was selected
-    if (currentStep === 18 && formData.uploadMethod === 'manual') {
-      setCurrentStep(16);
+    // From room types (18), go back to room names (17), skipping deleted upload method step
+    if (currentStep === 18) {
+      setCurrentStep(17);
+      return;
+    }
+    
+    // From room names (17), go back to capacity (15), skipping deleted upload method step
+    if (currentStep === 17 && !isApartmentFlow) {
+      setCurrentStep(15);
       return;
     }
     
@@ -580,6 +589,9 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             completedRoomIds: updatedCompletedIds 
           }));
         }
+        // Skip step 16 (deleted upload method) — go directly to room names
+        setCurrentStep(17);
+        return;
       }
     }
 
@@ -635,16 +647,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       return;
     }
 
-    // After upload method, skip to appropriate step
-    if (currentStep === 16) {
-      if (formData.uploadMethod === 'excel') {
-        setCurrentStep(17); // Excel upload step
-        return;
-      } else {
-        setCurrentStep(17); // Room names step (same step number, different content based on method)
-        return;
-      }
-    }
+    // Step 16 is deleted (was upload method) — should never reach here
+    // but just in case, skip to 17
 
     // From bulk selection step (19), check if all rooms are complete
     if (currentStep === 19) {
@@ -757,6 +761,15 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
       if (error) throw error;
 
+      // Save new columns (tenant_selection, has_multiple_blocks, block_count)
+      if (newDormId) {
+        await supabase.from('dorms').update({
+          tenant_selection: formData.tenantSelection || 'mixed',
+          has_multiple_blocks: formData.hasMultipleBlocks,
+          block_count: formData.blockCount,
+        }).eq('id', newDormId);
+      }
+
       // Create all rooms for this dorm
       if (formData.rooms.length > 0 && newDormId) {
         for (const room of formData.rooms) {
@@ -813,8 +826,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     // Common validations
     switch (currentStep) {
       case 2: return !formData.propertyType;
-      case 3: return !formData.title;
-      case 4: return !formData.genderPreference;
+      case 3: return !formData.title || (formData.hasMultipleBlocks && formData.blockCount < 2);
+      case 4: return !formData.tenantSelection || !formData.genderPreference;
       case 8: return !formData.city || !formData.area;
       case 13: return !formData.coverImage;
       case 15: 
@@ -851,12 +864,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
     // Dorm flow validations
     switch (currentStep) {
-      case 16: return !formData.uploadMethod;
-      case 17: 
-        if (formData.uploadMethod === 'manual') {
-          return formData.rooms.some(r => !r.name);
-        }
-        return formData.rooms.length === 0 || !formData.rooms.some(r => r.id.startsWith('excel-'));
+      case 17: return formData.rooms.some(r => !r.name);
       case 18: return formData.rooms.some(r => !r.type);
       case 19: 
         if (formData.completedRoomIds.length === formData.rooms.length && formData.rooms.length > 0) {
@@ -900,22 +908,23 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         );
       case 3:
         return (
-          <DescriptionStep
-            mode="title"
-            highlights={formData.highlights}
+          <PropertyDetailsStep
             title={formData.title}
-            description={formData.description}
-            onHighlightsChange={(v) => setFormData({ ...formData, highlights: v })}
             onTitleChange={(v) => setFormData({ ...formData, title: v })}
-            onDescriptionChange={(v) => setFormData({ ...formData, description: v })}
+            hasMultipleBlocks={formData.hasMultipleBlocks}
+            onHasMultipleBlocksChange={(v) => setFormData({ ...formData, hasMultipleBlocks: v })}
+            blockCount={formData.blockCount}
+            onBlockCountChange={(v) => setFormData({ ...formData, blockCount: v })}
             propertyType={formData.propertyType}
           />
         );
       case 4:
         return (
-          <GenderPreferenceStep
-            value={formData.genderPreference}
-            onChange={(v) => setFormData({ ...formData, genderPreference: v })}
+          <TenantPreferenceStep
+            tenantSelection={formData.tenantSelection}
+            onTenantSelectionChange={(v) => setFormData({ ...formData, tenantSelection: v })}
+            genderPreference={formData.genderPreference}
+            onGenderPreferenceChange={(v) => setFormData({ ...formData, genderPreference: v })}
             propertyType={formData.propertyType}
           />
         );
@@ -1047,32 +1056,14 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           />
         );
       case 16:
-        if (isApartmentFlow) {
-          // Apartment flow skips this step (handled in handleNext)
-          return null;
-        }
-        return (
-          <UploadMethodStep
-            value={formData.uploadMethod}
-            onChange={(v) => setFormData({ ...formData, uploadMethod: v })}
-            propertyType={formData.propertyType}
-          />
-        );
+        // Step 16 deleted (was upload method) — should not render
+        return null;
       case 17:
         if (isApartmentFlow) {
           return (
             <ApartmentNamesStep
               apartments={formData.apartments}
               onChange={(apartments) => setFormData({ ...formData, apartments })}
-            />
-          );
-        }
-        if (formData.uploadMethod === 'excel') {
-          return (
-            <ExcelUploadStep
-              roomCount={formData.capacity}
-              onImport={(rooms) => setFormData({ ...formData, rooms, selectedRoomIds: rooms.map(r => r.id) })}
-              importedCount={formData.rooms.length}
             />
           );
         }

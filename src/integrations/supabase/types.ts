@@ -1669,6 +1669,7 @@ export type Database = {
           amenities: string[] | null
           area: string | null
           available: boolean | null
+          block_count: number | null
           capacity: number | null
           cover_image: string | null
           created_at: string
@@ -1677,6 +1678,7 @@ export type Database = {
           email: string | null
           gallery_images: string[] | null
           gender_preference: string | null
+          has_multiple_blocks: boolean | null
           id: string
           image_url: string | null
           location: string
@@ -1694,6 +1696,7 @@ export type Database = {
           room_types_json: Json | null
           services_amenities: string | null
           shuttle: boolean | null
+          tenant_selection: string | null
           type: string | null
           university: string | null
           updated_at: string
@@ -1705,6 +1708,7 @@ export type Database = {
           amenities?: string[] | null
           area?: string | null
           available?: boolean | null
+          block_count?: number | null
           capacity?: number | null
           cover_image?: string | null
           created_at?: string
@@ -1713,6 +1717,7 @@ export type Database = {
           email?: string | null
           gallery_images?: string[] | null
           gender_preference?: string | null
+          has_multiple_blocks?: boolean | null
           id?: string
           image_url?: string | null
           location: string
@@ -1730,6 +1735,7 @@ export type Database = {
           room_types_json?: Json | null
           services_amenities?: string | null
           shuttle?: boolean | null
+          tenant_selection?: string | null
           type?: string | null
           university?: string | null
           updated_at?: string
@@ -1741,6 +1747,7 @@ export type Database = {
           amenities?: string[] | null
           area?: string | null
           available?: boolean | null
+          block_count?: number | null
           capacity?: number | null
           cover_image?: string | null
           created_at?: string
@@ -1749,6 +1756,7 @@ export type Database = {
           email?: string | null
           gallery_images?: string[] | null
           gender_preference?: string | null
+          has_multiple_blocks?: boolean | null
           id?: string
           image_url?: string | null
           location?: string
@@ -1766,6 +1774,7 @@ export type Database = {
           room_types_json?: Json | null
           services_amenities?: string | null
           shuttle?: boolean | null
+          tenant_selection?: string | null
           type?: string | null
           university?: string | null
           updated_at?: string
