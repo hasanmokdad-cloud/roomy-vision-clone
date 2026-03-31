@@ -67,11 +67,25 @@ export function ReviewStep({
   const [showPreview, setShowPreview] = useState(false);
   
   const rooms = formData.rooms || [];
-  const roomsWithPrice = rooms.filter(r => r.price !== null && r.price > 0);
-  const roomsWithImages = rooms.filter(r => r.images.length > 0);
+  const roomsWithPrice = rooms.filter(r => (r.price !== null && r.price > 0) || r.tiered_pricing_enabled);
+  const roomsWithImages = rooms.filter(r => r.images.length > 0 || (r.space_images && Object.values(r.space_images).some(arr => arr.length > 0)));
   const roomTypes = [...new Set(rooms.map(r => r.type).filter(Boolean))];
+  
+  // Count building photos by type
+  const buildingImages = formData.buildingImages || [];
+  const exteriorPhotos = buildingImages.filter(img => img.sectionType === 'exterior' || img.sectionType === 'cover').length;
+  const galleryPhotos = formData.galleryImages.length;
+  // Count distinct space types across all rooms
+  const allSpaceTypes = new Set<string>();
+  rooms.forEach(r => {
+    if (r.space_images) {
+      Object.entries(r.space_images).forEach(([key, urls]) => {
+        if (urls.length > 0) allSpaceTypes.add(key);
+      });
+    }
+  });
 
-  const sections = [
+  const sections: { icon: any; title: string; value: string; complete: boolean; editStep: number; show?: boolean }[] = [
     {
       icon: MapPin,
       title: 'Location',
@@ -83,17 +97,24 @@ export function ReviewStep({
     },
     {
       icon: Users,
-      title: 'Capacity & Gender',
-      value: `${formData.capacity} ${roomsLabel} • ${genderLabels[formData.genderPreference] || 'Not set'}`,
-      complete: formData.capacity > 0 && !!formData.genderPreference,
-      editStep: 14,
+      title: 'Tenant Preference',
+      value: `${tenantLabels[formData.tenantSelection || ''] || formData.tenantSelection || 'Not set'} - ${genderLabels[formData.genderPreference] || 'Not set'}`,
+      complete: !!formData.tenantSelection && !!formData.genderPreference,
+      editStep: 4,
     },
+    ...(formData.hasMultipleBlocks ? [{
+      icon: Layers,
+      title: 'Building Blocks',
+      value: `${formData.blockCount || 0} blocks configured`,
+      complete: (formData.blockCount || 0) > 0,
+      editStep: 3,
+    }] : []),
     {
       icon: Camera,
       title: `${dormLabelCap} Photos`,
-      value: `${formData.coverImage ? 1 : 0} cover, ${formData.galleryImages.length} gallery`,
-      complete: !!formData.coverImage,
-      editStep: 12,
+      value: `${exteriorPhotos} exterior photos, ${galleryPhotos} gallery photos${allSpaceTypes.size > 0 ? ` across ${allSpaceTypes.size} spaces` : ''}`,
+      complete: !!formData.coverImage || exteriorPhotos > 0,
+      editStep: 13,
     },
     {
       icon: FileText,
@@ -104,18 +125,18 @@ export function ReviewStep({
     },
     {
       icon: DoorOpen,
-      title: `${roomsLabelCap} Setup`,
+      title: 'Rental Units Setup',
       value: rooms.length > 0 
-        ? `${rooms.length} ${roomsLabel} • ${roomTypes.length} type${roomTypes.length !== 1 ? 's' : ''}`
-        : `No ${roomsLabel} added`,
+        ? `${rooms.length} units - ${roomTypes.length} type${roomTypes.length !== 1 ? 's' : ''}`
+        : 'No units added',
       complete: rooms.length > 0 && rooms.every(r => r.name && r.type),
       editStep: 16,
     },
     {
       icon: DollarSign,
-      title: `${roomsLabelCap} Pricing`,
+      title: 'Rental Units Pricing',
       value: roomsWithPrice.length > 0
-        ? `${roomsWithPrice.length}/${rooms.length} ${roomsLabel} priced`
+        ? `${roomsWithPrice.length}/${rooms.length} units priced`
         : 'No pricing set',
       complete: roomsWithPrice.length === rooms.length,
       editStep: 19,
