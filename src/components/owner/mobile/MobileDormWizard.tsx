@@ -839,7 +839,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       case 3: return !formData.title || (formData.hasMultipleBlocks && formData.blockCount < 2);
       case 4: return !formData.tenantSelection || !formData.genderPreference;
       case 8: return !formData.city || !formData.area;
-      case 13: return !formData.coverImage;
+      case 13: return !formData.buildingImages.some(img => img.sectionType === 'exterior');
       case 15: 
         if (formData.propertyType === 'hybrid') {
           const totalHybrid = (formData.dormRoomCount || 0) + (formData.apartmentCount || 0);
