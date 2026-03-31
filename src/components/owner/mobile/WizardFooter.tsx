@@ -48,7 +48,7 @@ export function WizardFooter({
   
   const phase1Steps = [2, 3, 4, 5, 6];
   const phase2Steps = [8, 9, 10, 11, 12, 13]; // Added 9 (NearbyUniversities), Photos now at 13
-  const phase3Steps = [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]; // Starts at 15 now
+  const phase3Steps = [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]; // Starts at 15 now
   
   let progressPercentage: number;
   

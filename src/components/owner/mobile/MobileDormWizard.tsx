@@ -940,7 +940,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           return false;
         }
         return formData.selectedRoomIds.length === 0;
-      case 26: return !formData.title || !formData.area || !agreedToOwnerTerms;
+      case 26: return false; // Floor level is optional
+      case 27: return !formData.title || !formData.area || !agreedToOwnerTerms;
       default: return false;
     }
   };
