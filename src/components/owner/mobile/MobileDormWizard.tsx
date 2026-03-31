@@ -10,7 +10,7 @@ import { AirbnbStepTransition } from './AirbnbStepTransition';
 import { LocationStep } from './steps/LocationStep';
 import { CapacityStep } from './steps/CapacityStep';
 import { AmenitiesStep } from './steps/AmenitiesStep';
-import { PhotosStep } from './steps/PhotosStep';
+import { PhotosStep, BuildingImage } from './steps/PhotosStep';
 import { DescriptionStep } from './steps/DescriptionStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { PropertyTypeStep } from './steps/PropertyTypeStep';
