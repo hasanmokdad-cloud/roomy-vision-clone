@@ -1226,11 +1226,13 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           );
         }
         return (
-          <RoomPricingStep
+          <RoomMediaStep
             rooms={formData.rooms}
             selectedIds={formData.selectedRoomIds}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
             propertyType={formData.propertyType}
+            blockSettings={formData.blockSettings}
+            currentBlockNumber={formData.currentBlockNumber}
           />
         );
       case 21:
@@ -1244,10 +1246,11 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           );
         }
         return (
-          <TieredPricingStep
+          <RoomPricingStep
             rooms={formData.rooms}
             selectedIds={formData.selectedRoomIds}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
+            propertyType={formData.propertyType}
           />
         );
       case 22:
@@ -1261,11 +1264,10 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           );
         }
         return (
-          <RoomAreaStep
+          <TieredPricingStep
             rooms={formData.rooms}
             selectedIds={formData.selectedRoomIds}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
-            propertyType={formData.propertyType}
           />
         );
       case 23:
@@ -1279,7 +1281,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           );
         }
         return (
-          <RoomCapacityStep
+          <RoomAreaStep
             rooms={formData.rooms}
             selectedIds={formData.selectedRoomIds}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
@@ -1297,7 +1299,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           );
         }
         return (
-          <RoomOccupancyStep
+          <RoomCapacityStep
             rooms={formData.rooms}
             selectedIds={formData.selectedRoomIds}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
@@ -1315,7 +1317,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           );
         }
         return (
-          <RoomMediaStep
+          <RoomOccupancyStep
             rooms={formData.rooms}
             selectedIds={formData.selectedRoomIds}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
