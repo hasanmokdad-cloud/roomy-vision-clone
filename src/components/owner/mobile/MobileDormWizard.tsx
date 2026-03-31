@@ -67,13 +67,15 @@ interface WizardFormData {
   amenities: string[];
   amenityDetails: AmenityDetails;
   genderPreference: string;
+  tenantSelection: string;
+  hasMultipleBlocks: boolean;
+  blockCount: number;
   coverImage: string;
   galleryImages: string[];
   highlights: string[];
   title: string;
   description: string;
   descriptionManuallyEdited?: boolean;
-  uploadMethod: 'manual' | 'excel' | '';
   rooms: WizardRoomData[];
   selectedRoomIds: string[];
   completedRoomIds: string[];
