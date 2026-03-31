@@ -940,7 +940,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           return false;
         }
         return formData.selectedRoomIds.length === 0;
-      case 26: return !formData.title || !formData.area || !agreedToOwnerTerms;
+      case 26: return false; // Floor level is optional
+      case 27: return !formData.title || !formData.area || !agreedToOwnerTerms;
       default: return false;
     }
   };
@@ -981,9 +982,9 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             title={formData.title}
             onTitleChange={(v) => setFormData({ ...formData, title: v })}
             hasMultipleBlocks={formData.hasMultipleBlocks}
-            onHasMultipleBlocksChange={(v) => setFormData({ ...formData, hasMultipleBlocks: v })}
+            onHasMultipleBlocksChange={(v) => setFormData(prev => ({ ...prev, hasMultipleBlocks: v }))}
             blockCount={formData.blockCount}
-            onBlockCountChange={(v) => setFormData({ ...formData, blockCount: v })}
+            onBlockCountChange={(v) => setFormData(prev => ({ ...prev, blockCount: v }))}
             propertyType={formData.propertyType}
           />
         );
