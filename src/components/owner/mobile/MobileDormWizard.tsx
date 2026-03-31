@@ -377,31 +377,48 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       setCurrentStep(22);
       return;
     }
-    
-    // From area (22), go back to tiered pricing (21) or pricing (20)
-    if (currentStep === 22) {
-      if (!selectedHasTieredRooms()) {
-        setCurrentStep(20);
+    // From review (26), go back to occupancy (25) for dorm
+    if (currentStep === 26 && !isApartmentFlow) {
+      setCurrentStep(25);
+      return;
+    }
+
+    // From occupancy (25), go back to area (23), skipping capacity setup (24)
+    if (currentStep === 25 && !isApartmentFlow) {
+      setCurrentStep(23);
+      return;
+    }
+
+    // From area (23), go back to tiered pricing (22) or pricing (21)
+    if (currentStep === 23 && !isApartmentFlow) {
+      if (selectedHasTieredRooms()) {
+        setCurrentStep(22);
       } else {
         setCurrentStep(21);
       }
       return;
     }
     
-    // From tiered pricing (21), go back to pricing (20)
-    if (currentStep === 21) {
-      setCurrentStep(20);
+    // From tiered pricing (22), go back to pricing (21)
+    if (currentStep === 22 && !isApartmentFlow) {
+      setCurrentStep(21);
       return;
     }
     
-    // From pricing (20), go back to bulk selection (19)
-    if (currentStep === 20) {
+    // From pricing (21), go back to media (20)
+    if (currentStep === 21 && !isApartmentFlow) {
+      setCurrentStep(20);
+      return;
+    }
+
+    // From media (20), go back to bulk selection (19)
+    if (currentStep === 20 && !isApartmentFlow) {
       setCurrentStep(19);
       return;
     }
     
-    // From bulk selection (19), restore all rooms for editing and go to room types
-    if (currentStep === 19) {
+    // From bulk selection (19), go back to room types (18)
+    if (currentStep === 19 && !isApartmentFlow) {
       setFormData(prev => ({
         ...prev,
         selectedRoomIds: prev.rooms.map(r => r.id),
