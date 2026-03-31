@@ -411,14 +411,20 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       return;
     }
     
-    // From room types (18), go back to room names (17), skipping deleted upload method step
-    if (currentStep === 18) {
-      setCurrentStep(17);
+    // From room types (18), go back to room unit setup (16)
+    if (currentStep === 18 && !isApartmentFlow) {
+      setCurrentStep(16);
       return;
     }
     
-    // From room names (17), go back to capacity (15), skipping deleted upload method step
+    // From room names (17), go back to room unit setup (16) for dorm flow
     if (currentStep === 17 && !isApartmentFlow) {
+      setCurrentStep(16);
+      return;
+    }
+    
+    // From room unit setup (16), go back to capacity (15)
+    if (currentStep === 16 && !isApartmentFlow) {
       setCurrentStep(15);
       return;
     }
