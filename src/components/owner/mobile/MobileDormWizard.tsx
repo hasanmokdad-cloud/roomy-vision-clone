@@ -163,7 +163,8 @@ const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 // 23: Room Area
 // 24: (Capacity Setup - ALWAYS SKIPPED for dorm)
 // 25: Room Occupancy (LOOP EXIT)
-// 26: Review
+// 26: Room Floor Level (post-loop)
+// 27: Review
 // --- APARTMENT FLOW (propertyType === 'apartment') ---
 // 15: Apartment Count
 // 16: (skipped for apartment flow)
