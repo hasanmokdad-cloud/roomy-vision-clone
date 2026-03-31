@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
@@ -12,6 +11,8 @@ interface DescriptionStepProps {
   onTitleChange: (title: string) => void;
   onDescriptionChange: (description: string) => void;
   propertyType?: string;
+  rulesAndRegulations?: string;
+  onRulesAndRegulationsChange?: (rules: string) => void;
 }
 
 const highlightOptions = [
@@ -29,30 +30,16 @@ const highlightOptions = [
   { id: 'safe-secure', label: 'Safe & secure' },
   { id: 'well-maintained', label: 'Well-maintained' },
   { id: 'bright-airy', label: 'Bright & airy' },
-  { id: 'pet-friendly', label: 'Pet-friendly' },
-  { id: 'fast-wifi', label: 'Fast WiFi' },
-  { id: 'fully-furnished', label: 'Fully furnished' },
   { id: 'recently-renovated', label: 'Recently renovated' },
   { id: 'great-views', label: 'Great views' },
   { id: 'close-to-shops', label: 'Close to shops' },
   { id: 'public-transport', label: 'Near public transport' },
-  { id: 'utilities-included', label: 'Utilities included' },
   { id: 'flexible-lease', label: 'Flexible lease' },
-  { id: 'communal-kitchen', label: 'Communal kitchen' },
-  { id: 'laundry-onsite', label: 'Laundry on-site' },
-  { id: 'rooftop-access', label: 'Rooftop access' },
-  { id: 'outdoor-space', label: 'Outdoor space' },
-  { id: 'parking-available', label: 'Parking available' },
-  { id: 'generator-backup', label: 'Generator backup' },
   { id: 'sea-view', label: 'Sea view' },
   { id: 'mountain-view', label: 'Mountain view' },
   { id: 'city-view', label: 'City view' },
-  { id: 'balcony', label: 'Balcony' },
-  { id: 'private-bathroom', label: 'Private bathroom' },
   { id: 'quiet-neighborhood', label: 'Quiet neighborhood' },
   { id: 'vibrant-area', label: 'Vibrant area' },
-  { id: 'study-room', label: 'Study room' },
-  { id: 'gym-access', label: 'Gym access' },
 ];
 
 export function DescriptionStep({
@@ -64,6 +51,8 @@ export function DescriptionStep({
   onTitleChange,
   onDescriptionChange,
   propertyType = 'dorm',
+  rulesAndRegulations = '',
+  onRulesAndRegulationsChange,
 }: DescriptionStepProps) {
   const { dormLabel } = usePropertyTerminology(propertyType);
   
@@ -143,11 +132,11 @@ export function DescriptionStep({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <Input
+            <input
               value={title}
               onChange={(e) => onTitleChange(e.target.value.slice(0, 50))}
               placeholder="e.g., Cozy Student Haven near Campus"
-              className="h-14 text-lg"
+              className="w-full h-14 text-lg px-4 rounded-lg border border-border bg-background text-foreground"
             />
             <p className="text-right text-sm text-muted-foreground mt-2">
               {title.length}/50
@@ -158,6 +147,7 @@ export function DescriptionStep({
     );
   }
 
+  // Description mode
   return (
     <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
       <div className="w-full max-w-xl mx-auto">
@@ -179,7 +169,7 @@ export function DescriptionStep({
           <Textarea
             value={description}
             onChange={(e) => onDescriptionChange(e.target.value.slice(0, 500))}
-            placeholder={`Describe your ${dormLabel}... What do students love about it? Any house rules? What makes it unique?`}
+            placeholder={`Describe your ${dormLabel}... What do students love about it? What makes it unique?`}
             className="min-h-[200px] text-base"
           />
           <p className="text-right text-sm text-muted-foreground mt-2">
@@ -195,6 +185,30 @@ export function DescriptionStep({
         >
           <p className="text-sm text-muted-foreground">
             💡 <strong>Tips:</strong> Mention nearby universities, hospitals, landmarks, transportation, what's included, and any unique features that set your listing apart.
+          </p>
+        </motion.div>
+
+        {/* Section 2 — Rules & Regulations */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-10"
+        >
+          <h2 className="text-lg font-semibold text-foreground text-center mb-1">
+            Building rules & regulations
+          </h2>
+          <p className="text-sm text-muted-foreground text-center mb-4">
+            Let tenants know what's expected. This will be shown on your listing page.
+          </p>
+          <Textarea
+            value={rulesAndRegulations}
+            onChange={(e) => onRulesAndRegulationsChange?.(e.target.value.slice(0, 1000))}
+            placeholder="e.g. No smoking inside the building. Quiet hours from 11PM to 7AM. No guests after midnight. Tenants are responsible for keeping shared spaces clean..."
+            className="min-h-[150px] text-base"
+          />
+          <p className="text-right text-sm text-muted-foreground mt-2">
+            {rulesAndRegulations.length}/1000
           </p>
         </motion.div>
       </div>
