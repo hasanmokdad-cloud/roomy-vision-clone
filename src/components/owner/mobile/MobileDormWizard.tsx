@@ -962,6 +962,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onTitleChange={(v) => setFormData({ ...formData, title: v })}
             onDescriptionChange={(v) => setFormData({ ...formData, description: v, descriptionManuallyEdited: true })}
             propertyType={formData.propertyType}
+            rulesAndRegulations={formData.rulesAndRegulations}
+            onRulesAndRegulationsChange={(v) => setFormData({ ...formData, rulesAndRegulations: v, rulesManuallyEdited: true })}
           />
         );
       case 7:
