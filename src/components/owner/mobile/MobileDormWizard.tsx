@@ -671,52 +671,57 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       return;
     }
 
-    // Step 16 is deleted (was upload method) — should never reach here
-    // but just in case, skip to 17
+    // DORM FLOW NAVIGATION (steps 19-25 loop)
 
-    // From bulk selection step (19), check if all rooms are complete
+    // From bulk selection (19), if all complete → review (26), else proceed to media (20)
     if (currentStep === 19) {
       const allComplete = formData.rooms.every(r => formData.completedRoomIds.includes(r.id));
       if (allComplete) {
-        setCurrentStep(25); // Go to media step
+        setCurrentStep(26);
         return;
       }
+      // Proceed to media (20)
     }
 
-    // After pricing step (20), check if tiered pricing needed
-    if (currentStep === 20) {
+    // After pricing (21), check if tiered pricing needed
+    if (currentStep === 21) {
       if (!selectedHasTieredRooms()) {
-        // Skip tiered pricing step (21), go to area (22)
-        setCurrentStep(22);
+        setCurrentStep(23); // Skip tiered pricing (22), go to area (23)
         return;
       }
     }
 
-    // After area step (22), check if capacity step needed
-    if (currentStep === 22) {
-      if (!selectedNeedsCapacityStep()) {
-        // Skip capacity step (23), go to occupancy (24)
-        setCurrentStep(24);
-        return;
-      }
+    // After area (23), ALWAYS skip capacity setup (24) for dorm → go to occupancy (25)
+    if (currentStep === 23 && !isApartmentFlow) {
+      setCurrentStep(25);
+      return;
     }
 
-    // After occupancy step (24), mark current batch as complete and loop back or proceed
-    if (currentStep === 24) {
-      // Mark current batch as completed
+    // After occupancy (25), mark batch complete and loop or proceed
+    if (currentStep === 25 && !isApartmentFlow) {
       const newCompletedIds = [...new Set([...formData.completedRoomIds, ...formData.selectedRoomIds])];
       setFormData(prev => ({ 
         ...prev, 
         completedRoomIds: newCompletedIds,
-        selectedRoomIds: [] // Clear selection for next batch
+        selectedRoomIds: []
       }));
       
-      // Check if all rooms are now complete
       const allComplete = formData.rooms.every(r => newCompletedIds.includes(r.id));
       
       if (allComplete) {
-        setCurrentStep(25); // Media step
+        // Check multi-block
+        if (formData.hasMultipleBlocks && formData.currentBlockNumber < formData.blockCount) {
+          // TODO: Block transition screen, then go to step 15 for next block
+          setFormData(prev => ({ ...prev, currentBlockNumber: prev.currentBlockNumber + 1 }));
+          setCurrentStep(15);
+        } else {
+          setCurrentStep(26); // Review
+        }
       } else {
+        setCurrentStep(19); // Back to bulk selection
+      }
+      return;
+    }
         setCurrentStep(19); // Back to room selection for next batch
       }
       return;
