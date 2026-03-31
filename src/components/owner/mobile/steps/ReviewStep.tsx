@@ -44,6 +44,12 @@ const genderLabels: Record<string, string> = {
   mixed: 'Mixed (Co-ed)',
 };
 
+const tenantLabels: Record<string, string> = {
+  students_only: 'Students only',
+  non_students_only: 'Non-students only',
+  both: 'Everyone',
+};
+
 const cityLabels: Record<string, string> = {
   byblos: 'Byblos',
   beirut: 'Beirut',
