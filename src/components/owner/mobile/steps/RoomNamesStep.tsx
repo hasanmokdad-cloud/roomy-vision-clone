@@ -45,6 +45,8 @@ export interface WizardRoomData {
   tiered_pricing_enabled?: boolean;
   pricing_tiers?: { occupancy: number; price: number | null; deposit: number | null }[];
   space_images?: Record<string, string[]>; // space_type -> urls
+  block_number?: number;
+  floor_level?: string;
 }
 
 interface RoomNamesStepProps {

@@ -27,6 +27,7 @@ import { RoomAreaStep } from './steps/RoomAreaStep';
 import { RoomCapacityStep } from './steps/RoomCapacityStep';
 import { RoomOccupancyStep } from './steps/RoomOccupancyStep';
 import { RoomMediaStep } from './steps/RoomMediaStep';
+import { RoomFloorLevelStep } from './steps/RoomFloorLevelStep';
 import { HybridCapacityStep } from './steps/HybridCapacityStep';
 import { NearbyUniversitiesStep } from './steps/NearbyUniversitiesStep';
 import { ResponsiveAlertModal } from '@/components/ui/responsive-alert-modal';
@@ -162,7 +163,8 @@ const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 // 23: Room Area
 // 24: (Capacity Setup - ALWAYS SKIPPED for dorm)
 // 25: Room Occupancy (LOOP EXIT)
-// 26: Review
+// 26: Room Floor Level (post-loop)
+// 27: Review
 // --- APARTMENT FLOW (propertyType === 'apartment') ---
 // 15: Apartment Count
 // 16: (skipped for apartment flow)
@@ -722,7 +724,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       }
       return;
     }
-    const maxStep = isApartmentFlow ? TOTAL_STEPS - 1 : 26;
+    const maxStep = isApartmentFlow ? TOTAL_STEPS - 1 : 27;
     if (currentStep < maxStep) {
       setCurrentStep(currentStep + 1);
     }
@@ -1335,13 +1337,11 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           );
         }
         return (
-          <ReviewStep
-            formData={{...formData, shuttle: formData.shuttle || false, propertyType: formData.propertyType}}
-            onEditStep={setCurrentStep}
-            agreedToOwnerTerms={agreedToOwnerTerms}
-            onAgreedToOwnerTermsChange={setAgreedToOwnerTerms}
-            onSubmit={handleSubmit}
-            submitting={submitting}
+          <RoomFloorLevelStep
+            rooms={formData.rooms}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+            hasMultipleBlocks={formData.hasMultipleBlocks}
+            blockCount={formData.blockCount}
           />
         );
       case 27:
@@ -1354,7 +1354,16 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             />
           );
         }
-        return null;
+        return (
+          <ReviewStep
+            formData={{...formData, shuttle: formData.shuttle || false, propertyType: formData.propertyType}}
+            onEditStep={setCurrentStep}
+            agreedToOwnerTerms={agreedToOwnerTerms}
+            onAgreedToOwnerTermsChange={setAgreedToOwnerTerms}
+            onSubmit={handleSubmit}
+            submitting={submitting}
+          />
+        );
       case 28:
         if (isApartmentFlow) {
           return (
@@ -1385,7 +1394,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     }
   };
 
-  const lastStepForFlow = isApartmentFlow ? TOTAL_STEPS - 1 : 26;
+  const lastStepForFlow = isApartmentFlow ? TOTAL_STEPS - 1 : 27;
   const isLastStep = currentStep === lastStepForFlow;
   const showFooter = currentStep > 0;
   const showTopBar = currentStep > 0;
