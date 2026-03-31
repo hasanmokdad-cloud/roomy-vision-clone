@@ -784,6 +784,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             has_reception: formData.hasReception,
             reception_per_block: formData.receptionPerBlock,
             rules_and_regulations: formData.rulesAndRegulations || null,
+            block_settings: formData.blockSettings,
             cover_image: coverUrl,
             image_url: coverUrl,
           }).eq('id', newDormId);
