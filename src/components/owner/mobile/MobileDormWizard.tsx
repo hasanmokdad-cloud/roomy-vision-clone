@@ -27,6 +27,7 @@ import { RoomAreaStep } from './steps/RoomAreaStep';
 import { RoomCapacityStep } from './steps/RoomCapacityStep';
 import { RoomOccupancyStep } from './steps/RoomOccupancyStep';
 import { RoomMediaStep } from './steps/RoomMediaStep';
+import { RoomFloorLevelStep } from './steps/RoomFloorLevelStep';
 import { HybridCapacityStep } from './steps/HybridCapacityStep';
 import { NearbyUniversitiesStep } from './steps/NearbyUniversitiesStep';
 import { ResponsiveAlertModal } from '@/components/ui/responsive-alert-modal';
