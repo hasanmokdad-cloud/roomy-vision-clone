@@ -1047,32 +1047,14 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           />
         );
       case 16:
-        if (isApartmentFlow) {
-          // Apartment flow skips this step (handled in handleNext)
-          return null;
-        }
-        return (
-          <UploadMethodStep
-            value={formData.uploadMethod}
-            onChange={(v) => setFormData({ ...formData, uploadMethod: v })}
-            propertyType={formData.propertyType}
-          />
-        );
+        // Step 16 deleted (was upload method) — should not render
+        return null;
       case 17:
         if (isApartmentFlow) {
           return (
             <ApartmentNamesStep
               apartments={formData.apartments}
               onChange={(apartments) => setFormData({ ...formData, apartments })}
-            />
-          );
-        }
-        if (formData.uploadMethod === 'excel') {
-          return (
-            <ExcelUploadStep
-              roomCount={formData.capacity}
-              onImport={(rooms) => setFormData({ ...formData, rooms, selectedRoomIds: rooms.map(r => r.id) })}
-              importedCount={formData.rooms.length}
             />
           );
         }
