@@ -56,6 +56,8 @@ const Profile = lazy(() => import("./pages/Profile"));
 const DormDetail = lazy(() => import("./pages/DormDetail"));
 const ApartmentDetail = lazy(() => import("./pages/ApartmentDetail"));
 const ApartmentPhotoTour = lazy(() => import("./pages/ApartmentPhotoTour"));
+const BuildingPhotoTour = lazy(() => import("./pages/BuildingPhotoTour"));
+const UnitPhotoTour = lazy(() => import("./pages/UnitPhotoTour"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const Analytics = lazy(() => import("./pages/admin/Analytics"));
 const Trends = lazy(() => import("./pages/admin/Trends"));
