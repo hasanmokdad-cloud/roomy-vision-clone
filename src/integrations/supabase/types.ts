@@ -1141,6 +1141,69 @@ export type Database = {
           },
         ]
       }
+      building_images: {
+        Row: {
+          created_at: string | null
+          dorm_id: string
+          id: string
+          section_type: string
+          sort_order: number | null
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          dorm_id: string
+          id?: string
+          section_type: string
+          sort_order?: number | null
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          dorm_id?: string
+          id?: string
+          section_type?: string
+          sort_order?: number | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "building_images_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "building_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "building_images_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorm_performance_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "building_images_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "building_images_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "dorms_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "building_images_dorm_id_fkey"
+            columns: ["dorm_id"]
+            isOneToOne: false
+            referencedRelation: "owner_performance_view"
+            referencedColumns: ["dorm_id"]
+          },
+        ]
+      }
       bulk_dorm_assignments: {
         Row: {
           admin_user_id: string
@@ -1679,6 +1742,7 @@ export type Database = {
           gallery_images: string[] | null
           gender_preference: string | null
           has_multiple_blocks: boolean | null
+          has_reception: boolean | null
           id: string
           image_url: string | null
           location: string
@@ -1689,11 +1753,13 @@ export type Database = {
           phone_number: string | null
           price: number | null
           property_type: string | null
+          reception_per_block: boolean | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           room_types: string | null
           room_types_json: Json | null
+          rules_and_regulations: string | null
           services_amenities: string | null
           shuttle: boolean | null
           tenant_selection: string | null
@@ -1718,6 +1784,7 @@ export type Database = {
           gallery_images?: string[] | null
           gender_preference?: string | null
           has_multiple_blocks?: boolean | null
+          has_reception?: boolean | null
           id?: string
           image_url?: string | null
           location: string
@@ -1728,11 +1795,13 @@ export type Database = {
           phone_number?: string | null
           price?: number | null
           property_type?: string | null
+          reception_per_block?: boolean | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           room_types?: string | null
           room_types_json?: Json | null
+          rules_and_regulations?: string | null
           services_amenities?: string | null
           shuttle?: boolean | null
           tenant_selection?: string | null
@@ -1757,6 +1826,7 @@ export type Database = {
           gallery_images?: string[] | null
           gender_preference?: string | null
           has_multiple_blocks?: boolean | null
+          has_reception?: boolean | null
           id?: string
           image_url?: string | null
           location?: string
@@ -1767,11 +1837,13 @@ export type Database = {
           phone_number?: string | null
           price?: number | null
           property_type?: string | null
+          reception_per_block?: boolean | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           room_types?: string | null
           room_types_json?: Json | null
+          rules_and_regulations?: string | null
           services_amenities?: string | null
           shuttle?: boolean | null
           tenant_selection?: string | null
