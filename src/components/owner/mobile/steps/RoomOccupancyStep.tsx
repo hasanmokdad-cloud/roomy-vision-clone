@@ -13,6 +13,25 @@ interface RoomOccupancyStepProps {
   propertyType?: string;
 }
 
+function getEffectiveCapacity(room: WizardRoomData): number {
+  // Derive capacity from capacityType if available
+  switch (room.capacityType) {
+    case 'single': return 1;
+    case 'double': case 'twin': return 2;
+    case 'triple': return 3;
+    case 'quadruple': return 4;
+    case 'suite': {
+      // Sum of all bedroom capacities
+      const bedrooms = room.suite_bedrooms || [];
+      if (bedrooms.length > 0) {
+        return bedrooms.reduce((sum: number, br: any) => sum + (br.capacity || 1), 0);
+      }
+      return room.capacity || 1;
+    }
+    default: return room.capacity || 1;
+  }
+}
+
 export function RoomOccupancyStep({ rooms, selectedIds, onChange, propertyType = 'dorm' }: RoomOccupancyStepProps) {
   const { roomsLabel, roomLabel } = usePropertyTerminology(propertyType);
   
