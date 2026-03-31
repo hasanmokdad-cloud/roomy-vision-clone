@@ -817,8 +817,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     // Common validations
     switch (currentStep) {
       case 2: return !formData.propertyType;
-      case 3: return !formData.title;
-      case 4: return !formData.genderPreference;
+      case 3: return !formData.title || (formData.hasMultipleBlocks && formData.blockCount < 2);
+      case 4: return !formData.tenantSelection || !formData.genderPreference;
       case 8: return !formData.city || !formData.area;
       case 13: return !formData.coverImage;
       case 15: 
