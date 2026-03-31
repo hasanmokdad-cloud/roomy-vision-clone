@@ -122,6 +122,8 @@ const INITIAL_FORM_DATA: WizardFormData = {
   hasReception: false,
   receptionPerBlock: false,
   buildingImages: [],
+  blockSettings: {},
+  currentBlockNumber: 1,
   rooms: [],
   selectedRoomIds: [],
   completedRoomIds: [],
