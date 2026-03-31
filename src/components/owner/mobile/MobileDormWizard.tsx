@@ -459,8 +459,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
   const selectedHasTieredRooms = (): boolean => {
     return formData.rooms.some(r => {
       if (!formData.selectedRoomIds.includes(r.id)) return false;
-      const type = r.type?.toLowerCase() || '';
-      return type.includes('double') || type.includes('triple');
+      return !!r.tiered_pricing_enabled;
     });
   };
 
