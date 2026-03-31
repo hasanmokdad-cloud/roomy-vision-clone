@@ -6,10 +6,24 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Wand2, AlertCircle } from 'lucide-react';
 import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
+export interface BedConfigRow {
+  bedType: 'single' | 'double' | 'twin';
+  quantity: number;
+}
+
+export interface SuiteBedroomConfig {
+  label: string;
+  capacity: 'single' | 'double' | 'twin' | 'triple';
+  bedConfig: BedConfigRow[];
+}
+
 export interface WizardRoomData {
   id: string;
   name: string;
-  type: string;
+  type: string; // canonical label
+  baseType?: string; // 'room' | 'studio'
+  capacityType?: string; // 'single' | 'double' | 'twin' | 'triple' | 'quadruple' | 'suite'
+  size?: string; // 'small' | 'medium' | 'large' | ''
   bedType?: string;
   price: number | null;
   deposit: number | null;
@@ -22,6 +36,12 @@ export interface WizardRoomData {
   area_m2: number | null;
   images: string[];
   video_url: string | null;
+  is_furnished?: boolean | null;
+  has_balcony?: boolean | null;
+  suite_has_kitchenette?: boolean | null;
+  suite_bathroom_count?: number;
+  bed_configuration?: BedConfigRow[];
+  suite_bedrooms?: SuiteBedroomConfig[];
 }
 
 interface RoomNamesStepProps {
