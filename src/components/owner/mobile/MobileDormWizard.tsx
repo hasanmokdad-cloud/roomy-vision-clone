@@ -82,6 +82,9 @@ interface WizardFormData {
   rulesManuallyEdited?: boolean;
   hasReception: boolean;
   receptionPerBlock: boolean;
+  // Block settings for room-unit-setup
+  blockSettings: Record<string, { kitchenette_type: string; balcony_type: string; furnished_type: string }>;
+  currentBlockNumber: number;
   rooms: WizardRoomData[];
   selectedRoomIds: string[];
   completedRoomIds: string[];
