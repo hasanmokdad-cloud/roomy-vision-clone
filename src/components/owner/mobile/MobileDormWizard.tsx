@@ -17,6 +17,7 @@ import { PropertyTypeStep } from './steps/PropertyTypeStep';
 import { PropertyDetailsStep } from './steps/PropertyDetailsStep';
 import { TenantPreferenceStep } from './steps/TenantPreferenceStep';
 import { RoomNamesStep, WizardRoomData } from './steps/RoomNamesStep';
+import { RoomUnitSetupStep } from './steps/RoomUnitSetupStep';
 import { RoomTypesStep } from './steps/RoomTypesStep';
 import { RoomBedTypeStep } from './steps/RoomBedTypeStep';
 import { RoomBulkSelectionStep } from './steps/RoomBulkSelectionStep';
@@ -81,6 +82,9 @@ interface WizardFormData {
   rulesManuallyEdited?: boolean;
   hasReception: boolean;
   receptionPerBlock: boolean;
+  // Block settings for room-unit-setup
+  blockSettings: Record<string, { kitchenette_type: string; balcony_type: string; furnished_type: string }>;
+  currentBlockNumber: number;
   rooms: WizardRoomData[];
   selectedRoomIds: string[];
   completedRoomIds: string[];
@@ -118,6 +122,8 @@ const INITIAL_FORM_DATA: WizardFormData = {
   hasReception: false,
   receptionPerBlock: false,
   buildingImages: [],
+  blockSettings: {},
+  currentBlockNumber: 1,
   rooms: [],
   selectedRoomIds: [],
   completedRoomIds: [],
@@ -146,7 +152,7 @@ const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 // 14: Filler Phase 3
 // --- DORM FLOW (propertyType !== 'apartment') ---
 // 15: Capacity (How many rooms?)
-// 16: (skipped — was Upload Method, now deleted)
+// 16: Room Unit Setup (kitchenette/balcony/furnished)
 // 17: Room Names
 // 18: Room Types
 // 19: Bulk Selection
@@ -159,7 +165,7 @@ const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 // 26: Review
 // --- APARTMENT FLOW (propertyType === 'apartment') ---
 // 15: Apartment Count
-// 16: (skipped)
+// 16: (skipped for apartment flow)
 // 17: Apartment Names
 // 18: Apartment Types
 // 19: Apartment Selection
@@ -405,14 +411,20 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       return;
     }
     
-    // From room types (18), go back to room names (17), skipping deleted upload method step
-    if (currentStep === 18) {
-      setCurrentStep(17);
+    // From room types (18), go back to room unit setup (16)
+    if (currentStep === 18 && !isApartmentFlow) {
+      setCurrentStep(16);
       return;
     }
     
-    // From room names (17), go back to capacity (15), skipping deleted upload method step
+    // From room names (17), go back to room unit setup (16) for dorm flow
     if (currentStep === 17 && !isApartmentFlow) {
+      setCurrentStep(16);
+      return;
+    }
+    
+    // From room unit setup (16), go back to capacity (15)
+    if (currentStep === 16 && !isApartmentFlow) {
       setCurrentStep(15);
       return;
     }
@@ -585,8 +597,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             completedRoomIds: updatedCompletedIds 
           }));
         }
-        // Skip step 16 (deleted upload method) — go directly to room names
-        setCurrentStep(17);
+        // Go to room unit setup (step 16)
+        setCurrentStep(16);
         return;
       }
     }
@@ -772,6 +784,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             has_reception: formData.hasReception,
             reception_per_block: formData.receptionPerBlock,
             rules_and_regulations: formData.rulesAndRegulations || null,
+            block_settings: formData.blockSettings,
             cover_image: coverUrl,
             image_url: coverUrl,
           }).eq('id', newDormId);
@@ -882,7 +895,12 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
     // Dorm flow validations
     switch (currentStep) {
-      case 17: return formData.rooms.some(r => !r.name);
+      case 16: {
+        const blockKey = String(formData.currentBlockNumber);
+        const bs = formData.blockSettings[blockKey];
+        return !bs || !bs.kitchenette_type || !bs.balcony_type || !bs.furnished_type;
+      }
+      case 17: return formData.rooms.some(r => !r.name.trim());
       case 18: return formData.rooms.some(r => !r.type);
       case 19: 
         if (formData.completedRoomIds.length === formData.rooms.length && formData.rooms.length > 0) {
@@ -1080,11 +1098,36 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             value={formData.capacity}
             onChange={(v) => setFormData({ ...formData, capacity: v })}
             propertyType={formData.propertyType}
+            hasMultipleBlocks={formData.hasMultipleBlocks}
+            currentBlockNumber={formData.currentBlockNumber}
           />
         );
-      case 16:
-        // Step 16 deleted (was upload method) — should not render
-        return null;
+      case 16: {
+        if (isApartmentFlow) return null;
+        const blockKey = String(formData.currentBlockNumber);
+        const bs = formData.blockSettings[blockKey] || { kitchenette_type: '', balcony_type: '', furnished_type: '' };
+        return (
+          <RoomUnitSetupStep
+            kitchenetteType={bs.kitchenette_type}
+            balconyType={bs.balcony_type}
+            furnishedType={bs.furnished_type}
+            onKitchenetteTypeChange={(v) => setFormData(prev => ({
+              ...prev,
+              blockSettings: { ...prev.blockSettings, [blockKey]: { ...bs, kitchenette_type: v } }
+            }))}
+            onBalconyTypeChange={(v) => setFormData(prev => ({
+              ...prev,
+              blockSettings: { ...prev.blockSettings, [blockKey]: { ...bs, balcony_type: v } }
+            }))}
+            onFurnishedTypeChange={(v) => setFormData(prev => ({
+              ...prev,
+              blockSettings: { ...prev.blockSettings, [blockKey]: { ...bs, furnished_type: v } }
+            }))}
+            hasMultipleBlocks={formData.hasMultipleBlocks}
+            currentBlockNumber={formData.currentBlockNumber}
+          />
+        );
+      }
       case 17:
         if (isApartmentFlow) {
           return (
@@ -1099,6 +1142,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             rooms={formData.rooms}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
             propertyType={formData.propertyType}
+            hasMultipleBlocks={formData.hasMultipleBlocks}
+            currentBlockNumber={formData.currentBlockNumber}
           />
         );
       case 18:

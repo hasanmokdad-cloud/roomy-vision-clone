@@ -1733,6 +1733,7 @@ export type Database = {
           area: string | null
           available: boolean | null
           block_count: number | null
+          block_settings: Json | null
           capacity: number | null
           cover_image: string | null
           created_at: string
@@ -1775,6 +1776,7 @@ export type Database = {
           area?: string | null
           available?: boolean | null
           block_count?: number | null
+          block_settings?: Json | null
           capacity?: number | null
           cover_image?: string | null
           created_at?: string
@@ -1817,6 +1819,7 @@ export type Database = {
           area?: string | null
           available?: boolean | null
           block_count?: number | null
+          block_settings?: Json | null
           capacity?: number | null
           cover_image?: string | null
           created_at?: string
@@ -4290,7 +4293,9 @@ export type Database = {
         Row: {
           area_m2: number | null
           available: boolean | null
+          bed_configuration: Json | null
           bed_type: string | null
+          block_number: number | null
           capacity: number | null
           capacity_occupied: number | null
           created_at: string
@@ -4299,14 +4304,20 @@ export type Database = {
           deposit_2_students: number | null
           description: string | null
           dorm_id: string
+          floor_level: string | null
+          has_balcony: boolean | null
           id: string
           images: string[] | null
+          is_furnished: boolean | null
           name: string
           panorama_urls: string[] | null
           price: number
           price_1_student: number | null
           price_2_students: number | null
           roomy_confirmed_occupants: number | null
+          suite_bathroom_count: number | null
+          suite_bedrooms: Json | null
+          suite_has_kitchenette: boolean | null
           three_d_model_url: string | null
           type: string
           updated_at: string
@@ -4315,7 +4326,9 @@ export type Database = {
         Insert: {
           area_m2?: number | null
           available?: boolean | null
+          bed_configuration?: Json | null
           bed_type?: string | null
+          block_number?: number | null
           capacity?: number | null
           capacity_occupied?: number | null
           created_at?: string
@@ -4324,14 +4337,20 @@ export type Database = {
           deposit_2_students?: number | null
           description?: string | null
           dorm_id: string
+          floor_level?: string | null
+          has_balcony?: boolean | null
           id?: string
           images?: string[] | null
+          is_furnished?: boolean | null
           name: string
           panorama_urls?: string[] | null
           price: number
           price_1_student?: number | null
           price_2_students?: number | null
           roomy_confirmed_occupants?: number | null
+          suite_bathroom_count?: number | null
+          suite_bedrooms?: Json | null
+          suite_has_kitchenette?: boolean | null
           three_d_model_url?: string | null
           type: string
           updated_at?: string
@@ -4340,7 +4359,9 @@ export type Database = {
         Update: {
           area_m2?: number | null
           available?: boolean | null
+          bed_configuration?: Json | null
           bed_type?: string | null
+          block_number?: number | null
           capacity?: number | null
           capacity_occupied?: number | null
           created_at?: string
@@ -4349,14 +4370,20 @@ export type Database = {
           deposit_2_students?: number | null
           description?: string | null
           dorm_id?: string
+          floor_level?: string | null
+          has_balcony?: boolean | null
           id?: string
           images?: string[] | null
+          is_furnished?: boolean | null
           name?: string
           panorama_urls?: string[] | null
           price?: number
           price_1_student?: number | null
           price_2_students?: number | null
           roomy_confirmed_occupants?: number | null
+          suite_bathroom_count?: number | null
+          suite_bedrooms?: Json | null
+          suite_has_kitchenette?: boolean | null
           three_d_model_url?: string | null
           type?: string
           updated_at?: string

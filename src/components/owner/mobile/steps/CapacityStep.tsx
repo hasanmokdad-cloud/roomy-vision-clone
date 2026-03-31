@@ -6,13 +6,14 @@ interface CapacityStepProps {
   value: number;
   onChange: (value: number) => void;
   propertyType: string;
+  hasMultipleBlocks?: boolean;
+  currentBlockNumber?: number;
 }
 
-export function CapacityStep({ value, onChange, propertyType }: CapacityStepProps) {
+export function CapacityStep({ value, onChange, propertyType, hasMultipleBlocks = false, currentBlockNumber = 1 }: CapacityStepProps) {
   const isApartment = propertyType === 'apartment';
   const unitLabel = isApartment ? 'apartment' : 'room';
   const unitLabelPlural = isApartment ? 'apartments' : 'rooms';
-  const buildingLabel = isApartment ? 'building' : 'dorm';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -30,6 +31,10 @@ export function CapacityStep({ value, onChange, propertyType }: CapacityStepProp
     }
   };
 
+  const heading = hasMultipleBlocks
+    ? `How many rental units does Block ${currentBlockNumber} have?`
+    : `How many rental units does your dorm have?`;
+
   return (
     <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
       <div className="w-full max-w-xl mx-auto">
@@ -39,7 +44,7 @@ export function CapacityStep({ value, onChange, propertyType }: CapacityStepProp
           className="text-center mb-8"
         >
           <h1 className="text-2xl lg:text-[32px] font-semibold text-foreground">
-            How many {unitLabelPlural} does your {buildingLabel} have?
+            {heading}
           </h1>
         </motion.div>
 
