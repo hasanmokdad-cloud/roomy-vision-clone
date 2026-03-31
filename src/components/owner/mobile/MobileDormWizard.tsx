@@ -1097,11 +1097,36 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             value={formData.capacity}
             onChange={(v) => setFormData({ ...formData, capacity: v })}
             propertyType={formData.propertyType}
+            hasMultipleBlocks={formData.hasMultipleBlocks}
+            currentBlockNumber={formData.currentBlockNumber}
           />
         );
-      case 16:
-        // Step 16 deleted (was upload method) — should not render
-        return null;
+      case 16: {
+        if (isApartmentFlow) return null;
+        const blockKey = String(formData.currentBlockNumber);
+        const bs = formData.blockSettings[blockKey] || { kitchenette_type: '', balcony_type: '', furnished_type: '' };
+        return (
+          <RoomUnitSetupStep
+            kitchenetteType={bs.kitchenette_type}
+            balconyType={bs.balcony_type}
+            furnishedType={bs.furnished_type}
+            onKitchenetteTypeChange={(v) => setFormData(prev => ({
+              ...prev,
+              blockSettings: { ...prev.blockSettings, [blockKey]: { ...bs, kitchenette_type: v } }
+            }))}
+            onBalconyTypeChange={(v) => setFormData(prev => ({
+              ...prev,
+              blockSettings: { ...prev.blockSettings, [blockKey]: { ...bs, balcony_type: v } }
+            }))}
+            onFurnishedTypeChange={(v) => setFormData(prev => ({
+              ...prev,
+              blockSettings: { ...prev.blockSettings, [blockKey]: { ...bs, furnished_type: v } }
+            }))}
+            hasMultipleBlocks={formData.hasMultipleBlocks}
+            currentBlockNumber={formData.currentBlockNumber}
+          />
+        );
+      }
       case 17:
         if (isApartmentFlow) {
           return (
@@ -1116,6 +1141,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             rooms={formData.rooms}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
             propertyType={formData.propertyType}
+            hasMultipleBlocks={formData.hasMultipleBlocks}
+            currentBlockNumber={formData.currentBlockNumber}
           />
         );
       case 18:
