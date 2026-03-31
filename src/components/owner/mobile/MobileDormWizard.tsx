@@ -855,12 +855,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
     // Dorm flow validations
     switch (currentStep) {
-      case 16: return !formData.uploadMethod;
-      case 17: 
-        if (formData.uploadMethod === 'manual') {
-          return formData.rooms.some(r => !r.name);
-        }
-        return formData.rooms.length === 0 || !formData.rooms.some(r => r.id.startsWith('excel-'));
+      case 17: return formData.rooms.some(r => !r.name);
       case 18: return formData.rooms.some(r => !r.type);
       case 19: 
         if (formData.completedRoomIds.length === formData.rooms.length && formData.rooms.length > 0) {
