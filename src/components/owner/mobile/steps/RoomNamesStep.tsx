@@ -42,6 +42,9 @@ export interface WizardRoomData {
   suite_bathroom_count?: number;
   bed_configuration?: BedConfigRow[];
   suite_bedrooms?: SuiteBedroomConfig[];
+  tiered_pricing_enabled?: boolean;
+  pricing_tiers?: { occupancy: number; price: number | null; deposit: number | null }[];
+  space_images?: Record<string, string[]>; // space_type -> urls
 }
 
 interface RoomNamesStepProps {

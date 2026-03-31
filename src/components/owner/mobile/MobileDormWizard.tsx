@@ -155,13 +155,13 @@ const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 // 16: Room Unit Setup (kitchenette/balcony/furnished)
 // 17: Room Names
 // 18: Room Types
-// 19: Bulk Selection
-// 20: Pricing
-// 21: Tiered Pricing
-// 22: Area
-// 23: Capacity Setup
-// 24: Occupancy
-// 25: Room Media
+// 19: Bulk Selection (LOOP ENTRY)
+// 20: Room Media (inside loop - first step)
+// 21: Room Pricing
+// 22: Tiered Pricing (conditional)
+// 23: Room Area
+// 24: (Capacity Setup - ALWAYS SKIPPED for dorm)
+// 25: Room Occupancy (LOOP EXIT)
 // 26: Review
 // --- APARTMENT FLOW (propertyType === 'apartment') ---
 // 15: Apartment Count
@@ -377,31 +377,48 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       setCurrentStep(22);
       return;
     }
-    
-    // From area (22), go back to tiered pricing (21) or pricing (20)
-    if (currentStep === 22) {
-      if (!selectedHasTieredRooms()) {
-        setCurrentStep(20);
+    // From review (26), go back to occupancy (25) for dorm
+    if (currentStep === 26 && !isApartmentFlow) {
+      setCurrentStep(25);
+      return;
+    }
+
+    // From occupancy (25), go back to area (23), skipping capacity setup (24)
+    if (currentStep === 25 && !isApartmentFlow) {
+      setCurrentStep(23);
+      return;
+    }
+
+    // From area (23), go back to tiered pricing (22) or pricing (21)
+    if (currentStep === 23 && !isApartmentFlow) {
+      if (selectedHasTieredRooms()) {
+        setCurrentStep(22);
       } else {
         setCurrentStep(21);
       }
       return;
     }
     
-    // From tiered pricing (21), go back to pricing (20)
-    if (currentStep === 21) {
-      setCurrentStep(20);
+    // From tiered pricing (22), go back to pricing (21)
+    if (currentStep === 22 && !isApartmentFlow) {
+      setCurrentStep(21);
       return;
     }
     
-    // From pricing (20), go back to bulk selection (19)
-    if (currentStep === 20) {
+    // From pricing (21), go back to media (20)
+    if (currentStep === 21 && !isApartmentFlow) {
+      setCurrentStep(20);
+      return;
+    }
+
+    // From media (20), go back to bulk selection (19)
+    if (currentStep === 20 && !isApartmentFlow) {
       setCurrentStep(19);
       return;
     }
     
-    // From bulk selection (19), restore all rooms for editing and go to room types
-    if (currentStep === 19) {
+    // From bulk selection (19), go back to room types (18)
+    if (currentStep === 19 && !isApartmentFlow) {
       setFormData(prev => ({
         ...prev,
         selectedRoomIds: prev.rooms.map(r => r.id),
@@ -442,8 +459,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
   const selectedHasTieredRooms = (): boolean => {
     return formData.rooms.some(r => {
       if (!formData.selectedRoomIds.includes(r.id)) return false;
-      const type = r.type?.toLowerCase() || '';
-      return type.includes('double') || type.includes('triple');
+      return !!r.tiered_pricing_enabled;
     });
   };
 
@@ -655,52 +671,57 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       return;
     }
 
-    // Step 16 is deleted (was upload method) — should never reach here
-    // but just in case, skip to 17
+    // DORM FLOW NAVIGATION (steps 19-25 loop)
 
-    // From bulk selection step (19), check if all rooms are complete
+    // From bulk selection (19), if all complete → review (26), else proceed to media (20)
     if (currentStep === 19) {
       const allComplete = formData.rooms.every(r => formData.completedRoomIds.includes(r.id));
       if (allComplete) {
-        setCurrentStep(25); // Go to media step
+        setCurrentStep(26);
         return;
       }
+      // Proceed to media (20)
     }
 
-    // After pricing step (20), check if tiered pricing needed
-    if (currentStep === 20) {
+    // After pricing (21), check if tiered pricing needed
+    if (currentStep === 21) {
       if (!selectedHasTieredRooms()) {
-        // Skip tiered pricing step (21), go to area (22)
-        setCurrentStep(22);
+        setCurrentStep(23); // Skip tiered pricing (22), go to area (23)
         return;
       }
     }
 
-    // After area step (22), check if capacity step needed
-    if (currentStep === 22) {
-      if (!selectedNeedsCapacityStep()) {
-        // Skip capacity step (23), go to occupancy (24)
-        setCurrentStep(24);
-        return;
-      }
+    // After area (23), ALWAYS skip capacity setup (24) for dorm → go to occupancy (25)
+    if (currentStep === 23 && !isApartmentFlow) {
+      setCurrentStep(25);
+      return;
     }
 
-    // After occupancy step (24), mark current batch as complete and loop back or proceed
-    if (currentStep === 24) {
-      // Mark current batch as completed
+    // After occupancy (25), mark batch complete and loop or proceed
+    if (currentStep === 25 && !isApartmentFlow) {
       const newCompletedIds = [...new Set([...formData.completedRoomIds, ...formData.selectedRoomIds])];
       setFormData(prev => ({ 
         ...prev, 
         completedRoomIds: newCompletedIds,
-        selectedRoomIds: [] // Clear selection for next batch
+        selectedRoomIds: []
       }));
       
-      // Check if all rooms are now complete
       const allComplete = formData.rooms.every(r => newCompletedIds.includes(r.id));
       
       if (allComplete) {
-        setCurrentStep(25); // Media step
+        // Check multi-block
+        if (formData.hasMultipleBlocks && formData.currentBlockNumber < formData.blockCount) {
+          // TODO: Block transition screen, then go to step 15 for next block
+          setFormData(prev => ({ ...prev, currentBlockNumber: prev.currentBlockNumber + 1 }));
+          setCurrentStep(15);
+        } else {
+          setCurrentStep(26); // Review
+        }
       } else {
+        setCurrentStep(19); // Back to bulk selection
+      }
+      return;
+    }
         setCurrentStep(19); // Back to room selection for next batch
       }
       return;
