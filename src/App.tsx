@@ -305,6 +305,8 @@ const AppRoutes = () => {
           {/* PUBLIC - Listings and Dorm Details (no auth required, but OnboardingGuard for students) */}
           <Route path="/listings" element={<OnboardingGuard><MobileSwipeLayout><Listings /></MobileSwipeLayout></OnboardingGuard>} />
           <Route path="/dorm/:id" element={<OnboardingGuard><DormDetail /></OnboardingGuard>} />
+          <Route path="/dorm/:id/photos" element={<OnboardingGuard><BuildingPhotoTour /></OnboardingGuard>} />
+          <Route path="/dorm/:id/room/:roomId/photos" element={<OnboardingGuard><UnitPhotoTour /></OnboardingGuard>} />
           
           {/* Apartment Detail Pages - Airbnb Style (PUBLIC) */}
           <Route path="/apartments/:apartmentId" element={<OnboardingGuard><ApartmentDetail /></OnboardingGuard>} />
