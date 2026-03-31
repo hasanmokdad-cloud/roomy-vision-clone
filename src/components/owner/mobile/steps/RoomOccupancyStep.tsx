@@ -13,6 +13,25 @@ interface RoomOccupancyStepProps {
   propertyType?: string;
 }
 
+function getEffectiveCapacity(room: WizardRoomData): number {
+  // Derive capacity from capacityType if available
+  switch (room.capacityType) {
+    case 'single': return 1;
+    case 'double': case 'twin': return 2;
+    case 'triple': return 3;
+    case 'quadruple': return 4;
+    case 'suite': {
+      // Sum of all bedroom capacities
+      const bedrooms = room.suite_bedrooms || [];
+      if (bedrooms.length > 0) {
+        return bedrooms.reduce((sum: number, br: any) => sum + (br.capacity || 1), 0);
+      }
+      return room.capacity || 1;
+    }
+    default: return room.capacity || 1;
+  }
+}
+
 export function RoomOccupancyStep({ rooms, selectedIds, onChange, propertyType = 'dorm' }: RoomOccupancyStepProps) {
   const { roomsLabel, roomLabel } = usePropertyTerminology(propertyType);
   
@@ -69,7 +88,7 @@ export function RoomOccupancyStep({ rooms, selectedIds, onChange, propertyType =
                       </Badge>
                     )}
                     <span className="text-xs text-muted-foreground">
-                      Capacity: {room.capacity || '?'}
+                      Capacity: {getEffectiveCapacity(room)}
                     </span>
                   </div>
                 </div>
@@ -78,21 +97,16 @@ export function RoomOccupancyStep({ rooms, selectedIds, onChange, propertyType =
               <Select
                 value={room.capacity_occupied?.toString() || '0'}
                 onValueChange={(v) => updateOccupancy(room.id, parseInt(v))}
-                disabled={!room.capacity}
               >
                 <SelectTrigger className="w-24 h-10 rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {room.capacity ? (
-                    Array.from({ length: (room.capacity || 0) + 1 }, (_, i) => i).map(num => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num} / {room.capacity}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="0">0</SelectItem>
-                  )}
+                  {Array.from({ length: getEffectiveCapacity(room) + 1 }, (_, i) => i).map(num => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num} / {getEffectiveCapacity(room)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </motion.div>
