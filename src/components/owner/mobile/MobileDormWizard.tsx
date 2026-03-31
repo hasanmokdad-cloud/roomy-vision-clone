@@ -1022,6 +1022,11 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             amenityDetails={formData.amenityDetails}
             onUpdateAmenityDetails={(details) => setFormData(prev => ({ ...prev, amenityDetails: details }))}
             propertyType={formData.propertyType}
+            hasMultipleBlocks={formData.hasMultipleBlocks}
+            hasReception={formData.hasReception}
+            receptionPerBlock={formData.receptionPerBlock}
+            onHasReceptionChange={(v) => setFormData(prev => ({ ...prev, hasReception: v }))}
+            onReceptionPerBlockChange={(v) => setFormData(prev => ({ ...prev, receptionPerBlock: v }))}
           />
         );
       case 12:
