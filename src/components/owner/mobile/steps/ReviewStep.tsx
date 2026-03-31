@@ -19,13 +19,17 @@ interface ReviewStepProps {
     capacity: number;
     amenities: string[];
     genderPreference: string;
+    tenantSelection?: string;
     coverImage: string;
     galleryImages: string[];
+    buildingImages?: { id: string; url: string; section_type: string }[];
     title: string;
     description: string;
     rooms?: WizardRoomData[];
     shuttle?: boolean;
     propertyType?: string;
+    hasMultipleBlocks?: boolean;
+    blockCount?: number;
   };
   onEditStep: (step: number) => void;
   agreedToOwnerTerms: boolean;
