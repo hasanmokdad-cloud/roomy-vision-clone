@@ -10,7 +10,7 @@ import { AirbnbStepTransition } from './AirbnbStepTransition';
 import { LocationStep } from './steps/LocationStep';
 import { CapacityStep } from './steps/CapacityStep';
 import { AmenitiesStep } from './steps/AmenitiesStep';
-import { PhotosStep } from './steps/PhotosStep';
+import { PhotosStep, BuildingImage } from './steps/PhotosStep';
 import { DescriptionStep } from './steps/DescriptionStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { PropertyTypeStep } from './steps/PropertyTypeStep';
@@ -72,10 +72,15 @@ interface WizardFormData {
   blockCount: number;
   coverImage: string;
   galleryImages: string[];
+  buildingImages: BuildingImage[];
   highlights: string[];
   title: string;
   description: string;
   descriptionManuallyEdited?: boolean;
+  rulesAndRegulations: string;
+  rulesManuallyEdited?: boolean;
+  hasReception: boolean;
+  receptionPerBlock: boolean;
   rooms: WizardRoomData[];
   selectedRoomIds: string[];
   completedRoomIds: string[];
@@ -108,6 +113,11 @@ const INITIAL_FORM_DATA: WizardFormData = {
   title: '',
   description: '',
   descriptionManuallyEdited: false,
+  rulesAndRegulations: '',
+  rulesManuallyEdited: false,
+  hasReception: false,
+  receptionPerBlock: false,
+  buildingImages: [],
   rooms: [],
   selectedRoomIds: [],
   completedRoomIds: [],
@@ -183,30 +193,16 @@ const highlightDescriptions: Record<string, string> = {
   'safe-secure': 'A safe and secure environment with reliable security measures.',
   'well-maintained': 'Well-maintained facilities with regular upkeep and care.',
   'bright-airy': 'Bright and airy spaces filled with natural light.',
-  'pet-friendly': 'Pet-friendly accommodation for students with furry companions.',
-  'fast-wifi': 'High-speed WiFi perfect for studying and entertainment.',
-  'fully-furnished': 'Fully furnished rooms so you can move in right away.',
   'recently-renovated': 'Recently renovated with fresh, updated interiors.',
   'great-views': 'Stunning views to enjoy from your window.',
   'close-to-shops': 'Convenient access to shops, cafes, and essential services.',
   'public-transport': 'Easy access to public transportation links.',
-  'utilities-included': 'All utilities included in your rent for hassle-free living.',
   'flexible-lease': 'Flexible lease terms to suit your academic schedule.',
-  'communal-kitchen': 'A well-equipped communal kitchen for cooking.',
-  'laundry-onsite': 'On-site laundry facilities for your convenience.',
-  'rooftop-access': 'Rooftop access with amazing views and outdoor space.',
-  'outdoor-space': 'Outdoor spaces to relax and unwind.',
-  'parking-available': 'Parking available for students with vehicles.',
-  'generator-backup': 'Generator backup ensuring uninterrupted power supply.',
   'sea-view': 'Beautiful sea views to enjoy.',
   'mountain-view': 'Scenic mountain views from the property.',
   'city-view': 'Vibrant city views from your window.',
-  'balcony': 'Private balcony for fresh air and relaxation.',
-  'private-bathroom': 'Private bathroom for your comfort and privacy.',
   'quiet-neighborhood': 'Located in a quiet, peaceful neighborhood.',
   'vibrant-area': 'Situated in a vibrant area with lots to explore.',
-  'study-room': 'Dedicated study room for focused academic work.',
-  'gym-access': 'Access to gym facilities to stay active.',
 };
 
 function generateDescriptionFromHighlights(highlights: string[], propertyType: string): string {
@@ -761,14 +757,36 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
       if (error) throw error;
 
-      // Save new columns (tenant_selection, has_multiple_blocks, block_count)
-      if (newDormId) {
-        await supabase.from('dorms').update({
-          tenant_selection: formData.tenantSelection || 'mixed',
-          has_multiple_blocks: formData.hasMultipleBlocks,
-          block_count: formData.blockCount,
-        }).eq('id', newDormId);
-      }
+        // Save new columns
+        if (newDormId) {
+          // Get cover image for legacy fields
+          const exteriorImages = formData.buildingImages
+            .filter(img => img.sectionType === 'exterior')
+            .sort((a, b) => a.sortOrder - b.sortOrder);
+          const coverUrl = exteriorImages[0]?.url || null;
+          
+          await supabase.from('dorms').update({
+            tenant_selection: formData.tenantSelection || 'mixed',
+            has_multiple_blocks: formData.hasMultipleBlocks,
+            block_count: formData.blockCount,
+            has_reception: formData.hasReception,
+            reception_per_block: formData.receptionPerBlock,
+            rules_and_regulations: formData.rulesAndRegulations || null,
+            cover_image: coverUrl,
+            image_url: coverUrl,
+          }).eq('id', newDormId);
+
+          // Save building images
+          if (formData.buildingImages.length > 0) {
+            const imageRows = formData.buildingImages.map(img => ({
+              dorm_id: newDormId,
+              section_type: img.sectionType,
+              sort_order: img.sortOrder,
+              url: img.url,
+            }));
+            await supabase.from('building_images').insert(imageRows);
+          }
+        }
 
       // Create all rooms for this dorm
       if (formData.rooms.length > 0 && newDormId) {
@@ -829,7 +847,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       case 3: return !formData.title || (formData.hasMultipleBlocks && formData.blockCount < 2);
       case 4: return !formData.tenantSelection || !formData.genderPreference;
       case 8: return !formData.city || !formData.area;
-      case 13: return !formData.coverImage;
+      case 13: return !formData.buildingImages.some(img => img.sectionType === 'exterior');
       case 15: 
         if (formData.propertyType === 'hybrid') {
           const totalHybrid = (formData.dormRoomCount || 0) + (formData.apartmentCount || 0);
@@ -952,6 +970,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onTitleChange={(v) => setFormData({ ...formData, title: v })}
             onDescriptionChange={(v) => setFormData({ ...formData, description: v, descriptionManuallyEdited: true })}
             propertyType={formData.propertyType}
+            rulesAndRegulations={formData.rulesAndRegulations}
+            onRulesAndRegulationsChange={(v) => setFormData({ ...formData, rulesAndRegulations: v, rulesManuallyEdited: true })}
           />
         );
       case 7:
@@ -1012,6 +1032,11 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             amenityDetails={formData.amenityDetails}
             onUpdateAmenityDetails={(details) => setFormData(prev => ({ ...prev, amenityDetails: details }))}
             propertyType={formData.propertyType}
+            hasMultipleBlocks={formData.hasMultipleBlocks}
+            hasReception={formData.hasReception}
+            receptionPerBlock={formData.receptionPerBlock}
+            onHasReceptionChange={(v) => setFormData(prev => ({ ...prev, hasReception: v }))}
+            onReceptionPerBlockChange={(v) => setFormData(prev => ({ ...prev, receptionPerBlock: v }))}
           />
         );
       case 12:
@@ -1028,10 +1053,12 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       case 13:
         return (
           <PhotosStep
-            coverImage={formData.coverImage}
-            galleryImages={formData.galleryImages}
-            onCoverChange={(v) => setFormData({ ...formData, coverImage: v })}
-            onGalleryChange={(v) => setFormData({ ...formData, galleryImages: v })}
+            buildingImages={formData.buildingImages}
+            onBuildingImagesChange={(v) => setFormData({ ...formData, buildingImages: v })}
+            selectedAmenities={formData.amenities}
+            hasReception={formData.hasReception}
+            receptionPerBlock={formData.receptionPerBlock}
+            blockCount={formData.blockCount}
             propertyType={formData.propertyType}
           />
         );

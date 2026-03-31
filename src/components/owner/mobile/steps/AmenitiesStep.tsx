@@ -3,15 +3,17 @@ import { motion } from 'framer-motion';
 import { 
   Wifi, UtensilsCrossed, WashingMachine, Thermometer, Snowflake, 
   BookOpen, Users, TreePine, Dumbbell, Waves,
-  ShieldCheck, ArrowUpDown, Car, Brush, Dog, Sofa, Tv, Zap, Droplets
+  ShieldCheck, ArrowUpDown, Car, Brush, Dog, Sofa, Tv, Zap, Droplets,
+  ConciergeBell, Building, Handshake
 } from 'lucide-react';
 import { ElectricityOptionsModal } from './ElectricityOptionsModal';
 import { WiFiOptionsModal } from './WiFiOptionsModal';
 import { CleaningOptionsModal } from './CleaningOptionsModal';
 import { WaterOptionsModal } from './WaterOptionsModal';
 import { LaundryOptionsModal } from './LaundryOptionsModal';
+import { KitchenOptionsModal } from './KitchenOptionsModal';
 import type { 
-  ElectricityOption, WiFiOption, CleaningOption, WaterOption, LaundryOption, AmenityDetails,
+  ElectricityOption, WiFiOption, CleaningOption, WaterOption, LaundryOption, KitchenOption, AmenityDetails,
   formatElectricityOption, formatLaundryOption 
 } from '@/types/amenities';
 import { usePropertyTerminology } from '@/hooks/use-property-terminology';
@@ -23,6 +25,11 @@ interface AmenitiesStepProps {
   amenityDetails?: AmenityDetails;
   onUpdateAmenityDetails?: (details: AmenityDetails) => void;
   propertyType?: string;
+  hasMultipleBlocks?: boolean;
+  hasReception?: boolean;
+  receptionPerBlock?: boolean;
+  onHasReceptionChange?: (v: boolean) => void;
+  onReceptionPerBlockChange?: (v: boolean) => void;
 }
 
 export function AmenitiesStep({ 
@@ -31,36 +38,53 @@ export function AmenitiesStep({
   onToggle, 
   amenityDetails = {},
   onUpdateAmenityDetails,
-  propertyType = 'dorm'
+  propertyType = 'dorm',
+  hasMultipleBlocks = false,
+  hasReception = false,
+  receptionPerBlock = false,
+  onHasReceptionChange,
+  onReceptionPerBlockChange,
 }: AmenitiesStepProps) {
   const { dormLabel } = usePropertyTerminology(propertyType);
+  const isDorm = propertyType === 'dorm';
   
+  // Build essentials items conditionally
+  const essentialsItems = [
+    { id: 'WiFi', label: 'WiFi', icon: Wifi, hasOptions: true, optionType: 'wifi' as const },
+    // Kitchen: show for non-dorm only (dorm Kitchen moves to shared)
+    ...(!isDorm ? [{ id: 'Kitchen', label: 'Kitchen', icon: UtensilsCrossed }] : []),
+    // Laundry: show for non-dorm only (dorm Laundry moves to shared)
+    ...(!isDorm ? [{ id: 'Laundry', label: 'Laundry', icon: WashingMachine, hasOptions: true, optionType: 'laundry' as const }] : []),
+    { id: 'Heating', label: 'Heating', icon: Thermometer },
+    { id: 'Air Conditioning', label: 'AC', icon: Snowflake },
+    { id: 'Furnished', label: 'Furnished', icon: Sofa },
+    { id: 'TV', label: 'TV', icon: Tv },
+    { id: 'Electricity', label: 'Electricity', icon: Zap, hasOptions: true, optionType: 'electricity' as const },
+    { id: 'Water', label: 'Water', icon: Droplets, hasOptions: true, optionType: 'water' as const },
+  ];
+
+  // Build shared items — Kitchen, Laundry, Reception added for dorm flow
+  const sharedItems = [
+    { id: 'Study Room', label: 'Study Room', icon: BookOpen },
+    { id: 'Common Area', label: 'Common Area', icon: Users },
+    { id: 'Garden', label: 'Garden', icon: TreePine },
+    { id: 'Gym', label: 'Gym', icon: Dumbbell },
+    { id: 'Pool', label: 'Pool', icon: Waves },
+    ...(isDorm ? [{ id: 'Kitchen', label: 'Kitchen', icon: UtensilsCrossed, hasOptions: true, optionType: 'kitchen' as const }] : []),
+    ...(isDorm ? [{ id: 'Laundry', label: 'Laundry', icon: WashingMachine, hasOptions: true, optionType: 'laundry' as const }] : []),
+    { id: 'Reception', label: 'Reception', icon: ConciergeBell },
+  ];
+
   const amenityCategories = {
     essentials: {
       title: `What essentials does your ${dormLabel} offer?`,
       subtitle: 'Select all that apply',
-      items: [
-        { id: 'WiFi', label: 'WiFi', icon: Wifi, hasOptions: true, optionType: 'wifi' },
-        { id: 'Kitchenette', label: 'Kitchenette', icon: UtensilsCrossed },
-        { id: 'Laundry', label: 'Laundry', icon: WashingMachine, hasOptions: true, optionType: 'laundry' },
-        { id: 'Heating', label: 'Heating', icon: Thermometer },
-        { id: 'Air Conditioning', label: 'AC', icon: Snowflake },
-        { id: 'Furnished', label: 'Furnished', icon: Sofa },
-        { id: 'TV', label: 'TV', icon: Tv },
-        { id: 'Electricity', label: 'Electricity', icon: Zap, hasOptions: true, optionType: 'electricity' },
-        { id: 'Water', label: 'Water', icon: Droplets, hasOptions: true, optionType: 'water' },
-      ],
+      items: essentialsItems,
     },
     shared: {
       title: 'Any shared spaces?',
-      subtitle: 'Great for student life',
-      items: [
-        { id: 'Study Room', label: 'Study Room', icon: BookOpen },
-        { id: 'Common Area', label: 'Common Area', icon: Users },
-        { id: 'Garden', label: 'Garden', icon: TreePine },
-        { id: 'Gym', label: 'Gym', icon: Dumbbell },
-        { id: 'Pool', label: 'Pool', icon: Waves },
-      ],
+      subtitle: 'You can add more amenities after you submit your listing.',
+      items: sharedItems,
     },
     safety: {
       title: 'Safety & convenience features?',
@@ -69,7 +93,7 @@ export function AmenitiesStep({
         { id: 'Security', label: 'Security', icon: ShieldCheck },
         { id: 'Elevator', label: 'Elevator', icon: ArrowUpDown },
         { id: 'Parking', label: 'Parking', icon: Car },
-        { id: 'Cleaning Service', label: 'Cleaning', icon: Brush, hasOptions: true, optionType: 'cleaning' },
+        { id: 'Cleaning Service', label: 'Cleaning', icon: Brush, hasOptions: true, optionType: 'cleaning' as const },
         { id: 'Pet Friendly', label: 'Pet Friendly', icon: Dog },
       ],
     },
@@ -81,10 +105,21 @@ export function AmenitiesStep({
   const [cleaningModalOpen, setCleaningModalOpen] = useState(false);
   const [waterModalOpen, setWaterModalOpen] = useState(false);
   const [laundryModalOpen, setLaundryModalOpen] = useState(false);
+  const [kitchenModalOpen, setKitchenModalOpen] = useState(false);
 
   const handleAmenityClick = (item: { id: string; label: string; hasOptions?: boolean; optionType?: string }) => {
+    // Reception toggle — handle separately
+    if (item.id === 'Reception') {
+      const newVal = !selectedAmenities.includes('Reception');
+      onToggle('Reception');
+      onHasReceptionChange?.(newVal);
+      if (!newVal) {
+        onReceptionPerBlockChange?.(false);
+      }
+      return;
+    }
+
     if (item.hasOptions && item.optionType) {
-      // Always open modal for amenities with options (for both selecting and editing)
       switch (item.optionType) {
         case 'electricity':
           setElectricityModalOpen(true);
@@ -101,17 +136,18 @@ export function AmenitiesStep({
         case 'laundry':
           setLaundryModalOpen(true);
           break;
+        case 'kitchen':
+          setKitchenModalOpen(true);
+          break;
       }
     } else {
       onToggle(item.id);
     }
   };
 
-  // Remove handlers for amenities with options
+  // Remove handlers
   const handleElectricityRemove = () => {
-    if (selectedAmenities.includes('Electricity')) {
-      onToggle('Electricity');
-    }
+    if (selectedAmenities.includes('Electricity')) onToggle('Electricity');
     const newDetails = { ...amenityDetails };
     delete newDetails.electricity;
     onUpdateAmenityDetails?.(newDetails);
@@ -119,9 +155,7 @@ export function AmenitiesStep({
   };
 
   const handleWiFiRemove = () => {
-    if (selectedAmenities.includes('WiFi')) {
-      onToggle('WiFi');
-    }
+    if (selectedAmenities.includes('WiFi')) onToggle('WiFi');
     const newDetails = { ...amenityDetails };
     delete newDetails.wifi;
     onUpdateAmenityDetails?.(newDetails);
@@ -129,9 +163,7 @@ export function AmenitiesStep({
   };
 
   const handleCleaningRemove = () => {
-    if (selectedAmenities.includes('Cleaning Service')) {
-      onToggle('Cleaning Service');
-    }
+    if (selectedAmenities.includes('Cleaning Service')) onToggle('Cleaning Service');
     const newDetails = { ...amenityDetails };
     delete newDetails.cleaning;
     onUpdateAmenityDetails?.(newDetails);
@@ -139,9 +171,7 @@ export function AmenitiesStep({
   };
 
   const handleWaterRemove = () => {
-    if (selectedAmenities.includes('Water')) {
-      onToggle('Water');
-    }
+    if (selectedAmenities.includes('Water')) onToggle('Water');
     const newDetails = { ...amenityDetails };
     delete newDetails.water;
     onUpdateAmenityDetails?.(newDetails);
@@ -149,48 +179,50 @@ export function AmenitiesStep({
   };
 
   const handleLaundryRemove = () => {
-    if (selectedAmenities.includes('Laundry')) {
-      onToggle('Laundry');
-    }
+    if (selectedAmenities.includes('Laundry')) onToggle('Laundry');
     const newDetails = { ...amenityDetails };
     delete newDetails.laundry;
     onUpdateAmenityDetails?.(newDetails);
     setLaundryModalOpen(false);
   };
 
+  const handleKitchenRemove = () => {
+    if (selectedAmenities.includes('Kitchen')) onToggle('Kitchen');
+    const newDetails = { ...amenityDetails };
+    delete newDetails.kitchen;
+    onUpdateAmenityDetails?.(newDetails);
+    setKitchenModalOpen(false);
+  };
+
+  // Save handlers
   const handleElectricitySave = (option: ElectricityOption) => {
-    if (!selectedAmenities.includes('Electricity')) {
-      onToggle('Electricity');
-    }
+    if (!selectedAmenities.includes('Electricity')) onToggle('Electricity');
     onUpdateAmenityDetails?.({ ...amenityDetails, electricity: option });
   };
 
   const handleWiFiSave = (option: WiFiOption) => {
-    if (!selectedAmenities.includes('WiFi')) {
-      onToggle('WiFi');
-    }
+    if (!selectedAmenities.includes('WiFi')) onToggle('WiFi');
     onUpdateAmenityDetails?.({ ...amenityDetails, wifi: option });
   };
 
   const handleCleaningSave = (option: CleaningOption) => {
-    if (!selectedAmenities.includes('Cleaning Service')) {
-      onToggle('Cleaning Service');
-    }
+    if (!selectedAmenities.includes('Cleaning Service')) onToggle('Cleaning Service');
     onUpdateAmenityDetails?.({ ...amenityDetails, cleaning: option });
   };
 
   const handleWaterSave = (option: WaterOption) => {
-    if (!selectedAmenities.includes('Water')) {
-      onToggle('Water');
-    }
+    if (!selectedAmenities.includes('Water')) onToggle('Water');
     onUpdateAmenityDetails?.({ ...amenityDetails, water: option });
   };
 
   const handleLaundrySave = (option: LaundryOption) => {
-    if (!selectedAmenities.includes('Laundry')) {
-      onToggle('Laundry');
-    }
+    if (!selectedAmenities.includes('Laundry')) onToggle('Laundry');
     onUpdateAmenityDetails?.({ ...amenityDetails, laundry: option });
+  };
+
+  const handleKitchenSave = (option: KitchenOption) => {
+    if (!selectedAmenities.includes('Kitchen')) onToggle('Kitchen');
+    onUpdateAmenityDetails?.({ ...amenityDetails, kitchen: option });
   };
 
   const getOptionLabel = (itemId: string): string | null => {
@@ -233,9 +265,16 @@ export function AmenitiesStep({
           return `${machines.join('+')} (${billing})`;
         }
         break;
+      case 'Kitchen':
+        if (amenityDetails.kitchen) {
+          return amenityDetails.kitchen.billing === 'included' ? 'Incl.' : 'Not incl.';
+        }
+        break;
     }
     return null;
   };
+
+  const receptionSelected = selectedAmenities.includes('Reception');
 
   return (
     <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
@@ -249,7 +288,7 @@ export function AmenitiesStep({
             {categoryData.title}
           </h1>
           <p className="text-muted-foreground text-sm lg:text-base">
-            You can add more amenities after you submit your listing.
+            {categoryData.subtitle}
           </p>
         </motion.div>
 
@@ -286,6 +325,52 @@ export function AmenitiesStep({
             );
           })}
         </div>
+
+        {/* Reception follow-up — only when Reception selected AND has_multiple_blocks */}
+        {category === 'shared' && receptionSelected && hasMultipleBlocks && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-8"
+          >
+            <h3 className="text-base font-semibold text-foreground text-center mb-1">
+              Does each building block have its own reception?
+            </h3>
+            <p className="text-sm text-muted-foreground text-center mb-4">
+              This helps us set up reception correctly for each block of your property
+            </p>
+            <div className="grid grid-cols-1 gap-3">
+              <button
+                onClick={() => onReceptionPerBlockChange?.(true)}
+                className={`flex items-start gap-3 p-4 rounded-xl border transition-all text-left ${
+                  receptionPerBlock
+                    ? 'border-foreground bg-background shadow-sm'
+                    : 'border-border hover:border-foreground/50'
+                }`}
+              >
+                <Building className="w-6 h-6 text-foreground mt-0.5 shrink-0" />
+                <div>
+                  <span className="font-medium text-sm text-foreground">Yes, each block has its own reception</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">Each block has a separate reception desk</p>
+                </div>
+              </button>
+              <button
+                onClick={() => onReceptionPerBlockChange?.(false)}
+                className={`flex items-start gap-3 p-4 rounded-xl border transition-all text-left ${
+                  receptionSelected && !receptionPerBlock
+                    ? 'border-foreground bg-background shadow-sm'
+                    : 'border-border hover:border-foreground/50'
+                }`}
+              >
+                <Handshake className="w-6 h-6 text-foreground mt-0.5 shrink-0" />
+                <div>
+                  <span className="font-medium text-sm text-foreground">No, one shared reception</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">One reception serves all blocks</p>
+                </div>
+              </button>
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* Option Modals */}
@@ -328,6 +413,14 @@ export function AmenitiesStep({
         onSave={handleLaundrySave}
         isSelected={selectedAmenities.includes('Laundry')}
         onRemove={handleLaundryRemove}
+      />
+      <KitchenOptionsModal
+        open={kitchenModalOpen}
+        onOpenChange={setKitchenModalOpen}
+        initialValue={amenityDetails.kitchen}
+        onSave={handleKitchenSave}
+        isSelected={selectedAmenities.includes('Kitchen')}
+        onRemove={handleKitchenRemove}
       />
     </div>
   );
