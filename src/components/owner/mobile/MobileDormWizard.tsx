@@ -152,7 +152,7 @@ const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 // 14: Filler Phase 3
 // --- DORM FLOW (propertyType !== 'apartment') ---
 // 15: Capacity (How many rooms?)
-// 16: (skipped — was Upload Method, now deleted)
+// 16: Room Unit Setup (kitchenette/balcony/furnished)
 // 17: Room Names
 // 18: Room Types
 // 19: Bulk Selection
@@ -165,7 +165,7 @@ const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 // 26: Review
 // --- APARTMENT FLOW (propertyType === 'apartment') ---
 // 15: Apartment Count
-// 16: (skipped)
+// 16: (skipped for apartment flow)
 // 17: Apartment Names
 // 18: Apartment Types
 // 19: Apartment Selection
