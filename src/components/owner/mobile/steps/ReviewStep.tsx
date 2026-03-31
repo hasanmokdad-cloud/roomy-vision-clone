@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Users, Camera, FileText, AlertCircle, CheckCircle, DoorOpen, DollarSign, Eye } from 'lucide-react';
+import { MapPin, Users, Camera, FileText, AlertCircle, CheckCircle, DoorOpen, DollarSign, Eye, Layers } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { IsometricRoomAnimation } from '../IsometricRoomAnimation';
 import { Checkbox } from '@/components/ui/checkbox';
