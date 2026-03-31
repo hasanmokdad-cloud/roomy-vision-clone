@@ -124,7 +124,8 @@ export function RoomBulkSelectionStep({
         </motion.div>
       ) : (
         <>
-          {/* Filter by type - only option now */}
+          {/* Filter by type - only shown when multiple types exist */}
+          {uniqueTypes.length > 1 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -150,6 +151,12 @@ export function RoomBulkSelectionStep({
               </Badge>
             )}
           </motion.div>
+          )}
+          {uniqueTypes.length <= 1 && selectedCount > 0 && (
+            <Badge variant="secondary" className="mb-4 text-xs">
+              {selectedCount} {selectedCount !== 1 ? roomsLabel : roomLabel} selected
+            </Badge>
+          )}
 
           <ScrollArea className="h-[calc(100vh-400px)]">
             <div className="space-y-3 pr-4">
