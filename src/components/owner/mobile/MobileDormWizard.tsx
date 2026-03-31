@@ -597,8 +597,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             completedRoomIds: updatedCompletedIds 
           }));
         }
-        // Skip step 16 (deleted upload method) — go directly to room names
-        setCurrentStep(17);
+        // Go to room unit setup (step 16)
+        setCurrentStep(16);
         return;
       }
     }
