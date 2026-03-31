@@ -899,22 +899,23 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         );
       case 3:
         return (
-          <DescriptionStep
-            mode="title"
-            highlights={formData.highlights}
+          <PropertyDetailsStep
             title={formData.title}
-            description={formData.description}
-            onHighlightsChange={(v) => setFormData({ ...formData, highlights: v })}
             onTitleChange={(v) => setFormData({ ...formData, title: v })}
-            onDescriptionChange={(v) => setFormData({ ...formData, description: v })}
+            hasMultipleBlocks={formData.hasMultipleBlocks}
+            onHasMultipleBlocksChange={(v) => setFormData({ ...formData, hasMultipleBlocks: v })}
+            blockCount={formData.blockCount}
+            onBlockCountChange={(v) => setFormData({ ...formData, blockCount: v })}
             propertyType={formData.propertyType}
           />
         );
       case 4:
         return (
-          <GenderPreferenceStep
-            value={formData.genderPreference}
-            onChange={(v) => setFormData({ ...formData, genderPreference: v })}
+          <TenantPreferenceStep
+            tenantSelection={formData.tenantSelection}
+            onTenantSelectionChange={(v) => setFormData({ ...formData, tenantSelection: v })}
+            genderPreference={formData.genderPreference}
+            onGenderPreferenceChange={(v) => setFormData({ ...formData, genderPreference: v })}
             propertyType={formData.propertyType}
           />
         );
