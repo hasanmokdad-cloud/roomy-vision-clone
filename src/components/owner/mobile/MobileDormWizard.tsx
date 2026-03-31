@@ -901,7 +901,22 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
         return !bs || !bs.kitchenette_type || !bs.balcony_type || !bs.furnished_type;
       }
       case 17: return formData.rooms.some(r => !r.name.trim());
-      case 18: return formData.rooms.some(r => !r.type);
+      case 18: {
+        const blockKey18 = String(formData.currentBlockNumber);
+        const bs18 = formData.blockSettings[blockKey18] || { kitchenette_type: 'room', balcony_type: 'none', furnished_type: 'furnished' };
+        const isMixed18 = bs18.kitchenette_type === 'mixed';
+        return formData.rooms.some(r => {
+          if (!r.capacityType) return true;
+          if (isMixed18 && r.capacityType !== 'suite' && !r.baseType) return true;
+          if ((r.capacityType === 'triple' || r.capacityType === 'quadruple') && r.bed_configuration) {
+            const total = r.bed_configuration.reduce((s, row) => s + (row.bedType === 'double' ? 2 : 1) * row.quantity, 0);
+            const target = r.capacityType === 'triple' ? 3 : 4;
+            if (total !== target) return true;
+          }
+          if (r.capacityType === 'suite' && (!r.suite_bedrooms || r.suite_bedrooms.length < 1)) return true;
+          return false;
+        });
+      }
       case 19: 
         if (formData.completedRoomIds.length === formData.rooms.length && formData.rooms.length > 0) {
           return false;
