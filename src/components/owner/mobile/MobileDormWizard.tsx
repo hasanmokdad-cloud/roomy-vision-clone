@@ -722,11 +722,6 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       }
       return;
     }
-        setCurrentStep(19); // Back to room selection for next batch
-      }
-      return;
-    }
-    
     const maxStep = isApartmentFlow ? TOTAL_STEPS - 1 : 26;
     if (currentStep < maxStep) {
       setCurrentStep(currentStep + 1);
