@@ -155,13 +155,13 @@ const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 // 16: Room Unit Setup (kitchenette/balcony/furnished)
 // 17: Room Names
 // 18: Room Types
-// 19: Bulk Selection
-// 20: Pricing
-// 21: Tiered Pricing
-// 22: Area
-// 23: Capacity Setup
-// 24: Occupancy
-// 25: Room Media
+// 19: Bulk Selection (LOOP ENTRY)
+// 20: Room Media (inside loop - first step)
+// 21: Room Pricing
+// 22: Tiered Pricing (conditional)
+// 23: Room Area
+// 24: (Capacity Setup - ALWAYS SKIPPED for dorm)
+// 25: Room Occupancy (LOOP EXIT)
 // 26: Review
 // --- APARTMENT FLOW (propertyType === 'apartment') ---
 // 15: Apartment Count
