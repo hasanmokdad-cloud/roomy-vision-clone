@@ -72,10 +72,15 @@ interface WizardFormData {
   blockCount: number;
   coverImage: string;
   galleryImages: string[];
+  buildingImages: BuildingImage[];
   highlights: string[];
   title: string;
   description: string;
   descriptionManuallyEdited?: boolean;
+  rulesAndRegulations: string;
+  rulesManuallyEdited?: boolean;
+  hasReception: boolean;
+  receptionPerBlock: boolean;
   rooms: WizardRoomData[];
   selectedRoomIds: string[];
   completedRoomIds: string[];
