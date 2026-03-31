@@ -22,7 +22,7 @@ interface ReviewStepProps {
     tenantSelection?: string;
     coverImage: string;
     galleryImages: string[];
-    buildingImages?: { id: string; url: string; section_type: string }[];
+    buildingImages?: { sectionType: string; url: string }[];
     title: string;
     description: string;
     rooms?: WizardRoomData[];
