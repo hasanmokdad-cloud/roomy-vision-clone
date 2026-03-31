@@ -4131,6 +4131,48 @@ export type Database = {
           },
         ]
       }
+      room_images: {
+        Row: {
+          created_at: string | null
+          id: string
+          room_id: string | null
+          sort_order: number | null
+          space_type: string
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          room_id?: string | null
+          sort_order?: number | null
+          space_type: string
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          room_id?: string | null
+          sort_order?: number | null
+          space_type?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_images_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_inventory_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_images_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_occupancy_claims: {
         Row: {
           claim_type: string
