@@ -56,6 +56,8 @@ const Profile = lazy(() => import("./pages/Profile"));
 const DormDetail = lazy(() => import("./pages/DormDetail"));
 const ApartmentDetail = lazy(() => import("./pages/ApartmentDetail"));
 const ApartmentPhotoTour = lazy(() => import("./pages/ApartmentPhotoTour"));
+const BuildingPhotoTour = lazy(() => import("./pages/BuildingPhotoTour"));
+const UnitPhotoTour = lazy(() => import("./pages/UnitPhotoTour"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const Analytics = lazy(() => import("./pages/admin/Analytics"));
 const Trends = lazy(() => import("./pages/admin/Trends"));
@@ -305,6 +307,8 @@ const AppRoutes = () => {
           {/* PUBLIC - Listings and Dorm Details (no auth required, but OnboardingGuard for students) */}
           <Route path="/listings" element={<OnboardingGuard><MobileSwipeLayout><Listings /></MobileSwipeLayout></OnboardingGuard>} />
           <Route path="/dorm/:id" element={<OnboardingGuard><DormDetail /></OnboardingGuard>} />
+          <Route path="/dorm/:id/photos" element={<OnboardingGuard><BuildingPhotoTour /></OnboardingGuard>} />
+          <Route path="/dorm/:id/room/:roomId/photos" element={<OnboardingGuard><UnitPhotoTour /></OnboardingGuard>} />
           
           {/* Apartment Detail Pages - Airbnb Style (PUBLIC) */}
           <Route path="/apartments/:apartmentId" element={<OnboardingGuard><ApartmentDetail /></OnboardingGuard>} />

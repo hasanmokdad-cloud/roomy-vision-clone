@@ -37,9 +37,6 @@ export function BuildingMetaHeader({
     <div className="animate-fade-in">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            {displayName}
-          </h1>
           <div className="flex items-center gap-2 text-muted-foreground">
             <MapPin className="w-5 h-5" />
             <span>{area || location}</span>
@@ -59,30 +56,6 @@ export function BuildingMetaHeader({
             {hasMultipleRoomTypes ? 'starting from' : 'per month'}
           </div>
         </div>
-      </div>
-      
-      {/* Share and Save Buttons */}
-      <div className="flex justify-end gap-3 mt-4">
-        <ShareButton 
-          dormId={dormId} 
-          dormName={displayName}
-          size="lg"
-          variant="outline"
-        />
-        <button
-          onClick={onToggleSave}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-border hover:bg-accent transition-colors"
-          aria-label={isSaved ? "Remove from favorites" : "Save to favorites"}
-        >
-          <Bookmark
-            className={`w-5 h-5 transition-colors ${
-              isSaved ? "fill-primary text-primary" : "text-muted-foreground"
-            }`}
-          />
-          <span className="text-sm font-medium">
-            {isSaved ? "Saved" : "Save"}
-          </span>
-        </button>
       </div>
     </div>
   );

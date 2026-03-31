@@ -254,14 +254,17 @@ export default function DormDetail() {
         </Button>
 
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* Hero Section - Using new component */}
+          {/* Hero Section - 5-grid layout */}
           <BuildingHero 
             images={images} 
             displayName={displayName}
+            dormId={dorm.id}
+            isSaved={isSaved}
+            onToggleSave={toggleSave}
             onImageClick={openGallery}
           />
 
-          {/* Meta Header - Using new component */}
+          {/* Meta Header - location, price, verification */}
           <BuildingMetaHeader
             displayName={displayName}
             area={dorm.area}
