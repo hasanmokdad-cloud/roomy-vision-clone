@@ -761,6 +761,15 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
       if (error) throw error;
 
+      // Save new columns (tenant_selection, has_multiple_blocks, block_count)
+      if (newDormId) {
+        await supabase.from('dorms').update({
+          tenant_selection: formData.tenantSelection || 'mixed',
+          has_multiple_blocks: formData.hasMultipleBlocks,
+          block_count: formData.blockCount,
+        }).eq('id', newDormId);
+      }
+
       // Create all rooms for this dorm
       if (formData.rooms.length > 0 && newDormId) {
         for (const room of formData.rooms) {
