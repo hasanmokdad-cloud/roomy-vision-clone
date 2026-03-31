@@ -1337,13 +1337,11 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
           );
         }
         return (
-          <ReviewStep
-            formData={{...formData, shuttle: formData.shuttle || false, propertyType: formData.propertyType}}
-            onEditStep={setCurrentStep}
-            agreedToOwnerTerms={agreedToOwnerTerms}
-            onAgreedToOwnerTermsChange={setAgreedToOwnerTerms}
-            onSubmit={handleSubmit}
-            submitting={submitting}
+          <RoomFloorLevelStep
+            rooms={formData.rooms}
+            onChange={(rooms) => setFormData({ ...formData, rooms })}
+            hasMultipleBlocks={formData.hasMultipleBlocks}
+            blockCount={formData.blockCount}
           />
         );
       case 27:
@@ -1356,7 +1354,16 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             />
           );
         }
-        return null;
+        return (
+          <ReviewStep
+            formData={{...formData, shuttle: formData.shuttle || false, propertyType: formData.propertyType}}
+            onEditStep={setCurrentStep}
+            agreedToOwnerTerms={agreedToOwnerTerms}
+            onAgreedToOwnerTermsChange={setAgreedToOwnerTerms}
+            onSubmit={handleSubmit}
+            submitting={submitting}
+          />
+        );
       case 28:
         if (isApartmentFlow) {
           return (
