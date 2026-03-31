@@ -1160,6 +1160,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             rooms={formData.rooms}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
             propertyType={formData.propertyType}
+            blockSettings={formData.blockSettings}
+            currentBlockNumber={formData.currentBlockNumber}
           />
         );
       case 19:
