@@ -120,12 +120,12 @@ const INITIAL_FORM_DATA: WizardFormData = {
 const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 
 // Total steps: 0-29 (30 steps total)
-// Step order (with NearbyUniversities inserted at step 9):
+// Step order:
 // 0: Intro
 // 1: Filler Phase 1
 // 2: Property Type
-// 3: Title
-// 4: Gender Preference
+// 3: Property Details (name + building blocks)
+// 4: Tenant Preference (tenant type + gender)
 // 5: Highlights
 // 6: Description
 // 7: Filler Phase 2
@@ -136,8 +136,8 @@ const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 // 14: Filler Phase 3
 // --- DORM FLOW (propertyType !== 'apartment') ---
 // 15: Capacity (How many rooms?)
-// 16: Upload Method
-// 17: Room Names / Excel Upload
+// 16: (skipped — was Upload Method, now deleted)
+// 17: Room Names
 // 18: Room Types
 // 19: Bulk Selection
 // 20: Pricing
@@ -149,7 +149,7 @@ const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
 // 26: Review
 // --- APARTMENT FLOW (propertyType === 'apartment') ---
 // 15: Apartment Count
-// 16: Upload Method (manual only for now)
+// 16: (skipped)
 // 17: Apartment Names
 // 18: Apartment Types
 // 19: Apartment Selection
