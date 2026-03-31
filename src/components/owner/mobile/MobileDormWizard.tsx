@@ -647,16 +647,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       return;
     }
 
-    // After upload method, skip to appropriate step
-    if (currentStep === 16) {
-      if (formData.uploadMethod === 'excel') {
-        setCurrentStep(17); // Excel upload step
-        return;
-      } else {
-        setCurrentStep(17); // Room names step (same step number, different content based on method)
-        return;
-      }
-    }
+    // Step 16 is deleted (was upload method) — should never reach here
+    // but just in case, skip to 17
 
     // From bulk selection step (19), check if all rooms are complete
     if (currentStep === 19) {
