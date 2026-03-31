@@ -17,6 +17,7 @@ import { PropertyTypeStep } from './steps/PropertyTypeStep';
 import { PropertyDetailsStep } from './steps/PropertyDetailsStep';
 import { TenantPreferenceStep } from './steps/TenantPreferenceStep';
 import { RoomNamesStep, WizardRoomData } from './steps/RoomNamesStep';
+import { RoomUnitSetupStep } from './steps/RoomUnitSetupStep';
 import { RoomTypesStep } from './steps/RoomTypesStep';
 import { RoomBedTypeStep } from './steps/RoomBedTypeStep';
 import { RoomBulkSelectionStep } from './steps/RoomBulkSelectionStep';
