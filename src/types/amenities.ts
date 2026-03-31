@@ -5,7 +5,7 @@ export interface AmenityWithOptions {
   label: string;
   icon: LucideIcon;
   hasOptions?: boolean;
-  optionType?: 'electricity' | 'wifi' | 'cleaning' | 'water' | 'laundry';
+  optionType?: 'electricity' | 'wifi' | 'cleaning' | 'water' | 'laundry' | 'kitchen';
 }
 
 export interface ElectricityOption {
@@ -39,7 +39,11 @@ export interface LaundryOption {
   dryingCost?: string;
 }
 
-export type AmenityOptionType = ElectricityOption | WiFiOption | CleaningOption | WaterOption | LaundryOption;
+export interface KitchenOption {
+  billing: 'included' | 'not-included';
+}
+
+export type AmenityOptionType = ElectricityOption | WiFiOption | CleaningOption | WaterOption | LaundryOption | KitchenOption;
 
 export interface AmenityDetails {
   electricity?: ElectricityOption;
@@ -47,6 +51,7 @@ export interface AmenityDetails {
   cleaning?: CleaningOption;
   water?: WaterOption;
   laundry?: LaundryOption;
+  kitchen?: KitchenOption;
 }
 
 export function formatElectricityOption(option: ElectricityOption): string {
@@ -81,4 +86,8 @@ export function formatLaundryOption(option: LaundryOption): string {
   if (option.dryingMachine) machines.push('Dry');
   const billing = option.billing === 'included' ? 'Incl.' : 'Per use';
   return `${machines.join('+')} (${billing})`;
+}
+
+export function formatKitchenOption(option: KitchenOption): string {
+  return option.billing === 'included' ? 'Incl.' : 'Not incl.';
 }
