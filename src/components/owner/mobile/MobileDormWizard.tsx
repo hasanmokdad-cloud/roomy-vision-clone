@@ -409,9 +409,15 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       return;
     }
     
-    // Skip Excel upload step when going back if manual was selected
-    if (currentStep === 18 && formData.uploadMethod === 'manual') {
-      setCurrentStep(16);
+    // From room types (18), go back to room names (17), skipping deleted upload method step
+    if (currentStep === 18) {
+      setCurrentStep(17);
+      return;
+    }
+    
+    // From room names (17), go back to capacity (15), skipping deleted upload method step
+    if (currentStep === 17 && !isApartmentFlow) {
+      setCurrentStep(15);
       return;
     }
     
