@@ -771,14 +771,36 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
 
       if (error) throw error;
 
-      // Save new columns (tenant_selection, has_multiple_blocks, block_count)
-      if (newDormId) {
-        await supabase.from('dorms').update({
-          tenant_selection: formData.tenantSelection || 'mixed',
-          has_multiple_blocks: formData.hasMultipleBlocks,
-          block_count: formData.blockCount,
-        }).eq('id', newDormId);
-      }
+        // Save new columns
+        if (newDormId) {
+          // Get cover image for legacy fields
+          const exteriorImages = formData.buildingImages
+            .filter(img => img.sectionType === 'exterior')
+            .sort((a, b) => a.sortOrder - b.sortOrder);
+          const coverUrl = exteriorImages[0]?.url || null;
+          
+          await supabase.from('dorms').update({
+            tenant_selection: formData.tenantSelection || 'mixed',
+            has_multiple_blocks: formData.hasMultipleBlocks,
+            block_count: formData.blockCount,
+            has_reception: formData.hasReception,
+            reception_per_block: formData.receptionPerBlock,
+            rules_and_regulations: formData.rulesAndRegulations || null,
+            cover_image: coverUrl,
+            image_url: coverUrl,
+          }).eq('id', newDormId);
+
+          // Save building images
+          if (formData.buildingImages.length > 0) {
+            const imageRows = formData.buildingImages.map(img => ({
+              dorm_id: newDormId,
+              section_type: img.sectionType,
+              sort_order: img.sortOrder,
+              url: img.url,
+            }));
+            await supabase.from('building_images').insert(imageRows);
+          }
+        }
 
       // Create all rooms for this dorm
       if (formData.rooms.length > 0 && newDormId) {
