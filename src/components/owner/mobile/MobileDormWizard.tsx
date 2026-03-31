@@ -724,7 +724,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       }
       return;
     }
-    const maxStep = isApartmentFlow ? TOTAL_STEPS - 1 : 26;
+    const maxStep = isApartmentFlow ? TOTAL_STEPS - 1 : 27;
     if (currentStep < maxStep) {
       setCurrentStep(currentStep + 1);
     }
