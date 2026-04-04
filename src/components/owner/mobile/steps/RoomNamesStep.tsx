@@ -185,8 +185,9 @@ export function RoomNamesStep({ rooms, onChange, propertyType = 'dorm', hasMulti
   };
   const duplicates = getDuplicates();
 
+  const blockName = getBlockDisplayName(currentBlockNumber, blockNames);
   const heading = hasMultipleBlocks
-    ? `Name the rooms in Block ${currentBlockNumber}`
+    ? `Name the rooms in ${blockName}`
     : 'Name your rooms';
 
   return (

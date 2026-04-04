@@ -22,6 +22,7 @@ interface RoomFloorLevelStepProps {
   blockCount?: number;
   floorDefinitions: FloorDefinition[];
   onFloorDefinitionsChange: (floors: FloorDefinition[]) => void;
+  blockNames?: Array<{ block_number: number; name: string }>;
 }
 
 export function formatFloorDisplay(floor: string | null | undefined): string {
