@@ -94,6 +94,7 @@ interface WizardFormData {
   selectedApartmentIds: string[];
   completedApartmentIds: string[];
   floorDefinitions: FloorDefinition[];
+  blockNames: Array<{ block_number: number; name: string }>;
 }
 
 const INITIAL_FORM_DATA: WizardFormData = {
