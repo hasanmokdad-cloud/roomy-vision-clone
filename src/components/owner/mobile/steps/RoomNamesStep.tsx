@@ -107,7 +107,7 @@ function generateName(pattern: { type: string; prefix: string; suffix: string; n
   }
 }
 
-export function RoomNamesStep({ rooms, onChange, propertyType = 'dorm', hasMultipleBlocks = false, currentBlockNumber = 1 }: RoomNamesStepProps) {
+export function RoomNamesStep({ rooms, onChange, propertyType = 'dorm', hasMultipleBlocks = false, currentBlockNumber = 1, blockNames = [] }: RoomNamesStepProps) {
   const { roomsLabel, roomLabel } = usePropertyTerminology(propertyType);
   const debounceTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
