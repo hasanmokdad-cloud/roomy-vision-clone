@@ -5,6 +5,7 @@ import { toast } from '@/hooks/use-toast';
 import CameraIcon from '@/assets/camera-icon.avif';
 import { PhotoUploadModal } from '../PhotoUploadModal';
 import { cn } from '@/lib/utils';
+import { getBlockDisplayName } from '@/utils/occupantLabel';
 
 export interface BuildingImage {
   sectionType: string;
