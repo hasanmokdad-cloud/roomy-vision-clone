@@ -1142,6 +1142,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             receptionPerBlock={formData.receptionPerBlock}
             blockCount={formData.blockCount}
             propertyType={formData.propertyType}
+            blockNames={formData.blockNames}
           />
         );
       case 14:
