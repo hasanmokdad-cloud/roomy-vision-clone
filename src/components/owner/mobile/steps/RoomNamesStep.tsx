@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Wand2, AlertCircle } from 'lucide-react';
 import { usePropertyTerminology } from '@/hooks/use-property-terminology';
+import { getBlockDisplayName } from '@/utils/occupantLabel';
 
 export interface BedConfigRow {
   bedType: 'single' | 'double' | 'twin';
