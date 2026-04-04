@@ -98,7 +98,7 @@ export function DescriptionStep({
                       : 'border-border text-foreground hover:border-foreground/50'
                   }`}
                 >
-                  {option.label}
+                  {option.id === 'student-friendly' && tenantSelection === 'mixed' ? 'Tenant-friendly' : option.label}
                 </motion.button>
               );
             })}
