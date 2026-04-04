@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { getBlockDisplayName } from '@/utils/occupantLabel';
 
 interface RoomUnitSetupStepProps {
   kitchenetteType: string;
@@ -10,6 +11,7 @@ interface RoomUnitSetupStepProps {
   hasMultipleBlocks?: boolean;
   currentBlockNumber?: number;
   furnishedFromAmenities?: boolean;
+  blockNames?: Array<{ block_number: number; name: string }>;
 }
 
 interface CardOption {
