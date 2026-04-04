@@ -1733,6 +1733,7 @@ export type Database = {
           area: string | null
           available: boolean | null
           block_count: number | null
+          block_names: Json | null
           block_settings: Json | null
           capacity: number | null
           cover_image: string | null
@@ -1777,6 +1778,7 @@ export type Database = {
           area?: string | null
           available?: boolean | null
           block_count?: number | null
+          block_names?: Json | null
           block_settings?: Json | null
           capacity?: number | null
           cover_image?: string | null
@@ -1821,6 +1823,7 @@ export type Database = {
           area?: string | null
           available?: boolean | null
           block_count?: number | null
+          block_names?: Json | null
           block_settings?: Json | null
           capacity?: number | null
           cover_image?: string | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.dorms ADD COLUMN IF NOT EXISTS block_names jsonb DEFAULT '[]';
