@@ -291,6 +291,7 @@ export function RoomFloorLevelStep({
   blockCount = 1,
   floorDefinitions,
   onFloorDefinitionsChange,
+  blockNames = [],
 }: RoomFloorLevelStepProps) {
   const [collapsedBlocks, setCollapsedBlocks] = useState<Set<number>>(new Set());
 
