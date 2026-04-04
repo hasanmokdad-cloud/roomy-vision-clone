@@ -814,6 +814,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
               label: f.label.trim(),
               blockNumber: f.blockNumber,
             })),
+            block_names: formData.blockNames,
           }).eq('id', newDormId);
 
           // Save building images
