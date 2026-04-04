@@ -387,7 +387,7 @@ export function RoomFloorLevelStep({
                   >
                     <div className="flex items-center gap-2">
                       <Layers className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-semibold text-foreground">Block {blockNum}</span>
+                      <span className="font-semibold text-foreground">{getBlockDisplayName(blockNum, blockNames)}</span>
                       <Badge variant="secondary" className="text-xs">
                         {blockRooms.length} units
                       </Badge>
