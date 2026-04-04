@@ -135,6 +135,7 @@ const INITIAL_FORM_DATA: WizardFormData = {
   selectedApartmentIds: [],
   completedApartmentIds: [],
   floorDefinitions: [],
+  blockNames: [],
 };
 
 const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
