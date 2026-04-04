@@ -56,6 +56,7 @@ interface RoomNamesStepProps {
   propertyType?: string;
   hasMultipleBlocks?: boolean;
   currentBlockNumber?: number;
+  blockNames?: Array<{ block_number: number; name: string }>;
 }
 
 // Pattern detection for auto-sequencing
