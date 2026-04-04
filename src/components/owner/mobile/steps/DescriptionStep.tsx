@@ -55,8 +55,10 @@ export function DescriptionStep({
   propertyType = 'dorm',
   rulesAndRegulations = '',
   onRulesAndRegulationsChange,
+  tenantSelection = 'student_only',
 }: DescriptionStepProps) {
   const { dormLabel } = usePropertyTerminology(propertyType);
+  const occupantPlural = occupant(tenantSelection, { plural: true });
   
   const toggleHighlight = (id: string) => {
     if (highlights.includes(id)) {
