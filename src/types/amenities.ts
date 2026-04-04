@@ -90,5 +90,6 @@ export function formatLaundryOption(option: LaundryOption): string {
 }
 
 export function formatKitchenOption(option: KitchenOption): string {
-  return option.billing === 'included' ? 'Incl.' : 'Not incl.';
+  if (option.billing === 'included') return 'Incl.';
+  return option.billingInfo || 'Not incl.';
 }

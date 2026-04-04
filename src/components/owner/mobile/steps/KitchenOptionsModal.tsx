@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { UtensilsCrossed } from 'lucide-react';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import type { KitchenOption } from '@/types/amenities';
@@ -25,15 +26,17 @@ export function KitchenOptionsModal({
   onRemove,
 }: KitchenOptionsModalProps) {
   const [billing, setBilling] = useState<'included' | 'not-included'>(initialValue?.billing || 'included');
+  const [billingInfo, setBillingInfo] = useState(initialValue?.billingInfo || '');
 
   useEffect(() => {
     if (initialValue) {
       setBilling(initialValue.billing || 'included');
+      setBillingInfo(initialValue.billingInfo || '');
     }
   }, [initialValue, open]);
 
   const handleSave = () => {
-    onSave({ billing });
+    onSave({ billing, ...(billing === 'not-included' ? { billingInfo } : {}) });
     onOpenChange(false);
   };
 
@@ -72,11 +75,26 @@ export function KitchenOptionsModal({
                 <Label htmlFor="kitchen-not-included" className="flex-1 cursor-pointer">
                   <span className="font-medium">Not included</span>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Students pay a separate usage fee
+                    Students pay separately
                   </p>
                 </Label>
               </div>
             </RadioGroup>
+
+            {billing === 'not-included' && (
+              <div className="mt-4 pl-1">
+                <Label htmlFor="kitchen-billing-info" className="text-sm font-medium text-foreground">
+                  Specify the arrangement
+                </Label>
+                <Input
+                  id="kitchen-billing-info"
+                  value={billingInfo}
+                  onChange={(e) => setBillingInfo(e.target.value)}
+                  placeholder="e.g. Pay per use, $10/month subscription, tokens required…"
+                  className="mt-1.5"
+                />
+              </div>
+            )}
           </div>
         </div>
 

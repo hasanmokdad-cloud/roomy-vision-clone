@@ -21,7 +21,7 @@ export default function BuildingPhotoTour() {
 
   const SECTION_ORDER = [
     'exterior', 'study_room', 'common_area', 'garden', 'gym', 'pool',
-    'kitchen', 'laundry', 'reception', 'additional',
+    'kitchen', 'laundry', 'reception', 'terrace', 'rooftop', 'additional',
   ];
 
   const SECTION_LABELS: Record<string, string> = {
@@ -34,6 +34,8 @@ export default function BuildingPhotoTour() {
     kitchen: 'Kitchen',
     laundry: 'Laundry',
     reception: 'Reception',
+    terrace: 'Terrace',
+    rooftop: 'Rooftop',
     additional: 'Additional Photos',
   };
 

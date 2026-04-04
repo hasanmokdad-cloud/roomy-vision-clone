@@ -30,6 +30,8 @@ const SHARED_SPACE_ORDER = [
   { id: 'Pool', sectionType: 'pool', emoji: '🏊', label: 'Pool' },
   { id: 'Kitchen', sectionType: 'kitchen', emoji: '🍳', label: 'Kitchen' },
   { id: 'Laundry', sectionType: 'laundry', emoji: '👕', label: 'Laundry' },
+  { id: 'Terrace', sectionType: 'terrace', emoji: '🌅', label: 'Terrace' },
+  { id: 'Rooftop', sectionType: 'rooftop', emoji: '🏙', label: 'Rooftop' },
 ];
 
 export function PhotosStep({ 

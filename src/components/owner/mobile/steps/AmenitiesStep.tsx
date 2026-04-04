@@ -73,6 +73,8 @@ export function AmenitiesStep({
     ...(isDorm ? [{ id: 'Kitchen', label: 'Kitchen', icon: UtensilsCrossed, hasOptions: true, optionType: 'kitchen' as const }] : []),
     ...(isDorm ? [{ id: 'Laundry', label: 'Laundry', icon: WashingMachine, hasOptions: true, optionType: 'laundry' as const }] : []),
     { id: 'Reception', label: 'Reception', icon: ConciergeBell },
+    { id: 'Terrace', label: 'Terrace', icon: TreePine },
+    { id: 'Rooftop', label: 'Rooftop', icon: Building },
   ];
 
   const amenityCategories = {
