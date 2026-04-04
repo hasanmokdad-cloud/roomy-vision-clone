@@ -1740,6 +1740,7 @@ export type Database = {
           description: string | null
           dorm_name: string | null
           email: string | null
+          floor_definitions: Json | null
           gallery_images: string[] | null
           gender_preference: string | null
           has_multiple_blocks: boolean | null
@@ -1783,6 +1784,7 @@ export type Database = {
           description?: string | null
           dorm_name?: string | null
           email?: string | null
+          floor_definitions?: Json | null
           gallery_images?: string[] | null
           gender_preference?: string | null
           has_multiple_blocks?: boolean | null
@@ -1826,6 +1828,7 @@ export type Database = {
           description?: string | null
           dorm_name?: string | null
           email?: string | null
+          floor_definitions?: Json | null
           gallery_images?: string[] | null
           gender_preference?: string | null
           has_multiple_blocks?: boolean | null

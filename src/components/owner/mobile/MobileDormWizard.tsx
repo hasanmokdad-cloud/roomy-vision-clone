@@ -27,7 +27,7 @@ import { RoomAreaStep } from './steps/RoomAreaStep';
 import { RoomCapacityStep } from './steps/RoomCapacityStep';
 import { RoomOccupancyStep } from './steps/RoomOccupancyStep';
 import { RoomMediaStep } from './steps/RoomMediaStep';
-import { RoomFloorLevelStep } from './steps/RoomFloorLevelStep';
+import { RoomFloorLevelStep, FloorDefinition } from './steps/RoomFloorLevelStep';
 import { HybridCapacityStep } from './steps/HybridCapacityStep';
 import { NearbyUniversitiesStep } from './steps/NearbyUniversitiesStep';
 import { ResponsiveAlertModal } from '@/components/ui/responsive-alert-modal';
@@ -93,6 +93,7 @@ interface WizardFormData {
   apartments: WizardApartmentData[];
   selectedApartmentIds: string[];
   completedApartmentIds: string[];
+  floorDefinitions: FloorDefinition[];
 }
 
 const INITIAL_FORM_DATA: WizardFormData = {
@@ -132,6 +133,7 @@ const INITIAL_FORM_DATA: WizardFormData = {
   apartments: [],
   selectedApartmentIds: [],
   completedApartmentIds: [],
+  floorDefinitions: [],
 };
 
 const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
@@ -805,6 +807,11 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             block_settings: formData.blockSettings,
             cover_image: coverUrl,
             image_url: coverUrl,
+            floor_definitions: formData.floorDefinitions.filter(f => f.label.trim()).map(f => ({
+              order: f.order,
+              label: f.label.trim(),
+              blockNumber: f.blockNumber,
+            })),
           }).eq('id', newDormId);
 
           // Save building images
@@ -1343,6 +1350,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onChange={(rooms) => setFormData({ ...formData, rooms })}
             hasMultipleBlocks={formData.hasMultipleBlocks}
             blockCount={formData.blockCount}
+            floorDefinitions={formData.floorDefinitions}
+            onFloorDefinitionsChange={(floorDefinitions) => setFormData({ ...formData, floorDefinitions })}
           />
         );
       case 27:
