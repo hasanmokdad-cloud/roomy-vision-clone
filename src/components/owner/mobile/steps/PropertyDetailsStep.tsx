@@ -2,6 +2,11 @@ import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { usePropertyTerminology } from '@/hooks/use-property-terminology';
 
+interface BlockNameEntry {
+  block_number: number;
+  name: string;
+}
+
 interface PropertyDetailsStepProps {
   title: string;
   onTitleChange: (title: string) => void;
@@ -9,8 +14,18 @@ interface PropertyDetailsStepProps {
   onHasMultipleBlocksChange: (value: boolean) => void;
   blockCount: number;
   onBlockCountChange: (value: number) => void;
+  blockNames: BlockNameEntry[];
+  onBlockNamesChange: (names: BlockNameEntry[]) => void;
   propertyType?: string;
 }
+
+const PLACEHOLDER_EXAMPLES = [
+  'e.g. Block A',
+  'e.g. Block B',
+  'e.g. Block C',
+  'e.g. Block D',
+  'e.g. Block E',
+];
 
 export function PropertyDetailsStep({
   title,
@@ -19,6 +34,8 @@ export function PropertyDetailsStep({
   onHasMultipleBlocksChange,
   blockCount,
   onBlockCountChange,
+  blockNames,
+  onBlockNamesChange,
   propertyType = 'dorm',
 }: PropertyDetailsStepProps) {
   const { dormLabel } = usePropertyTerminology(propertyType);
@@ -43,6 +60,31 @@ export function PropertyDetailsStep({
       subLabel: 'My property has 2 or more separate building blocks',
     },
   ];
+
+  // Keep blockNames array in sync with blockCount
+  const getBlockName = (blockNum: number): string => {
+    const entry = blockNames.find(b => b.block_number === blockNum);
+    return entry?.name || '';
+  };
+
+  const updateBlockName = (blockNum: number, name: string) => {
+    const exists = blockNames.find(b => b.block_number === blockNum);
+    if (exists) {
+      onBlockNamesChange(blockNames.map(b => b.block_number === blockNum ? { ...b, name } : b));
+    } else {
+      onBlockNamesChange([...blockNames, { block_number: blockNum, name }]);
+    }
+  };
+
+  // Check for duplicate block names
+  const getDuplicateError = (blockNum: number): string | null => {
+    const currentName = getBlockName(blockNum).trim().toLowerCase();
+    if (!currentName) return null;
+    const isDuplicate = blockNames.some(
+      b => b.block_number !== blockNum && b.name.trim().toLowerCase() === currentName
+    );
+    return isDuplicate ? 'This block name is already used.' : null;
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
@@ -151,6 +193,43 @@ export function PropertyDetailsStep({
               <p className="text-xs text-muted-foreground mt-2">
                 Each block will be set up separately in the next steps. Shared spaces will be assumed shared across all blocks unless specified otherwise.
               </p>
+
+              {/* Block naming sub-section */}
+              {blockCount >= 2 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-6"
+                >
+                  <h3 className="text-sm font-semibold text-foreground mb-1">
+                    Name your blocks
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Give each block the name used in real life — tenants will see these names on your listing
+                  </p>
+                  <div className="space-y-3">
+                    {Array.from({ length: blockCount }, (_, i) => i + 1).map((blockNum) => {
+                      const duplicateError = getDuplicateError(blockNum);
+                      return (
+                        <div key={blockNum}>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                            Block {blockNum}
+                          </label>
+                          <Input
+                            value={getBlockName(blockNum)}
+                            onChange={(e) => updateBlockName(blockNum, e.target.value)}
+                            placeholder={PLACEHOLDER_EXAMPLES[blockNum - 1] || `e.g. Block ${String.fromCharCode(64 + blockNum)}`}
+                            className="h-11"
+                          />
+                          {duplicateError && (
+                            <p className="text-xs text-destructive mt-1">{duplicateError}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
             </motion.div>
           )}
         </motion.div>
