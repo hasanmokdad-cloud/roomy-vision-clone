@@ -549,7 +549,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     // When moving from highlights step (step 5) to description step (step 6),
     // generate description if not already set AND not manually edited
     if (currentStep === 5 && formData.highlights.length > 0 && !formData.description && !formData.descriptionManuallyEdited) {
-      const generatedDesc = generateDescriptionFromHighlights(formData.highlights, formData.propertyType);
+      const generatedDesc = generateDescriptionFromHighlights(formData.highlights, formData.propertyType, formData.tenantSelection);
       setFormData(prev => ({ ...prev, description: generatedDesc }));
     }
 
