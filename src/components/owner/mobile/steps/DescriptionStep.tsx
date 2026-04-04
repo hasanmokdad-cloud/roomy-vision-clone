@@ -14,6 +14,7 @@ interface DescriptionStepProps {
   propertyType?: string;
   rulesAndRegulations?: string;
   onRulesAndRegulationsChange?: (rules: string) => void;
+  tenantSelection?: string;
 }
 
 const highlightOptions = [
