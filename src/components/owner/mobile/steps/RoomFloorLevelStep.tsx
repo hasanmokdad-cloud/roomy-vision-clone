@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChevronDown, ChevronUp, Layers, Plus, Trash2, GripVertical } from 'lucide-react';
 import { WizardRoomData } from './RoomNamesStep';
+import { getBlockDisplayName } from '@/utils/occupantLabel';
 
 export interface FloorDefinition {
   id: string;
