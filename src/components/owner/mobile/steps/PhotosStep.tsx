@@ -21,6 +21,7 @@ interface PhotosStepProps {
   receptionPerBlock: boolean;
   blockCount: number;
   propertyType?: string;
+  blockNames?: Array<{ block_number: number; name: string }>;
 }
 
 const SHARED_SPACE_ORDER = [
