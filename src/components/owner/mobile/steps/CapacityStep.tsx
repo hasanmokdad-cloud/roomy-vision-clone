@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getBlockDisplayName } from '@/utils/occupantLabel';
 
 interface CapacityStepProps {
   value: number;
@@ -8,9 +9,10 @@ interface CapacityStepProps {
   propertyType: string;
   hasMultipleBlocks?: boolean;
   currentBlockNumber?: number;
+  blockNames?: Array<{ block_number: number; name: string }>;
 }
 
-export function CapacityStep({ value, onChange, propertyType, hasMultipleBlocks = false, currentBlockNumber = 1 }: CapacityStepProps) {
+export function CapacityStep({ value, onChange, propertyType, hasMultipleBlocks = false, currentBlockNumber = 1, blockNames = [] }: CapacityStepProps) {
   const isApartment = propertyType === 'apartment';
   const unitLabel = isApartment ? 'apartment' : 'room';
   const unitLabelPlural = isApartment ? 'apartments' : 'rooms';
@@ -31,8 +33,9 @@ export function CapacityStep({ value, onChange, propertyType, hasMultipleBlocks 
     }
   };
 
+  const blockName = getBlockDisplayName(currentBlockNumber, blockNames);
   const heading = hasMultipleBlocks
-    ? `How many rental units does Block ${currentBlockNumber} have?`
+    ? `How many rental units does ${blockName} have?`
     : `How many rental units does your dorm have?`;
 
   return (

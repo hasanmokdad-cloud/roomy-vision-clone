@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChevronDown, ChevronUp, Layers, Plus, Trash2, GripVertical } from 'lucide-react';
 import { WizardRoomData } from './RoomNamesStep';
+import { getBlockDisplayName } from '@/utils/occupantLabel';
 
 export interface FloorDefinition {
   id: string;
@@ -22,6 +23,7 @@ interface RoomFloorLevelStepProps {
   blockCount?: number;
   floorDefinitions: FloorDefinition[];
   onFloorDefinitionsChange: (floors: FloorDefinition[]) => void;
+  blockNames?: Array<{ block_number: number; name: string }>;
 }
 
 export function formatFloorDisplay(floor: string | null | undefined): string {
@@ -289,6 +291,7 @@ export function RoomFloorLevelStep({
   blockCount = 1,
   floorDefinitions,
   onFloorDefinitionsChange,
+  blockNames = [],
 }: RoomFloorLevelStepProps) {
   const [collapsedBlocks, setCollapsedBlocks] = useState<Set<number>>(new Set());
 
@@ -384,7 +387,7 @@ export function RoomFloorLevelStep({
                   >
                     <div className="flex items-center gap-2">
                       <Layers className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-semibold text-foreground">Block {blockNum}</span>
+                      <span className="font-semibold text-foreground">{getBlockDisplayName(blockNum, blockNames)}</span>
                       <Badge variant="secondary" className="text-xs">
                         {blockRooms.length} units
                       </Badge>
@@ -401,7 +404,7 @@ export function RoomFloorLevelStep({
                       {/* Block floor builder */}
                       <div>
                         <h3 className="text-sm font-semibold text-foreground mb-1">
-                          Define Block {blockNum} floors
+                          Define {getBlockDisplayName(blockNum, blockNames)} floors
                         </h3>
                         <FloorBuilder
                           floors={floorDefinitions}

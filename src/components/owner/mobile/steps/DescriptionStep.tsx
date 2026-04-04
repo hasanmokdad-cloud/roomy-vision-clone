@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Textarea } from '@/components/ui/textarea';
 import { usePropertyTerminology } from '@/hooks/use-property-terminology';
+import { occupant } from '@/utils/occupantLabel';
 
 interface DescriptionStepProps {
   mode: 'highlights' | 'title' | 'description';
@@ -13,6 +14,7 @@ interface DescriptionStepProps {
   propertyType?: string;
   rulesAndRegulations?: string;
   onRulesAndRegulationsChange?: (rules: string) => void;
+  tenantSelection?: string;
 }
 
 const highlightOptions = [
@@ -53,8 +55,10 @@ export function DescriptionStep({
   propertyType = 'dorm',
   rulesAndRegulations = '',
   onRulesAndRegulationsChange,
+  tenantSelection = 'student_only',
 }: DescriptionStepProps) {
   const { dormLabel } = usePropertyTerminology(propertyType);
+  const occupantPlural = occupant(tenantSelection, { plural: true });
   
   const toggleHighlight = (id: string) => {
     if (highlights.includes(id)) {
@@ -94,7 +98,7 @@ export function DescriptionStep({
                       : 'border-border text-foreground hover:border-foreground/50'
                   }`}
                 >
-                  {option.label}
+                  {option.id === 'student-friendly' && tenantSelection === 'mixed' ? 'Tenant-friendly' : option.label}
                 </motion.button>
               );
             })}
@@ -169,7 +173,7 @@ export function DescriptionStep({
           <Textarea
             value={description}
             onChange={(e) => onDescriptionChange(e.target.value.slice(0, 500))}
-            placeholder={`Describe your ${dormLabel}... What do students love about it? What makes it unique?`}
+            placeholder={`Describe your ${dormLabel}... What do ${occupantPlural} love about it? What makes it unique?`}
             className="min-h-[200px] text-base"
           />
           <p className="text-right text-sm text-muted-foreground mt-2">
@@ -184,7 +188,7 @@ export function DescriptionStep({
           className="mt-6 p-4 rounded-xl bg-muted/50"
         >
           <p className="text-sm text-muted-foreground">
-            💡 <strong>Tips:</strong> Mention nearby universities, hospitals, landmarks, transportation, what's included, and any unique features that set your listing apart.
+            💡 <strong>Tips:</strong> Mention nearby universities, hospitals, landmarks, transportation,{tenantSelection === 'mixed' ? ' workplaces,' : ''} what's included, and any unique features that set your listing apart.
           </p>
         </motion.div>
 

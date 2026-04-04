@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Wand2, AlertCircle } from 'lucide-react';
 import { usePropertyTerminology } from '@/hooks/use-property-terminology';
+import { getBlockDisplayName } from '@/utils/occupantLabel';
 
 export interface BedConfigRow {
   bedType: 'single' | 'double' | 'twin';
@@ -55,6 +56,7 @@ interface RoomNamesStepProps {
   propertyType?: string;
   hasMultipleBlocks?: boolean;
   currentBlockNumber?: number;
+  blockNames?: Array<{ block_number: number; name: string }>;
 }
 
 // Pattern detection for auto-sequencing
@@ -105,7 +107,7 @@ function generateName(pattern: { type: string; prefix: string; suffix: string; n
   }
 }
 
-export function RoomNamesStep({ rooms, onChange, propertyType = 'dorm', hasMultipleBlocks = false, currentBlockNumber = 1 }: RoomNamesStepProps) {
+export function RoomNamesStep({ rooms, onChange, propertyType = 'dorm', hasMultipleBlocks = false, currentBlockNumber = 1, blockNames = [] }: RoomNamesStepProps) {
   const { roomsLabel, roomLabel } = usePropertyTerminology(propertyType);
   const debounceTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
@@ -183,8 +185,9 @@ export function RoomNamesStep({ rooms, onChange, propertyType = 'dorm', hasMulti
   };
   const duplicates = getDuplicates();
 
+  const blockName = getBlockDisplayName(currentBlockNumber, blockNames);
   const heading = hasMultipleBlocks
-    ? `Name the rooms in Block ${currentBlockNumber}`
+    ? `Name the rooms in ${blockName}`
     : 'Name your rooms';
 
   return (

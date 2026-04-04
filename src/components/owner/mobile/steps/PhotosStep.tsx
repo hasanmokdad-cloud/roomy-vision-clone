@@ -5,6 +5,7 @@ import { toast } from '@/hooks/use-toast';
 import CameraIcon from '@/assets/camera-icon.avif';
 import { PhotoUploadModal } from '../PhotoUploadModal';
 import { cn } from '@/lib/utils';
+import { getBlockDisplayName } from '@/utils/occupantLabel';
 
 export interface BuildingImage {
   sectionType: string;
@@ -20,6 +21,7 @@ interface PhotosStepProps {
   receptionPerBlock: boolean;
   blockCount: number;
   propertyType?: string;
+  blockNames?: Array<{ block_number: number; name: string }>;
 }
 
 const SHARED_SPACE_ORDER = [
@@ -42,6 +44,7 @@ export function PhotosStep({
   receptionPerBlock,
   blockCount,
   propertyType = 'dorm',
+  blockNames = [],
 }: PhotosStepProps) {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadSection, setUploadSection] = useState<string>('exterior');
@@ -88,7 +91,7 @@ export function PhotosStep({
       for (let i = 1; i <= blockCount; i++) {
         gallerySections.push({
           sectionType: `reception_block_${i}`,
-          label: `Reception — Block ${i}`,
+          label: `Reception — ${getBlockDisplayName(i, blockNames)}`,
           emoji: '🛎',
         });
       }

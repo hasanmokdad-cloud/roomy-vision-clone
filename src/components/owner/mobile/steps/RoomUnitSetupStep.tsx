@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { getBlockDisplayName } from '@/utils/occupantLabel';
 
 interface RoomUnitSetupStepProps {
   kitchenetteType: string;
@@ -10,6 +11,7 @@ interface RoomUnitSetupStepProps {
   hasMultipleBlocks?: boolean;
   currentBlockNumber?: number;
   furnishedFromAmenities?: boolean;
+  blockNames?: Array<{ block_number: number; name: string }>;
 }
 
 interface CardOption {
@@ -61,9 +63,11 @@ export function RoomUnitSetupStep({
   hasMultipleBlocks = false,
   currentBlockNumber = 1,
   furnishedFromAmenities = false,
+  blockNames = [],
 }: RoomUnitSetupStepProps) {
+  const blockName = getBlockDisplayName(currentBlockNumber, blockNames);
   const heading = hasMultipleBlocks
-    ? `Tell us about Block ${currentBlockNumber}'s rental units`
+    ? `Tell us about ${blockName}'s rental units`
     : 'Tell us about your rental units';
 
   const subHeading = furnishedFromAmenities

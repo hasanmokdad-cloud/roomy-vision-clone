@@ -94,6 +94,7 @@ interface WizardFormData {
   selectedApartmentIds: string[];
   completedApartmentIds: string[];
   floorDefinitions: FloorDefinition[];
+  blockNames: Array<{ block_number: number; name: string }>;
 }
 
 const INITIAL_FORM_DATA: WizardFormData = {
@@ -134,6 +135,7 @@ const INITIAL_FORM_DATA: WizardFormData = {
   selectedApartmentIds: [],
   completedApartmentIds: [],
   floorDefinitions: [],
+  blockNames: [],
 };
 
 const STORAGE_KEY_PREFIX = 'roomy_dorm_wizard_';
@@ -215,7 +217,7 @@ const highlightDescriptions: Record<string, string> = {
   'vibrant-area': 'Situated in a vibrant area with lots to explore.',
 };
 
-function generateDescriptionFromHighlights(highlights: string[], propertyType: string): string {
+function generateDescriptionFromHighlights(highlights: string[], propertyType: string, tenantSelection: string = 'student_only'): string {
   if (highlights.length === 0) return '';
   
   const descriptions = highlights
@@ -226,8 +228,9 @@ function generateDescriptionFromHighlights(highlights: string[], propertyType: s
   
   // Use "student housing" for apartment type, "dorm" for dorm and hybrid
   const accommodationType = propertyType === 'apartment' ? 'student housing' : 'dorm';
+  const occupantLabel = tenantSelection === 'student_only' ? 'students' : 'tenants';
   
-  return `Welcome to this wonderful ${accommodationType}! ${descriptions.join(' ')}`;
+  return `Welcome to this wonderful ${accommodationType}! Perfect for ${occupantLabel}. ${descriptions.join(' ')}`;
 }
 
 function createEmptyRoom(index: number): WizardRoomData {
@@ -546,7 +549,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     // When moving from highlights step (step 5) to description step (step 6),
     // generate description if not already set AND not manually edited
     if (currentStep === 5 && formData.highlights.length > 0 && !formData.description && !formData.descriptionManuallyEdited) {
-      const generatedDesc = generateDescriptionFromHighlights(formData.highlights, formData.propertyType);
+      const generatedDesc = generateDescriptionFromHighlights(formData.highlights, formData.propertyType, formData.tenantSelection);
       setFormData(prev => ({ ...prev, description: generatedDesc }));
     }
 
@@ -812,6 +815,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
               label: f.label.trim(),
               blockNumber: f.blockNumber,
             })),
+            block_names: formData.blockNames,
           }).eq('id', newDormId);
 
           // Save building images
@@ -882,7 +886,20 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     // Common validations
     switch (currentStep) {
       case 2: return !formData.propertyType;
-      case 3: return !formData.title || (formData.hasMultipleBlocks && formData.blockCount < 2);
+      case 3: {
+        if (!formData.title || (formData.hasMultipleBlocks && formData.blockCount < 2)) return true;
+        // Block names required when multiple blocks
+        if (formData.hasMultipleBlocks && formData.blockCount >= 2) {
+          for (let i = 1; i <= formData.blockCount; i++) {
+            const entry = formData.blockNames.find(b => b.block_number === i);
+            if (!entry?.name?.trim()) return true;
+          }
+          // Check uniqueness
+          const names = formData.blockNames.filter(b => b.block_number <= formData.blockCount).map(b => b.name.trim().toLowerCase());
+          if (new Set(names).size !== names.length) return true;
+        }
+        return false;
+      }
       case 4: return !formData.tenantSelection || !formData.genderPreference;
       case 8: return !formData.city || !formData.area;
       case 13: return !formData.buildingImages.some(img => img.sectionType === 'exterior');
@@ -997,6 +1014,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onHasMultipleBlocksChange={(v) => setFormData(prev => ({ ...prev, hasMultipleBlocks: v }))}
             blockCount={formData.blockCount}
             onBlockCountChange={(v) => setFormData(prev => ({ ...prev, blockCount: v }))}
+            blockNames={formData.blockNames}
+            onBlockNamesChange={(names) => setFormData(prev => ({ ...prev, blockNames: names }))}
             propertyType={formData.propertyType}
           />
         );
@@ -1021,6 +1040,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onTitleChange={(v) => setFormData({ ...formData, title: v })}
             onDescriptionChange={(v) => setFormData({ ...formData, description: v })}
             propertyType={formData.propertyType}
+            tenantSelection={formData.tenantSelection}
           />
         );
       case 6:
@@ -1036,6 +1056,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             propertyType={formData.propertyType}
             rulesAndRegulations={formData.rulesAndRegulations}
             onRulesAndRegulationsChange={(v) => setFormData({ ...formData, rulesAndRegulations: v, rulesManuallyEdited: true })}
+            tenantSelection={formData.tenantSelection}
           />
         );
       case 7:
@@ -1124,6 +1145,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             receptionPerBlock={formData.receptionPerBlock}
             blockCount={formData.blockCount}
             propertyType={formData.propertyType}
+            blockNames={formData.blockNames}
           />
         );
       case 14:
@@ -1146,6 +1168,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             propertyType={formData.propertyType}
             hasMultipleBlocks={formData.hasMultipleBlocks}
             currentBlockNumber={formData.currentBlockNumber}
+            blockNames={formData.blockNames}
           />
         );
       case 16: {
@@ -1180,6 +1203,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             hasMultipleBlocks={formData.hasMultipleBlocks}
             currentBlockNumber={formData.currentBlockNumber}
             furnishedFromAmenities={isFurnishedFromAmenities}
+            blockNames={formData.blockNames}
           />
         );
       }
@@ -1199,6 +1223,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             propertyType={formData.propertyType}
             hasMultipleBlocks={formData.hasMultipleBlocks}
             currentBlockNumber={formData.currentBlockNumber}
+            blockNames={formData.blockNames}
           />
         );
       case 18:
@@ -1346,6 +1371,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             selectedIds={formData.selectedRoomIds}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
             propertyType={formData.propertyType}
+            tenantSelection={formData.tenantSelection}
           />
         );
       case 26:
@@ -1366,6 +1392,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             blockCount={formData.blockCount}
             floorDefinitions={formData.floorDefinitions}
             onFloorDefinitionsChange={(floorDefinitions) => setFormData({ ...formData, floorDefinitions })}
+            blockNames={formData.blockNames}
           />
         );
       case 27:

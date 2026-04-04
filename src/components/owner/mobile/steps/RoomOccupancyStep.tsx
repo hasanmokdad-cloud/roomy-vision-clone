@@ -5,12 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Users } from 'lucide-react';
 import { WizardRoomData } from './RoomNamesStep';
 import { usePropertyTerminology } from '@/hooks/use-property-terminology';
+import { occupant } from '@/utils/occupantLabel';
 
 interface RoomOccupancyStepProps {
   rooms: WizardRoomData[];
   selectedIds: string[];
   onChange: (rooms: WizardRoomData[]) => void;
   propertyType?: string;
+  tenantSelection?: string;
 }
 
 function getEffectiveCapacity(room: WizardRoomData): number {
@@ -32,8 +34,9 @@ function getEffectiveCapacity(room: WizardRoomData): number {
   }
 }
 
-export function RoomOccupancyStep({ rooms, selectedIds, onChange, propertyType = 'dorm' }: RoomOccupancyStepProps) {
+export function RoomOccupancyStep({ rooms, selectedIds, onChange, propertyType = 'dorm', tenantSelection = 'student_only' }: RoomOccupancyStepProps) {
   const { roomsLabel, roomLabel } = usePropertyTerminology(propertyType);
+  const occupantPlural = occupant(tenantSelection, { plural: true });
   
   // Filter to show selected rooms, or all rooms when none selected (editing mode)
   const selectedRooms = selectedIds.length > 0 
@@ -59,7 +62,7 @@ export function RoomOccupancyStep({ rooms, selectedIds, onChange, propertyType =
             Current occupancy
           </h1>
           <p className="text-muted-foreground">
-            How many students currently occupy each {roomLabel}?
+            How many {occupantPlural} currently occupy each {roomLabel}?
           </p>
         </motion.div>
 
