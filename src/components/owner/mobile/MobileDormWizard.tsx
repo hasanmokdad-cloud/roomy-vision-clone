@@ -919,10 +919,15 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     }
 
     // Dorm flow validations
+    const furnishedFromAmenities = formData.amenities.includes('Furnished');
+
     switch (currentStep) {
       case 16: {
         const blockKey = String(formData.currentBlockNumber);
         const bs = formData.blockSettings[blockKey];
+        if (furnishedFromAmenities) {
+          return !bs || !bs.kitchenette_type || !bs.balcony_type;
+        }
         return !bs || !bs.kitchenette_type || !bs.balcony_type || !bs.furnished_type;
       }
       case 17: return formData.rooms.some(r => !r.name.trim());
