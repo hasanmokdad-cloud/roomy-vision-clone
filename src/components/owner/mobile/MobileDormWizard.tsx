@@ -807,6 +807,11 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             block_settings: formData.blockSettings,
             cover_image: coverUrl,
             image_url: coverUrl,
+            floor_definitions: formData.floorDefinitions.filter(f => f.label.trim()).map(f => ({
+              order: f.order,
+              label: f.label.trim(),
+              blockNumber: f.blockNumber,
+            })),
           }).eq('id', newDormId);
 
           // Save building images
