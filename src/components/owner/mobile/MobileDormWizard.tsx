@@ -919,10 +919,15 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     }
 
     // Dorm flow validations
+    const furnishedFromAmenities = formData.amenities.includes('Furnished');
+
     switch (currentStep) {
       case 16: {
         const blockKey = String(formData.currentBlockNumber);
         const bs = formData.blockSettings[blockKey];
+        if (furnishedFromAmenities) {
+          return !bs || !bs.kitchenette_type || !bs.balcony_type;
+        }
         return !bs || !bs.kitchenette_type || !bs.balcony_type || !bs.furnished_type;
       }
       case 17: return formData.rooms.some(r => !r.name.trim());
@@ -1146,7 +1151,15 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
       case 16: {
         if (isApartmentFlow) return null;
         const blockKey = String(formData.currentBlockNumber);
-        const bs = formData.blockSettings[blockKey] || { kitchenette_type: '', balcony_type: '', furnished_type: '' };
+        const isFurnishedFromAmenities = formData.amenities.includes('Furnished');
+        const bs = formData.blockSettings[blockKey] || { kitchenette_type: '', balcony_type: '', furnished_type: isFurnishedFromAmenities ? 'furnished' : '' };
+        // Auto-set furnished_type when amenity is selected
+        if (isFurnishedFromAmenities && bs.furnished_type !== 'furnished') {
+          setFormData(prev => ({
+            ...prev,
+            blockSettings: { ...prev.blockSettings, [blockKey]: { ...bs, furnished_type: 'furnished' } }
+          }));
+        }
         return (
           <RoomUnitSetupStep
             kitchenetteType={bs.kitchenette_type}
@@ -1166,6 +1179,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             }))}
             hasMultipleBlocks={formData.hasMultipleBlocks}
             currentBlockNumber={formData.currentBlockNumber}
+            furnishedFromAmenities={isFurnishedFromAmenities}
           />
         );
       }

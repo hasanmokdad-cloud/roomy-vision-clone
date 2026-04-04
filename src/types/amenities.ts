@@ -41,6 +41,7 @@ export interface LaundryOption {
 
 export interface KitchenOption {
   billing: 'included' | 'not-included';
+  billingInfo?: string;
 }
 
 export type AmenityOptionType = ElectricityOption | WiFiOption | CleaningOption | WaterOption | LaundryOption | KitchenOption;
@@ -89,5 +90,6 @@ export function formatLaundryOption(option: LaundryOption): string {
 }
 
 export function formatKitchenOption(option: KitchenOption): string {
-  return option.billing === 'included' ? 'Incl.' : 'Not incl.';
+  if (option.billing === 'included') return 'Incl.';
+  return option.billingInfo || 'Not incl.';
 }

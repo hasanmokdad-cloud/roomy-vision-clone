@@ -1,14 +1,15 @@
 import { motion } from 'framer-motion';
 
 interface RoomUnitSetupStepProps {
-  kitchenetteType: string; // 'studio' | 'room' | 'mixed' | ''
-  balconyType: string; // 'all' | 'none' | 'mixed' | ''
-  furnishedType: string; // 'furnished' | 'unfurnished' | 'mixed' | ''
+  kitchenetteType: string;
+  balconyType: string;
+  furnishedType: string;
   onKitchenetteTypeChange: (v: string) => void;
   onBalconyTypeChange: (v: string) => void;
   onFurnishedTypeChange: (v: string) => void;
   hasMultipleBlocks?: boolean;
   currentBlockNumber?: number;
+  furnishedFromAmenities?: boolean;
 }
 
 interface CardOption {
@@ -59,10 +60,15 @@ export function RoomUnitSetupStep({
   onFurnishedTypeChange,
   hasMultipleBlocks = false,
   currentBlockNumber = 1,
+  furnishedFromAmenities = false,
 }: RoomUnitSetupStepProps) {
   const heading = hasMultipleBlocks
     ? `Tell us about Block ${currentBlockNumber}'s rental units`
     : 'Tell us about your rental units';
+
+  const subHeading = furnishedFromAmenities
+    ? 'This helps us set up the right options for each unit — furnished status was already set from your amenities'
+    : 'This helps us set up the right options for each unit';
 
   return (
     <div className="min-h-screen flex flex-col items-center pt-24 pb-32 px-6">
@@ -76,7 +82,7 @@ export function RoomUnitSetupStep({
             {heading}
           </h1>
           <p className="text-muted-foreground text-sm lg:text-base mt-2">
-            This helps us set up the right options for each unit
+            {subHeading}
           </p>
         </motion.div>
 
@@ -109,7 +115,7 @@ export function RoomUnitSetupStep({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mb-8"
+          className={furnishedFromAmenities ? '' : 'mb-8'}
         >
           <h3 className="text-base font-semibold text-foreground mb-1">
             Do your rental units have a private balcony?
@@ -128,28 +134,30 @@ export function RoomUnitSetupStep({
           />
         </motion.div>
 
-        {/* Question 3 — Furnished */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <h3 className="text-base font-semibold text-foreground mb-1">
-            Are your rental units furnished?
-          </h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            A furnished unit includes at minimum a bed, desk, wardrobe, and basic furniture — appliances and extras may vary
-          </p>
-          <SelectionCards
-            options={[
-              { value: 'furnished', emoji: '✅', label: 'Yes, all of them are', subLabel: 'Every unit comes fully furnished' },
-              { value: 'unfurnished', emoji: '🚫', label: 'No, none of them are', subLabel: 'Units are unfurnished — tenants bring their own furniture' },
-              { value: 'mixed', emoji: '🔀', label: "It depends — some are, some aren't", subLabel: "You'll assign this per unit on the next page" },
-            ]}
-            selected={furnishedType}
-            onSelect={onFurnishedTypeChange}
-          />
-        </motion.div>
+        {/* Question 3 — Furnished (hidden if set from amenities) */}
+        {!furnishedFromAmenities && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <h3 className="text-base font-semibold text-foreground mb-1">
+              Are your rental units furnished?
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              A furnished unit includes at minimum a bed, desk, wardrobe, and basic furniture — appliances and extras may vary
+            </p>
+            <SelectionCards
+              options={[
+                { value: 'furnished', emoji: '✅', label: 'Yes, all of them are', subLabel: 'Every unit comes fully furnished' },
+                { value: 'unfurnished', emoji: '🚫', label: 'No, none of them are', subLabel: 'Units are unfurnished — tenants bring their own furniture' },
+                { value: 'mixed', emoji: '🔀', label: "It depends — some are, some aren't", subLabel: "You'll assign this per unit on the next page" },
+              ]}
+              selected={furnishedType}
+              onSelect={onFurnishedTypeChange}
+            />
+          </motion.div>
+        )}
       </div>
     </div>
   );
