@@ -1368,6 +1368,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             selectedIds={formData.selectedRoomIds}
             onChange={(rooms) => setFormData({ ...formData, rooms })}
             propertyType={formData.propertyType}
+            tenantSelection={formData.tenantSelection}
           />
         );
       case 26:

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Textarea } from '@/components/ui/textarea';
 import { usePropertyTerminology } from '@/hooks/use-property-terminology';
+import { occupant } from '@/utils/occupantLabel';
 
 interface DescriptionStepProps {
   mode: 'highlights' | 'title' | 'description';
