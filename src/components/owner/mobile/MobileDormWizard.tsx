@@ -217,7 +217,7 @@ const highlightDescriptions: Record<string, string> = {
   'vibrant-area': 'Situated in a vibrant area with lots to explore.',
 };
 
-function generateDescriptionFromHighlights(highlights: string[], propertyType: string): string {
+function generateDescriptionFromHighlights(highlights: string[], propertyType: string, tenantSelection: string = 'student_only'): string {
   if (highlights.length === 0) return '';
   
   const descriptions = highlights
@@ -228,8 +228,9 @@ function generateDescriptionFromHighlights(highlights: string[], propertyType: s
   
   // Use "student housing" for apartment type, "dorm" for dorm and hybrid
   const accommodationType = propertyType === 'apartment' ? 'student housing' : 'dorm';
+  const occupantLabel = tenantSelection === 'student_only' ? 'students' : 'tenants';
   
-  return `Welcome to this wonderful ${accommodationType}! ${descriptions.join(' ')}`;
+  return `Welcome to this wonderful ${accommodationType}! Perfect for ${occupantLabel}. ${descriptions.join(' ')}`;
 }
 
 function createEmptyRoom(index: number): WizardRoomData {
