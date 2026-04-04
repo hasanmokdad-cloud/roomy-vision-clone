@@ -44,6 +44,7 @@ export function PhotosStep({
   receptionPerBlock,
   blockCount,
   propertyType = 'dorm',
+  blockNames = [],
 }: PhotosStepProps) {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadSection, setUploadSection] = useState<string>('exterior');
