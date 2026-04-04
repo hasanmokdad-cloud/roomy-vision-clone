@@ -884,7 +884,20 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
     // Common validations
     switch (currentStep) {
       case 2: return !formData.propertyType;
-      case 3: return !formData.title || (formData.hasMultipleBlocks && formData.blockCount < 2);
+      case 3: {
+        if (!formData.title || (formData.hasMultipleBlocks && formData.blockCount < 2)) return true;
+        // Block names required when multiple blocks
+        if (formData.hasMultipleBlocks && formData.blockCount >= 2) {
+          for (let i = 1; i <= formData.blockCount; i++) {
+            const entry = formData.blockNames.find(b => b.block_number === i);
+            if (!entry?.name?.trim()) return true;
+          }
+          // Check uniqueness
+          const names = formData.blockNames.filter(b => b.block_number <= formData.blockCount).map(b => b.name.trim().toLowerCase());
+          if (new Set(names).size !== names.length) return true;
+        }
+        return false;
+      }
       case 4: return !formData.tenantSelection || !formData.genderPreference;
       case 8: return !formData.city || !formData.area;
       case 13: return !formData.buildingImages.some(img => img.sectionType === 'exterior');
