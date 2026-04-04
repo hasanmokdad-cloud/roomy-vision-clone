@@ -173,7 +173,7 @@ export function DescriptionStep({
           <Textarea
             value={description}
             onChange={(e) => onDescriptionChange(e.target.value.slice(0, 500))}
-            placeholder={`Describe your ${dormLabel}... What do students love about it? What makes it unique?`}
+            placeholder={`Describe your ${dormLabel}... What do ${occupantPlural} love about it? What makes it unique?`}
             className="min-h-[200px] text-base"
           />
           <p className="text-right text-sm text-muted-foreground mt-2">
