@@ -91,7 +91,7 @@ export function PhotosStep({
       for (let i = 1; i <= blockCount; i++) {
         gallerySections.push({
           sectionType: `reception_block_${i}`,
-          label: `Reception — Block ${i}`,
+          label: `Reception — ${getBlockDisplayName(i, blockNames)}`,
           emoji: '🛎',
         });
       }
