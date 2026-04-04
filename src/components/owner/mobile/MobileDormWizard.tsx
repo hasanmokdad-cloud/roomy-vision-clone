@@ -1386,6 +1386,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             blockCount={formData.blockCount}
             floorDefinitions={formData.floorDefinitions}
             onFloorDefinitionsChange={(floorDefinitions) => setFormData({ ...formData, floorDefinitions })}
+            blockNames={formData.blockNames}
           />
         );
       case 27:
