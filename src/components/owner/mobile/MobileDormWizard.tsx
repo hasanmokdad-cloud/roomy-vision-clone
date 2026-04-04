@@ -1198,6 +1198,7 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             hasMultipleBlocks={formData.hasMultipleBlocks}
             currentBlockNumber={formData.currentBlockNumber}
             furnishedFromAmenities={isFurnishedFromAmenities}
+            blockNames={formData.blockNames}
           />
         );
       }
