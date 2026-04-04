@@ -404,7 +404,7 @@ export function RoomFloorLevelStep({
                       {/* Block floor builder */}
                       <div>
                         <h3 className="text-sm font-semibold text-foreground mb-1">
-                          Define Block {blockNum} floors
+                          Define {getBlockDisplayName(blockNum, blockNames)} floors
                         </h3>
                         <FloorBuilder
                           floors={floorDefinitions}
