@@ -1012,6 +1012,8 @@ export function MobileDormWizard({ onBeforeSubmit, onSaved, isSubmitting }: Mobi
             onHasMultipleBlocksChange={(v) => setFormData(prev => ({ ...prev, hasMultipleBlocks: v }))}
             blockCount={formData.blockCount}
             onBlockCountChange={(v) => setFormData(prev => ({ ...prev, blockCount: v }))}
+            blockNames={formData.blockNames}
+            onBlockNamesChange={(names) => setFormData(prev => ({ ...prev, blockNames: names }))}
             propertyType={formData.propertyType}
           />
         );
