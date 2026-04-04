@@ -5,12 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Users } from 'lucide-react';
 import { WizardRoomData } from './RoomNamesStep';
 import { usePropertyTerminology } from '@/hooks/use-property-terminology';
+import { occupant } from '@/utils/occupantLabel';
 
 interface RoomOccupancyStepProps {
   rooms: WizardRoomData[];
   selectedIds: string[];
   onChange: (rooms: WizardRoomData[]) => void;
   propertyType?: string;
+  tenantSelection?: string;
 }
 
 function getEffectiveCapacity(room: WizardRoomData): number {
